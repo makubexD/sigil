@@ -171,7 +171,7 @@ describe('Resolve phase', () => {
 // ─── Claude Code emit ──────────────────────────────────────────────────────────
 
 describe('Claude Code target', () => {
-  it('emits marketplace.json with all packs', async () => {
+  it('emits marketplace.json with all packs (flat top-level schema)', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
@@ -179,8 +179,12 @@ describe('Claude Code target', () => {
 
     assert.ok('.claude-plugin/marketplace.json' in files, 'marketplace.json emitted');
     const marketplace = JSON.parse(files['.claude-plugin/marketplace.json']);
-    assert.equal(marketplace.marketplace.version, VERSION);
-    assert.equal(marketplace.marketplace.plugins.length, 3);
+    // Official schema is flat: name / owner / plugins[] at top level (no "marketplace" wrapper)
+    // See: code.claude.com/docs/en/plugin-marketplaces
+    assert.ok(!marketplace.marketplace, 'no nested "marketplace" key — must be flat');
+    assert.equal(marketplace.name, 'maku-catalog', 'name at top level');
+    assert.ok(marketplace.owner?.name, 'owner.name present');
+    assert.equal(marketplace.plugins.length, 3, '3 plugin entries');
   });
 
   it('emits plugin.json with correct version for each pack', async () => {
@@ -205,6 +209,12 @@ describe('Claude Code target', () => {
     assert.ok(skillMd.includes('Writing xUnit Tests'), 'skill body present');
     assert.ok(skillMd.includes('Applied Rules'), 'rules section present');
     assert.ok(skillMd.includes('File-scoped namespaces'), 'dotnet-style rule inlined');
+    // `paths:` is the Claude Code–recognized key; `appliesTo` is our vendor-neutral source name
+    // See: code.claude.com/docs/en/skills
+    assert.ok(skillMd.includes('paths:'), 'paths: field emitted (not appliesTo:)');
+    assert.ok(!skillMd.includes('appliesTo:'), 'appliesTo not emitted in Claude output');
+    // description must be safely quoted (not a bare plain scalar)
+    assert.ok(skillMd.match(/description:\s*"/), 'description is a quoted YAML scalar');
   });
 
   it('emits the shared code-reviewer agent into each pack that uses it', async () => {
@@ -225,6 +235,24 @@ describe('Claude Code target', () => {
     assert.ok('.claude/skills/xunit-testing/SKILL.md' in files, 'skill scaffolded');
     assert.ok('.claude/rules/csharp-dotnet-style.md' in files, 'rule scaffolded');
     assert.ok('.claude/agents/code-reviewer.md' in files, 'agent scaffolded');
+  });
+
+  it('scaffold: language-scoped rule has paths: frontmatter; shared rule does not', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.scaffold!('csharp/xunit-testing', resolved, { projectDir: '/fake' });
+
+    const languageRule = files['.claude/rules/csharp-dotnet-style.md'];
+    assert.ok(languageRule, 'csharp rule scaffolded');
+    assert.ok(languageRule.includes('paths:'), 'language rule has paths: frontmatter');
+    assert.ok(languageRule.includes('*.cs'), 'csharp glob present');
+
+    // Scaffold shared rule directly and verify no frontmatter
+    const sharedFiles = await target.scaffold!('shared/clean-code', resolved, { projectDir: '/fake' });
+    const sharedRule = sharedFiles['.claude/rules/shared-clean-code.md'];
+    assert.ok(sharedRule, 'shared rule scaffolded');
+    assert.ok(!sharedRule.startsWith('---'), 'shared rule has no frontmatter (loaded unconditionally)');
   });
 });
 
@@ -264,7 +292,10 @@ describe('Copilot target', () => {
 
     const promptFile = files['.github/prompts/xunit-testing.prompt.md'];
     assert.ok(promptFile, 'xunit-testing.prompt.md emitted');
-    assert.ok(promptFile.includes('mode: agent'), 'agent mode set');
+    // `agent:` is the current field name (renamed from legacy `mode:`)
+    // See: code.visualstudio.com/docs/agent-customization/prompt-files
+    assert.ok(promptFile.includes('agent: agent'), 'agent field set (not legacy mode:)');
+    assert.ok(!promptFile.includes('applyTo'), 'no applyTo in prompt files (belongs in .instructions.md only)');
     assert.ok(promptFile.includes('Writing xUnit Tests'), 'skill body present');
   });
 
@@ -277,5 +308,21 @@ describe('Copilot target', () => {
     assert.ok('.github/AGENTS.md' in files, 'AGENTS.md emitted');
     const content = files['.github/AGENTS.md'];
     assert.ok(content.includes('code-reviewer'), 'code-reviewer agent listed');
+  });
+
+  it('scaffold: agent emits .agent.md with required description frontmatter', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.scaffold!('shared/code-reviewer', resolved, { projectDir: '/fake' });
+
+    // Official Copilot spec requires .agent.md extension and description frontmatter
+    // See: docs.github.com/.../custom-agents-configuration
+    assert.ok('.github/agents/code-reviewer.agent.md' in files, 'agent uses .agent.md extension');
+    assert.ok(!('.github/agents/code-reviewer.md' in files), 'bare .md not emitted');
+    const content = files['.github/agents/code-reviewer.agent.md'];
+    assert.ok(content.startsWith('---'), 'agent file has YAML frontmatter');
+    assert.ok(content.includes('description:'), 'description frontmatter present (required by spec)');
+    assert.ok(content.match(/description:\s*"/), 'description is safely quoted');
   });
 });

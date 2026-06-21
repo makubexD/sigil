@@ -26,6 +26,12 @@ export interface WizardResult {
   includeDeps: boolean;
   /** Whether to overwrite existing files. */
   overwrite: boolean;
+  /**
+   * Optional language filter (e.g. 'csharp', 'python'). When set, only artifacts for
+   * this language (plus shared/cross-language artifacts) are installed.
+   * Undefined means all languages.
+   */
+  language?: string;
 }
 
 /** Returns true when stdin and stdout are both interactive terminals. */
@@ -136,6 +142,36 @@ export async function runWizard(
     selectors = picked as string[];
   }
 
+  // ── Step 3b: language filter (only for scopes that span all languages) ───
+  // For 'pack' (language already implied) and 'individual' (explicit picks), skip.
+  let language: string | undefined;
+  if (scope === 'all' || scope === 'kind') {
+    // Collect distinct languages present in the catalog (excluding shared/undefined)
+    const catalogLanguages = [
+      ...new Set(
+        catalog.artifacts
+          .map(a => a.frontmatter.language as string | undefined)
+          .filter((l): l is string => Boolean(l))
+          .sort(),
+      ),
+    ];
+
+    if (catalogLanguages.length > 0) {
+      const langOptions = [
+        { value: '',  label: 'All languages', hint: catalogLanguages.join(', ') },
+        ...catalogLanguages.map(l => ({ value: l, label: l, hint: '' })),
+      ];
+
+      const langAnswer = await select({
+        message: 'Filter by language?',
+        options: langOptions,
+        initialValue: '',
+      });
+      if (isCancel(langAnswer)) { cancel('Install cancelled.'); return null; }
+      language = (langAnswer as string) || undefined;
+    }
+  }
+
   // ── Step 4: dependency closure ────────────────────────────────────────────
   const includeDepsAnswer = await confirm({
     message: 'Include dependencies? (rules and agents referenced by selected skills)',
@@ -154,11 +190,23 @@ export async function runWizard(
   const overwrite = overwriteAnswer as boolean;
 
   // ── Summary before proceeding ─────────────────────────────────────────────
+  const equivalentCmd = buildEquivalentCommand({
+    selectors,
+    target: target as string,
+    language,
+    includeDeps,
+    overwrite,
+  });
+
   const summaryLines = [
     `Target:       ${target}`,
     `Scope:        ${selectors.join(' ')}`,
+    ...(language ? [`Language:     ${language}`] : []),
     `Dependencies: ${includeDeps ? 'yes' : 'no (--no-deps)'}`,
     `Overwrite:    ${overwrite ? 'yes' : 'no (warn on conflict)'}`,
+    '',
+    `Repeat non-interactively:`,
+    `  ${equivalentCmd}`,
   ];
   note(summaryLines.join('\n'), 'Install plan');
 
@@ -175,7 +223,34 @@ export async function runWizard(
     selectors,
     includeDeps,
     overwrite,
+    language,
   };
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+/**
+ * Builds a copy-pasteable `maku-catalog add …` command string from the effective
+ * install options. Includes `--yes` so it runs non-interactively.
+ * Used in both the wizard plan-box and the end-of-install summary in cli.ts.
+ */
+export function buildEquivalentCommand(opts: {
+  selectors: string[];
+  target: string;
+  language?: string;
+  kinds?: string[];
+  exclude?: string[];
+  includeDeps: boolean;
+  overwrite: boolean;
+}): string {
+  const parts = ['maku-catalog add', ...opts.selectors, `--target ${opts.target}`];
+  if (opts.language)                 parts.push(`--language ${opts.language}`);
+  if (opts.kinds && opts.kinds.length > 0)    parts.push(`--kind ${opts.kinds.join(',')}`);
+  if (opts.exclude && opts.exclude.length > 0) parts.push(`--exclude ${opts.exclude.join(',')}`);
+  if (!opts.includeDeps)             parts.push('--no-deps');
+  if (opts.overwrite)                parts.push('--overwrite');
+  parts.push('--yes');
+  return parts.join(' ');
 }
 
 /** Print a formatted conflict advisory after a partial install. */

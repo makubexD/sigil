@@ -22,7 +22,7 @@ import { validateCatalog } from './validate';
 import { resolveCatalog } from './resolve';
 import { getAllTargets, getTarget } from './targets';
 import { resolveSelection } from './select';
-import { isInteractiveTTY, runWizard, printConflictAdvice, printSkippedAdvice } from './wizard';
+import { isInteractiveTTY, runWizard, buildEquivalentCommand, printConflictAdvice, printSkippedAdvice } from './wizard';
 import type { FileMap, PacksConfig } from './types';
 
 const pkg = JSON.parse(
@@ -218,6 +218,7 @@ program
     let effectiveTarget = opts.target;
     let effectiveIncludeDeps = opts.deps !== false;  // --no-deps sets opts.deps=false
     let effectiveOverwrite = opts.overwrite;
+    let effectiveLanguage = opts.language;
 
     if (needsWizard) {
       if (!isTTY) {
@@ -243,6 +244,9 @@ program
       effectiveTarget = wizardResult.target;
       effectiveIncludeDeps = wizardResult.includeDeps;
       effectiveOverwrite = wizardResult.overwrite;
+      // Language from wizard takes precedence over --language flag; flag overrides wizard if
+      // used with -i / --interactive.
+      effectiveLanguage = wizardResult.language ?? opts.language;
     }
 
     // ── Target resolution ──────────────────────────────────────────────────
@@ -255,10 +259,13 @@ program
     }
 
     // ── Selection + filtering ──────────────────────────────────────────────
+    const effectiveKinds = opts.kind?.split(',').map(k => k.trim()).filter(Boolean);
+    const effectiveExclude = opts.exclude?.split(',').map(k => k.trim()).filter(Boolean);
+
     const filters = {
-      kinds: opts.kind?.split(',').map(k => k.trim()).filter(Boolean),
-      exclude: opts.exclude?.split(',').map(k => k.trim()).filter(Boolean),
-      language: opts.language,
+      kinds: effectiveKinds,
+      exclude: effectiveExclude,
+      language: effectiveLanguage,
     };
 
     let ids: string[];
@@ -351,6 +358,20 @@ program
         for (const f of conflictPaths) console.log(`  ${f}  (overwritten)`);
       }
     }
+
+    // Print a copy-pasteable command to reproduce this install non-interactively.
+    console.log(
+      '\nRepeat non-interactively:\n  ' +
+      buildEquivalentCommand({
+        selectors: effectiveSelectors,
+        target: targetName,
+        language: effectiveLanguage,
+        kinds: effectiveKinds,
+        exclude: effectiveExclude,
+        includeDeps: effectiveIncludeDeps,
+        overwrite: effectiveOverwrite,
+      }),
+    );
   });
 
 // ─── init ─────────────────────────────────────────────────────────────────────

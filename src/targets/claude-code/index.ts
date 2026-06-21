@@ -34,6 +34,7 @@ import type {
   ArtifactKind,
 } from '../../types';
 import type { AgentFrontmatter } from '../../schema';
+import { yamlScalar } from '../yaml-util';
 
 export class ClaudeCodeTarget implements Target {
   readonly name = 'claude';
@@ -70,17 +71,17 @@ export class ClaudeCodeTarget implements Target {
       });
     }
 
-    // marketplace.json — lists all packs so `/plugin marketplace add` picks them up
+    // marketplace.json — flat top-level schema (name / owner / plugins[])
+    // See: code.claude.com/docs/en/plugin-marketplaces
     files['.claude-plugin/marketplace.json'] = JSON.stringify(
       {
-        marketplace: {
-          name: 'maku-catalog',
-          displayName: 'Maku Agent Catalog',
-          description: 'Vendor-neutral AI skills, agents, and rules for multiple languages.',
-          version: options.version,
-          homepage: 'https://github.com/maku/agent-catalog',
-          plugins: pluginEntries,
+        name: 'maku-catalog',
+        owner: {
+          name: 'Maku Agent Catalog',
+          url: 'https://github.com/maku/agent-catalog',
         },
+        description: 'Vendor-neutral AI skills, agents, and rules for multiple languages.',
+        plugins: pluginEntries,
       },
       null,
       2,
@@ -219,11 +220,13 @@ export class ClaudeCodeTarget implements Target {
     const description = fm.description as string;
     const appliesTo = (fm.appliesTo as string[] | undefined) ?? ['**/*'];
 
+    // `paths:` is the Claude Code–recognized key for path-scoped loading.
+    // `appliesTo` is our canonical vendor-neutral field name in catalog source.
     const frontmatter = [
       '---',
       `name: ${name}`,
-      `description: ${description}`,
-      ...(appliesTo.length > 0 ? [`appliesTo:\n${appliesTo.map(g => `  - "${g}"`).join('\n')}`] : []),
+      `description: ${yamlScalar(description)}`,
+      ...(appliesTo.length > 0 ? [`paths:\n${appliesTo.map(g => `  - "${g}"`).join('\n')}`] : []),
       '---',
     ].join('\n');
 
@@ -250,7 +253,7 @@ export class ClaudeCodeTarget implements Target {
     const frontmatterLines = [
       '---',
       `name: ${fm.name}`,
-      `description: >-\n  ${(fm.description as string).replace(/\n/g, '\n  ')}`,
+      `description: ${yamlScalar(fm.description as string)}`,
     ];
     if (claudeHints?.model) frontmatterLines.push(`model: ${claudeHints.model}`);
     if (claudeHints?.effort) frontmatterLines.push(`effort: ${claudeHints.effort}`);
@@ -298,8 +301,28 @@ export class ClaudeCodeTarget implements Target {
 
   private scaffoldRule(rule: ResolvedArtifact, files: FileMap): void {
     const slug = rule.id.replace(/\//g, '-');
-    // .claude/rules/ is natively loaded by Claude Code for every session
-    files[`.claude/rules/${slug}.md`] = `# ${rule.frontmatter.title}\n\n${rule.resolvedBody ?? rule.body}\n`;
+    const title = rule.frontmatter.title as string;
+    const body = rule.resolvedBody ?? rule.body;
+
+    // Language-scoped rules get a `paths:` frontmatter block so Claude Code loads them
+    // only when editing matching files. Shared (no-language) rules have no frontmatter
+    // and are loaded unconditionally at session start.
+    // `paths:` is the Claude Code–recognized key (see code.claude.com/docs/en/memory).
+    const hasLanguage = Boolean(rule.frontmatter.language);
+    const appliesTo = (rule.frontmatter.appliesTo as string[] | undefined) ?? [];
+
+    if (hasLanguage && appliesTo.length > 0) {
+      const pathsFrontmatter = [
+        '---',
+        `paths:\n${appliesTo.map(g => `  - "${g}"`).join('\n')}`,
+        '---',
+        '',
+      ].join('\n');
+      files[`.claude/rules/${slug}.md`] = `${pathsFrontmatter}# ${title}\n\n${body}\n`;
+    } else {
+      // Shared rules: no frontmatter — loaded for every session
+      files[`.claude/rules/${slug}.md`] = `# ${title}\n\n${body}\n`;
+    }
   }
 
   private scaffoldAgent(agent: ResolvedArtifact, files: FileMap): void {

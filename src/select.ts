@@ -131,11 +131,10 @@ export function resolveSelection(
   }
 
   if (filters.language) {
-    const lang = filters.language;
     candidates = candidates.filter(a => {
       const artifactLang = a.frontmatter.language as string | undefined;
-      // Include if: exact language match, no language (shared), or id starts with 'shared/'
-      return artifactLang === lang || artifactLang === undefined;
+      // Include if: exact language match, or no language (shared cross-language artifacts)
+      return artifactLang === filters.language || artifactLang === undefined;
     });
   }
 

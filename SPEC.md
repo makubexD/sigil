@@ -185,11 +185,23 @@ Adapters then decide **how** to materialise the closure:
 | Canonical kind | Claude Code plugin (`dist/claude/`) | Claude Code scaffold (`.claude/`) | GitHub Copilot (`.github/`) |
 |---|---|---|---|
 | `skill` | `skills/<name>/SKILL.md` | `.claude/skills/<name>/SKILL.md` | `prompts/<name>.prompt.md` |
-| `agent` | `agents/<name>.md` | `.claude/agents/<name>.md` | entry in `AGENTS.md` |
-| `rule` (shared, no language) | folded into skill SKILL.md | `.claude/rules/<slug>.md` | `copilot-instructions.md` |
-| `rule` (language-scoped) | folded into skill SKILL.md | `.claude/rules/<slug>.md` | `instructions/<slug>.instructions.md` |
+| `agent` | `agents/<name>.md` | `.claude/agents/<name>.md` | `agents/<name>.agent.md` |
+| `rule` (shared, no language) | folded into skill SKILL.md | `.claude/rules/<slug>.md` (no frontmatter) | `copilot-instructions.md` |
+| `rule` (language-scoped) | folded into skill SKILL.md | `.claude/rules/<slug>.md` (`paths:` frontmatter) | `instructions/<slug>.instructions.md` |
 | `prompt` | `commands/<slug>.md` | `.claude/commands/<slug>.md` | `prompts/<slug>.prompt.md` |
 | `workflow` | `commands/<slug>.md` | `.claude/commands/<slug>.md` | `prompts/<slug>.prompt.md` |
+
+**Emitted frontmatter notes (per official specs):**
+
+- **Claude skill SKILL.md:** uses `paths:` for path-scoped loading (`appliesTo` is our vendor-neutral
+  source field; adapters translate it). `description` is emitted as a double-quoted YAML scalar.
+- **Copilot prompt files:** use `agent: agent` (current field; `mode:` was the legacy name). `applyTo`
+  is **not valid** in `.prompt.md` — it belongs only in `.instructions.md`.
+- **Copilot agent files:** require the `.agent.md` extension and a `description:` frontmatter field
+  (both required by the Copilot spec). Build path writes the aggregate `AGENTS.md` (open standard).
+- **Claude marketplace.json:** flat top-level schema — `name`, `owner`, `plugins[]` — no wrapper key.
+- **`appliesTo` in catalog source stays unchanged** — it is our canonical vendor-neutral field.
+  Adapters translate it to `paths:` (Claude) or `applyTo` (Copilot `.instructions.md`).
 
 ---
 

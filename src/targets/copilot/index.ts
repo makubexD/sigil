@@ -13,20 +13,21 @@
  *
  * Scaffold (add): emits per-artifact files — never clobbers an aggregate file.
  *   .github/
- *     instructions/<slug>.instructions.md  ← language rule, or shared rule with applyTo: "**"
- *     prompts/<name>.prompt.md             ← skill or prompt
- *     agents/<name>.md                     ← one file per agent
+ *     instructions/<slug>.instructions.md    ← language rule, or shared rule with applyTo: "**"
+ *     prompts/<name>.prompt.md               ← skill or prompt
+ *     agents/<name>.agent.md                 ← one file per agent (required extension + frontmatter)
  *
  * Mapping from canonical → Copilot:
- *   skill  → .github/prompts/<name>.prompt.md    (mode: agent, triggered by /name)
- *   agent  → .github/agents/<name>.md            (per-file in scaffold; AGENTS.md in build)
+ *   skill  → .github/prompts/<name>.prompt.md       (agent: agent, triggered by /name)
+ *   agent  → .github/agents/<name>.agent.md          (per-file in scaffold; AGENTS.md in build)
  *   rule   → .github/instructions/<id>.instructions.md (applyTo from canonicalAppliesTo)
  *             Baseline (shared, no language) rules get applyTo: "**"
  *   prompt → .github/prompts/<name>.prompt.md
  *
- * NOTE on agents: the scaffold path writes to .github/agents/<name>.md (per-file).
- * If this path is not yet supported by your Copilot version, copy the files to AGENTS.md
- * manually, or use `build --target copilot` which always produces the aggregate AGENTS.md.
+ * NOTE on prompt files: `applyTo` is NOT valid frontmatter for .prompt.md — it belongs
+ * only in .instructions.md. The current `agent:` field replaces the legacy `mode:`.
+ * NOTE on agents: `.agent.md` extension and `description` frontmatter are required by the
+ * official Copilot spec. `build` emits the aggregate AGENTS.md (cross-tool open standard).
  */
 import type {
   Target,
@@ -37,6 +38,7 @@ import type {
   ScaffoldOptions,
   ArtifactKind,
 } from '../../types';
+import { yamlScalar } from '../yaml-util';
 
 export class CopilotTarget implements Target {
   readonly name = 'copilot';
@@ -159,17 +161,29 @@ export class CopilotTarget implements Target {
   }
 
   /**
-   * Agents scaffold to .github/agents/<name>.md (per-file, incrementally safe).
-   * The full `build` command produces the aggregated .github/AGENTS.md.
+   * Agents scaffold to .github/agents/<name>.agent.md (per-file, incrementally safe).
+   * The `.agent.md` extension and the `description` frontmatter field are both required
+   * by the official GitHub Copilot custom agent specification.
+   * See: docs.github.com/.../custom-agents-configuration
+   *
+   * The full `build` command produces the aggregated .github/AGENTS.md (open standard).
    */
   private scaffoldAgent(agent: ResolvedArtifact, files: FileMap): void {
     const name = agent.frontmatter.name as string;
     const title = agent.frontmatter.title as string;
     const description = agent.frontmatter.description as string;
-    files[`.github/agents/${name}.md`] = [
-      `# ${title}`,
+
+    const frontmatter = [
+      '---',
+      `name: ${name}`,
+      `description: ${yamlScalar(description)}`,
+      '---',
       '',
-      description,
+    ].join('\n');
+
+    files[`.github/agents/${name}.agent.md`] = [
+      frontmatter,
+      `# ${title}`,
       '',
       agent.body,
       '',
@@ -243,23 +257,19 @@ export class CopilotTarget implements Target {
    */
   private buildPromptFile(artifact: ResolvedArtifact): string {
     const description = artifact.frontmatter.description as string;
-    const appliesTo = artifact.frontmatter.appliesTo as string[] | undefined;
 
+    // `agent:` is the current field name (renamed from `mode:` in recent Copilot docs).
+    // `applyTo` is NOT valid inside .prompt.md — it belongs only in .instructions.md.
+    // See: code.visualstudio.com/docs/agent-customization/prompt-files
     const frontmatterLines = [
       '---',
-      'mode: agent',
-      `description: >-`,
-      `  ${description}`,
+      'agent: agent',
+      `description: ${yamlScalar(description)}`,
       'tools:',
       '  - codebase',
       '  - github',
+      '---',
     ];
-
-    if (appliesTo && appliesTo.length > 0) {
-      // Copilot uses applyTo in prompt files to suggest when the prompt is relevant
-      frontmatterLines.push(`applyTo: "${appliesTo.join(',')}"`);
-    }
-    frontmatterLines.push('---');
 
     // For skills: inline the resolved rule guidance as a context section
     const parts = [frontmatterLines.join('\n'), ''];

@@ -96,7 +96,7 @@ maku-catalog add skill:python/pytest-testing --target copilot
 ```
 .github/instructions/python-python-style.instructions.md   ← applyTo: "**/*.py"
 .github/prompts/pytest-testing.prompt.md                   ← invocable as /pytest-testing
-.github/agents/code-reviewer.md
+.github/agents/code-reviewer.agent.md                      ← .agent.md + description frontmatter required
 ```
 
 Copilot Chat picks up `.github/instructions/*.instructions.md` for files matching `applyTo` and

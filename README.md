@@ -185,8 +185,10 @@ plugins/dotnet-pack/
 .github/instructions/
   csharp-dotnet-style.instructions.md  ← applyTo: "**/*.cs,**/*.csproj"
 .github/prompts/
-  xunit-testing.prompt.md              ← mode: agent, rule guidance inlined
-.github/AGENTS.md                      ← all agents
+  xunit-testing.prompt.md              ← agent: agent, rule guidance inlined
+.github/AGENTS.md                      ← all agents (open standard aggregate)
+# or per-file when using `add` (scaffold path):
+# .github/agents/<name>.agent.md      ← .agent.md extension + description frontmatter required
 ```
 
 ## Adding a language

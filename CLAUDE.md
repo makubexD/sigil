@@ -30,9 +30,12 @@ recursive generics force deep type-inference. `npm run build` now sets this auto
 `tsc` directly (e.g. `build:watch`), prefix it yourself.
 
 **Test note:** `test/` is excluded from `tsconfig.build.json`. After editing a test file you must
-compile it separately (`tsc --outDir dist-cli test/pipeline.test.ts` or use `ts-node`) before
-running `npm test`. The test file imports from `../dist-cli/…`, so source edits need a full
-`npm run build` to take effect in tests.
+compile it separately before running `npm test`:
+```bash
+npx tsc --outDir test test/pipeline.test.ts --module commonjs --target ES2020 --esModuleInterop --skipLibCheck
+```
+The test file imports from `../dist-cli/…`, so source edits need a full `npm run build` to take
+effect in tests.
 
 ## `add` command — selector + filter model
 
@@ -60,8 +63,15 @@ add csharp/xunit-testing           # bare ID
 non-zero with a usage hint instead of hanging. Always safe to run in CI with `--yes`.
 
 **Wizard (`src/wizard.ts`):** triggered when run with no selector in an interactive TTY. Uses
-`@clack/prompts` for a 5-step guided flow: target → scope → artifacts → include-deps → overwrite.
-Every prompt maps 1:1 to a CLI flag; wizard and scripted paths are equivalent.
+`@clack/prompts` for a 6-step guided flow: target → scope → artifacts → language filter →
+include-deps → overwrite. Every prompt maps 1:1 to a CLI flag; wizard and scripted paths are
+equivalent. After completing, both the plan box and the final install summary print a
+`maku-catalog add … --yes` line (via `buildEquivalentCommand`) for non-interactive replay.
+
+The language filter step (step 3b) appears only for scope choices that span all languages (`all`,
+`kind`). It is skipped for `pack` (language already implied) and `individual` (explicit picks).
+`WizardResult.language` flows into `effectiveLanguage` in `cli.ts`, which feeds `filters.language`
+to `resolveSelection()`. The resolver already supported this — only the wizard wiring was missing.
 
 **Conflict handling (cli.ts `partitionFiles`):** before writing, all candidate paths are
 partitioned into `toWrite` (new) and `conflicting` (exists). New files are always written;
@@ -126,6 +136,31 @@ The `build` command produces the plugin layout. The `add` command produces the s
 
 The `claude:` block in agent `.agent.md` files (model, effort, maxTurns, isolation) is
 Claude-only. Other adapters skip it. When adding a new adapter, read only your own namespace.
+`effort`, `maxTurns`, and `isolation` are **official Claude Code subagent frontmatter fields**
+(confirmed in the spec) — do not remove them.
+
+### Description YAML convention
+
+**In catalog source:** `description:` is authored as a `>-` folded block scalar (11 of 12 files).
+gray-matter parses `>-` to a plain string (folds continuation lines to a space, strips the final
+newline) — so it is purely a readability choice with no runtime effect.
+
+**In emitted files:** all adapter outputs use `src/targets/yaml-util.ts`'s `yamlScalar()` helper,
+which double-quotes every description. This is safe for any content (colons, special chars, long
+text). Never emit a bare plain scalar for `description:` — a colon inside it breaks YAML parsers.
+
+### Platform-format notes (verified 2026-06)
+
+These are the key differences between our source field names and what each platform expects:
+
+| Source field | Claude Code emits | Copilot emits |
+|---|---|---|
+| `appliesTo:` (skill/rule) | `paths:` (SKILL.md) or `paths:` (scaffolded rules) | `applyTo:` (`.instructions.md` only) |
+| — | flat `marketplace.json`: `name/owner/plugins[]` | — |
+| — | — | `agent: agent` (prompt files; not `mode:`) |
+| — | — | `.agent.md` extension + `description:` frontmatter (required) |
+
+The `appliesTo` field stays unchanged in `catalog/` source and the zod schema — only adapters translate it.
 
 ### JSON Schemas
 

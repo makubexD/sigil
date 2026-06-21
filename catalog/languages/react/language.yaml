@@ -1,0 +1,8 @@
+displayName: "React"
+globs:
+  - "**/*.tsx"
+  - "**/*.jsx"
+  - "**/*.ts"
+  - "**/*.js"
+  - "**/package.json"
+icon: "⚛️"

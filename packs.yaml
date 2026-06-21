@@ -1,0 +1,28 @@
+# packs.yaml — groups catalog artifacts into installable "packs", one per language.
+# Each pack becomes a single Claude Code plugin and a single Copilot output bundle.
+# Add a language pack here after creating its catalog/languages/<lang>/ folder.
+
+packs:
+  - name: dotnet-pack
+    displayName: .NET / C# Pack
+    description: >
+      Skills, agents, and rules for C# and .NET development.
+      Includes xUnit testing conventions, .NET style guidance, and a .NET API architect agent.
+    languages:
+      - csharp
+
+  - name: python-pack
+    displayName: Python Pack
+    description: >
+      Skills, agents, and rules for Python development.
+      Includes pytest testing conventions, Python style guidance, and a Python architect agent.
+    languages:
+      - python
+
+  - name: react-pack
+    displayName: React Pack
+    description: >
+      Skills, agents, and rules for React development.
+      Includes React Testing Library conventions, React component style guidance, and a React architect agent.
+    languages:
+      - react

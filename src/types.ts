@@ -1,0 +1,163 @@
+/**
+ * Core type definitions for the maku-catalog compiler pipeline.
+ * These interfaces flow through Load → Validate → Resolve → Emit.
+ */
+
+// ─── Artifact kinds ──────────────────────────────────────────────────────────
+
+export type ArtifactKind = 'skill' | 'agent' | 'rule' | 'prompt' | 'workflow';
+
+/**
+ * A reference file bundled alongside a skill (e.g. references/assertions.md).
+ * Loaded from <skill-dir>/references/*.md.
+ */
+export interface ReferenceFile {
+  name: string;     // filename, e.g. "assertions.md"
+  content: string;  // raw file content
+}
+
+/**
+ * A single parsed artifact from the catalog source.
+ * Produced by the Load phase; consumed by Validate and Resolve.
+ */
+export interface Artifact {
+  id: string;                          // e.g. "csharp/xunit-testing" or "shared/clean-code"
+  kind: ArtifactKind;
+  filePath: string;                    // absolute path to the source .md file
+  frontmatter: Record<string, unknown>;
+  body: string;                        // raw Markdown body (after frontmatter)
+  references?: ReferenceFile[];        // only set for skills with a references/ dir
+}
+
+// ─── Language metadata ────────────────────────────────────────────────────────
+
+/**
+ * Loaded from catalog/languages/<lang>/language.yaml.
+ * Provides display info and file glob patterns for each language.
+ */
+export interface LanguageMetadata {
+  id: string;          // matches the directory name, e.g. "csharp"
+  displayName: string; // e.g. ".NET / C#"
+  globs: string[];     // canonical file globs, e.g. ["**/*.cs", "**/*.csproj"]
+  icon?: string;       // optional emoji or icon name
+}
+
+// ─── Loaded catalog ───────────────────────────────────────────────────────────
+
+/** Raw output of the Load phase — no validation or resolution yet. */
+export interface LoadedCatalog {
+  artifacts: Artifact[];
+  byId: Map<string, Artifact>;
+  languages: Map<string, LanguageMetadata>;  // keyed by language id
+}
+
+// ─── Resolved catalog ─────────────────────────────────────────────────────────
+
+/**
+ * An artifact after the Resolve phase.
+ * Rules have their `extends` chain flattened; skills have their `uses` closure expanded.
+ */
+export interface ResolvedArtifact extends Artifact {
+  /** For rules: body with all ancestor extends bodies prepended (oldest ancestor first). */
+  resolvedBody?: string;
+  /** For skills: the fully resolved rule artifacts from uses.rules (with THEIR extends flattened). */
+  resolvedRules?: ResolvedArtifact[];
+  /** For skills: agent IDs from uses.agents (looked up at emit time). */
+  resolvedAgentIds?: string[];
+}
+
+/** Output of the Resolve phase. */
+export interface ResolvedCatalog {
+  artifacts: ResolvedArtifact[];
+  byId: Map<string, ResolvedArtifact>;
+  languages: Map<string, LanguageMetadata>;
+}
+
+// ─── Compiler output ──────────────────────────────────────────────────────────
+
+/**
+ * A flat map of relative output path → file content.
+ * Target adapters return this; the CLI then writes it to dist/<target>/.
+ */
+export type FileMap = Record<string, string>;
+
+// ─── Pack config (from packs.yaml) ───────────────────────────────────────────
+
+export interface Pack {
+  name: string;         // kebab-case, e.g. "dotnet-pack"
+  displayName: string;  // human-readable, e.g. ".NET / C# Pack"
+  description: string;
+  languages?: string[]; // language IDs whose artifacts belong to this pack
+  artifacts?: string[]; // optional explicit artifact ID list (overrides languages)
+}
+
+export interface PacksConfig {
+  packs: Pack[];
+}
+
+// ─── Target adapter interface ─────────────────────────────────────────────────
+
+export interface CompileOptions {
+  /** npm package version — written into generated plugin.json version fields. */
+  version: string;
+  packs: Pack[];
+}
+
+export interface ScaffoldOptions {
+  /** Absolute path to the consumer's project root. */
+  projectDir: string;
+  /** When true, overwrite existing files; when false, skip. */
+  overwrite?: boolean;
+  /**
+   * When false, skip writing the dependency closure (rules/agents referenced by `uses`).
+   * Defaults to true — a skill scaffold normally writes its rule and agent dependencies.
+   */
+  includeDeps?: boolean;
+}
+
+/**
+ * The interface every platform adapter must implement.
+ * Register in src/targets/index.ts.
+ */
+export interface Target {
+  /** Identifier used in --target CLI flag and dist/<name>/ output directory. */
+  name: string;
+
+  /**
+   * Full build: compile the entire resolved catalog into a FileMap.
+   * Called by `maku-catalog build`.
+   */
+  compile(catalog: ResolvedCatalog, options: CompileOptions): Promise<FileMap>;
+
+  /**
+   * Partial scaffold: emit only the files needed for one artifact and its closure.
+   * Called by `maku-catalog add`.
+   * May be omitted if the target doesn't support partial installs.
+   */
+  scaffold?(
+    artifactId: string,
+    catalog: ResolvedCatalog,
+    options: ScaffoldOptions,
+  ): Promise<FileMap>;
+
+  /**
+   * Artifact kinds this target can scaffold.
+   * Kinds absent from this list trigger a warn-and-skip during `add` rather than an error.
+   * If omitted, all kinds are considered supported (adapters should declare this explicitly).
+   */
+  supportedKinds?: ArtifactKind[];
+}
+
+// ─── Validation ───────────────────────────────────────────────────────────────
+
+export interface ValidationError {
+  artifactId: string;
+  filePath: string;
+  error: string;
+}
+
+export interface ValidationResult {
+  valid: boolean;
+  errors: ValidationError[];
+  warnings: string[];
+}

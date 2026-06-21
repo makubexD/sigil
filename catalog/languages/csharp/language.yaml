@@ -1,0 +1,8 @@
+displayName: ".NET / C#"
+globs:
+  - "**/*.cs"
+  - "**/*.csproj"
+  - "**/*.sln"
+  - "**/*.razor"
+  - "**/*.cshtml"
+icon: "⚙️"

@@ -1,0 +1,7 @@
+displayName: "Python"
+globs:
+  - "**/*.py"
+  - "**/pyproject.toml"
+  - "**/setup.cfg"
+  - "**/requirements*.txt"
+icon: "🐍"

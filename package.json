@@ -1,0 +1,59 @@
+{
+  "name": "@maku/agent-catalog",
+  "version": "0.1.0",
+  "description": "Vendor-neutral AI skills, agents, rules, and prompts — compiled to Claude Code, GitHub Copilot, and more.",
+  "keywords": [
+    "ai",
+    "skills",
+    "agents",
+    "catalog",
+    "claude",
+    "copilot",
+    "mcp",
+    "rules",
+    "prompts"
+  ],
+  "license": "MIT",
+  "bin": {
+    "maku-catalog": "./dist-cli/cli.js"
+  },
+  "files": [
+    "catalog/",
+    "schema/",
+    "dist-cli/",
+    "packs.yaml",
+    "SPEC.md",
+    "USAGE.md",
+    "LICENSE",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js",
+    "build:watch": "tsc -p tsconfig.build.json --watch",
+    "test": "node --test test/pipeline.test.js",
+    "validate": "node dist-cli/cli.js validate",
+    "catalog:build": "node dist-cli/cli.js build",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "@clack/prompts": "^0.8.2",
+    "commander": "^12.1.0",
+    "fast-glob": "^3.3.2",
+    "gray-matter": "^4.0.3",
+    "js-yaml": "^4.1.0",
+    "zod": "^3.23.8",
+    "zod-to-json-schema": "^3.23.3"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^20.14.0",
+    "cross-env": "^10.1.0",
+    "typescript": "^5.5.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

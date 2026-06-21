@@ -10,6 +10,7 @@ import path from 'path';
 import { loadCatalog } from '../dist-cli/load';
 import { validateCatalog } from '../dist-cli/validate';
 import { resolveCatalog } from '../dist-cli/resolve';
+import { computeClosure } from '../dist-cli/select';
 import { ClaudeCodeTarget } from '../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../dist-cli/targets/copilot';
 
@@ -165,6 +166,73 @@ describe('Resolve phase', () => {
 
     const skill = resolved.byId.get('csharp/xunit-testing');
     assert.ok(skill?.resolvedAgentIds?.includes('shared/code-reviewer'), 'agent id recorded');
+  });
+});
+
+// ─── computeClosure ────────────────────────────────────────────────────────────
+
+describe('computeClosure', () => {
+  it('identifies the primary artifact and its dependency closure', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+
+    const { primary, dependencies } = computeClosure(['csharp/xunit-testing'], resolved);
+
+    // Primary
+    assert.equal(primary.length, 1, 'one primary artifact');
+    assert.equal(primary[0].id, 'csharp/xunit-testing');
+
+    // Dependencies
+    const depIds = dependencies.map(d => d.artifact.id);
+    assert.ok(depIds.includes('csharp/dotnet-style'), 'dotnet-style rule is a dependency');
+    assert.ok(depIds.includes('shared/code-reviewer'), 'code-reviewer agent is a dependency');
+
+    // Rules come before agents in the dependency list
+    const ruleIdx = depIds.indexOf('csharp/dotnet-style');
+    const agentIdx = depIds.indexOf('shared/code-reviewer');
+    assert.ok(ruleIdx < agentIdx, 'rules listed before agents');
+
+    // via attribute names the skill that pulls each dep in
+    const ruleDep = dependencies.find(d => d.artifact.id === 'csharp/dotnet-style');
+    assert.ok(ruleDep?.via.includes('csharp/xunit-testing'), 'via references the source skill');
+  });
+
+  it('excludes directly-selected artifacts from the dependency list', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+
+    // Selecting the rule AND the skill — the rule is a direct pick, not a dependency
+    const { primary, dependencies } = computeClosure(
+      ['csharp/xunit-testing', 'csharp/dotnet-style'],
+      resolved,
+    );
+
+    assert.equal(primary.length, 2, 'two primary artifacts');
+    const depIds = dependencies.map(d => d.artifact.id);
+    assert.ok(!depIds.includes('csharp/dotnet-style'), 'directly-selected rule not in dependencies');
+    assert.ok(depIds.includes('shared/code-reviewer'), 'agent is still a dependency');
+  });
+
+  it('returns empty dependencies when selection contains no skills', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+
+    const { primary, dependencies } = computeClosure(['shared/code-reviewer'], resolved);
+
+    assert.equal(primary.length, 1, 'one primary artifact');
+    assert.equal(dependencies.length, 0, 'no dependencies when primary has no skills');
+  });
+
+  it('returns empty dependencies when all closure artifacts are already primary picks', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+
+    // Selecting skill + all its deps directly → no computed dependencies
+    const { dependencies } = computeClosure(
+      ['csharp/xunit-testing', 'csharp/dotnet-style', 'shared/code-reviewer'],
+      resolved,
+    );
+    assert.equal(dependencies.length, 0, 'all closure members already in primary — no deps');
   });
 });
 

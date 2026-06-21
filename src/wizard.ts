@@ -12,7 +12,8 @@
 import { intro, outro, select, multiselect, confirm, note, log, isCancel, cancel } from '@clack/prompts';
 import type { ResolvedCatalog, Pack, ArtifactKind } from './types';
 import type { ResolvedArtifact } from './types';
-import { artifactLabel, artifactHint } from './select';
+import { artifactLabel, artifactHint, resolveSelection, computeClosure } from './select';
+import type { ClosurePreview } from './select';
 
 export interface WizardResult {
   /** Platform target (claude or copilot). */
@@ -69,12 +70,12 @@ export async function runWizard(
   }));
 
   const scopeOptions: Array<{ value: ScopeChoice; label: string; hint: string }> = [
-    { value: 'all',        label: 'Everything',                hint: 'full catalog' },
+    { value: 'all',        label: 'Everything',       hint: 'full catalog — all skills, agents, rules, prompts' },
     ...(packs.length > 0
-      ? [{ value: 'pack' as ScopeChoice, label: 'By pack',     hint: packOptions.map(p => p.label).join(', ') }]
+      ? [{ value: 'pack' as ScopeChoice, label: 'By pack', hint: packOptions.map(p => p.label).join(', ') }]
       : []),
-    { value: 'kind',       label: 'By kind',                   hint: 'skills, agents, rules, prompts' },
-    { value: 'individual', label: 'Pick individually',          hint: 'choose from the full list' },
+    { value: 'kind',       label: 'By kind',          hint: 'e.g. all skills, or all agents, rules, prompts' },
+    { value: 'individual', label: 'Pick individually', hint: 'choose exact artifacts from the full list' },
   ];
 
   const scope = await select({
@@ -175,13 +176,37 @@ export async function runWizard(
     }
   }
 
+  // ── Pre-compute dependency closure ────────────────────────────────────────
+  // Derive the primary IDs from the selectors + language so we can show concrete
+  // dependency info in step 4 and the plan box. Empty supportedKinds = preview mode
+  // (all kinds treated as supported; the real install still applies the target filter).
+  const { ids: primaryIds } = resolveSelection(selectors, { language }, catalog, packs, []);
+  const closurePreview: ClosurePreview = computeClosure(primaryIds, catalog);
+
   // ── Step 4: dependency closure ────────────────────────────────────────────
-  note(
-    'Skills reference rules and agents via `uses:`. ' +
-    'Yes also installs those rules/agents (the dependency closure).\n' +
-    'No installs only the artifacts you selected — equivalent to --no-deps.',
-    'About dependencies',
-  );
+  {
+    const deps = closurePreview.dependencies;
+    let depNoteBody: string;
+    if (deps.length > 0) {
+      // Name each dependency and which skill's `uses:` frontmatter declared it.
+      const lines = deps.map(({ artifact: a, via }) => {
+        const title = (a.frontmatter.title as string | undefined)
+          ?? (a.frontmatter.description as string | undefined)
+          ?? a.id;
+        // Compact via: show up to 2 skills, then "+N more"
+        const viaDisplay = via.length <= 2 ? via.join(', ') : `${via[0]} +${via.length - 1} more`;
+        return `  ${a.kind.padEnd(5)}  ${a.id}  — ${title}  (via ${viaDisplay})`;
+      });
+      depNoteBody =
+        "The skill author recommends installing these alongside it\n" +
+        "(declared in the skill's `uses:` frontmatter — not a hard requirement):\n" +
+        lines.join('\n') +
+        '\n\nYes installs these too. No installs only your selection (--no-deps).';
+    } else {
+      depNoteBody = 'Your current selection has no uses: dependencies — only your selected artifacts will be written.';
+    }
+    note(depNoteBody, 'About dependencies');
+  }
   const includeDepsAnswer = await confirm({
     message: 'Include dependencies?',
     initialValue: true,
@@ -204,12 +229,30 @@ export async function runWizard(
   const overwrite = overwriteAnswer as boolean;
 
   // ── Summary before proceeding ─────────────────────────────────────────────
+  // Build the artifact preview list (picks + deps, tagged)
+  const artifactLines: string[] = [];
+  for (const a of closurePreview.primary) {
+    artifactLines.push(`  ${a.kind.padEnd(5)}  ${a.id}  (your pick)`);
+  }
+  if (includeDeps) {
+    for (const { artifact: a, via } of closurePreview.dependencies) {
+      const viaDisplay = via.length <= 2 ? via.join(', ') : `${via[0]} +${via.length - 1} more`;
+      artifactLines.push(`  ${a.kind.padEnd(5)}  ${a.id}  (dependency of ${viaDisplay})`);
+    }
+  } else if (closurePreview.dependencies.length > 0) {
+    const n = closurePreview.dependencies.length;
+    artifactLines.push(`  (${n} recommended dep${n !== 1 ? 's' : ''} excluded)`);
+  }
+  const artifactCount = closurePreview.primary.length + (includeDeps ? closurePreview.dependencies.length : 0);
+
   const summaryLines = [
     `Target:       ${target}`,
     `Scope:        ${selectors.join(' ')}`,
     ...(language ? [`Language:     ${language}`] : []),
-    `Dependencies: ${includeDeps ? 'yes' : 'no (--no-deps)'}`,
     `Overwrite:    ${overwrite ? 'yes' : 'no (warn on conflict)'}`,
+    '',
+    `Will install ${artifactCount} artifact${artifactCount !== 1 ? 's' : ''}:`,
+    ...artifactLines,
   ];
   note(summaryLines.join('\n'), 'Install plan');
 

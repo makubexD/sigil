@@ -67,11 +67,21 @@ non-zero with a usage hint instead of hanging. Always safe to run in CI with `--
 include-deps → overwrite. Every prompt maps 1:1 to a CLI flag; wizard and scripted paths are
 equivalent. After the install completes, `printEquivalentCommand()` prints the copy-pasteable
 `maku-catalog add … --yes` line once (as a boxed clack note in a TTY, plain text in CI). The
-wizard plan box shows only the summary (no command) so the command is never printed twice.
+wizard plan box shows only the summary + artifact preview (no command) so the command is never
+printed twice.
 
-The dependency step (step 4) shows an explanatory note before the confirm, and the final file
-listing tags each dependency file with `(dependency)` plus a summary line — so users who chose a
-skill but see extra rule/agent files understand why they appeared.
+**Dependency closure UX (step 4 + plan box):** the `uses:` dependency is purely authored YAML
+frontmatter in each SKILL.md (e.g. `uses: { rules: [csharp/dotnet-style], agents: [shared/code-reviewer] }`) — not a hard technical requirement. The wizard surfaces this concretely:
+- After step 3b, `computeClosure(primaryIds, catalog)` (`src/select.ts`) walks `resolvedRules` and
+  `resolvedAgentIds` on each skill to compute the exact rules/agents that would be added. Any
+  artifact already in the primary picks set is excluded from the dep list.
+- **Step 4 note** names each dependency with its kind, ID, and title, plus the `via` skill that
+  declares it. The lead sentence frames it as "the skill author recommends" (not a hard requirement).
+- **Install-plan box** (before "Proceed?") shows the full resolved artifact set: each primary pick
+  tagged `(your pick)` and each dependency tagged `(dependency of <skill>)`. When deps are excluded
+  (answered No), the box shows only primary picks + a `(N deps excluded)` line.
+- The **post-install file listing** in `cli.ts` still tags each written file `(dependency)` for
+  completeness, now consistent with the pre-confirm preview.
 
 The language filter step (step 3b) appears only for scope choices that span all languages (`all`,
 `kind`). It is skipped for `pack` (language already implied) and `individual` (explicit picks).

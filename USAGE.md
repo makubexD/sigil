@@ -39,10 +39,13 @@ The wizard runs when `add` is called with **no selector** in an interactive term
 1. **Target** — Claude Code or GitHub Copilot (auto-detected, shown with reason)
 2. **Scope** — Everything / By pack / By kind / Pick individually
 3. **Artifacts** — multiselect from the full list (grouped by kind) when picking individually
-4. **Dependencies** — include the rule/agent closure referenced by skills?
-5. **Conflicts** — whether to overwrite files that already exist
+3b. **Language filter** — shown for *all* and *kind* scopes; each option shows the artifact count for that language
+4. **Dependencies** — include the rule/agent closure referenced by skills? An explanatory note describes what the closure is before you answer
+5. **Conflicts** — whether to overwrite files that already exist; a note explains the effect of each choice
 
-After confirmation, it runs the install and prints a summary.
+After confirmation, it runs the install. The final output lists every written file, tagging dependency
+files (rules/agents pulled in by skills via `uses:`) with `(dependency)` so you know exactly why they
+appeared. A copy-pasteable `maku-catalog add … --yes` command is printed in a box at the very end.
 
 **Non-TTY / CI:** the wizard never runs in a piped or non-interactive context. Provide an explicit
 selector instead:

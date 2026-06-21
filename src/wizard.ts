@@ -159,7 +159,10 @@ export async function runWizard(
     if (catalogLanguages.length > 0) {
       const langOptions = [
         { value: '',  label: 'All languages', hint: catalogLanguages.join(', ') },
-        ...catalogLanguages.map(l => ({ value: l, label: l, hint: '' })),
+        ...catalogLanguages.map(l => {
+          const count = catalog.artifacts.filter(a => a.frontmatter.language === l).length;
+          return { value: l, label: l, hint: `${count} artifact${count !== 1 ? 's' : ''}` };
+        }),
       ];
 
       const langAnswer = await select({
@@ -173,8 +176,14 @@ export async function runWizard(
   }
 
   // ── Step 4: dependency closure ────────────────────────────────────────────
+  note(
+    'Skills reference rules and agents via `uses:`. ' +
+    'Yes also installs those rules/agents (the dependency closure).\n' +
+    'No installs only the artifacts you selected — equivalent to --no-deps.',
+    'About dependencies',
+  );
   const includeDepsAnswer = await confirm({
-    message: 'Include dependencies? (rules and agents referenced by selected skills)',
+    message: 'Include dependencies?',
     initialValue: true,
   });
   if (isCancel(includeDepsAnswer)) { cancel('Install cancelled.'); return null; }
@@ -182,6 +191,11 @@ export async function runWizard(
 
   // ── Step 5: conflict preview ───────────────────────────────────────────────
   // (Actual file preview happens in cli.ts after scaffold; we just ask about overwrite here)
+  note(
+    'No keeps your existing files and lists any conflicts at the end.\n' +
+    'Yes replaces them in place — equivalent to --overwrite.',
+    'About conflicts',
+  );
   const overwriteAnswer = await confirm({
     message: 'Overwrite existing files if conflicts are found?',
     initialValue: false,
@@ -190,23 +204,12 @@ export async function runWizard(
   const overwrite = overwriteAnswer as boolean;
 
   // ── Summary before proceeding ─────────────────────────────────────────────
-  const equivalentCmd = buildEquivalentCommand({
-    selectors,
-    target: target as string,
-    language,
-    includeDeps,
-    overwrite,
-  });
-
   const summaryLines = [
     `Target:       ${target}`,
     `Scope:        ${selectors.join(' ')}`,
     ...(language ? [`Language:     ${language}`] : []),
     `Dependencies: ${includeDeps ? 'yes' : 'no (--no-deps)'}`,
     `Overwrite:    ${overwrite ? 'yes' : 'no (warn on conflict)'}`,
-    '',
-    `Repeat non-interactively:`,
-    `  ${equivalentCmd}`,
   ];
   note(summaryLines.join('\n'), 'Install plan');
 
@@ -269,4 +272,16 @@ export function printSkippedAdvice(skipped: Array<{ id: string; kind: string; re
     `${skipped.length} artifact(s) skipped (not supported by this target):\n` +
     skipped.map(s => `  ${s.id} (${s.kind}): ${s.reason}`).join('\n'),
   );
+}
+
+/**
+ * Prints the equivalent CLI command once, at the very end of the install flow.
+ * In an interactive TTY it renders as a styled clack note box; in CI/pipe it is plain text.
+ */
+export function printEquivalentCommand(cmd: string, fancy: boolean): void {
+  if (fancy) {
+    note(cmd, 'Repeat non-interactively');
+  } else {
+    console.log('\nRepeat non-interactively:\n  ' + cmd);
+  }
 }

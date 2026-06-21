@@ -22,7 +22,7 @@ import { validateCatalog } from './validate';
 import { resolveCatalog } from './resolve';
 import { getAllTargets, getTarget } from './targets';
 import { resolveSelection } from './select';
-import { isInteractiveTTY, runWizard, buildEquivalentCommand, printConflictAdvice, printSkippedAdvice } from './wizard';
+import { isInteractiveTTY, runWizard, buildEquivalentCommand, printEquivalentCommand, printConflictAdvice, printSkippedAdvice } from './wizard';
 import type { FileMap, PacksConfig } from './types';
 
 const pkg = JSON.parse(
@@ -300,6 +300,19 @@ program
       includeDeps: effectiveIncludeDeps,
     };
 
+    // Pre-compute the primary file paths (no deps) so we can tag dependency files
+    // in the listing. Only needed when deps are included; cheap since catalog is small.
+    const primaryPaths = new Set<string>();
+    if (effectiveIncludeDeps) {
+      const primaryScaffoldOpts = { ...scaffoldOpts, includeDeps: false };
+      for (const id of ids) {
+        try {
+          const pFiles = await target.scaffold!(id, resolved, primaryScaffoldOpts);
+          for (const k of Object.keys(pFiles)) primaryPaths.add(k);
+        } catch { /* ignore — the main loop below will surface real errors */ }
+      }
+    }
+
     const allFiles: FileMap = {};
     for (const id of ids) {
       try {
@@ -353,15 +366,32 @@ program
     );
 
     if (written > 0) {
-      for (const f of Object.keys(toWrite)) console.log(`  ${f}`);
+      // Tag files that came from the dependency closure, not from the user's selection directly.
+      const isDep = (f: string) => primaryPaths.size > 0 && !primaryPaths.has(f);
+      for (const f of Object.keys(toWrite)) {
+        console.log(`  ${f}${isDep(f) ? '  (dependency)' : ''}`);
+      }
       if (overwrittenCount > 0) {
-        for (const f of conflictPaths) console.log(`  ${f}  (overwritten)`);
+        for (const f of conflictPaths) {
+          console.log(`  ${f}  (overwritten)${isDep(f) ? '  (dependency)' : ''}`);
+        }
+      }
+      // Explain dependency files so users aren't surprised by "extra" artifacts.
+      const depCount = [
+        ...Object.keys(toWrite),
+        ...(overwrittenCount > 0 ? conflictPaths : []),
+      ].filter(isDep).length;
+      if (depCount > 0) {
+        console.log(
+          `\n  (${depCount} dependency file${depCount !== 1 ? 's' : ''} pulled in via uses: references` +
+          ` — re-run with --no-deps to install selected artifacts only)`,
+        );
       }
     }
 
     // Print a copy-pasteable command to reproduce this install non-interactively.
-    console.log(
-      '\nRepeat non-interactively:\n  ' +
+    // Appears once here (boxed in a TTY, plain text in CI) — not in the wizard plan box.
+    printEquivalentCommand(
       buildEquivalentCommand({
         selectors: effectiveSelectors,
         target: targetName,
@@ -371,6 +401,7 @@ program
         includeDeps: effectiveIncludeDeps,
         overwrite: effectiveOverwrite,
       }),
+      isInteractiveTTY(),
     );
   });
 

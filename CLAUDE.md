@@ -65,8 +65,13 @@ non-zero with a usage hint instead of hanging. Always safe to run in CI with `--
 **Wizard (`src/wizard.ts`):** triggered when run with no selector in an interactive TTY. Uses
 `@clack/prompts` for a 6-step guided flow: target → scope → artifacts → language filter →
 include-deps → overwrite. Every prompt maps 1:1 to a CLI flag; wizard and scripted paths are
-equivalent. After completing, both the plan box and the final install summary print a
-`maku-catalog add … --yes` line (via `buildEquivalentCommand`) for non-interactive replay.
+equivalent. After the install completes, `printEquivalentCommand()` prints the copy-pasteable
+`maku-catalog add … --yes` line once (as a boxed clack note in a TTY, plain text in CI). The
+wizard plan box shows only the summary (no command) so the command is never printed twice.
+
+The dependency step (step 4) shows an explanatory note before the confirm, and the final file
+listing tags each dependency file with `(dependency)` plus a summary line — so users who chose a
+skill but see extra rule/agent files understand why they appeared.
 
 The language filter step (step 3b) appears only for scope choices that span all languages (`all`,
 `kind`). It is skipped for `pack` (language already implied) and `individual` (explicit picks).

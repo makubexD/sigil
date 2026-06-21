@@ -9,10 +9,10 @@
  * isInteractiveTTY() before invoking runWizard().
  */
 
-import { intro, outro, select, multiselect, confirm, note, log, isCancel, cancel } from '@clack/prompts';
-import type { ResolvedCatalog, Pack, ArtifactKind } from './types';
+import { intro, outro, select, multiselect, groupMultiselect, confirm, note, log, isCancel, cancel } from '@clack/prompts';
+import type { ResolvedCatalog, Pack } from './types';
 import type { ResolvedArtifact } from './types';
-import { artifactLabel, artifactHint, resolveSelection, computeClosure } from './select';
+import { artifactLabel, artifactHint, resolveSelection, computeClosure, groupArtifactsByLanguage } from './select';
 import type { ClosurePreview } from './select';
 
 export interface WizardResult {
@@ -75,7 +75,7 @@ export async function runWizard(
       ? [{ value: 'pack' as ScopeChoice, label: 'By pack', hint: packOptions.map(p => p.label).join(', ') }]
       : []),
     { value: 'kind',       label: 'By kind',          hint: 'e.g. all skills, or all agents, rules, prompts' },
-    { value: 'individual', label: 'Pick individually', hint: 'choose exact artifacts from the full list' },
+    { value: 'individual', label: 'Pick individually', hint: 'narrow by language, then choose exact artifacts' },
   ];
 
   const scope = await select({
@@ -113,31 +113,41 @@ export async function runWizard(
     selectors = (kinds as string[]).map(k => `kind:${k}`);
 
   } else {
-    // individual — multiselect from full artifact list, grouped
-    const kindOrder: ArtifactKind[] = ['skill', 'agent', 'rule', 'prompt', 'workflow'];
-    const grouped = new Map<string, ResolvedArtifact[]>();
-    for (const k of kindOrder) {
-      const group = catalog.artifacts.filter(a => a.kind === k);
-      if (group.length > 0) grouped.set(k, group);
+    // individual — language pre-filter, then grouped multiselect by language
+
+    // ── Step 3a: narrow by language (display-only; not saved to WizardResult.language) ─
+    let pickerLanguage: string | undefined;
+    const indivLangOpts = buildLanguageOptions(catalog);
+    if (indivLangOpts.length > 0) {
+      const langAnswer = await select({
+        message: 'Narrow by language?  (filters the list below; you can still pick cross-language later)',
+        options: indivLangOpts,
+        initialValue: '',
+      });
+      if (isCancel(langAnswer)) { cancel('Install cancelled.'); return null; }
+      pickerLanguage = (langAnswer as string) || undefined;
     }
 
-    type Choice = { value: string; label: string; hint: string };
-    const options: Choice[] = [];
-    for (const [kind, group] of grouped) {
-      // @clack/prompts doesn't have group separators in multiselect; we fake it with labels
-      for (const a of group) {
-        options.push({
-          value: `${a.kind}:${a.id}`,
-          label: `${artifactLabel(a)}  (${kind})`,
-          hint: artifactHint(a),
-        });
-      }
+    // ── Step 3b-individual: grouped picker ───────────────────────────────────────────
+    const byLang = groupArtifactsByLanguage(catalog.artifacts, pickerLanguage);
+
+    // Convert to groupMultiselect options (Record<groupKey, Option[]>)
+    type PickerOption = { value: string; label: string; hint: string };
+    const groupedOptions: Record<string, PickerOption[]> = {};
+    let firstValue: string | undefined;
+    for (const [groupKey, arts] of Object.entries(byLang)) {
+      groupedOptions[groupKey] = arts.map(a => {
+        const val = `${a.kind}:${a.id}`;
+        if (firstValue === undefined) firstValue = val;
+        return { value: val, label: `${a.id}  (${a.kind})`, hint: artifactHint(a) };
+      });
     }
 
-    const picked = await multiselect({
+    const picked = await groupMultiselect({
       message: 'Select artifacts to install  (↑↓ navigate, space toggle, enter confirm)',
-      options,
+      options: groupedOptions,
       required: true,
+      ...(firstValue !== undefined ? { cursorAt: firstValue } : {}),
     });
     if (isCancel(picked)) { cancel('Install cancelled.'); return null; }
     selectors = picked as string[];
@@ -147,25 +157,8 @@ export async function runWizard(
   // For 'pack' (language already implied) and 'individual' (explicit picks), skip.
   let language: string | undefined;
   if (scope === 'all' || scope === 'kind') {
-    // Collect distinct languages present in the catalog (excluding shared/undefined)
-    const catalogLanguages = [
-      ...new Set(
-        catalog.artifacts
-          .map(a => a.frontmatter.language as string | undefined)
-          .filter((l): l is string => Boolean(l))
-          .sort(),
-      ),
-    ];
-
-    if (catalogLanguages.length > 0) {
-      const langOptions = [
-        { value: '',  label: 'All languages', hint: catalogLanguages.join(', ') },
-        ...catalogLanguages.map(l => {
-          const count = catalog.artifacts.filter(a => a.frontmatter.language === l).length;
-          return { value: l, label: l, hint: `${count} artifact${count !== 1 ? 's' : ''}` };
-        }),
-      ];
-
+    const langOptions = buildLanguageOptions(catalog);
+    if (langOptions.length > 0) {
       const langAnswer = await select({
         message: 'Filter by language?',
         options: langOptions,
@@ -273,7 +266,38 @@ export async function runWizard(
   };
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
+// ── Internal helpers ──────────────────────────────────────────────────────────
+
+/**
+ * Builds the language-filter option list shared by:
+ *  - Step 3b (all/kind scopes) — language *is* saved to WizardResult.language
+ *  - Step 3a-individual — language used only to narrow the picker display
+ *
+ * Returns an empty array when the catalog has no language-tagged artifacts
+ * (caller should skip the select prompt entirely in that case).
+ */
+function buildLanguageOptions(
+  catalog: ResolvedCatalog,
+): Array<{ value: string; label: string; hint: string }> {
+  const catalogLanguages = [
+    ...new Set(
+      catalog.artifacts
+        .map(a => a.frontmatter.language as string | undefined)
+        .filter((l): l is string => Boolean(l))
+        .sort(),
+    ),
+  ];
+  if (catalogLanguages.length === 0) return [];
+  return [
+    { value: '', label: 'All languages', hint: catalogLanguages.join(', ') },
+    ...catalogLanguages.map(l => {
+      const count = catalog.artifacts.filter(a => a.frontmatter.language === l).length;
+      return { value: l, label: l, hint: `${count} artifact${count !== 1 ? 's' : ''}` };
+    }),
+  ];
+}
+
+// ── Exported helpers ──────────────────────────────────────────────────────────
 
 /**
  * Builds a copy-pasteable `maku-catalog add …` command string from the effective

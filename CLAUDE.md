@@ -83,10 +83,22 @@ frontmatter in each SKILL.md (e.g. `uses: { rules: [csharp/dotnet-style], agents
 - The **post-install file listing** in `cli.ts` still tags each written file `(dependency)` for
   completeness, now consistent with the pre-confirm preview.
 
+**`individual` scope — language pre-filter + grouped picker:** when "Pick individually" is selected,
+the wizard first asks "Narrow by language?" (same `buildLanguageOptions(catalog)` helper also used by
+step 3b; artifact counts shown as hints). The chosen language scopes which artifacts the picker
+displays but is **not** saved to `WizardResult.language` (picks are explicit selectors, not a
+language filter). The picker uses `groupMultiselect` — artifacts appear under language group headers
+(real languages alphabetical, `shared` last), each row tagged with its kind. Group building is handled
+by `groupArtifactsByLanguage(artifacts, language?)` in `src/select.ts` (pure, tested).
+
+> **Autocomplete deferred:** `autocompleteMultiselect` exists only in `@clack/prompts@1.x`
+> (Node >= 20.12). The pre-filter + grouped scroll is the chosen approach. Revisit if the catalog
+> grows to 100+ artifacts per language.
+
 The language filter step (step 3b) appears only for scope choices that span all languages (`all`,
-`kind`). It is skipped for `pack` (language already implied) and `individual` (explicit picks).
-`WizardResult.language` flows into `effectiveLanguage` in `cli.ts`, which feeds `filters.language`
-to `resolveSelection()`. The resolver already supported this — only the wizard wiring was missing.
+`kind`). It is skipped for `pack` (language already implied) and `individual` (handled by the
+pre-filter above). `WizardResult.language` flows into `effectiveLanguage` in `cli.ts`, which feeds
+`filters.language` to `resolveSelection()`. The resolver already supported this.
 
 **Conflict handling (cli.ts `partitionFiles`):** before writing, all candidate paths are
 partitioned into `toWrite` (new) and `conflicting` (exists). New files are always written;

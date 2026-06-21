@@ -38,7 +38,12 @@ maku-catalog add
 The wizard runs when `add` is called with **no selector** in an interactive terminal. It guides you through:
 1. **Target** — Claude Code or GitHub Copilot (auto-detected, shown with reason)
 2. **Scope** — Everything / By pack / By kind / Pick individually
-3. **Artifacts** — multiselect from the full list (grouped by kind) when picking individually
+3. **Artifacts** — when picking individually, a **"Narrow by language?"** step first narrows the list
+   (showing only that language's artifacts plus shared ones; "All languages" shows everything), then a
+   **grouped checkbox list** (`groupMultiselect`) renders artifacts under language headers in alphabetical
+   order (`shared` last), each row tagged with its kind. Scrolling is the scale lever — no autocomplete
+   upgrade needed at this stage (`autocompleteMultiselect` requires `@clack/prompts@1.x` / Node ≥ 20.12,
+   deferred). For `all` and `kind` scopes, step 3b below handles language filtering.
 3b. **Language filter** — shown for *all* and *kind* scopes; each option shows the artifact count for that language
 4. **Dependencies** — before you decide, a note names the *exact* rules/agents your selection
    references via `uses:` frontmatter (e.g. `rule csharp/dotnet-style` and `agent shared/code-reviewer`).

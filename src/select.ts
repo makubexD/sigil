@@ -39,6 +39,9 @@ export interface SelectionResult {
 
 const KIND_PREFIXES: ArtifactKind[] = ['skill', 'agent', 'rule', 'prompt', 'workflow'];
 
+/** Canonical kind ordering (for sort helpers that need a stable display order). */
+export const KIND_ORDER: ArtifactKind[] = KIND_PREFIXES;
+
 /**
  * Resolve a list of selector strings + filters into a concrete set of artifact IDs.
  *
@@ -246,4 +249,62 @@ export function computeClosure(primaryIds: string[], catalog: ResolvedCatalog): 
   }
 
   return { primary, dependencies: [...ruleEntries, ...agentEntries] };
+}
+
+// ─── Language grouping ────────────────────────────────────────────────────────
+
+/**
+ * Groups artifacts by language for the grouped-multiselect picker in the wizard.
+ *
+ * When `language` is supplied (non-empty string), only that language's artifacts
+ * plus shared (language-undefined) artifacts are included — mirrors the language
+ * filter in `resolveSelection`.
+ *
+ * Group keys: `frontmatter.language`, or `'shared'` for language-undefined artifacts.
+ * Group order: real languages alphabetical, `'shared'` last.
+ * Within each group: sorted by kind (skill → agent → rule → prompt → workflow) then id.
+ *
+ * Returns a plain ordered Record suitable for `@clack/prompts` `groupMultiselect`.
+ */
+export function groupArtifactsByLanguage(
+  artifacts: ResolvedArtifact[],
+  language?: string,
+): Record<string, ResolvedArtifact[]> {
+  // Apply optional language filter (mirrors resolveSelection semantics)
+  const filtered = language
+    ? artifacts.filter(a => {
+        const lang = a.frontmatter.language as string | undefined;
+        return lang === language || lang === undefined;
+      })
+    : artifacts;
+
+  // Bucket by language key
+  const buckets = new Map<string, ResolvedArtifact[]>();
+  for (const a of filtered) {
+    const key = (a.frontmatter.language as string | undefined) ?? 'shared';
+    if (!buckets.has(key)) buckets.set(key, []);
+    buckets.get(key)!.push(a);
+  }
+
+  // Sort within each bucket: kind order, then id
+  const kindIndex: Record<string, number> = Object.fromEntries(KIND_ORDER.map((k, i) => [k, i]));
+  for (const group of buckets.values()) {
+    group.sort((a, b) => {
+      const ki = (kindIndex[a.kind] ?? 99) - (kindIndex[b.kind] ?? 99);
+      return ki !== 0 ? ki : a.id.localeCompare(b.id);
+    });
+  }
+
+  // Sort group keys: real languages alphabetical, 'shared' last
+  const sortedKeys = [...buckets.keys()].sort((a, b) => {
+    if (a === 'shared') return 1;
+    if (b === 'shared') return -1;
+    return a.localeCompare(b);
+  });
+
+  const result: Record<string, ResolvedArtifact[]> = {};
+  for (const key of sortedKeys) {
+    result[key] = buckets.get(key)!;
+  }
+  return result;
 }

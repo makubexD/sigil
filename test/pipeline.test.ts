@@ -10,7 +10,7 @@ import path from 'path';
 import { loadCatalog } from '../dist-cli/load';
 import { validateCatalog } from '../dist-cli/validate';
 import { resolveCatalog } from '../dist-cli/resolve';
-import { computeClosure } from '../dist-cli/select';
+import { computeClosure, groupArtifactsByLanguage } from '../dist-cli/select';
 import { ClaudeCodeTarget } from '../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../dist-cli/targets/copilot';
 
@@ -233,6 +233,90 @@ describe('computeClosure', () => {
       resolved,
     );
     assert.equal(dependencies.length, 0, 'all closure members already in primary — no deps');
+  });
+});
+
+// ─── groupArtifactsByLanguage ─────────────────────────────────────────────────
+
+describe('groupArtifactsByLanguage', () => {
+  it('buckets artifacts under their language, undefined-language under "shared"', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+
+    const groups = groupArtifactsByLanguage(resolved.artifacts);
+
+    // "shared" must be present (shared/clean-code, shared/code-reviewer, etc.)
+    assert.ok('shared' in groups, '"shared" group present for language-undefined artifacts');
+
+    // At least one real language group
+    const realLanguages = Object.keys(groups).filter(k => k !== 'shared');
+    assert.ok(realLanguages.length > 0, 'at least one language group');
+
+    // Every artifact in "shared" has no language frontmatter
+    for (const a of groups['shared']) {
+      const lang = a.frontmatter.language as string | undefined;
+      assert.equal(lang, undefined, `shared artifact ${a.id} must have no language`);
+    }
+
+    // Every artifact in a real language group matches that group key
+    for (const lang of realLanguages) {
+      for (const a of groups[lang]) {
+        assert.equal(
+          a.frontmatter.language as string | undefined,
+          lang,
+          `artifact ${a.id} language frontmatter matches group key`,
+        );
+      }
+    }
+  });
+
+  it('"shared" group is sorted last', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+
+    const groups = groupArtifactsByLanguage(resolved.artifacts);
+    const keys = Object.keys(groups);
+
+    assert.equal(keys[keys.length - 1], 'shared', '"shared" is the last group key');
+  });
+
+  it('within each group, artifacts are sorted by kind then id', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+
+    const groups = groupArtifactsByLanguage(resolved.artifacts);
+    const kindOrder = ['skill', 'agent', 'rule', 'prompt', 'workflow'];
+
+    for (const [groupKey, arts] of Object.entries(groups)) {
+      for (let i = 1; i < arts.length; i++) {
+        const prev = arts[i - 1];
+        const curr = arts[i];
+        const prevKi = kindOrder.indexOf(prev.kind);
+        const currKi = kindOrder.indexOf(curr.kind);
+        const ok =
+          currKi > prevKi ||
+          (currKi === prevKi && curr.id >= prev.id);
+        assert.ok(
+          ok,
+          `In group "${groupKey}": ${prev.id} (${prev.kind}) should sort before ${curr.id} (${curr.kind})`,
+        );
+      }
+    }
+  });
+
+  it('single-language filter includes that language + "shared", excludes others', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+
+    const groups = groupArtifactsByLanguage(resolved.artifacts, 'csharp');
+    const keys = Object.keys(groups);
+
+    assert.ok('csharp' in groups, 'csharp group present');
+    assert.ok('shared' in groups, '"shared" group present (always included)');
+
+    // No other language groups
+    const otherLangs = keys.filter(k => k !== 'csharp' && k !== 'shared');
+    assert.equal(otherLangs.length, 0, `no other language groups: ${otherLangs.join(', ')}`);
   });
 });
 

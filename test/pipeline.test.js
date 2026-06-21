@@ -1,0 +1,523 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+/**
+ * End-to-end pipeline tests.
+ * Tests the full Load → Validate → Resolve → Emit cycle for both targets.
+ *
+ * Run: npm test   (after npm run build)
+ */
+const node_test_1 = require("node:test");
+const strict_1 = __importDefault(require("node:assert/strict"));
+const path_1 = __importDefault(require("path"));
+const load_1 = require("../dist-cli/load");
+const validate_1 = require("../dist-cli/validate");
+const resolve_1 = require("../dist-cli/resolve");
+const select_1 = require("../dist-cli/select");
+const claude_code_1 = require("../dist-cli/targets/claude-code");
+const copilot_1 = require("../dist-cli/targets/copilot");
+const prompt_args_1 = require("../dist-cli/targets/prompt-args");
+const CATALOG_DIR = path_1.default.resolve(__dirname, '../catalog');
+const VERSION = '0.1.0';
+const PACKS = [
+    { name: 'dotnet-pack', displayName: '.NET / C# Pack', description: 'C# skills and agents', languages: ['csharp'] },
+    { name: 'python-pack', displayName: 'Python Pack', description: 'Python skills and agents', languages: ['python'] },
+    { name: 'react-pack', displayName: 'React Pack', description: 'React skills and agents', languages: ['react'] },
+];
+// ─── Load ──────────────────────────────────────────────────────────────────────
+(0, node_test_1.describe)('Load phase', () => {
+    (0, node_test_1.it)('loads all expected artifacts', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        // Languages
+        strict_1.default.ok(catalog.languages.has('csharp'), 'csharp language loaded');
+        strict_1.default.ok(catalog.languages.has('python'), 'python language loaded');
+        strict_1.default.ok(catalog.languages.has('react'), 'react language loaded');
+        // Shared artifacts
+        strict_1.default.ok(catalog.byId.has('shared/clean-code'), 'shared/clean-code rule exists');
+        strict_1.default.ok(catalog.byId.has('shared/code-reviewer'), 'shared/code-reviewer agent exists');
+        strict_1.default.ok(catalog.byId.has('shared/explain-diff'), 'shared/explain-diff prompt exists');
+        // Language artifacts
+        strict_1.default.ok(catalog.byId.has('csharp/dotnet-style'), 'csharp/dotnet-style rule exists');
+        strict_1.default.ok(catalog.byId.has('csharp/xunit-testing'), 'csharp/xunit-testing skill exists');
+        strict_1.default.ok(catalog.byId.has('csharp/dotnet-api-architect'), 'csharp/dotnet-api-architect agent exists');
+        strict_1.default.ok(catalog.byId.has('python/python-style'), 'python/python-style rule exists');
+        strict_1.default.ok(catalog.byId.has('python/pytest-testing'), 'python/pytest-testing skill exists');
+        strict_1.default.ok(catalog.byId.has('react/react-style'), 'react/react-style rule exists');
+        strict_1.default.ok(catalog.byId.has('react/component-testing'), 'react/component-testing skill exists');
+    });
+    (0, node_test_1.it)('loads skill reference files', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const skill = catalog.byId.get('csharp/xunit-testing');
+        strict_1.default.ok(skill, 'skill exists');
+        strict_1.default.ok(skill.references && skill.references.length > 0, 'skill has references');
+        strict_1.default.equal(skill.references[0].name, 'assertions.md');
+    });
+});
+// ─── Validate ─────────────────────────────────────────────────────────────────
+(0, node_test_1.describe)('Validate phase', () => {
+    (0, node_test_1.it)('passes with no errors on the seeded catalog', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const result = (0, validate_1.validateCatalog)(catalog);
+        if (!result.valid) {
+            const msg = result.errors.map(e => `[${e.artifactId}] ${e.error}`).join('\n');
+            strict_1.default.fail(`Validation failed:\n${msg}`);
+        }
+        strict_1.default.equal(result.errors.length, 0);
+    });
+    (0, node_test_1.it)('reports an error for a dangling extends reference', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        // Inject a fake artifact with a bad extends reference
+        const fakeRule = {
+            id: 'test/fake-rule',
+            kind: 'rule',
+            filePath: '/fake/path.rule.md',
+            frontmatter: {
+                id: 'test/fake-rule',
+                kind: 'rule',
+                title: 'Fake Rule',
+                description: 'A fake rule for testing.',
+                extends: ['does-not/exist'],
+                appliesTo: ['**/*'],
+                severity: 'recommended',
+            },
+            body: '- Fake rule body.',
+        };
+        catalog.artifacts.push(fakeRule);
+        catalog.byId.set(fakeRule.id, fakeRule);
+        const result = (0, validate_1.validateCatalog)(catalog);
+        strict_1.default.ok(!result.valid, 'should be invalid');
+        strict_1.default.ok(result.errors.some(e => e.error.includes("does-not/exist")), 'error message mentions the missing id');
+    });
+    (0, node_test_1.it)('detects cycles in extends', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const ruleA = {
+            id: 'test/cycle-a',
+            kind: 'rule',
+            filePath: '/fake/cycle-a.rule.md',
+            frontmatter: { id: 'test/cycle-a', kind: 'rule', title: 'A', description: 'A', extends: ['test/cycle-b'], appliesTo: ['**/*'], severity: 'recommended' },
+            body: '- A',
+        };
+        const ruleB = {
+            id: 'test/cycle-b',
+            kind: 'rule',
+            filePath: '/fake/cycle-b.rule.md',
+            frontmatter: { id: 'test/cycle-b', kind: 'rule', title: 'B', description: 'B', extends: ['test/cycle-a'], appliesTo: ['**/*'], severity: 'recommended' },
+            body: '- B',
+        };
+        catalog.artifacts.push(ruleA, ruleB);
+        catalog.byId.set(ruleA.id, ruleA);
+        catalog.byId.set(ruleB.id, ruleB);
+        const result = (0, validate_1.validateCatalog)(catalog);
+        strict_1.default.ok(!result.valid, 'should detect the cycle');
+        strict_1.default.ok(result.errors.some(e => e.error.includes('Cycle')), 'error mentions cycle');
+    });
+});
+// ─── Resolve ───────────────────────────────────────────────────────────────────
+(0, node_test_1.describe)('Resolve phase', () => {
+    (0, node_test_1.it)('flattens extends chains for rules', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const dotnetRule = resolved.byId.get('csharp/dotnet-style');
+        strict_1.default.ok(dotnetRule, 'csharp/dotnet-style resolved');
+        // resolvedBody should contain BOTH the parent (shared/clean-code) body
+        // AND the csharp/dotnet-style body
+        strict_1.default.ok(dotnetRule.resolvedBody?.includes('Clear names'), 'inherited clean-code guidance present');
+        strict_1.default.ok(dotnetRule.resolvedBody?.includes('File-scoped namespaces'), 'own guidance present');
+    });
+    (0, node_test_1.it)('expands uses.rules for skills', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const skill = resolved.byId.get('csharp/xunit-testing');
+        strict_1.default.ok(skill, 'csharp/xunit-testing resolved');
+        strict_1.default.ok(skill.resolvedRules && skill.resolvedRules.length > 0, 'resolvedRules populated');
+        strict_1.default.equal(skill.resolvedRules[0].id, 'csharp/dotnet-style');
+    });
+    (0, node_test_1.it)('expands uses.agents for skills', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const skill = resolved.byId.get('csharp/xunit-testing');
+        strict_1.default.ok(skill?.resolvedAgentIds?.includes('shared/code-reviewer'), 'agent id recorded');
+    });
+});
+// ─── computeClosure ────────────────────────────────────────────────────────────
+(0, node_test_1.describe)('computeClosure', () => {
+    (0, node_test_1.it)('identifies the primary artifact and its dependency closure', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const { primary, dependencies } = (0, select_1.computeClosure)(['csharp/xunit-testing'], resolved);
+        // Primary
+        strict_1.default.equal(primary.length, 1, 'one primary artifact');
+        strict_1.default.equal(primary[0].id, 'csharp/xunit-testing');
+        // Dependencies
+        const depIds = dependencies.map(d => d.artifact.id);
+        strict_1.default.ok(depIds.includes('csharp/dotnet-style'), 'dotnet-style rule is a dependency');
+        strict_1.default.ok(depIds.includes('shared/code-reviewer'), 'code-reviewer agent is a dependency');
+        // Rules come before agents in the dependency list
+        const ruleIdx = depIds.indexOf('csharp/dotnet-style');
+        const agentIdx = depIds.indexOf('shared/code-reviewer');
+        strict_1.default.ok(ruleIdx < agentIdx, 'rules listed before agents');
+        // via attribute names the skill that pulls each dep in
+        const ruleDep = dependencies.find(d => d.artifact.id === 'csharp/dotnet-style');
+        strict_1.default.ok(ruleDep?.via.includes('csharp/xunit-testing'), 'via references the source skill');
+    });
+    (0, node_test_1.it)('excludes directly-selected artifacts from the dependency list', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        // Selecting the rule AND the skill — the rule is a direct pick, not a dependency
+        const { primary, dependencies } = (0, select_1.computeClosure)(['csharp/xunit-testing', 'csharp/dotnet-style'], resolved);
+        strict_1.default.equal(primary.length, 2, 'two primary artifacts');
+        const depIds = dependencies.map(d => d.artifact.id);
+        strict_1.default.ok(!depIds.includes('csharp/dotnet-style'), 'directly-selected rule not in dependencies');
+        strict_1.default.ok(depIds.includes('shared/code-reviewer'), 'agent is still a dependency');
+    });
+    (0, node_test_1.it)('returns empty dependencies when selection contains no skills', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const { primary, dependencies } = (0, select_1.computeClosure)(['shared/code-reviewer'], resolved);
+        strict_1.default.equal(primary.length, 1, 'one primary artifact');
+        strict_1.default.equal(dependencies.length, 0, 'no dependencies when primary has no skills');
+    });
+    (0, node_test_1.it)('returns empty dependencies when all closure artifacts are already primary picks', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        // Selecting skill + all its deps directly → no computed dependencies
+        const { dependencies } = (0, select_1.computeClosure)(['csharp/xunit-testing', 'csharp/dotnet-style', 'shared/code-reviewer'], resolved);
+        strict_1.default.equal(dependencies.length, 0, 'all closure members already in primary — no deps');
+    });
+});
+// ─── groupArtifactsByLanguage ─────────────────────────────────────────────────
+(0, node_test_1.describe)('groupArtifactsByLanguage', () => {
+    (0, node_test_1.it)('buckets artifacts under their language, undefined-language under "shared"', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const groups = (0, select_1.groupArtifactsByLanguage)(resolved.artifacts);
+        // "shared" must be present (shared/clean-code, shared/code-reviewer, etc.)
+        strict_1.default.ok('shared' in groups, '"shared" group present for language-undefined artifacts');
+        // At least one real language group
+        const realLanguages = Object.keys(groups).filter(k => k !== 'shared');
+        strict_1.default.ok(realLanguages.length > 0, 'at least one language group');
+        // Every artifact in "shared" has no language frontmatter
+        for (const a of groups['shared']) {
+            const lang = a.frontmatter.language;
+            strict_1.default.equal(lang, undefined, `shared artifact ${a.id} must have no language`);
+        }
+        // Every artifact in a real language group matches that group key
+        for (const lang of realLanguages) {
+            for (const a of groups[lang]) {
+                strict_1.default.equal(a.frontmatter.language, lang, `artifact ${a.id} language frontmatter matches group key`);
+            }
+        }
+    });
+    (0, node_test_1.it)('"shared" group is sorted last', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const groups = (0, select_1.groupArtifactsByLanguage)(resolved.artifacts);
+        const keys = Object.keys(groups);
+        strict_1.default.equal(keys[keys.length - 1], 'shared', '"shared" is the last group key');
+    });
+    (0, node_test_1.it)('within each group, artifacts are sorted by kind then id', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const groups = (0, select_1.groupArtifactsByLanguage)(resolved.artifacts);
+        const kindOrder = ['skill', 'agent', 'rule', 'prompt', 'workflow'];
+        for (const [groupKey, arts] of Object.entries(groups)) {
+            for (let i = 1; i < arts.length; i++) {
+                const prev = arts[i - 1];
+                const curr = arts[i];
+                const prevKi = kindOrder.indexOf(prev.kind);
+                const currKi = kindOrder.indexOf(curr.kind);
+                const ok = currKi > prevKi ||
+                    (currKi === prevKi && curr.id >= prev.id);
+                strict_1.default.ok(ok, `In group "${groupKey}": ${prev.id} (${prev.kind}) should sort before ${curr.id} (${curr.kind})`);
+            }
+        }
+    });
+    (0, node_test_1.it)('single-language filter includes that language + "shared", excludes others', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const groups = (0, select_1.groupArtifactsByLanguage)(resolved.artifacts, 'csharp');
+        const keys = Object.keys(groups);
+        strict_1.default.ok('csharp' in groups, 'csharp group present');
+        strict_1.default.ok('shared' in groups, '"shared" group present (always included)');
+        // No other language groups
+        const otherLangs = keys.filter(k => k !== 'csharp' && k !== 'shared');
+        strict_1.default.equal(otherLangs.length, 0, `no other language groups: ${otherLangs.join(', ')}`);
+    });
+});
+// ─── Claude Code emit ──────────────────────────────────────────────────────────
+(0, node_test_1.describe)('Claude Code target', () => {
+    (0, node_test_1.it)('emits marketplace.json with all packs (flat top-level schema)', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new claude_code_1.ClaudeCodeTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        strict_1.default.ok('.claude-plugin/marketplace.json' in files, 'marketplace.json emitted');
+        const marketplace = JSON.parse(files['.claude-plugin/marketplace.json']);
+        // Official schema is flat: name / owner / plugins[] at top level (no "marketplace" wrapper)
+        // See: code.claude.com/docs/en/plugin-marketplaces
+        strict_1.default.ok(!marketplace.marketplace, 'no nested "marketplace" key — must be flat');
+        strict_1.default.equal(marketplace.name, 'maku-catalog', 'name at top level');
+        strict_1.default.ok(marketplace.owner?.name, 'owner.name present');
+        strict_1.default.equal(marketplace.plugins.length, 3, '3 plugin entries');
+    });
+    (0, node_test_1.it)('emits plugin.json with correct version for each pack', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new claude_code_1.ClaudeCodeTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        const pluginJson = JSON.parse(files['plugins/dotnet-pack/.claude-plugin/plugin.json']);
+        strict_1.default.equal(pluginJson.version, VERSION, 'plugin version matches npm version');
+        strict_1.default.equal(pluginJson.name, 'dotnet-pack');
+    });
+    (0, node_test_1.it)('emits a SKILL.md with the rule body inlined', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new claude_code_1.ClaudeCodeTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        const skillMd = files['plugins/dotnet-pack/skills/xunit-testing/SKILL.md'];
+        strict_1.default.ok(skillMd, 'xunit-testing SKILL.md emitted');
+        strict_1.default.ok(skillMd.includes('Writing xUnit Tests'), 'skill body present');
+        strict_1.default.ok(skillMd.includes('Applied Rules'), 'rules section present');
+        strict_1.default.ok(skillMd.includes('File-scoped namespaces'), 'dotnet-style rule inlined');
+        // `paths:` is the Claude Code–recognized key; `appliesTo` is our vendor-neutral source name
+        // See: code.claude.com/docs/en/skills
+        strict_1.default.ok(skillMd.includes('paths:'), 'paths: field emitted (not appliesTo:)');
+        strict_1.default.ok(!skillMd.includes('appliesTo:'), 'appliesTo not emitted in Claude output');
+        // description must be safely quoted (not a bare plain scalar)
+        strict_1.default.ok(skillMd.match(/description:\s*"/), 'description is a quoted YAML scalar');
+    });
+    (0, node_test_1.it)('emits the shared code-reviewer agent into each pack that uses it', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new claude_code_1.ClaudeCodeTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        strict_1.default.ok('plugins/dotnet-pack/agents/code-reviewer.md' in files, 'shared agent emitted into dotnet-pack');
+    });
+    (0, node_test_1.it)('scaffold: writes skill + closure into .claude/', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new claude_code_1.ClaudeCodeTarget();
+        const files = await target.scaffold('csharp/xunit-testing', resolved, { projectDir: '/fake' });
+        strict_1.default.ok('.claude/skills/xunit-testing/SKILL.md' in files, 'skill scaffolded');
+        strict_1.default.ok('.claude/rules/csharp-dotnet-style.md' in files, 'rule scaffolded');
+        strict_1.default.ok('.claude/agents/code-reviewer.md' in files, 'agent scaffolded');
+    });
+    (0, node_test_1.it)('scaffold: language-scoped rule has paths: frontmatter; shared rule does not', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new claude_code_1.ClaudeCodeTarget();
+        const files = await target.scaffold('csharp/xunit-testing', resolved, { projectDir: '/fake' });
+        const languageRule = files['.claude/rules/csharp-dotnet-style.md'];
+        strict_1.default.ok(languageRule, 'csharp rule scaffolded');
+        strict_1.default.ok(languageRule.includes('paths:'), 'language rule has paths: frontmatter');
+        strict_1.default.ok(languageRule.includes('*.cs'), 'csharp glob present');
+        // Scaffold shared rule directly and verify no frontmatter
+        const sharedFiles = await target.scaffold('shared/clean-code', resolved, { projectDir: '/fake' });
+        const sharedRule = sharedFiles['.claude/rules/shared-clean-code.md'];
+        strict_1.default.ok(sharedRule, 'shared rule scaffolded');
+        strict_1.default.ok(!sharedRule.startsWith('---'), 'shared rule has no frontmatter (loaded unconditionally)');
+    });
+});
+// ─── Copilot emit ──────────────────────────────────────────────────────────────
+(0, node_test_1.describe)('Copilot target', () => {
+    (0, node_test_1.it)('emits copilot-instructions.md from shared rules', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new copilot_1.CopilotTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        strict_1.default.ok('.github/copilot-instructions.md' in files, 'copilot-instructions.md emitted');
+        const content = files['.github/copilot-instructions.md'];
+        strict_1.default.ok(content.includes('Clean Code Baseline'), 'shared rule heading present');
+        strict_1.default.ok(content.includes('Clear names'), 'rule body content present');
+    });
+    (0, node_test_1.it)('emits language-specific instructions with applyTo globs', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new copilot_1.CopilotTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        const instrFile = files['.github/instructions/csharp-dotnet-style.instructions.md'];
+        strict_1.default.ok(instrFile, 'csharp instructions file emitted');
+        strict_1.default.ok(instrFile.includes('applyTo'), 'applyTo frontmatter present');
+        strict_1.default.ok(instrFile.includes('*.cs'), 'cs glob present');
+        strict_1.default.ok(instrFile.includes('File-scoped namespaces'), 'rule body present');
+    });
+    (0, node_test_1.it)('emits skills as prompt files', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new copilot_1.CopilotTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        const promptFile = files['.github/prompts/xunit-testing.prompt.md'];
+        strict_1.default.ok(promptFile, 'xunit-testing.prompt.md emitted');
+        // `agent:` is the current field name (renamed from legacy `mode:`)
+        // See: code.visualstudio.com/docs/agent-customization/prompt-files
+        strict_1.default.ok(promptFile.includes('agent: agent'), 'agent field set (not legacy mode:)');
+        strict_1.default.ok(!promptFile.includes('applyTo'), 'no applyTo in prompt files (belongs in .instructions.md only)');
+        strict_1.default.ok(promptFile.includes('Writing xUnit Tests'), 'skill body present');
+    });
+    (0, node_test_1.it)('emits AGENTS.md with all agents', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new copilot_1.CopilotTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        strict_1.default.ok('.github/AGENTS.md' in files, 'AGENTS.md emitted');
+        const content = files['.github/AGENTS.md'];
+        strict_1.default.ok(content.includes('code-reviewer'), 'code-reviewer agent listed');
+    });
+    (0, node_test_1.it)('scaffold: agent emits .agent.md with required description frontmatter', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new copilot_1.CopilotTarget();
+        const files = await target.scaffold('shared/code-reviewer', resolved, { projectDir: '/fake' });
+        // Official Copilot spec requires .agent.md extension and description frontmatter
+        // See: docs.github.com/.../custom-agents-configuration
+        strict_1.default.ok('.github/agents/code-reviewer.agent.md' in files, 'agent uses .agent.md extension');
+        strict_1.default.ok(!('.github/agents/code-reviewer.md' in files), 'bare .md not emitted');
+        const content = files['.github/agents/code-reviewer.agent.md'];
+        strict_1.default.ok(content.startsWith('---'), 'agent file has YAML frontmatter');
+        strict_1.default.ok(content.includes('description:'), 'description frontmatter present (required by spec)');
+        strict_1.default.ok(content.match(/description:\s*"/), 'description is safely quoted');
+    });
+});
+// ─── Part A: prompt-args helpers ───────────────────────────────────────────────
+(0, node_test_1.describe)('toClaudePlaceholders', () => {
+    (0, node_test_1.it)('translates {{name}} to $name', () => {
+        strict_1.default.equal((0, prompt_args_1.toClaudePlaceholders)('Give me {{diff}}'), 'Give me $diff');
+    });
+    (0, node_test_1.it)('translates multiple placeholders', () => {
+        strict_1.default.equal((0, prompt_args_1.toClaudePlaceholders)('Diff: {{diff}}\nAudience: {{audience}}'), 'Diff: $diff\nAudience: $audience');
+    });
+    (0, node_test_1.it)('tolerates inner whitespace ({{ diff }})', () => {
+        strict_1.default.equal((0, prompt_args_1.toClaudePlaceholders)('{{ diff }}'), '$diff');
+    });
+    (0, node_test_1.it)('leaves text with no placeholders unchanged', () => {
+        const body = 'No substitution needed here.';
+        strict_1.default.equal((0, prompt_args_1.toClaudePlaceholders)(body), body);
+    });
+});
+(0, node_test_1.describe)('toCopilotPlaceholders', () => {
+    (0, node_test_1.it)('translates {{name}} to ${input:name}', () => {
+        strict_1.default.equal((0, prompt_args_1.toCopilotPlaceholders)('Give me {{diff}}'), 'Give me ${input:diff}');
+    });
+    (0, node_test_1.it)('translates multiple placeholders', () => {
+        strict_1.default.equal((0, prompt_args_1.toCopilotPlaceholders)('Diff: {{diff}}\nAudience: {{audience}}'), 'Diff: ${input:diff}\nAudience: ${input:audience}');
+    });
+    (0, node_test_1.it)('tolerates inner whitespace ({{ diff }})', () => {
+        strict_1.default.equal((0, prompt_args_1.toCopilotPlaceholders)('{{ diff }}'), '${input:diff}');
+    });
+    (0, node_test_1.it)('leaves text with no placeholders unchanged', () => {
+        const body = 'No substitution needed here.';
+        strict_1.default.equal((0, prompt_args_1.toCopilotPlaceholders)(body), body);
+    });
+});
+(0, node_test_1.describe)('buildArgumentHint', () => {
+    (0, node_test_1.it)('formats required args as [name]', () => {
+        const args = [{ name: 'diff', required: true }, { name: 'audience' }];
+        strict_1.default.equal((0, prompt_args_1.buildArgumentHint)(args), '[diff] [audience]');
+    });
+    (0, node_test_1.it)('returns empty string for no args', () => {
+        strict_1.default.equal((0, prompt_args_1.buildArgumentHint)([]), '');
+    });
+    (0, node_test_1.it)('single arg', () => {
+        strict_1.default.equal((0, prompt_args_1.buildArgumentHint)([{ name: 'file' }]), '[file]');
+    });
+});
+(0, node_test_1.describe)('Claude scaffold: prompt with args', () => {
+    (0, node_test_1.it)('emits description, argument-hint, arguments frontmatter and $name body', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new claude_code_1.ClaudeCodeTarget();
+        const files = await target.scaffold('shared/explain-diff', resolved, { projectDir: '/fake' });
+        const f = files['.claude/commands/shared-explain-diff.md'];
+        strict_1.default.ok(f, 'command file emitted at .claude/commands/shared-explain-diff.md');
+        strict_1.default.ok(f.startsWith('---'), 'command file starts with YAML frontmatter');
+        strict_1.default.ok(f.includes('description:'), 'description field present');
+        strict_1.default.ok(f.includes('argument-hint:'), 'argument-hint field present');
+        strict_1.default.ok(f.includes('[diff]'), 'diff arg in argument-hint');
+        strict_1.default.ok(f.includes('[audience]'), 'audience arg in argument-hint');
+        strict_1.default.ok(f.includes('arguments:'), 'arguments list present');
+        strict_1.default.ok(f.includes('  - diff'), 'diff in arguments list');
+        strict_1.default.ok(f.includes('  - audience'), 'audience in arguments list');
+        strict_1.default.ok(!f.includes('{{diff}}'), '{{diff}} placeholder translated');
+        strict_1.default.ok(f.includes('$diff'), '$diff substitution present');
+    });
+});
+(0, node_test_1.describe)('Copilot scaffold: prompt with args', () => {
+    (0, node_test_1.it)('emits ${input:name} substitution in body', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new copilot_1.CopilotTarget();
+        const files = await target.scaffold('shared/explain-diff', resolved, { projectDir: '/fake' });
+        const f = files['.github/prompts/shared-explain-diff.prompt.md'];
+        strict_1.default.ok(f, 'prompt file emitted at .github/prompts/shared-explain-diff.prompt.md');
+        strict_1.default.ok(f.includes('agent: agent'), 'agent: agent frontmatter present');
+        strict_1.default.ok(f.includes('description:'), 'description frontmatter present');
+        strict_1.default.ok(!f.includes('{{diff}}'), '{{diff}} placeholder translated');
+        strict_1.default.ok(f.includes('${input:diff}'), '${input:diff} substitution present');
+    });
+    (0, node_test_1.it)('regression: skill-derived prompt file is unaffected (no {{}} tokens)', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const target = new copilot_1.CopilotTarget();
+        const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+        const f = files['.github/prompts/xunit-testing.prompt.md'];
+        strict_1.default.ok(f, 'xunit-testing prompt file still emitted');
+        strict_1.default.ok(f.includes('agent: agent'), 'agent field still present');
+        strict_1.default.ok(f.includes('Writing xUnit Tests'), 'skill body still present');
+        strict_1.default.ok(!f.includes('{{'), 'no unresolved {{ placeholders in skill prompt');
+    });
+});
+// ─── Part B: availability helpers ──────────────────────────────────────────────
+(0, node_test_1.describe)('availableKinds', () => {
+    (0, node_test_1.it)('returns present kinds in KIND_ORDER', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const kinds = (0, select_1.availableKinds)(resolved.artifacts);
+        // Must be a subset of KIND_ORDER — skill comes before agent, etc.
+        const kindOrder = ['skill', 'agent', 'rule', 'prompt', 'workflow'];
+        for (let i = 0; i < kinds.length - 1; i++) {
+            strict_1.default.ok(kindOrder.indexOf(kinds[i]) < kindOrder.indexOf(kinds[i + 1]), `kind order: ${kinds[i]} should precede ${kinds[i + 1]}`);
+        }
+    });
+    (0, node_test_1.it)('excludes kinds not present in the artifact list', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        // Skills only
+        const skillsOnly = resolved.artifacts.filter(a => a.kind === 'skill');
+        const kinds = (0, select_1.availableKinds)(skillsOnly);
+        strict_1.default.deepEqual(kinds, ['skill'], 'only skill kind present');
+    });
+    (0, node_test_1.it)('returns empty array for empty list', () => {
+        strict_1.default.deepEqual((0, select_1.availableKinds)([]), []);
+    });
+});
+(0, node_test_1.describe)('buildLanguageOptions (array-based)', () => {
+    (0, node_test_1.it)('returns [] when no language-tagged artifacts', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const sharedOnly = resolved.artifacts.filter(a => !a.frontmatter.language);
+        strict_1.default.deepEqual((0, select_1.buildLanguageOptions)(sharedOnly), []);
+    });
+    (0, node_test_1.it)('includes All languages option + one per language with count', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        const opts = (0, select_1.buildLanguageOptions)(resolved.artifacts);
+        strict_1.default.ok(opts.length >= 2, 'at least All + 1 language');
+        strict_1.default.equal(opts[0].value, '', 'first option is All languages');
+        strict_1.default.ok(opts.slice(1).every(o => o.hint.match(/\d+ artifact/)), 'each language has count hint');
+    });
+    (0, node_test_1.it)('counts reflect the passed subset, not the whole catalog', async () => {
+        const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+        const resolved = (0, resolve_1.resolveCatalog)(catalog);
+        // Only csharp artifacts
+        const csharpOnly = resolved.artifacts.filter(a => a.frontmatter.language === 'csharp');
+        const opts = (0, select_1.buildLanguageOptions)(csharpOnly);
+        // Only csharp should appear (no python, react)
+        const langs = opts.slice(1).map(o => o.value);
+        strict_1.default.ok(langs.every(l => l === 'csharp'), 'only csharp in subset options');
+        // Count in hint matches actual csharp artifacts
+        const csharpOpt = opts.find(o => o.value === 'csharp');
+        strict_1.default.ok(csharpOpt?.hint.startsWith(`${csharpOnly.length} artifact`), 'count matches subset');
+    });
+});

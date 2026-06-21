@@ -251,6 +251,52 @@ export function computeClosure(primaryIds: string[], catalog: ResolvedCatalog): 
   return { primary, dependencies: [...ruleEntries, ...agentEntries] };
 }
 
+// ─── Availability helpers ─────────────────────────────────────────────────────
+
+/**
+ * Returns the distinct artifact kinds present in the given array, in KIND_ORDER.
+ * Used by the wizard to build "By kind" option lists from only the artifact kinds
+ * that are actually available (after target.supportedKinds filtering).
+ */
+export function availableKinds(artifacts: ResolvedArtifact[]): ArtifactKind[] {
+  const present = new Set(artifacts.map(a => a.kind));
+  return KIND_ORDER.filter(k => present.has(k));
+}
+
+/**
+ * Builds a language-filter option list from an artifact array.
+ *
+ * Used by the wizard for:
+ *  - Step 3b (all/kind scopes) — callers pass the already-visible/kind-filtered subset.
+ *  - Step 3a-individual pre-filter — callers pass the visible set.
+ *
+ * Each option carries a count hint reflecting the passed subset (not the whole catalog).
+ * Returns `[]` when the array has no language-tagged artifacts (caller should skip the prompt).
+ *
+ * Previously lived in wizard.ts as `buildLanguageOptions(catalog)`. Moved here so the
+ * logic is pure, array-based, and unit-testable.
+ */
+export function buildLanguageOptions(
+  artifacts: ResolvedArtifact[],
+): Array<{ value: string; label: string; hint: string }> {
+  const langs = [
+    ...new Set(
+      artifacts
+        .map(a => a.frontmatter.language as string | undefined)
+        .filter((l): l is string => Boolean(l))
+        .sort(),
+    ),
+  ];
+  if (langs.length === 0) return [];
+  return [
+    { value: '', label: 'All languages', hint: langs.join(', ') },
+    ...langs.map(l => {
+      const count = artifacts.filter(a => a.frontmatter.language === l).length;
+      return { value: l, label: l, hint: `${count} artifact${count !== 1 ? 's' : ''}` };
+    }),
+  ];
+}
+
 // ─── Language grouping ────────────────────────────────────────────────────────
 
 /**

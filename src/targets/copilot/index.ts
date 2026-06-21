@@ -39,6 +39,7 @@ import type {
   ArtifactKind,
 } from '../../types';
 import { yamlScalar } from '../yaml-util';
+import { toCopilotPlaceholders } from '../prompt-args';
 
 export class CopilotTarget implements Target {
   readonly name = 'copilot';
@@ -286,7 +287,8 @@ export class CopilotTarget implements Target {
         }
       }
     } else {
-      parts.push(artifact.body);
+      // Standalone prompt — translate {{name}} → ${input:name} for VS Code input variables.
+      parts.push(toCopilotPlaceholders(artifact.body));
     }
 
     return parts.join('\n').trimEnd() + '\n';

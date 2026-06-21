@@ -10,9 +10,11 @@ import path from 'path';
 import { loadCatalog } from '../dist-cli/load';
 import { validateCatalog } from '../dist-cli/validate';
 import { resolveCatalog } from '../dist-cli/resolve';
-import { computeClosure, groupArtifactsByLanguage } from '../dist-cli/select';
+import { computeClosure, groupArtifactsByLanguage, availableKinds, buildLanguageOptions } from '../dist-cli/select';
 import { ClaudeCodeTarget } from '../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../dist-cli/targets/copilot';
+import { toClaudePlaceholders, toCopilotPlaceholders, buildArgumentHint } from '../dist-cli/targets/prompt-args';
+import type { PromptArg } from '../dist-cli/targets/prompt-args';
 
 const CATALOG_DIR = path.resolve(__dirname, '../catalog');
 const VERSION = '0.1.0';
@@ -476,5 +478,180 @@ describe('Copilot target', () => {
     assert.ok(content.startsWith('---'), 'agent file has YAML frontmatter');
     assert.ok(content.includes('description:'), 'description frontmatter present (required by spec)');
     assert.ok(content.match(/description:\s*"/), 'description is safely quoted');
+  });
+});
+
+// ─── Part A: prompt-args helpers ───────────────────────────────────────────────
+
+describe('toClaudePlaceholders', () => {
+  it('translates {{name}} to $name', () => {
+    assert.equal(toClaudePlaceholders('Give me {{diff}}'), 'Give me $diff');
+  });
+
+  it('translates multiple placeholders', () => {
+    assert.equal(
+      toClaudePlaceholders('Diff: {{diff}}\nAudience: {{audience}}'),
+      'Diff: $diff\nAudience: $audience',
+    );
+  });
+
+  it('tolerates inner whitespace ({{ diff }})', () => {
+    assert.equal(toClaudePlaceholders('{{ diff }}'), '$diff');
+  });
+
+  it('leaves text with no placeholders unchanged', () => {
+    const body = 'No substitution needed here.';
+    assert.equal(toClaudePlaceholders(body), body);
+  });
+});
+
+describe('toCopilotPlaceholders', () => {
+  it('translates {{name}} to ${input:name}', () => {
+    assert.equal(toCopilotPlaceholders('Give me {{diff}}'), 'Give me ${input:diff}');
+  });
+
+  it('translates multiple placeholders', () => {
+    assert.equal(
+      toCopilotPlaceholders('Diff: {{diff}}\nAudience: {{audience}}'),
+      'Diff: ${input:diff}\nAudience: ${input:audience}',
+    );
+  });
+
+  it('tolerates inner whitespace ({{ diff }})', () => {
+    assert.equal(toCopilotPlaceholders('{{ diff }}'), '${input:diff}');
+  });
+
+  it('leaves text with no placeholders unchanged', () => {
+    const body = 'No substitution needed here.';
+    assert.equal(toCopilotPlaceholders(body), body);
+  });
+});
+
+describe('buildArgumentHint', () => {
+  it('formats required args as [name]', () => {
+    const args: PromptArg[] = [{ name: 'diff', required: true }, { name: 'audience' }];
+    assert.equal(buildArgumentHint(args), '[diff] [audience]');
+  });
+
+  it('returns empty string for no args', () => {
+    assert.equal(buildArgumentHint([]), '');
+  });
+
+  it('single arg', () => {
+    assert.equal(buildArgumentHint([{ name: 'file' }]), '[file]');
+  });
+});
+
+describe('Claude scaffold: prompt with args', () => {
+  it('emits description, argument-hint, arguments frontmatter and $name body', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
+
+    const f = files['.claude/commands/shared-explain-diff.md'];
+    assert.ok(f, 'command file emitted at .claude/commands/shared-explain-diff.md');
+    assert.ok(f.startsWith('---'), 'command file starts with YAML frontmatter');
+    assert.ok(f.includes('description:'), 'description field present');
+    assert.ok(f.includes('argument-hint:'), 'argument-hint field present');
+    assert.ok(f.includes('[diff]'), 'diff arg in argument-hint');
+    assert.ok(f.includes('[audience]'), 'audience arg in argument-hint');
+    assert.ok(f.includes('arguments:'), 'arguments list present');
+    assert.ok(f.includes('  - diff'), 'diff in arguments list');
+    assert.ok(f.includes('  - audience'), 'audience in arguments list');
+    assert.ok(!f.includes('{{diff}}'), '{{diff}} placeholder translated');
+    assert.ok(f.includes('$diff'), '$diff substitution present');
+  });
+});
+
+describe('Copilot scaffold: prompt with args', () => {
+  it('emits ${input:name} substitution in body', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
+
+    const f = files['.github/prompts/shared-explain-diff.prompt.md'];
+    assert.ok(f, 'prompt file emitted at .github/prompts/shared-explain-diff.prompt.md');
+    assert.ok(f.includes('agent: agent'), 'agent: agent frontmatter present');
+    assert.ok(f.includes('description:'), 'description frontmatter present');
+    assert.ok(!f.includes('{{diff}}'), '{{diff}} placeholder translated');
+    assert.ok(f.includes('${input:diff}'), '${input:diff} substitution present');
+  });
+
+  it('regression: skill-derived prompt file is unaffected (no {{}} tokens)', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+
+    const f = files['.github/prompts/xunit-testing.prompt.md'];
+    assert.ok(f, 'xunit-testing prompt file still emitted');
+    assert.ok(f.includes('agent: agent'), 'agent field still present');
+    assert.ok(f.includes('Writing xUnit Tests'), 'skill body still present');
+    assert.ok(!f.includes('{{'), 'no unresolved {{ placeholders in skill prompt');
+  });
+});
+
+// ─── Part B: availability helpers ──────────────────────────────────────────────
+
+describe('availableKinds', () => {
+  it('returns present kinds in KIND_ORDER', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const kinds = availableKinds(resolved.artifacts);
+    // Must be a subset of KIND_ORDER — skill comes before agent, etc.
+    const kindOrder = ['skill', 'agent', 'rule', 'prompt', 'workflow'];
+    for (let i = 0; i < kinds.length - 1; i++) {
+      assert.ok(
+        kindOrder.indexOf(kinds[i]) < kindOrder.indexOf(kinds[i + 1]),
+        `kind order: ${kinds[i]} should precede ${kinds[i + 1]}`,
+      );
+    }
+  });
+
+  it('excludes kinds not present in the artifact list', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    // Skills only
+    const skillsOnly = resolved.artifacts.filter(a => a.kind === 'skill');
+    const kinds = availableKinds(skillsOnly);
+    assert.deepEqual(kinds, ['skill'], 'only skill kind present');
+  });
+
+  it('returns empty array for empty list', () => {
+    assert.deepEqual(availableKinds([]), []);
+  });
+});
+
+describe('buildLanguageOptions (array-based)', () => {
+  it('returns [] when no language-tagged artifacts', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const sharedOnly = resolved.artifacts.filter(a => !a.frontmatter.language);
+    assert.deepEqual(buildLanguageOptions(sharedOnly), []);
+  });
+
+  it('includes All languages option + one per language with count', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const opts = buildLanguageOptions(resolved.artifacts);
+    assert.ok(opts.length >= 2, 'at least All + 1 language');
+    assert.equal(opts[0].value, '', 'first option is All languages');
+    assert.ok(opts.slice(1).every(o => o.hint.match(/\d+ artifact/)), 'each language has count hint');
+  });
+
+  it('counts reflect the passed subset, not the whole catalog', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    // Only csharp artifacts
+    const csharpOnly = resolved.artifacts.filter(a => a.frontmatter.language === 'csharp');
+    const opts = buildLanguageOptions(csharpOnly);
+    // Only csharp should appear (no python, react)
+    const langs = opts.slice(1).map(o => o.value);
+    assert.ok(langs.every(l => l === 'csharp'), 'only csharp in subset options');
+    // Count in hint matches actual csharp artifacts
+    const csharpOpt = opts.find(o => o.value === 'csharp');
+    assert.ok(csharpOpt?.hint.startsWith(`${csharpOnly.length} artifact`), 'count matches subset');
   });
 });

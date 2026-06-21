@@ -10,10 +10,11 @@
  */
 
 import { intro, outro, select, multiselect, groupMultiselect, confirm, note, log, isCancel, cancel } from '@clack/prompts';
-import type { ResolvedCatalog, Pack } from './types';
+import type { ResolvedCatalog, Pack, ArtifactKind } from './types';
 import type { ResolvedArtifact } from './types';
-import { artifactLabel, artifactHint, resolveSelection, computeClosure, groupArtifactsByLanguage } from './select';
+import { artifactHint, resolveSelection, computeClosure, groupArtifactsByLanguage, availableKinds, buildLanguageOptions } from './select';
 import type { ClosurePreview } from './select';
+import { getAllTargets } from './targets';
 
 export interface WizardResult {
   /** Platform target (claude or copilot). */
@@ -49,11 +50,18 @@ export async function runWizard(
 ): Promise<WizardResult | null> {
   intro('📦  maku-catalog  —  interactive installer');
 
-  // ── Step 1: target ────────────────────────────────────────────────────────
-  const targetOptions = [
-    { value: 'claude',  label: 'Claude Code',      hint: 'writes to .claude/' },
-    { value: 'copilot', label: 'GitHub Copilot',   hint: 'writes to .github/' },
-  ];
+  // ── Step 1: target — derived from the registered adapters that support `add` ──
+  // Friendly labels/hints for known names; unknown names fall back to the adapter name.
+  const TARGET_META: Record<string, { label: string; hint: string }> = {
+    claude:  { label: 'Claude Code',    hint: 'writes to .claude/' },
+    copilot: { label: 'GitHub Copilot', hint: 'writes to .github/' },
+  };
+  const scaffoldableTargets = getAllTargets().filter(t => Boolean(t.scaffold));
+  const targetOptions = scaffoldableTargets.map(t => ({
+    value: t.name,
+    label: TARGET_META[t.name]?.label ?? t.name,
+    hint:  TARGET_META[t.name]?.hint  ?? '',
+  }));
 
   const target = await select({
     message: `Install target  (detected: ${detectedTarget})`,
@@ -61,6 +69,19 @@ export async function runWizard(
     initialValue: detectedTarget,
   });
   if (isCancel(target)) { cancel('Install cancelled.'); return null; }
+
+  // ── Compute visible artifact set (target's supportedKinds as a filter) ───
+  // This is the "stopper": every subsequent step only shows what this target can install.
+  const chosenTarget = scaffoldableTargets.find(t => t.name === (target as string));
+  const supportedKindSet = new Set<string>(chosenTarget?.supportedKinds ?? []);
+  const visible: ResolvedArtifact[] = supportedKindSet.size === 0
+    ? catalog.artifacts
+    : catalog.artifacts.filter(a => supportedKindSet.has(a.kind));
+
+  if (visible.length === 0) {
+    cancel(`No installable artifacts for target '${target as string}'.`);
+    return null;
+  }
 
   // ── Step 2: scope ─────────────────────────────────────────────────────────
   const packOptions = packs.map(p => ({
@@ -99,26 +120,50 @@ export async function runWizard(
     selectors = [pack as string];
 
   } else if (scope === 'kind') {
-    const kinds = await multiselect({
-      message: 'Which kinds?',
-      options: [
-        { value: 'skill',    label: 'Skills',    hint: 'procedural how-to guides for AI' },
-        { value: 'agent',    label: 'Agents',    hint: 'specialised AI personas' },
-        { value: 'rule',     label: 'Rules',     hint: 'coding style guidelines' },
-        { value: 'prompt',   label: 'Prompts',   hint: 'reusable parameterised prompts' },
-      ] as Array<{ value: string; label: string; hint: string }>,
-      required: true,
+    // Build kind options only from what's actually present in the visible (target-filtered) set.
+    const KIND_META: Record<string, { label: string; hint: string }> = {
+      skill:    { label: 'Skills',    hint: 'procedural how-to guides for AI' },
+      agent:    { label: 'Agents',    hint: 'specialised AI personas' },
+      rule:     { label: 'Rules',     hint: 'coding style guidelines' },
+      prompt:   { label: 'Prompts',   hint: 'reusable parameterised prompts / commands' },
+      workflow: { label: 'Workflows', hint: 'multi-step automated workflows' },
+    };
+    const presentKinds = availableKinds(visible);
+    const kindOptions = presentKinds.map(k => {
+      const count = visible.filter(a => a.kind === k).length;
+      return {
+        value: k as string,
+        label: KIND_META[k]?.label ?? k,
+        hint: `${count} artifact${count !== 1 ? 's' : ''}  — ${KIND_META[k]?.hint ?? ''}`,
+      };
     });
-    if (isCancel(kinds)) { cancel('Install cancelled.'); return null; }
-    selectors = (kinds as string[]).map(k => `kind:${k}`);
+
+    let chosenKinds: string[];
+    if (presentKinds.length === 1) {
+      // Only one kind available — auto-select it to avoid a pointless one-option prompt.
+      const k = presentKinds[0];
+      log.info(`Only ${KIND_META[k]?.label ?? k} available for this target — selected automatically.`);
+      chosenKinds = [k];
+    } else {
+      const kinds = await multiselect({
+        message: 'Which kinds?',
+        options: kindOptions as Array<{ value: string; label: string; hint: string }>,
+        required: true,
+      });
+      if (isCancel(kinds)) { cancel('Install cancelled.'); return null; }
+      chosenKinds = kinds as string[];
+    }
+    selectors = chosenKinds.map(k => `kind:${k}`);
 
   } else {
     // individual — language pre-filter, then grouped multiselect by language
 
     // ── Step 3a: narrow by language (display-only; not saved to WizardResult.language) ─
+    // Derived from the visible (target-filtered) set, not the whole catalog.
     let pickerLanguage: string | undefined;
-    const indivLangOpts = buildLanguageOptions(catalog);
-    if (indivLangOpts.length > 0) {
+    const indivLangOpts = buildLanguageOptions(visible);
+    // Show only when ≥2 distinct languages are available — a 1-language set needs no filter.
+    if (indivLangOpts.length > 1) {
       const langAnswer = await select({
         message: 'Narrow by language?  (filters the list below; you can still pick cross-language later)',
         options: indivLangOpts,
@@ -128,8 +173,16 @@ export async function runWizard(
       pickerLanguage = (langAnswer as string) || undefined;
     }
 
-    // ── Step 3b-individual: grouped picker ───────────────────────────────────────────
-    const byLang = groupArtifactsByLanguage(catalog.artifacts, pickerLanguage);
+    // ── Step 3b-individual: grouped picker (scoped to visible) ───────────────────────
+    const byLang = groupArtifactsByLanguage(visible, pickerLanguage);
+
+    // Stopper: pre-filter may have narrowed to nothing (shouldn't happen in practice,
+    // but handle gracefully so the user gets a clear message rather than an empty picker).
+    const totalFiltered = Object.values(byLang).reduce((n, arr) => n + arr.length, 0);
+    if (totalFiltered === 0) {
+      cancel('No artifacts match the selected language filter.');
+      return null;
+    }
 
     // Convert to groupMultiselect options (Record<groupKey, Option[]>)
     type PickerOption = { value: string; label: string; hint: string };
@@ -155,10 +208,20 @@ export async function runWizard(
 
   // ── Step 3b: language filter (only for scopes that span all languages) ───
   // For 'pack' (language already implied) and 'individual' (explicit picks), skip.
+  // Derives from the running artifact subset so counts and available languages are accurate.
   let language: string | undefined;
   if (scope === 'all' || scope === 'kind') {
-    const langOptions = buildLanguageOptions(catalog);
-    if (langOptions.length > 0) {
+    // For 'kind', further narrow to the chosen kinds so the language list reflects what remains.
+    const subsetForLang: ResolvedArtifact[] = scope === 'kind'
+      ? (() => {
+          const chosenKindSet = new Set(selectors.map(s => s.replace('kind:', '') as ArtifactKind));
+          return visible.filter(a => chosenKindSet.has(a.kind));
+        })()
+      : visible;
+
+    const langOptions = buildLanguageOptions(subsetForLang);
+    // Only show when ≥2 languages exist in the subset (>1 option beyond "All languages").
+    if (langOptions.length > 1) {
       const langAnswer = await select({
         message: 'Filter by language?',
         options: langOptions,
@@ -264,37 +327,6 @@ export async function runWizard(
     overwrite,
     language,
   };
-}
-
-// ── Internal helpers ──────────────────────────────────────────────────────────
-
-/**
- * Builds the language-filter option list shared by:
- *  - Step 3b (all/kind scopes) — language *is* saved to WizardResult.language
- *  - Step 3a-individual — language used only to narrow the picker display
- *
- * Returns an empty array when the catalog has no language-tagged artifacts
- * (caller should skip the select prompt entirely in that case).
- */
-function buildLanguageOptions(
-  catalog: ResolvedCatalog,
-): Array<{ value: string; label: string; hint: string }> {
-  const catalogLanguages = [
-    ...new Set(
-      catalog.artifacts
-        .map(a => a.frontmatter.language as string | undefined)
-        .filter((l): l is string => Boolean(l))
-        .sort(),
-    ),
-  ];
-  if (catalogLanguages.length === 0) return [];
-  return [
-    { value: '', label: 'All languages', hint: catalogLanguages.join(', ') },
-    ...catalogLanguages.map(l => {
-      const count = catalog.artifacts.filter(a => a.frontmatter.language === l).length;
-      return { value: l, label: l, hint: `${count} artifact${count !== 1 ? 's' : ''}` };
-    }),
-  ];
 }
 
 // ── Exported helpers ──────────────────────────────────────────────────────────

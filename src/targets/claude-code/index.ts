@@ -35,6 +35,8 @@ import type {
 } from '../../types';
 import type { AgentFrontmatter } from '../../schema';
 import { yamlScalar } from '../yaml-util';
+import { toClaudePlaceholders, buildArgumentHint } from '../prompt-args';
+import type { PromptArg } from '../prompt-args';
 
 export class ClaudeCodeTarget implements Target {
   readonly name = 'claude';
@@ -332,6 +334,30 @@ export class ClaudeCodeTarget implements Target {
 
   private scaffoldPrompt(prompt: ResolvedArtifact, files: FileMap): void {
     const slug = prompt.id.replace(/\//g, '-');
-    files[`.claude/commands/${slug}.md`] = `# ${prompt.frontmatter.title}\n\n${prompt.body}\n`;
+    const title = prompt.frontmatter.title as string;
+    const description = prompt.frontmatter.description as string;
+    const args = (prompt.frontmatter.args as PromptArg[] | undefined) ?? [];
+
+    // Build YAML frontmatter — argument-hint and arguments are omitted when there are no args.
+    // `description:` feeds the `/` menu label in Claude Code.
+    // `argument-hint:` shows autocomplete hint (e.g. "[diff] [audience]").
+    // `arguments:` declares named positional args so `$name` substitution resolves.
+    const fmLines: string[] = [
+      '---',
+      `description: ${yamlScalar(description)}`,
+    ];
+    if (args.length > 0) {
+      fmLines.push(`argument-hint: ${buildArgumentHint(args)}`);
+      fmLines.push('arguments:');
+      for (const arg of args) {
+        fmLines.push(`  - ${arg.name}`);
+      }
+    }
+    fmLines.push('---');
+
+    // Translate {{name}} placeholders → $name (Claude's $name substitution syntax).
+    const body = toClaudePlaceholders(prompt.body);
+
+    files[`.claude/commands/${slug}.md`] = [fmLines.join('\n'), '', `# ${title}`, '', body, ''].join('\n');
   }
 }

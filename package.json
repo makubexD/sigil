@@ -36,6 +36,7 @@
     "test": "node --test test/pipeline.test.js",
     "validate": "node dist-cli/cli.js validate",
     "catalog:build": "node dist-cli/cli.js build",
+    "maku": "node dist-cli/cli.js",
     "prepack": "npm run build"
   },
   "dependencies": {

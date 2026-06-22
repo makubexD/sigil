@@ -24,6 +24,7 @@ const select_2 = require("../dist-cli/select");
 const platforms_1 = require("../dist-cli/authoring/platforms");
 const check_source_1 = require("../dist-cli/authoring/check-source");
 const header_1 = require("../dist-cli/authoring/header");
+const wizard_1 = require("../dist-cli/wizard");
 const targets_1 = require("../dist-cli/targets");
 const CATALOG_DIR = path_1.default.resolve(__dirname, '../catalog');
 const VERSION = '0.1.0';
@@ -853,6 +854,34 @@ const PACKS = [
         });
     });
     // ── E4 — headerFor ───────────────────────────────────────────────────────────
+    (0, node_test_1.describe)('E5 — buildEquivalentNewCommand', () => {
+        (0, node_test_1.it)('includes kind and --name always', () => {
+            const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'rule', name: 'my-rule' });
+            strict_1.default.ok(cmd.startsWith('maku-catalog new rule'), 'starts with new rule');
+            strict_1.default.ok(cmd.includes('--name my-rule'), '--name present');
+            strict_1.default.ok(cmd.endsWith('--yes'), 'ends with --yes');
+        });
+        (0, node_test_1.it)('omits --language when shared (undefined)', () => {
+            const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'agent', name: 'sql-reviewer' });
+            strict_1.default.ok(!cmd.includes('--language'), '--language absent when shared');
+        });
+        (0, node_test_1.it)('includes --language when specified', () => {
+            const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'skill', name: 'ef-core', language: 'csharp' });
+            strict_1.default.ok(cmd.includes('--language csharp'), '--language present');
+        });
+        (0, node_test_1.it)('omits --platforms when unrestricted (undefined)', () => {
+            const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'prompt', name: 'my-prompt' });
+            strict_1.default.ok(!cmd.includes('--platforms'), '--platforms absent when unrestricted');
+        });
+        (0, node_test_1.it)('includes --platforms when restricted', () => {
+            const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'rule', name: 'my-rule', platforms: ['claude'] });
+            strict_1.default.ok(cmd.includes('--platforms claude'), '--platforms present when restricted');
+        });
+        (0, node_test_1.it)('joins multiple platforms with comma', () => {
+            const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'agent', name: 'rev', platforms: ['claude', 'copilot'] });
+            strict_1.default.ok(cmd.includes('--platforms claude,copilot'), 'multiple platforms comma-joined');
+        });
+    });
     (0, node_test_1.describe)('E4 — headerFor', () => {
         (0, node_test_1.it)('skill header contains required fields', () => {
             const result = (0, header_1.headerFor)('skill', {

@@ -24,6 +24,22 @@ node --test --test-name-pattern "Resolve: extends flattening" test/pipeline.test
 npm run build:watch
 ```
 
+**CLI dev invocation (two options):**
+
+*Primary — `npm link` (one-time setup):*
+```bash
+npm link            # registers a global `maku-catalog` symlink pointing at dist-cli/
+maku-catalog new    # then use the bin name directly from any directory
+```
+The symlink survives rebuilds because it points to `dist-cli/cli.js` by path, not by content. Run `npm unlink -g @maku/agent-catalog` to remove.
+
+*Fallback — npm script wrapper (no global install):*
+```bash
+npm run maku -- new                          # bare wizard
+npm run maku -- new skill --name foo --yes   # flags-only, non-interactive
+npm run maku -- check catalog/shared/...     # the `--` forwards all args to the bin
+```
+
 **Heap-size note:** `tsc` OOMs at the default 4 GB V8 heap on this project because Zod's
 recursive generics force deep type-inference. `npm run build` now sets this automatically via
 `cross-env NODE_OPTIONS=--max-old-space-size=8192` — no manual env-var needed. If you invoke

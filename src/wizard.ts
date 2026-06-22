@@ -9,12 +9,21 @@
  * isInteractiveTTY() before invoking runWizard().
  */
 
-import { intro, outro, select, multiselect, groupMultiselect, confirm, note, log, isCancel, cancel } from '@clack/prompts';
+import { intro, outro, select, multiselect, text, groupMultiselect, confirm, note, log, isCancel, cancel } from '@clack/prompts';
 import type { ResolvedCatalog, Pack, ArtifactKind, Target } from './types';
 import type { ResolvedArtifact } from './types';
 import { artifactHint, resolveSelection, computeClosure, groupArtifactsByLanguage, availableKinds, buildLanguageOptions, kindNoun, kindPlural, kindHint } from './select';
 import type { ClosurePreview } from './select';
 import { getAllTargets } from './targets';
+import { kindSupportingTargets, setPlatforms } from './authoring/platforms';
+
+// ── Shared constants ──────────────────────────────────────────────────────────
+
+/** Friendly labels and install-destination hints for known target names. */
+export const TARGET_META: Record<string, { label: string; hint: string }> = {
+  claude:  { label: 'Claude Code',    hint: 'writes to .claude/' },
+  copilot: { label: 'GitHub Copilot', hint: 'writes to .github/' },
+};
 
 export interface WizardResult {
   /** Platform target (claude or copilot). */
@@ -51,11 +60,6 @@ export async function runWizard(
   intro('📦  maku-catalog  —  interactive installer');
 
   // ── Step 1: target — derived from the registered adapters that support `add` ──
-  // Friendly labels/hints for known names; unknown names fall back to the adapter name.
-  const TARGET_META: Record<string, { label: string; hint: string }> = {
-    claude:  { label: 'Claude Code',    hint: 'writes to .claude/' },
-    copilot: { label: 'GitHub Copilot', hint: 'writes to .github/' },
-  };
   const scaffoldableTargets = getAllTargets().filter(t => Boolean(t.scaffold));
   const targetOptions = scaffoldableTargets.map(t => ({
     value: t.name,
@@ -330,6 +334,171 @@ export async function runWizard(
     overwrite,
     language,
   };
+}
+
+// ─── new artifact wizard ──────────────────────────────────────────────────────
+
+/** Return value of `runNewWizard` — maps 1:1 to `maku-catalog new` CLI flags. */
+export interface NewWizardResult {
+  kind: string;
+  name: string;
+  title: string;
+  description: string;
+  language?: string;
+  platforms?: string[];
+}
+
+/**
+ * Interactive guided wizard for `maku-catalog new`.
+ *
+ * Steps: kind → platforms (DRY default = all pre-checked) → language →
+ *        name / title / description → confirm.
+ *
+ * Caller must check `isInteractiveTTY()` before invoking.
+ * Returns `null` when the user cancels at any step.
+ */
+export async function runNewWizard(
+  catalog: ResolvedCatalog,
+  targets: Target[],
+): Promise<NewWizardResult | null> {
+  intro('✨  maku-catalog new  —  scaffold a new catalog artifact');
+
+  // ── Step 1: Kind ─────────────────────────────────────────────────────────
+  const kindOptions = [
+    { value: 'skill',  label: 'Skill',  hint: 'procedural how-to workflow — invoked when the user asks for guidance' },
+    { value: 'agent',  label: 'Agent',  hint: 'persistent AI persona with an ongoing role' },
+    { value: 'rule',   label: 'Rule',   hint: 'always-on coding convention (style, naming, patterns)' },
+    { value: 'prompt', label: 'Prompt', hint: 'parameterised one-shot command (language-agnostic)' },
+    // workflow is not scaffoldable — shown as info below, not as a selectable option
+  ];
+  log.info('Note: workflow artifacts are not yet scaffoldable via `new`.');
+  const kindAnswer = await select({
+    message: 'What kind of artifact?',
+    options: kindOptions,
+  });
+  if (isCancel(kindAnswer)) { cancel('Scaffold cancelled.'); return null; }
+  const kind = kindAnswer as string;
+
+  // ── Step 2: Platforms (pre-filtered to kind-supporting; all pre-checked = DRY default) ──
+  const supporting = kindSupportingTargets(kind, targets);
+  let platforms: string[] | undefined;
+  if (supporting.length > 1) {
+    const platformOptions = supporting.map(t => ({
+      value: t.name,
+      label: TARGET_META[t.name]?.label ?? t.name,
+      hint:  TARGET_META[t.name]?.hint  ?? '',
+    }));
+    note(
+      'By default, this artifact propagates to EVERY AI that supports its kind (DRY rule).\n' +
+      'Deselect AIs to restrict. You can always widen later with:\n' +
+      '  maku-catalog retarget <id> --add <platform>',
+      'Platform targeting',
+    );
+    const pickedPlatforms = await multiselect({
+      message: 'Which AIs should this artifact propagate to?',
+      options: platformOptions,
+      initialValues: supporting.map(t => t.name),
+      required: true,
+    });
+    if (isCancel(pickedPlatforms)) { cancel('Scaffold cancelled.'); return null; }
+    // Normalize: if all kind-supporting targets selected → undefined (DRY field removed)
+    const { platforms: normalized } = setPlatforms(kind, pickedPlatforms as string[], targets);
+    platforms = normalized;
+  }
+  // Only 1 supporting target: no choice needed — default to all (undefined)
+
+  // ── Step 3: Language ─────────────────────────────────────────────────────
+  const skillRequiresLanguage = kind === 'skill';
+  const langOptions = buildLanguageOptions(catalog.artifacts);
+  // For skills, filter out "All languages" (blank value = shared is not allowed)
+  const filteredLangOptions = skillRequiresLanguage
+    ? langOptions.filter(o => o.value !== '')
+    : langOptions;
+
+  let language: string | undefined;
+  if (filteredLangOptions.length > 0) {
+    const langAnswer = await select({
+      message: skillRequiresLanguage
+        ? 'Language?  (skills must belong to a specific language)'
+        : 'Language?  (choose a language or "All languages / shared")',
+      options: filteredLangOptions,
+      initialValue: filteredLangOptions[0].value,
+    });
+    if (isCancel(langAnswer)) { cancel('Scaffold cancelled.'); return null; }
+    language = (langAnswer as string) || undefined;
+  }
+
+  // ── Step 4: Name / Title / Description ────────────────────────────────────
+  const isKebabCase = (s: string) => /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s);
+
+  const nameAnswer = await text({
+    message: 'Artifact name  (kebab-case, e.g. ef-core-migrations)',
+    placeholder: `new-${kind}`,
+    validate(v) {
+      const s = (v ?? '').trim();
+      if (!s) return 'Name is required.';
+      if (!isKebabCase(s)) return 'Name must be kebab-case: lowercase letters, digits, hyphens only.';
+    },
+  });
+  if (isCancel(nameAnswer)) { cancel('Scaffold cancelled.'); return null; }
+  const name = (nameAnswer as string).trim();
+
+  const titleDefault = name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  const titleAnswer = await text({
+    message: 'Title  (human-readable, e.g. "EF Core Migrations")',
+    placeholder: titleDefault,
+  });
+  if (isCancel(titleAnswer)) { cancel('Scaffold cancelled.'); return null; }
+  const title = ((titleAnswer as string) || '').trim() || titleDefault;
+
+  const descAnswer = await text({
+    message: 'Description  (one-liner for catalog listings)',
+    placeholder: `${title} — TODO`,
+  });
+  if (isCancel(descAnswer)) { cancel('Scaffold cancelled.'); return null; }
+  const description = ((descAnswer as string) || '').trim() || `TODO — ${name} description.`;
+
+  // ── Step 5: Confirm ──────────────────────────────────────────────────────
+  const idPrefix = language ?? 'shared';
+  const id = `${idPrefix}/${name}`;
+  const platformSummary = platforms ? platforms.join(', ') : 'all supporting AIs (DRY default)';
+  note(
+    [
+      `Kind:         ${kind}`,
+      `ID:           ${id}`,
+      `Title:        ${title}`,
+      `Description:  ${description}`,
+      `Platforms:    ${platformSummary}`,
+    ].join('\n'),
+    'New artifact summary',
+  );
+
+  const proceed = await confirm({ message: 'Create this artifact?' });
+  if (isCancel(proceed) || !proceed) { cancel('Scaffold cancelled.'); return null; }
+
+  outro('Creating artifact…');
+
+  return { kind, name, title, description, language, platforms };
+}
+
+/**
+ * Builds a copy-pasteable `maku-catalog new … --yes` command string from a
+ * wizard result (or equivalent set of flags).
+ * Omits --language when shared; omits --platforms when unrestricted (DRY default).
+ */
+export function buildEquivalentNewCommand(result: {
+  kind: string;
+  name: string;
+  language?: string;
+  platforms?: string[];
+}): string {
+  const parts = ['maku-catalog new', result.kind, `--name ${result.name}`];
+  if (result.language) parts.push(`--language ${result.language}`);
+  if (result.platforms && result.platforms.length > 0) {
+    parts.push(`--platforms ${result.platforms.join(',')}`);
+  }
+  parts.push('--yes');
+  return parts.join(' ');
 }
 
 // ── Exported helpers ──────────────────────────────────────────────────────────

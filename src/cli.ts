@@ -22,7 +22,7 @@ import { validateCatalog } from './validate';
 import { resolveCatalog } from './resolve';
 import { getAllTargets, getTarget } from './targets';
 import { resolveSelection } from './select';
-import { isInteractiveTTY, runWizard, buildEquivalentCommand, printEquivalentCommand, printConflictAdvice, printSkippedAdvice } from './wizard';
+import { isInteractiveTTY, runWizard, runNewWizard, buildEquivalentCommand, buildEquivalentNewCommand, printEquivalentCommand, printConflictAdvice, printSkippedAdvice } from './wizard';
 import { checkOutputContract } from './targets/output-contract';
 import { checkSourceArtifact } from './authoring/check-source';
 import { headerFor } from './authoring/header';
@@ -483,63 +483,126 @@ program
 // ─── new ──────────────────────────────────────────────────────────────────────
 
 program
-  .command('new <kind>')
-  .description('Scaffold an authoring template for a new catalog artifact.')
-  .option('--language <lang>', 'Language (e.g. csharp, python, react)')
+  .command('new [kind]')
+  .description(
+    'Scaffold an authoring template for a new catalog artifact.\n\n' +
+    'When run with no arguments in an interactive terminal, launches a guided\n' +
+    'wizard (kind → platforms → language → name/title/description → confirm).\n\n' +
+    'Valid kinds: skill, agent, rule, prompt\n\n' +
+    'Examples:\n' +
+    '  maku-catalog new                                  # guided wizard\n' +
+    '  maku-catalog new skill --name ef-core --language csharp --yes\n' +
+    '  maku-catalog new rule --name my-rule --platforms claude --yes',
+  )
+  .option('--language <lang>', 'Language (e.g. csharp, python, react). Omit for shared/cross-language.')
   .option('--name <name>', 'Artifact name (kebab-case)')
   .option('--catalog-dir <dir>', 'Path to the catalog/ directory', resolveDefault('catalog'))
-  .option('--platforms <list>', 'Comma-separated target platforms to restrict to (e.g. claude,copilot). Omit for all (DRY default).')
-  .action(async (kind: string, opts: { language?: string; name?: string; catalogDir: string; platforms?: string }) => {
+  .option('--platforms <list>', 'Comma-separated platforms to restrict to (e.g. claude,copilot). Omit for all (DRY default).')
+  .option('--yes', 'Non-interactive: skip wizard. Requires explicit kind and --name.')
+  .option('-i, --interactive', 'Force the guided wizard even when kind is provided.')
+  .action(async (kind: string | undefined, opts: {
+    language?: string;
+    name?: string;
+    catalogDir: string;
+    platforms?: string;
+    yes?: boolean;
+    interactive?: boolean;
+  }) => {
     const validKinds = ['skill', 'agent', 'rule', 'prompt', 'workflow'];
-    if (!validKinds.includes(kind)) {
-      console.error(`✗ Unknown kind '${kind}'. Valid kinds: ${validKinds.join(', ')}`);
-      process.exit(1);
+    const scaffoldableKinds = validKinds.filter(k => k !== 'workflow');
+
+    // ── Wizard vs flags dispatch ────────────────────────────────────────────
+    const needsWizard = (!kind || opts.interactive) && !opts.yes;
+    const isTTY = isInteractiveTTY();
+
+    let effectiveKind: string = kind ?? '';
+    let effectiveName: string | undefined = opts.name;
+    let effectiveLanguage: string | undefined = opts.language;
+    let effectiveTitle: string | undefined;
+    let effectiveDescription: string | undefined;
+    let restrictedPlatforms: string[] | undefined;
+
+    if (needsWizard) {
+      if (!isTTY) {
+        console.error(
+          '✗ No kind provided and stdin/stdout is not an interactive terminal.\n' +
+          `  Provide a kind: maku-catalog new <kind> --name <name> --yes\n` +
+          `  Valid kinds: ${scaffoldableKinds.join(', ')}\n\n` +
+          '  Or run in an interactive terminal to use the guided wizard.',
+        );
+        process.exit(1);
+      }
+      // Load catalog for the wizard (language list + reference data)
+      const rawCatalog = await loadCatalog(opts.catalogDir);
+      const resolved = resolveCatalog(rawCatalog);
+      const targets = getAllTargets();
+      const wizardResult = await runNewWizard(resolved, targets);
+      if (!wizardResult) return;
+      effectiveKind     = wizardResult.kind;
+      effectiveName     = wizardResult.name;
+      effectiveLanguage = wizardResult.language;
+      effectiveTitle    = wizardResult.title;
+      effectiveDescription = wizardResult.description;
+      restrictedPlatforms  = wizardResult.platforms;
+    } else {
+      // Flags path — validate inputs
+      if (!effectiveKind) {
+        console.error(
+          '✗ No kind specified and --yes skips the wizard.\n' +
+          `  Provide a kind: maku-catalog new <kind> --name <name> --yes\n` +
+          `  Valid kinds: ${scaffoldableKinds.join(', ')}`,
+        );
+        process.exit(1);
+      }
+      if (!validKinds.includes(effectiveKind)) {
+        console.error(`✗ Unknown kind '${effectiveKind}'. Valid kinds: ${validKinds.join(', ')}`);
+        process.exit(1);
+      }
+      // Parse --platforms flag
+      if (opts.platforms) {
+        const requestedPlatforms = opts.platforms.split(',').map(p => p.trim()).filter(Boolean);
+        const targets = getAllTargets();
+        const { platforms: normalized, errors } = setPlatforms(effectiveKind, requestedPlatforms, targets);
+        if (errors.length > 0) {
+          for (const e of errors) console.error(`  ✗  ${e}`);
+          process.exit(1);
+        }
+        restrictedPlatforms = normalized;
+      }
     }
 
-    const name = opts.name ?? `new-${kind}`;
-    const lang = opts.language ?? 'shared';
+    // ── Unified scaffolding (unchanged logic, now driven by effective* vars) ──
+    const name = effectiveName ?? `new-${effectiveKind}`;
+    const lang = effectiveLanguage ?? 'shared';
     const idPrefix = lang === 'shared' ? 'shared' : lang;
     const id = `${idPrefix}/${name}`;
 
-    // Parse platforms restriction (absent = all supporting targets)
-    let restrictedPlatforms: string[] | undefined;
-    if (opts.platforms) {
-      const requestedPlatforms = opts.platforms.split(',').map(p => p.trim()).filter(Boolean);
-      const targets = getAllTargets();
-      const { platforms: normalized, errors } = setPlatforms(kind, requestedPlatforms, targets);
-      if (errors.length > 0) {
-        for (const e of errors) console.error(`  ✗  ${e}`);
-        process.exit(1);
-      }
-      restrictedPlatforms = normalized;
-    }
-
     // Build the header from the schema-derived generator
-    const header = headerFor(kind, {
+    const header = headerFor(effectiveKind, {
       id,
-      kind,
-      title: `TODO — ${name}`,
-      description: 'TODO — one-line description used in catalog listings.',
-      name: (kind === 'skill' || kind === 'agent') ? name : undefined,
+      kind: effectiveKind,
+      title: effectiveTitle ?? `TODO — ${name}`,
+      description: effectiveDescription ?? 'TODO — one-line description used in catalog listings.',
+      name: (effectiveKind === 'skill' || effectiveKind === 'agent') ? name : undefined,
       language: lang !== 'shared' ? lang : undefined,
       platforms: restrictedPlatforms,
     });
 
     let outPath: string;
 
-    if (kind === 'skill') {
+    if (effectiveKind === 'skill') {
       const dir = lang === 'shared'
         ? path.join(opts.catalogDir, 'shared', 'skills', name)
         : path.join(opts.catalogDir, 'languages', lang, 'skills', name);
       fs.mkdirSync(dir, { recursive: true });
       outPath = path.join(dir, 'SKILL.md');
     } else {
-      const folder = `${kind}s`;
+      const folder = `${effectiveKind}s`;
       const dir = lang === 'shared'
         ? path.join(opts.catalogDir, 'shared', folder)
         : path.join(opts.catalogDir, 'languages', lang, folder);
       fs.mkdirSync(dir, { recursive: true });
-      outPath = path.join(dir, `${name}.${kind}.md`);
+      outPath = path.join(dir, `${name}.${effectiveKind}.md`);
     }
 
     // Check for existing file
@@ -554,9 +617,34 @@ program
     if (restrictedPlatforms) {
       console.log(`  platforms: [${restrictedPlatforms.join(', ')}]  (run: maku-catalog retarget ${id} --to all to propagate to all AIs)`);
     } else {
-      console.log(`  platforms: all supporting AIs (DRY default — edit frontmatter or run: maku-catalog retarget ${id} --add|remove <platform> to adjust)`);
+      console.log(`  platforms: all supporting AIs (DRY default — run: maku-catalog retarget ${id} --add|remove <platform> to adjust)`);
     }
-    console.log(`  Fill in the title, description, and body, then run: maku-catalog check ${outPath}`);
+
+    // ── Auto-validate the newly created file ──────────────────────────────
+    try {
+      const catalog = await loadCatalog(opts.catalogDir);
+      const targets = getAllTargets();
+      const normPath = (p: string) => p.replace(/\\/g, '/');
+      const artifact = catalog.artifacts.find(a => normPath(a.filePath) === normPath(outPath));
+      if (artifact) {
+        const violations = checkSourceArtifact(artifact, catalog, targets);
+        if (violations.length === 0) {
+          console.log('  ✓ source validation passed');
+        } else {
+          console.log('  ✗ source validation found issues:');
+          for (const v of violations) console.log(`    ${v.problem}`);
+        }
+      }
+    } catch (_e) {
+      // Catalog reload failed (unlikely) — point to manual check
+    }
+    console.log(`  Next: fill in the body, then run: maku-catalog check ${outPath}`);
+
+    // ── Print equivalent non-interactive command (wizard path only) ────────
+    if (needsWizard) {
+      const cmd = buildEquivalentNewCommand({ kind: effectiveKind, name, language: effectiveLanguage, platforms: restrictedPlatforms });
+      printEquivalentCommand(cmd, isTTY);
+    }
   });
 
 // ─── check ────────────────────────────────────────────────────────────────────

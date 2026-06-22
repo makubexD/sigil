@@ -16,6 +16,11 @@ import { CopilotTarget } from '../dist-cli/targets/copilot';
 import { toClaudePlaceholders, toCopilotPlaceholders, buildArgumentHint } from '../dist-cli/targets/prompt-args';
 import { checkOutputContract } from '../dist-cli/targets/output-contract';
 import type { PromptArg } from '../dist-cli/targets/prompt-args';
+import { artifactTargetsPlatform } from '../dist-cli/select';
+import { effectivePlatforms, isFullCoverage, normalizePlatforms, addPlatforms, removePlatforms } from '../dist-cli/authoring/platforms';
+import { checkSourceArtifact } from '../dist-cli/authoring/check-source';
+import { headerFor } from '../dist-cli/authoring/header';
+import { getAllTargets } from '../dist-cli/targets';
 
 const CATALOG_DIR = path.resolve(__dirname, '../catalog');
 const VERSION = '0.1.0';
@@ -878,4 +883,242 @@ describe('checkOutputContract — red paths (violations detected)', () => {
     const violations = checkOutputContract(irrelevantFiles, target.outputContracts ?? []);
     assert.deepEqual(violations, [], 'aggregate files should not trigger false violations');
   });
+});
+
+// ─── Part E — platforms field + source validation ──────────────────────────────
+
+describe('Part E — platforms field + source validation', () => {
+
+  // ── E1 — artifactTargetsPlatform helper ─────────────────────────────────────
+
+  describe('E1 — artifactTargetsPlatform helper', () => {
+    it('absent platforms → always true', () => {
+      const a = { frontmatter: {} };
+      assert.equal(artifactTargetsPlatform(a, 'claude'), true);
+    });
+
+    it('empty platforms array → true', () => {
+      const a = { frontmatter: { platforms: [] } };
+      assert.equal(artifactTargetsPlatform(a, 'copilot'), true);
+    });
+
+    it('platforms match → true', () => {
+      const a = { frontmatter: { platforms: ['claude'] } };
+      assert.equal(artifactTargetsPlatform(a, 'claude'), true);
+    });
+
+    it('platforms mismatch → false', () => {
+      const a = { frontmatter: { platforms: ['claude'] } };
+      assert.equal(artifactTargetsPlatform(a, 'copilot'), false);
+    });
+  });
+
+  // ── E2 — platforms math ──────────────────────────────────────────────────────
+
+  describe('E2 — platforms math', () => {
+    it('effectivePlatforms: absent → all supporting targets', () => {
+      const targets = getAllTargets();
+      const result = effectivePlatforms('skill', undefined, targets);
+      assert.ok(result.includes('claude'), 'claude in effective platforms');
+      assert.ok(result.includes('copilot'), 'copilot in effective platforms');
+    });
+
+    it('effectivePlatforms: restricted → subset', () => {
+      const targets = getAllTargets();
+      const result = effectivePlatforms('skill', ['claude'], targets);
+      assert.deepEqual(result, ['claude']);
+    });
+
+    it('isFullCoverage: full set → true', () => {
+      const targets = getAllTargets();
+      const allNames = targets.map(t => t.name);
+      assert.equal(isFullCoverage('skill', allNames, targets), true);
+    });
+
+    it('normalizePlatforms: full set → undefined', () => {
+      const targets = getAllTargets();
+      const allNames = targets.map(t => t.name);
+      assert.equal(normalizePlatforms('skill', allNames, targets), undefined);
+    });
+
+    it('addPlatforms: add already covered → noOp=true', () => {
+      const targets = getAllTargets();
+      const result = addPlatforms('skill', ['claude', 'copilot'], ['claude'], targets);
+      assert.equal(result.noOp, true, 'adding an already-covered platform is a noOp');
+    });
+
+    it('removePlatforms: remove all → errors not empty', () => {
+      const targets = getAllTargets();
+      const result = removePlatforms('skill', ['claude'], ['claude'], targets);
+      assert.ok(result.errors.length > 0, 'removing the last platform should produce an error');
+      assert.ok(
+        result.errors[0].includes('Cannot remove all') || result.errors[0].includes('no platform'),
+        `error message should mention platform removal constraint — got: ${result.errors[0]}`,
+      );
+    });
+  });
+
+  // ── E3 — checkSourceArtifact ─────────────────────────────────────────────────
+
+  describe('E3 — checkSourceArtifact', () => {
+    it('existing valid artifact → no violations', async () => {
+      const catalog = await loadCatalog(CATALOG_DIR);
+      const skill = catalog.byId.get('csharp/xunit-testing');
+      assert.ok(skill, 'csharp/xunit-testing must exist in catalog');
+      const targets = getAllTargets();
+      const violations = checkSourceArtifact(skill, catalog, targets);
+      assert.deepEqual(
+        violations,
+        [],
+        `Expected no violations for a valid artifact, got:\n${violations.map(v => v.problem).join('\n')}`,
+      );
+    });
+
+    it('id mismatch → violation', async () => {
+      const catalog = await loadCatalog(CATALOG_DIR);
+      const real = catalog.byId.get('csharp/xunit-testing');
+      assert.ok(real, 'csharp/xunit-testing must exist');
+      // id name segment ('wrong-id') doesn't match the frontmatter name ('xunit-testing')
+      const synthetic = {
+        ...real,
+        id: 'csharp/wrong-id',
+        frontmatter: { ...real.frontmatter, id: 'csharp/wrong-id' },
+      };
+      const targets = getAllTargets();
+      const violations = checkSourceArtifact(synthetic, catalog, targets);
+      assert.ok(violations.length > 0, 'expected at least one violation for id/name mismatch');
+    });
+
+    it('unknown platforms → violation', async () => {
+      const catalog = await loadCatalog(CATALOG_DIR);
+      const real = catalog.byId.get('shared/clean-code');
+      assert.ok(real, 'shared/clean-code must exist');
+      const synthetic = {
+        ...real,
+        frontmatter: { ...real.frontmatter, platforms: ['nonexistent-target'] },
+      };
+      const targets = getAllTargets();
+      const violations = checkSourceArtifact(synthetic, catalog, targets);
+      assert.ok(
+        violations.some(v => v.problem.includes('nonexistent-target')),
+        `expected violation mentioning unknown platform — got: ${violations.map(v => v.problem).join('; ')}`,
+      );
+    });
+
+    it('kebab-case violation → violation', async () => {
+      const catalog = await loadCatalog(CATALOG_DIR);
+      const real = catalog.byId.get('csharp/xunit-testing');
+      assert.ok(real, 'csharp/xunit-testing must exist');
+      // name 'Not_Kebab' is not kebab-case; id name must also match, so keep them in sync
+      const synthetic = {
+        ...real,
+        id: 'csharp/Not_Kebab',
+        frontmatter: { ...real.frontmatter, id: 'csharp/Not_Kebab', name: 'Not_Kebab' },
+      };
+      const targets = getAllTargets();
+      const violations = checkSourceArtifact(synthetic, catalog, targets);
+      assert.ok(
+        violations.some(v => v.problem.includes('kebab-case')),
+        `expected kebab-case violation — got: ${violations.map(v => v.problem).join('; ')}`,
+      );
+    });
+
+    it('dep coverage drift → violation', () => {
+      // Build a minimal fake catalog: a skill restricted to copilot that uses a
+      // rule restricted to claude only. The dep checker should flag the drift.
+      const fakeRule = {
+        id: 'fake/restricted-rule',
+        kind: 'rule' as const,
+        filePath: '/fake/restricted-rule.rule.md',
+        frontmatter: {
+          id: 'fake/restricted-rule',
+          kind: 'rule',
+          title: 'Restricted Rule',
+          description: 'A rule restricted to claude only.',
+          severity: 'recommended',
+          appliesTo: ['**/*'],
+          platforms: ['claude'],
+        },
+        body: '- Rule body.',
+      };
+      const fakeSkill = {
+        id: 'fake/drift-skill',
+        kind: 'skill' as const,
+        filePath: '/fake/drift-skill/SKILL.md',
+        frontmatter: {
+          id: 'fake/drift-skill',
+          kind: 'skill',
+          title: 'Drift Skill',
+          description: 'A skill targeting copilot that uses a claude-only rule.',
+          name: 'drift-skill',
+          language: 'fake',
+          platforms: ['copilot'],
+          uses: { rules: ['fake/restricted-rule'] },
+        },
+        body: 'Skill body.',
+      };
+      const fakeCatalog = {
+        artifacts: [fakeRule as any, fakeSkill as any],
+        byId: new Map<string, any>([
+          [fakeRule.id, fakeRule],
+          [fakeSkill.id, fakeSkill],
+        ]),
+        languages: new Map<string, any>(),
+      };
+      const targets = getAllTargets();
+      const violations = checkSourceArtifact(fakeSkill as any, fakeCatalog as any, targets);
+      assert.ok(
+        violations.some(v => v.problem.includes('coverage drift') || v.problem.includes('restricted')),
+        `expected a coverage drift violation — got: ${violations.map(v => v.problem).join('; ')}`,
+      );
+    });
+  });
+
+  // ── E4 — headerFor ───────────────────────────────────────────────────────────
+
+  describe('E4 — headerFor', () => {
+    it('skill header contains required fields', () => {
+      const result = headerFor('skill', {
+        id: 'csharp/foo',
+        kind: 'skill',
+        title: 'Foo',
+        description: 'Foo desc',
+        name: 'foo',
+        language: 'csharp',
+      });
+      assert.ok(result.includes('id: csharp/foo'), 'id field present');
+      assert.ok(result.includes('kind: skill'), 'kind field present');
+      assert.ok(result.includes('name: foo'), 'name field present');
+      assert.ok(result.includes('language: csharp'), 'language field present');
+    });
+
+    it('restricted platforms emitted active', () => {
+      const result = headerFor('rule', {
+        id: 'shared/bar',
+        kind: 'rule',
+        title: 'Bar',
+        description: 'Bar desc',
+        platforms: ['claude'],
+      });
+      // Active platforms: block should be present (not commented out)
+      assert.ok(result.includes('platforms:'), 'platforms: key present');
+      assert.ok(result.includes('  - claude'), '  - claude entry present');
+    });
+
+    it('unrestricted platforms emitted as comment only', () => {
+      const result = headerFor('agent', {
+        id: 'shared/baz',
+        kind: 'agent',
+        title: 'Baz',
+        description: 'Baz desc',
+        name: 'baz',
+      });
+      // Comment-only platforms hint should be present
+      assert.ok(result.includes('# platforms:'), '# platforms: comment present');
+      // No active (non-comment) platforms: line should exist
+      const activeplatformsLine = result.split('\n').find(l => /^platforms:/.test(l));
+      assert.equal(activeplatformsLine, undefined, 'no active platforms: line when not restricted');
+    });
+  });
+
 });

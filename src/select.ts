@@ -57,6 +57,7 @@ export function resolveSelection(
   catalog: ResolvedCatalog,
   packs: Pack[],
   supportedKinds: ArtifactKind[],
+  targetName?: string,
 ): SelectionResult {
   const candidateIds: string[] = [];
   const seen = new Set<string>();
@@ -153,6 +154,13 @@ export function resolveSelection(
         kind: a.kind,
         reason: `kind '${a.kind}' is not supported for this target`,
       });
+    } else if (targetName && !artifactTargetsPlatform(a, targetName)) {
+      const restricted = (a.frontmatter.platforms as string[]).join(', ');
+      skipped.push({
+        id: a.id,
+        kind: a.kind,
+        reason: `restricted to platforms: [${restricted}]`,
+      });
     } else {
       ids.push(a.id);
     }
@@ -210,6 +218,23 @@ export function kindPlural(target: Target | undefined, kind: string): string {
  */
 export function kindHint(target: Target | undefined, kind: string): string | undefined {
   return target?.vocabulary?.[kind as ArtifactKind]?.hint;
+}
+
+/**
+ * Returns true if the artifact should be emitted to the given platform/target.
+ *
+ * - When `platforms` is absent or empty, the artifact targets ALL platforms (DRY default).
+ * - When `platforms` is present, it must include targetName.
+ *
+ * This implements the opt-in restriction model: you only restrict when you mean to.
+ */
+export function artifactTargetsPlatform(
+  artifact: { frontmatter: Record<string, unknown> },
+  targetName: string,
+): boolean {
+  const platforms = artifact.frontmatter.platforms as string[] | undefined;
+  if (!platforms || platforms.length === 0) return true;
+  return platforms.includes(targetName);
 }
 
 // ─── Closure preview ──────────────────────────────────────────────────────────

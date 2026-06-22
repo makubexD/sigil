@@ -124,6 +124,14 @@ export interface OutputViolation {
   problem: string;
 }
 
+/** A single source-convention violation found by checkSourceArtifact. */
+export interface SourceViolation {
+  /** Absolute or relative file path of the artifact that failed. */
+  file: string;
+  /** The specific problem detected. */
+  problem: string;
+}
+
 // ─── Pack config (from packs.yaml) ───────────────────────────────────────────
 
 export interface Pack {

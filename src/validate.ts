@@ -8,9 +8,10 @@
  *   3. No cycles in the `extends` graph.
  */
 import type { LoadedCatalog, ValidationError, ValidationResult } from './types';
+import type { Target, ArtifactKind } from './types';
 import { getSchema } from './schema/index';
 
-export function validateCatalog(catalog: LoadedCatalog): ValidationResult {
+export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[]): ValidationResult {
   const errors: ValidationError[] = [];
   const warnings: string[] = [];
 
@@ -107,6 +108,32 @@ export function validateCatalog(catalog: LoadedCatalog): ValidationResult {
           filePath: artifact.filePath,
           error: `Dangling workflow step reference: '${step.ref}' does not exist in the catalog`,
         });
+      }
+    }
+
+    // ── 4. platforms: field validation ─────────────────────────────────────
+    if (knownTargets && knownTargets.length > 0) {
+      const platforms = artifact.frontmatter.platforms as string[] | undefined;
+      if (platforms && platforms.length > 0) {
+        const allTargetNames = new Set(knownTargets.map(t => t.name));
+        const kindSupporting = new Set(
+          knownTargets
+            .filter(t => !t.supportedKinds || t.supportedKinds.includes(artifact.kind as ArtifactKind))
+            .map(t => t.name),
+        );
+        for (const p of platforms) {
+          if (!allTargetNames.has(p)) {
+            errors.push({
+              artifactId: artifact.id,
+              filePath: artifact.filePath,
+              error: `platforms: '${p}' is not a registered target. Known: ${[...allTargetNames].join(', ')}`,
+            });
+          } else if (!kindSupporting.has(p)) {
+            warnings.push(
+              `[${artifact.id}] platforms: '${p}' does not support kind '${artifact.kind}' — this platform will never emit this artifact`,
+            );
+          }
+        }
       }
     }
   }

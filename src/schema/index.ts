@@ -26,6 +26,17 @@ const BaseFields = {
    * the single version); supported for future per-artifact versioning.
    */
   version: z.string().optional(),
+  /**
+   * Optional: restrict this artifact to a subset of platforms.
+   * Absent (the default) = emits to every registered target whose supportedKinds
+   * includes this kind — the DRY auto-propagation default.
+   * Present = emits only to the listed target names, intersected with targets
+   * that actually support the kind.
+   * Normalization rule: if the set equals all kind-supporting targets, remove
+   * this field rather than listing them all.
+   * Valid names are registered target names (e.g. "claude", "copilot").
+   */
+  platforms: z.array(z.string()).optional(),
 };
 
 // ─── Skill ───────────────────────────────────────────────────────────────────

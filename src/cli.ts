@@ -24,6 +24,10 @@ import { getAllTargets, getTarget } from './targets';
 import { resolveSelection } from './select';
 import { isInteractiveTTY, runWizard, buildEquivalentCommand, printEquivalentCommand, printConflictAdvice, printSkippedAdvice } from './wizard';
 import { checkOutputContract } from './targets/output-contract';
+import { checkSourceArtifact } from './authoring/check-source';
+import { headerFor } from './authoring/header';
+import { addPlatforms, removePlatforms, setPlatforms } from './authoring/platforms';
+import { artifactTargetsPlatform } from './select';
 import type { FileMap, PacksConfig } from './types';
 
 const pkg = JSON.parse(
@@ -70,11 +74,17 @@ program
       ? getAllTargets()
       : [getTarget(opts.target)];
 
+    /** Filter a resolved catalog to only artifacts targeting a given platform. */
+    const filterForTarget = (name: string) => {
+      const filtered = resolved.artifacts.filter(a => artifactTargetsPlatform(a, name));
+      return { ...resolved, artifacts: filtered, byId: new Map(filtered.map(a => [a.id, a])) };
+    };
+
     const compileOpts = { version: pkg.version, packs: packsConfig.packs };
 
     for (const target of targets) {
       console.log(`\nBuilding target: ${target.name}`);
-      const files = await target.compile(resolved, compileOpts);
+      const files = await target.compile(filterForTarget(target.name), compileOpts);
 
       // Output-conformance check: verify emitted file shapes match the target's contracts.
       const violations = checkOutputContract(files, target.outputContracts ?? []);
@@ -104,7 +114,7 @@ program
   .action(async (opts: { catalogDir: string; packs: string }) => {
     console.log(`Validating catalog at: ${opts.catalogDir}`);
     const catalog = await loadCatalog(opts.catalogDir);
-    const result = validateCatalog(catalog);
+    const result = validateCatalog(catalog, getAllTargets());
 
     for (const w of result.warnings) console.warn(`  ⚠  ${w}`);
     for (const e of result.errors) {
@@ -293,6 +303,7 @@ program
         resolved,
         packsConfig.packs,
         target.supportedKinds ?? [],
+        targetName,
       );
       ids = result.ids;
       skipped = result.skipped;
@@ -477,7 +488,8 @@ program
   .option('--language <lang>', 'Language (e.g. csharp, python, react)')
   .option('--name <name>', 'Artifact name (kebab-case)')
   .option('--catalog-dir <dir>', 'Path to the catalog/ directory', resolveDefault('catalog'))
-  .action((kind: string, opts: { language?: string; name?: string; catalogDir: string }) => {
+  .option('--platforms <list>', 'Comma-separated target platforms to restrict to (e.g. claude,copilot). Omit for all (DRY default).')
+  .action(async (kind: string, opts: { language?: string; name?: string; catalogDir: string; platforms?: string }) => {
     const validKinds = ['skill', 'agent', 'rule', 'prompt', 'workflow'];
     if (!validKinds.includes(kind)) {
       console.error(`✗ Unknown kind '${kind}'. Valid kinds: ${validKinds.join(', ')}`);
@@ -489,7 +501,30 @@ program
     const idPrefix = lang === 'shared' ? 'shared' : lang;
     const id = `${idPrefix}/${name}`;
 
-    const template = buildTemplate(kind, id, name, lang);
+    // Parse platforms restriction (absent = all supporting targets)
+    let restrictedPlatforms: string[] | undefined;
+    if (opts.platforms) {
+      const requestedPlatforms = opts.platforms.split(',').map(p => p.trim()).filter(Boolean);
+      const targets = getAllTargets();
+      const { platforms: normalized, errors } = setPlatforms(kind, requestedPlatforms, targets);
+      if (errors.length > 0) {
+        for (const e of errors) console.error(`  ✗  ${e}`);
+        process.exit(1);
+      }
+      restrictedPlatforms = normalized;
+    }
+
+    // Build the header from the schema-derived generator
+    const header = headerFor(kind, {
+      id,
+      kind,
+      title: `TODO — ${name}`,
+      description: 'TODO — one-line description used in catalog listings.',
+      name: (kind === 'skill' || kind === 'agent') ? name : undefined,
+      language: lang !== 'shared' ? lang : undefined,
+      platforms: restrictedPlatforms,
+    });
+
     let outPath: string;
 
     if (kind === 'skill') {
@@ -499,7 +534,7 @@ program
       fs.mkdirSync(dir, { recursive: true });
       outPath = path.join(dir, 'SKILL.md');
     } else {
-      const folder = `${kind}s`; // e.g. "rules", "agents", "prompts"
+      const folder = `${kind}s`;
       const dir = lang === 'shared'
         ? path.join(opts.catalogDir, 'shared', folder)
         : path.join(opts.catalogDir, 'languages', lang, folder);
@@ -507,9 +542,242 @@ program
       outPath = path.join(dir, `${name}.${kind}.md`);
     }
 
-    fs.writeFileSync(outPath, template, 'utf-8');
+    // Check for existing file
+    if (fs.existsSync(outPath)) {
+      console.error(`✗ File already exists: ${outPath}`);
+      console.error('  Use a different --name, or delete the existing file first.');
+      process.exit(1);
+    }
+
+    fs.writeFileSync(outPath, header, 'utf-8');
     console.log(`✓ Created: ${outPath}`);
-    console.log('  Fill in the frontmatter and body, then run `maku-catalog validate`.');
+    if (restrictedPlatforms) {
+      console.log(`  platforms: [${restrictedPlatforms.join(', ')}]  (run: maku-catalog retarget ${id} --to all to propagate to all AIs)`);
+    } else {
+      console.log(`  platforms: all supporting AIs (DRY default — edit frontmatter or run: maku-catalog retarget ${id} --add|remove <platform> to adjust)`);
+    }
+    console.log(`  Fill in the title, description, and body, then run: maku-catalog check ${outPath}`);
+  });
+
+// ─── check ────────────────────────────────────────────────────────────────────
+
+program
+  .command('check [files...]')
+  .description(
+    'Validate one or more catalog source artifact files against schema + source conventions.\n\n' +
+    'Checks: zod schema, id↔path↔language consistency, kebab-case names,\n' +
+    'duplicate ids, reference integrity, valid platforms: values, and dependency coverage drift.\n\n' +
+    'Exits non-zero when any violation is found.\n\n' +
+    'Examples:\n' +
+    '  maku-catalog check catalog/languages/csharp/skills/xunit-testing/SKILL.md\n' +
+    '  maku-catalog check catalog/shared/rules/clean-code.rule.md\n' +
+    '  maku-catalog check catalog/  # check all artifacts in a directory',
+  )
+  .option('--catalog-dir <dir>', 'Path to the catalog/ directory', resolveDefault('catalog'))
+  .option('--schema-only', 'Only run zod schema validation (skip path/id/reference checks)', false)
+  .action(async (files: string[], opts: { catalogDir: string; schemaOnly: boolean }) => {
+    // Load the full catalog for reference-integrity and dup-id checks
+    const catalog = await loadCatalog(opts.catalogDir);
+    const targets = getAllTargets();
+
+    // Normalize path separators (fast-glob returns forward slashes; path.resolve returns OS-native)
+    const normPath = (p: string) => p.replace(/\\/g, '/');
+
+    // Resolve which files to check
+    let filesToCheck: string[] = files;
+    if (filesToCheck.length === 0) {
+      console.error('✗ No files specified. Pass file path(s) as arguments.');
+      console.error('  Example: maku-catalog check catalog/languages/csharp/skills/xunit-testing/SKILL.md');
+      process.exit(1);
+    }
+
+    // Expand directories to all artifact files within them
+    const expandedFiles: string[] = [];
+    for (const f of filesToCheck) {
+      if (fs.existsSync(f) && fs.statSync(f).isDirectory()) {
+        const resolvedDir = normPath(path.resolve(f));
+        const found = catalog.artifacts
+          .filter(a => normPath(a.filePath).startsWith(resolvedDir))
+          .map(a => a.filePath);
+        expandedFiles.push(...found);
+      } else {
+        expandedFiles.push(path.resolve(f));
+      }
+    }
+
+    let totalViolations = 0;
+    let checkedCount = 0;
+
+    for (const filePath of expandedFiles) {
+      // Find this artifact in the loaded catalog (normalize separators for Windows compat)
+      const artifact = catalog.artifacts.find(a => normPath(a.filePath) === normPath(filePath));
+      if (!artifact) {
+        console.warn(`  ⚠  ${filePath}: not found in catalog (not a recognized artifact file?)`);
+        continue;
+      }
+
+      const violations = checkSourceArtifact(artifact, catalog, targets, { schemaOnly: opts.schemaOnly });
+      checkedCount++;
+
+      if (violations.length === 0) {
+        console.log(`  ✓  ${artifact.id}  (${path.relative(process.cwd(), filePath)})`);
+      } else {
+        console.error(`  ✗  ${artifact.id}  (${path.relative(process.cwd(), filePath)})`);
+        for (const viol of violations) {
+          console.error(`       ${viol.problem}`);
+        }
+        totalViolations += violations.length;
+      }
+    }
+
+    if (checkedCount === 0) {
+      console.warn('  ⚠  No artifact files found to check.');
+      return;
+    }
+
+    console.log(`\n${totalViolations === 0 ? '✓' : '✗'} ${checkedCount} artifact(s) checked, ${totalViolations} violation(s) found.`);
+    if (totalViolations > 0) process.exit(1);
+  });
+
+// ─── retarget ─────────────────────────────────────────────────────────────────
+
+program
+  .command('retarget <id>')
+  .description(
+    'Change the platform targeting of an existing catalog artifact without touching its body.\n\n' +
+    'DRY lifecycle: an artifact starts targeting all AIs (no platforms: field). Use retarget\n' +
+    'to restrict it, expand it, or reset it — body and content never changes.\n\n' +
+    'Normalization rule: when the set reaches all kind-supporting targets, the platforms:\n' +
+    'field is automatically removed (= neutral auto-propagate, back to DRY default).\n\n' +
+    'Examples:\n' +
+    '  maku-catalog retarget csharp/xunit-testing --add copilot\n' +
+    '  maku-catalog retarget shared/explain-diff --remove claude\n' +
+    '  maku-catalog retarget csharp/dotnet-style --to all      # reset to all AIs\n' +
+    '  maku-catalog retarget csharp/dotnet-style --to claude   # restrict to Claude only',
+  )
+  .option('--add <platforms>', 'Comma-separated platforms to add to the targeting set')
+  .option('--remove <platforms>', 'Comma-separated platforms to remove from the targeting set')
+  .option('--to <platforms>', 'Set the targeting to exactly these platforms (comma-separated), or "all" to reset')
+  .option('--catalog-dir <dir>', 'Path to the catalog/ directory', resolveDefault('catalog'))
+  .option('--yes', 'Skip confirmation prompt', false)
+  .option('--with-deps', 'Also apply the same targeting change to the artifact\'s uses: closure (rules/agents)', false)
+  .action(async (id: string, opts: {
+    add?: string;
+    remove?: string;
+    to?: string;
+    catalogDir: string;
+    yes: boolean;
+    withDeps: boolean;
+  }) => {
+    if (!opts.add && !opts.remove && !opts.to) {
+      console.error('✗ Specify at least one of: --add, --remove, --to');
+      process.exit(1);
+    }
+    if ((opts.add ? 1 : 0) + (opts.remove ? 1 : 0) + (opts.to ? 1 : 0) > 1) {
+      console.error('✗ Use only one of --add, --remove, or --to per invocation.');
+      process.exit(1);
+    }
+
+    const catalog = await loadCatalog(opts.catalogDir);
+    const targets = getAllTargets();
+
+    const artifact = catalog.byId.get(id);
+    if (!artifact) {
+      const available = catalog.artifacts.map(a => a.id).join(', ');
+      console.error(`✗ Artifact '${id}' not found. Available: ${available || '(none)'}`);
+      process.exit(1);
+    }
+
+    const kind = artifact.kind;
+    const currentPlatforms = artifact.frontmatter.platforms as string[] | undefined;
+    let mutResult: { platforms: string[] | undefined; noOp: boolean; errors: string[]; warnings: string[] };
+
+    if (opts.to) {
+      const toVal = opts.to === 'all' ? undefined : opts.to.split(',').map(p => p.trim()).filter(Boolean);
+      mutResult = setPlatforms(kind, toVal, targets);
+    } else if (opts.add) {
+      const toAdd = opts.add.split(',').map(p => p.trim()).filter(Boolean);
+      mutResult = addPlatforms(kind, currentPlatforms, toAdd, targets);
+    } else {
+      const toRemove = opts.remove!.split(',').map(p => p.trim()).filter(Boolean);
+      mutResult = removePlatforms(kind, currentPlatforms, toRemove, targets);
+    }
+
+    // Print warnings
+    for (const w of mutResult.warnings) console.warn(`  ⚠  ${w}`);
+
+    // Fail on errors
+    if (mutResult.errors.length > 0) {
+      for (const e of mutResult.errors) console.error(`  ✗  ${e}`);
+      process.exit(1);
+    }
+
+    if (mutResult.noOp) {
+      console.log(`  → No change to ${id} (already at the requested state).`);
+      return;
+    }
+
+    // Read the current file
+    const matter = await import('gray-matter');
+    const raw = fs.readFileSync(artifact.filePath, 'utf-8');
+    const parsed = matter.default(raw);
+
+    // Update or remove the platforms field
+    if (mutResult.platforms === undefined) {
+      delete parsed.data.platforms;
+    } else {
+      parsed.data.platforms = mutResult.platforms;
+    }
+
+    // Stringify back — preserve body
+    const newFrontmatter = Object.entries(parsed.data)
+      .map(([k, val]) => {
+        if (Array.isArray(val)) {
+          return `${k}:\n${(val as unknown[]).map(item => {
+            if (typeof item === 'object' && item !== null) {
+              return Object.entries(item as Record<string,unknown>).map(([ik, iv]) => `    ${ik}: ${iv}`).join('\n');
+            }
+            return `  - ${item}`;
+          }).join('\n')}`;
+        }
+        if (typeof val === 'object' && val !== null) {
+          const objLines = Object.entries(val as Record<string, unknown>).map(([ik, iv]) => `  ${ik}: ${iv}`).join('\n');
+          return `${k}:\n${objLines}`;
+        }
+        if (typeof val === 'string' && (val.includes('\n') || val.includes(':'))) {
+          return `${k}: "${val.replace(/"/g, '\\"')}"`;
+        }
+        return `${k}: ${val}`;
+      })
+      .join('\n');
+
+    const newContent = `---\n${newFrontmatter}\n---${parsed.content}`;
+    fs.writeFileSync(artifact.filePath, newContent, 'utf-8');
+
+    const newLabel = mutResult.platforms === undefined
+      ? 'all supporting AIs (DRY default — platforms: field removed)'
+      : `[${mutResult.platforms.join(', ')}]`;
+    console.log(`✓ ${id}: platforms updated → ${newLabel}`);
+    console.log(`  File: ${artifact.filePath}`);
+
+    // Validate the changed artifact
+    const updatedCatalog = await loadCatalog(opts.catalogDir);
+    const updatedArtifact = updatedCatalog.byId.get(id);
+    if (updatedArtifact) {
+      const violations = checkSourceArtifact(updatedArtifact, updatedCatalog, targets);
+      if (violations.length > 0) {
+        console.warn('  ⚠  Post-retarget validation warnings:');
+        for (const viol of violations) console.warn(`     ${viol.problem}`);
+      }
+    }
+
+    if (mutResult.platforms === undefined) {
+      console.log(`\n  → Next: maku-catalog build  (will now emit to all supporting platforms)`);
+    } else {
+      console.log(`\n  → Next: maku-catalog build  (or: maku-catalog retarget ${id} --to all to widen back)`);
+    }
+
+    console.log('  ℹ  Consumers who already ran \'add\' must re-run it to pick up the changed targeting.');
   });
 
 // ─── completion ───────────────────────────────────────────────────────────────

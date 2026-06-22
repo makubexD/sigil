@@ -30,6 +30,12 @@
         "version": {
           "type": "string"
         },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "appliesTo": {
           "type": "array",
           "items": {

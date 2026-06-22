@@ -30,6 +30,12 @@
         "version": {
           "type": "string"
         },
+        "platforms": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
         "name": {
           "type": "string",
           "minLength": 1

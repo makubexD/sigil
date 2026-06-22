@@ -20,6 +20,11 @@ const claude_code_1 = require("../dist-cli/targets/claude-code");
 const copilot_1 = require("../dist-cli/targets/copilot");
 const prompt_args_1 = require("../dist-cli/targets/prompt-args");
 const output_contract_1 = require("../dist-cli/targets/output-contract");
+const select_2 = require("../dist-cli/select");
+const platforms_1 = require("../dist-cli/authoring/platforms");
+const check_source_1 = require("../dist-cli/authoring/check-source");
+const header_1 = require("../dist-cli/authoring/header");
+const targets_1 = require("../dist-cli/targets");
 const CATALOG_DIR = path_1.default.resolve(__dirname, '../catalog');
 const VERSION = '0.1.0';
 const PACKS = [
@@ -692,5 +697,202 @@ const PACKS = [
         };
         const violations = (0, output_contract_1.checkOutputContract)(irrelevantFiles, target.outputContracts ?? []);
         strict_1.default.deepEqual(violations, [], 'aggregate files should not trigger false violations');
+    });
+});
+// ─── Part E — platforms field + source validation ──────────────────────────────
+(0, node_test_1.describe)('Part E — platforms field + source validation', () => {
+    // ── E1 — artifactTargetsPlatform helper ─────────────────────────────────────
+    (0, node_test_1.describe)('E1 — artifactTargetsPlatform helper', () => {
+        (0, node_test_1.it)('absent platforms → always true', () => {
+            const a = { frontmatter: {} };
+            strict_1.default.equal((0, select_2.artifactTargetsPlatform)(a, 'claude'), true);
+        });
+        (0, node_test_1.it)('empty platforms array → true', () => {
+            const a = { frontmatter: { platforms: [] } };
+            strict_1.default.equal((0, select_2.artifactTargetsPlatform)(a, 'copilot'), true);
+        });
+        (0, node_test_1.it)('platforms match → true', () => {
+            const a = { frontmatter: { platforms: ['claude'] } };
+            strict_1.default.equal((0, select_2.artifactTargetsPlatform)(a, 'claude'), true);
+        });
+        (0, node_test_1.it)('platforms mismatch → false', () => {
+            const a = { frontmatter: { platforms: ['claude'] } };
+            strict_1.default.equal((0, select_2.artifactTargetsPlatform)(a, 'copilot'), false);
+        });
+    });
+    // ── E2 — platforms math ──────────────────────────────────────────────────────
+    (0, node_test_1.describe)('E2 — platforms math', () => {
+        (0, node_test_1.it)('effectivePlatforms: absent → all supporting targets', () => {
+            const targets = (0, targets_1.getAllTargets)();
+            const result = (0, platforms_1.effectivePlatforms)('skill', undefined, targets);
+            strict_1.default.ok(result.includes('claude'), 'claude in effective platforms');
+            strict_1.default.ok(result.includes('copilot'), 'copilot in effective platforms');
+        });
+        (0, node_test_1.it)('effectivePlatforms: restricted → subset', () => {
+            const targets = (0, targets_1.getAllTargets)();
+            const result = (0, platforms_1.effectivePlatforms)('skill', ['claude'], targets);
+            strict_1.default.deepEqual(result, ['claude']);
+        });
+        (0, node_test_1.it)('isFullCoverage: full set → true', () => {
+            const targets = (0, targets_1.getAllTargets)();
+            const allNames = targets.map(t => t.name);
+            strict_1.default.equal((0, platforms_1.isFullCoverage)('skill', allNames, targets), true);
+        });
+        (0, node_test_1.it)('normalizePlatforms: full set → undefined', () => {
+            const targets = (0, targets_1.getAllTargets)();
+            const allNames = targets.map(t => t.name);
+            strict_1.default.equal((0, platforms_1.normalizePlatforms)('skill', allNames, targets), undefined);
+        });
+        (0, node_test_1.it)('addPlatforms: add already covered → noOp=true', () => {
+            const targets = (0, targets_1.getAllTargets)();
+            const result = (0, platforms_1.addPlatforms)('skill', ['claude', 'copilot'], ['claude'], targets);
+            strict_1.default.equal(result.noOp, true, 'adding an already-covered platform is a noOp');
+        });
+        (0, node_test_1.it)('removePlatforms: remove all → errors not empty', () => {
+            const targets = (0, targets_1.getAllTargets)();
+            const result = (0, platforms_1.removePlatforms)('skill', ['claude'], ['claude'], targets);
+            strict_1.default.ok(result.errors.length > 0, 'removing the last platform should produce an error');
+            strict_1.default.ok(result.errors[0].includes('Cannot remove all') || result.errors[0].includes('no platform'), `error message should mention platform removal constraint — got: ${result.errors[0]}`);
+        });
+    });
+    // ── E3 — checkSourceArtifact ─────────────────────────────────────────────────
+    (0, node_test_1.describe)('E3 — checkSourceArtifact', () => {
+        (0, node_test_1.it)('existing valid artifact → no violations', async () => {
+            const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+            const skill = catalog.byId.get('csharp/xunit-testing');
+            strict_1.default.ok(skill, 'csharp/xunit-testing must exist in catalog');
+            const targets = (0, targets_1.getAllTargets)();
+            const violations = (0, check_source_1.checkSourceArtifact)(skill, catalog, targets);
+            strict_1.default.deepEqual(violations, [], `Expected no violations for a valid artifact, got:\n${violations.map(v => v.problem).join('\n')}`);
+        });
+        (0, node_test_1.it)('id mismatch → violation', async () => {
+            const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+            const real = catalog.byId.get('csharp/xunit-testing');
+            strict_1.default.ok(real, 'csharp/xunit-testing must exist');
+            // id name segment ('wrong-id') doesn't match the frontmatter name ('xunit-testing')
+            const synthetic = {
+                ...real,
+                id: 'csharp/wrong-id',
+                frontmatter: { ...real.frontmatter, id: 'csharp/wrong-id' },
+            };
+            const targets = (0, targets_1.getAllTargets)();
+            const violations = (0, check_source_1.checkSourceArtifact)(synthetic, catalog, targets);
+            strict_1.default.ok(violations.length > 0, 'expected at least one violation for id/name mismatch');
+        });
+        (0, node_test_1.it)('unknown platforms → violation', async () => {
+            const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+            const real = catalog.byId.get('shared/clean-code');
+            strict_1.default.ok(real, 'shared/clean-code must exist');
+            const synthetic = {
+                ...real,
+                frontmatter: { ...real.frontmatter, platforms: ['nonexistent-target'] },
+            };
+            const targets = (0, targets_1.getAllTargets)();
+            const violations = (0, check_source_1.checkSourceArtifact)(synthetic, catalog, targets);
+            strict_1.default.ok(violations.some(v => v.problem.includes('nonexistent-target')), `expected violation mentioning unknown platform — got: ${violations.map(v => v.problem).join('; ')}`);
+        });
+        (0, node_test_1.it)('kebab-case violation → violation', async () => {
+            const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
+            const real = catalog.byId.get('csharp/xunit-testing');
+            strict_1.default.ok(real, 'csharp/xunit-testing must exist');
+            // name 'Not_Kebab' is not kebab-case; id name must also match, so keep them in sync
+            const synthetic = {
+                ...real,
+                id: 'csharp/Not_Kebab',
+                frontmatter: { ...real.frontmatter, id: 'csharp/Not_Kebab', name: 'Not_Kebab' },
+            };
+            const targets = (0, targets_1.getAllTargets)();
+            const violations = (0, check_source_1.checkSourceArtifact)(synthetic, catalog, targets);
+            strict_1.default.ok(violations.some(v => v.problem.includes('kebab-case')), `expected kebab-case violation — got: ${violations.map(v => v.problem).join('; ')}`);
+        });
+        (0, node_test_1.it)('dep coverage drift → violation', () => {
+            // Build a minimal fake catalog: a skill restricted to copilot that uses a
+            // rule restricted to claude only. The dep checker should flag the drift.
+            const fakeRule = {
+                id: 'fake/restricted-rule',
+                kind: 'rule',
+                filePath: '/fake/restricted-rule.rule.md',
+                frontmatter: {
+                    id: 'fake/restricted-rule',
+                    kind: 'rule',
+                    title: 'Restricted Rule',
+                    description: 'A rule restricted to claude only.',
+                    severity: 'recommended',
+                    appliesTo: ['**/*'],
+                    platforms: ['claude'],
+                },
+                body: '- Rule body.',
+            };
+            const fakeSkill = {
+                id: 'fake/drift-skill',
+                kind: 'skill',
+                filePath: '/fake/drift-skill/SKILL.md',
+                frontmatter: {
+                    id: 'fake/drift-skill',
+                    kind: 'skill',
+                    title: 'Drift Skill',
+                    description: 'A skill targeting copilot that uses a claude-only rule.',
+                    name: 'drift-skill',
+                    language: 'fake',
+                    platforms: ['copilot'],
+                    uses: { rules: ['fake/restricted-rule'] },
+                },
+                body: 'Skill body.',
+            };
+            const fakeCatalog = {
+                artifacts: [fakeRule, fakeSkill],
+                byId: new Map([
+                    [fakeRule.id, fakeRule],
+                    [fakeSkill.id, fakeSkill],
+                ]),
+                languages: new Map(),
+            };
+            const targets = (0, targets_1.getAllTargets)();
+            const violations = (0, check_source_1.checkSourceArtifact)(fakeSkill, fakeCatalog, targets);
+            strict_1.default.ok(violations.some(v => v.problem.includes('coverage drift') || v.problem.includes('restricted')), `expected a coverage drift violation — got: ${violations.map(v => v.problem).join('; ')}`);
+        });
+    });
+    // ── E4 — headerFor ───────────────────────────────────────────────────────────
+    (0, node_test_1.describe)('E4 — headerFor', () => {
+        (0, node_test_1.it)('skill header contains required fields', () => {
+            const result = (0, header_1.headerFor)('skill', {
+                id: 'csharp/foo',
+                kind: 'skill',
+                title: 'Foo',
+                description: 'Foo desc',
+                name: 'foo',
+                language: 'csharp',
+            });
+            strict_1.default.ok(result.includes('id: csharp/foo'), 'id field present');
+            strict_1.default.ok(result.includes('kind: skill'), 'kind field present');
+            strict_1.default.ok(result.includes('name: foo'), 'name field present');
+            strict_1.default.ok(result.includes('language: csharp'), 'language field present');
+        });
+        (0, node_test_1.it)('restricted platforms emitted active', () => {
+            const result = (0, header_1.headerFor)('rule', {
+                id: 'shared/bar',
+                kind: 'rule',
+                title: 'Bar',
+                description: 'Bar desc',
+                platforms: ['claude'],
+            });
+            // Active platforms: block should be present (not commented out)
+            strict_1.default.ok(result.includes('platforms:'), 'platforms: key present');
+            strict_1.default.ok(result.includes('  - claude'), '  - claude entry present');
+        });
+        (0, node_test_1.it)('unrestricted platforms emitted as comment only', () => {
+            const result = (0, header_1.headerFor)('agent', {
+                id: 'shared/baz',
+                kind: 'agent',
+                title: 'Baz',
+                description: 'Baz desc',
+                name: 'baz',
+            });
+            // Comment-only platforms hint should be present
+            strict_1.default.ok(result.includes('# platforms:'), '# platforms: comment present');
+            // No active (non-comment) platforms: line should exist
+            const activeplatformsLine = result.split('\n').find(l => /^platforms:/.test(l));
+            strict_1.default.equal(activeplatformsLine, undefined, 'no active platforms: line when not restricted');
+        });
     });
 });

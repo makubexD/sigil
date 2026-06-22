@@ -10,9 +10,9 @@
  */
 
 import { intro, outro, select, multiselect, groupMultiselect, confirm, note, log, isCancel, cancel } from '@clack/prompts';
-import type { ResolvedCatalog, Pack, ArtifactKind } from './types';
+import type { ResolvedCatalog, Pack, ArtifactKind, Target } from './types';
 import type { ResolvedArtifact } from './types';
-import { artifactHint, resolveSelection, computeClosure, groupArtifactsByLanguage, availableKinds, buildLanguageOptions } from './select';
+import { artifactHint, resolveSelection, computeClosure, groupArtifactsByLanguage, availableKinds, buildLanguageOptions, kindNoun, kindPlural, kindHint } from './select';
 import type { ClosurePreview } from './select';
 import { getAllTargets } from './targets';
 
@@ -120,21 +120,24 @@ export async function runWizard(
     selectors = [pack as string];
 
   } else if (scope === 'kind') {
-    // Build kind options only from what's actually present in the visible (target-filtered) set.
-    const KIND_META: Record<string, { label: string; hint: string }> = {
-      skill:    { label: 'Skills',    hint: 'procedural how-to guides for AI' },
-      agent:    { label: 'Agents',    hint: 'specialised AI personas' },
-      rule:     { label: 'Rules',     hint: 'coding style guidelines' },
-      prompt:   { label: 'Prompts',   hint: 'reusable parameterised prompts / commands' },
-      workflow: { label: 'Workflows', hint: 'multi-step automated workflows' },
+    // Build kind options using the target's native vocabulary (falls back to neutral catalog names).
+    // Default hints are a fallback when the target's vocabulary doesn't supply one.
+    const KIND_DEFAULT_HINTS: Record<string, string> = {
+      skill:    'procedural how-to guides for the AI',
+      agent:    'specialised AI personas',
+      rule:     'coding style guidelines',
+      prompt:   'reusable parameterised prompts',
+      workflow: 'multi-step automated workflows',
     };
     const presentKinds = availableKinds(visible);
     const kindOptions = presentKinds.map(k => {
       const count = visible.filter(a => a.kind === k).length;
+      const plural = kindPlural(chosenTarget, k);
+      const hint = kindHint(chosenTarget, k) ?? KIND_DEFAULT_HINTS[k] ?? '';
       return {
         value: k as string,
-        label: KIND_META[k]?.label ?? k,
-        hint: `${count} artifact${count !== 1 ? 's' : ''}  — ${KIND_META[k]?.hint ?? ''}`,
+        label: plural,
+        hint: `${count} artifact${count !== 1 ? 's' : ''}  — ${hint}`,
       };
     });
 
@@ -142,7 +145,7 @@ export async function runWizard(
     if (presentKinds.length === 1) {
       // Only one kind available — auto-select it to avoid a pointless one-option prompt.
       const k = presentKinds[0];
-      log.info(`Only ${KIND_META[k]?.label ?? k} available for this target — selected automatically.`);
+      log.info(`Only ${kindPlural(chosenTarget, k)} available for this target — selected automatically.`);
       chosenKinds = [k];
     } else {
       const kinds = await multiselect({
@@ -192,7 +195,7 @@ export async function runWizard(
       groupedOptions[groupKey] = arts.map(a => {
         const val = `${a.kind}:${a.id}`;
         if (firstValue === undefined) firstValue = val;
-        return { value: val, label: `${a.id}  (${a.kind})`, hint: artifactHint(a) };
+        return { value: val, label: `${a.id}  (${kindNoun(chosenTarget, a.kind)})`, hint: artifactHint(a) };
       });
     }
 
@@ -251,7 +254,7 @@ export async function runWizard(
           ?? a.id;
         // Compact via: show up to 2 skills, then "+N more"
         const viaDisplay = via.length <= 2 ? via.join(', ') : `${via[0]} +${via.length - 1} more`;
-        return `  ${a.kind.padEnd(5)}  ${a.id}  — ${title}  (via ${viaDisplay})`;
+        return `  ${kindNoun(chosenTarget, a.kind).padEnd(12)}  ${a.id}  — ${title}  (via ${viaDisplay})`;
       });
       depNoteBody =
         "The skill author recommends installing these alongside it\n" +
@@ -288,12 +291,12 @@ export async function runWizard(
   // Build the artifact preview list (picks + deps, tagged)
   const artifactLines: string[] = [];
   for (const a of closurePreview.primary) {
-    artifactLines.push(`  ${a.kind.padEnd(5)}  ${a.id}  (your pick)`);
+    artifactLines.push(`  ${kindNoun(chosenTarget, a.kind).padEnd(12)}  ${a.id}  (your pick)`);
   }
   if (includeDeps) {
     for (const { artifact: a, via } of closurePreview.dependencies) {
       const viaDisplay = via.length <= 2 ? via.join(', ') : `${via[0]} +${via.length - 1} more`;
-      artifactLines.push(`  ${a.kind.padEnd(5)}  ${a.id}  (dependency of ${viaDisplay})`);
+      artifactLines.push(`  ${kindNoun(chosenTarget, a.kind).padEnd(12)}  ${a.id}  (dependency of ${viaDisplay})`);
     }
   } else if (closurePreview.dependencies.length > 0) {
     const n = closurePreview.dependencies.length;
@@ -364,12 +367,15 @@ export function printConflictAdvice(conflicting: string[], targetName: string): 
   );
 }
 
-/** Print a formatted skipped-kinds advisory. */
-export function printSkippedAdvice(skipped: Array<{ id: string; kind: string; reason: string }>): void {
+/** Print a formatted skipped-kinds advisory using the target's native vocabulary. */
+export function printSkippedAdvice(
+  skipped: Array<{ id: string; kind: string; reason: string }>,
+  target?: Target,
+): void {
   if (skipped.length === 0) return;
   log.warn(
     `${skipped.length} artifact(s) skipped (not supported by this target):\n` +
-    skipped.map(s => `  ${s.id} (${s.kind}): ${s.reason}`).join('\n'),
+    skipped.map(s => `  ${s.id} (${kindNoun(target, s.kind)}): ${s.reason}`).join('\n'),
   );
 }
 

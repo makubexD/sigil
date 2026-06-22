@@ -10,10 +10,11 @@ import path from 'path';
 import { loadCatalog } from '../dist-cli/load';
 import { validateCatalog } from '../dist-cli/validate';
 import { resolveCatalog } from '../dist-cli/resolve';
-import { computeClosure, groupArtifactsByLanguage, availableKinds, buildLanguageOptions } from '../dist-cli/select';
+import { computeClosure, groupArtifactsByLanguage, availableKinds, buildLanguageOptions, kindNoun, kindPlural, kindHint } from '../dist-cli/select';
 import { ClaudeCodeTarget } from '../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../dist-cli/targets/copilot';
 import { toClaudePlaceholders, toCopilotPlaceholders, buildArgumentHint } from '../dist-cli/targets/prompt-args';
+import { checkOutputContract } from '../dist-cli/targets/output-contract';
 import type { PromptArg } from '../dist-cli/targets/prompt-args';
 
 const CATALOG_DIR = path.resolve(__dirname, '../catalog');
@@ -683,5 +684,198 @@ describe('buildLanguageOptions (array-based)', () => {
     // Count in hint matches actual csharp artifacts
     const csharpOpt = opts.find(o => o.value === 'csharp');
     assert.ok(csharpOpt?.hint.startsWith(`${csharpOnly.length} artifact`), 'count matches subset');
+  });
+});
+
+// ─── Part C: per-target kind vocabulary ───────────────────────────────────────
+
+describe('kindNoun / kindPlural / kindHint (per-AI vocabulary)', () => {
+  it('prompt → command on Claude Code', () => {
+    const target = new ClaudeCodeTarget();
+    assert.equal(kindNoun(target, 'prompt'), 'command',  'Claude: prompt noun is command');
+    assert.equal(kindPlural(target, 'prompt'), 'Commands', 'Claude: prompt plural is Commands');
+  });
+
+  it('rule → instructions on Copilot', () => {
+    const target = new CopilotTarget();
+    assert.equal(kindNoun(target, 'rule'), 'instructions', 'Copilot: rule noun is instructions');
+    assert.equal(kindPlural(target, 'rule'), 'Instructions', 'Copilot: rule plural is Instructions');
+  });
+
+  it('prompt → prompt on Copilot (stays neutral)', () => {
+    const target = new CopilotTarget();
+    assert.equal(kindNoun(target, 'prompt'), 'prompt', 'Copilot: prompt stays prompt');
+    assert.equal(kindPlural(target, 'prompt'), 'Prompts', 'Copilot: prompt plural is Prompts');
+  });
+
+  it('skill stays skill on both platforms', () => {
+    const claude = new ClaudeCodeTarget();
+    const copilot = new CopilotTarget();
+    assert.equal(kindNoun(claude,  'skill'), 'skill', 'Claude: skill stays skill');
+    assert.equal(kindNoun(copilot, 'skill'), 'skill', 'Copilot: skill stays skill');
+  });
+
+  it('fallback: undefined target returns raw catalog kind', () => {
+    assert.equal(kindNoun(undefined, 'prompt'), 'prompt', 'no target: raw kind returned');
+    assert.equal(kindNoun(undefined, 'rule'),   'rule',   'no target: raw kind returned');
+    assert.equal(kindPlural(undefined, 'skill'), 'Skills', 'no target: simple plural fallback');
+  });
+
+  it('fallback: unmapped kind returns raw kind / simple plural', () => {
+    const target = new ClaudeCodeTarget();
+    assert.equal(kindNoun(target, 'some-new-kind'), 'some-new-kind',  'unmapped kind: raw noun');
+    assert.equal(kindPlural(target, 'some-new-kind'), 'Some-new-kinds', 'unmapped kind: simple plural');
+  });
+
+  it('kindHint returns platform-specific hint when declared', () => {
+    const claude = new ClaudeCodeTarget();
+    const copilot = new CopilotTarget();
+    assert.ok(kindHint(claude, 'prompt')?.includes('command'),      'Claude command hint mentions command');
+    assert.ok(kindHint(copilot, 'rule')?.includes('instructions'),  'Copilot rule hint mentions instructions');
+    assert.equal(kindHint(undefined, 'skill'), undefined, 'no target: no hint');
+  });
+});
+
+// ─── Part D: output-conformance contracts ─────────────────────────────────────
+
+describe('checkOutputContract — green paths (existing output passes)', () => {
+  it('Claude full compile output satisfies all contracts', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+    const violations = checkOutputContract(files, target.outputContracts ?? []);
+    assert.deepEqual(violations, [],
+      `Claude compile has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+  });
+
+  it('Copilot full compile output satisfies all contracts', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+    const violations = checkOutputContract(files, target.outputContracts ?? []);
+    assert.deepEqual(violations, [],
+      `Copilot compile has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+  });
+
+  it('Claude scaffold of prompt (command) satisfies all contracts', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
+    const violations = checkOutputContract(files, target.outputContracts ?? []);
+    assert.deepEqual(violations, [],
+      `Claude prompt scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+  });
+
+  it('Copilot scaffold of prompt file satisfies all contracts', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
+    const violations = checkOutputContract(files, target.outputContracts ?? []);
+    assert.deepEqual(violations, [],
+      `Copilot prompt scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+  });
+
+  it('Copilot scaffold of skill satisfies all contracts', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.scaffold!('csharp/xunit-testing', resolved, { projectDir: '/fake' });
+    const violations = checkOutputContract(files, target.outputContracts ?? []);
+    assert.deepEqual(violations, [],
+      `Copilot skill scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+  });
+});
+
+describe('checkOutputContract — red paths (violations detected)', () => {
+  it('Claude command with forbidden name: key is flagged', () => {
+    const target = new ClaudeCodeTarget();
+    const badFiles = {
+      '.claude/commands/my-cmd.md':
+        '---\ndescription: "Explain a diff"\nname: should-not-be-here\n---\nBody here',
+    };
+    const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
+    assert.ok(violations.length > 0, 'violation expected for forbidden name: key');
+    assert.ok(violations.some(v => v.problem.includes("'name'")),
+      `violation message should mention 'name' — got: ${violations[0].problem}`);
+  });
+
+  it('Claude command without required description: is flagged', () => {
+    const target = new ClaudeCodeTarget();
+    const badFiles = {
+      '.claude/commands/my-cmd.md': '---\nargument-hint: "[diff]"\n---\nBody',
+    };
+    const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
+    assert.ok(violations.some(v => v.problem.includes("'description'")),
+      'violation expected for missing description');
+  });
+
+  it('Claude command body with unresolved {{placeholder}} is flagged', () => {
+    const target = new ClaudeCodeTarget();
+    const badFiles = {
+      '.claude/commands/my-cmd.md':
+        '---\ndescription: "foo"\n---\nPlease explain {{diff}} to me',
+    };
+    const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
+    assert.ok(violations.some(v => v.problem.includes('{{')),
+      'unresolved {{ placeholder must be flagged');
+  });
+
+  it('Claude command body with Copilot ${input:…} syntax is flagged', () => {
+    const target = new ClaudeCodeTarget();
+    const badFiles = {
+      '.claude/commands/my-cmd.md':
+        '---\ndescription: "foo"\n---\nPlease explain ${input:diff} to me',
+    };
+    const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
+    assert.ok(violations.some(v => v.problem.includes('${input:')),
+      'Copilot placeholder syntax in Claude command must be flagged');
+  });
+
+  it('Copilot prompt file with unresolved {{placeholder}} is flagged', () => {
+    const target = new CopilotTarget();
+    const badFiles = {
+      '.github/prompts/bad.prompt.md':
+        '---\nagent: agent\ndescription: "foo"\n---\nHello {{name}}',
+    };
+    const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
+    assert.ok(violations.some(v => v.problem.includes('{{')),
+      'unresolved {{ in Copilot prompt must be flagged');
+  });
+
+  it('Copilot SKILL.md with forbidden applyTo: is flagged', () => {
+    const target = new CopilotTarget();
+    const badFiles = {
+      '.github/skills/test-skill/SKILL.md':
+        '---\nname: test-skill\ndescription: "foo"\napplyTo: "**/*.ts"\n---\nBody',
+    };
+    const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
+    assert.ok(violations.some(v => v.problem.includes("'applyTo'")),
+      'applyTo in Copilot SKILL.md must be flagged');
+  });
+
+  it('Copilot SKILL.md with forbidden paths: is flagged', () => {
+    const target = new CopilotTarget();
+    const badFiles = {
+      '.github/skills/test-skill/SKILL.md':
+        '---\nname: test-skill\ndescription: "foo"\npaths:\n  - "**/*.ts"\n---\nBody',
+    };
+    const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
+    assert.ok(violations.some(v => v.problem.includes("'paths'")),
+      'paths: in Copilot SKILL.md must be flagged');
+  });
+
+  it('files matching no contract entry are silently skipped (no false positives)', () => {
+    const target = new CopilotTarget();
+    // AGENTS.md and copilot-instructions.md have no matching entry
+    const irrelevantFiles = {
+      '.github/AGENTS.md': '# AI Agents\n\n## code-reviewer\nBody',
+      '.github/copilot-instructions.md': '# Copilot Instructions\n\n## Clean Code\nBody',
+    };
+    const violations = checkOutputContract(irrelevantFiles, target.outputContracts ?? []);
+    assert.deepEqual(violations, [], 'aggregate files should not trigger false violations');
   });
 });

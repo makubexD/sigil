@@ -51,6 +51,8 @@ import type {
   CompileOptions,
   ScaffoldOptions,
   ArtifactKind,
+  KindVocabulary,
+  ContractEntry,
 } from '../../types';
 import { yamlScalar } from '../yaml-util';
 import { toCopilotPlaceholders } from '../prompt-args';
@@ -59,10 +61,74 @@ export class CopilotTarget implements Target {
   readonly name = 'copilot';
 
   /**
-   * All four basic kinds are supported — rules map to .github/instructions/,
-   * skills/prompts to .github/prompts/, agents to .github/agents/.
+   * All four basic kinds are supported — skills to .github/skills/ (Agent Skills open standard),
+   * rules to .github/instructions/, prompts to .github/prompts/, agents to .github/agents/.
    */
   readonly supportedKinds: ArtifactKind[] = ['skill', 'agent', 'rule', 'prompt'];
+
+  /**
+   * GitHub Copilot's native artifact vocabulary (verified June 2026).
+   * A catalog `rule` maps to *instructions* on Copilot — "rule" is not a Copilot term.
+   * A catalog `prompt` maps to a *prompt file* — "command" is not a Copilot artifact type.
+   * Both platforms share the Agent Skills open standard for `skill`.
+   */
+  readonly vocabulary: Partial<Record<ArtifactKind, KindVocabulary>> = {
+    skill:    { noun: 'skill',        plural: 'Skills',       hint: 'Agent Skills (open standard, agentskills.io)' },
+    agent:    { noun: 'agent',        plural: 'Agents',       hint: 'custom agents (invoked as @name in Copilot Chat)' },
+    rule:     { noun: 'instructions', plural: 'Instructions', hint: 'coding guidelines (.instructions.md with applyTo)' },
+    prompt:   { noun: 'prompt',       plural: 'Prompts',      hint: 'prompt files invoked as /name in Copilot Chat' },
+    workflow: { noun: 'prompt',       plural: 'Prompts',      hint: 'multi-step workflows as prompt files' },
+  };
+
+  /**
+   * Output-conformance contracts for Copilot scaffold output.
+   * Checked by `build` and `add` after emit to enforce per-AI artifact shapes:
+   *   - Copilot prompt files must NOT have `applyTo` (belongs only in .instructions.md)
+   *   - Copilot SKILL.md must NOT have `applyTo`/`paths` (skills load by description relevance)
+   *   - Prompt files must NOT have unresolved {{…}} — these should be ${input:name}
+   */
+  readonly outputContracts: ContractEntry[] = [
+    {
+      // Prompt file: agent + description required; no skill/Claude/instructions fields.
+      match: /\.github\/prompts\/.*\.prompt\.md$/,
+      label: 'Copilot prompt file',
+      contract: {
+        requiredKeys: ['agent', 'description'],
+        forbiddenKeys: ['applyTo', 'name', 'paths', 'arguments', 'argument-hint'],
+        bodyForbids: [
+          { pattern: /\{\{/, reason: 'unresolved {{…}} placeholder (should be translated to ${input:name})' },
+        ],
+      },
+    },
+    {
+      // Agent Skill (open standard): name + description only; no path-matching fields.
+      match: /\.github\/skills\/.*\/SKILL\.md$/,
+      label: 'Copilot Agent Skill',
+      contract: {
+        requiredKeys: ['name', 'description'],
+        // applyTo and paths: are Claude/instructions fields — Copilot skills load by description relevance
+        forbiddenKeys: ['applyTo', 'paths', 'agent'],
+      },
+    },
+    {
+      // Instructions file: applyTo required; no agent or name fields.
+      match: /\.github\/instructions\/.*\.instructions\.md$/,
+      label: 'Copilot instructions',
+      contract: {
+        requiredKeys: ['applyTo'],
+        forbiddenKeys: ['name', 'agent'],
+      },
+    },
+    {
+      // Agent: name + description required; no path-matching or prompt fields.
+      match: /\.github\/agents\/.*\.agent\.md$/,
+      label: 'Copilot agent',
+      contract: {
+        requiredKeys: ['name', 'description'],
+        forbiddenKeys: ['applyTo'],
+      },
+    },
+  ];
 
   // ── Full build ─────────────────────────────────────────────────────────────
 

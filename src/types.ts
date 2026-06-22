@@ -81,6 +81,49 @@ export interface ResolvedCatalog {
  */
 export type FileMap = Record<string, string>;
 
+// ─── Target vocabulary + output contracts ─────────────────────────────────────
+
+/**
+ * Platform-native vocabulary for a catalog kind.
+ * Declares how this target refers to each artifact type in its own ecosystem.
+ * Example: a catalog `prompt` becomes a "command" on Claude Code but a "prompt" on Copilot.
+ */
+export interface KindVocabulary {
+  /** Singular noun (e.g. "command" for Claude Code prompts, "instructions" for Copilot rules). */
+  noun: string;
+  /** Plural label for pickers (e.g. "Commands", "Instructions"). */
+  plural: string;
+  /** Optional hint describing what this artifact type does on this platform. */
+  hint?: string;
+}
+
+/** Structural contract for a category of emitted files. */
+export interface ArtifactContract {
+  /** Frontmatter keys that MUST be present. */
+  requiredKeys?: string[];
+  /** Frontmatter keys that MUST NOT appear (cross-contamination guard). */
+  forbiddenKeys?: string[];
+  /** Patterns that MUST NOT appear in the parsed file body. */
+  bodyForbids?: { pattern: RegExp; reason: string }[];
+}
+
+/** Maps an output path pattern to an artifact contract. */
+export interface ContractEntry {
+  /** Regex tested against the output file's relative path. */
+  match: RegExp;
+  /** Human-readable label for this artifact type (used in error messages). */
+  label: string;
+  /** The structural contract to check against. */
+  contract: ArtifactContract;
+}
+
+/** A single conformance violation found by checkOutputContract. */
+export interface OutputViolation {
+  file: string;
+  label: string;
+  problem: string;
+}
+
 // ─── Pack config (from packs.yaml) ───────────────────────────────────────────
 
 export interface Pack {
@@ -146,6 +189,24 @@ export interface Target {
    * If omitted, all kinds are considered supported (adapters should declare this explicitly).
    */
   supportedKinds?: ArtifactKind[];
+
+  /**
+   * Platform-native vocabulary for each artifact kind.
+   * Used by the wizard and CLI to show the right noun/plural for this platform's ecosystem.
+   * Falls back to the raw catalog kind when absent or undefined for a specific kind.
+   *
+   * Example: Claude Code declares prompt → { noun: 'command', plural: 'Commands' }
+   *          Copilot declares rule → { noun: 'instructions', plural: 'Instructions' }
+   */
+  vocabulary?: Partial<Record<ArtifactKind, KindVocabulary>>;
+
+  /**
+   * Output-conformance contracts for this target's emitted files.
+   * Checked by `build` and `add` after emit; any violation causes a non-zero exit.
+   * Each entry maps a path regex to required/forbidden frontmatter keys and body constraints.
+   * Files matching no entry are skipped (aggregate files like AGENTS.md have no fixed shape).
+   */
+  outputContracts?: ContractEntry[];
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────

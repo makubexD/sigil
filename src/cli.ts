@@ -23,6 +23,7 @@ import { resolveCatalog } from './resolve';
 import { getAllTargets, getTarget } from './targets';
 import { resolveSelection } from './select';
 import { isInteractiveTTY, runWizard, buildEquivalentCommand, printEquivalentCommand, printConflictAdvice, printSkippedAdvice } from './wizard';
+import { checkOutputContract } from './targets/output-contract';
 import type { FileMap, PacksConfig } from './types';
 
 const pkg = JSON.parse(
@@ -74,6 +75,18 @@ program
     for (const target of targets) {
       console.log(`\nBuilding target: ${target.name}`);
       const files = await target.compile(resolved, compileOpts);
+
+      // Output-conformance check: verify emitted file shapes match the target's contracts.
+      const violations = checkOutputContract(files, target.outputContracts ?? []);
+      if (violations.length > 0) {
+        for (const v of violations) {
+          console.error(`  ✗  [${v.label}] ${v.file}`);
+          console.error(`       ${v.problem}`);
+        }
+        console.error(`\n✗ ${violations.length} output-conformance error(s) in target '${target.name}'. Fix the catalog source or adapter before shipping.`);
+        process.exit(1);
+      }
+
       writeFilesSync(files, path.join(opts.outDir, target.name), true);
       const count = Object.keys(files).length;
       console.log(`  ✓ ${count} file(s) written to dist/${target.name}/`);
@@ -140,6 +153,8 @@ program
       byKind.set(a.kind, list);
     }
 
+    // `list` runs without a chosen target so it intentionally shows neutral catalog-kind
+    // names (SKILL, AGENT, RULE, PROMPT) — not platform-specific terms like "command".
     for (const [kind, list] of byKind) {
       console.log(`\n${kind.toUpperCase()} (${list.length})`);
       for (const a of list) {
@@ -286,7 +301,7 @@ program
       process.exit(1);
     }
 
-    printSkippedAdvice(skipped);
+    printSkippedAdvice(skipped, target);
 
     if (ids.length === 0) {
       console.log('No artifacts to install (all were filtered out or unsupported).');
@@ -322,6 +337,18 @@ program
         console.error(`✗ Failed to scaffold '${id}': ${(err as Error).message}`);
         process.exit(1);
       }
+    }
+
+    // ── Output-conformance check ───────────────────────────────────────────
+    // Validate emitted file shapes before writing anything to disk.
+    const violations = checkOutputContract(allFiles, target.outputContracts ?? []);
+    if (violations.length > 0) {
+      for (const v of violations) {
+        console.error(`  ✗  [${v.label}] ${v.file}`);
+        console.error(`       ${v.problem}`);
+      }
+      console.error(`\n✗ ${violations.length} output-conformance error(s). Install aborted — no files were written.`);
+      process.exit(1);
     }
 
     // ── Conflict detection ─────────────────────────────────────────────────

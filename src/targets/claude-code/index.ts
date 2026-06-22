@@ -32,6 +32,8 @@ import type {
   ScaffoldOptions,
   Pack,
   ArtifactKind,
+  KindVocabulary,
+  ContractEntry,
 } from '../../types';
 import type { AgentFrontmatter } from '../../schema';
 import { yamlScalar } from '../yaml-util';
@@ -46,6 +48,70 @@ export class ClaudeCodeTarget implements Target {
    * `workflow` is intentionally absent — no scaffold shape defined yet.
    */
   readonly supportedKinds: ArtifactKind[] = ['skill', 'agent', 'rule', 'prompt'];
+
+  /**
+   * Claude Code's native artifact vocabulary (verified June 2026).
+   * A catalog `prompt` maps to a *custom command* on Claude Code — "prompt" is not a
+   * Claude Code artifact type. Custom commands are single-file skills; both `.claude/commands/`
+   * and `.claude/skills/` are permanently supported (docs.claude.com/en/skills).
+   */
+  readonly vocabulary: Partial<Record<ArtifactKind, KindVocabulary>> = {
+    skill:    { noun: 'skill',    plural: 'Skills',    hint: 'procedural how-to guides for the AI' },
+    agent:    { noun: 'agent',    plural: 'Agents',    hint: 'specialised AI personas (subagents)' },
+    rule:     { noun: 'rule',     plural: 'Rules',     hint: 'coding style guidelines loaded as memory' },
+    prompt:   { noun: 'command',  plural: 'Commands',  hint: 'custom commands invoked with /name in Claude Code' },
+    workflow: { noun: 'workflow', plural: 'Workflows', hint: 'multi-step automated workflows' },
+  };
+
+  /**
+   * Output-conformance contracts for Claude Code scaffold output.
+   * Checked by `build` and `add` after emit to catch cross-contamination
+   * (e.g. Copilot placeholder syntax in a command, or skill frontmatter in a rule).
+   *
+   * Note: these contracts match scaffold paths (.claude/…); plugin build paths
+   * (plugins/<pack>/…) have no entries here and are checked by compile tests instead.
+   */
+  readonly outputContracts: ContractEntry[] = [
+    {
+      // Custom command: only description frontmatter; body must not have foreign placeholders.
+      match: /\.claude\/commands\/.*\.md$/,
+      label: 'Claude custom command',
+      contract: {
+        requiredKeys: ['description'],
+        forbiddenKeys: ['name', 'paths', 'applyTo', 'agent', 'tools'],
+        bodyForbids: [
+          { pattern: /\{\{/, reason: 'unresolved {{…}} placeholder (should be translated to $name)' },
+          { pattern: /\$\{input:/, reason: 'Copilot ${input:…} placeholder found in Claude command body' },
+        ],
+      },
+    },
+    {
+      // Skill: name + description required; Claude uses paths: (not applyTo), no prompt fields.
+      match: /\.claude\/skills\/.*\/SKILL\.md$/,
+      label: 'Claude skill',
+      contract: {
+        requiredKeys: ['name', 'description'],
+        forbiddenKeys: ['applyTo', 'agent', 'argument-hint', 'arguments'],
+      },
+    },
+    {
+      // Rule: no prompt/agent/Copilot frontmatter allowed; shared rules have no frontmatter at all.
+      match: /\.claude\/rules\/.*\.md$/,
+      label: 'Claude rule',
+      contract: {
+        forbiddenKeys: ['name', 'agent', 'applyTo', 'argument-hint', 'arguments', 'tools'],
+      },
+    },
+    {
+      // Agent: name + description required; no prompt or Copilot fields.
+      match: /\.claude\/agents\/.*\.md$/,
+      label: 'Claude agent',
+      contract: {
+        requiredKeys: ['name', 'description'],
+        forbiddenKeys: ['applyTo', 'argument-hint', 'arguments'],
+      },
+    },
+  ];
 
   // ── Full build ─────────────────────────────────────────────────────────────
 
@@ -347,7 +413,9 @@ export class ClaudeCodeTarget implements Target {
       `description: ${yamlScalar(description)}`,
     ];
     if (args.length > 0) {
-      fmLines.push(`argument-hint: ${buildArgumentHint(args)}`);
+      // Quote the argument-hint value — bare square brackets like [diff] [audience] are
+      // invalid YAML flow-sequence syntax without quoting; a plain string "..." is safe.
+      fmLines.push(`argument-hint: "${buildArgumentHint(args)}"`);
       fmLines.push('arguments:');
       for (const arg of args) {
         fmLines.push(`  - ${arg.name}`);

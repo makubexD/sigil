@@ -111,13 +111,16 @@ maku-catalog add skill:python/pytest-testing --target copilot
 
 **What gets written:**
 ```
+.github/skills/pytest-testing/SKILL.md                     ← native Agent Skill, invocable as /pytest-testing
+.github/skills/pytest-testing/references/fixtures.md       ← supporting file bundled with the skill
 .github/instructions/python-python-style.instructions.md   ← applyTo: "**/*.py"
-.github/prompts/pytest-testing.prompt.md                   ← invocable as /pytest-testing
 .github/agents/code-reviewer.agent.md                      ← .agent.md + description frontmatter required
 ```
 
 Copilot Chat picks up `.github/instructions/*.instructions.md` for files matching `applyTo` and
-makes `.github/prompts/*.prompt.md` available as `/` commands.
+loads `.github/skills/*/SKILL.md` as native Agent Skills (invocable as `/name` commands).
+**Note:** `.github/prompts/*.prompt.md` is for catalog `prompt` artifacts (e.g. `shared/explain-diff`),
+not for skills. The two are distinct Copilot artifact types.
 
 ---
 
@@ -289,8 +292,8 @@ catalog repo**. Just run from your project root.
 
 **Claude Code** and **Copilot** read from fixed, tool-mandated locations. The catalog always
 writes to those locations:
-- Claude Code: `.claude/skills/`, `.claude/rules/`, `.claude/agents/`, `.claude/commands/`
-- GitHub Copilot: `.github/instructions/`, `.github/prompts/`, `.github/agents/`
+- Claude Code: `.claude/skills/` (skills), `.claude/rules/` (rules), `.claude/agents/` (agents), `.claude/commands/` (prompts)
+- GitHub Copilot: `.github/skills/` (skills), `.github/instructions/` (rules), `.github/agents/` (agents), `.github/prompts/` (prompts)
 
 The only variable is the **root**: point `--project-dir` at whichever directory should be the root.
 

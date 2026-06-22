@@ -438,19 +438,30 @@ describe('Copilot target', () => {
     assert.ok(instrFile.includes('File-scoped namespaces'), 'rule body present');
   });
 
-  it('emits skills as prompt files', async () => {
+  it('emits skills as native Agent Skills (open standard)', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
 
-    const promptFile = files['.github/prompts/xunit-testing.prompt.md'];
-    assert.ok(promptFile, 'xunit-testing.prompt.md emitted');
-    // `agent:` is the current field name (renamed from legacy `mode:`)
-    // See: code.visualstudio.com/docs/agent-customization/prompt-files
-    assert.ok(promptFile.includes('agent: agent'), 'agent field set (not legacy mode:)');
-    assert.ok(!promptFile.includes('applyTo'), 'no applyTo in prompt files (belongs in .instructions.md only)');
-    assert.ok(promptFile.includes('Writing xUnit Tests'), 'skill body present');
+    // Skills must now emit as native Agent Skills at .github/skills/<name>/SKILL.md
+    // (Copilot Agent Skills open standard, agentskills.io) — NOT as prompt files.
+    const skillMd = files['.github/skills/xunit-testing/SKILL.md'];
+    assert.ok(skillMd, '.github/skills/xunit-testing/SKILL.md emitted');
+    assert.ok(skillMd.includes('name: xunit-testing'), 'name frontmatter present');
+    assert.ok(skillMd.includes('description:'), 'description frontmatter present');
+    assert.ok(skillMd.includes('Writing xUnit Tests'), 'skill body present');
+    // Agent Skill frontmatter must NOT include applyTo or paths — skills load by description relevance
+    assert.ok(!skillMd.includes('applyTo'), 'no applyTo in SKILL.md (path-matching belongs in instructions)');
+    assert.ok(!skillMd.includes('paths:'), 'no paths: in SKILL.md');
+
+    // Supporting files (references) must be written alongside SKILL.md
+    const assertionsRef = files['.github/skills/xunit-testing/references/assertions.md'];
+    assert.ok(assertionsRef, 'references/assertions.md emitted alongside SKILL.md (bug-fix: was silently dropped)');
+
+    // No prompt file should be emitted for a skill
+    assert.ok(!('.github/prompts/xunit-testing.prompt.md' in files),
+      'skills must NOT emit as .prompt.md (skills and prompts are distinct Copilot artifact types)');
   });
 
   it('emits AGENTS.md with all agents', async () => {
@@ -579,17 +590,36 @@ describe('Copilot scaffold: prompt with args', () => {
     assert.ok(f.includes('${input:diff}'), '${input:diff} substitution present');
   });
 
-  it('regression: skill-derived prompt file is unaffected (no {{}} tokens)', async () => {
+  it('regression: .github/prompts/ contains only standalone prompts (not skills)', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
 
-    const f = files['.github/prompts/xunit-testing.prompt.md'];
-    assert.ok(f, 'xunit-testing prompt file still emitted');
-    assert.ok(f.includes('agent: agent'), 'agent field still present');
-    assert.ok(f.includes('Writing xUnit Tests'), 'skill body still present');
-    assert.ok(!f.includes('{{'), 'no unresolved {{ placeholders in skill prompt');
+    // Verify the per-AI artifact separation: prompts/ must only contain catalog `prompt` kinds,
+    // never catalog `skill` kinds (those belong in skills/).
+    const promptKeys = Object.keys(files).filter(k => k.startsWith('.github/prompts/'));
+    const skillKeys  = Object.keys(files).filter(k => k.startsWith('.github/skills/'));
+
+    // The standalone explain-diff prompt must appear in prompts/
+    assert.ok(promptKeys.some(k => k.includes('shared-explain-diff')),
+      'standalone prompt emitted to .github/prompts/');
+
+    // No skill names should leak into prompts/
+    assert.ok(!promptKeys.some(k => k.includes('xunit-testing')),
+      'xunit-testing (a skill) must NOT appear in .github/prompts/');
+    assert.ok(!promptKeys.some(k => k.includes('pytest-testing')),
+      'pytest-testing (a skill) must NOT appear in .github/prompts/');
+
+    // Skills must appear in skills/ with no unresolved {{ placeholders
+    assert.ok(skillKeys.some(k => k.endsWith('/SKILL.md')),
+      'at least one SKILL.md emitted under .github/skills/');
+    skillKeys
+      .filter(k => k.endsWith('/SKILL.md'))
+      .forEach(k => {
+        assert.ok(!files[k].includes('{{'),
+          `no unresolved {{ placeholders in ${k}`);
+      });
   });
 });
 

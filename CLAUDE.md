@@ -178,14 +178,31 @@ text). Never emit a bare plain scalar for `description:` — a colon inside it b
 
 ### Platform-format notes (verified 2026-06)
 
-These are the key differences between our source field names and what each platform expects:
+**Per-AI artifact vocabulary** — do not mix these terms across platforms:
+
+| Catalog kind | Claude Code artifact | GitHub Copilot artifact |
+|---|---|---|
+| `skill` | Agent Skill — `.claude/skills/<n>/SKILL.md` | Agent Skill — `.github/skills/<n>/SKILL.md` |
+| `prompt` | **Custom command** — `.claude/commands/<slug>.md` | **Prompt file** — `.github/prompts/<slug>.prompt.md` |
+| `agent` | Subagent — `.claude/agents/<n>.md` | Custom agent — `.github/agents/<n>.agent.md` |
+| `rule` (shared) | Memory rule — `.claude/rules/<slug>.md` | Global instructions — `copilot-instructions.md` |
+| `rule` (language) | Memory rule — `.claude/rules/<slug>.md` (`paths:`) | Scoped instructions — `instructions/<slug>.instructions.md` |
+
+- Claude Code has **no "prompt" artifact** — catalog `prompt` → custom command (single-file skill).
+- Copilot has **no "command" artifact** — catalog `prompt` → prompt file. `/name` is shared UI only.
+- Both platforms use the **Agent Skills open standard** (`SKILL.md`) for `skill`.
+- Claude **built-in commands** (`/model`, `/clear`, `/compact`) control the session and are **not** catalog artifact types.
+
+**Key field differences between source and what each platform expects:**
 
 | Source field | Claude Code emits | Copilot emits |
 |---|---|---|
-| `appliesTo:` (skill/rule) | `paths:` (SKILL.md) or `paths:` (scaffolded rules) | `applyTo:` (`.instructions.md` only) |
+| `appliesTo:` (skill/rule) | `paths:` (SKILL.md or rules) | `applyTo:` (`.instructions.md` only; NOT in SKILL.md or prompt files) |
+| `prompt` body `{{name}}` | `$name` (via `arguments:` frontmatter list) | `${input:name}` (VS Code input variable, 2-part only) |
+| `prompt` frontmatter | `description:` + `argument-hint:` + `arguments:` (YAML list) | `agent: agent` + `description:` + `tools:` |
+| skill frontmatter | `name:` + `description:` + `paths:` | `name:` + `description:` only (no `applyTo`/`paths:`) |
 | — | flat `marketplace.json`: `name/owner/plugins[]` | — |
-| — | — | `agent: agent` (prompt files; not `mode:`) |
-| — | — | `.agent.md` extension + `description:` frontmatter (required) |
+| — | — | `.agent.md` extension + `description:` (required by Copilot spec) |
 
 The `appliesTo` field stays unchanged in `catalog/` source and the zod schema — only adapters translate it.
 

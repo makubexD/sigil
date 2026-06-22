@@ -28,8 +28,10 @@ to the native file layout of each AI platform (Claude Code, GitHub Copilot, and 
 
 ### skill
 
-A procedural how-to that an AI agent reads when asked to perform a specific task. Becomes a
-`/name` command in Claude Code and a `/name` prompt in Copilot Chat.
+A procedural how-to that an AI agent reads when asked to perform a specific task. Emitted as a
+native **Agent Skill** on both Claude Code (`.claude/skills/<name>/SKILL.md`) and GitHub Copilot
+(`.github/skills/<name>/SKILL.md`) — both follow the same Agent Skills open standard
+(agentskills.io). Invoked as `/name` in both tools.
 
 **File:** `catalog/languages/<lang>/skills/<name>/SKILL.md`  
 **Invoked as:** `skill:csharp/xunit-testing` in the CLI
@@ -104,8 +106,16 @@ extends:
 
 ### prompt
 
-A reusable, parameterised prompt that can be invoked by name. Becomes a Copilot `/name` prompt or
-a Claude Code command.
+A reusable, parameterised prompt that can be invoked by name.
+
+- **GitHub Copilot:** emitted as a **prompt file** (`.github/prompts/<slug>.prompt.md`), invoked
+  as `/slug` in Copilot Chat. "Prompt file" is Copilot's native term for this artifact.
+- **Claude Code:** emitted as a **custom command** (`.claude/commands/<slug>.md`), invoked as
+  `/slug` in Claude Code. Custom commands are single-file skills in Claude's vocabulary — "prompt"
+  is not a Claude Code artifact type.
+
+There is intentionally no cross-vocabulary confusion: `/name` is the shared *invocation UI*, not a
+shared artifact name. Each adapter uses the platform's own term.
 
 **File:** `catalog/shared/prompts/<name>.prompt.md` or `catalog/languages/<lang>/prompts/<name>.prompt.md`
 
@@ -119,10 +129,16 @@ args:
   - name: diff
     description: The git diff to explain.
     required: true
+  - name: audience
+    description: "Who will read this: reviewer, junior, manager"
+    required: false
 ---
 ```
 
-Use `{{argName}}` in the prompt body as a placeholder.
+Use `{{argName}}` in the prompt body. Each adapter translates:
+- `{{name}}` → `$name` on Claude Code (named positional arg via `arguments:` frontmatter list)
+- `{{name}}` → `${input:name}` on Copilot (VS Code input variable; 2-part form only — arg
+  descriptions may contain colons, which would break the `${input:name:placeholder}` 3-part form)
 
 ### workflow
 
@@ -176,15 +192,40 @@ Adapters then decide **how** to materialise the closure:
 |---|---|---|
 | Claude Code (plugin build) | Inlined as `## Applied Rules` section in SKILL.md | Written to `agents/<name>.md` in the pack |
 | Claude Code (scaffold/add) | Written to `.claude/rules/<slug>.md` | Written to `.claude/agents/<name>.md` |
-| GitHub Copilot | Body included in `.prompt.md`'s `## Coding guidelines` section | Entry in `AGENTS.md` |
+| GitHub Copilot | Inlined as `## Coding guidelines to apply` section in the native SKILL.md | Entry in `AGENTS.md` |
 
 ---
+
+## Per-platform artifact models (verified June 2026)
+
+Each platform has its own native artifact vocabulary. The catalog's kind names (`skill`, `prompt`,
+…) are vendor-neutral source terms; each adapter translates them.
+
+| Catalog kind | Claude Code native artifact | GitHub Copilot native artifact |
+|---|---|---|
+| `skill` | **Agent Skill** — `.claude/skills/<name>/SKILL.md` | **Agent Skill** — `.github/skills/<name>/SKILL.md` |
+| `prompt` | **Custom command** — `.claude/commands/<slug>.md` | **Prompt file** — `.github/prompts/<slug>.prompt.md` |
+| `agent` | **Subagent** — `.claude/agents/<name>.md` | **Custom agent** — `.github/agents/<name>.agent.md` |
+| `rule` (shared) | **Memory rule** — `.claude/rules/<slug>.md` (no path filter) | **Global instructions** — `.github/copilot-instructions.md` |
+| `rule` (language) | **Memory rule** — `.claude/rules/<slug>.md` (`paths:` frontmatter) | **Scoped instructions** — `.github/instructions/<slug>.instructions.md` (`applyTo:`) |
+
+**Key vocabulary rules (do not mix these terms across platforms):**
+
+- Claude Code has **no "prompt" artifact**. A catalog `prompt` becomes a *custom command* (a
+  single-file skill — "custom commands have been merged into skills" per the official docs). The
+  word "prompt" is not used in Claude Code's artifact vocabulary.
+- GitHub Copilot has **no "command" artifact**. A catalog `prompt` becomes a *prompt file*.
+  `/name` is the shared *invocation UI* but is not a shared artifact type.
+- Both platforms share the **Agent Skills open standard** (`SKILL.md`, agentskills.io) for
+  the `skill` kind — the only artifact where the file layout is identical on both platforms.
+- Claude **built-in commands** (`/model`, `/clear`, `/compact`) *control the session* and are
+  unrelated to authored custom commands / skills. They are not catalog artifact types.
 
 ## Canonical → platform mapping
 
 | Canonical kind | Claude Code plugin (`dist/claude/`) | Claude Code scaffold (`.claude/`) | GitHub Copilot (`.github/`) |
 |---|---|---|---|
-| `skill` | `skills/<name>/SKILL.md` | `.claude/skills/<name>/SKILL.md` | `prompts/<name>.prompt.md` |
+| `skill` | `skills/<name>/SKILL.md` + `references/` | `.claude/skills/<name>/SKILL.md` + `references/` | `skills/<name>/SKILL.md` + `references/` |
 | `agent` | `agents/<name>.md` | `.claude/agents/<name>.md` | `agents/<name>.agent.md` |
 | `rule` (shared, no language) | folded into skill SKILL.md | `.claude/rules/<slug>.md` (no frontmatter) | `copilot-instructions.md` |
 | `rule` (language-scoped) | folded into skill SKILL.md | `.claude/rules/<slug>.md` (`paths:` frontmatter) | `instructions/<slug>.instructions.md` |
@@ -195,8 +236,16 @@ Adapters then decide **how** to materialise the closure:
 
 - **Claude skill SKILL.md:** uses `paths:` for path-scoped loading (`appliesTo` is our vendor-neutral
   source field; adapters translate it). `description` is emitted as a double-quoted YAML scalar.
+- **Copilot skill SKILL.md:** uses only `name` and `description` frontmatter — **no** `applyTo` or
+  `paths:`. Copilot skills load by description relevance, not file-path matching. Supporting files
+  (`references/`) are written alongside SKILL.md, same as Claude.
 - **Copilot prompt files:** use `agent: agent` (current field; `mode:` was the legacy name). `applyTo`
-  is **not valid** in `.prompt.md` — it belongs only in `.instructions.md`.
+  is **not valid** in `.prompt.md` — it belongs only in `.instructions.md`. Body uses `${input:name}`
+  for argument substitution (2-part form; 3-part `${input:name:placeholder}` is avoided because arg
+  descriptions may contain colons).
+- **Claude custom commands (prompts):** frontmatter uses `description:` (feeds the `/` menu),
+  `argument-hint: [a] [b]` (autocomplete hint), and `arguments:` (YAML list of names for `$name`
+  substitution). Body uses `$name` (named positional args — official Claude Code feature).
 - **Copilot agent files:** require the `.agent.md` extension and a `description:` frontmatter field
   (both required by the Copilot spec). Build path writes the aggregate `AGENTS.md` (open standard).
 - **Claude marketplace.json:** flat top-level schema — `name`, `owner`, `plugins[]` — no wrapper key.

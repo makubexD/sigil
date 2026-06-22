@@ -343,18 +343,26 @@ const PACKS = [
         strict_1.default.ok(instrFile.includes('*.cs'), 'cs glob present');
         strict_1.default.ok(instrFile.includes('File-scoped namespaces'), 'rule body present');
     });
-    (0, node_test_1.it)('emits skills as prompt files', async () => {
+    (0, node_test_1.it)('emits skills as native Agent Skills (open standard)', async () => {
         const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
         const resolved = (0, resolve_1.resolveCatalog)(catalog);
         const target = new copilot_1.CopilotTarget();
         const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
-        const promptFile = files['.github/prompts/xunit-testing.prompt.md'];
-        strict_1.default.ok(promptFile, 'xunit-testing.prompt.md emitted');
-        // `agent:` is the current field name (renamed from legacy `mode:`)
-        // See: code.visualstudio.com/docs/agent-customization/prompt-files
-        strict_1.default.ok(promptFile.includes('agent: agent'), 'agent field set (not legacy mode:)');
-        strict_1.default.ok(!promptFile.includes('applyTo'), 'no applyTo in prompt files (belongs in .instructions.md only)');
-        strict_1.default.ok(promptFile.includes('Writing xUnit Tests'), 'skill body present');
+        // Skills must now emit as native Agent Skills at .github/skills/<name>/SKILL.md
+        // (Copilot Agent Skills open standard, agentskills.io) — NOT as prompt files.
+        const skillMd = files['.github/skills/xunit-testing/SKILL.md'];
+        strict_1.default.ok(skillMd, '.github/skills/xunit-testing/SKILL.md emitted');
+        strict_1.default.ok(skillMd.includes('name: xunit-testing'), 'name frontmatter present');
+        strict_1.default.ok(skillMd.includes('description:'), 'description frontmatter present');
+        strict_1.default.ok(skillMd.includes('Writing xUnit Tests'), 'skill body present');
+        // Agent Skill frontmatter must NOT include applyTo or paths — skills load by description relevance
+        strict_1.default.ok(!skillMd.includes('applyTo'), 'no applyTo in SKILL.md (path-matching belongs in instructions)');
+        strict_1.default.ok(!skillMd.includes('paths:'), 'no paths: in SKILL.md');
+        // Supporting files (references) must be written alongside SKILL.md
+        const assertionsRef = files['.github/skills/xunit-testing/references/assertions.md'];
+        strict_1.default.ok(assertionsRef, 'references/assertions.md emitted alongside SKILL.md (bug-fix: was silently dropped)');
+        // No prompt file should be emitted for a skill
+        strict_1.default.ok(!('.github/prompts/xunit-testing.prompt.md' in files), 'skills must NOT emit as .prompt.md (skills and prompts are distinct Copilot artifact types)');
     });
     (0, node_test_1.it)('emits AGENTS.md with all agents', async () => {
         const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
@@ -456,16 +464,27 @@ const PACKS = [
         strict_1.default.ok(!f.includes('{{diff}}'), '{{diff}} placeholder translated');
         strict_1.default.ok(f.includes('${input:diff}'), '${input:diff} substitution present');
     });
-    (0, node_test_1.it)('regression: skill-derived prompt file is unaffected (no {{}} tokens)', async () => {
+    (0, node_test_1.it)('regression: .github/prompts/ contains only standalone prompts (not skills)', async () => {
         const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
         const resolved = (0, resolve_1.resolveCatalog)(catalog);
         const target = new copilot_1.CopilotTarget();
         const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
-        const f = files['.github/prompts/xunit-testing.prompt.md'];
-        strict_1.default.ok(f, 'xunit-testing prompt file still emitted');
-        strict_1.default.ok(f.includes('agent: agent'), 'agent field still present');
-        strict_1.default.ok(f.includes('Writing xUnit Tests'), 'skill body still present');
-        strict_1.default.ok(!f.includes('{{'), 'no unresolved {{ placeholders in skill prompt');
+        // Verify the per-AI artifact separation: prompts/ must only contain catalog `prompt` kinds,
+        // never catalog `skill` kinds (those belong in skills/).
+        const promptKeys = Object.keys(files).filter(k => k.startsWith('.github/prompts/'));
+        const skillKeys = Object.keys(files).filter(k => k.startsWith('.github/skills/'));
+        // The standalone explain-diff prompt must appear in prompts/
+        strict_1.default.ok(promptKeys.some(k => k.includes('shared-explain-diff')), 'standalone prompt emitted to .github/prompts/');
+        // No skill names should leak into prompts/
+        strict_1.default.ok(!promptKeys.some(k => k.includes('xunit-testing')), 'xunit-testing (a skill) must NOT appear in .github/prompts/');
+        strict_1.default.ok(!promptKeys.some(k => k.includes('pytest-testing')), 'pytest-testing (a skill) must NOT appear in .github/prompts/');
+        // Skills must appear in skills/ with no unresolved {{ placeholders
+        strict_1.default.ok(skillKeys.some(k => k.endsWith('/SKILL.md')), 'at least one SKILL.md emitted under .github/skills/');
+        skillKeys
+            .filter(k => k.endsWith('/SKILL.md'))
+            .forEach(k => {
+            strict_1.default.ok(!files[k].includes('{{'), `no unresolved {{ placeholders in ${k}`);
+        });
     });
 });
 // ─── Part B: availability helpers ──────────────────────────────────────────────

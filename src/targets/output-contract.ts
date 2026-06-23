@@ -21,10 +21,7 @@ import type { FileMap, ContractEntry, OutputViolation } from '../types';
  * Check every file in `files` against the first matching entry in `contracts`.
  * Returns an array of violations (empty array = all contracts satisfied).
  */
-export function checkOutputContract(
-  files: FileMap,
-  contracts: ContractEntry[],
-): OutputViolation[] {
+export function checkOutputContract(files: FileMap, contracts: ContractEntry[]): OutputViolation[] {
   const violations: OutputViolation[] = [];
 
   for (const [filePath, content] of Object.entries(files)) {

@@ -26,18 +26,21 @@ npm run build:watch
 
 **CLI dev invocation (two options):**
 
-*Primary — `npm link` (one-time setup):*
-```bash
-npm link            # registers a global `maku-catalog` symlink pointing at dist-cli/
-maku-catalog new    # then use the bin name directly from any directory
-```
-The symlink survives rebuilds because it points to `dist-cli/cli.js` by path, not by content. Run `npm unlink -g @maku/agent-catalog` to remove.
+_Primary — `npm link` (one-time setup):_
 
-*Fallback — npm script wrapper (no global install):*
 ```bash
-npm run maku -- new                          # bare wizard
-npm run maku -- new skill --name foo --yes   # flags-only, non-interactive
-npm run maku -- check catalog/shared/...     # the `--` forwards all args to the bin
+npm link        # registers a global `sigil` symlink pointing at dist-cli/
+sigil new      # then use the bin name directly from any directory
+```
+
+The symlink survives rebuilds because it points to `dist-cli/cli.js` by path, not by content. Run `npm unlink -g sigil` to remove it.
+
+_Fallback — npm script wrapper (no global install):_
+
+```bash
+npm run sigil -- new                          # bare wizard
+npm run sigil -- new skill --name foo --yes   # flags-only, non-interactive
+npm run sigil -- check catalog/shared/...     # the `--` forwards all args to the bin
 ```
 
 **Heap-size note:** `tsc` OOMs at the default 4 GB V8 heap on this project because Zod's
@@ -47,17 +50,47 @@ recursive generics force deep type-inference. `npm run build` now sets this auto
 
 **Test note:** `test/` is excluded from `tsconfig.build.json`. After editing a test file you must
 compile it separately before running `npm test`:
+
 ```bash
 npx tsc --outDir test test/pipeline.test.ts --module commonjs --target ES2020 --esModuleInterop --skipLibCheck
 ```
+
 The test file imports from `../dist-cli/…`, so source edits need a full `npm run build` to take
 effect in tests.
+
+**Lint/format:**
+
+```bash
+npm run lint           # ESLint — report violations
+npm run lint:fix       # ESLint — auto-fix
+npm run format         # Prettier — reformat all non-ignored files
+npm run format:check   # Prettier — check (used in CI)
+```
+
+**Releasing a new version:**
+
+```bash
+sigil release patch         # 0.1.0 → 0.1.1  (also: minor, major, or explicit x.y.z)
+sigil release patch --dry-run  # preview without writing
+```
+
+The command runs a clean-tree preflight, bumps `package.json` + `package-lock.json`, rebuilds so
+`dist/**/plugin.json` carries the new version, promotes `CHANGELOG.md`, then commits + tags.
+After success:
+
+```bash
+git push && git push --tags  # triggers release.yml → npm publish via OIDC
+```
+
+See `docs/guides/operations.md` and `.github/workflows/release.yml` for the full publish setup (OIDC Trusted
+Publishing — no stored `NPM_TOKEN` needed).
 
 ## `add` command — selector + filter model
 
 The `add` command is variadic and conflict-aware.
 
 **Selector forms (can be combined):**
+
 ```bash
 add all                            # full catalog
 add pack:dotnet-pack               # all artifacts in a pack
@@ -67,6 +100,7 @@ add csharp/xunit-testing           # bare ID
 ```
 
 **Key flags:**
+
 - `--kind skill,agent` / `--exclude prompt` — post-expansion kind filters
 - `--language csharp` — restrict to one language (shared artifacts always included)
 - `--no-deps` — skip the `uses` closure (skill only, no rule/agent deps)
@@ -82,12 +116,13 @@ non-zero with a usage hint instead of hanging. Always safe to run in CI with `--
 `@clack/prompts` for a 6-step guided flow: target → scope → artifacts → language filter →
 include-deps → overwrite. Every prompt maps 1:1 to a CLI flag; wizard and scripted paths are
 equivalent. After the install completes, `printEquivalentCommand()` prints the copy-pasteable
-`maku-catalog add … --yes` line once (as a boxed clack note in a TTY, plain text in CI). The
+`sigil add … --yes` line once (as a boxed clack note in a TTY, plain text in CI). The
 wizard plan box shows only the summary + artifact preview (no command) so the command is never
 printed twice.
 
 **Dependency closure UX (step 4 + plan box):** the `uses:` dependency is purely authored YAML
 frontmatter in each SKILL.md (e.g. `uses: { rules: [csharp/dotnet-style], agents: [shared/code-reviewer] }`) — not a hard technical requirement. The wizard surfaces this concretely:
+
 - After step 3b, `computeClosure(primaryIds, catalog)` (`src/select.ts`) walks `resolvedRules` and
   `resolvedAgentIds` on each skill to compute the exact rules/agents that would be added. Any
   artifact already in the primary picks set is excluded from the dep list.
@@ -124,11 +159,12 @@ conflicting files are never touched without `--overwrite`.
 and checks each artifact's kind against `target.supportedKinds`. Unsupported kinds go to
 `skipped[]` (warn-and-skip, not an error). Shared by both the wizard and the flags path.
 
-**Shell completion:** `maku-catalog completion [bash|zsh|fish]` prints a completion script.
-`maku-catalog __complete <word> --prev <prev>` (hidden) outputs candidate completions for the
+**Shell completion:** `sigil completion [bash|zsh|fish]` prints a completion script.
+`sigil __complete <word> --prev <prev>` (hidden) outputs candidate completions for the
 current position — used by the generated scripts.
 
 **Path anchoring (`src/cli.ts`):** Two path roles must stay separate:
+
 - **Catalog source** (`catalog/`, `packs.yaml`, `schema/`) — read from the installed package.
   `PKG_ROOT = path.resolve(__dirname, '..')` (in `dist-cli/`, so `..` = package root).
   `resolveDefault(relative)` anchors all `--catalog-dir`/`--packs`/`--out-dir` defaults here.
@@ -136,7 +172,7 @@ current position — used by the generated scripts.
 - **Consumer destination** (`--project-dir`) — anchored on `process.cwd()` by design.
   Never change this: it is the user's project root where `.claude/`/`.github/` get written.
 
-This separation makes `maku-catalog add` work from any directory, not just inside the repo.
+This separation makes `sigil add` work from any directory, not just inside the repo.
 
 ## Architecture
 
@@ -168,10 +204,10 @@ The registry lives in `src/targets/index.ts` — adding a platform = one new fil
 Claude Code plugins cannot ship loose rules (`CLAUDE.md` at plugin root is not loaded by Claude).
 Rules are therefore materialised differently depending on the delivery mode:
 
-| Delivery | Rule handling | Agent handling |
-|---|---|---|
+| Delivery                          | Rule handling                                          | Agent handling                            |
+| --------------------------------- | ------------------------------------------------------ | ----------------------------------------- |
 | **Plugin build** (`dist/claude/`) | Inlined as `## Applied Rules` section in each SKILL.md | Written to `agents/<name>.md` in the pack |
-| **CLI scaffold** (`add` / `init`) | Written to `.claude/rules/<slug>.md` (loaded natively) | Written to `.claude/agents/<name>.md` |
+| **CLI scaffold** (`add` / `init`) | Written to `.claude/rules/<slug>.md` (loaded natively) | Written to `.claude/agents/<name>.md`     |
 
 The `build` command produces the plugin layout. The `add` command produces the scaffold layout.
 
@@ -196,12 +232,12 @@ text). Never emit a bare plain scalar for `description:` — a colon inside it b
 
 **Per-AI artifact vocabulary** — do not mix these terms across platforms:
 
-| Catalog kind | Claude Code artifact | GitHub Copilot artifact |
-|---|---|---|
-| `skill` | Agent Skill — `.claude/skills/<n>/SKILL.md` | Agent Skill — `.github/skills/<n>/SKILL.md` |
-| `prompt` | **Custom command** — `.claude/commands/<slug>.md` | **Prompt file** — `.github/prompts/<slug>.prompt.md` |
-| `agent` | Subagent — `.claude/agents/<n>.md` | Custom agent — `.github/agents/<n>.agent.md` |
-| `rule` (shared) | Memory rule — `.claude/rules/<slug>.md` | Global instructions — `copilot-instructions.md` |
+| Catalog kind      | Claude Code artifact                               | GitHub Copilot artifact                                     |
+| ----------------- | -------------------------------------------------- | ----------------------------------------------------------- |
+| `skill`           | Agent Skill — `.claude/skills/<n>/SKILL.md`        | Agent Skill — `.github/skills/<n>/SKILL.md`                 |
+| `prompt`          | **Custom command** — `.claude/commands/<slug>.md`  | **Prompt file** — `.github/prompts/<slug>.prompt.md`        |
+| `agent`           | Subagent — `.claude/agents/<n>.md`                 | Custom agent — `.github/agents/<n>.agent.md`                |
+| `rule` (shared)   | Memory rule — `.claude/rules/<slug>.md`            | Global instructions — `copilot-instructions.md`             |
 | `rule` (language) | Memory rule — `.claude/rules/<slug>.md` (`paths:`) | Scoped instructions — `instructions/<slug>.instructions.md` |
 
 - Claude Code has **no "prompt" artifact** — catalog `prompt` → custom command (single-file skill).
@@ -211,14 +247,14 @@ text). Never emit a bare plain scalar for `description:` — a colon inside it b
 
 **Key field differences between source and what each platform expects:**
 
-| Source field | Claude Code emits | Copilot emits |
-|---|---|---|
-| `appliesTo:` (skill/rule) | `paths:` (SKILL.md or rules) | `applyTo:` (`.instructions.md` only; NOT in SKILL.md or prompt files) |
-| `prompt` body `{{name}}` | `$name` (via `arguments:` frontmatter list) | `${input:name}` (VS Code input variable, 2-part only) |
-| `prompt` frontmatter | `description:` + `argument-hint:` + `arguments:` (YAML list) | `agent: agent` + `description:` + `tools:` |
-| skill frontmatter | `name:` + `description:` + `paths:` | `name:` + `description:` only (no `applyTo`/`paths:`) |
-| — | flat `marketplace.json`: `name/owner/plugins[]` | — |
-| — | — | `.agent.md` extension + `description:` (required by Copilot spec) |
+| Source field              | Claude Code emits                                            | Copilot emits                                                         |
+| ------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `appliesTo:` (skill/rule) | `paths:` (SKILL.md or rules)                                 | `applyTo:` (`.instructions.md` only; NOT in SKILL.md or prompt files) |
+| `prompt` body `{{name}}`  | `$name` (via `arguments:` frontmatter list)                  | `${input:name}` (VS Code input variable, 2-part only)                 |
+| `prompt` frontmatter      | `description:` + `argument-hint:` + `arguments:` (YAML list) | `agent: agent` + `description:` + `tools:`                            |
+| skill frontmatter         | `name:` + `description:` + `paths:`                          | `name:` + `description:` only (no `applyTo`/`paths:`)                 |
+| —                         | flat `marketplace.json`: `name/owner/plugins[]`              | —                                                                     |
+| —                         | —                                                            | `.agent.md` extension + `description:` (required by Copilot spec)     |
 
 The `appliesTo` field stays unchanged in `catalog/` source and the zod schema — only adapters translate it.
 

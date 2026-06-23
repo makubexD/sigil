@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" role="img" aria-label="Sigil">
+  <title>Sigil</title>
+  <defs>
+    <linearGradient id="sealGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4545C0"/>
+      <stop offset="100%" stop-color="#1A1A65"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Seal ring — a circle enclosing the inscribed glyph, symbolising "sealed intent" -->
+  <circle cx="25" cy="32" r="19"
+          fill="none" stroke="url(#sealGrad)" stroke-width="3"/>
+
+  <!-- Inscribed sigil glyph — angular S-rune (Sowilo-style zigzag):
+       one source, sealed inside the mark -->
+  <polyline points="34,20 14,32 34,44"
+            fill="none" stroke="url(#sealGrad)" stroke-width="3"
+            stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- Radiating rays from the seal's right edge (44, 32) →
+       "one source, every assistant" — the sealed glyph broadcasts to three targets -->
+  <line x1="44" y1="32" x2="57" y2="23" stroke="#D49A2A" stroke-width="2" stroke-linecap="round"/>
+  <line x1="44" y1="32" x2="60" y2="32" stroke="#D49A2A" stroke-width="2" stroke-linecap="round"/>
+  <line x1="44" y1="32" x2="57" y2="41" stroke="#D49A2A" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Terminal nodes — each output assistant that receives the intent -->
+  <circle cx="57" cy="23" r="2.5" fill="#D49A2A"/>
+  <circle cx="60" cy="32" r="2.5" fill="#D49A2A"/>
+  <circle cx="57" cy="41" r="2.5" fill="#D49A2A"/>
+</svg>

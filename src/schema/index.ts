@@ -57,10 +57,13 @@ export const SkillSchema = z.object({
    * Reuse references: which shared/language rules and agents this skill depends on.
    * The resolver expands these at build time — nothing is copied in the source.
    */
-  uses: z.object({
-    rules: z.array(z.string()).optional().default([]),
-    agents: z.array(z.string()).optional().default([]),
-  }).optional().default({}),
+  uses: z
+    .object({
+      rules: z.array(z.string()).optional().default([]),
+      agents: z.array(z.string()).optional().default([]),
+    })
+    .optional()
+    .default({}),
 });
 
 // ─── Agent ───────────────────────────────────────────────────────────────────
@@ -90,12 +93,14 @@ export const AgentSchema = z.object({
    * Claude Code-specific hints. Namespaced so other adapters can ignore them.
    * Adapter reads these and applies them to the agent's Markdown frontmatter.
    */
-  claude: z.object({
-    model: z.enum(['haiku', 'sonnet', 'opus']).optional(),
-    effort: z.enum(['low', 'medium', 'high']).optional(),
-    maxTurns: z.number().int().positive().optional(),
-    isolation: z.enum(['worktree']).optional(),
-  }).optional(),
+  claude: z
+    .object({
+      model: z.enum(['haiku', 'sonnet', 'opus']).optional(),
+      effort: z.enum(['low', 'medium', 'high']).optional(),
+      maxTurns: z.number().int().positive().optional(),
+      isolation: z.enum(['worktree']).optional(),
+    })
+    .optional(),
 });
 
 // ─── Rule ─────────────────────────────────────────────────────────────────────
@@ -124,11 +129,15 @@ export const PromptSchema = z.object({
   /** Optional file globs to scope when this prompt is auto-suggested. */
   appliesTo: z.array(z.string()).optional(),
   /** Named input arguments for parameterised prompts. */
-  args: z.array(z.object({
-    name: z.string(),
-    description: z.string().optional(),
-    required: z.boolean().optional().default(false),
-  })).optional(),
+  args: z
+    .array(
+      z.object({
+        name: z.string(),
+        description: z.string().optional(),
+        required: z.boolean().optional().default(false),
+      }),
+    )
+    .optional(),
 });
 
 // ─── Workflow ─────────────────────────────────────────────────────────────────
@@ -140,11 +149,15 @@ export const WorkflowSchema = z.object({
    * Ordered steps that reference other artifact IDs.
    * Emitted as a multi-step skill/command on each platform.
    */
-  steps: z.array(z.object({
-    /** Artifact ID of the skill or prompt to run in this step. */
-    ref: z.string(),
-    description: z.string().optional(),
-  })).min(1),
+  steps: z
+    .array(
+      z.object({
+        /** Artifact ID of the skill or prompt to run in this step. */
+        ref: z.string(),
+        description: z.string().optional(),
+      }),
+    )
+    .min(1),
 });
 
 // ─── Registry ─────────────────────────────────────────────────────────────────
@@ -157,7 +170,7 @@ const SCHEMAS = {
   workflow: WorkflowSchema,
 } as const;
 
-export type AnySchema = typeof SCHEMAS[keyof typeof SCHEMAS];
+export type AnySchema = (typeof SCHEMAS)[keyof typeof SCHEMAS];
 
 /** Returns the zod schema for the given artifact kind. Throws on unknown kind. */
 export function getSchema(kind: string): AnySchema {

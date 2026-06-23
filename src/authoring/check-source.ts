@@ -11,9 +11,9 @@
  *      deps (rules/agents) restricted to a platform P does not include.
  *
  * Used by:
- *   - `maku-catalog check <file>`  — explicit single-file validation
- *   - `maku-catalog new`           — auto-run after scaffolding
- *   - `maku-catalog retarget`      — validate the mutated artifact before saving
+ *   - `sigil check <file>`  — explicit single-file validation
+ *   - `sigil new`           — auto-run after scaffolding
+ *   - `sigil retarget`      — validate the mutated artifact before saving
  */
 import path from 'path';
 import type { Artifact, LoadedCatalog, SourceViolation } from '../types';
@@ -107,7 +107,10 @@ export function checkSourceArtifact(
 
   // id must be exactly "<prefix>/<name>" (two parts)
   if (parts.length !== 2 || !parts[0] || !parts[1]) {
-    v.push({ file, problem: `id '${id}' must follow the convention '<language>/<name>' or 'shared/<name>'` });
+    v.push({
+      file,
+      problem: `id '${id}' must follow the convention '<language>/<name>' or 'shared/<name>'`,
+    });
   } else {
     const [idPrefix, idName] = parts;
 
@@ -124,7 +127,10 @@ export function checkSourceArtifact(
     const kindName = artifact.frontmatter.name as string | undefined;
     if ((artifact.kind === 'skill' || artifact.kind === 'agent') && kindName) {
       if (!isKebabCase(kindName)) {
-        v.push({ file, problem: `name '${kindName}' must be kebab-case (lowercase letters, digits, hyphens)` });
+        v.push({
+          file,
+          problem: `name '${kindName}' must be kebab-case (lowercase letters, digits, hyphens)`,
+        });
       }
       // name must match the last path segment of the id
       if (kindName !== idName) {
@@ -178,7 +184,10 @@ export function checkSourceArtifact(
     if (!target) {
       v.push({ file, problem: `extends: '${ref}' does not exist in the catalog` });
     } else if (target.kind !== 'rule') {
-      v.push({ file, problem: `extends: '${ref}' has kind '${target.kind}' — only rules can be extended` });
+      v.push({
+        file,
+        problem: `extends: '${ref}' has kind '${target.kind}' — only rules can be extended`,
+      });
     }
   }
 
@@ -189,7 +198,10 @@ export function checkSourceArtifact(
     if (!target) {
       v.push({ file, problem: `uses.rules: '${ref}' does not exist in the catalog` });
     } else if (target.kind !== 'rule') {
-      v.push({ file, problem: `uses.rules: '${ref}' has kind '${target.kind}' — only rules valid here` });
+      v.push({
+        file,
+        problem: `uses.rules: '${ref}' has kind '${target.kind}' — only rules valid here`,
+      });
     }
   }
   for (const ref of uses?.agents ?? []) {
@@ -197,7 +209,10 @@ export function checkSourceArtifact(
     if (!target) {
       v.push({ file, problem: `uses.agents: '${ref}' does not exist in the catalog` });
     } else if (target.kind !== 'agent') {
-      v.push({ file, problem: `uses.agents: '${ref}' has kind '${target.kind}' — only agents valid here` });
+      v.push({
+        file,
+        problem: `uses.agents: '${ref}' has kind '${target.kind}' — only agents valid here`,
+      });
     }
   }
 
@@ -221,7 +236,10 @@ export function checkSourceArtifact(
 
     for (const p of platforms) {
       if (!allTargetNames.has(p)) {
-        v.push({ file, problem: `platforms: '${p}' is not a registered target. Known targets: ${[...allTargetNames].join(', ')}` });
+        v.push({
+          file,
+          problem: `platforms: '${p}' is not a registered target. Known targets: ${[...allTargetNames].join(', ')}`,
+        });
       } else if (!kindSupporting.has(p)) {
         v.push({ file, problem: `platforms: '${p}' does not support kind '${artifact.kind}'` });
       }

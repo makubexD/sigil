@@ -1,5 +1,5 @@
 {
-  "name": "@maku/agent-catalog",
+  "name": "sigil",
   "version": "0.1.0",
   "description": "Vendor-neutral AI skills, agents, rules, and prompts — compiled to Claude Code, GitHub Copilot, and more.",
   "keywords": [
@@ -13,17 +13,26 @@
     "rules",
     "prompts"
   ],
+  "author": "makudev1719",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/makubexD/sigil.git"
+  },
+  "homepage": "https://github.com/makubexD/sigil#readme",
+  "bugs": {
+    "url": "https://github.com/makubexD/sigil/issues"
+  },
   "bin": {
-    "maku-catalog": "./dist-cli/cli.js"
+    "sigil": "./dist-cli/cli.js"
   },
   "files": [
     "catalog/",
     "schema/",
     "dist-cli/",
     "packs.yaml",
-    "SPEC.md",
-    "USAGE.md",
+    "docs/",
+    "CHANGELOG.md",
     "LICENSE",
     "README.md"
   ],
@@ -36,8 +45,12 @@
     "test": "node --test test/pipeline.test.js",
     "validate": "node dist-cli/cli.js validate",
     "catalog:build": "node dist-cli/cli.js build",
-    "maku": "node dist-cli/cli.js",
-    "prepack": "npm run build"
+    "sigil": "node dist-cli/cli.js",
+    "prepack": "npm run build",
+    "lint": "eslint src",
+    "lint:fix": "eslint src --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",
@@ -49,10 +62,14 @@
     "zod-to-json-schema": "^3.23.3"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.14.0",
     "cross-env": "^10.1.0",
-    "typescript": "^5.5.0"
+    "eslint": "^10.5.0",
+    "prettier": "^3.8.4",
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.62.0"
   },
   "engines": {
     "node": ">=18.0.0"

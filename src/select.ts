@@ -113,7 +113,7 @@ export function resolveSelection(
 
     if (!catalog.byId.has(id)) {
       throw new Error(
-        `Artifact '${id}' not found. Run \`maku-catalog list\` to see available artifacts.`,
+        `Artifact '${id}' not found. Run \`sigil list\` to see available artifacts.`,
       );
     }
     addId(id);
@@ -208,7 +208,7 @@ export function kindNoun(target: Target | undefined, kind: string): string {
 export function kindPlural(target: Target | undefined, kind: string): string {
   return (
     target?.vocabulary?.[kind as ArtifactKind]?.plural ??
-    (kind.charAt(0).toUpperCase() + kind.slice(1) + 's')
+    kind.charAt(0).toUpperCase() + kind.slice(1) + 's'
   );
 }
 

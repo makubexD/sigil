@@ -1,5 +1,5 @@
 /**
- * Core type definitions for the maku-catalog compiler pipeline.
+ * Core type definitions for the sigil compiler pipeline.
  * These interfaces flow through Load → Validate → Resolve → Emit.
  */
 
@@ -12,8 +12,8 @@ export type ArtifactKind = 'skill' | 'agent' | 'rule' | 'prompt' | 'workflow';
  * Loaded from <skill-dir>/references/*.md.
  */
 export interface ReferenceFile {
-  name: string;     // filename, e.g. "assertions.md"
-  content: string;  // raw file content
+  name: string; // filename, e.g. "assertions.md"
+  content: string; // raw file content
 }
 
 /**
@@ -21,12 +21,12 @@ export interface ReferenceFile {
  * Produced by the Load phase; consumed by Validate and Resolve.
  */
 export interface Artifact {
-  id: string;                          // e.g. "csharp/xunit-testing" or "shared/clean-code"
+  id: string; // e.g. "csharp/xunit-testing" or "shared/clean-code"
   kind: ArtifactKind;
-  filePath: string;                    // absolute path to the source .md file
+  filePath: string; // absolute path to the source .md file
   frontmatter: Record<string, unknown>;
-  body: string;                        // raw Markdown body (after frontmatter)
-  references?: ReferenceFile[];        // only set for skills with a references/ dir
+  body: string; // raw Markdown body (after frontmatter)
+  references?: ReferenceFile[]; // only set for skills with a references/ dir
 }
 
 // ─── Language metadata ────────────────────────────────────────────────────────
@@ -36,10 +36,10 @@ export interface Artifact {
  * Provides display info and file glob patterns for each language.
  */
 export interface LanguageMetadata {
-  id: string;          // matches the directory name, e.g. "csharp"
+  id: string; // matches the directory name, e.g. "csharp"
   displayName: string; // e.g. ".NET / C#"
-  globs: string[];     // canonical file globs, e.g. ["**/*.cs", "**/*.csproj"]
-  icon?: string;       // optional emoji or icon name
+  globs: string[]; // canonical file globs, e.g. ["**/*.cs", "**/*.csproj"]
+  icon?: string; // optional emoji or icon name
 }
 
 // ─── Loaded catalog ───────────────────────────────────────────────────────────
@@ -48,7 +48,7 @@ export interface LanguageMetadata {
 export interface LoadedCatalog {
   artifacts: Artifact[];
   byId: Map<string, Artifact>;
-  languages: Map<string, LanguageMetadata>;  // keyed by language id
+  languages: Map<string, LanguageMetadata>; // keyed by language id
 }
 
 // ─── Resolved catalog ─────────────────────────────────────────────────────────
@@ -135,8 +135,8 @@ export interface SourceViolation {
 // ─── Pack config (from packs.yaml) ───────────────────────────────────────────
 
 export interface Pack {
-  name: string;         // kebab-case, e.g. "dotnet-pack"
-  displayName: string;  // human-readable, e.g. ".NET / C# Pack"
+  name: string; // kebab-case, e.g. "dotnet-pack"
+  displayName: string; // human-readable, e.g. ".NET / C# Pack"
   description: string;
   languages?: string[]; // language IDs whose artifacts belong to this pack
   artifacts?: string[]; // optional explicit artifact ID list (overrides languages)
@@ -152,6 +152,12 @@ export interface CompileOptions {
   /** npm package version — written into generated plugin.json version fields. */
   version: string;
   packs: Pack[];
+  /**
+   * Project homepage URL (from package.json `homepage`).
+   * Written into generated marketplace.json and plugin.json author URL fields.
+   * Falls back to a placeholder when absent.
+   */
+  homepage?: string;
 }
 
 export interface ScaffoldOptions {
@@ -176,13 +182,13 @@ export interface Target {
 
   /**
    * Full build: compile the entire resolved catalog into a FileMap.
-   * Called by `maku-catalog build`.
+   * Called by `sigil build`.
    */
   compile(catalog: ResolvedCatalog, options: CompileOptions): Promise<FileMap>;
 
   /**
    * Partial scaffold: emit only the files needed for one artifact and its closure.
-   * Called by `maku-catalog add`.
+   * Called by `sigil add`.
    * May be omitted if the target doesn't support partial installs.
    */
   scaffold?(

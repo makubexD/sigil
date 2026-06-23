@@ -9,12 +9,7 @@
  *
  * All other artifact kinds pass through unchanged.
  */
-import type {
-  Artifact,
-  LoadedCatalog,
-  ResolvedArtifact,
-  ResolvedCatalog,
-} from './types';
+import type { Artifact, LoadedCatalog, ResolvedArtifact, ResolvedCatalog } from './types';
 
 export function resolveCatalog(catalog: LoadedCatalog): ResolvedCatalog {
   // Pre-compute the resolved form of every rule (needed for skill resolution)
@@ -79,9 +74,7 @@ function resolveRule(
     ancestorBodies.push(resolvedParent.resolvedBody ?? resolvedParent.body);
   }
 
-  const resolvedBody = [...ancestorBodies, artifact.body]
-    .filter(Boolean)
-    .join('\n\n');
+  const resolvedBody = [...ancestorBodies, artifact.body].filter(Boolean).join('\n\n');
 
   const resolved: ResolvedArtifact = { ...artifact, resolvedBody };
   cache.set(artifact.id, resolved);

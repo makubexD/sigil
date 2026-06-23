@@ -1,0 +1,18 @@
+dist-cli/
+dist/
+node_modules/
+schema/*.json
+catalog/
+packs.yaml
+package-lock.json
+
+# Test caches and minified output
+coverage/
+*.min.js
+
+# Hand-tuned SVG assets — do not reformat
+docs/assets/
+
+# Prose files — preserve manual line-breaks and formatting
+LICENSE
+CHANGELOG.md

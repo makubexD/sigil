@@ -4,7 +4,7 @@ kind: prompt
 title: Author a New Catalog Artifact
 description: >-
   Guided authoring workflow for adding a new skill, agent, rule, or prompt to the
-  maku-catalog. Interviews you, suggests the right kind and which AIs it propagates
+  sigil. Interviews you, suggests the right kind and which AIs it propagates
   to, scaffolds the frontmatter, and validates on save. DRY: body authored once,
   emits to every targeted AI automatically.
 tags:
@@ -14,12 +14,12 @@ tags:
   - shared
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 #                # or list: [claude, copilot] to restrict
-#                # change later: maku-catalog retarget shared/author-artifact --add <platform>
+#                # change later: sigil retarget shared/author-artifact --add <platform>
 ---
 
 # Author a New Catalog Artifact
 
-When the user wants to add a new artifact to the maku-catalog, follow this structured process.
+When the user wants to add a new artifact to the sigil, follow this structured process.
 
 ## Step 1 — Understand the intent
 
@@ -37,7 +37,7 @@ Explain to the user:
 > "By default, this artifact will propagate to ALL AIs that support its kind — that's the DRY rule.
 > Right now that means: Claude Code and GitHub Copilot (both support skill/agent/rule/prompt).
 > You can restrict it with `--platforms claude` if you only want it on one AI.
-> You can always widen it later with: `maku-catalog retarget <id> --add <platform>`"
+> You can always widen it later with: `sigil retarget <id> --add <platform>`"
 
 Ask: "Should this go to all AIs (recommended) or only specific ones?" Default to all.
 
@@ -68,10 +68,10 @@ Collect the following (suggest sensible defaults):
 
 ## Step 4 — Scaffold the file
 
-Build and run the `maku-catalog new` command with the gathered information:
+Build and run the `sigil new` command with the gathered information:
 
 ```bash
-maku-catalog new <kind> \
+sigil new <kind> \
   --name <name> \
   --language <lang>        \   # omit for shared
   [--platforms claude]     \   # only if restricting; omit for DRY default
@@ -81,13 +81,13 @@ maku-catalog new <kind> \
 **Examples**:
 ```bash
 # Shared prompt (all AIs, no language):
-maku-catalog new prompt --name author-artifact
+sigil new prompt --name author-artifact
 
 # Claude-only csharp skill:
-maku-catalog new skill --name ef-core-migrations --language csharp --platforms claude
+sigil new skill --name ef-core-migrations --language csharp --platforms claude
 
 # Shared agent (all AIs):
-maku-catalog new agent --name sql-reviewer
+sigil new agent --name sql-reviewer
 ```
 
 The command generates a minimal, schema-derived frontmatter header with:
@@ -119,7 +119,7 @@ For a **prompt** body: the instruction text, with `{{placeholder}}` for args
 Run the check command and fix all violations before finishing:
 
 ```bash
-maku-catalog check <path-to-new-file>
+sigil check <path-to-new-file>
 ```
 
 Violation categories:
@@ -128,7 +128,7 @@ Violation categories:
 - `platforms:` → platform name is wrong or unsupported for the kind
 - `Dependency coverage drift` → a `uses:` dep is restricted to fewer platforms than this artifact
 
-Do not finish until `maku-catalog check` exits 0.
+Do not finish until `sigil check` exits 0.
 
 ## Step 7 — Summary
 
@@ -139,5 +139,5 @@ Print:
 - Next steps:
   - `npm run validate` — full catalog integrity check
   - `npm run catalog:build` — emit to all targets
-  - `maku-catalog retarget <id> --add <platform>` — widen to more AIs later
-  - `maku-catalog retarget <id> --remove <platform>` — restrict further
+  - `sigil retarget <id> --add <platform>` — widen to more AIs later
+  - `sigil retarget <id> --remove <platform>` — restrict further

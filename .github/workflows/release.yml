@@ -1,0 +1,55 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+# id-token is required for npm OIDC Trusted Publishing (no stored NPM_TOKEN needed).
+# See: https://docs.npmjs.com/generating-provenance-statements
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Validate catalog
+        run: npm run validate
+
+      - name: Run tests
+        run: npm test
+
+      # ── Publish ──────────────────────────────────────────────────────────────
+      #
+      # RECOMMENDED PATH — npm OIDC Trusted Publishing (no stored secret):
+      #   1. Publish once manually: `npm publish --access public`
+      #   2. On npmjs.com → your package → Publishing → Trusted Publishers
+      #      Add: repo=<owner>/<repo>, workflow=release.yml, environment=<leave blank>
+      #   After that, OIDC authentication is automatic and this step runs as-is.
+      #
+      # FALLBACK (if OIDC cannot be configured):
+      #   Replace the step below with:
+      #     - name: Publish to npm (token)
+      #       env:
+      #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+      #       run: npm publish --access public
+      #
+      - name: Publish to npm (OIDC + provenance)
+        run: npm publish --provenance --access public

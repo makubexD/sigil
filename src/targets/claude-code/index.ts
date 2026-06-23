@@ -56,10 +56,14 @@ export class ClaudeCodeTarget implements Target {
    * and `.claude/skills/` are permanently supported (docs.claude.com/en/skills).
    */
   readonly vocabulary: Partial<Record<ArtifactKind, KindVocabulary>> = {
-    skill:    { noun: 'skill',    plural: 'Skills',    hint: 'procedural how-to guides for the AI' },
-    agent:    { noun: 'agent',    plural: 'Agents',    hint: 'specialised AI personas (subagents)' },
-    rule:     { noun: 'rule',     plural: 'Rules',     hint: 'coding style guidelines loaded as memory' },
-    prompt:   { noun: 'command',  plural: 'Commands',  hint: 'custom commands invoked with /name in Claude Code' },
+    skill: { noun: 'skill', plural: 'Skills', hint: 'procedural how-to guides for the AI' },
+    agent: { noun: 'agent', plural: 'Agents', hint: 'specialised AI personas (subagents)' },
+    rule: { noun: 'rule', plural: 'Rules', hint: 'coding style guidelines loaded as memory' },
+    prompt: {
+      noun: 'command',
+      plural: 'Commands',
+      hint: 'custom commands invoked with /name in Claude Code',
+    },
     workflow: { noun: 'workflow', plural: 'Workflows', hint: 'multi-step automated workflows' },
   };
 
@@ -80,8 +84,14 @@ export class ClaudeCodeTarget implements Target {
         requiredKeys: ['description'],
         forbiddenKeys: ['name', 'paths', 'applyTo', 'agent', 'tools'],
         bodyForbids: [
-          { pattern: /\{\{/, reason: 'unresolved {{…}} placeholder (should be translated to $name)' },
-          { pattern: /\$\{input:/, reason: 'Copilot ${input:…} placeholder found in Claude command body' },
+          {
+            pattern: /\{\{/,
+            reason: 'unresolved {{…}} placeholder (should be translated to $name)',
+          },
+          {
+            pattern: /\$\{input:/,
+            reason: 'Copilot ${input:…} placeholder found in Claude command body',
+          },
         ],
       },
     },
@@ -128,7 +138,13 @@ export class ClaudeCodeTarget implements Target {
 
     for (const pack of options.packs) {
       const packArtifacts = this.getPackArtifacts(pack, catalog);
-      const pluginFiles = this.buildPlugin(pack, packArtifacts, catalog, options.version);
+      const pluginFiles = this.buildPlugin(
+        pack,
+        packArtifacts,
+        catalog,
+        options.version,
+        options.homepage,
+      );
       Object.assign(files, pluginFiles);
 
       pluginEntries.push({
@@ -141,19 +157,21 @@ export class ClaudeCodeTarget implements Target {
 
     // marketplace.json — flat top-level schema (name / owner / plugins[])
     // See: code.claude.com/docs/en/plugin-marketplaces
-    files['.claude-plugin/marketplace.json'] = JSON.stringify(
-      {
-        name: 'maku-catalog',
-        owner: {
-          name: 'Maku Agent Catalog',
-          url: 'https://github.com/maku/agent-catalog',
+    const marketplaceUrl = options.homepage ?? 'https://github.com/makubexD/sigil#readme';
+    files['.claude-plugin/marketplace.json'] =
+      JSON.stringify(
+        {
+          name: 'sigil',
+          owner: {
+            name: 'Sigil',
+            url: marketplaceUrl,
+          },
+          description: 'Vendor-neutral AI skills, agents, and rules for multiple languages.',
+          plugins: pluginEntries,
         },
-        description: 'Vendor-neutral AI skills, agents, and rules for multiple languages.',
-        plugins: pluginEntries,
-      },
-      null,
-      2,
-    ) + '\n';
+        null,
+        2,
+      ) + '\n';
 
     return files;
   }
@@ -213,28 +231,31 @@ export class ClaudeCodeTarget implements Target {
     packArtifacts: ResolvedArtifact[],
     catalog: ResolvedCatalog,
     version: string,
+    homepage?: string,
   ): FileMap {
     const files: FileMap = {};
     const prefix = `plugins/${pack.name}`;
+    const pluginUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
 
     // plugin.json — metadata; version comes from npm package version
-    files[`${prefix}/.claude-plugin/plugin.json`] = JSON.stringify(
-      {
-        $schema: 'https://json.schemastore.org/claude-code-plugin-manifest.json',
-        name: pack.name,
-        displayName: pack.displayName,
-        version,
-        description: pack.description,
-        author: {
-          name: 'Maku Agent Catalog',
-          url: 'https://github.com/maku/agent-catalog',
+    files[`${prefix}/.claude-plugin/plugin.json`] =
+      JSON.stringify(
+        {
+          $schema: 'https://json.schemastore.org/claude-code-plugin-manifest.json',
+          name: pack.name,
+          displayName: pack.displayName,
+          version,
+          description: pack.description,
+          author: {
+            name: 'Sigil',
+            url: pluginUrl,
+          },
+          license: 'MIT',
+          keywords: pack.languages ?? [],
         },
-        license: 'MIT',
-        keywords: pack.languages ?? [],
-      },
-      null,
-      2,
-    ) + '\n';
+        null,
+        2,
+      ) + '\n';
 
     const skills = packArtifacts.filter(a => a.kind === 'skill');
     const agents = packArtifacts.filter(a => a.kind === 'agent');
@@ -408,10 +429,7 @@ export class ClaudeCodeTarget implements Target {
     // `description:` feeds the `/` menu label in Claude Code.
     // `argument-hint:` shows autocomplete hint (e.g. "[diff] [audience]").
     // `arguments:` declares named positional args so `$name` substitution resolves.
-    const fmLines: string[] = [
-      '---',
-      `description: ${yamlScalar(description)}`,
-    ];
+    const fmLines: string[] = ['---', `description: ${yamlScalar(description)}`];
     if (args.length > 0) {
       // Quote the argument-hint value — bare square brackets like [diff] [audience] are
       // invalid YAML flow-sequence syntax without quoting; a plain string "..." is safe.
@@ -426,6 +444,13 @@ export class ClaudeCodeTarget implements Target {
     // Translate {{name}} placeholders → $name (Claude's $name substitution syntax).
     const body = toClaudePlaceholders(prompt.body);
 
-    files[`.claude/commands/${slug}.md`] = [fmLines.join('\n'), '', `# ${title}`, '', body, ''].join('\n');
+    files[`.claude/commands/${slug}.md`] = [
+      fmLines.join('\n'),
+      '',
+      `# ${title}`,
+      '',
+      body,
+      '',
+    ].join('\n');
   }
 }

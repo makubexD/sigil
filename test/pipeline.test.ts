@@ -10,25 +10,59 @@ import path from 'path';
 import { loadCatalog } from '../dist-cli/load';
 import { validateCatalog } from '../dist-cli/validate';
 import { resolveCatalog } from '../dist-cli/resolve';
-import { computeClosure, groupArtifactsByLanguage, availableKinds, buildLanguageOptions, kindNoun, kindPlural, kindHint } from '../dist-cli/select';
+import {
+  computeClosure,
+  groupArtifactsByLanguage,
+  availableKinds,
+  buildLanguageOptions,
+  kindNoun,
+  kindPlural,
+  kindHint,
+} from '../dist-cli/select';
 import { ClaudeCodeTarget } from '../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../dist-cli/targets/copilot';
-import { toClaudePlaceholders, toCopilotPlaceholders, buildArgumentHint } from '../dist-cli/targets/prompt-args';
+import {
+  toClaudePlaceholders,
+  toCopilotPlaceholders,
+  buildArgumentHint,
+} from '../dist-cli/targets/prompt-args';
 import { checkOutputContract } from '../dist-cli/targets/output-contract';
 import type { PromptArg } from '../dist-cli/targets/prompt-args';
 import { artifactTargetsPlatform } from '../dist-cli/select';
-import { effectivePlatforms, isFullCoverage, normalizePlatforms, addPlatforms, removePlatforms } from '../dist-cli/authoring/platforms';
+import {
+  effectivePlatforms,
+  isFullCoverage,
+  normalizePlatforms,
+  addPlatforms,
+  removePlatforms,
+} from '../dist-cli/authoring/platforms';
 import { checkSourceArtifact } from '../dist-cli/authoring/check-source';
 import { headerFor } from '../dist-cli/authoring/header';
 import { buildEquivalentNewCommand } from '../dist-cli/wizard';
 import { getAllTargets } from '../dist-cli/targets';
+import { bumpVersion, promoteChangelog } from '../dist-cli/release';
 
 const CATALOG_DIR = path.resolve(__dirname, '../catalog');
 const VERSION = '0.1.0';
 const PACKS = [
-  { name: 'dotnet-pack', displayName: '.NET / C# Pack', description: 'C# skills and agents', languages: ['csharp'] },
-  { name: 'python-pack', displayName: 'Python Pack', description: 'Python skills and agents', languages: ['python'] },
-  { name: 'react-pack', displayName: 'React Pack', description: 'React skills and agents', languages: ['react'] },
+  {
+    name: 'dotnet-pack',
+    displayName: '.NET / C# Pack',
+    description: 'C# skills and agents',
+    languages: ['csharp'],
+  },
+  {
+    name: 'python-pack',
+    displayName: 'Python Pack',
+    description: 'Python skills and agents',
+    languages: ['python'],
+  },
+  {
+    name: 'react-pack',
+    displayName: 'React Pack',
+    description: 'React skills and agents',
+    languages: ['react'],
+  },
 ];
 
 // ─── Load ──────────────────────────────────────────────────────────────────────
@@ -50,7 +84,10 @@ describe('Load phase', () => {
     // Language artifacts
     assert.ok(catalog.byId.has('csharp/dotnet-style'), 'csharp/dotnet-style rule exists');
     assert.ok(catalog.byId.has('csharp/xunit-testing'), 'csharp/xunit-testing skill exists');
-    assert.ok(catalog.byId.has('csharp/dotnet-api-architect'), 'csharp/dotnet-api-architect agent exists');
+    assert.ok(
+      catalog.byId.has('csharp/dotnet-api-architect'),
+      'csharp/dotnet-api-architect agent exists',
+    );
 
     assert.ok(catalog.byId.has('python/python-style'), 'python/python-style rule exists');
     assert.ok(catalog.byId.has('python/pytest-testing'), 'python/pytest-testing skill exists');
@@ -108,7 +145,7 @@ describe('Validate phase', () => {
     const result = validateCatalog(catalog);
     assert.ok(!result.valid, 'should be invalid');
     assert.ok(
-      result.errors.some(e => e.error.includes("does-not/exist")),
+      result.errors.some(e => e.error.includes('does-not/exist')),
       'error message mentions the missing id',
     );
   });
@@ -120,14 +157,30 @@ describe('Validate phase', () => {
       id: 'test/cycle-a',
       kind: 'rule' as const,
       filePath: '/fake/cycle-a.rule.md',
-      frontmatter: { id: 'test/cycle-a', kind: 'rule', title: 'A', description: 'A', extends: ['test/cycle-b'], appliesTo: ['**/*'], severity: 'recommended' },
+      frontmatter: {
+        id: 'test/cycle-a',
+        kind: 'rule',
+        title: 'A',
+        description: 'A',
+        extends: ['test/cycle-b'],
+        appliesTo: ['**/*'],
+        severity: 'recommended',
+      },
       body: '- A',
     };
     const ruleB = {
       id: 'test/cycle-b',
       kind: 'rule' as const,
       filePath: '/fake/cycle-b.rule.md',
-      frontmatter: { id: 'test/cycle-b', kind: 'rule', title: 'B', description: 'B', extends: ['test/cycle-a'], appliesTo: ['**/*'], severity: 'recommended' },
+      frontmatter: {
+        id: 'test/cycle-b',
+        kind: 'rule',
+        title: 'B',
+        description: 'B',
+        extends: ['test/cycle-a'],
+        appliesTo: ['**/*'],
+        severity: 'recommended',
+      },
       body: '- B',
     };
     catalog.artifacts.push(ruleA, ruleB);
@@ -155,7 +208,10 @@ describe('Resolve phase', () => {
 
     // resolvedBody should contain BOTH the parent (shared/clean-code) body
     // AND the csharp/dotnet-style body
-    assert.ok(dotnetRule.resolvedBody?.includes('Clear names'), 'inherited clean-code guidance present');
+    assert.ok(
+      dotnetRule.resolvedBody?.includes('Clear names'),
+      'inherited clean-code guidance present',
+    );
     assert.ok(dotnetRule.resolvedBody?.includes('File-scoped namespaces'), 'own guidance present');
   });
 
@@ -218,7 +274,10 @@ describe('computeClosure', () => {
 
     assert.equal(primary.length, 2, 'two primary artifacts');
     const depIds = dependencies.map(d => d.artifact.id);
-    assert.ok(!depIds.includes('csharp/dotnet-style'), 'directly-selected rule not in dependencies');
+    assert.ok(
+      !depIds.includes('csharp/dotnet-style'),
+      'directly-selected rule not in dependencies',
+    );
     assert.ok(depIds.includes('shared/code-reviewer'), 'agent is still a dependency');
   });
 
@@ -302,9 +361,7 @@ describe('groupArtifactsByLanguage', () => {
         const curr = arts[i];
         const prevKi = kindOrder.indexOf(prev.kind);
         const currKi = kindOrder.indexOf(curr.kind);
-        const ok =
-          currKi > prevKi ||
-          (currKi === prevKi && curr.id >= prev.id);
+        const ok = currKi > prevKi || (currKi === prevKi && curr.id >= prev.id);
         assert.ok(
           ok,
           `In group "${groupKey}": ${prev.id} (${prev.kind}) should sort before ${curr.id} (${curr.kind})`,
@@ -343,7 +400,7 @@ describe('Claude Code target', () => {
     // Official schema is flat: name / owner / plugins[] at top level (no "marketplace" wrapper)
     // See: code.claude.com/docs/en/plugin-marketplaces
     assert.ok(!marketplace.marketplace, 'no nested "marketplace" key — must be flat');
-    assert.equal(marketplace.name, 'maku-catalog', 'name at top level');
+    assert.equal(marketplace.name, 'sigil', 'name at top level');
     assert.ok(marketplace.owner?.name, 'owner.name present');
     assert.equal(marketplace.plugins.length, 3, '3 plugin entries');
   });
@@ -384,7 +441,10 @@ describe('Claude Code target', () => {
     const target = new ClaudeCodeTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
 
-    assert.ok('plugins/dotnet-pack/agents/code-reviewer.md' in files, 'shared agent emitted into dotnet-pack');
+    assert.ok(
+      'plugins/dotnet-pack/agents/code-reviewer.md' in files,
+      'shared agent emitted into dotnet-pack',
+    );
   });
 
   it('scaffold: writes skill + closure into .claude/', async () => {
@@ -410,10 +470,15 @@ describe('Claude Code target', () => {
     assert.ok(languageRule.includes('*.cs'), 'csharp glob present');
 
     // Scaffold shared rule directly and verify no frontmatter
-    const sharedFiles = await target.scaffold!('shared/clean-code', resolved, { projectDir: '/fake' });
+    const sharedFiles = await target.scaffold!('shared/clean-code', resolved, {
+      projectDir: '/fake',
+    });
     const sharedRule = sharedFiles['.claude/rules/shared-clean-code.md'];
     assert.ok(sharedRule, 'shared rule scaffolded');
-    assert.ok(!sharedRule.startsWith('---'), 'shared rule has no frontmatter (loaded unconditionally)');
+    assert.ok(
+      !sharedRule.startsWith('---'),
+      'shared rule has no frontmatter (loaded unconditionally)',
+    );
   });
 });
 
@@ -459,16 +524,24 @@ describe('Copilot target', () => {
     assert.ok(skillMd.includes('description:'), 'description frontmatter present');
     assert.ok(skillMd.includes('Writing xUnit Tests'), 'skill body present');
     // Agent Skill frontmatter must NOT include applyTo or paths — skills load by description relevance
-    assert.ok(!skillMd.includes('applyTo'), 'no applyTo in SKILL.md (path-matching belongs in instructions)');
+    assert.ok(
+      !skillMd.includes('applyTo'),
+      'no applyTo in SKILL.md (path-matching belongs in instructions)',
+    );
     assert.ok(!skillMd.includes('paths:'), 'no paths: in SKILL.md');
 
     // Supporting files (references) must be written alongside SKILL.md
     const assertionsRef = files['.github/skills/xunit-testing/references/assertions.md'];
-    assert.ok(assertionsRef, 'references/assertions.md emitted alongside SKILL.md (bug-fix: was silently dropped)');
+    assert.ok(
+      assertionsRef,
+      'references/assertions.md emitted alongside SKILL.md (bug-fix: was silently dropped)',
+    );
 
     // No prompt file should be emitted for a skill
-    assert.ok(!('.github/prompts/xunit-testing.prompt.md' in files),
-      'skills must NOT emit as .prompt.md (skills and prompts are distinct Copilot artifact types)');
+    assert.ok(
+      !('.github/prompts/xunit-testing.prompt.md' in files),
+      'skills must NOT emit as .prompt.md (skills and prompts are distinct Copilot artifact types)',
+    );
   });
 
   it('emits AGENTS.md with all agents', async () => {
@@ -494,7 +567,10 @@ describe('Copilot target', () => {
     assert.ok(!('.github/agents/code-reviewer.md' in files), 'bare .md not emitted');
     const content = files['.github/agents/code-reviewer.agent.md'];
     assert.ok(content.startsWith('---'), 'agent file has YAML frontmatter');
-    assert.ok(content.includes('description:'), 'description frontmatter present (required by spec)');
+    assert.ok(
+      content.includes('description:'),
+      'description frontmatter present (required by spec)',
+    );
     assert.ok(content.match(/description:\s*"/), 'description is safely quoted');
   });
 });
@@ -606,26 +682,33 @@ describe('Copilot scaffold: prompt with args', () => {
     // Verify the per-AI artifact separation: prompts/ must only contain catalog `prompt` kinds,
     // never catalog `skill` kinds (those belong in skills/).
     const promptKeys = Object.keys(files).filter(k => k.startsWith('.github/prompts/'));
-    const skillKeys  = Object.keys(files).filter(k => k.startsWith('.github/skills/'));
+    const skillKeys = Object.keys(files).filter(k => k.startsWith('.github/skills/'));
 
     // The standalone explain-diff prompt must appear in prompts/
-    assert.ok(promptKeys.some(k => k.includes('shared-explain-diff')),
-      'standalone prompt emitted to .github/prompts/');
+    assert.ok(
+      promptKeys.some(k => k.includes('shared-explain-diff')),
+      'standalone prompt emitted to .github/prompts/',
+    );
 
     // No skill names should leak into prompts/
-    assert.ok(!promptKeys.some(k => k.includes('xunit-testing')),
-      'xunit-testing (a skill) must NOT appear in .github/prompts/');
-    assert.ok(!promptKeys.some(k => k.includes('pytest-testing')),
-      'pytest-testing (a skill) must NOT appear in .github/prompts/');
+    assert.ok(
+      !promptKeys.some(k => k.includes('xunit-testing')),
+      'xunit-testing (a skill) must NOT appear in .github/prompts/',
+    );
+    assert.ok(
+      !promptKeys.some(k => k.includes('pytest-testing')),
+      'pytest-testing (a skill) must NOT appear in .github/prompts/',
+    );
 
     // Skills must appear in skills/ with no unresolved {{ placeholders
-    assert.ok(skillKeys.some(k => k.endsWith('/SKILL.md')),
-      'at least one SKILL.md emitted under .github/skills/');
+    assert.ok(
+      skillKeys.some(k => k.endsWith('/SKILL.md')),
+      'at least one SKILL.md emitted under .github/skills/',
+    );
     skillKeys
       .filter(k => k.endsWith('/SKILL.md'))
       .forEach(k => {
-        assert.ok(!files[k].includes('{{'),
-          `no unresolved {{ placeholders in ${k}`);
+        assert.ok(!files[k].includes('{{'), `no unresolved {{ placeholders in ${k}`);
       });
   });
 });
@@ -675,7 +758,10 @@ describe('buildLanguageOptions (array-based)', () => {
     const opts = buildLanguageOptions(resolved.artifacts);
     assert.ok(opts.length >= 2, 'at least All + 1 language');
     assert.equal(opts[0].value, '', 'first option is All languages');
-    assert.ok(opts.slice(1).every(o => o.hint.match(/\d+ artifact/)), 'each language has count hint');
+    assert.ok(
+      opts.slice(1).every(o => o.hint.match(/\d+ artifact/)),
+      'each language has count hint',
+    );
   });
 
   it('counts reflect the passed subset, not the whole catalog', async () => {
@@ -686,7 +772,10 @@ describe('buildLanguageOptions (array-based)', () => {
     const opts = buildLanguageOptions(csharpOnly);
     // Only csharp should appear (no python, react)
     const langs = opts.slice(1).map(o => o.value);
-    assert.ok(langs.every(l => l === 'csharp'), 'only csharp in subset options');
+    assert.ok(
+      langs.every(l => l === 'csharp'),
+      'only csharp in subset options',
+    );
     // Count in hint matches actual csharp artifacts
     const csharpOpt = opts.find(o => o.value === 'csharp');
     assert.ok(csharpOpt?.hint.startsWith(`${csharpOnly.length} artifact`), 'count matches subset');
@@ -698,14 +787,18 @@ describe('buildLanguageOptions (array-based)', () => {
 describe('kindNoun / kindPlural / kindHint (per-AI vocabulary)', () => {
   it('prompt → command on Claude Code', () => {
     const target = new ClaudeCodeTarget();
-    assert.equal(kindNoun(target, 'prompt'), 'command',  'Claude: prompt noun is command');
+    assert.equal(kindNoun(target, 'prompt'), 'command', 'Claude: prompt noun is command');
     assert.equal(kindPlural(target, 'prompt'), 'Commands', 'Claude: prompt plural is Commands');
   });
 
   it('rule → instructions on Copilot', () => {
     const target = new CopilotTarget();
     assert.equal(kindNoun(target, 'rule'), 'instructions', 'Copilot: rule noun is instructions');
-    assert.equal(kindPlural(target, 'rule'), 'Instructions', 'Copilot: rule plural is Instructions');
+    assert.equal(
+      kindPlural(target, 'rule'),
+      'Instructions',
+      'Copilot: rule plural is Instructions',
+    );
   });
 
   it('prompt → prompt on Copilot (stays neutral)', () => {
@@ -717,27 +810,37 @@ describe('kindNoun / kindPlural / kindHint (per-AI vocabulary)', () => {
   it('skill stays skill on both platforms', () => {
     const claude = new ClaudeCodeTarget();
     const copilot = new CopilotTarget();
-    assert.equal(kindNoun(claude,  'skill'), 'skill', 'Claude: skill stays skill');
+    assert.equal(kindNoun(claude, 'skill'), 'skill', 'Claude: skill stays skill');
     assert.equal(kindNoun(copilot, 'skill'), 'skill', 'Copilot: skill stays skill');
   });
 
   it('fallback: undefined target returns raw catalog kind', () => {
     assert.equal(kindNoun(undefined, 'prompt'), 'prompt', 'no target: raw kind returned');
-    assert.equal(kindNoun(undefined, 'rule'),   'rule',   'no target: raw kind returned');
+    assert.equal(kindNoun(undefined, 'rule'), 'rule', 'no target: raw kind returned');
     assert.equal(kindPlural(undefined, 'skill'), 'Skills', 'no target: simple plural fallback');
   });
 
   it('fallback: unmapped kind returns raw kind / simple plural', () => {
     const target = new ClaudeCodeTarget();
-    assert.equal(kindNoun(target, 'some-new-kind'), 'some-new-kind',  'unmapped kind: raw noun');
-    assert.equal(kindPlural(target, 'some-new-kind'), 'Some-new-kinds', 'unmapped kind: simple plural');
+    assert.equal(kindNoun(target, 'some-new-kind'), 'some-new-kind', 'unmapped kind: raw noun');
+    assert.equal(
+      kindPlural(target, 'some-new-kind'),
+      'Some-new-kinds',
+      'unmapped kind: simple plural',
+    );
   });
 
   it('kindHint returns platform-specific hint when declared', () => {
     const claude = new ClaudeCodeTarget();
     const copilot = new CopilotTarget();
-    assert.ok(kindHint(claude, 'prompt')?.includes('command'),      'Claude command hint mentions command');
-    assert.ok(kindHint(copilot, 'rule')?.includes('instructions'),  'Copilot rule hint mentions instructions');
+    assert.ok(
+      kindHint(claude, 'prompt')?.includes('command'),
+      'Claude command hint mentions command',
+    );
+    assert.ok(
+      kindHint(copilot, 'rule')?.includes('instructions'),
+      'Copilot rule hint mentions instructions',
+    );
     assert.equal(kindHint(undefined, 'skill'), undefined, 'no target: no hint');
   });
 });
@@ -751,8 +854,11 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
     const target = new ClaudeCodeTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
     const violations = checkOutputContract(files, target.outputContracts ?? []);
-    assert.deepEqual(violations, [],
-      `Claude compile has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+    assert.deepEqual(
+      violations,
+      [],
+      `Claude compile has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`,
+    );
   });
 
   it('Copilot full compile output satisfies all contracts', async () => {
@@ -761,8 +867,11 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
     const violations = checkOutputContract(files, target.outputContracts ?? []);
-    assert.deepEqual(violations, [],
-      `Copilot compile has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+    assert.deepEqual(
+      violations,
+      [],
+      `Copilot compile has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`,
+    );
   });
 
   it('Claude scaffold of prompt (command) satisfies all contracts', async () => {
@@ -771,8 +880,11 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
     const target = new ClaudeCodeTarget();
     const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
     const violations = checkOutputContract(files, target.outputContracts ?? []);
-    assert.deepEqual(violations, [],
-      `Claude prompt scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+    assert.deepEqual(
+      violations,
+      [],
+      `Claude prompt scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`,
+    );
   });
 
   it('Copilot scaffold of prompt file satisfies all contracts', async () => {
@@ -781,8 +893,11 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
     const target = new CopilotTarget();
     const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
     const violations = checkOutputContract(files, target.outputContracts ?? []);
-    assert.deepEqual(violations, [],
-      `Copilot prompt scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+    assert.deepEqual(
+      violations,
+      [],
+      `Copilot prompt scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`,
+    );
   });
 
   it('Copilot scaffold of skill satisfies all contracts', async () => {
@@ -791,8 +906,11 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
     const target = new CopilotTarget();
     const files = await target.scaffold!('csharp/xunit-testing', resolved, { projectDir: '/fake' });
     const violations = checkOutputContract(files, target.outputContracts ?? []);
-    assert.deepEqual(violations, [],
-      `Copilot skill scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`);
+    assert.deepEqual(
+      violations,
+      [],
+      `Copilot skill scaffold has violations:\n${violations.map(v => `  [${v.label}] ${v.file}: ${v.problem}`).join('\n')}`,
+    );
   });
 });
 
@@ -805,8 +923,10 @@ describe('checkOutputContract — red paths (violations detected)', () => {
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
     assert.ok(violations.length > 0, 'violation expected for forbidden name: key');
-    assert.ok(violations.some(v => v.problem.includes("'name'")),
-      `violation message should mention 'name' — got: ${violations[0].problem}`);
+    assert.ok(
+      violations.some(v => v.problem.includes("'name'")),
+      `violation message should mention 'name' — got: ${violations[0].problem}`,
+    );
   });
 
   it('Claude command without required description: is flagged', () => {
@@ -815,19 +935,22 @@ describe('checkOutputContract — red paths (violations detected)', () => {
       '.claude/commands/my-cmd.md': '---\nargument-hint: "[diff]"\n---\nBody',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
-    assert.ok(violations.some(v => v.problem.includes("'description'")),
-      'violation expected for missing description');
+    assert.ok(
+      violations.some(v => v.problem.includes("'description'")),
+      'violation expected for missing description',
+    );
   });
 
   it('Claude command body with unresolved {{placeholder}} is flagged', () => {
     const target = new ClaudeCodeTarget();
     const badFiles = {
-      '.claude/commands/my-cmd.md':
-        '---\ndescription: "foo"\n---\nPlease explain {{diff}} to me',
+      '.claude/commands/my-cmd.md': '---\ndescription: "foo"\n---\nPlease explain {{diff}} to me',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
-    assert.ok(violations.some(v => v.problem.includes('{{')),
-      'unresolved {{ placeholder must be flagged');
+    assert.ok(
+      violations.some(v => v.problem.includes('{{')),
+      'unresolved {{ placeholder must be flagged',
+    );
   });
 
   it('Claude command body with Copilot ${input:…} syntax is flagged', () => {
@@ -837,19 +960,22 @@ describe('checkOutputContract — red paths (violations detected)', () => {
         '---\ndescription: "foo"\n---\nPlease explain ${input:diff} to me',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
-    assert.ok(violations.some(v => v.problem.includes('${input:')),
-      'Copilot placeholder syntax in Claude command must be flagged');
+    assert.ok(
+      violations.some(v => v.problem.includes('${input:')),
+      'Copilot placeholder syntax in Claude command must be flagged',
+    );
   });
 
   it('Copilot prompt file with unresolved {{placeholder}} is flagged', () => {
     const target = new CopilotTarget();
     const badFiles = {
-      '.github/prompts/bad.prompt.md':
-        '---\nagent: agent\ndescription: "foo"\n---\nHello {{name}}',
+      '.github/prompts/bad.prompt.md': '---\nagent: agent\ndescription: "foo"\n---\nHello {{name}}',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
-    assert.ok(violations.some(v => v.problem.includes('{{')),
-      'unresolved {{ in Copilot prompt must be flagged');
+    assert.ok(
+      violations.some(v => v.problem.includes('{{')),
+      'unresolved {{ in Copilot prompt must be flagged',
+    );
   });
 
   it('Copilot SKILL.md with forbidden applyTo: is flagged', () => {
@@ -859,8 +985,10 @@ describe('checkOutputContract — red paths (violations detected)', () => {
         '---\nname: test-skill\ndescription: "foo"\napplyTo: "**/*.ts"\n---\nBody',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
-    assert.ok(violations.some(v => v.problem.includes("'applyTo'")),
-      'applyTo in Copilot SKILL.md must be flagged');
+    assert.ok(
+      violations.some(v => v.problem.includes("'applyTo'")),
+      'applyTo in Copilot SKILL.md must be flagged',
+    );
   });
 
   it('Copilot SKILL.md with forbidden paths: is flagged', () => {
@@ -870,8 +998,10 @@ describe('checkOutputContract — red paths (violations detected)', () => {
         '---\nname: test-skill\ndescription: "foo"\npaths:\n  - "**/*.ts"\n---\nBody',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
-    assert.ok(violations.some(v => v.problem.includes("'paths'")),
-      'paths: in Copilot SKILL.md must be flagged');
+    assert.ok(
+      violations.some(v => v.problem.includes("'paths'")),
+      'paths: in Copilot SKILL.md must be flagged',
+    );
   });
 
   it('files matching no contract entry are silently skipped (no false positives)', () => {
@@ -889,7 +1019,6 @@ describe('checkOutputContract — red paths (violations detected)', () => {
 // ─── Part E — platforms field + source validation ──────────────────────────────
 
 describe('Part E — platforms field + source validation', () => {
-
   // ── E1 — artifactTargetsPlatform helper ─────────────────────────────────────
 
   describe('E1 — artifactTargetsPlatform helper', () => {
@@ -1069,7 +1198,9 @@ describe('Part E — platforms field + source validation', () => {
       const targets = getAllTargets();
       const violations = checkSourceArtifact(fakeSkill as any, fakeCatalog as any, targets);
       assert.ok(
-        violations.some(v => v.problem.includes('coverage drift') || v.problem.includes('restricted')),
+        violations.some(
+          v => v.problem.includes('coverage drift') || v.problem.includes('restricted'),
+        ),
         `expected a coverage drift violation — got: ${violations.map(v => v.problem).join('; ')}`,
       );
     });
@@ -1080,7 +1211,7 @@ describe('Part E — platforms field + source validation', () => {
   describe('E5 — buildEquivalentNewCommand', () => {
     it('includes kind and --name always', () => {
       const cmd = buildEquivalentNewCommand({ kind: 'rule', name: 'my-rule' });
-      assert.ok(cmd.startsWith('maku-catalog new rule'), 'starts with new rule');
+      assert.ok(cmd.startsWith('sigil new rule'), 'starts with new rule');
       assert.ok(cmd.includes('--name my-rule'), '--name present');
       assert.ok(cmd.endsWith('--yes'), 'ends with --yes');
     });
@@ -1101,12 +1232,20 @@ describe('Part E — platforms field + source validation', () => {
     });
 
     it('includes --platforms when restricted', () => {
-      const cmd = buildEquivalentNewCommand({ kind: 'rule', name: 'my-rule', platforms: ['claude'] });
+      const cmd = buildEquivalentNewCommand({
+        kind: 'rule',
+        name: 'my-rule',
+        platforms: ['claude'],
+      });
       assert.ok(cmd.includes('--platforms claude'), '--platforms present when restricted');
     });
 
     it('joins multiple platforms with comma', () => {
-      const cmd = buildEquivalentNewCommand({ kind: 'agent', name: 'rev', platforms: ['claude', 'copilot'] });
+      const cmd = buildEquivalentNewCommand({
+        kind: 'agent',
+        name: 'rev',
+        platforms: ['claude', 'copilot'],
+      });
       assert.ok(cmd.includes('--platforms claude,copilot'), 'multiple platforms comma-joined');
     });
   });
@@ -1155,5 +1294,58 @@ describe('Part E — platforms field + source validation', () => {
       assert.equal(activeplatformsLine, undefined, 'no active platforms: line when not restricted');
     });
   });
+});
 
+// ─── Release helpers ──────────────────────────────────────────────────────────
+
+describe('bumpVersion', () => {
+  it('bumps patch', () => assert.equal(bumpVersion('0.1.0', 'patch'), '0.1.1'));
+  it('bumps minor (resets patch)', () => assert.equal(bumpVersion('0.1.5', 'minor'), '0.2.0'));
+  it('bumps major (resets minor + patch)', () =>
+    assert.equal(bumpVersion('1.2.3', 'major'), '2.0.0'));
+  it('passes through explicit version', () => assert.equal(bumpVersion('0.1.0', '1.5.0'), '1.5.0'));
+  it('throws on non-semver current', () => {
+    assert.throws(() => bumpVersion('not-semver', 'patch'), /not valid semver/);
+  });
+  it('throws on unknown level', () => {
+    assert.throws(() => bumpVersion('1.0.0', 'beta'), /Unknown release level/);
+  });
+});
+
+describe('promoteChangelog', () => {
+  const base = [
+    '# Changelog',
+    '',
+    '## [Unreleased]',
+    '',
+    '### Added',
+    '- new thing',
+    '',
+    '## [0.1.0] - 2026-01-01',
+    '',
+    '### Added',
+    '- initial release',
+  ].join('\n');
+
+  it('inserts new version heading after [Unreleased]', () => {
+    const result = promoteChangelog(base, '0.2.0', '2026-06-22');
+    const lines = result.split('\n');
+    const unreleasedIdx = lines.findIndex(l => l === '## [Unreleased]');
+    assert.ok(unreleasedIdx >= 0, '[Unreleased] still present');
+    // The new version heading should appear after [Unreleased] and an empty line
+    const newHeadingIdx = lines.findIndex(l => l === '## [0.2.0] - 2026-06-22');
+    assert.ok(newHeadingIdx > unreleasedIdx, 'new version heading after [Unreleased]');
+  });
+
+  it('preserves existing content', () => {
+    const result = promoteChangelog(base, '0.2.0', '2026-06-22');
+    assert.ok(result.includes('## [0.1.0] - 2026-01-01'), 'prior release preserved');
+    assert.ok(result.includes('- new thing'), 'unreleased content preserved');
+    assert.ok(result.includes('- initial release'), 'prior release content preserved');
+  });
+
+  it('throws when [Unreleased] is missing', () => {
+    const noUnreleased = '# Changelog\n\n## [0.1.0] - 2026-01-01\n\n### Added\n- thing\n';
+    assert.throws(() => promoteChangelog(noUnreleased, '0.2.0', '2026-06-22'), /Unreleased/);
+  });
 });

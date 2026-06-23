@@ -9,23 +9,17 @@
 import fs from 'fs';
 import path from 'path';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import {
-  SkillSchema,
-  AgentSchema,
-  RuleSchema,
-  PromptSchema,
-  WorkflowSchema,
-} from './index';
+import { SkillSchema, AgentSchema, RuleSchema, PromptSchema, WorkflowSchema } from './index';
 
 const OUTPUT_DIR = path.resolve(__dirname, '../../schema');
 
 // Use `any` here — Zod's recursive generics exceed TS's instantiation depth limit.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const SCHEMAS: Array<{ name: string; schema: any }> = [
-  { name: 'skill',    schema: SkillSchema },
-  { name: 'agent',    schema: AgentSchema },
-  { name: 'rule',     schema: RuleSchema },
-  { name: 'prompt',   schema: PromptSchema },
+  { name: 'skill', schema: SkillSchema },
+  { name: 'agent', schema: AgentSchema },
+  { name: 'rule', schema: RuleSchema },
+  { name: 'prompt', schema: PromptSchema },
   { name: 'workflow', schema: WorkflowSchema },
 ];
 

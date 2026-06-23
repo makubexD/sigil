@@ -118,7 +118,9 @@ export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[])
         const allTargetNames = new Set(knownTargets.map(t => t.name));
         const kindSupporting = new Set(
           knownTargets
-            .filter(t => !t.supportedKinds || t.supportedKinds.includes(artifact.kind as ArtifactKind))
+            .filter(
+              t => !t.supportedKinds || t.supportedKinds.includes(artifact.kind as ArtifactKind),
+            )
             .map(t => t.name),
         );
         for (const p of platforms) {

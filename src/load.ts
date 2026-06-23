@@ -68,8 +68,8 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
       const existing = byId.get(artifact.id)!;
       throw new Error(
         `[load] Duplicate artifact id '${artifact.id}'\n` +
-        `  First:  ${existing.filePath}\n` +
-        `  Second: ${artifact.filePath}`,
+          `  First:  ${existing.filePath}\n` +
+          `  Second: ${artifact.filePath}`,
       );
     }
     byId.set(artifact.id, artifact);

@@ -79,7 +79,9 @@ export function headerFor(kind: string, v: HeaderValues): string {
   lines.push(`id: ${v.id}`);
   lines.push(`kind: ${kind}`);
   lines.push(`title: ${yamlStr(v.title || `TODO — ${v.name ?? kind}`)}`);
-  lines.push(...descriptionBlock(v.description || 'TODO — one-line description used in catalog listings.'));
+  lines.push(
+    ...descriptionBlock(v.description || 'TODO — one-line description used in catalog listings.'),
+  );
 
   // ── Kind-specific required and optional keys ─────────────────────────────
   switch (kind) {
@@ -88,7 +90,9 @@ export function headerFor(kind: string, v: HeaderValues): string {
       lines.push(`name: ${v.name ?? 'TODO'}`);
       lines.push(`language: ${v.language ?? 'TODO'}`);
       // Optional (commented hints)
-      lines.push(`# appliesTo:   # file globs that trigger this skill's context — defaults to ['**/*']`);
+      lines.push(
+        `# appliesTo:   # file globs that trigger this skill's context — defaults to ['**/*']`,
+      );
       if (v.usesRules && v.usesRules.length > 0) {
         lines.push('uses:');
         lines.push('  rules:');
@@ -115,13 +119,17 @@ export function headerFor(kind: string, v: HeaderValues): string {
       }
       if (v.claudeModel || v.claudeEffort || v.claudeMaxTurns) {
         lines.push('claude:');
-        if (v.claudeModel)    lines.push(`  model: ${v.claudeModel}`);
-        if (v.claudeEffort)   lines.push(`  effort: ${v.claudeEffort}`);
+        if (v.claudeModel) lines.push(`  model: ${v.claudeModel}`);
+        if (v.claudeEffort) lines.push(`  effort: ${v.claudeEffort}`);
         if (v.claudeMaxTurns) lines.push(`  maxTurns: ${v.claudeMaxTurns}`);
       } else {
-        lines.push('# claude:        # model: sonnet | effort: medium | maxTurns: 15 | isolation: worktree');
+        lines.push(
+          '# claude:        # model: sonnet | effort: medium | maxTurns: 15 | isolation: worktree',
+        );
       }
-      lines.push('# tools:          # vendor-neutral capabilities: codebase, terminal, web-search ...');
+      lines.push(
+        '# tools:          # vendor-neutral capabilities: codebase, terminal, web-search ...',
+      );
       break;
     }
     case 'rule': {
@@ -136,7 +144,9 @@ export function headerFor(kind: string, v: HeaderValues): string {
         lines.push('extends:');
         for (const r of v.extendsRules) lines.push(`  - ${r}`);
       } else {
-        lines.push('# extends:       # parent rule IDs for DRY inheritance — bodies prepended at build');
+        lines.push(
+          '# extends:       # parent rule IDs for DRY inheritance — bodies prepended at build',
+        );
       }
       lines.push('# appliesTo:     # file globs — defaults to ["**/*"]');
       break;
@@ -175,17 +185,19 @@ export function headerFor(kind: string, v: HeaderValues): string {
   if (v.platforms && v.platforms.length > 0) {
     lines.push('platforms:');
     for (const p of v.platforms) lines.push(`  - ${p}`);
-    lines.push('# Remove the platforms: field (or run: maku-catalog retarget <id> --to all)');
+    lines.push('# Remove the platforms: field (or run: sigil retarget <id> --to all)');
     lines.push('# to propagate this artifact to every AI that supports its kind.');
   } else {
     lines.push('# platforms:     # omit to propagate to ALL supporting AIs (DRY default)');
     lines.push('#                # or list: [claude, copilot] to restrict');
-    lines.push('#                # change later: maku-catalog retarget <id> --add <platform>');
+    lines.push('#                # change later: sigil retarget <id> --add <platform>');
   }
 
   lines.push('---');
   lines.push('');
-  lines.push(`<!-- ${kind === 'rule' ? 'Add rule bullets below. Extend with extends: for DRY inheritance.' : kind === 'skill' ? 'Describe what the AI should do when this skill is invoked.' : kind === 'agent' ? 'Define the agent persona and instructions below.' : kind === 'prompt' ? 'Write the prompt body. Use {{placeholder}} for args.' : 'TODO: Add content below.'} -->`);
+  lines.push(
+    `<!-- ${kind === 'rule' ? 'Add rule bullets below. Extend with extends: for DRY inheritance.' : kind === 'skill' ? 'Describe what the AI should do when this skill is invoked.' : kind === 'agent' ? 'Define the agent persona and instructions below.' : kind === 'prompt' ? 'Write the prompt body. Use {{placeholder}} for args.' : 'TODO: Add content below.'} -->`,
+  );
   lines.push('');
 
   return lines.join('\n') + '\n';

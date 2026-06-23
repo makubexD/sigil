@@ -26,12 +26,28 @@ const check_source_1 = require("../dist-cli/authoring/check-source");
 const header_1 = require("../dist-cli/authoring/header");
 const wizard_1 = require("../dist-cli/wizard");
 const targets_1 = require("../dist-cli/targets");
+const release_1 = require("../dist-cli/release");
 const CATALOG_DIR = path_1.default.resolve(__dirname, '../catalog');
 const VERSION = '0.1.0';
 const PACKS = [
-    { name: 'dotnet-pack', displayName: '.NET / C# Pack', description: 'C# skills and agents', languages: ['csharp'] },
-    { name: 'python-pack', displayName: 'Python Pack', description: 'Python skills and agents', languages: ['python'] },
-    { name: 'react-pack', displayName: 'React Pack', description: 'React skills and agents', languages: ['react'] },
+    {
+        name: 'dotnet-pack',
+        displayName: '.NET / C# Pack',
+        description: 'C# skills and agents',
+        languages: ['csharp'],
+    },
+    {
+        name: 'python-pack',
+        displayName: 'Python Pack',
+        description: 'Python skills and agents',
+        languages: ['python'],
+    },
+    {
+        name: 'react-pack',
+        displayName: 'React Pack',
+        description: 'React skills and agents',
+        languages: ['react'],
+    },
 ];
 // ─── Load ──────────────────────────────────────────────────────────────────────
 (0, node_test_1.describe)('Load phase', () => {
@@ -95,7 +111,7 @@ const PACKS = [
         catalog.byId.set(fakeRule.id, fakeRule);
         const result = (0, validate_1.validateCatalog)(catalog);
         strict_1.default.ok(!result.valid, 'should be invalid');
-        strict_1.default.ok(result.errors.some(e => e.error.includes("does-not/exist")), 'error message mentions the missing id');
+        strict_1.default.ok(result.errors.some(e => e.error.includes('does-not/exist')), 'error message mentions the missing id');
     });
     (0, node_test_1.it)('detects cycles in extends', async () => {
         const catalog = await (0, load_1.loadCatalog)(CATALOG_DIR);
@@ -103,14 +119,30 @@ const PACKS = [
             id: 'test/cycle-a',
             kind: 'rule',
             filePath: '/fake/cycle-a.rule.md',
-            frontmatter: { id: 'test/cycle-a', kind: 'rule', title: 'A', description: 'A', extends: ['test/cycle-b'], appliesTo: ['**/*'], severity: 'recommended' },
+            frontmatter: {
+                id: 'test/cycle-a',
+                kind: 'rule',
+                title: 'A',
+                description: 'A',
+                extends: ['test/cycle-b'],
+                appliesTo: ['**/*'],
+                severity: 'recommended',
+            },
             body: '- A',
         };
         const ruleB = {
             id: 'test/cycle-b',
             kind: 'rule',
             filePath: '/fake/cycle-b.rule.md',
-            frontmatter: { id: 'test/cycle-b', kind: 'rule', title: 'B', description: 'B', extends: ['test/cycle-a'], appliesTo: ['**/*'], severity: 'recommended' },
+            frontmatter: {
+                id: 'test/cycle-b',
+                kind: 'rule',
+                title: 'B',
+                description: 'B',
+                extends: ['test/cycle-a'],
+                appliesTo: ['**/*'],
+                severity: 'recommended',
+            },
             body: '- B',
         };
         catalog.artifacts.push(ruleA, ruleB);
@@ -235,8 +267,7 @@ const PACKS = [
                 const curr = arts[i];
                 const prevKi = kindOrder.indexOf(prev.kind);
                 const currKi = kindOrder.indexOf(curr.kind);
-                const ok = currKi > prevKi ||
-                    (currKi === prevKi && curr.id >= prev.id);
+                const ok = currKi > prevKi || (currKi === prevKi && curr.id >= prev.id);
                 strict_1.default.ok(ok, `In group "${groupKey}": ${prev.id} (${prev.kind}) should sort before ${curr.id} (${curr.kind})`);
             }
         }
@@ -265,7 +296,7 @@ const PACKS = [
         // Official schema is flat: name / owner / plugins[] at top level (no "marketplace" wrapper)
         // See: code.claude.com/docs/en/plugin-marketplaces
         strict_1.default.ok(!marketplace.marketplace, 'no nested "marketplace" key — must be flat');
-        strict_1.default.equal(marketplace.name, 'maku-catalog', 'name at top level');
+        strict_1.default.equal(marketplace.name, 'sigil', 'name at top level');
         strict_1.default.ok(marketplace.owner?.name, 'owner.name present');
         strict_1.default.equal(marketplace.plugins.length, 3, '3 plugin entries');
     });
@@ -321,7 +352,9 @@ const PACKS = [
         strict_1.default.ok(languageRule.includes('paths:'), 'language rule has paths: frontmatter');
         strict_1.default.ok(languageRule.includes('*.cs'), 'csharp glob present');
         // Scaffold shared rule directly and verify no frontmatter
-        const sharedFiles = await target.scaffold('shared/clean-code', resolved, { projectDir: '/fake' });
+        const sharedFiles = await target.scaffold('shared/clean-code', resolved, {
+            projectDir: '/fake',
+        });
         const sharedRule = sharedFiles['.claude/rules/shared-clean-code.md'];
         strict_1.default.ok(sharedRule, 'shared rule scaffolded');
         strict_1.default.ok(!sharedRule.startsWith('---'), 'shared rule has no frontmatter (loaded unconditionally)');
@@ -857,7 +890,7 @@ const PACKS = [
     (0, node_test_1.describe)('E5 — buildEquivalentNewCommand', () => {
         (0, node_test_1.it)('includes kind and --name always', () => {
             const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'rule', name: 'my-rule' });
-            strict_1.default.ok(cmd.startsWith('maku-catalog new rule'), 'starts with new rule');
+            strict_1.default.ok(cmd.startsWith('sigil new rule'), 'starts with new rule');
             strict_1.default.ok(cmd.includes('--name my-rule'), '--name present');
             strict_1.default.ok(cmd.endsWith('--yes'), 'ends with --yes');
         });
@@ -874,11 +907,19 @@ const PACKS = [
             strict_1.default.ok(!cmd.includes('--platforms'), '--platforms absent when unrestricted');
         });
         (0, node_test_1.it)('includes --platforms when restricted', () => {
-            const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'rule', name: 'my-rule', platforms: ['claude'] });
+            const cmd = (0, wizard_1.buildEquivalentNewCommand)({
+                kind: 'rule',
+                name: 'my-rule',
+                platforms: ['claude'],
+            });
             strict_1.default.ok(cmd.includes('--platforms claude'), '--platforms present when restricted');
         });
         (0, node_test_1.it)('joins multiple platforms with comma', () => {
-            const cmd = (0, wizard_1.buildEquivalentNewCommand)({ kind: 'agent', name: 'rev', platforms: ['claude', 'copilot'] });
+            const cmd = (0, wizard_1.buildEquivalentNewCommand)({
+                kind: 'agent',
+                name: 'rev',
+                platforms: ['claude', 'copilot'],
+            });
             strict_1.default.ok(cmd.includes('--platforms claude,copilot'), 'multiple platforms comma-joined');
         });
     });
@@ -923,5 +964,52 @@ const PACKS = [
             const activeplatformsLine = result.split('\n').find(l => /^platforms:/.test(l));
             strict_1.default.equal(activeplatformsLine, undefined, 'no active platforms: line when not restricted');
         });
+    });
+});
+// ─── Release helpers ──────────────────────────────────────────────────────────
+(0, node_test_1.describe)('bumpVersion', () => {
+    (0, node_test_1.it)('bumps patch', () => strict_1.default.equal((0, release_1.bumpVersion)('0.1.0', 'patch'), '0.1.1'));
+    (0, node_test_1.it)('bumps minor (resets patch)', () => strict_1.default.equal((0, release_1.bumpVersion)('0.1.5', 'minor'), '0.2.0'));
+    (0, node_test_1.it)('bumps major (resets minor + patch)', () => strict_1.default.equal((0, release_1.bumpVersion)('1.2.3', 'major'), '2.0.0'));
+    (0, node_test_1.it)('passes through explicit version', () => strict_1.default.equal((0, release_1.bumpVersion)('0.1.0', '1.5.0'), '1.5.0'));
+    (0, node_test_1.it)('throws on non-semver current', () => {
+        strict_1.default.throws(() => (0, release_1.bumpVersion)('not-semver', 'patch'), /not valid semver/);
+    });
+    (0, node_test_1.it)('throws on unknown level', () => {
+        strict_1.default.throws(() => (0, release_1.bumpVersion)('1.0.0', 'beta'), /Unknown release level/);
+    });
+});
+(0, node_test_1.describe)('promoteChangelog', () => {
+    const base = [
+        '# Changelog',
+        '',
+        '## [Unreleased]',
+        '',
+        '### Added',
+        '- new thing',
+        '',
+        '## [0.1.0] - 2026-01-01',
+        '',
+        '### Added',
+        '- initial release',
+    ].join('\n');
+    (0, node_test_1.it)('inserts new version heading after [Unreleased]', () => {
+        const result = (0, release_1.promoteChangelog)(base, '0.2.0', '2026-06-22');
+        const lines = result.split('\n');
+        const unreleasedIdx = lines.findIndex(l => l === '## [Unreleased]');
+        strict_1.default.ok(unreleasedIdx >= 0, '[Unreleased] still present');
+        // The new version heading should appear after [Unreleased] and an empty line
+        const newHeadingIdx = lines.findIndex(l => l === '## [0.2.0] - 2026-06-22');
+        strict_1.default.ok(newHeadingIdx > unreleasedIdx, 'new version heading after [Unreleased]');
+    });
+    (0, node_test_1.it)('preserves existing content', () => {
+        const result = (0, release_1.promoteChangelog)(base, '0.2.0', '2026-06-22');
+        strict_1.default.ok(result.includes('## [0.1.0] - 2026-01-01'), 'prior release preserved');
+        strict_1.default.ok(result.includes('- new thing'), 'unreleased content preserved');
+        strict_1.default.ok(result.includes('- initial release'), 'prior release content preserved');
+    });
+    (0, node_test_1.it)('throws when [Unreleased] is missing', () => {
+        const noUnreleased = '# Changelog\n\n## [0.1.0] - 2026-01-01\n\n### Added\n- thing\n';
+        strict_1.default.throws(() => (0, release_1.promoteChangelog)(noUnreleased, '0.2.0', '2026-06-22'), /Unreleased/);
     });
 });

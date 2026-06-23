@@ -28,10 +28,7 @@ export interface PromptArg {
  * Core substitution engine. Replaces every `{{name}}` token (tolerant of inner
  * whitespace, e.g. `{{ name }}`) using the provided `render` callback.
  */
-export function substitutePlaceholders(
-  body: string,
-  render: (name: string) => string,
-): string {
+export function substitutePlaceholders(body: string, render: (name: string) => string): string {
   return body.replace(/\{\{\s*([\w-]+)\s*\}\}/g, (_match, name: string) => render(name));
 }
 

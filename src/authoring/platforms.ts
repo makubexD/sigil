@@ -14,9 +14,7 @@ import type { Target, ArtifactKind } from '../types';
  * Targets that declare no supportedKinds are treated as supporting everything.
  */
 export function kindSupportingTargets(kind: string, targets: Target[]): Target[] {
-  return targets.filter(t =>
-    !t.supportedKinds || t.supportedKinds.includes(kind as ArtifactKind),
-  );
+  return targets.filter(t => !t.supportedKinds || t.supportedKinds.includes(kind as ArtifactKind));
 }
 
 /**
@@ -39,11 +37,7 @@ export function effectivePlatforms(
  * Returns true when the platform set equals all kind-supporting targets —
  * the normalization condition under which the `platforms:` field should be removed.
  */
-export function isFullCoverage(
-  kind: string,
-  platformSet: string[],
-  targets: Target[],
-): boolean {
+export function isFullCoverage(kind: string, platformSet: string[], targets: Target[]): boolean {
   const supporting = kindSupportingTargets(kind, targets).map(t => t.name);
   if (supporting.length === 0) return true; // no targets support it → vacuously full
   const setNames = new Set(platformSet);
@@ -101,7 +95,8 @@ export function addPlatforms(
       errors.push(`Platform '${p}' does not support kind '${kind}'`);
     }
   }
-  if (errors.length > 0) return { platforms: current ? [...current].sort() : undefined, noOp: true, errors, warnings };
+  if (errors.length > 0)
+    return { platforms: current ? [...current].sort() : undefined, noOp: true, errors, warnings };
 
   const alreadyCovered = toAdd.filter(p => currentSet.has(p));
   if (alreadyCovered.length > 0) {
@@ -109,7 +104,12 @@ export function addPlatforms(
   }
 
   if (alreadyCovered.length === toAdd.length) {
-    return { platforms: normalizePlatforms(kind, [...currentSet], targets), noOp: true, errors, warnings };
+    return {
+      platforms: normalizePlatforms(kind, [...currentSet], targets),
+      noOp: true,
+      errors,
+      warnings,
+    };
   }
 
   const newSet = new Set([...currentSet, ...toAdd]);
@@ -137,13 +137,25 @@ export function removePlatforms(
   }
 
   if (notPresent.length === toRemove.length) {
-    return { platforms: normalizePlatforms(kind, [...currentSet], targets), noOp: true, errors, warnings };
+    return {
+      platforms: normalizePlatforms(kind, [...currentSet], targets),
+      noOp: true,
+      errors,
+      warnings,
+    };
   }
 
   const remaining = [...currentSet].filter(p => !toRemove.includes(p));
   if (remaining.length === 0) {
-    errors.push('Cannot remove all platforms — artifact would target no platform. Use retarget --to <name> to change targets instead.');
-    return { platforms: normalizePlatforms(kind, [...currentSet], targets), noOp: true, errors, warnings };
+    errors.push(
+      'Cannot remove all platforms — artifact would target no platform. Use retarget --to <name> to change targets instead.',
+    );
+    return {
+      platforms: normalizePlatforms(kind, [...currentSet], targets),
+      noOp: true,
+      errors,
+      warnings,
+    };
   }
 
   const normalized = normalizePlatforms(kind, remaining, targets);

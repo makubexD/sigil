@@ -21,8 +21,8 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-latest, node: '22' }   # latest LTS on Linux
-          - { os: windows-latest, node: '20' }  # engines floor + Windows path coverage
+          - { os: ubuntu-latest, node: '22' } # latest LTS on Linux
+          - { os: windows-latest, node: '20' } # engines floor + Windows path coverage
 
     steps:
       - uses: actions/checkout@v5

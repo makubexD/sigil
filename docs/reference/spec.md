@@ -183,22 +183,22 @@ uses:
 The resolver looks up each rule (resolving its own `extends` chain) and records each agent ID.
 Adapters then decide how to materialise the closure:
 
-| Adapter | Rules | Agents |
-| ------- | ----- | ------ |
-| Claude Code (plugin build) | Inlined as `## Applied Rules` section in SKILL.md | Written to `agents/<name>.md` in the pack |
-| Claude Code (scaffold/add) | Written to `.claude/rules/<slug>.md` | Written to `.claude/agents/<name>.md` |
-| GitHub Copilot | Inlined as `## Coding guidelines to apply` section in SKILL.md | Entry in `AGENTS.md` |
+| Adapter                    | Rules                                                          | Agents                                    |
+| -------------------------- | -------------------------------------------------------------- | ----------------------------------------- |
+| Claude Code (plugin build) | Inlined as `## Applied Rules` section in SKILL.md              | Written to `agents/<name>.md` in the pack |
+| Claude Code (scaffold/add) | Written to `.claude/rules/<slug>.md`                           | Written to `.claude/agents/<name>.md`     |
+| GitHub Copilot             | Inlined as `## Coding guidelines to apply` section in SKILL.md | Entry in `AGENTS.md`                      |
 
 ---
 
 ## Per-platform artifact models (verified June 2026)
 
-| Catalog kind | Claude Code native artifact | GitHub Copilot native artifact |
-| ------------ | --------------------------- | ------------------------------ |
-| `skill` | **Agent Skill** — `.claude/skills/<name>/SKILL.md` | **Agent Skill** — `.github/skills/<name>/SKILL.md` |
-| `prompt` | **Custom command** — `.claude/commands/<slug>.md` | **Prompt file** — `.github/prompts/<slug>.prompt.md` |
-| `agent` | **Subagent** — `.claude/agents/<name>.md` | **Custom agent** — `.github/agents/<name>.agent.md` |
-| `rule` (shared) | **Memory rule** — `.claude/rules/<slug>.md` (no path filter) | **Global instructions** — `.github/copilot-instructions.md` |
+| Catalog kind      | Claude Code native artifact                                        | GitHub Copilot native artifact                                                       |
+| ----------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `skill`           | **Agent Skill** — `.claude/skills/<name>/SKILL.md`                 | **Agent Skill** — `.github/skills/<name>/SKILL.md`                                   |
+| `prompt`          | **Custom command** — `.claude/commands/<slug>.md`                  | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                 |
+| `agent`           | **Subagent** — `.claude/agents/<name>.md`                          | **Custom agent** — `.github/agents/<name>.agent.md`                                  |
+| `rule` (shared)   | **Memory rule** — `.claude/rules/<slug>.md` (no path filter)       | **Global instructions** — `.github/copilot-instructions.md`                          |
 | `rule` (language) | **Memory rule** — `.claude/rules/<slug>.md` (`paths:` frontmatter) | **Scoped instructions** — `.github/instructions/<slug>.instructions.md` (`applyTo:`) |
 
 **Key vocabulary rules:**
@@ -210,14 +210,14 @@ Adapters then decide how to materialise the closure:
 
 ## Canonical → platform mapping
 
-| Canonical kind | Claude Code plugin (`dist/claude/`) | Claude Code scaffold (`.claude/`) | GitHub Copilot (`.github/`) |
-| -------------- | ----------------------------------- | ---------------------------------- | --------------------------- |
-| `skill` | `skills/<name>/SKILL.md` + `references/` | `.claude/skills/<name>/SKILL.md` + `references/` | `skills/<name>/SKILL.md` + `references/` |
-| `agent` | `agents/<name>.md` | `.claude/agents/<name>.md` | `agents/<name>.agent.md` |
-| `rule` (shared) | folded into skill SKILL.md | `.claude/rules/<slug>.md` (no frontmatter) | `copilot-instructions.md` |
-| `rule` (language) | folded into skill SKILL.md | `.claude/rules/<slug>.md` (`paths:` frontmatter) | `instructions/<slug>.instructions.md` |
-| `prompt` | `commands/<slug>.md` | `.claude/commands/<slug>.md` | `prompts/<slug>.prompt.md` |
-| `workflow` | `commands/<slug>.md` | `.claude/commands/<slug>.md` | `prompts/<slug>.prompt.md` |
+| Canonical kind    | Claude Code plugin (`dist/claude/`)      | Claude Code scaffold (`.claude/`)                | GitHub Copilot (`.github/`)              |
+| ----------------- | ---------------------------------------- | ------------------------------------------------ | ---------------------------------------- |
+| `skill`           | `skills/<name>/SKILL.md` + `references/` | `.claude/skills/<name>/SKILL.md` + `references/` | `skills/<name>/SKILL.md` + `references/` |
+| `agent`           | `agents/<name>.md`                       | `.claude/agents/<name>.md`                       | `agents/<name>.agent.md`                 |
+| `rule` (shared)   | folded into skill SKILL.md               | `.claude/rules/<slug>.md` (no frontmatter)       | `copilot-instructions.md`                |
+| `rule` (language) | folded into skill SKILL.md               | `.claude/rules/<slug>.md` (`paths:` frontmatter) | `instructions/<slug>.instructions.md`    |
+| `prompt`          | `commands/<slug>.md`                     | `.claude/commands/<slug>.md`                     | `prompts/<slug>.prompt.md`               |
+| `workflow`        | `commands/<slug>.md`                     | `.claude/commands/<slug>.md`                     | `prompts/<slug>.prompt.md`               |
 
 **Emitted frontmatter notes:**
 
@@ -232,44 +232,44 @@ Adapters then decide how to materialise the closure:
 
 ## File conventions
 
-| Path | Contents |
-| ---- | -------- |
-| `catalog/shared/` | Cross-language artifacts (rules, agents, prompts) |
-| `catalog/languages/<lang>/` | Language-specific skills, rules, agents |
-| `catalog/languages/<lang>/language.yaml` | Display name, file globs, icon |
-| `catalog/languages/<lang>/skills/<name>/SKILL.md` | Skill entry point |
-| `catalog/languages/<lang>/skills/<name>/references/` | Supplementary docs bundled with the skill |
-| `packs.yaml` | Groups languages into installable packs |
-| `schema/*.schema.json` | JSON Schemas for editor autocomplete (generated from zod) |
+| Path                                                 | Contents                                                  |
+| ---------------------------------------------------- | --------------------------------------------------------- |
+| `catalog/shared/`                                    | Cross-language artifacts (rules, agents, prompts)         |
+| `catalog/languages/<lang>/`                          | Language-specific skills, rules, agents                   |
+| `catalog/languages/<lang>/language.yaml`             | Display name, file globs, icon                            |
+| `catalog/languages/<lang>/skills/<name>/SKILL.md`    | Skill entry point                                         |
+| `catalog/languages/<lang>/skills/<name>/references/` | Supplementary docs bundled with the skill                 |
+| `packs.yaml`                                         | Groups languages into installable packs                   |
+| `schema/*.schema.json`                               | JSON Schemas for editor autocomplete (generated from zod) |
 
 ---
 
 ## CLI reference
 
-| Command | Description |
-| ------- | ----------- |
-| `sigil build [--target claude\|copilot\|all]` | Compile catalog to `dist/` |
-| `sigil validate` | Schema + reference-graph checks. Non-zero exit on any error. |
-| `sigil list [--language L] [--kind K]` | Browse the catalog |
-| `sigil add [selectors...] [flags]` | Scaffold artifact(s) + closure into a project |
-| `sigil init --target claude\|copilot` | Initialise project directory structure |
-| `sigil new <kind> [--language L] [--name N]` | Author a new artifact template |
-| `sigil check <file>` | Validate a single source file |
-| `sigil edit <id>` | Update title, description, or tags |
-| `sigil delete <id>` | Remove an artifact; warns about dependents |
-| `sigil retarget <id>` | Widen or restrict platform targeting |
-| `sigil release [level]` | Bump version, rebuild, update CHANGELOG, commit + tag |
-| `sigil completion [bash\|zsh\|fish]` | Print shell tab-completion script |
+| Command                                       | Description                                                  |
+| --------------------------------------------- | ------------------------------------------------------------ |
+| `sigil build [--target claude\|copilot\|all]` | Compile catalog to `dist/`                                   |
+| `sigil validate`                              | Schema + reference-graph checks. Non-zero exit on any error. |
+| `sigil list [--language L] [--kind K]`        | Browse the catalog                                           |
+| `sigil add [selectors...] [flags]`            | Scaffold artifact(s) + closure into a project                |
+| `sigil init --target claude\|copilot`         | Initialise project directory structure                       |
+| `sigil new <kind> [--language L] [--name N]`  | Author a new artifact template                               |
+| `sigil check <file>`                          | Validate a single source file                                |
+| `sigil edit <id>`                             | Update title, description, or tags                           |
+| `sigil delete <id>`                           | Remove an artifact; warns about dependents                   |
+| `sigil retarget <id>`                         | Widen or restrict platform targeting                         |
+| `sigil release [level]`                       | Bump version, rebuild, update CHANGELOG, commit + tag        |
+| `sigil completion [bash\|zsh\|fish]`          | Print shell tab-completion script                            |
 
 **Selectors for `add` (variadic, combinable):**
 
-| Selector | Expands to |
-| -------- | ---------- |
-| `all` | Every artifact in the catalog |
-| `pack:dotnet-pack` | Every artifact in a named pack |
-| `kind:agent` | Every artifact of that kind |
+| Selector                     | Expands to                            |
+| ---------------------------- | ------------------------------------- |
+| `all`                        | Every artifact in the catalog         |
+| `pack:dotnet-pack`           | Every artifact in a named pack        |
+| `kind:agent`                 | Every artifact of that kind           |
 | `skill:csharp/xunit-testing` | One explicit artifact (kind-prefixed) |
-| `csharp/xunit-testing` | One explicit artifact (bare ID) |
+| `csharp/xunit-testing`       | One explicit artifact (bare ID)       |
 
 **Key `add` flags:** `--target claude|copilot`, `--kind skill,agent`, `--exclude prompt`,
 `--language csharp`, `--no-deps`, `--dry-run`, `--overwrite`, `--yes`, `--project-dir <dir>`,

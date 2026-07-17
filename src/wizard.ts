@@ -966,7 +966,7 @@ export function buildEquivalentCommand(opts: {
 }
 
 /** Print a formatted conflict advisory after a partial install. */
-export function printConflictAdvice(conflicting: string[], targetName: string): void {
+export function printConflictAdvice(conflicting: string[]): void {
   log.warn(
     `${conflicting.length} file(s) already exist and were NOT overwritten:\n` +
       conflicting.map(f => `  ${f}`).join('\n') +

@@ -22,7 +22,6 @@
  *   So in the plugin build we fold rule bodies into the skill's SKILL.md.
  *   In the scaffold build we write rules to .claude/rules/*.md, which Claude Code loads natively.
  */
-import path from 'path';
 import type {
   Target,
   ResolvedCatalog,

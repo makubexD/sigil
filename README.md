@@ -111,17 +111,17 @@ sigil build --target claude
 
 ## Learn more
 
-| Document | Purpose |
-| -------- | ------- |
-| [docs/index.md](docs/index.md) | Documentation hub — one line per doc, command cheat-sheet |
-| [docs/guides/consuming.md](docs/guides/consuming.md) | Install skills into a project — wizard, `add`, `list` |
-| [docs/guides/authoring.md](docs/guides/authoring.md) | Add new skills, rules, or languages to the catalog |
-| [docs/guides/operations.md](docs/guides/operations.md) | Build targets, CI gate, `release` command |
-| [docs/reference/spec.md](docs/reference/spec.md) | Frontmatter schema, platform mapping, CLI flags |
-| [docs/reference/troubleshooting.md](docs/reference/troubleshooting.md) | Common errors and FAQ |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | Authoring rules, DRY conventions, PR process |
-| [CHANGELOG.md](CHANGELOG.md) | Version history |
-| [CLAUDE.md](CLAUDE.md) | Build internals and architecture (for code contributors) |
+| Document                                                               | Purpose                                                   |
+| ---------------------------------------------------------------------- | --------------------------------------------------------- |
+| [docs/index.md](docs/index.md)                                         | Documentation hub — one line per doc, command cheat-sheet |
+| [docs/guides/consuming.md](docs/guides/consuming.md)                   | Install skills into a project — wizard, `add`, `list`     |
+| [docs/guides/authoring.md](docs/guides/authoring.md)                   | Add new skills, rules, or languages to the catalog        |
+| [docs/guides/operations.md](docs/guides/operations.md)                 | Build targets, CI gate, `release` command                 |
+| [docs/reference/spec.md](docs/reference/spec.md)                       | Frontmatter schema, platform mapping, CLI flags           |
+| [docs/reference/troubleshooting.md](docs/reference/troubleshooting.md) | Common errors and FAQ                                     |
+| [CONTRIBUTING.md](CONTRIBUTING.md)                                     | Authoring rules, DRY conventions, PR process              |
+| [CHANGELOG.md](CHANGELOG.md)                                           | Version history                                           |
+| [CLAUDE.md](CLAUDE.md)                                                 | Build internals and architecture (for code contributors)  |
 
 ## License
 

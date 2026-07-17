@@ -112,9 +112,7 @@ export function resolveSelection(
     }
 
     if (!catalog.byId.has(id)) {
-      throw new Error(
-        `Artifact '${id}' not found. Run \`sigil list\` to see available artifacts.`,
-      );
+      throw new Error(`Artifact '${id}' not found. Run \`sigil list\` to see available artifacts.`);
     }
     addId(id);
   }

@@ -5,11 +5,11 @@ package — you never need to be inside the catalog repo.
 
 ## How to invoke `sigil`
 
-| Context | Command form |
-| ------- | ------------ |
-| After `npm install -g sigil` | `sigil <cmd>` |
-| Without installing | `npx sigil <cmd>` |
-| Built from source | `node /path/to/sigil/dist-cli/cli.js <cmd>` |
+| Context                      | Command form                                |
+| ---------------------------- | ------------------------------------------- |
+| After `npm install -g sigil` | `sigil <cmd>`                               |
+| Without installing           | `npx sigil <cmd>`                           |
+| Built from source            | `node /path/to/sigil/dist-cli/cli.js <cmd>` |
 
 **Building from source (first time only):**
 

@@ -1,7 +1,7 @@
 # Authoring Catalog Artifacts — Recipes
 
 Copy-pasteable walkthroughs for adding a new skill, rule, or language to the catalog.
-For the *rules* of authoring (kinds, DRY, PR process) see [CONTRIBUTING.md](../../CONTRIBUTING.md).
+For the _rules_ of authoring (kinds, DRY, PR process) see [CONTRIBUTING.md](../../CONTRIBUTING.md).
 
 ---
 
@@ -79,7 +79,7 @@ appliesTo:
   - '**/*.tsx'
 severity: recommended
 extends:
-  - shared/clean-code   # DRY: baseline bullets prepended at build time
+  - shared/clean-code # DRY: baseline bullets prepended at build time
 ---
 - Prefer `type` over `interface` for object shapes unless declaration merging is needed.
 - Use `unknown` instead of `any`; narrow with type guards.

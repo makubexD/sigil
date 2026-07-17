@@ -37,7 +37,7 @@ import {
   printConflictAdvice,
   printSkippedAdvice,
 } from './wizard';
-import { confirm, isCancel, cancel, note, log as clackLog } from '@clack/prompts';
+import { confirm, isCancel, cancel, note } from '@clack/prompts';
 import { checkOutputContract } from './targets/output-contract';
 import { checkSourceArtifact } from './authoring/check-source';
 import { headerFor } from './authoring/header';
@@ -420,7 +420,7 @@ program
           writeFilesSync(conflicting, opts.projectDir, true);
           overwrittenCount = conflictPaths.length;
         } else {
-          printConflictAdvice(conflictPaths, targetName);
+          printConflictAdvice(conflictPaths);
         }
       }
 
@@ -1342,78 +1342,6 @@ function detectProjectTarget(
   }
 
   return detected;
-}
-
-/** Returns a template file body for the `new` command. */
-function buildTemplate(kind: string, id: string, name: string, language: string): string {
-  const base = [
-    '---',
-    `id: ${id}`,
-    `kind: ${kind}`,
-    `title: TODO — ${name}`,
-    `description: TODO — one-line description used in catalog listings.`,
-    `tags: []`,
-  ];
-
-  switch (kind) {
-    case 'skill':
-      return (
-        [
-          ...base,
-          `name: ${name}`,
-          `language: ${language}`,
-          `appliesTo:`,
-          `  - "**/*"`,
-          `uses:`,
-          `  rules: []`,
-          `  agents: []`,
-          '---',
-          '',
-          '# TODO — Skill title',
-          '',
-          'Describe what the AI should do when this skill is invoked.',
-        ].join('\n') + '\n'
-      );
-
-    case 'rule':
-      return (
-        [
-          ...base,
-          `language: ${language === 'shared' ? '# omit for cross-language rules' : language}`,
-          `appliesTo:`,
-          `  - "**/*"`,
-          `severity: recommended`,
-          `extends: []  # reference parent rule IDs for DRY inheritance`,
-          '---',
-          '',
-          '- TODO — Add rule bullets here.',
-        ].join('\n') + '\n'
-      );
-
-    case 'agent':
-      return (
-        [
-          ...base,
-          `name: ${name}`,
-          ...(language !== 'shared' ? [`language: ${language}`] : []),
-          `claude:`,
-          `  model: sonnet`,
-          `  effort: medium`,
-          `  maxTurns: 10`,
-          '---',
-          '',
-          'You are TODO. When invoked:',
-          '',
-          '1. TODO',
-        ].join('\n') + '\n'
-      );
-
-    case 'prompt':
-      return [...base, `args: []`, '---', '', 'TODO — prompt body.'].join('\n') + '\n';
-
-    default:
-      return [...base, '---', '', 'TODO'].join('\n') + '\n';
-  }
 }
 
 // ─── release ──────────────────────────────────────────────────────────────────

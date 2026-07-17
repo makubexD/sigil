@@ -18,7 +18,6 @@
 import path from 'path';
 import type { Artifact, LoadedCatalog, SourceViolation } from '../types';
 import { getSchema } from '../schema/index';
-import { artifactTargetsPlatform } from '../select';
 import type { Target, ArtifactKind } from '../types';
 
 // ─── Convention checkers ──────────────────────────────────────────────────────

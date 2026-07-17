@@ -41,13 +41,13 @@ sigil add skill:csharp/xunit-testing --overwrite --yes  # replace
 
 Run `sigil check <file>` for a per-file explanation of each violation. Common violations:
 
-| Violation | Fix |
-| --------- | --- |
-| `Schema: missing required field 'title'` | Add `title:` to the artifact frontmatter |
-| `id/path mismatch` | Ensure `id:` matches `<language>/<name>` or `shared/<name>` |
-| `platforms: unknown value 'openai'` | Use only `claude` or `copilot` in the platforms list |
-| `uses.rules references unknown artifact` | Check the rule ID in `uses.rules` — must match an existing catalog entry |
-| `Dependency coverage drift` | A `uses:` dep targets fewer platforms than the referencing skill — widen the dep's `platforms:` or narrow the skill's |
+| Violation                                | Fix                                                                                                                   |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| `Schema: missing required field 'title'` | Add `title:` to the artifact frontmatter                                                                              |
+| `id/path mismatch`                       | Ensure `id:` matches `<language>/<name>` or `shared/<name>`                                                           |
+| `platforms: unknown value 'openai'`      | Use only `claude` or `copilot` in the platforms list                                                                  |
+| `uses.rules references unknown artifact` | Check the rule ID in `uses.rules` — must match an existing catalog entry                                              |
+| `Dependency coverage drift`              | A `uses:` dep targets fewer platforms than the referencing skill — widen the dep's `platforms:` or narrow the skill's |
 
 For a full description of each schema field → [spec.md](spec.md).
 

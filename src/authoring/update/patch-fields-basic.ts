@@ -1,6 +1,6 @@
 /**
  * `sigil patch` field handlers for the simple scalar/list fields shared by every
- * artifact kind: title, description, version, tags, appliesTo, severity.
+ * artifact kind: title, description, tags, appliesTo, severity.
  *
  * Split out of patch-build.ts by field family — see that file for the shared
  * `PatchCtx` / `patchList` plumbing and the `buildFieldPatch` orchestrator.
@@ -29,12 +29,6 @@ export function applyDescription(ctx: PatchCtx, ops: UpdateOps): boolean {
   }
   if (ops.description === ctx.fm.description) return false;
   ctx.patch.description = ops.description;
-  return true;
-}
-
-export function applyVersion(ctx: PatchCtx, ops: UpdateOps): boolean {
-  if (ops.version === undefined || ops.version === ctx.fm.version) return false;
-  ctx.patch.version = ops.version || undefined;
   return true;
 }
 

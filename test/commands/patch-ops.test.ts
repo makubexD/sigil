@@ -14,20 +14,16 @@ function makeOpts(overrides: Partial<PatchOpts> = {}): PatchOpts {
 }
 
 describe('buildUpdateOpsFromFlags', () => {
-  it('passes through common fields (title/description/version) unchanged', () => {
-    const ops = buildUpdateOpsFromFlags(
-      makeOpts({ title: 'New Title', description: 'New desc', version: '1.2.3' }),
-    );
+  it('passes through common fields (title/description) unchanged', () => {
+    const ops = buildUpdateOpsFromFlags(makeOpts({ title: 'New Title', description: 'New desc' }));
     assert.equal(ops.title, 'New Title');
     assert.equal(ops.description, 'New desc');
-    assert.equal(ops.version, '1.2.3');
   });
 
   it('leaves common fields undefined when no matching flag was passed', () => {
     const ops = buildUpdateOpsFromFlags(makeOpts());
     assert.equal(ops.title, undefined);
     assert.equal(ops.description, undefined);
-    assert.equal(ops.version, undefined);
   });
 
   it('wraps a single add/remove tag flag into a one-element array', () => {

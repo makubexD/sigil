@@ -117,7 +117,6 @@ export function headerFor(kind: string, v: HeaderValues): string {
     ...buildSharedRequiredLines(kind, v),
     ...kindSpecificLines,
     '# tags:          # discovery tags []',
-    '# version:       # per-artifact semver (optional; package version is the default)',
     ...buildPlatformsLines(v),
     '---',
     '',

@@ -21,7 +21,6 @@ export const COMMON_FIELDS: FieldDescriptor[] = [
   { field: 'title', kind: 'scalar', required: true },
   { field: 'description', kind: 'scalar', required: true },
   { field: 'tags', kind: 'list' },
-  { field: 'version', kind: 'scalar' },
 ];
 
 /** Kind-specific editable fields (added to COMMON_FIELDS). */

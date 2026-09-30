@@ -13,7 +13,6 @@ export interface ArtifactDetail {
   description: string;
   tags: string[];
   language: string | undefined;
-  version: string | undefined;
   platforms: string[] | undefined; // undefined = all supporting targets
   filePath: string;
 
@@ -77,15 +76,7 @@ function computeTargetPlatforms(artifact: ResolvedArtifact, targets: Target[]): 
 
 type CommonDetailFields = Pick<
   ArtifactDetail,
-  | 'id'
-  | 'kind'
-  | 'title'
-  | 'description'
-  | 'tags'
-  | 'language'
-  | 'version'
-  | 'platforms'
-  | 'filePath'
+  'id' | 'kind' | 'title' | 'description' | 'tags' | 'language' | 'platforms' | 'filePath'
 >;
 
 /** Builds the fields common to every kind (title, description, tags, platforms, etc.). */
@@ -100,7 +91,6 @@ function buildCommonDetailFields(
     description: (fm.description as string | undefined) ?? '',
     tags: (fm.tags as string[] | undefined) ?? [],
     language: fm.language as string | undefined,
-    version: fm.version as string | undefined,
     platforms: fm.platforms as string[] | undefined,
     filePath: artifact.filePath,
   };

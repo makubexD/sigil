@@ -5,7 +5,7 @@
  * `patch` and `errors` arrays, returning whether the field changed. Handlers are
  * split across three sibling modules by field family — this file keeps only the
  * shared types, the `patchList` primitive, and the `buildFieldPatch` orchestrator:
- *   patch-fields-basic.ts — title, description, version, tags, appliesTo, severity
+ *   patch-fields-basic.ts — title, description, tags, appliesTo, severity
  *   patch-fields-refs.ts  — extends, uses.rules, uses.agents
  *   patch-fields-agent.ts — tools, disallowedTools, claude.*
  */
@@ -13,7 +13,6 @@ import type { Artifact } from '../../types';
 import {
   applyTitle,
   applyDescription,
-  applyVersion,
   applyTags,
   applyAppliesTo,
   applyAppliesToRationale,
@@ -31,7 +30,6 @@ import { applyTools, applyDisallowedTools, applyClaude } from './patch-fields-ag
 export interface UpdateOps {
   title?: string | undefined;
   description?: string | undefined;
-  version?: string | undefined;
 
   setTags?: string[] | undefined;
   addTags?: string[] | undefined;
@@ -120,7 +118,6 @@ export function patchList(
 const FIELD_HANDLERS: Array<(ctx: PatchCtx, ops: UpdateOps) => boolean> = [
   applyTitle,
   applyDescription,
-  applyVersion,
   applyTags,
   applyAppliesTo,
   applyAppliesToRationale,

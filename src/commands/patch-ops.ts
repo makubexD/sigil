@@ -12,7 +12,6 @@ export interface PatchOpts {
   yes: boolean;
   title?: string;
   description?: string;
-  version?: string;
   addTag?: string;
   removeTag?: string;
   setTags?: string;
@@ -60,14 +59,13 @@ function toSingleton(v?: string): string[] | undefined {
   return v ? [v] : undefined;
 }
 
-/** Builds the title/description/version/tags subset of UpdateOps. */
+/** Builds the title/description/tags subset of UpdateOps. */
 function buildCommonUpdateOps(
   opts: PatchOpts,
-): Pick<UpdateOps, 'title' | 'description' | 'version' | 'addTags' | 'removeTags' | 'setTags'> {
+): Pick<UpdateOps, 'title' | 'description' | 'addTags' | 'removeTags' | 'setTags'> {
   return {
     title: opts.title,
     description: opts.description,
-    version: opts.version,
     addTags: toSingleton(opts.addTag),
     removeTags: toSingleton(opts.removeTag),
     setTags: splitList(opts.setTags),

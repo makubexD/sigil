@@ -36,11 +36,6 @@ export const BaseFields = {
   /** Discovery tags. */
   tags: z.array(z.string()).optional().default([]),
   /**
-   * Optional per-artifact semver. Unused in v1 (the npm package version is
-   * the single version); supported for future per-artifact versioning.
-   */
-  version: z.string().optional(),
-  /**
    * Optional: restrict this artifact to a subset of platforms.
    * Absent (the default) = emits to every registered target whose supportedKinds
    * includes this kind — the DRY auto-propagation default.

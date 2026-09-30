@@ -275,7 +275,6 @@ const patchCmd = program
   .option('--yes', 'Non-interactive: apply without prompting', false)
   .option('--title <title>', 'New title')
   .option('--description <desc>', 'New description')
-  .option('--version <ver>', 'New version string (semver)')
   .option('--add-tag <tag>', 'Add a tag')
   .option('--remove-tag <tag>', 'Remove a tag')
   .option('--set-tags <list>', 'Replace all tags (comma-separated)')

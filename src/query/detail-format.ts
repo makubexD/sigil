@@ -19,12 +19,11 @@ function renderHeaderLines(detail: ArtifactDetail): string[] {
   return ['', `  ${detail.kind.toUpperCase()}  ${detail.id}`, `  ${detail.title}`, ''];
 }
 
-/** Common fields present on every kind: description, language, version, tags, platforms, etc. */
+/** Common fields present on every kind: description, language, tags, platforms, etc. */
 function renderCommonFieldLines(detail: ArtifactDetail): string[] {
   const lines: string[] = [];
   pushRow(lines, 'description:', detail.description);
   if (detail.language) pushRow(lines, 'language:', detail.language);
-  if (detail.version) pushRow(lines, 'version:', detail.version);
   if (detail.tags.length) pushRow(lines, 'tags:', detail.tags.join(', '));
 
   const platformsLabel =

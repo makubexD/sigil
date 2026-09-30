@@ -59,7 +59,6 @@ const SIGIL_INTERNAL_FIELDS: ReadonlySet<string> = new Set([
   'relatedArtifacts',
   'appliesToRationale',
   'severity',
-  'version',
   'slots',
   'revision',
   'docs',

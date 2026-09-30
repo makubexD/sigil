@@ -27,9 +27,6 @@
           },
           "default": []
         },
-        "version": {
-          "type": "string"
-        },
         "platforms": {
           "type": "array",
           "items": {

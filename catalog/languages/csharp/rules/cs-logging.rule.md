@@ -28,6 +28,9 @@ public sealed class CalendarParser(ILogger<CalendarParser> logger)
 }
 ```
 
+This holds in a class that already writes to `Console`: new diagnostics go through `ILogger<T>`,
+never another `Console.WriteLine`.
+
 `Console.WriteLine()` is acceptable only for **intentional user-facing CLI output** (not diagnostics).
 Switch to `ILogger<T>` as soon as the code is consumed by anything other than a single-entry-point CLI.
 

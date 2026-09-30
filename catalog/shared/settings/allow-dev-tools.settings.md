@@ -3,14 +3,11 @@ id: shared/allow-dev-tools
 kind: settings
 title: "Allow Common Dev Tools"
 description: >-
-  Grants Claude Code permission to run standard development commands (npm, git,
+  Grants Claude Code permission to run standard development commands (npm scripts,
   tsc, eslint, prettier) without requiring per-call confirmation.
 permissions:
   allow:
     - "Bash(npm run *)"
-    - "Bash(git status)"
-    - "Bash(git diff *)"
-    - "Bash(git log *)"
     - "Bash(npx tsc *)"
     - "Bash(npx eslint *)"
     - "Bash(npx prettier *)"
@@ -27,8 +24,10 @@ entries are added.
 
 **What's allowed:**
 - `npm run *` — any npm script (lint, test, build, etc.)
-- Common `git` read commands (status, diff, log) — no write operations
 - TypeScript compiler, ESLint, Prettier via `npx`
+
+No `git` entries: Claude Code already runs read-only commands such as `git status`, `git diff` and
+`git log` without a prompt, so allowing them here changed nothing.
 
 To allow additional commands, install another settings artifact with extra allow entries
 or use `sigil patch shared/allow-dev-tools --add-permission-allow "Bash(your-command)"`.

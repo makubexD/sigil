@@ -3,7 +3,7 @@ id: python/py-debugger
 kind: agent
 title: Debugger (Python)
 description: >-
-  Use to investigate a failing test, traceback, or unexpected runtime
+  Use to investigate a failing Python test, traceback, or unexpected runtime
   behaviour in isolation and return the root cause plus a verified minimal
   fix. Makes behavior-changing fixes; does not do behavior-preserving
   restructuring. Use proactively when pytest fails or an error is reported.

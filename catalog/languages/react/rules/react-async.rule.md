@@ -6,11 +6,13 @@ description: React async data patterns — no raw fetch-in-useEffect, TanStack Q
 language: react
 appliesTo:
   - "**/*.tsx"
-  - "**/*.ts"
+  - "**/*.jsx"
+  - "**/use*.ts"
+  - "**/use*.js"
 tags:
   - react
   - async
-appliesToRationale: Scoped to component and hook files because async data-fetching patterns are a React/hooks concern, not a plain-config concern.
+appliesToRationale: Scoped to components and hook files (use*.ts) because async data-fetching patterns are a React/hooks concern — "**/*.ts" also put this rule on plain TypeScript utilities (2026-09-27 live-prompt campaign).
 ---
 
 ## Never Fetch Raw in `useEffect`

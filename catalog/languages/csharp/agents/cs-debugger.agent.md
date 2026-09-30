@@ -3,7 +3,7 @@ id: csharp/cs-debugger
 kind: agent
 title: Debugger (.NET / C#)
 description: >-
-  Use to investigate a failing test, exception, or unexpected runtime behaviour
+  Use to investigate a failing C#/.NET test, exception, or unexpected runtime behaviour
   in isolation and return the root cause plus a verified minimal fix. Makes
   behavior-changing fixes; does not do behavior-preserving restructuring. Use
   proactively when tests fail or an error is reported.

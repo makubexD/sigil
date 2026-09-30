@@ -3,7 +3,7 @@ id: typescript/ts-security-auditor
 kind: agent
 title: Security Auditor (TypeScript)
 description: >-
-  Use to conduct a deep, codebase-wide security audit and produce a prioritized remediation
+  Use to conduct a deep, codebase-wide security audit of a TypeScript/Node.js project and produce a prioritized remediation
   report. Makes no edits (Bash is read-only by instruction, not sandboxed). Sweeps the entire
   codebase for threat-surface issues: hardcoded secrets, injection, prototype pollution, unsafe
   deserialization, and dependency CVEs. Use proactively before releases, when adding

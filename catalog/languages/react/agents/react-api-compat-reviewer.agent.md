@@ -3,7 +3,7 @@ id: react/react-api-compat-reviewer
 kind: agent
 title: API Compatibility Reviewer (React)
 description: >-
-  Use to review whether a change to a shared component library will break downstream consumers —
+  Use to review whether a change to a shared React component library will break downstream consumers —
   component prop-contract and exported hook compatibility before a release. Makes no edits (Bash
   is read-only by instruction, not sandboxed); returns a Breaking/Behavioral/Compatible tiered
   report with a SemVer recommendation. Specializes in what consuming apps see: exported

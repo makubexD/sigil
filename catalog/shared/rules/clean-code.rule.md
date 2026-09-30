@@ -22,3 +22,4 @@ tags:
 - **Keep it DRY but not over-abstracted.** Duplication is worse than a bad abstraction; over-abstraction is worse than mild duplication. Extract when you have three concrete examples of the same pattern.
 - **Fail fast.** Validate inputs at the boundary (function entry, API surface, config load). Do not let invalid state propagate deep into the system.
 - **Consistent formatting.** Use the project's formatter/linter. Never debate formatting in code review — automate it.
+- **Legacy code is not a precedent.** New or changed code follows these rules even when the code around it does not. Never copy an existing violation for consistency; if a rule needs something the project lacks (a logger, a config value), add the smallest correct version of it.

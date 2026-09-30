@@ -3,7 +3,7 @@ id: typescript/ts-refactor-specialist
 kind: agent
 title: Refactor Specialist (TypeScript)
 description: >-
-  Use to perform behavior-preserving refactors — extract function/module, rename
+  Use to perform behavior-preserving TypeScript refactors — extract function/module, rename
   symbols, decompose large modules, eliminate duplication, break circular
   dependencies. Applies changes and verifies the test suite stays green. Never
   changes observable behavior. Use proactively after a feature is working and

@@ -3,7 +3,7 @@ id: csharp/cs-api-compat-reviewer
 kind: agent
 title: API Compatibility Reviewer (.NET / C#)
 description: >-
-  Use to gate public/binary API compatibility before merging a branch or cutting a release. Makes
+  Use to gate C#/.NET public and binary API compatibility before merging a branch or cutting a release. Makes
   no edits (Bash is read-only by instruction, not sandboxed); classifies changes as
   source-breaking, binary-breaking, or compatible, and emits a SemVer recommendation. Reviews the
   public surface contract. Use proactively when changing method signatures, removing members,

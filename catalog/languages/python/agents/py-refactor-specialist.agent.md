@@ -3,7 +3,7 @@ id: python/py-refactor-specialist
 kind: agent
 title: Refactor Specialist (Python)
 description: >-
-  Use to perform behavior-preserving refactors — extract function/module,
+  Use to perform behavior-preserving Python refactors — extract function/module,
   rename symbols, decompose large modules, eliminate duplication, break
   circular imports. Applies changes and verifies the test suite stays
   green. Never changes observable behavior. Use proactively after a

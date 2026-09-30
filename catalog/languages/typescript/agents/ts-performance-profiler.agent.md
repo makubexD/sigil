@@ -3,7 +3,7 @@ id: typescript/ts-performance-profiler
 kind: agent
 title: Performance Profiler (TypeScript)
 description: >-
-  Use to profile a file or codebase for performance issues: analyze algorithmic
+  Use to profile a TypeScript/Node.js file or codebase for performance issues: analyze algorithmic
   complexity, identify hot paths, and surface performance anti-patterns — N+1
   queries, blocking the event loop, needless allocations, O(n²) loops, repeated
   computation. Can run profiling tools if available. Measures and reasons about

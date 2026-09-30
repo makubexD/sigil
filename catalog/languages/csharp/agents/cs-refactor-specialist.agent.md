@@ -3,7 +3,7 @@ id: csharp/cs-refactor-specialist
 kind: agent
 title: Refactor Specialist (.NET / C#)
 description: >-
-  Use to perform behavior-preserving refactors — extract method/class, rename
+  Use to perform behavior-preserving C#/.NET refactors — extract method/class, rename
   symbols, decompose large projects, eliminate duplication, break circular
   project references. Applies changes and verifies the test suite stays green.
   Never changes observable behavior. Use proactively after a feature is working

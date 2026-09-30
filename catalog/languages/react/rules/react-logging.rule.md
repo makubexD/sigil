@@ -6,11 +6,13 @@ description: React client-side logging — structured error reporting over conso
 language: react
 appliesTo:
   - "**/*.tsx"
-  - "**/*.ts"
+  - "**/*.jsx"
+  - "**/use*.ts"
+  - "**/use*.js"
 tags:
   - react
   - logging
-appliesToRationale: Scoped to component and hook files because these client-side logging conventions only apply to browser-executed React code.
+appliesToRationale: Scoped to components and hook files (use*.ts) because these client-side logging conventions only apply to browser-executed React code — "**/*.ts" also put this rule on plain TypeScript utilities (2026-09-27 live-prompt campaign).
 ---
 
 ## `console.*` Is Dev-Only, Not Production Telemetry

@@ -5,8 +5,11 @@ title: Git (TypeScript)
 description: TypeScript-specific git additions — .gitignore entries, @deprecated-based deprecation, npm pre-push gate.
 language: typescript
 appliesTo:
-  - "**/*"
-appliesToRationale: Matches shared/git — it governs commit/PR workflow, not any specific file.
+  - "**/*.ts"
+  - "**/*.tsx"
+  - package.json
+  - .gitignore
+appliesToRationale: Scoped to TypeScript source, package.json and .gitignore — the shared/git baseline it extends is repeated in every language's git rule, so "**/*" loaded it on every file of every stack (a .py file got the TypeScript git rule) and twice beside another language's (2026-09-27 live-prompt campaign).
 extends:
   - shared/git
 tags:

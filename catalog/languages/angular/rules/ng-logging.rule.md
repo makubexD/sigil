@@ -25,6 +25,9 @@ export class LoggerService {
 }
 ```
 
+This holds in a component that already calls `console.*`: new diagnostics go through
+`LoggerService`, never another `console` call.
+
 Raw `console.*` is acceptable only for intentional, developer-facing output, and should be gated by
 `isDevMode()` so it does not run in production builds. `console.log` for diagnostics in committed
 code is a smell — use the logger.

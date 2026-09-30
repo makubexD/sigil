@@ -97,6 +97,17 @@ through Claude Code and Copilot CLI against seven install combinations:
   `.mcp.json`. A fragment another installed entry still records is now kept.
 - Copilot `.instructions.md` files had no `description`, so Copilot CLI's instruction index gave the
   model only a file name to decide whether to open a rule. They now carry the rule's description.
+- Rule globs that leaked across stacks: `ts-git`/`ng-git` matched every file (a `.py` file got the
+  TypeScript git rule, and `shared/git` loaded twice beside another language's git rule), and
+  `react-async`/`react-logging` matched plain `.ts` utilities. They are now scoped to their own
+  files.
+- Models copied a legacy file's `console.log` instead of following the logging rule. `shared/clean-code`
+  and the TypeScript, Python, C# and Angular logging rules now say that new code follows the rules
+  even when the surrounding code doesn't.
+- 15 language agents never named their language in `description` (the only field agents dispatch
+  on), and Copilot chose its built-in reviewer over `ts-security-auditor`. Each now names it.
+- `shared/allow-dev-tools` dropped `git status`/`diff`/`log`: Claude Code already runs read-only
+  commands without a prompt, so those entries did nothing.
 
 ### Removed
 

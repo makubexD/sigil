@@ -19,6 +19,10 @@ Never use `console.log`, `console.warn`, or `console.error` for diagnostic loggi
 server application. `console` output is unstructured, has no level control, and cannot be routed to
 aggregators.
 
+This holds in a file that already uses `console`: new diagnostics go through a logger, never another
+`console.*` call. If the project has no logger yet, accept an injected `Logger` (a small interface
+with `info`/`warn`/`error`) rather than copying the surrounding style.
+
 Use a structured logger — discover which one the project uses (pino, winston, tslog, or a
 framework-provided logger). Inject it via constructor or function argument; never import a singleton
 logger directly in domain code:

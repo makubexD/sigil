@@ -3,7 +3,7 @@ id: react/react-refactor-specialist
 kind: agent
 title: Refactor Specialist (React)
 description: >-
-  Use to perform behavior-preserving refactors — extract sub-component,
+  Use to perform behavior-preserving React refactors — extract sub-component,
   extract custom hook, rename symbols, decompose large components,
   eliminate duplication. Applies changes and verifies the test suite stays
   green. Never changes observable behavior. Use proactively after a

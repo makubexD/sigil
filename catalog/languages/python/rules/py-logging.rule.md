@@ -26,6 +26,9 @@ def run_pipeline() -> None:
     logger.info("Pipeline starting")
 ```
 
+This holds in a module that already uses `print`: new diagnostics use the logger, never another
+`print`.
+
 `print()` is acceptable only for **intentional, user-facing CLI output** — a report printed to
 stdout that the user is meant to read directly. The distinction: diagnostic telemetry → `logging`;
 user output → `print` (or `rich`/`click.echo` for formatted CLI output).

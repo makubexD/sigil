@@ -15,6 +15,11 @@ import { resolveCatalog } from '../resolve';
 import { loadAndValidate, writeFilesSync, detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets';
 import { loadManifest, saveManifest, sha256 } from '../manifest';
+import { applyMerge, serialize, detectConfigDrift } from '../config-merge';
+import { resolveConfigRoot } from '../config-utils';
+import { isConfigKind } from '../kinds';
+import type { ManifestEntry } from '../manifest/types';
+import type { ConfigMergeOp, ConfigRoot, MergeStrategy } from '../types';
 
 export interface UpdateOptions {
   projectDir: string;
@@ -23,6 +28,11 @@ export interface UpdateOptions {
   packs: string;
   force: boolean;
   dryRun: boolean;
+}
+
+/** True when `entry` is a config-kind (hook/settings/mcp) install record. */
+function isConfigEntry(entry: ManifestEntry): boolean {
+  return isConfigKind(entry.kind) && !!entry.configFiles && entry.configFiles.length > 0;
 }
 
 /**
@@ -34,6 +44,66 @@ export function isFileDrifted(fullPath: string, recordedHash: string | undefined
   if (!fs.existsSync(fullPath)) return false;
   const diskHash = sha256(fs.readFileSync(fullPath, 'utf-8'));
   return diskHash !== recordedHash;
+}
+
+/** Read+parse a config JSON file; returns {} for a missing file, undefined for invalid JSON. */
+function readConfigFile(fullPath: string): Record<string, unknown> | undefined {
+  if (!fs.existsSync(fullPath)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
+  } catch {
+    return undefined;
+  }
+}
+
+/**
+ * Restore or re-merge one recorded config fragment (hook/settings/mcp) onto disk.
+ * Unlike whole-file entries, the fresh content comes from the manifest's own recorded
+ * fragment — not from re-scaffolding — since a config file is user-owned and sigil only
+ * owns a sub-tree of it. Returns true when at least one file was written (or would be,
+ * under --dry-run).
+ */
+function updateConfigEntry(entry: ManifestEntry, opts: UpdateOptions): boolean {
+  let wrote = false;
+  for (const cf of entry.configFiles ?? []) {
+    const rootDir = resolveConfigRoot(cf.root as ConfigRoot | undefined, opts.projectDir);
+    const fullPath = path.join(rootDir, cf.file);
+    const op: ConfigMergeOp = {
+      file: cf.file,
+      root: cf.root as ConfigRoot | undefined,
+      fragment: cf.fragment,
+      strategy: cf.strategy as Record<string, MergeStrategy>,
+    };
+
+    const existing = readConfigFile(fullPath);
+    if (existing === undefined) {
+      console.error(`  ✗  ${entry.id}: ${cf.file} exists but is not valid JSON. Skipped.`);
+      continue;
+    }
+
+    const existedOnDisk = fs.existsSync(fullPath);
+    if (existedOnDisk && !detectConfigDrift(existing, op)) {
+      continue; // fragment already present and intact — nothing to restore
+    }
+    if (existedOnDisk && !opts.force) {
+      console.log(`     ⊘ ${cf.file}  (drifted — would skip without --force)`);
+      continue;
+    }
+
+    const action = existedOnDisk ? 're-merged' : 'restored';
+    if (opts.dryRun) {
+      console.log(`  ↑  ${entry.id}\n     ~ ${cf.file}  (would be ${action})`);
+      wrote = true;
+      continue;
+    }
+
+    const merged = applyMerge(existing, op);
+    fs.mkdirSync(path.dirname(fullPath), { recursive: true });
+    fs.writeFileSync(fullPath, serialize(merged), 'utf-8');
+    console.log(`  ✓  ${entry.id}  (${cf.file} ${action})`);
+    wrote = true;
+  }
+  return wrote;
 }
 
 export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<void> {
@@ -80,6 +150,11 @@ export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<voi
     if (!catalogIds.has(entry.id)) {
       console.log(`  ✗  ${entry.id}  (orphaned — no longer in catalog, run sigil uninstall)`);
       orphanedCount++;
+      continue;
+    }
+
+    if (isConfigEntry(entry)) {
+      if (updateConfigEntry(entry, opts)) updatedCount++;
       continue;
     }
 

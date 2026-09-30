@@ -174,6 +174,38 @@ describe('characterization — sigil status', () => {
   });
 });
 
+describe('characterization — sigil update (config kinds)', () => {
+  it('restores a deleted config-kind file (hook/settings) via update', () => {
+    withTempDir(dir => {
+      runCli(
+        [
+          'add',
+          'shared/protect-config',
+          '--target',
+          'claude',
+          '--project-dir',
+          dir,
+          '--yes',
+          ...CATALOG_ARGS,
+        ],
+        dir,
+      );
+      const settingsPath = path.join(dir, '.claude', 'settings.json');
+      assert.ok(fs.existsSync(settingsPath), 'precondition: settings.json written by add');
+
+      fs.rmSync(settingsPath);
+      const result = runCli(
+        ['update', 'shared/protect-config', '--project-dir', dir, ...CATALOG_ARGS],
+        dir,
+      );
+
+      assert.equal(result.status, 0, `expected exit 0, got ${result.status}: ${result.stdout}`);
+      assert.ok(fs.existsSync(settingsPath), 'update must restore the deleted config file');
+      assert.match(result.stdout, /restored/);
+    });
+  });
+});
+
 describe('characterization — not-found errors (get / edit)', () => {
   it('get on an unknown id exits 1 and lists available ids', () => {
     const result = runCli(['get', 'nope/does-not-exist', ...CATALOG_ONLY_ARGS], process.cwd());

@@ -12,6 +12,7 @@ import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
 import { checkSourceArtifact } from '../authoring/check-source';
 import { scanContent, formatScanFindings } from '../trust/scan';
+import { normPath } from '../paths';
 
 export interface CheckOptions {
   catalogDir: string;
@@ -24,9 +25,6 @@ export async function runCheck(files: string[], opts: CheckOptions): Promise<voi
   // Load the full catalog for reference-integrity and dup-id checks
   const catalog = await loadCatalog(opts.catalogDir);
   const targets = getAllTargets();
-
-  // Normalize path separators (fast-glob returns forward slashes; path.resolve returns OS-native)
-  const normPath = (p: string) => p.replace(/\\/g, '/');
 
   // Resolve which files to check
   if (files.length === 0) {

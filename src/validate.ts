@@ -10,6 +10,21 @@
 import type { LoadedCatalog, ValidationError, ValidationResult } from './types';
 import type { Target, ArtifactKind } from './types';
 import { getSchema } from './schema/index';
+import { checkReferences, type RefCheck } from './refs';
+
+/** Renders one RefCheck in validate.ts's established per-field wording. */
+function formatRefError(check: RefCheck): string {
+  if (check.problem === 'dangling') {
+    return `Dangling ${check.field} reference: '${check.ref}' does not exist in the catalog`;
+  }
+  const validityNote =
+    check.field === 'extends'
+      ? 'only rules can be extended'
+      : check.field === 'uses.rules'
+        ? 'only rules are valid here'
+        : 'only agents are valid here';
+  return `Invalid ${check.field}: '${check.ref}' has kind '${check.actualKind}' — ${validityNote}`;
+}
 
 export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[]): ValidationResult {
   const errors: ValidationError[] = [];
@@ -43,60 +58,13 @@ export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[])
 
     // ── 2. Reference integrity ─────────────────────────────────────────────
 
-    // extends (rules only)
-    const extendsRefs = (artifact.frontmatter.extends as string[] | undefined) ?? [];
-    for (const ref of extendsRefs) {
-      const target = catalog.byId.get(ref);
-      if (!target) {
-        errors.push({
-          artifactId: artifact.id,
-          filePath: artifact.filePath,
-          error: `Dangling extends reference: '${ref}' does not exist in the catalog`,
-        });
-      } else if (target.kind !== 'rule') {
-        errors.push({
-          artifactId: artifact.id,
-          filePath: artifact.filePath,
-          error: `Invalid extends: '${ref}' has kind '${target.kind}' — only rules can be extended`,
-        });
-      }
-    }
-
-    // uses.rules
-    const uses = artifact.frontmatter.uses as { rules?: string[]; agents?: string[] } | undefined;
-    for (const ref of uses?.rules ?? []) {
-      const target = catalog.byId.get(ref);
-      if (!target) {
-        errors.push({
-          artifactId: artifact.id,
-          filePath: artifact.filePath,
-          error: `Dangling uses.rules reference: '${ref}' does not exist in the catalog`,
-        });
-      } else if (target.kind !== 'rule') {
-        errors.push({
-          artifactId: artifact.id,
-          filePath: artifact.filePath,
-          error: `Invalid uses.rules: '${ref}' has kind '${target.kind}' — only rules are valid here`,
-        });
-      }
-    }
-
-    // uses.agents
-    for (const ref of uses?.agents ?? []) {
-      const target = catalog.byId.get(ref);
-      if (!target) {
-        errors.push({
-          artifactId: artifact.id,
-          filePath: artifact.filePath,
-          error: `Dangling uses.agents reference: '${ref}' does not exist in the catalog`,
-        });
-      } else if (target.kind !== 'agent') {
-        errors.push({
-          artifactId: artifact.id,
-          filePath: artifact.filePath,
-          error: `Invalid uses.agents: '${ref}' has kind '${target.kind}' — only agents are valid here`,
-        });
-      }
+    // extends / uses.rules / uses.agents
+    for (const check of checkReferences(artifact.frontmatter, catalog)) {
+      errors.push({
+        artifactId: artifact.id,
+        filePath: artifact.filePath,
+        error: formatRefError(check),
+      });
     }
 
     // workflow steps

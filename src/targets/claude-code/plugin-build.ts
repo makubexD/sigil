@@ -13,8 +13,9 @@
  * Rules are inlined into SKILL.md because Claude Code plugins cannot ship loose rules.
  */
 import type { ResolvedCatalog, ResolvedArtifact, FileMap, Pack } from '../../types';
-import type { AgentFrontmatter, RelatedArtifact } from '../../schema';
+import type { AgentFrontmatter } from '../../schema';
 import { yamlScalar } from '../yaml-util';
+import { renderBoundarySection } from '../shared/boundary';
 
 /**
  * Select the artifacts that belong to a pack.
@@ -123,43 +124,7 @@ export function buildAgentMd(
   // Generate a structured escalation section from relatedArtifacts frontmatter,
   // but only for siblings that are co-present in the install/build set.
   // No installSet → no section (standalone install, can't know what's co-present).
-  const boundaryLines: string[] = [];
-  if (installSet && catalog) {
-    const related = (fm.relatedArtifacts as RelatedArtifact[] | undefined) ?? [];
-    // Filter to co-present entries only (excluding self — though self won't be in related)
-    const coPresent = related.filter(r => r.id !== agent.id && installSet.has(r.id));
-
-    if (coPresent.length > 0) {
-      const escalates = coPresent.filter(r => r.relation === 'escalates-to');
-      const complements = coPresent.filter(r => r.relation === 'complements');
-      const seeAlso = coPresent.filter(r => r.relation === 'see-also');
-
-      boundaryLines.push('## Boundary', '');
-
-      const formatEntry = (r: RelatedArtifact): string => {
-        const sibling = catalog.byId.get(r.id);
-        const name = (sibling?.frontmatter.name as string | undefined) ?? r.id.split('/').pop()!;
-        const title = (sibling?.frontmatter.title as string | undefined) ?? name;
-        return `- **${title}** (\`${name}\`) — ${r.reason}`;
-      };
-
-      if (escalates.length > 0) {
-        boundaryLines.push('Delegate specialized work to co-installed agents:');
-        boundaryLines.push(...escalates.map(formatEntry));
-        if (complements.length > 0 || seeAlso.length > 0) boundaryLines.push('');
-      }
-      if (complements.length > 0) {
-        boundaryLines.push('Related specialists (distinct scope):');
-        boundaryLines.push(...complements.map(formatEntry));
-        if (seeAlso.length > 0) boundaryLines.push('');
-      }
-      if (seeAlso.length > 0) {
-        boundaryLines.push('See also:');
-        boundaryLines.push(...seeAlso.map(formatEntry));
-      }
-      boundaryLines.push('');
-    }
-  }
+  const boundaryLines = renderBoundarySection(agent, installSet, catalog);
 
   const bodyParts =
     boundaryLines.length > 0

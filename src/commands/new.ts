@@ -18,6 +18,7 @@ import {
   printEquivalentCommand,
 } from '../wizard';
 import { checkSourceArtifact } from '../authoring/check-source';
+import { normPath } from '../paths';
 import { headerFor } from '../authoring/header';
 import { setPlatforms } from '../authoring/platforms';
 
@@ -160,7 +161,6 @@ export async function runNew(kind: string | undefined, opts: NewOptions): Promis
   try {
     const catalog = await loadCatalog(opts.catalogDir);
     const targets = getAllTargets();
-    const normPath = (p: string) => p.replace(/\\/g, '/');
     const artifact = catalog.artifacts.find(a => normPath(a.filePath) === normPath(outPath));
     if (artifact) {
       const violations = checkSourceArtifact(artifact, catalog, targets);

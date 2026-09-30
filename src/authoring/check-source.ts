@@ -19,6 +19,22 @@ import path from 'path';
 import type { Artifact, LoadedCatalog, SourceViolation } from '../types';
 import { getSchema } from '../schema/index';
 import type { Target, ArtifactKind } from '../types';
+import { checkReferences, type RefCheck } from '../refs';
+import { normPath } from '../paths';
+
+/** Renders one RefCheck in check-source.ts's established per-field wording. */
+function formatRefViolation(check: RefCheck): string {
+  if (check.problem === 'dangling') {
+    return `${check.field}: '${check.ref}' does not exist in the catalog`;
+  }
+  const validityNote =
+    check.field === 'extends'
+      ? 'only rules can be extended'
+      : check.field === 'uses.rules'
+        ? 'only rules valid here'
+        : 'only agents valid here';
+  return `${check.field}: '${check.ref}' has kind '${check.actualKind}' — ${validityNote}`;
+}
 
 // ─── Convention checkers ──────────────────────────────────────────────────────
 
@@ -34,8 +50,7 @@ function isKebabCase(s: string): boolean {
  * Returns undefined when the path doesn't match either convention.
  */
 function inferIdPrefixFromPath(filePath: string): string | undefined {
-  // Normalise to forward slashes for cross-platform matching
-  const normalized = filePath.replace(/\\/g, '/');
+  const normalized = normPath(filePath);
   const langMatch = normalized.match(/\/languages\/([^/]+)\//);
   if (langMatch) return langMatch[1];
   if (normalized.includes('/shared/')) return 'shared';
@@ -171,8 +186,8 @@ export function checkSourceArtifact(
   // while destPath uses backslashes, causing false-positive duplicates on --overwrite.
   const existing = catalog.byId.get(id);
   if (existing) {
-    const normExisting = existing.filePath.replace(/\\/g, '/');
-    const normArtifact = artifact.filePath.replace(/\\/g, '/');
+    const normExisting = normPath(existing.filePath);
+    const normArtifact = normPath(artifact.filePath);
     if (normExisting !== normArtifact) {
       v.push({
         file,
@@ -182,44 +197,12 @@ export function checkSourceArtifact(
   }
 
   // ── 4. Reference integrity ─────────────────────────────────────────────────
-  // extends
-  const extendsRefs = (artifact.frontmatter.extends as string[] | undefined) ?? [];
-  for (const ref of extendsRefs) {
-    const target = catalog.byId.get(ref);
-    if (!target) {
-      v.push({ file, problem: `extends: '${ref}' does not exist in the catalog` });
-    } else if (target.kind !== 'rule') {
-      v.push({
-        file,
-        problem: `extends: '${ref}' has kind '${target.kind}' — only rules can be extended`,
-      });
-    }
+  // extends / uses.rules / uses.agents
+  for (const check of checkReferences(artifact.frontmatter, catalog)) {
+    v.push({ file, problem: formatRefViolation(check) });
   }
-
-  // uses.rules + uses.agents
+  // uses.rules/uses.agents lists are also needed below for dependency-coverage-drift.
   const uses = artifact.frontmatter.uses as { rules?: string[]; agents?: string[] } | undefined;
-  for (const ref of uses?.rules ?? []) {
-    const target = catalog.byId.get(ref);
-    if (!target) {
-      v.push({ file, problem: `uses.rules: '${ref}' does not exist in the catalog` });
-    } else if (target.kind !== 'rule') {
-      v.push({
-        file,
-        problem: `uses.rules: '${ref}' has kind '${target.kind}' — only rules valid here`,
-      });
-    }
-  }
-  for (const ref of uses?.agents ?? []) {
-    const target = catalog.byId.get(ref);
-    if (!target) {
-      v.push({ file, problem: `uses.agents: '${ref}' does not exist in the catalog` });
-    } else if (target.kind !== 'agent') {
-      v.push({
-        file,
-        problem: `uses.agents: '${ref}' has kind '${target.kind}' — only agents valid here`,
-      });
-    }
-  }
 
   // workflow steps
   const steps = artifact.frontmatter.steps as Array<{ ref: string }> | undefined;

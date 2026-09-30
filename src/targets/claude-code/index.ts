@@ -45,6 +45,7 @@ import type {
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
 import { resolveClaudeConfigDestination, CLAUDE_MCP_SERVERS_KEY } from './config';
+import { basenameOfId } from '../../paths';
 import { getPackArtifacts, buildPlugin } from './plugin-build';
 import {
   scaffoldSkill,
@@ -395,7 +396,7 @@ export class ClaudeCodeTarget implements Target {
 
       case 'mcp': {
         const server = fm.server as Record<string, unknown>;
-        const serverName = (fm.name as string | undefined) ?? artifact.id.replace(/^.*\//, '');
+        const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
         // Strip any catalog-only fields before storing
         const { description: _d, ...serverConfig } = server as Record<string, unknown>;
         void _d;

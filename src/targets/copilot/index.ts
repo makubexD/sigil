@@ -46,6 +46,7 @@ import type {
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
 import { resolveCopilotConfigDestination } from './config';
+import { basenameOfId } from '../../paths';
 import {
   buildCopilotInstructions,
   buildInstructionsFile,
@@ -316,7 +317,7 @@ export class CopilotTarget implements Target {
     const dest = resolveCopilotConfigDestination('mcp', scope);
 
     const server = fm.server as Record<string, unknown>;
-    const serverName = (fm.name as string | undefined) ?? artifact.id.replace(/^.*\//, '');
+    const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
     const { description: _d, ...serverConfig } = server as Record<string, unknown>;
     void _d;
 

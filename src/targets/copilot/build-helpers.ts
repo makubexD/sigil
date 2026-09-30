@@ -8,6 +8,7 @@
 import type { ResolvedArtifact, ResolvedCatalog } from '../../types';
 import { yamlScalar } from '../yaml-util';
 import { toCopilotPlaceholders } from '../prompt-args';
+import { renderBoundarySection } from '../shared/boundary';
 
 /** Builds .github/copilot-instructions.md from shared (cross-language) rules. */
 export function buildCopilotInstructions(sharedRules: ResolvedArtifact[]): string {
@@ -133,45 +134,7 @@ export function buildAgentsMd(agents: ResolvedArtifact[], catalog?: ResolvedCata
     const description = agent.frontmatter.description as string;
 
     // Conditional Boundary section — only for co-present related artifacts
-    const boundaryLines: string[] = [];
-    if (installSet && catalog) {
-      const related =
-        (agent.frontmatter.relatedArtifacts as
-          | Array<{ id: string; relation: string; reason: string }>
-          | undefined) ?? [];
-      const coPresent = related.filter(r => r.id !== agent.id && installSet.has(r.id));
-
-      if (coPresent.length > 0) {
-        const escalates = coPresent.filter(r => r.relation === 'escalates-to');
-        const complements = coPresent.filter(r => r.relation === 'complements');
-        const seeAlso = coPresent.filter(r => r.relation === 'see-also');
-
-        const formatEntry = (r: { id: string; reason: string }): string => {
-          const sibling = catalog.byId.get(r.id);
-          const sibName =
-            (sibling?.frontmatter.name as string | undefined) ?? r.id.split('/').pop()!;
-          const sibTitle = (sibling?.frontmatter.title as string | undefined) ?? sibName;
-          return `- **${sibTitle}** (\`${sibName}\`) — ${r.reason}`;
-        };
-
-        boundaryLines.push('## Boundary', '');
-        if (escalates.length > 0) {
-          boundaryLines.push('Delegate specialized work to co-installed agents:');
-          boundaryLines.push(...escalates.map(formatEntry));
-          if (complements.length > 0 || seeAlso.length > 0) boundaryLines.push('');
-        }
-        if (complements.length > 0) {
-          boundaryLines.push('Related specialists (distinct scope):');
-          boundaryLines.push(...complements.map(formatEntry));
-          if (seeAlso.length > 0) boundaryLines.push('');
-        }
-        if (seeAlso.length > 0) {
-          boundaryLines.push('See also:');
-          boundaryLines.push(...seeAlso.map(formatEntry));
-        }
-        boundaryLines.push('');
-      }
-    }
+    const boundaryLines = renderBoundarySection(agent, installSet, catalog);
 
     const bodySection =
       boundaryLines.length > 0 ? [...boundaryLines, agent.body].join('\n') : agent.body;

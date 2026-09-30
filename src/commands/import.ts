@@ -13,6 +13,7 @@ import matter from 'gray-matter';
 import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
 import { checkSourceArtifact } from '../authoring/check-source';
+import { normPath, basenameOfId } from '../paths';
 import {
   discoverFiles,
   buildImportPlan,
@@ -144,12 +145,12 @@ export async function runImport(sourceDir: string, opts: ImportOptions): Promise
   // check for same-topic artifacts in other languages in the existing catalog.
   const overlapLines: string[] = [];
   for (const item of plan.items) {
-    const slug = item.frontmatter.id.split('/').pop()!;
+    const slug = basenameOfId(item.frontmatter.id);
     const topic = stripLanguagePrefix(slug, lang);
     const matches = catalog.artifacts.filter(a => {
       if ((a.frontmatter.language as string | undefined) === lang) return false;
       const aTopic = stripLanguagePrefix(
-        String(a.frontmatter.name ?? a.id.split('/').pop()),
+        String(a.frontmatter.name ?? basenameOfId(a.id)),
         String(a.frontmatter.language ?? ''),
       );
       return aTopic === topic;
@@ -167,7 +168,7 @@ export async function runImport(sourceDir: string, opts: ImportOptions): Promise
   console.log('\n── Coverage report ─────────────────────────────────────────────────────');
   for (const item of plan.items) {
     const flag = item.conflicts ? '⚠ conflict' : '＋ new';
-    const relDest = path.relative(opts.catalogDir, item.destPath).replace(/\\/g, '/');
+    const relDest = normPath(path.relative(opts.catalogDir, item.destPath));
     const descWarn = item.descriptionSynthesized ? '  ⚠ generic description' : '';
     console.log(`  ${flag.padEnd(12)} ${item.relativePath}  →  catalog/${relDest}${descWarn}`);
     if (opts.dryRun) {
@@ -241,7 +242,7 @@ export async function runImport(sourceDir: string, opts: ImportOptions): Promise
   console.log('\n── Import results ──────────────────────────────────────────────────────');
   for (const r of result.fileResults) {
     if (r.status === 'written') {
-      const relDest = path.relative(opts.catalogDir, r.destPath).replace(/\\/g, '/');
+      const relDest = normPath(path.relative(opts.catalogDir, r.destPath));
       console.log(`  ✓ catalog/${relDest}`);
     } else if (r.status === 'skipped-conflict') {
       console.log(`  = ${r.relativePath}  (skipped — already exists; use --overwrite to replace)`);

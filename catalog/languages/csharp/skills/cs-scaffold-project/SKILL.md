@@ -28,9 +28,9 @@ whenToUse: "Run via `/cs-scaffold-project <name>` when adding a new project to a
 
 # Scaffold Project
 
-**Project name + type:** $ARGUMENTS
+**Project name + type:** {sigil:arguments}
 
-Parse `$ARGUMENTS`:
+Parse `{sigil:arguments}`:
 - First token → `<name>` (e.g. `MyOrg.MyLib.Reporting`)
 - `--type=<lib|console|web|test>` (default: `lib`)
 
@@ -40,7 +40,7 @@ Read the following to understand what "standards pre-wired" means for this solut
 - `Directory.Build.props` — TFM, `<Nullable>`, `<LangVersion>`, `<ImplicitUsings>`, analyzer settings.
 - `Directory.Packages.props` — CPM-managed package versions in use.
 - `.editorconfig` — code style and analyzer severities.
-- `CLAUDE.md` — documented architecture layers and naming conventions.
+- `{sigil:conventions-file}` — documented architecture layers and naming conventions.
 - An existing similar project's `.csproj` as a reference.
 
 If none of these exist, prompt the user for the target TFM and whether CPM is in use before proceeding.

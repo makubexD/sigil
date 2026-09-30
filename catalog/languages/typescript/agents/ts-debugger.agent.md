@@ -71,7 +71,7 @@ Common TypeScript / Node failure patterns to check:
 Apply the **minimal change** to the root cause. Touch only what must change. Do not opportunistically
 refactor, rename, or clean up neighboring code in the same edit.
 
-Follow the conventions discovered from `CLAUDE.md` and any rules files present.
+Follow the conventions discovered from `{sigil:conventions-file}` and any rules files present.
 
 **Propose rather than apply** if the fix:
 - Is non-obvious or carries risk.

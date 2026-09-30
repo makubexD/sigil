@@ -27,13 +27,13 @@ whenToUse: "Run via `/ng-document [file]` when public symbols, components, or se
 
 # Document
 
-**Target:** $ARGUMENTS
+**Target:** {sigil:arguments}
 
 ## Step 1 — Resolve target
 
-**If `$ARGUMENTS` is provided:** treat it as the target file or module.
+**If `{sigil:arguments}` is provided:** treat it as the target file or module.
 
-**If `$ARGUMENTS` is empty:**
+**If `{sigil:arguments}` is empty:**
 1. Discover the source root (from `angular.json` or `package.json`).
 2. Scan for exported symbols, components, and services that lack TSDoc:
    ```bash
@@ -44,7 +44,7 @@ whenToUse: "Run via `/ng-document [file]` when public symbols, components, or se
 ## Step 2 — Discover documentation style
 
 Do **not** assume a style. Discover it:
-- Read `CLAUDE.md` and any rules files present.
+- Read `{sigil:conventions-file}` and any rules files present.
 - Check for Compodoc config (`.compodocrc*`, a `compodoc` script in `package.json`) and any TSDoc/eslint-jsdoc config.
 - Read 2–3 existing doc comments to match the in-use tag conventions.
 - If no style is in use, default to **TSDoc** (`@param` / `@returns` / `@throws` / `@remarks` / `@deprecated`).

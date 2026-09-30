@@ -47,7 +47,7 @@ test files (analyze test coupling separately only if requested). Source root fro
 ## 2. Discover architecture intent
 
 Read in order:
-1. `CLAUDE.md` "Architecture" section — stated layer diagram, subpackage descriptions, module
+1. `{sigil:conventions-file}` "Architecture" section — stated layer diagram, subpackage descriptions, module
    boundaries, and invariants (e.g. "domain must not import infrastructure").
 2. The project's documented conventions and any rules files present — especially `ts-code-quality` (coupling limits) and `ts-project-layout` (layout intent).
 3. `package.json` workspaces — declared packages and their intended responsibilities.

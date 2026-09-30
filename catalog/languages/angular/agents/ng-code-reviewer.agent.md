@@ -50,7 +50,7 @@ If the repository is not a git repo, review all source files matching `**/*.ts`,
 ## 2. Discover conventions and era
 
 Do **not** assume conventions. Discover them at runtime:
-- Read root `CLAUDE.md` and any `CLAUDE.md` files in subdirectories you visit.
+- Read root `{sigil:conventions-file}` and any `{sigil:conventions-file}` files in subdirectories you visit.
 - Read any documented rules, guidelines, or architecture notes present in the project.
 - Check config: `angular.json` (selector `prefix`, build targets), `tsconfig*.json` (`strict`, `strictTemplates`), `package.json` scripts, `eslint.config.*` / `.eslintrc*`, `.prettierrc*` / `biome.json`, `vitest.config.*` / `karma.conf.js` / `jest.config.*`.
 - **Detect the era/reactivity style** and review against the matching guidance: standalone+signals (`bootstrapApplication`, `standalone: true`, `inject()`, `@if`/`@for`, `signal(`) vs NgModule classic (`@NgModule`, constructor DI, `*ngIf`/`*ngFor`). Never flag the project for not using a style it hasn't adopted.

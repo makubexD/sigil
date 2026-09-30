@@ -44,7 +44,7 @@ Use the delegation message. Default: the changed components/templates in `git di
 
 ## 2. Discover conventions and era
 
-- Read `CLAUDE.md`, any rules files present, `angular.json` (selector `prefix`), `tsconfig` (`strictTemplates`).
+- Read `{sigil:conventions-file}`, any rules files present, `angular.json` (selector `prefix`), `tsconfig` (`strictTemplates`).
 - **Detect the era/reactivity style** and review against the matching catalog entry:
   - Control flow: `@if`/`@for`/`@switch` (modern) vs `*ngIf`/`*ngFor`/`[ngSwitch]` (classic).
   - Inputs/outputs: signal `input()`/`output()`/`model()` (modern) vs `@Input()`/`@Output()` (classic).

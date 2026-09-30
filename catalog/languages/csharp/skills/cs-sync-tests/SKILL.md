@@ -27,7 +27,7 @@ whenToUse: "Run via `/cs-sync-tests` after multiple source files have changed an
 
 # Sync Tests
 
-**Scope:** $ARGUMENTS (defaults to `changed` if empty)
+**Scope:** {sigil:arguments} (defaults to `changed` if empty)
 
 ## Step 1 — Determine scope
 
@@ -64,7 +64,7 @@ For each in-scope source file:
 
 1. Derive the expected test file path using the mirroring convention.
 2. **Test file does not exist:** create it. Follow the project's documented conventions — discover
-   from `CLAUDE.md`, any rules files present, or by reading existing tests:
+   from `{sigil:conventions-file}`, any rules files present, or by reading existing tests:
    - AAA with `// Arrange` / `// Act` / `// Assert`.
    - One behaviour per test; `Method_Should_Behavior_When_Condition` names.
    - Moq for I/O boundaries; test pure logic directly.

@@ -30,9 +30,9 @@ tags:
 
 # Add Package
 
-**Package:** $ARGUMENTS
+**Package:** {sigil:arguments}
 
-Parse `$ARGUMENTS`:
+Parse `{sigil:arguments}`:
 - First token → `<package-id>`
 - If a second token looks like a version (e.g. `4.2.0`) → `<version>`; else auto-discover.
 - If `--dev` is present → `devDependencies` (also add `@types/<pkg>` if needed).

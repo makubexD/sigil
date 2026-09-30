@@ -27,13 +27,13 @@ whenToUse: "Run via `/ng-generate-tests [file]` when a source file lacks a spec 
 
 # Generate Tests
 
-**Target:** $ARGUMENTS
+**Target:** {sigil:arguments}
 
 ## Step 1 — Resolve target
 
-**If `$ARGUMENTS` is provided:** treat it as the target file or component path.
+**If `{sigil:arguments}` is provided:** treat it as the target file or component path.
 
-**If `$ARGUMENTS` is empty:**
+**If `{sigil:arguments}` is empty:**
 1. Discover source files that lack a corresponding `*.spec.ts` (using the mirroring logic in Step 2).
 2. List the top candidates with a one-line description of each, and ask the user to choose before proceeding.
 
@@ -54,7 +54,7 @@ Read the target file fully. Identify:
 
 ## Step 4 — Write tests
 
-Follow the project's documented test conventions. Discover them from `CLAUDE.md`, any rules files present, `vitest.config.*`, or by reading existing specs. Apply these principles consistently:
+Follow the project's documented test conventions. Discover them from `{sigil:conventions-file}`, any rules files present, `vitest.config.*`, or by reading existing specs. Apply these principles consistently:
 
 - **One behaviour per test.** Each `it` has a single, named reason to fail.
 - **AAA pattern.** Arrange (`TestBed.configureTestingModule`, build data), Act (call the method or `fixture.detectChanges()`), Assert. Mark each section with an inline `// Arrange` / `// Act` / `// Assert` comment even if one line.

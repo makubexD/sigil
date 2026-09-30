@@ -30,11 +30,11 @@ tags:
 
 # Document
 
-**Target:** $ARGUMENTS
+**Target:** {sigil:arguments}
 
 ## Step 1 — Resolve target
 
-If `$ARGUMENTS` is provided, use it as the target file or module. If empty, discover the source root
+If `{sigil:arguments}` is provided, use it as the target file or module. If empty, discover the source root
 from `package.json`. Scan for exported symbols missing TSDoc:
 
 ```bash
@@ -46,7 +46,7 @@ List the top candidates by undocumented export count and ask the user to choose 
 ## Step 2 — Discover documentation style
 
 Do not assume. Read in order:
-1. `CLAUDE.md` and any rules files present for stated documentation conventions.
+1. `{sigil:conventions-file}` and any rules files present for stated documentation conventions.
 2. `package.json` for TypeDoc or API Extractor configuration.
 3. 2–3 existing TSDoc comments in the codebase to determine the project's style and tag usage.
 

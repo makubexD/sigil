@@ -45,7 +45,7 @@ convention). If a narrow scope is specified in the delegation message, use it.
 ## 2. Discover conventions and security baseline
 
 Read in order:
-1. `CLAUDE.md` — stated security invariants (e.g. "secrets only from env vars").
+1. `{sigil:conventions-file}` — stated security invariants (e.g. "secrets only from env vars").
 2. The project's documented conventions and any rules files present — especially the `ts-security` rule's stated invariants.
 3. `package.json` — runtime dependencies that introduce attack surface (HTTP servers, template
    engines, ORMs, auth libraries, file upload handlers).

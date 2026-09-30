@@ -47,7 +47,7 @@ Derive scope from the delegation message:
 ## 2. Discover conventions
 
 Do not assume. Read in order:
-1. Root `CLAUDE.md` and any subdir `CLAUDE.md` relevant to the changed files.
+1. Root `{sigil:conventions-file}` and any subdir `{sigil:conventions-file}` relevant to the changed files.
 2. The project's documented conventions and any rules files present (active rules).
 3. `tsconfig.json` / `tsconfig.*.json` — compiler strictness settings.
 4. `package.json` — `"type"`, scripts, dependency categories.

@@ -31,11 +31,11 @@ tags:
 
 # Generate Tests
 
-**Target:** $ARGUMENTS
+**Target:** {sigil:arguments}
 
 ## Step 1 — Resolve target
 
-If `$ARGUMENTS` is provided, use it as the target source file or module. If empty, discover the
+If `{sigil:arguments}` is provided, use it as the target source file or module. If empty, discover the
 source root from `package.json` (`"main"`, `"exports"`, or the `src/` convention). Scan for source
 files that have no corresponding test file; present the top candidates and ask the user to choose
 before proceeding.

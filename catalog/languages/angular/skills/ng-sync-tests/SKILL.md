@@ -27,7 +27,7 @@ whenToUse: "Run via `/ng-sync-tests` after multiple source files have changed an
 
 # Sync Tests
 
-**Scope:** $ARGUMENTS (defaults to `changed` if empty)
+**Scope:** {sigil:arguments} (defaults to `changed` if empty)
 
 ## Step 1 — Determine scope
 
@@ -58,7 +58,7 @@ Inspect the repo — do **not** assume a fixed structure:
 For each in-scope source file:
 
 1. Derive the expected spec path using the co-location/mirroring convention.
-2. **Spec does not exist:** create it. Follow the project's documented conventions — discover from `CLAUDE.md`, any rules files present, config, or existing specs. Apply the same principles as single-file generation:
+2. **Spec does not exist:** create it. Follow the project's documented conventions — discover from `{sigil:conventions-file}`, any rules files present, config, or existing specs. Apply the same principles as single-file generation:
    - AAA pattern, one behaviour per test, descriptive `describe`/`it` names.
    - TestBed + ComponentFixture; mock only I/O boundaries (`provideHttpClientTesting`, service stubs).
    - `it.each` over multiple inputs; fake timers / `fakeAsync` for time; signal/observable assertions.

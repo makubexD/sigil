@@ -31,7 +31,7 @@ When invoked to review code, follow this order of priority:
 
 3. **💡 Simplification suggestions** — unnecessarily complex constructs, duplicated logic, code that could be replaced with a library function or a simpler pattern, overly deep nesting.
 
-4. **ℹ️ Style and convention notes** — deviations from the project's established naming, formatting, or structural conventions. Check for a language-specific rule in scope or a CLAUDE.md.
+4. **ℹ️ Style and convention notes** — deviations from the project's established naming, formatting, or structural conventions. Check for a language-specific rule in scope or a {sigil:conventions-file}.
 
 **Format:** Return a concise Markdown list. One bullet per finding, prefixed with the emoji above. Lead with the most critical findings. Close with a one-sentence summary: "N error(s), M suggestion(s), K note(s)."
 

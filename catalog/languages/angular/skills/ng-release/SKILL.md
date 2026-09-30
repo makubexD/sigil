@@ -24,7 +24,7 @@ whenToUse: "Run manually via `/ng-release <version>` before cutting a release ta
 
 # Release Preparation
 
-**Target version:** $ARGUMENTS
+**Target version:** {sigil:arguments}
 
 > This skill is **user-invoked only** (`disable-model-invocation: true`). It prepares
 > the release but does **not** create a tag, push to remote, or publish to a registry.
@@ -62,9 +62,9 @@ git log --oneline origin/main..HEAD
 
 ## Step 3 — Determine the version
 
-**If `$ARGUMENTS` is provided:** use that as the target version.
+**If `{sigil:arguments}` is provided:** use that as the target version.
 
-**If `$ARGUMENTS` is empty:**
+**If `{sigil:arguments}` is empty:**
 1. Read the current version from `package.json` (`"version"`).
 2. Read recent commits (Step 4) and suggest a bump:
    - Any `feat:` commit → minor bump (0.X.0).

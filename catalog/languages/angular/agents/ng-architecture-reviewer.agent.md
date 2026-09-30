@@ -41,7 +41,7 @@ Discover the source root from `angular.json` (project `root`/`sourceRoot`) or `p
 
 ## 2. Discover architecture intent
 
-- Read `CLAUDE.md` — look for an "Architecture" section, feature/layer diagram, or folder descriptions.
+- Read `{sigil:conventions-file}` — look for an "Architecture" section, feature/layer diagram, or folder descriptions.
 - Read any rules files present.
 - Read `angular.json` (projects, lazy build budgets) and `tsconfig*.json` path aliases.
 - Look for architecture decision records (`docs/adr/`, `decisions/`).

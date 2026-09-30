@@ -56,7 +56,7 @@ If no specific failing command is provided, run the full suite and identify all 
 
 Apply the **minimal** change that corrects the root cause:
 - Touch only what must change. Do not refactor, rename, or clean up opportunistically.
-- Discover the project's documented conventions (check `CLAUDE.md`, any rules files present, infer from existing code) and follow them — including the detected era/reactivity style — for any line you write.
+- Discover the project's documented conventions (check `{sigil:conventions-file}`, any rules files present, infer from existing code) and follow them — including the detected era/reactivity style — for any line you write.
 - **Propose rather than apply** if the fix is non-obvious, involves a breaking change to a public contract (exported symbol, selector, `@Input`/`@Output`), or spans more than ~5 lines across more than 2 files. Explain the tradeoff clearly.
 
 ### 4. Verify

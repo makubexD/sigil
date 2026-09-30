@@ -44,7 +44,7 @@ Discover the source root from `.sln`, `Directory.Build.props`, or common `src/` 
 
 ## 2. Discover conventions and security baseline
 
-- Read `CLAUDE.md` and any rules files present — note any documented security invariants.
+- Read `{sigil:conventions-file}` and any rules files present — note any documented security invariants.
 - Read `Directory.Build.props`, `Directory.Packages.props`, `.editorconfig` for NRT status and analyzer configuration.
 - Check for existing security tooling: `security-code-scan`, `SonarAnalyzer.CSharp`, `Roslynator`.
 

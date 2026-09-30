@@ -41,7 +41,7 @@ Discover the source root from `.sln`, `Directory.Build.props`, or `src/`.
 
 ## 2. Discover context
 
-- Read `CLAUDE.md` for documented performance constraints or SLAs.
+- Read `{sigil:conventions-file}` for documented performance constraints or SLAs.
 - Read `Directory.Build.props` for TFM (`.NET 8+` enables `SearchValues`, `FrozenDictionary`, etc.).
 - Identify the project type: CLI (startup cost), API server (latency/RPS), data pipeline (throughput), background service (CPU/memory).
 

@@ -25,7 +25,7 @@ whenToUse: "Run manually via `/ts-release <version>` before cutting a release ta
 
 # Release Preparation
 
-**Target version:** $ARGUMENTS
+**Target version:** {sigil:arguments}
 
 > User-invoked only — does not tag, push, or publish. All final actions require human confirmation.
 
@@ -48,9 +48,9 @@ clean working tree.
 
 ## Step 3 — Determine the version
 
-**If `$ARGUMENTS` is provided:** use it as the target version.
+**If `{sigil:arguments}` is provided:** use it as the target version.
 
-**If `$ARGUMENTS` is empty:**
+**If `{sigil:arguments}` is empty:**
 1. Read the current version from `package.json` `"version"` field.
 2. Read recent commits (Step 4) and suggest a version bump:
    - Any `feat:` commit → **minor** bump (`X.Y+1.0`).

@@ -42,7 +42,7 @@ from `package.json`. If a specific file or function is named, start there and ex
 ## 2. Discover context
 
 Read in order:
-1. `CLAUDE.md` for performance constraints, SLAs, or throughput targets.
+1. `{sigil:conventions-file}` for performance constraints, SLAs, or throughput targets.
 2. `package.json` for Node.js version and async framework in use.
 3. Identify project type: CLI (startup cost matters), API server (per-request latency), data pipeline
    (throughput + memory), or library (call overhead).

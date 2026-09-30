@@ -28,7 +28,7 @@ whenToUse: "Run via `/ng-generate-component <name>` when scaffolding a new compo
 
 # Generate Component
 
-**Target:** $ARGUMENTS  (name, optional `--type=`; defaults to `component`)
+**Target:** {sigil:arguments}  (name, optional `--type=`; defaults to `component`)
 
 ## Step 1 — Parse arguments and discover conventions
 

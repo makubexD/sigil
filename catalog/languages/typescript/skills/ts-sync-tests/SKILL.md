@@ -32,11 +32,11 @@ tags:
 
 # Sync Tests
 
-**Scope:** $ARGUMENTS (default: `--scope=changed`)
+**Scope:** {sigil:arguments} (default: `--scope=changed`)
 
 ## Step 1 — Determine scope
 
-Parse `$ARGUMENTS` for `--scope=changed` (default) or `--scope=all`.
+Parse `{sigil:arguments}` for `--scope=changed` (default) or `--scope=all`.
 
 **`changed`:** `git status --porcelain` / `git diff --name-only HEAD` for modified files. Exclude
 deleted source files (handled in Step 4), existing test files, lock/generated/config files.

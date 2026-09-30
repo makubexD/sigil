@@ -27,13 +27,13 @@ whenToUse: "Run via `/cs-document [file]` when public members are missing XML do
 
 # Document
 
-**Target:** $ARGUMENTS
+**Target:** {sigil:arguments}
 
 ## Step 1 — Resolve target
 
-**If `$ARGUMENTS` is provided:** treat it as the target file or class.
+**If `{sigil:arguments}` is provided:** treat it as the target file or class.
 
-**If `$ARGUMENTS` is empty:**
+**If `{sigil:arguments}` is empty:**
 1. Discover the source root from `.sln`, `Directory.Build.props`, or common roots.
 2. Scan for public members that lack `///` doc comments:
    ```bash
@@ -44,7 +44,7 @@ whenToUse: "Run via `/cs-document [file]` when public members are missing XML do
 ## Step 2 — Discover documentation style
 
 Do **not** assume a style. Discover it:
-- Read `CLAUDE.md` and any rules files present.
+- Read `{sigil:conventions-file}` and any rules files present.
 - Check `Directory.Build.props` for `<GenerateDocumentationFile>true</GenerateDocumentationFile>`.
 - Check `.editorconfig` for `dotnet_diagnostic.CS1591.severity` (missing XML comment).
 - Read 2–3 existing doc comments in the project to identify the in-use style and level of detail.

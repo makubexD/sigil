@@ -27,9 +27,9 @@ whenToUse: "Use any time you need to add a new NuGet dependency. Pass the packag
 
 # Add Package
 
-**Package:** $ARGUMENTS
+**Package:** {sigil:arguments}
 
-Parse `$ARGUMENTS`:
+Parse `{sigil:arguments}`:
 - First token → `<package-id>`
 - If a second token looks like a version (e.g. `4.2.0`, `^4.0`) → `<version>`; else auto-discover
 - If `--dev` is present → treat as analyzer/build-only package (`PrivateAssets="all"`)

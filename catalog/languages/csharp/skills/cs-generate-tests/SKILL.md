@@ -27,13 +27,13 @@ whenToUse: "Run via `/cs-generate-tests [file]` when a source file lacks tests o
 
 # Generate Tests
 
-**Target:** $ARGUMENTS
+**Target:** {sigil:arguments}
 
 ## Step 1 — Resolve target
 
-**If `$ARGUMENTS` is provided:** treat it as the target file or class path.
+**If `{sigil:arguments}` is provided:** treat it as the target file or class path.
 
-**If `$ARGUMENTS` is empty:**
+**If `{sigil:arguments}` is empty:**
 1. Discover source files that lack corresponding test files (using the mirroring logic in Step 2).
 2. List the top candidates with a one-line description of each, and ask the user to choose before proceeding.
 
@@ -56,7 +56,7 @@ Read the target file fully. Identify:
 
 ## Step 4 — Write tests
 
-Follow the project's documented test conventions. Discover them from `CLAUDE.md`, any rules files present, `Directory.Build.props`, or by reading existing tests. Apply these principles:
+Follow the project's documented test conventions. Discover them from `{sigil:conventions-file}`, any rules files present, `Directory.Build.props`, or by reading existing tests. Apply these principles:
 
 - **One behaviour per test.** Each test has a single, named reason to fail.
 - **AAA pattern.** Mark each section with `// Arrange` / `// Act` / `// Assert`.

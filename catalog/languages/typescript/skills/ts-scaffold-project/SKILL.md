@@ -33,16 +33,16 @@ tags:
 
 # Scaffold Project
 
-**Package name + type:** $ARGUMENTS
+**Package name + type:** {sigil:arguments}
 
-Parse `$ARGUMENTS`: first token → `<name>` (e.g. `@myorg/reporting`, `my-cli-tool`);
+Parse `{sigil:arguments}`: first token → `<name>` (e.g. `@myorg/reporting`, `my-cli-tool`);
 `--type=<lib|app|cli|test>` (default: `lib`).
 
 ## Step 1 — Discover repo standards
 
 Read: root `package.json` (workspaces config, `"type"`, `"engines"`, shared scripts, and —
 critically — which test runner is actually a `devDependency` there or in a sibling package;
-never assume Vitest); `tsconfig.base.json`; `eslint.config.*`; `CLAUDE.md` for documented
+never assume Vitest); `tsconfig.base.json`; `eslint.config.*`; `{sigil:conventions-file}` for documented
 architecture/naming; and one existing similar package as a concrete reference. If none of these
 exist, ask the user for the target Node.js version, whether this is ESM-first, and which test
 runner to use before proceeding.

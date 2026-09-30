@@ -47,7 +47,7 @@ If the repository is not a git repo, review all `.cs` and `.csproj` files in the
 ## 2. Discover conventions
 
 Do **not** assume conventions. Discover them at runtime:
-- Read root `CLAUDE.md` and any `CLAUDE.md` files in subdirectories you visit.
+- Read root `{sigil:conventions-file}` and any `{sigil:conventions-file}` files in subdirectories you visit.
 - Read any documented rules or guidelines present in the project.
 - Read `.editorconfig`, `Directory.Build.props`, `Directory.Packages.props`, `.csproj` files.
 - Check style configs: `<Nullable>`, `<TreatWarningsAsErrors>`, `<AnalysisLevel>`, `<AnalysisMode>`.

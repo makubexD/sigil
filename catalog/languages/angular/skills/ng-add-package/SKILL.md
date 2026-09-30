@@ -26,7 +26,7 @@ whenToUse: "Run via `/ng-add-package <package>` when a new dependency is needed 
 
 # Add Package
 
-**Target:** $ARGUMENTS  (package name, optional version, optional `--dev`)
+**Target:** {sigil:arguments}  (package name, optional version, optional `--dev`)
 
 ## Step 1 — Parse and inspect the project
 

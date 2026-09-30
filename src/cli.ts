@@ -2252,7 +2252,8 @@ program
       const changelogPath = path.resolve(PKG_ROOT, 'CHANGELOG.md');
       if (fs.existsSync(changelogPath)) {
         const changelogText = fs.readFileSync(changelogPath, 'utf-8');
-        const today = new Date().toISOString().slice(0, 10);
+        const ISO_DATE_LEN = 10; // 'YYYY-MM-DD'
+        const today = new Date().toISOString().slice(0, ISO_DATE_LEN);
         try {
           const promoted = promoteChangelog(changelogText, nextVersion, today);
           fs.writeFileSync(changelogPath, promoted, 'utf-8');

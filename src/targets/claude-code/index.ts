@@ -21,32 +21,65 @@
  *   Claude Code plugins cannot ship loose rules — they only load context via skills/agents/hooks.
  *   So in the plugin build we fold rule bodies into the skill's SKILL.md.
  *   In the scaffold build we write rules to .claude/rules/*.md, which Claude Code loads natively.
+ *
+ * Sub-modules:
+ *   config       — ConfigDestination, resolveClaudeConfigDestination
+ *   plugin-build — getPackArtifacts, buildPlugin, buildPluginSkillMd, buildAgentMd, buildWorkflowMd
+ *   scaffold     — scaffoldSkill, scaffoldRule, scaffoldAgent, scaffoldPrompt, scaffoldWorkflow
  */
 import type {
   Target,
   ResolvedCatalog,
-  ResolvedArtifact,
   FileMap,
   CompileOptions,
   ScaffoldOptions,
-  Pack,
+  ConfigMergeOp,
+  ConfigScope,
+  ConfigKind,
+  ConfigScopeInfo,
   ArtifactKind,
   KindVocabulary,
   ContractEntry,
+  MergeStrategy,
 } from '../../types';
-import type { AgentFrontmatter } from '../../schema';
-import { yamlScalar } from '../yaml-util';
-import { toClaudePlaceholders, buildArgumentHint } from '../prompt-args';
-import type { PromptArg } from '../prompt-args';
+import path from 'path';
+import { resolveConfigRoot } from '../../config-utils';
+import { resolveClaudeConfigDestination, CLAUDE_MCP_SERVERS_KEY } from './config';
+import { getPackArtifacts, buildPlugin } from './plugin-build';
+import {
+  scaffoldSkill,
+  scaffoldRule,
+  scaffoldAgent,
+  scaffoldPrompt,
+  scaffoldWorkflow,
+} from './scaffold';
+
+export { ConfigDestination, resolveClaudeConfigDestination } from './config';
 
 export class ClaudeCodeTarget implements Target {
   readonly name = 'claude';
 
-  /**
-   * Artifact kinds this target can scaffold via `add`.
-   * `workflow` is intentionally absent — no scaffold shape defined yet.
-   */
-  readonly supportedKinds: ArtifactKind[] = ['skill', 'agent', 'rule', 'prompt'];
+  readonly supportedKinds: ArtifactKind[] = [
+    'skill',
+    'agent',
+    'rule',
+    'prompt',
+    'workflow',
+    'hook',
+    'settings',
+    'mcp',
+  ];
+
+  /** Directories created by `sigil init --target claude`. */
+  readonly initDirs: string[] = [
+    '.claude/skills',
+    '.claude/rules',
+    '.claude/agents',
+    '.claude/commands',
+  ];
+
+  /** Presence of .claude/ signals this target is installed in the project. */
+  readonly projectMarkers: string[] = ['.claude'];
 
   /**
    * Claude Code's native artifact vocabulary (verified June 2026).
@@ -64,7 +97,66 @@ export class ClaudeCodeTarget implements Target {
       hint: 'custom commands invoked with /name in Claude Code',
     },
     workflow: { noun: 'workflow', plural: 'Workflows', hint: 'multi-step automated workflows' },
+    hook: { noun: 'hook', plural: 'Hooks', hint: 'event hooks (pre/post-tool, stop, etc.)' },
+    settings: { noun: 'setting', plural: 'Settings', hint: 'settings.json fragments' },
+    mcp: { noun: 'MCP server', plural: 'MCPs', hint: 'external MCP servers' },
   };
+
+  /**
+   * Claude Code config scopes, ordered by documented precedence (highest → lowest).
+   * Ref: https://code.claude.com/docs/en/settings
+   *   Local (highest overrides) → Project (team-shared) → User (lowest priority)
+   *
+   * Each destination's fullPath is pre-resolved so the wizard can display it without
+   * any provider-specific branching. The mcp 'local' scope writes into ~/.claude.json
+   * under a per-project key, NOT into the repo — surfaced here so users understand why
+   * nothing appears in their project directory.
+   */
+  configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
+    const SCOPES = [
+      {
+        value: 'local' as ConfigScope,
+        precedence: 1,
+        shared: false,
+        blastRadius: 'project' as const,
+        description: 'gitignored, personal — this repo only',
+      },
+      {
+        value: 'project' as ConfigScope,
+        precedence: 2,
+        shared: true,
+        blastRadius: 'project' as const,
+        description: 'git-committed, shared with your team',
+      },
+      {
+        value: 'user' as ConfigScope,
+        precedence: 3,
+        shared: false,
+        blastRadius: 'all-projects' as const,
+        description: 'global — affects ALL your projects',
+      },
+    ];
+    return SCOPES.map(sc => ({
+      ...sc,
+      label: sc.value,
+      destinations: kinds.map(kind => {
+        const d = resolveClaudeConfigDestination(kind, sc.value, projectDir);
+        // For mcp, derive the in-file JSON key-path so same-file scopes (local vs user both
+        // write ~/.claude.json) are displayed as visibly distinct in the scope menu.
+        //   local → 'projects › <abs-project-path> › mcpServers'  (wrapPath nests it)
+        //   user  → 'mcpServers'                                    (top-level key)
+        const section =
+          kind === 'mcp' ? [...(d.wrapPath ?? []), CLAUDE_MCP_SERVERS_KEY].join(' › ') : undefined;
+        return {
+          kind,
+          file: d.file,
+          root: d.root,
+          fullPath: path.join(resolveConfigRoot(d.root, projectDir), d.file),
+          section,
+        };
+      }),
+    }));
+  }
 
   /**
    * Output-conformance contracts for Claude Code scaffold output.
@@ -96,11 +188,13 @@ export class ClaudeCodeTarget implements Target {
     },
     {
       // Skill: name + description required; Claude uses paths: (not applyTo), no prompt fields.
+      // NOTE: argument-hint IS valid in SKILL.md (it shows autocomplete hint in the Claude UI).
+      //       Only `arguments:` (declarative arg list for Claude commands) is prompt-only here.
       match: /\.claude\/skills\/.*\/SKILL\.md$/,
       label: 'Claude skill',
       contract: {
         requiredKeys: ['name', 'description'],
-        forbiddenKeys: ['applyTo', 'agent', 'argument-hint', 'arguments'],
+        forbiddenKeys: ['applyTo', 'agent', 'arguments'],
       },
     },
     {
@@ -122,12 +216,11 @@ export class ClaudeCodeTarget implements Target {
     },
   ];
 
-  // ── Full build ─────────────────────────────────────────────────────────────
+  // ── Full build ───────────────────────────────────────────────────────────────
 
   async compile(catalog: ResolvedCatalog, options: CompileOptions): Promise<FileMap> {
     const files: FileMap = {};
 
-    // Collect per-pack plugin entries for marketplace.json
     const pluginEntries: Array<{
       name: string;
       displayName: string;
@@ -136,8 +229,8 @@ export class ClaudeCodeTarget implements Target {
     }> = [];
 
     for (const pack of options.packs) {
-      const packArtifacts = this.getPackArtifacts(pack, catalog);
-      const pluginFiles = this.buildPlugin(
+      const packArtifacts = getPackArtifacts(pack, catalog);
+      const pluginFiles = buildPlugin(
         pack,
         packArtifacts,
         catalog,
@@ -161,10 +254,7 @@ export class ClaudeCodeTarget implements Target {
       JSON.stringify(
         {
           name: 'sigil',
-          owner: {
-            name: 'Sigil',
-            url: marketplaceUrl,
-          },
+          owner: { name: 'Sigil', url: marketplaceUrl },
           description: 'Vendor-neutral AI skills, agents, and rules for multiple languages.',
           plugins: pluginEntries,
         },
@@ -175,7 +265,7 @@ export class ClaudeCodeTarget implements Target {
     return files;
   }
 
-  // ── Scaffold (add command) ─────────────────────────────────────────────────
+  // ── Scaffold (add command) ───────────────────────────────────────────────────
 
   async scaffold(
     artifactId: string,
@@ -191,16 +281,19 @@ export class ClaudeCodeTarget implements Target {
 
     switch (artifact.kind) {
       case 'skill':
-        this.scaffoldSkill(artifact, catalog, files, options);
+        scaffoldSkill(artifact, catalog, files, options);
         break;
       case 'agent':
-        this.scaffoldAgent(artifact, files);
+        scaffoldAgent(artifact, files, catalog, options.coInstallSet);
         break;
       case 'rule':
-        this.scaffoldRule(artifact, files);
+        scaffoldRule(artifact, files);
         break;
       case 'prompt':
-        this.scaffoldPrompt(artifact, files);
+        scaffoldPrompt(artifact, files);
+        break;
+      case 'workflow':
+        scaffoldWorkflow(artifact, files);
         break;
       default:
         throw new Error(`Scaffolding not supported for kind '${artifact.kind}'`);
@@ -209,247 +302,136 @@ export class ClaudeCodeTarget implements Target {
     return files;
   }
 
-  // ── Private: plugin build helpers ─────────────────────────────────────────
-
-  private getPackArtifacts(pack: Pack, catalog: ResolvedCatalog): ResolvedArtifact[] {
-    if (pack.artifacts && pack.artifacts.length > 0) {
-      return pack.artifacts
-        .map(id => catalog.byId.get(id))
-        .filter((a): a is ResolvedArtifact => a !== undefined);
-    }
-    // Default: all artifacts whose language matches one of the pack's languages
-    const langs = new Set(pack.languages ?? []);
-    return catalog.artifacts.filter(a => {
-      const lang = a.frontmatter.language as string | undefined;
-      return lang !== undefined && langs.has(lang);
-    });
-  }
-
-  private buildPlugin(
-    pack: Pack,
-    packArtifacts: ResolvedArtifact[],
-    catalog: ResolvedCatalog,
-    version: string,
-    homepage?: string,
-  ): FileMap {
-    const files: FileMap = {};
-    const prefix = `plugins/${pack.name}`;
-    const pluginUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
-
-    // plugin.json — metadata; version comes from npm package version
-    files[`${prefix}/.claude-plugin/plugin.json`] =
-      JSON.stringify(
-        {
-          $schema: 'https://json.schemastore.org/claude-code-plugin-manifest.json',
-          name: pack.name,
-          displayName: pack.displayName,
-          version,
-          description: pack.description,
-          author: {
-            name: 'Sigil',
-            url: pluginUrl,
-          },
-          license: 'MIT',
-          keywords: pack.languages ?? [],
-        },
-        null,
-        2,
-      ) + '\n';
-
-    const skills = packArtifacts.filter(a => a.kind === 'skill');
-    const agents = packArtifacts.filter(a => a.kind === 'agent');
-
-    // Write skills — rule bodies inlined as "## Applied Rules" section
-    for (const skill of skills) {
-      const skillName = skill.frontmatter.name as string;
-      const skillMd = this.buildPluginSkillMd(skill, catalog);
-      files[`${prefix}/skills/${skillName}/SKILL.md`] = skillMd;
-
-      // Write reference files alongside the SKILL.md
-      for (const ref of skill.references ?? []) {
-        files[`${prefix}/skills/${skillName}/references/${ref.name}`] = ref.content;
-      }
-    }
-
-    // Write agents — apply claude: hints as frontmatter fields
-    for (const agent of agents) {
-      const agentName = agent.frontmatter.name as string;
-      files[`${prefix}/agents/${agentName}.md`] = this.buildAgentMd(agent);
-    }
-
-    // Include shared agents referenced by skills in this pack
-    const sharedAgentIds = new Set<string>();
-    for (const skill of skills) {
-      for (const agentId of skill.resolvedAgentIds ?? []) {
-        if (!agents.some(a => a.id === agentId)) {
-          sharedAgentIds.add(agentId);
-        }
-      }
-    }
-    for (const agentId of sharedAgentIds) {
-      const agent = catalog.byId.get(agentId);
-      if (agent) {
-        const agentName = agent.frontmatter.name as string;
-        files[`${prefix}/agents/${agentName}.md`] = this.buildAgentMd(agent);
-      }
-    }
-
-    return files;
-  }
+  // ── Config scaffold (hook / settings / mcp) ──────────────────────────────────
 
   /**
-   * Builds a SKILL.md for the Claude plugin.
-   * The resolved rule bodies are appended under "## Applied Rules" so the
-   * guidance is present in context when the skill fires.
+   * Produce merge ops for config-kind artifacts.
+   * Called by `sigil add` when the artifact is a hook, settings, or mcp kind.
+   * Returns ConfigMergeOp[] describing how to merge into the user's JSON config files.
+   *
+   * The install scope is resolved in order: options.scope → fm.defaultScope → 'project'.
+   * The resulting op carries `root` so the CLI knows which root directory to resolve.
    */
-  private buildPluginSkillMd(skill: ResolvedArtifact, _catalog: ResolvedCatalog): string {
-    const fm = skill.frontmatter;
-    const name = fm.name as string;
-    const description = fm.description as string;
-    const appliesTo = (fm.appliesTo as string[] | undefined) ?? ['**/*'];
-
-    // `paths:` is the Claude Code–recognized key for path-scoped loading.
-    // `appliesTo` is our canonical vendor-neutral field name in catalog source.
-    const frontmatter = [
-      '---',
-      `name: ${name}`,
-      `description: ${yamlScalar(description)}`,
-      ...(appliesTo.length > 0 ? [`paths:\n${appliesTo.map(g => `  - "${g}"`).join('\n')}`] : []),
-      '---',
-    ].join('\n');
-
-    const parts = [frontmatter, '', skill.body];
-
-    // Append resolved rule bodies
-    const rules = skill.resolvedRules ?? [];
-    if (rules.length > 0) {
-      parts.push('', '---', '', '## Applied Rules', '');
-      for (const rule of rules) {
-        const ruleTitle = rule.frontmatter.title as string;
-        parts.push(`### ${ruleTitle}`, '', rule.resolvedBody ?? rule.body, '');
-      }
-    }
-
-    return parts.join('\n').trimEnd() + '\n';
-  }
-
-  /** Builds an agent .md file with claude-specific frontmatter applied. */
-  private buildAgentMd(agent: ResolvedArtifact): string {
-    const fm = agent.frontmatter;
-    const claudeHints = (fm.claude as AgentFrontmatter['claude']) ?? {};
-
-    const frontmatterLines = [
-      '---',
-      `name: ${fm.name}`,
-      `description: ${yamlScalar(fm.description as string)}`,
-    ];
-    if (claudeHints?.model) frontmatterLines.push(`model: ${claudeHints.model}`);
-    if (claudeHints?.effort) frontmatterLines.push(`effort: ${claudeHints.effort}`);
-    if (claudeHints?.maxTurns) frontmatterLines.push(`maxTurns: ${claudeHints.maxTurns}`);
-    if (claudeHints?.isolation) frontmatterLines.push(`isolation: ${claudeHints.isolation}`);
-
-    const disallowed = fm.disallowedTools as string[] | undefined;
-    if (disallowed && disallowed.length > 0) {
-      frontmatterLines.push(`disallowedTools: ${JSON.stringify(disallowed)}`);
-    }
-    frontmatterLines.push('---');
-
-    return [frontmatterLines.join('\n'), '', agent.body, ''].join('\n');
-  }
-
-  // ── Private: scaffold helpers ──────────────────────────────────────────────
-
-  private scaffoldSkill(
-    skill: ResolvedArtifact,
+  async scaffoldConfig(
+    artifactId: string,
     catalog: ResolvedCatalog,
-    files: FileMap,
     options: ScaffoldOptions,
-  ): void {
-    const skillName = skill.frontmatter.name as string;
-
-    // The scaffolded SKILL.md is the original body — no inlining needed because
-    // .claude/rules/*.md are loaded natively by Claude Code.
-    files[`.claude/skills/${skillName}/SKILL.md`] = this.buildPluginSkillMd(skill, catalog);
-
-    for (const ref of skill.references ?? []) {
-      files[`.claude/skills/${skillName}/references/${ref.name}`] = ref.content;
+  ): Promise<ConfigMergeOp[]> {
+    const artifact = catalog.byId.get(artifactId);
+    if (!artifact) {
+      throw new Error(`Artifact '${artifactId}' not found in the catalog`);
     }
 
-    // Write dependency closure (rules + agents) unless --no-deps was requested.
-    if (options.includeDeps !== false) {
-      for (const rule of skill.resolvedRules ?? []) {
-        this.scaffoldRule(rule, files);
+    const fm = artifact.frontmatter;
+    const scope: ConfigScope =
+      options.scope ?? (fm.defaultScope as ConfigScope | undefined) ?? 'project';
+    const dest = resolveClaudeConfigDestination(
+      artifact.kind as 'hook' | 'settings' | 'mcp',
+      scope,
+      options.projectDir,
+    );
+
+    switch (artifact.kind) {
+      case 'hook': {
+        const event = fm.event as string;
+        const matcher = (fm.matcher as string | undefined) ?? '*';
+        const command = fm.command as string;
+        const timeout = fm.timeout as number | undefined;
+        const hookEntry: Record<string, unknown> = { type: 'command', command };
+        if (timeout !== undefined) hookEntry.timeout = timeout;
+
+        // Claude Code hooks format:
+        // { hooks: { [event]: [{ matcher: "...", hooks: [{type: "command", command: "..."}] }] } }
+        const fragment: Record<string, unknown> = {
+          hooks: {
+            [event]: [{ matcher, hooks: [hookEntry] }],
+          },
+        };
+        return [
+          {
+            file: dest.file,
+            root: dest.root,
+            fragment,
+            // hooks key uses array-append so multiple hooks can coexist for the same event
+            strategy: { hooks: 'array-append' },
+          },
+        ];
       }
-      for (const agentId of skill.resolvedAgentIds ?? []) {
-        const agent = catalog.byId.get(agentId);
-        if (agent) this.scaffoldAgent(agent, files);
+
+      case 'settings': {
+        const fragment: Record<string, unknown> = {};
+        const strategy: Record<string, MergeStrategy> = {};
+
+        const permissions = fm.permissions as
+          | { allow?: string[]; deny?: string[]; ask?: string[] }
+          | undefined;
+        if (permissions) {
+          fragment.permissions = permissions;
+          strategy.permissions = 'array-union';
+        }
+
+        const env = fm.env as Record<string, string> | undefined;
+        if (env && Object.keys(env).length > 0) {
+          fragment.env = env;
+          strategy.env = 'object-spread';
+        }
+
+        const model = fm.model as string | undefined;
+        if (model) {
+          fragment.model = model;
+          strategy.model = 'object-spread';
+        }
+
+        const statusLine = fm.statusLine;
+        if (statusLine !== undefined) {
+          fragment.statusLine = statusLine;
+          strategy.statusLine = 'object-spread';
+        }
+
+        if (Object.keys(fragment).length === 0) return [];
+
+        return [{ file: dest.file, root: dest.root, fragment, strategy }];
       }
-    }
-  }
 
-  private scaffoldRule(rule: ResolvedArtifact, files: FileMap): void {
-    const slug = rule.id.replace(/\//g, '-');
-    const title = rule.frontmatter.title as string;
-    const body = rule.resolvedBody ?? rule.body;
+      case 'mcp': {
+        const server = fm.server as Record<string, unknown>;
+        const serverName = (fm.name as string | undefined) ?? artifact.id.replace(/^.*\//, '');
+        // Strip any catalog-only fields before storing
+        const { description: _d, ...serverConfig } = server as Record<string, unknown>;
+        void _d;
 
-    // Language-scoped rules get a `paths:` frontmatter block so Claude Code loads them
-    // only when editing matching files. Shared (no-language) rules have no frontmatter
-    // and are loaded unconditionally at session start.
-    // `paths:` is the Claude Code–recognized key (see code.claude.com/docs/en/memory).
-    const hasLanguage = Boolean(rule.frontmatter.language);
-    const appliesTo = (rule.frontmatter.appliesTo as string[] | undefined) ?? [];
+        if (dest.wrapPath) {
+          // mcp-local scope: wrap fragment under projects.<absProjectDir>.mcpServers
+          // so deep-merge leaves other project entries intact.
+          const [topKey, ...nested] = dest.wrapPath;
+          let inner: Record<string, unknown> = {
+            [CLAUDE_MCP_SERVERS_KEY]: { [serverName]: serverConfig },
+          };
+          for (const k of [...nested].reverse()) {
+            inner = { [k]: inner };
+          }
+          return [
+            {
+              file: dest.file,
+              root: dest.root,
+              fragment: { [topKey]: inner },
+              strategy: { [topKey]: 'object-spread' },
+            },
+          ];
+        }
 
-    if (hasLanguage && appliesTo.length > 0) {
-      const pathsFrontmatter = [
-        '---',
-        `paths:\n${appliesTo.map(g => `  - "${g}"`).join('\n')}`,
-        '---',
-        '',
-      ].join('\n');
-      files[`.claude/rules/${slug}.md`] = `${pathsFrontmatter}# ${title}\n\n${body}\n`;
-    } else {
-      // Shared rules: no frontmatter — loaded for every session
-      files[`.claude/rules/${slug}.md`] = `# ${title}\n\n${body}\n`;
-    }
-  }
-
-  private scaffoldAgent(agent: ResolvedArtifact, files: FileMap): void {
-    const agentName = agent.frontmatter.name as string;
-    files[`.claude/agents/${agentName}.md`] = this.buildAgentMd(agent);
-  }
-
-  private scaffoldPrompt(prompt: ResolvedArtifact, files: FileMap): void {
-    const slug = prompt.id.replace(/\//g, '-');
-    const title = prompt.frontmatter.title as string;
-    const description = prompt.frontmatter.description as string;
-    const args = (prompt.frontmatter.args as PromptArg[] | undefined) ?? [];
-
-    // Build YAML frontmatter — argument-hint and arguments are omitted when there are no args.
-    // `description:` feeds the `/` menu label in Claude Code.
-    // `argument-hint:` shows autocomplete hint (e.g. "[diff] [audience]").
-    // `arguments:` declares named positional args so `$name` substitution resolves.
-    const fmLines: string[] = ['---', `description: ${yamlScalar(description)}`];
-    if (args.length > 0) {
-      // Quote the argument-hint value — bare square brackets like [diff] [audience] are
-      // invalid YAML flow-sequence syntax without quoting; a plain string "..." is safe.
-      fmLines.push(`argument-hint: "${buildArgumentHint(args)}"`);
-      fmLines.push('arguments:');
-      for (const arg of args) {
-        fmLines.push(`  - ${arg.name}`);
+        return [
+          {
+            file: dest.file,
+            root: dest.root,
+            fragment: { [CLAUDE_MCP_SERVERS_KEY]: { [serverName]: serverConfig } },
+            strategy: { [CLAUDE_MCP_SERVERS_KEY]: 'object-spread' },
+          },
+        ];
       }
+
+      default:
+        throw new Error(`scaffoldConfig not supported for kind '${artifact.kind}'`);
     }
-    fmLines.push('---');
-
-    // Translate {{name}} placeholders → $name (Claude's $name substitution syntax).
-    const body = toClaudePlaceholders(prompt.body);
-
-    files[`.claude/commands/${slug}.md`] = [
-      fmLines.join('\n'),
-      '',
-      `# ${title}`,
-      '',
-      body,
-      '',
-    ].join('\n');
   }
 }

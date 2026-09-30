@@ -14,6 +14,7 @@ import { loadCatalog } from './load';
 import { validateCatalog } from './validate';
 import { getAllTargets } from './targets';
 import type { FileMap, PacksConfig } from './types';
+import { CLAUDE_MCP_SERVERS_KEY } from './targets/claude-code/config';
 
 // ─── Package root & version ───────────────────────────────────────────────────
 
@@ -162,8 +163,10 @@ export function mergeOpSection(
     // local mcp: { projects: { <absProjectDir>: { mcpServers: {…} } } }
     const inner = fragment[topKey] as Record<string, unknown>;
     const dirKey = Object.keys(inner)[0];
-    return dirKey ? `projects › ${dirKey} › mcpServers` : 'projects › … › mcpServers';
+    return dirKey
+      ? `projects › ${dirKey} › ${CLAUDE_MCP_SERVERS_KEY}`
+      : `projects › … › ${CLAUDE_MCP_SERVERS_KEY}`;
   }
-  // user/project mcp ('mcpServers') or Copilot mcp ('servers') — top key IS the section
+  // user/project mcp (CLAUDE_MCP_SERVERS_KEY) or Copilot mcp ('servers') — top key IS the section
   return topKey;
 }

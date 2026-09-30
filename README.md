@@ -149,6 +149,7 @@ the 2026-08-26 catalog-parity round.
 | `angular-tooling`    | All ng- skills, agents, and rules                       |
 | `python-starter`     | pytest testing skill + deps + essentials                |
 | `react-starter`      | generate-tests skill + deps + essentials                |
+| `spec-driven`        | `/feature` conductor (needs agent-skills installed)     |
 
 **Skills per language (7 each — cs-/ts-/ng-/py-/react-):** generate-tests · scaffold-project ·
 document · add-package · audit-deps · release · sync-tests (Angular swaps scaffold-project for

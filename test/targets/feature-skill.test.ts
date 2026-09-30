@@ -7,7 +7,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
-import { loadResolvedCatalog } from '../helpers/catalog';
+import path from 'path';
+import { loadAndValidate } from '../../dist-cli/cli-helpers';
+import { resolveSelection } from '../../dist-cli/select/selector-resolve';
+import { CATALOG_DIR, loadResolvedCatalog } from '../helpers/catalog';
 
 const OPTS = { projectDir: '/fake' };
 
@@ -54,5 +57,22 @@ describe('shared/feature skill', () => {
     const examples = files['.github/skills/feature/references/examples.md'] ?? '';
     assert.ok(examples.length > 0, 'examples present');
     assert.ok(!/\bgid\b/.test(examples), 'no gid-specific prompts');
+  });
+
+  it('the spec-driven pack installs it on both targets', async () => {
+    const { packsConfig } = await loadAndValidate(
+      CATALOG_DIR,
+      path.resolve(CATALOG_DIR, '../packs.yaml'),
+    );
+    for (const targetName of ['claude', 'copilot']) {
+      const { ids } = resolveSelection({
+        selectors: ['pack:spec-driven'],
+        filters: {},
+        catalog: await loadResolvedCatalog(),
+        packs: packsConfig.packs,
+        targetName,
+      });
+      assert.deepEqual(ids, ['shared/feature'], `pack resolves on ${targetName}`);
+    }
   });
 });

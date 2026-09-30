@@ -117,3 +117,12 @@ packs:
       Covers Angular-specific concerns: components, RxJS, Signals, templates,
       security, and testing patterns for Angular applications.
       Skill deps are auto-resolved by the wizard's deps step.
+
+  - name: spec-driven
+    displayName: Spec-Driven Development
+    description: >
+      The /feature conductor: drives one feature through clarify, spec, plan, TDD build,
+      review and close-out with explicit approval gates. Requires the agent-skills collection
+      (addyosmani/agent-skills), installed separately. Works with any language.
+    artifacts:
+      - shared/feature

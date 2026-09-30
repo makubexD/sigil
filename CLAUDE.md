@@ -91,6 +91,24 @@ linking, use `npm run sigil -- <args>`.
   (`SIGIL_INTERNAL_FIELDS` in that rule file) excludes fields that are deliberately sigil-internal
   (`tags`, `severity`, `uses`, …) — extend that list only for fields that genuinely never reach a
   provider by design, never to silence a real gap.
+- **Artifact bodies are provider-neutral prose — never a hardcoded provider-specific literal**
+  (`CLAUDE.md`, `$ARGUMENTS`, `.claude/rules/`, …). Unlike frontmatter, which every `FieldMapping`
+  already routes through per-provider translation, the body had no equivalent mechanism at all
+  until the 2026-08-10 audit: 29 files told **Copilot** to "Read CLAUDE.md", 18 hardcoded Claude's
+  `$ARGUMENTS` token — both shipped unchanged to every provider and passed `sigil sync --check` for
+  a full release cycle. Fixed with a **body lexicon**: `{sigil:<term>}` neutral tokens
+  (`src/targets/lexicon.ts`'s `LEXICON_TERMS`), one `ProviderLexicon` table per provider
+  (`src/targets/<provider>/lexicon.ts`), applied unconditionally by `renderArtifact()`
+  (`src/targets/emit.ts`) — the same "one place, not opt-in" shape `{{name}}` → `$name`/`${input:}`
+  translation already used for prompt/workflow. **Every `KindEmitSpec` must set `lexicon:`** and
+  include `UNTRANSLATED_TOKEN_FORBID` (`src/targets/lexicon-forbid.ts`) in its `bodyForbids` — the
+  second net that would have caught the original gap even before the lexicon existed. **Any
+  hand-rolled aggregate that assembles body content without calling `renderArtifact()`** (Copilot's
+  `AGENTS.md`/`copilot-instructions.md`, `copilot/build-helpers.ts`) does not get the lexicon pass
+  for free — it must call `applyLexicon()` directly; this was a second, independent instance of the
+  same bug found in the same audit. The `provider-term-leak` conformance rule derives its detection
+  from every registered lexicon's literal values, not a hand-listed string set, so a new term is
+  guarded automatically. See `docs/decisions/provider-neutral-body-lexicon-2026-08.md`.
 
 ## Architecture
 

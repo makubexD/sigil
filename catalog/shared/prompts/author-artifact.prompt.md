@@ -104,6 +104,16 @@ Open the created file. Fill in the title, description, and body.
 AI-specific sections ("For Claude only: ...") — that defeats the DRY architecture. The
 adapters translate format and vocabulary automatically.
 
+**Never hardcode one provider's specific filename, path, or invocation syntax in the
+body.** Use a neutral lexicon token instead — see `src/targets/lexicon.ts` for the exact
+token syntax and the current, authoritative list of available terms (a project-conventions
+file, an always-on-rules directory, and how the provider surfaces invocation arguments to
+the model). `renderArtifact()` substitutes each provider's own value at render time — the
+same job `FieldMapping` already does for frontmatter, now for body text. `sigil sync
+--check` catches a hardcoded literal as a `provider-term-leak` error before it ships. (This
+paragraph deliberately does not spell out the token's own bracket syntax inline — doing so
+would itself look like an unresolved instance of it. Read the source file.)
+
 For a **skill** body:
 1. What this skill covers (one sentence)
 2. When to invoke it

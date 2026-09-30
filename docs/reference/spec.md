@@ -250,10 +250,15 @@ below for what that command checks).
   `whenToUse` — trigger phrases the model matches against; this is what actually drives model-invoked
   dispatch, distinct from `description`), `allowed-tools: <csv>` (from `allowedTools`), `argument-hint:
 "<hint>"` (from `argumentHint`), `disable-model-invocation: true` (from `disableModelInvocation`),
-  `user-invocable: false` (from `userInvocable`), `context: fork` (from `skillContext`) — all Claude-only
-  and skipped entirely in Copilot's SKILL.md output.
-- **Copilot skill SKILL.md:** uses only `name` and `description` — no `applyTo`, `paths:`, `when_to_use`,
-  or any other Claude-only field.
+  `user-invocable: false` (from `userInvocable`), `context: fork` (from `skillContext`) — `argument-hint`,
+  `disable-model-invocation`, `user-invocable`, and `context` are Claude-only and skipped entirely in
+  Copilot's SKILL.md output.
+- **Copilot skill SKILL.md:** frontmatter is `name`, `description`, and `allowed-tools: <csv>` (from
+  `allowedTools` — valid outside Claude Code per the Agent Skills spec's six-field list,
+  `AGENT_SKILLS_SPEC_DOC`) — no `applyTo`, `paths:`, `when_to_use`, or any Claude-only field.
+  `argumentHint` has no Copilot frontmatter equivalent (`argument-hint` is a documented hard error
+  outside Claude Code) and instead renders as a `**Arguments:** <hint>` body line, the same pattern
+  `whenToUse` already used for its own `## When to Use` body section — see `copilot/spec/skill.ts`.
 - **Copilot prompt files:** use `agent: agent`. `applyTo` is not valid here. Body uses `${input:name}` (2-part VS Code input variable form only).
 - **Claude prompt/workflow (user-invoked skills):** `name:`, `description:`, `argument-hint:`, `arguments:` (YAML list), and `disable-model-invocation: true` frontmatter. Body uses `$name` (via the `arguments:` list).
 - **Copilot agent files:** require `.agent.md` extension and `description:` frontmatter.
@@ -420,6 +425,23 @@ slots** (a provider can rearrange a body without a catalog-side change).
    on `KindDescriptor.ownedBy` (`src/kinds.ts`) rather than pretended-neutral. `validate` warns the
    moment a second target declares `supportedKinds` for an `ownedBy`-nonempty kind — that warning is
    the signal the vocabulary must move into per-provider namespaces before a second provider ships it.
+7. Add one **body lexicon** table: `src/targets/<platform>/lexicon.ts` exporting a `ProviderLexicon`
+   (`src/targets/lexicon.ts`) with a `{value, doc}` entry for every term in `LEXICON_TERMS`. Wire it
+   onto every `KindEmitSpec`'s `lexicon:` field — `renderArtifact()` (`src/targets/emit.ts`) applies
+   it unconditionally, so a body written once (`Read {sigil:conventions-file}...`) resolves to each
+   provider's own literal (`CLAUDE.md` / `AGENTS.md`) at render time. This is what keeps catalog
+   _bodies_ provider-neutral the same way `FieldMapping` already keeps _frontmatter_ neutral — see
+   `src/targets/lexicon.ts`'s header and `docs/decisions/provider-neutral-body-lexicon-2026-08.md`
+   for the audit that found bodies had no equivalent mechanism at all. Also add each of your
+   provider's `bodyForbids` entries: `UNTRANSLATED_TOKEN_FORBID` (a `{sigil:}` token surviving to
+   output means an unknown term or a spec that forgot step 7) on every spec, plus
+   `CLAUDE_LITERAL_FORBIDS_ON_COPILOT`-style entries for any OTHER provider's literal your provider
+   must never see (`src/targets/lexicon-forbid.ts`) — this is the second net that catches a
+   hardcoded literal an author typed instead of using the lexicon token in the first place.
+   **Any hand-rolled aggregate that assembles an artifact's body without going through
+   `renderArtifact()`** (Copilot's `AGENTS.md`/`copilot-instructions.md` — see
+   `copilot/build-helpers.ts`) must call `applyLexicon()` directly; it does not get the pass for
+   free just by existing in the same target.
 
 ### Adding a kind
 

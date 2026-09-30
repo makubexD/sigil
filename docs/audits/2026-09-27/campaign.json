@@ -1,0 +1,654 @@
+{
+  "defaults": {
+    "claudeModel": "sonnet",
+    "copilotModel": null,
+    "copilotAutoTier": "intelligence",
+    "maxUsdPerCall": 0.6,
+    "timeoutSec": 180
+  },
+  "prompts": {
+    "rules": "Read {file}. Then list every project rule or instruction file whose contents are in your context right now (ignore skills and agents, and anything you did not actually receive). For each one output exactly one line: <rule path=\"RELATIVE_PATH\">ONE_SENTENCE_COPIED_VERBATIM_FROM_THAT_FILE</rule>. If there are none, output NONE. Do not open, list or search any other file.",
+    "inventory": "List the names of the custom agents and the skills available to you in this project, one per line, prefixed with 'agent:' or 'skill:'. Nothing else. Do not open any file.",
+    "logEdit": "Do not run any shell commands and do not ask questions."
+  },
+  "combos": [
+    {
+      "id": "K1",
+      "why": "every config kind (hook, settings, MCP), a prompt, and the language-agnostic fallback reviewer",
+      "ids": [
+        "hook:shared/protect-config",
+        "settings:shared/allow-dev-tools",
+        "mcp:shared/filesystem",
+        "prompt:shared/explain-diff",
+        "rule:shared/clean-code",
+        "rule:shared/git",
+        "agent:shared/code-reviewer"
+      ],
+      "fixture": "K1",
+      "providers": ["claude", "copilot"],
+      "probes": [
+        {
+          "id": "P1",
+          "check": {
+            "type": "inventory"
+          }
+        },
+        {
+          "id": "P3",
+          "prompt": "Review scripts/sync-users.js for bugs and security problems. Delegate to the most appropriate specialist subagent.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "code-reviewer"
+          }
+        },
+        {
+          "id": "P4",
+          "prompt": "Use the code-reviewer subagent to review scripts/sync-users.js. Report every finding with its line.",
+          "maxTurns": 4,
+          "effort": "medium",
+          "timeoutSec": 600,
+          "maxUsd": 1.5,
+          "check": {
+            "type": "recall",
+            "agent": "code-reviewer",
+            "min": 0.6
+          }
+        },
+        {
+          "id": "P6",
+          "prompt": "@rules",
+          "file": "scripts/sync-users.js",
+          "check": {
+            "type": "rules"
+          },
+          "providers": ["claude"]
+        },
+        {
+          "id": "P7",
+          "prompt": "Use the Write tool to create prod.env containing X=1. Just attempt it once; do not reason about any hook first and do not retry.",
+          "permission": "acceptEdits",
+          "check": {
+            "type": "hookBlock",
+            "file": "prod.env"
+          },
+          "providers": ["claude"]
+        },
+        {
+          "id": "P7n",
+          "prompt": "Use the Write tool to create notes.txt containing hello. Do nothing else.",
+          "permission": "acceptEdits",
+          "check": {
+            "type": "fileWritten",
+            "file": "notes.txt"
+          },
+          "providers": ["claude"]
+        },
+        {
+          "id": "P8",
+          "prompt": "Run `npm run probe` with the Bash tool and reply with its output only.",
+          "check": {
+            "type": "bash",
+            "allowed": true
+          },
+          "providers": ["claude"]
+        },
+        {
+          "id": "P9",
+          "prompt": "/shared-explain-diff diff: \"diff --git a/scripts/sync-users.js b/scripts/sync-users.js\n-  for (let i = 0; i <= users.length; i++) {\n+  for (let i = 0; i < users.length; i++) {\" audience: reviewer",
+          "maxTurns": 2,
+          "check": {
+            "type": "command",
+            "expect": "off[- ]by[- ]one|out of bounds|<= ?to ?<|boundary|last (element|index)"
+          },
+          "providers": ["claude"]
+        },
+        {
+          "id": "P9c",
+          "prompt": "Explain this diff for a reviewer using the explain-diff prompt: \"-  for (let i = 0; i <= users.length; i++) {\n+  for (let i = 0; i < users.length; i++) {\"",
+          "providers": ["copilot"],
+          "check": {
+            "type": "command",
+            "expect": "off[- ]by[- ]one|out of bounds|<= ?to ?<|boundary|last (element|index)"
+          }
+        },
+        {
+          "id": "P10",
+          "prompt": "Use the filesystem MCP server's tool to list the allowed directories, then reply with them.",
+          "maxTurns": 3,
+          "check": {
+            "type": "mcp",
+            "server": "filesystem"
+          }
+        }
+      ]
+    },
+    {
+      "id": "K2",
+      "why": "the baseline single-language path (TypeScript), plus Copilot's reading of prompt files and MCP",
+      "languages": ["typescript"],
+      "ids": ["prompt:shared/explain-diff", "mcp:shared/filesystem"],
+      "fixture": "K2",
+      "providers": ["claude", "copilot"],
+      "probes": [
+        {
+          "id": "P1",
+          "check": {
+            "type": "inventory"
+          }
+        },
+        {
+          "id": "P2",
+          "prompt": "Add the zod package to this project as a runtime dependency.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "skill",
+            "expect": "ts-add-package"
+          }
+        },
+        {
+          "id": "P3",
+          "prompt": "Review src/http.ts for bugs and security problems. Delegate to the most appropriate specialist subagent.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "ts-code-reviewer|ts-security-auditor"
+          }
+        },
+        {
+          "id": "P3n",
+          "prompt": "Can you check src/report-service.ts for bugs?",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "ts-code-reviewer",
+            "soft": true
+          }
+        },
+        {
+          "id": "P4",
+          "prompt": "Use the ts-code-reviewer subagent to review src/. Report every finding with its file and line.",
+          "maxTurns": 4,
+          "effort": "medium",
+          "timeoutSec": 600,
+          "maxUsd": 1.5,
+          "check": {
+            "type": "recall",
+            "agent": "ts-code-reviewer",
+            "min": 0.6
+          }
+        },
+        {
+          "id": "P5",
+          "prompt": "In src/report-service.ts add a method exportCsv(id: string): Promise<string> that builds a CSV of the report rows, logs when the export starts and when it fails, and reads an export API key from configuration. @logEdit",
+          "permission": "acceptEdits",
+          "maxTurns": 8,
+          "check": {
+            "type": "diff",
+            "mustNot": ["console\\.(log|warn|error)", "\\?\\?\\s*['\"`]", ":\\s*any\\b"],
+            "must": ["log(ger)?\\.(info|error|warn|debug)"]
+          }
+        },
+        {
+          "id": "P5c",
+          "variant": "strip-rules",
+          "prompt": "@P5",
+          "permission": "acceptEdits",
+          "maxTurns": 8,
+          "check": {
+            "type": "diff",
+            "control": true,
+            "mustNot": ["console\\.(log|warn|error)", "\\?\\?\\s*['\"`]", ":\\s*any\\b"],
+            "must": ["log(ger)?\\.(info|error|warn|debug)"]
+          }
+        },
+        {
+          "id": "P6",
+          "prompt": "@rules",
+          "file": "src/http.ts",
+          "check": {
+            "type": "rules"
+          }
+        },
+        {
+          "id": "P6b",
+          "prompt": "@rules",
+          "file": "package.json",
+          "check": {
+            "type": "rules"
+          }
+        },
+        {
+          "id": "P8",
+          "prompt": "Run `npm run probe` with the Bash tool and reply with its output only.",
+          "providers": ["claude"],
+          "check": {
+            "type": "bash",
+            "allowed": false
+          }
+        },
+        {
+          "id": "P9",
+          "prompt": "Explain this diff for a reviewer using the explain-diff prompt: \"-  return report.rows.reduce((sum, r) => sum + r.amount);\n+  return report.rows.reduce((sum, r) => sum + r.amount, 0);\"",
+          "providers": ["copilot"],
+          "check": {
+            "type": "command",
+            "expect": "initial|empty|0"
+          }
+        },
+        {
+          "id": "P10",
+          "prompt": "Use the filesystem MCP server's tool to list the allowed directories, then reply with them.",
+          "providers": ["copilot"],
+          "check": {
+            "type": "mcp",
+            "server": "filesystem"
+          }
+        }
+      ]
+    },
+    {
+      "id": "K3",
+      "why": "second language (Python) through the same probes",
+      "languages": ["python"],
+      "fixture": "K3",
+      "providers": ["claude", "copilot"],
+      "probes": [
+        {
+          "id": "P2",
+          "prompt": "Add the httpx package to this project as a runtime dependency.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "skill",
+            "expect": "py-add-package"
+          }
+        },
+        {
+          "id": "P3",
+          "prompt": "Review app/report_service.py for bugs and security problems. Delegate to the most appropriate specialist subagent.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "py-code-reviewer|py-security-auditor"
+          }
+        },
+        {
+          "id": "P3n",
+          "prompt": "Can you check app/report_service.py for bugs?",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "py-code-reviewer",
+            "soft": true
+          }
+        },
+        {
+          "id": "P4",
+          "prompt": "Use the py-code-reviewer subagent to review app/. Report every finding with its file and line.",
+          "maxTurns": 4,
+          "effort": "medium",
+          "timeoutSec": 600,
+          "maxUsd": 1.5,
+          "check": {
+            "type": "recall",
+            "agent": "py-code-reviewer",
+            "min": 0.6
+          }
+        },
+        {
+          "id": "P5",
+          "prompt": "In app/report_service.py add a function export_csv(report_id) that returns the report rows as a CSV string, logs when the export starts and when it fails, and reads an export API key from configuration. @logEdit",
+          "permission": "acceptEdits",
+          "maxTurns": 8,
+          "check": {
+            "type": "diff",
+            "mustNot": ["\\bprint\\(", "environ\\.get\\([^)]*,\\s*['\"]"],
+            "must": ["getLogger|logger\\.(info|error|exception|warning|debug)"]
+          }
+        },
+        {
+          "id": "P5c",
+          "variant": "strip-rules",
+          "prompt": "@P5",
+          "permission": "acceptEdits",
+          "maxTurns": 8,
+          "check": {
+            "type": "diff",
+            "control": true,
+            "mustNot": ["\\bprint\\(", "environ\\.get\\([^)]*,\\s*['\"]"],
+            "must": ["getLogger|logger\\.(info|error|exception|warning|debug)"]
+          }
+        },
+        {
+          "id": "P6",
+          "prompt": "@rules",
+          "file": "app/config.py",
+          "check": {
+            "type": "rules"
+          }
+        }
+      ]
+    },
+    {
+      "id": "K4",
+      "why": "third stack (C#), .cs-scoped rules",
+      "languages": ["csharp"],
+      "fixture": "K4",
+      "providers": ["claude", "copilot"],
+      "probes": [
+        {
+          "id": "P2",
+          "prompt": "Add the Polly NuGet package to this project.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "skill",
+            "expect": "cs-add-package"
+          }
+        },
+        {
+          "id": "P3",
+          "prompt": "Review src/ReportService.cs for bugs and security problems. Delegate to the most appropriate specialist subagent.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "cs-code-reviewer|cs-security-auditor"
+          }
+        },
+        {
+          "id": "P4",
+          "prompt": "Use the cs-code-reviewer subagent to review src/ and Reports.csproj. Report every finding with its file and line.",
+          "maxTurns": 4,
+          "effort": "medium",
+          "timeoutSec": 600,
+          "maxUsd": 1.5,
+          "check": {
+            "type": "recall",
+            "agent": "cs-code-reviewer",
+            "min": 0.6
+          }
+        },
+        {
+          "id": "P5",
+          "prompt": "In src/ReportService.cs add a method ExportCsv(string reportId) that returns the report rows as CSV, logs when the export starts and when it fails, and reads an export API key from configuration. @logEdit",
+          "permission": "acceptEdits",
+          "maxTurns": 8,
+          "check": {
+            "type": "diff",
+            "mustNot": ["Console\\.Write"],
+            "must": ["ILogger"]
+          }
+        },
+        {
+          "id": "P6",
+          "prompt": "@rules",
+          "file": "src/Config.cs",
+          "check": {
+            "type": "rules"
+          },
+          "providers": ["claude"]
+        }
+      ]
+    },
+    {
+      "id": "K5",
+      "why": "TypeScript + Angular: both claim **/*.ts — rule leak onto plain .ts files, reviewer choice",
+      "languages": ["typescript", "angular"],
+      "fixture": "K5",
+      "providers": ["claude", "copilot"],
+      "probes": [
+        {
+          "id": "P2",
+          "prompt": "Generate a new Angular component called ReportSummary under src/app.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "skill",
+            "expect": "ng-generate-component"
+          }
+        },
+        {
+          "id": "P3",
+          "prompt": "Review src/app/report/report.component.ts and its template for bugs. Delegate to the most appropriate specialist subagent.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "ng-code-reviewer|ng-template-reviewer"
+          }
+        },
+        {
+          "id": "P3b",
+          "prompt": "Review src/lib/math-util.ts for bugs. Delegate to the most appropriate specialist subagent.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "ts-code-reviewer|ng-code-reviewer",
+            "note": "either is defensible; records which one wins"
+          }
+        },
+        {
+          "id": "P4",
+          "prompt": "Use the ng-code-reviewer subagent to review src/app/report/. Report every finding with its file and line.",
+          "maxTurns": 4,
+          "effort": "medium",
+          "timeoutSec": 600,
+          "maxUsd": 1.5,
+          "check": {
+            "type": "recall",
+            "agent": "ng-code-reviewer",
+            "min": 0.6
+          }
+        },
+        {
+          "id": "P5",
+          "prompt": "Add a refresh that reloads the report every 30 seconds while ReportComponent is alive. @logEdit",
+          "permission": "acceptEdits",
+          "maxTurns": 8,
+          "check": {
+            "type": "diff",
+            "must": ["takeUntilDestroyed|DestroyRef|takeUntil|unsubscribe|clearInterval|toSignal"],
+            "mustNot": ["console\\.log"]
+          }
+        },
+        {
+          "id": "P6",
+          "prompt": "@rules",
+          "file": "src/lib/math-util.ts",
+          "check": {
+            "type": "rules",
+            "foreign": ["angular-ng-", "ng-"]
+          }
+        },
+        {
+          "id": "P6b",
+          "prompt": "@rules",
+          "file": "src/app/report/report.component.html",
+          "check": {
+            "type": "rules"
+          }
+        }
+      ]
+    },
+    {
+      "id": "K6",
+      "why": "TypeScript + React: both claim **/*.tsx, react rules claim **/*.ts",
+      "languages": ["typescript", "react"],
+      "fixture": "K6",
+      "providers": ["claude", "copilot"],
+      "probes": [
+        {
+          "id": "P2",
+          "prompt": "Generate tests for src/components/ReportCard.tsx.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "skill",
+            "expect": "react-generate-tests"
+          }
+        },
+        {
+          "id": "P3",
+          "prompt": "Review src/components/ReportCard.tsx for bugs. Delegate to the most appropriate specialist subagent.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "react-code-reviewer"
+          }
+        },
+        {
+          "id": "P4",
+          "prompt": "Use the react-code-reviewer subagent to review src/components/ReportCard.tsx. Report every finding with its line.",
+          "maxTurns": 4,
+          "effort": "medium",
+          "timeoutSec": 600,
+          "maxUsd": 1.5,
+          "check": {
+            "type": "recall",
+            "agent": "react-code-reviewer",
+            "min": 0.6
+          }
+        },
+        {
+          "id": "P5",
+          "prompt": "Make ReportCard refetch when its id changes and show 'Loading…' until the data arrives. @logEdit",
+          "permission": "acceptEdits",
+          "maxTurns": 8,
+          "check": {
+            "type": "diff",
+            "must": ["\\[\\s*(props\\.)?id\\s*\\]", "Loading"],
+            "mustNot": [":\\s*any\\b"]
+          }
+        },
+        {
+          "id": "P6",
+          "prompt": "@rules",
+          "file": "src/lib/format.ts",
+          "check": {
+            "type": "rules",
+            "foreign": ["react-"]
+          },
+          "providers": ["claude"]
+        },
+        {
+          "id": "P6b",
+          "prompt": "@rules",
+          "file": "src/components/ReportCard.tsx",
+          "check": {
+            "type": "rules"
+          },
+          "providers": ["claude"]
+        }
+      ]
+    },
+    {
+      "id": "K7",
+      "why": "Python + TypeScript + shared cli/wizard skills: shared skill vs language skills, cli-rules scoping, cross-language leaks",
+      "languages": ["python", "typescript"],
+      "ids": ["skill:shared/cli", "skill:shared/wizard"],
+      "fixture": "K7",
+      "providers": ["claude", "copilot"],
+      "probes": [
+        {
+          "id": "P2",
+          "prompt": "Help me redesign the command-line interface of tools/cli/main.py: command structure, flags, help text and exit codes.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "skill",
+            "expect": "^cli$|shared-cli|\\bcli\\b"
+          }
+        },
+        {
+          "id": "P2b",
+          "prompt": "I want to add an interactive setup wizard (reports init) in front of this CLI. Help me design it.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "skill",
+            "expect": "wizard"
+          }
+        },
+        {
+          "id": "P3",
+          "prompt": "Audit tools/cli/main.py against command-line interface conventions. Delegate to the most appropriate specialist subagent.",
+          "early": true,
+          "maxTurns": 4,
+          "check": {
+            "type": "dispatch",
+            "tool": "agent",
+            "expect": "cli-auditor"
+          }
+        },
+        {
+          "id": "P4",
+          "prompt": "Use the cli-auditor subagent to audit tools/cli/main.py. Report every finding with its line.",
+          "maxTurns": 4,
+          "effort": "medium",
+          "timeoutSec": 600,
+          "maxUsd": 1.5,
+          "check": {
+            "type": "recall",
+            "agent": "cli-auditor",
+            "min": 0.6
+          }
+        },
+        {
+          "id": "P5",
+          "prompt": "Add a --dry-run flag to the purge command in tools/cli/main.py and make unknown commands fail properly. @logEdit",
+          "permission": "acceptEdits",
+          "maxTurns": 8,
+          "check": {
+            "type": "diff",
+            "must": ["stderr|parser\\.error|SystemExit", "dry[-_]run"],
+            "mustNot": ["--dryRun|--DryRun|--Dry"]
+          }
+        },
+        {
+          "id": "P6",
+          "prompt": "@rules",
+          "file": "tools/cli/main.py",
+          "check": {
+            "type": "rules",
+            "foreign": ["typescript-ts-", "ts-"]
+          }
+        },
+        {
+          "id": "P6b",
+          "prompt": "@rules",
+          "file": "lib/format.ts",
+          "check": {
+            "type": "rules",
+            "foreign": ["python-py-", "py-", "cli-rules"]
+          }
+        }
+      ]
+    }
+  ]
+}

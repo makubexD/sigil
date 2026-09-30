@@ -1,0 +1,38 @@
+[
+  {
+    "id": "errors-to-stdout",
+    "any": [
+      "stderr|stdout"
+    ]
+  },
+  {
+    "id": "wrong-exit-code",
+    "any": [
+      "exit(\\()?0|exit code|non-?zero"
+    ]
+  },
+  {
+    "id": "destructive-no-confirm",
+    "any": [
+      "confirm|--yes|--force|dry[- ]run|destructive"
+    ]
+  },
+  {
+    "id": "bad-flag-casing",
+    "any": [
+      "--Out|kebab|lower-?case|flag nam"
+    ]
+  },
+  {
+    "id": "no-help-text",
+    "any": [
+      "help=|help text|description|--help"
+    ]
+  },
+  {
+    "id": "positional-command-not-subparser",
+    "any": [
+      "subparser|subcommand|add_subparsers|choices"
+    ]
+  }
+]

@@ -1,0 +1,7 @@
+{
+  "name": "user-sync",
+  "version": "1.0.0",
+  "scripts": {
+    "probe": "node -e \"console.log('probe-ok')\""
+  }
+}

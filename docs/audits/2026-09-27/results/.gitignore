@@ -1,0 +1,3 @@
+# Raw claude/copilot event streams (~20 MB per full run) stay local; the per-probe
+# verdicts in *.jsonl and ../live-probe-report.md are what gets committed.
+*/raw/

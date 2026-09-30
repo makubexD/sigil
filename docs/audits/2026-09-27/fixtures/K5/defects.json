@@ -1,0 +1,38 @@
+[
+  {
+    "id": "subscription-leak",
+    "any": [
+      "unsubscribe|takeUntil|leak|DestroyRef|async pipe|toSignal"
+    ]
+  },
+  {
+    "id": "untyped-any",
+    "any": [
+      "\\bany\\b|untyped|typed interface"
+    ]
+  },
+  {
+    "id": "innerhtml-xss",
+    "any": [
+      "innerHTML|XSS|sanitiz"
+    ]
+  },
+  {
+    "id": "null-template",
+    "any": [
+      "report\\?\\.|undefined.*template|before (it )?loads|null|safe navigation|@if"
+    ]
+  },
+  {
+    "id": "console-log",
+    "any": [
+      "console\\.log|logging"
+    ]
+  },
+  {
+    "id": "legacy-patterns",
+    "any": [
+      "standalone|inject\\(|signal|constructor injection|OnPush"
+    ]
+  }
+]

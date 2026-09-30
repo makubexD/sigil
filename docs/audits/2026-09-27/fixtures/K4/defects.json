@@ -1,0 +1,38 @@
+[
+  {
+    "id": "hardcoded-connection-secret",
+    "any": [
+      "dev-password-1234|hardcod|password in (source|code)|connection string"
+    ]
+  },
+  {
+    "id": "sql-injection",
+    "any": [
+      "sql injection|parameteri[sz]|concatenat"
+    ]
+  },
+  {
+    "id": "sync-over-async",
+    "any": [
+      "\\.Result|sync[- ]over[- ]async|deadlock|blocking"
+    ]
+  },
+  {
+    "id": "async-void",
+    "any": [
+      "async void"
+    ]
+  },
+  {
+    "id": "console-diagnostics",
+    "any": [
+      "Console\\.WriteLine|ILogger|logger"
+    ]
+  },
+  {
+    "id": "deprecated-sqlclient",
+    "any": [
+      "System\\.Data\\.SqlClient|Microsoft\\.Data\\.SqlClient|deprecated"
+    ]
+  }
+]

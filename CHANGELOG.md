@@ -109,6 +109,12 @@ through Claude Code and Copilot CLI against seven install combinations:
 - `shared/allow-dev-tools` dropped `git status`/`diff`/`log`: Claude Code already runs read-only
   commands without a prompt, so those entries did nothing.
 
+### Added (live-prompt campaign)
+
+- `docs/audits/2026-09-27/tools/live-probe.js`: installs catalog combinations into a target folder
+  and sends real prompts through `claude -p` / `copilot -p` to check that each artifact takes effect.
+  Manual and paid, so not part of `npm test`.
+
 ### Removed
 
 - The internal `requiresLanguage` kind-descriptor flag (no kind requires a language any more).

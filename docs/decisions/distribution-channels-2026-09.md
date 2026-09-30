@@ -259,6 +259,30 @@ then one collapsible section per tool) plus a `docs/setup/<tool>.md` page.
     "✓ updated". It should print the fragment diff and ask, or need `--force` when not
     interactive.
 
+- **Live-prompt campaign (2026-09-27/28).** The install audit proved the files were right; this
+  checked that they change what the models do. `docs/audits/2026-09-27/tools/live-probe.js` wiped
+  the target folder, installed 7 catalog combinations (shared config kinds; TypeScript; Python; C#;
+  TS + Angular; TS + React; Python + TS + the shared CLI skills), added small legacy code with
+  seeded defects, and sent real prompts through `claude -p` and `copilot -p`.
+  - **Worked on both providers:** skill and agent dispatch across languages, reviewers catching
+    5–6 of 6 seeded defects, the hook and the settings, and rules loading per their globs.
+  - **Fixed:**
+    - Copilot MCP: sigil wrote only `.vscode/mcp.json`, which Copilot CLI never reads; it now also
+      writes `.mcp.json`. Uninstalling one target no longer removes a server the other still uses.
+    - Copilot instruction files had no `description`, which Copilot CLI's instruction index shows
+      to the model.
+    - Cross-stack rule globs.
+    - A legacy-code line in the rules: models had copied `console.log`.
+    - 15 agent descriptions that never named their language.
+    - Three no-op `git` allow entries.
+  - **Learned about the providers:**
+    - Copilot CLI lists path-specific instructions and lets the model open them. It doesn't
+      inject them.
+    - Its `auto` model routes each request to a different model.
+    - A plain "check this for bugs" doesn't dispatch a reviewer agent on either provider.
+
+  Findings, evidence and cost: [`docs/audits/2026-09-27/findings.md`](../audits/2026-09-27/findings.md).
+
 - **README Quick Start** restructured in the agent-skills style, listing only routes that work today.
 
 ## Appendix — fixes worth making in the original `gid` skills

@@ -1,0 +1,38 @@
+[
+  {
+    "id": "effect-no-deps",
+    "any": [
+      "dependency array|deps|every render|infinite|re-?runs"
+    ]
+  },
+  {
+    "id": "null-report-render",
+    "any": [
+      "null|undefined|loading state|before (the )?(data|fetch)|crash"
+    ]
+  },
+  {
+    "id": "missing-key",
+    "any": [
+      "\\bkey\\b"
+    ]
+  },
+  {
+    "id": "dangerous-html-xss",
+    "any": [
+      "dangerouslySetInnerHTML|XSS|sanitiz"
+    ]
+  },
+  {
+    "id": "untyped-props",
+    "any": [
+      "\\bany\\b|props type|typed props|interface"
+    ]
+  },
+  {
+    "id": "fetch-no-abort-or-error",
+    "any": [
+      "AbortController|abort|race|error handling|\\.catch|unmount"
+    ]
+  }
+]

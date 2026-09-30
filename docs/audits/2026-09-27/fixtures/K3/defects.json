@@ -1,0 +1,38 @@
+[
+  {
+    "id": "hardcoded-fallback-secret",
+    "any": [
+      "dev-token-1234|hardcod|fallback (token|secret)|default (token|secret)"
+    ]
+  },
+  {
+    "id": "unsafe-yaml",
+    "any": [
+      "yaml\\.load|safe_load|SafeLoader|unsafe (yaml|deserializ)"
+    ]
+  },
+  {
+    "id": "token-printed",
+    "any": [
+      "print.*token|token.*(print|log)|logs? the (api )?token|leak"
+    ]
+  },
+  {
+    "id": "bare-except",
+    "any": [
+      "bare except|except:|swallow|catch-all|broad except"
+    ]
+  },
+  {
+    "id": "shell-injection",
+    "any": [
+      "shell=True|command injection|shell injection|injection"
+    ]
+  },
+  {
+    "id": "none-deref",
+    "any": [
+      "None.*(subscript|TypeError|\\[.rows.\\])|returns? None|NoneType|null check|None check"
+    ]
+  }
+]

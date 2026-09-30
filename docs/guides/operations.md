@@ -87,6 +87,25 @@ node dist-cli/schema/emit.js
 
 ---
 
+## Live-prompt check (manual, costs money)
+
+The tests above prove that the emitted files are right. `docs/audits/2026-09-27/tools/live-probe.js`
+checks that Claude Code and Copilot CLI actually use them. For each combination in
+`docs/audits/2026-09-27/campaign.json` it wipes the target folder (`C:\WorkspaceMaku\TestCaI`, or
+`PROBE_TARGET`), installs the combination, copies in a legacy fixture, and sends real prompts. It
+then records whether each skill triggered, the right agent was dispatched, rules loaded only for
+their own files and changed the code, the hook blocked, the setting granted access, and the MCP
+server connected. Every probe is a real model call, so this is never part of `npm test`.
+
+```bash
+node docs/audits/2026-09-27/tools/live-probe.js --dry                        # set up fixtures only, no model calls
+node docs/audits/2026-09-27/tools/live-probe.js --provider claude --only K1:P7 --max-usd 2
+node docs/audits/2026-09-27/tools/live-probe.js --only K2:P2,K2:P3 --repeat 3  # k/3 pass rate, no retries
+node docs/audits/2026-09-27/tools/live-probe-report.js                      # → docs/audits/2026-09-27/live-probe-report.md
+```
+
+---
+
 ## Release a new version (`sigil release`)
 
 `sigil release` automates the full release lifecycle — no manual version editing, no forgotten

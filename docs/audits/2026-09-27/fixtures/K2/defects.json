@@ -1,0 +1,38 @@
+[
+  {
+    "id": "hardcoded-fallback-secret",
+    "any": [
+      "dev-token-1234|hardcod|fallback (token|secret)|default (token|secret)"
+    ]
+  },
+  {
+    "id": "token-logged",
+    "any": [
+      "logs? the (api )?token|token.*(log|console)|console\\.log.*token|leak"
+    ]
+  },
+  {
+    "id": "unvalidated-any",
+    "any": [
+      "\\bany\\b|unvalidated|without validation|no validation|runtime validation|schema"
+    ]
+  },
+  {
+    "id": "shell-injection",
+    "any": [
+      "exec\\(|command injection|shell injection|injection"
+    ]
+  },
+  {
+    "id": "reduce-no-initial",
+    "any": [
+      "reduce.*(initial|seed)|initial value|empty (rows|array)"
+    ]
+  },
+  {
+    "id": "floating-promises",
+    "any": [
+      "forEach.*(await|promise)|floating|not awaited|unawaited|fire[- ]and[- ]forget|unhandled"
+    ]
+  }
+]

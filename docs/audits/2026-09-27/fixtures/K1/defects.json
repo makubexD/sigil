@@ -1,0 +1,32 @@
+[
+  {
+    "id": "hardcoded-fallback-secret",
+    "any": [
+      "dev-billing-key|hardcod|fallback (key|secret)|default (key|secret)"
+    ]
+  },
+  {
+    "id": "shell-injection",
+    "any": [
+      "execSync|command injection|shell injection|injection"
+    ]
+  },
+  {
+    "id": "off-by-one",
+    "any": [
+      "<=\\s*users\\.length|off[- ]by[- ]one|out of bounds|undefined.*users\\[i\\]"
+    ]
+  },
+  {
+    "id": "floating-promise",
+    "any": [
+      "not awaited|missing await|floating|unawaited|without await|fire[- ]and[- ]forget"
+    ]
+  },
+  {
+    "id": "secret-in-logs-or-url",
+    "any": [
+      "logs? the (api )?key|key in (the )?(log|url|query)|leak|query string"
+    ]
+  }
+]

@@ -22,6 +22,7 @@ import { getAllTargets } from '../../dist-cli/targets/index';
 import type { Artifact, LoadedCatalog, Target } from '../../dist-cli/types';
 import { loadCatalog } from '../../dist-cli/load';
 import { CATALOG_DIR } from '../helpers/catalog';
+import { redundantDefaultRule } from '../../dist-cli/commands/sync/conformance/rules/redundant-default';
 
 function makeCatalog(artifacts: Artifact[]): LoadedCatalog {
   return {
@@ -401,6 +402,55 @@ describe('conformance rule: declared-but-unemitted', () => {
     const catalog = makeCatalog([hook]);
     const findings = runConformance(catalog, [], { ruleId: 'declared-but-unemitted' });
     assert.equal(findings.length, 0);
+  });
+});
+
+describe('conformance rule: redundant-default', () => {
+  function ruleArtifact(frontmatter: Record<string, unknown>): Artifact {
+    return {
+      id: 'typescript/ts-probe',
+      kind: 'rule',
+      filePath: '/fake/ts-probe.rule.md',
+      frontmatter: { id: 'typescript/ts-probe', kind: 'rule', title: 'Probe', ...frontmatter },
+      body: 'body',
+    } as Artifact;
+  }
+
+  it('flags severity explicitly set to the schema default (recommended)', () => {
+    const catalog = makeCatalog([ruleArtifact({ severity: 'recommended' })]);
+    const findings = runConformance(catalog, [], { ruleId: 'redundant-default' });
+    assert.equal(findings.length, 1);
+    assert.match(findings[0]!.detail, /key='severity'/);
+  });
+
+  it('does not flag severity set to a non-default value', () => {
+    const catalog = makeCatalog([ruleArtifact({ severity: 'required' })]);
+    const findings = runConformance(catalog, [], { ruleId: 'redundant-default' });
+    assert.equal(findings.length, 0);
+  });
+
+  it('flags extends: [] as redundant', () => {
+    const catalog = makeCatalog([ruleArtifact({ extends: [] })]);
+    const findings = runConformance(catalog, [], { ruleId: 'redundant-default' });
+    assert.equal(findings.length, 1);
+    assert.match(findings[0]!.detail, /key='extends'/);
+  });
+
+  it('does not flag a non-empty extends array', () => {
+    const catalog = makeCatalog([ruleArtifact({ extends: ['shared/clean-code'] })]);
+    const findings = runConformance(catalog, [], { ruleId: 'redundant-default' });
+    assert.equal(findings.length, 0);
+  });
+
+  it('produces one independently-fixable finding per redundant key on the same artifact', () => {
+    // Regression guard for fix()'s key-identity comment: two redundant keys on one artifact
+    // must resolve to two DISTINCT ArtifactEdits, not the same key fixed twice.
+    const catalog = makeCatalog([ruleArtifact({ severity: 'recommended', extends: [] })]);
+    const findings = runConformance(catalog, [], { ruleId: 'redundant-default' });
+    assert.equal(findings.length, 2);
+    const edits = findings.map(f => redundantDefaultRule.fix!(f, { catalog, targets: [] }));
+    const patchedKeys = edits.map(e => Object.keys(e!.frontmatterPatch!)[0]).sort();
+    assert.deepEqual(patchedKeys, ['extends', 'severity']);
   });
 });
 

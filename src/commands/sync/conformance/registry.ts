@@ -15,6 +15,7 @@ import { relatedArtifactsRule } from './rules/related-artifacts';
 import { providerKindCoverageRule } from './rules/provider-kind-coverage';
 import { deprecatedHygieneRule } from './rules/deprecated-hygiene';
 import { declaredButUnemittedRule } from './rules/declared-but-unemitted';
+import { redundantDefaultRule } from './rules/redundant-default';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -26,4 +27,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   providerKindCoverageRule,
   deprecatedHygieneRule,
   declaredButUnemittedRule,
+  redundantDefaultRule,
 ];

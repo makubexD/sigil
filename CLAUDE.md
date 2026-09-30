@@ -82,7 +82,7 @@ linking, use `npm run sigil -- <args>`.
 - **Every catalog frontmatter field authored on a whole-file kind must be mapped by at least one
   provider's `KindEmitSpec`.** `tools` (`AgentSchema`) was authored on ~26 agents — several
   explicitly read-only in their own `description` — but mapped by neither `CLAUDE_AGENT_SPEC` nor
-  `COPILOT_AGENT_SPEC` for a full release cycle; both providers default an absent `tools` to *all*
+  `COPILOT_AGENT_SPEC` for a full release cycle; both providers default an absent `tools` to _all_
   tools, so every emitted agent silently inherited full write access until the 2026-08-10 audit
   caught it (fixed in `claude-code/spec/agent.ts` / `copilot/spec/agent.ts`). The
   `declared-but-unemitted` conformance rule (`src/commands/sync/conformance/rules/`) now fails

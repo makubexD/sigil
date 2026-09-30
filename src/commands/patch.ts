@@ -17,8 +17,9 @@ import { checkSourceArtifact } from '../authoring/check-source';
 import { writeArtifactFrontmatter } from '../authoring/frontmatter';
 import { addPlatforms, removePlatforms, setPlatforms } from '../authoring/platforms';
 import { buildFieldPatch, getEditableFields } from '../authoring/update';
-import { resolveDefault } from '../cli-helpers';
-import { notFoundError, SigilError } from '../errors';
+import { resolveDefault, requireValidCatalog } from '../cli-helpers';
+import { SigilError } from '../errors';
+import { requireArtifact } from './shared/artifact';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -65,17 +66,14 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
   // resolveDefault is used for the --catalog-dir default; already applied by Commander.
   void resolveDefault; // imported for documentation — default is set in cli.ts option declaration
 
-  const catalog = await loadCatalog(opts.catalogDir);
+  const catalog = await requireValidCatalog(opts.catalogDir);
   const targets = getAllTargets();
 
-  const artifact = catalog.byId.get(id);
-  if (!artifact) {
-    throw notFoundError(
-      'Artifact',
-      id,
-      catalog.artifacts.map(a => a.id),
-    );
-  }
+  const artifact = requireArtifact(
+    catalog.byId,
+    catalog.artifacts.map(a => a.id),
+    id,
+  );
 
   // ── Build UpdateOps from CLI flags ─────────────────────────────────────────
   const splitList = (s?: string): string[] | undefined =>

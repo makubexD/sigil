@@ -14,6 +14,7 @@ import { getTarget } from '../targets';
 import { resolveSelection, CONFIG_KINDS } from '../select';
 import { hasUsesClosure } from '../kinds';
 import { SigilError } from '../errors';
+import { renderViolations } from './shared/contract';
 import {
   isInteractiveTTY,
   runWizard,
@@ -226,10 +227,9 @@ export async function runAdd(selectors: string[], opts: AddOpts): Promise<void> 
   // ── Output-conformance check ───────────────────────────────────────────────
   const violations = checkOutputContract(allFiles, target.outputContracts ?? []);
   if (violations.length > 0) {
-    const lines = violations.map(v => `  ✗  [${v.label}] ${v.file}\n       ${v.problem}`);
     throw new SigilError(
       `${violations.length} output-conformance error(s). Install aborted — no files were written.`,
-      { hint: lines.join('\n') },
+      { hint: renderViolations(violations) },
     );
   }
 

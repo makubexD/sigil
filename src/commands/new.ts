@@ -20,6 +20,7 @@ import {
 import { checkSourceArtifact } from '../authoring/check-source';
 import { normPath } from '../paths';
 import { SigilError } from '../errors';
+import { requireValidCatalog } from '../cli-helpers';
 import { headerFor } from '../authoring/header';
 import { setPlatforms } from '../authoring/platforms';
 
@@ -57,7 +58,7 @@ export async function runNew(kind: string | undefined, opts: NewOptions): Promis
       });
     }
     // Load catalog for the wizard (language list + reference data)
-    const rawCatalog = await loadCatalog(opts.catalogDir);
+    const rawCatalog = await requireValidCatalog(opts.catalogDir);
     const resolved = resolveCatalog(rawCatalog);
     const targets = getAllTargets();
     const wizardResult = await runNewWizard(resolved, targets);

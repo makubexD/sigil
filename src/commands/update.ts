@@ -14,7 +14,8 @@ import path from 'node:path';
 import { resolveCatalog } from '../resolve';
 import { loadAndValidate, writeFilesSync, detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets';
-import { loadManifest, saveManifest, sha256 } from '../manifest';
+import { saveManifest, sha256 } from '../manifest';
+import { requireManifest } from './shared/manifest';
 import { applyMerge, serialize, detectConfigDrift } from '../config-merge';
 import { resolveConfigRoot } from '../config-utils';
 import { isConfigKind } from '../kinds';
@@ -117,12 +118,7 @@ export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<voi
     throw new SigilError(`Target '${targetName}' does not support the update command.`);
   }
 
-  let manifest;
-  try {
-    manifest = loadManifest(opts.projectDir);
-  } catch (err) {
-    throw new SigilError((err as Error).message, { cause: err });
-  }
+  const manifest = requireManifest(opts.projectDir);
 
   // Filter entries by target (and by explicit ids if provided)
   const idFilter = new Set(ids);

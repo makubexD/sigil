@@ -9,7 +9,7 @@ import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { getAllTargets } from '../targets';
 import { getArtifactDetail, formatDetailText } from '../query';
-import { notFoundError } from '../errors';
+import { requireArtifact } from './shared/artifact';
 
 export interface GetOptions {
   catalogDir: string;
@@ -21,14 +21,11 @@ export async function runGet(id: string, opts: GetOptions): Promise<void> {
   const resolved = resolveCatalog(rawCatalog);
   const targets = getAllTargets();
 
-  const artifact = resolved.byId.get(id);
-  if (!artifact) {
-    throw notFoundError(
-      'Artifact',
-      id,
-      rawCatalog.artifacts.map(a => a.id),
-    );
-  }
+  const artifact = requireArtifact(
+    resolved.byId,
+    rawCatalog.artifacts.map(a => a.id),
+    id,
+  );
 
   const detail = getArtifactDetail(artifact, rawCatalog, targets);
 

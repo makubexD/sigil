@@ -7,8 +7,8 @@
  */
 import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets';
-import { loadManifest, computeStatus } from '../manifest';
-import { SigilError } from '../errors';
+import { computeStatus } from '../manifest';
+import { requireManifest } from './shared/manifest';
 
 export interface StatusOptions {
   projectDir: string;
@@ -22,12 +22,7 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
   const { catalog: rawCatalog } = await loadAndValidate(opts.catalogDir, opts.packs);
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
 
-  let manifest;
-  try {
-    manifest = loadManifest(opts.projectDir);
-  } catch (err) {
-    throw new SigilError((err as Error).message, { cause: err });
-  }
+  const manifest = requireManifest(opts.projectDir);
 
   if (manifest.entries.length === 0) {
     console.log(

@@ -15,6 +15,7 @@ import { checkOutputContract } from '../targets/output-contract';
 import { buildRegistry } from '../registry';
 import { loadAndValidate, writeFilesSync, pkg } from '../cli-helpers';
 import { SigilError } from '../errors';
+import { renderViolations } from './shared/contract';
 
 export interface BuildOptions {
   target: string;
@@ -44,10 +45,9 @@ export async function runBuild(opts: BuildOptions): Promise<void> {
     // Output-conformance check: verify emitted file shapes match the target's contracts.
     const violations = checkOutputContract(files, target.outputContracts ?? []);
     if (violations.length > 0) {
-      const lines = violations.map(v => `  ✗  [${v.label}] ${v.file}\n       ${v.problem}`);
       throw new SigilError(
         `${violations.length} output-conformance error(s) in target '${target.name}'. Fix the catalog source or adapter before shipping.`,
-        { hint: lines.join('\n') },
+        { hint: renderViolations(violations) },
       );
     }
 

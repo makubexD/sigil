@@ -10,7 +10,9 @@ import { getAllTargets } from '../targets';
 import { isInteractiveTTY, runEditWizard } from '../wizard';
 import { writeArtifactFrontmatter } from '../authoring/frontmatter';
 import { checkSourceArtifact } from '../authoring/check-source';
-import { notFoundError, SigilError } from '../errors';
+import { SigilError } from '../errors';
+import { requireArtifact } from './shared/artifact';
+import { requireValidCatalog } from '../cli-helpers';
 
 export interface EditOptions {
   title?: string | undefined;
@@ -21,17 +23,14 @@ export interface EditOptions {
 }
 
 export async function runEdit(id: string, opts: EditOptions): Promise<void> {
-  const catalog = await loadCatalog(opts.catalogDir);
+  const catalog = await requireValidCatalog(opts.catalogDir);
   const targets = getAllTargets();
 
-  const artifact = catalog.byId.get(id);
-  if (!artifact) {
-    throw notFoundError(
-      'Artifact',
-      id,
-      catalog.artifacts.map(a => a.id),
-    );
-  }
+  const artifact = requireArtifact(
+    catalog.byId,
+    catalog.artifacts.map(a => a.id),
+    id,
+  );
 
   let newTitle: string;
   let newDescription: string;

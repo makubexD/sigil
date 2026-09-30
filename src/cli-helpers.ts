@@ -46,12 +46,13 @@ export function resolveDefault(relative: string): string {
 // ─── Catalog loading ──────────────────────────────────────────────────────────
 
 /**
- * Load and validate the catalog + packs. Exits the process on validation errors.
+ * Load the catalog and throw a SigilError if it fails schema/reference validation.
+ * Shared by `loadAndValidate` (catalog + packs) and by commands that need a valid
+ * catalog but have no `--packs` flag of their own (delete/edit/patch/retarget/move/new).
  */
-export async function loadAndValidate(
+export async function requireValidCatalog(
   catalogDir: string,
-  packsFile: string,
-): Promise<{ catalog: Awaited<ReturnType<typeof loadCatalog>>; packsConfig: PacksConfig }> {
+): Promise<Awaited<ReturnType<typeof loadCatalog>>> {
   const catalog = await loadCatalog(catalogDir);
   const result = validateCatalog(catalog);
 
@@ -62,6 +63,15 @@ export async function loadAndValidate(
     });
   }
 
+  return catalog;
+}
+
+/** Load and validate the catalog + packs. Throws a SigilError on validation errors. */
+export async function loadAndValidate(
+  catalogDir: string,
+  packsFile: string,
+): Promise<{ catalog: Awaited<ReturnType<typeof loadCatalog>>; packsConfig: PacksConfig }> {
+  const catalog = await requireValidCatalog(catalogDir);
   const packsRaw = fs.readFileSync(packsFile, 'utf-8');
   const packsConfig = yaml.load(packsRaw, { schema: yaml.JSON_SCHEMA }) as PacksConfig;
   return { catalog, packsConfig };

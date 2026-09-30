@@ -8,11 +8,12 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { confirm, isCancel, cancel, note } from '@clack/prompts';
-import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { isInteractiveTTY } from '../wizard';
 import { hasUsesClosure, isDirectoryBacked } from '../kinds';
-import { notFoundError, SigilError } from '../errors';
+import { SigilError } from '../errors';
+import { requireArtifact } from './shared/artifact';
+import { requireValidCatalog } from '../cli-helpers';
 
 export interface DeleteOptions {
   catalogDir: string;
@@ -21,17 +22,14 @@ export interface DeleteOptions {
 }
 
 export async function runDelete(id: string, opts: DeleteOptions): Promise<void> {
-  const rawCatalog = await loadCatalog(opts.catalogDir);
+  const rawCatalog = await requireValidCatalog(opts.catalogDir);
   const resolvedCatalog = resolveCatalog(rawCatalog);
 
-  const artifact = rawCatalog.byId.get(id);
-  if (!artifact) {
-    throw notFoundError(
-      'Artifact',
-      id,
-      rawCatalog.artifacts.map(a => a.id),
-    );
-  }
+  const artifact = requireArtifact(
+    rawCatalog.byId,
+    rawCatalog.artifacts.map(a => a.id),
+    id,
+  );
 
   // ── Reverse-dependency scan ─────────────────────────────────────────────────
   // Find skills whose resolved rules or agent IDs include this artifact.

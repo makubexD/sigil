@@ -11,12 +11,12 @@ import fs from 'node:fs';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
 import { confirm, isCancel, cancel } from '@clack/prompts';
-import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
 import { isInteractiveTTY } from '../wizard';
 import { planMove, executeMove, summarizePlan } from '../authoring/move';
 import type { LoadedCatalog } from '../types';
 import { SigilError } from '../errors';
+import { requireValidCatalog } from '../cli-helpers';
 
 export interface MoveOptions {
   catalogDir: string;
@@ -59,7 +59,7 @@ function loadCatalogSync(dir: string): LoadedCatalog {
 }
 
 export async function runMove(oldId: string, newId: string, opts: MoveOptions): Promise<void> {
-  const catalog = await loadCatalog(opts.catalogDir);
+  const catalog = await requireValidCatalog(opts.catalogDir);
 
   let plan;
   try {

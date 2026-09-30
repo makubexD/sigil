@@ -10,7 +10,9 @@ import { getAllTargets } from '../targets';
 import { addPlatforms, removePlatforms, setPlatforms } from '../authoring/platforms';
 import { writeArtifactFrontmatter } from '../authoring/frontmatter';
 import { checkSourceArtifact } from '../authoring/check-source';
-import { notFoundError, SigilError } from '../errors';
+import { SigilError } from '../errors';
+import { requireArtifact } from './shared/artifact';
+import { requireValidCatalog } from '../cli-helpers';
 
 export interface RetargetOptions {
   add?: string | undefined;
@@ -29,17 +31,14 @@ export async function runRetarget(id: string, opts: RetargetOptions): Promise<vo
     throw new SigilError('Use only one of --add, --remove, or --to per invocation.');
   }
 
-  const catalog = await loadCatalog(opts.catalogDir);
+  const catalog = await requireValidCatalog(opts.catalogDir);
   const targets = getAllTargets();
 
-  const artifact = catalog.byId.get(id);
-  if (!artifact) {
-    throw notFoundError(
-      'Artifact',
-      id,
-      catalog.artifacts.map(a => a.id),
-    );
-  }
+  const artifact = requireArtifact(
+    catalog.byId,
+    catalog.artifacts.map(a => a.id),
+    id,
+  );
 
   const kind = artifact.kind;
   const currentPlatforms = artifact.frontmatter.platforms as string[] | undefined;

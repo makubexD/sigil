@@ -9,7 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { confirm, isCancel, cancel, note } from '@clack/prompts';
 import { detectProjectTarget } from '../cli-helpers';
-import { loadManifest, saveManifest, removeEntries, sha256 } from '../manifest';
+import { saveManifest, removeEntries, sha256 } from '../manifest';
+import { requireManifest } from './shared/manifest';
 import { resolveConfigRoot } from '../config-utils';
 import { reverseMerge, serialize } from '../config-merge';
 import { CONFIG_KINDS } from '../select';
@@ -28,12 +29,7 @@ export interface UninstallOptions {
 export async function runUninstall(ids: string[], opts: UninstallOptions): Promise<void> {
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
 
-  let manifest;
-  try {
-    manifest = loadManifest(opts.projectDir);
-  } catch (err) {
-    throw new SigilError((err as Error).message, { cause: err });
-  }
+  const manifest = requireManifest(opts.projectDir);
 
   // Validate all ids exist in the manifest for this target
   const notFound = ids.filter(

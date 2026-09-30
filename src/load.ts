@@ -19,6 +19,9 @@ const ARTIFACT_PATTERNS = [
   '**/*.agent.md',
   '**/*.prompt.md',
   '**/*.workflow.md',
+  '**/*.hook.md',
+  '**/*.settings.md',
+  '**/*.mcp.md',
 ];
 
 /**
@@ -40,7 +43,7 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
   for (const yamlPath of langYamlPaths) {
     try {
       const raw = fs.readFileSync(yamlPath, 'utf-8');
-      const meta = yaml.load(raw) as Omit<LanguageMetadata, 'id'>;
+      const meta = yaml.load(raw, { schema: yaml.JSON_SCHEMA }) as Omit<LanguageMetadata, 'id'>;
       const langId = path.basename(path.dirname(yamlPath));
       languages.set(langId, { id: langId, ...meta });
     } catch (err) {

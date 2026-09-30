@@ -12,6 +12,7 @@ import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { isInteractiveTTY } from '../wizard';
 import { hasUsesClosure, isDirectoryBacked } from '../kinds';
+import { notFoundError, SigilError } from '../errors';
 
 export interface DeleteOptions {
   catalogDir: string;
@@ -25,9 +26,11 @@ export async function runDelete(id: string, opts: DeleteOptions): Promise<void> 
 
   const artifact = rawCatalog.byId.get(id);
   if (!artifact) {
-    const available = rawCatalog.artifacts.map(a => a.id).join(', ');
-    console.error(`✗ Artifact '${id}' not found. Available: ${available || '(none)'}`);
-    process.exit(1);
+    throw notFoundError(
+      'Artifact',
+      id,
+      rawCatalog.artifacts.map(a => a.id),
+    );
   }
 
   // ── Reverse-dependency scan ─────────────────────────────────────────────────
@@ -64,11 +67,9 @@ export async function runDelete(id: string, opts: DeleteOptions): Promise<void> 
   const isTTY = isInteractiveTTY();
 
   if (!opts.yes && !isTTY) {
-    console.error(
-      '✗ stdin/stdout is not an interactive terminal.\n' +
-        `  Re-run with --yes to confirm deletion: sigil delete ${id} --yes`,
-    );
-    process.exit(1);
+    throw new SigilError('stdin/stdout is not an interactive terminal.', {
+      hint: `  Re-run with --yes to confirm deletion: sigil delete ${id} --yes`,
+    });
   }
 
   if (dependents.length > 0) {

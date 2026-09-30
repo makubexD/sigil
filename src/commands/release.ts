@@ -13,6 +13,7 @@ import { confirm, isCancel } from '@clack/prompts';
 import { bumpVersion, promoteChangelog } from '../release';
 import { isInteractiveTTY } from '../wizard';
 import { pkg, PKG_ROOT } from '../cli-helpers';
+import { SigilError } from '../errors';
 
 /** Length of an ISO date string in the format 'YYYY-MM-DD'. */
 const ISO_DATE_LEN = 10;
@@ -36,8 +37,7 @@ export async function runRelease(level: string | undefined, opts: ReleaseOptions
   try {
     nextVersion = bumpVersion(pkg.version, releaseLevel);
   } catch (e: unknown) {
-    console.error(`  ✗  ${(e as Error).message}`);
-    process.exit(1);
+    throw new SigilError((e as Error).message, { cause: e });
   }
 
   console.log(`\nRelease: ${pkg.version} → ${nextVersion}`);
@@ -47,14 +47,13 @@ export async function runRelease(level: string | undefined, opts: ReleaseOptions
     let status: string;
     try {
       status = execSync('git status --porcelain', { encoding: 'utf-8' });
-    } catch {
-      console.error('  ✗  git status failed — is this a git repo?');
-      process.exit(1);
+    } catch (e) {
+      throw new SigilError('git status failed — is this a git repo?', { cause: e });
     }
     if (status.trim()) {
-      console.error('  ✗  Working tree is not clean. Commit or stash changes first.');
-      console.error(status);
-      process.exit(1);
+      throw new SigilError('Working tree is not clean. Commit or stash changes first.', {
+        hint: status,
+      });
     }
 
     let branch: string;
@@ -124,10 +123,11 @@ export async function runRelease(level: string | undefined, opts: ReleaseOptions
         process.stdout.write('✓\n');
       } catch (e: unknown) {
         process.stdout.write('✗\n');
-        console.error((e as { stderr?: Buffer; stdout?: Buffer }).stderr?.toString() ?? String(e));
-        console.error(`\n  ✗  Gate failed at: ${cmd}`);
-        console.error('  Restore: git checkout package.json package-lock.json');
-        process.exit(1);
+        const stderr = (e as { stderr?: Buffer; stdout?: Buffer }).stderr?.toString() ?? String(e);
+        throw new SigilError(`Gate failed at: ${cmd}`, {
+          hint: `${stderr}\n  Restore: git checkout package.json package-lock.json`,
+          cause: e,
+        });
       }
     }
   }
@@ -164,9 +164,10 @@ export async function runRelease(level: string | undefined, opts: ReleaseOptions
     execFileSync('git', ['tag', `v${nextVersion}`], { cwd: PKG_ROOT, stdio: 'pipe' });
     console.log(`  ✓ git commit + tag v${nextVersion}`);
   } catch (e: unknown) {
-    console.error('  ✗  git commit/tag failed:');
-    console.error((e as { stderr?: Buffer }).stderr?.toString() ?? String(e));
-    process.exit(1);
+    throw new SigilError('git commit/tag failed:', {
+      hint: (e as { stderr?: Buffer }).stderr?.toString() ?? String(e),
+      cause: e,
+    });
   }
 
   // ── 8. Summary ─────────────────────────────────────────────────────────────

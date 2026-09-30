@@ -18,6 +18,7 @@ import { writeArtifactFrontmatter } from '../authoring/frontmatter';
 import { addPlatforms, removePlatforms, setPlatforms } from '../authoring/platforms';
 import { buildFieldPatch, getEditableFields } from '../authoring/update';
 import { resolveDefault } from '../cli-helpers';
+import { notFoundError, SigilError } from '../errors';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -69,9 +70,11 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
 
   const artifact = catalog.byId.get(id);
   if (!artifact) {
-    const available = catalog.artifacts.map(a => a.id).join(', ');
-    console.error(`✗ Artifact '${id}' not found. Available: ${available || '(none)'}`);
-    process.exit(1);
+    throw notFoundError(
+      'Artifact',
+      id,
+      catalog.artifacts.map(a => a.id),
+    );
   }
 
   // ── Build UpdateOps from CLI flags ─────────────────────────────────────────
@@ -172,8 +175,8 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
   }
 
   if (errors.length > 0) {
-    for (const e of errors) console.error(`✗ ${e}`);
-    process.exit(1);
+    const rest = errors.slice(1).join('\n');
+    throw new SigilError(errors[0]!, rest ? { hint: rest } : {});
   }
 
   const effectivePatch = { ...patch, ...platformPatch };
@@ -200,8 +203,7 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
     try {
       writeArtifactFrontmatter(artifact.filePath, effectivePatch);
     } catch (err) {
-      console.error(`✗ Write failed: ${(err as Error).message}`);
-      process.exit(1);
+      throw new SigilError(`Write failed: ${(err as Error).message}`, { cause: err });
     }
 
     // Post-write validation — reload from disk so Zod sees the new content.
@@ -222,9 +224,9 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
 
       if (blocking.length > 0) {
         fs.writeFileSync(artifact.filePath, originalContent, 'utf-8');
-        console.error('✗ Patch rolled back — would break validation:');
-        for (const v of blocking) console.error(`  ${v.problem}`);
-        process.exit(1);
+        throw new SigilError('Patch rolled back — would break validation:', {
+          hint: blocking.map(v => `  ${v.problem}`).join('\n'),
+        });
       }
 
       for (const w of warnings) console.warn(`  ⚠  ${w.problem}`);

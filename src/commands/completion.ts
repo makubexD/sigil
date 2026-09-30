@@ -5,6 +5,7 @@
  *
  * @module
  */
+import { SigilError } from '../errors';
 
 /** No extra options — shell is the positional argument. */
 export type CompletionOptions = Record<string, never>;
@@ -24,8 +25,7 @@ export function runCompletion(shell = 'bash'): void {
       console.log(buildFishCompletion(binPath));
       break;
     default:
-      console.error(`✗ Unknown shell '${shell}'. Valid options: bash, zsh, fish`);
-      process.exit(1);
+      throw new SigilError(`Unknown shell '${shell}'. Valid options: bash, zsh, fish`);
   }
 }
 

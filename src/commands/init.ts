@@ -8,6 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { getAllTargets, getTarget } from '../targets';
+import { SigilError } from '../errors';
 
 export interface InitOptions {
   target: string;
@@ -23,8 +24,7 @@ export function runInit(opts: InitOptions): void {
     const names = getAllTargets()
       .map(t => t.name)
       .join(', ');
-    console.error(`✗ Unknown target '${opts.target}'. Valid options: ${names}`);
-    process.exit(1);
+    throw new SigilError(`Unknown target '${opts.target}'. Valid options: ${names}`);
   }
   for (const dir of target.initDirs ?? []) {
     const full = path.join(opts.projectDir, dir);

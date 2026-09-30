@@ -14,6 +14,7 @@ import { artifactTargetsPlatform } from '../select';
 import { checkOutputContract } from '../targets/output-contract';
 import { buildRegistry } from '../registry';
 import { loadAndValidate, writeFilesSync, pkg } from '../cli-helpers';
+import { SigilError } from '../errors';
 
 export interface BuildOptions {
   target: string;
@@ -43,14 +44,11 @@ export async function runBuild(opts: BuildOptions): Promise<void> {
     // Output-conformance check: verify emitted file shapes match the target's contracts.
     const violations = checkOutputContract(files, target.outputContracts ?? []);
     if (violations.length > 0) {
-      for (const v of violations) {
-        console.error(`  ✗  [${v.label}] ${v.file}`);
-        console.error(`       ${v.problem}`);
-      }
-      console.error(
-        `\n✗ ${violations.length} output-conformance error(s) in target '${target.name}'. Fix the catalog source or adapter before shipping.`,
+      const lines = violations.map(v => `  ✗  [${v.label}] ${v.file}\n       ${v.problem}`);
+      throw new SigilError(
+        `${violations.length} output-conformance error(s) in target '${target.name}'. Fix the catalog source or adapter before shipping.`,
+        { hint: lines.join('\n') },
       );
-      process.exit(1);
     }
 
     writeFilesSync(files, path.join(opts.outDir, target.name));

@@ -10,6 +10,7 @@ import { getAllTargets } from '../targets';
 import { isInteractiveTTY, runEditWizard } from '../wizard';
 import { writeArtifactFrontmatter } from '../authoring/frontmatter';
 import { checkSourceArtifact } from '../authoring/check-source';
+import { notFoundError, SigilError } from '../errors';
 
 export interface EditOptions {
   title?: string | undefined;
@@ -25,9 +26,11 @@ export async function runEdit(id: string, opts: EditOptions): Promise<void> {
 
   const artifact = catalog.byId.get(id);
   if (!artifact) {
-    const available = catalog.artifacts.map(a => a.id).join(', ');
-    console.error(`✗ Artifact '${id}' not found. Available: ${available || '(none)'}`);
-    process.exit(1);
+    throw notFoundError(
+      'Artifact',
+      id,
+      catalog.artifacts.map(a => a.id),
+    );
   }
 
   let newTitle: string;
@@ -58,8 +61,7 @@ export async function runEdit(id: string, opts: EditOptions): Promise<void> {
         : [];
 
     if (!newTitle) {
-      console.error('✗ --title is required in non-interactive mode when no title is set.');
-      process.exit(1);
+      throw new SigilError('--title is required in non-interactive mode when no title is set.');
     }
   }
 

@@ -20,6 +20,7 @@ import { resolveConfigRoot } from '../config-utils';
 import { isConfigKind } from '../kinds';
 import type { ManifestEntry } from '../manifest/types';
 import type { ConfigMergeOp, ConfigRoot, MergeStrategy } from '../types';
+import { SigilError } from '../errors';
 
 export interface UpdateOptions {
   projectDir: string;
@@ -113,16 +114,14 @@ export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<voi
   const target = getTarget(targetName);
 
   if (!target.scaffold) {
-    console.error(`✗ Target '${targetName}' does not support the update command.`);
-    process.exit(1);
+    throw new SigilError(`Target '${targetName}' does not support the update command.`);
   }
 
   let manifest;
   try {
     manifest = loadManifest(opts.projectDir);
   } catch (err) {
-    console.error(`✗ ${(err as Error).message}`);
-    process.exit(1);
+    throw new SigilError((err as Error).message, { cause: err });
   }
 
   // Filter entries by target (and by explicit ids if provided)

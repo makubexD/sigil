@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { getAllTargets } from './targets';
 import { resolveDefault, pkg } from './cli-helpers';
+import { handleFatal } from './cli-error';
 import { runBuild } from './commands/build';
 import { runValidate } from './commands/validate';
 import { runIndex } from './commands/index';
@@ -307,4 +308,4 @@ program
   .option('--yes', 'Non-interactive; skip the confirmation prompt (required when not a TTY)')
   .action(runRelease);
 
-program.parse(process.argv);
+program.parseAsync(process.argv).catch(handleFatal);

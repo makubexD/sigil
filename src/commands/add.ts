@@ -13,6 +13,7 @@ import { resolveCatalog } from '../resolve';
 import { getTarget } from '../targets';
 import { resolveSelection, CONFIG_KINDS } from '../select';
 import { hasUsesClosure } from '../kinds';
+import { SigilError } from '../errors';
 import {
   isInteractiveTTY,
   runWizard,
@@ -78,18 +79,20 @@ export async function runAdd(selectors: string[], opts: AddOpts): Promise<void> 
 
   if (needsWizard) {
     if (!isTTY) {
-      console.error(
-        '✗ No selectors provided and stdin/stdout is not an interactive terminal.\n' +
-          '  Provide at least one selector (e.g. `add all` or `add skill:csharp/cs-generate-tests`)\n' +
-          '  or use --yes to confirm non-interactive mode.\n\n' +
-          '  Available selectors:\n' +
-          '    all                         install the full catalog\n' +
-          '    pack:<name>                 install a named pack\n' +
-          '    kind:<kind>                 install all of a kind (skill/agent/rule/prompt)\n' +
-          '    <kind>:<id>                 install a specific artifact\n\n' +
-          '  Run `sigil list` to browse available artifacts.',
+      throw new SigilError(
+        'No selectors provided and stdin/stdout is not an interactive terminal.',
+        {
+          hint:
+            '  Provide at least one selector (e.g. `add all` or `add skill:csharp/cs-generate-tests`)\n' +
+            '  or use --yes to confirm non-interactive mode.\n\n' +
+            '  Available selectors:\n' +
+            '    all                         install the full catalog\n' +
+            '    pack:<name>                 install a named pack\n' +
+            '    kind:<kind>                 install all of a kind (skill/agent/rule/prompt)\n' +
+            '    <kind>:<id>                 install a specific artifact\n\n' +
+            '  Run `sigil list` to browse available artifacts.',
+        },
       );
-      process.exit(1);
     }
 
     const detectedTarget = detectProjectTarget(opts.projectDir, { verbose: false });
@@ -114,8 +117,7 @@ export async function runAdd(selectors: string[], opts: AddOpts): Promise<void> 
   const target = getTarget(targetName);
 
   if (!target.scaffold) {
-    console.error(`✗ Target '${targetName}' does not support the add command.`);
-    process.exit(1);
+    throw new SigilError(`Target '${targetName}' does not support the add command.`);
   }
 
   // ── Selection + filtering ──────────────────────────────────────────────────
@@ -145,8 +147,7 @@ export async function runAdd(selectors: string[], opts: AddOpts): Promise<void> 
     ids = result.ids;
     skipped = result.skipped;
   } catch (err) {
-    console.error(`✗ ${(err as Error).message}`);
-    process.exit(1);
+    throw new SigilError((err as Error).message, { cause: err });
   }
 
   printSkippedAdvice(skipped, target);
@@ -218,22 +219,18 @@ export async function runAdd(selectors: string[], opts: AddOpts): Promise<void> 
       const files = await target.scaffold!(id, resolved, scaffoldOpts);
       Object.assign(allFiles, files);
     } catch (err) {
-      console.error(`✗ Failed to scaffold '${id}': ${(err as Error).message}`);
-      process.exit(1);
+      throw new SigilError(`Failed to scaffold '${id}': ${(err as Error).message}`, { cause: err });
     }
   }
 
   // ── Output-conformance check ───────────────────────────────────────────────
   const violations = checkOutputContract(allFiles, target.outputContracts ?? []);
   if (violations.length > 0) {
-    for (const v of violations) {
-      console.error(`  ✗  [${v.label}] ${v.file}`);
-      console.error(`       ${v.problem}`);
-    }
-    console.error(
-      `\n✗ ${violations.length} output-conformance error(s). Install aborted — no files were written.`,
+    const lines = violations.map(v => `  ✗  [${v.label}] ${v.file}\n       ${v.problem}`);
+    throw new SigilError(
+      `${violations.length} output-conformance error(s). Install aborted — no files were written.`,
+      { hint: lines.join('\n') },
     );
-    process.exit(1);
   }
 
   // ── Conflict detection ─────────────────────────────────────────────────────

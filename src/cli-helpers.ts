@@ -15,6 +15,7 @@ import { validateCatalog } from './validate';
 import { getAllTargets } from './targets';
 import type { FileMap, PacksConfig } from './types';
 import { CLAUDE_MCP_SERVERS_KEY } from './targets/claude-code/config';
+import { SigilError } from './errors';
 
 // ─── Package root & version ───────────────────────────────────────────────────
 
@@ -55,11 +56,10 @@ export async function loadAndValidate(
   const result = validateCatalog(catalog);
 
   if (!result.valid) {
-    for (const e of result.errors) {
-      console.error(`  ✗  [${e.artifactId}] ${e.error}`);
-    }
-    console.error('\nCatalog has validation errors. Fix them before building.');
-    process.exit(1);
+    const lines = result.errors.map(e => `  ✗  [${e.artifactId}] ${e.error}`);
+    throw new SigilError('Catalog has validation errors. Fix them before building.', {
+      hint: lines.join('\n'),
+    });
   }
 
   const packsRaw = fs.readFileSync(packsFile, 'utf-8');

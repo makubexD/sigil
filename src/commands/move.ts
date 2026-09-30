@@ -16,6 +16,7 @@ import { getAllTargets } from '../targets';
 import { isInteractiveTTY } from '../wizard';
 import { planMove, executeMove, summarizePlan } from '../authoring/move';
 import type { LoadedCatalog } from '../types';
+import { SigilError } from '../errors';
 
 export interface MoveOptions {
   catalogDir: string;
@@ -64,8 +65,7 @@ export async function runMove(oldId: string, newId: string, opts: MoveOptions): 
   try {
     plan = planMove(oldId, newId, catalog, opts.catalogDir);
   } catch (err) {
-    console.error(`✗ ${(err as Error).message}`);
-    process.exit(1);
+    throw new SigilError((err as Error).message, { cause: err });
   }
 
   const summary = summarizePlan(plan);
@@ -89,8 +89,7 @@ export async function runMove(oldId: string, newId: string, opts: MoveOptions): 
   // Confirm
   const isTTY = isInteractiveTTY();
   if (!opts.yes && !isTTY) {
-    console.error(`✗ stdin/stdout is not interactive. Re-run with --yes to confirm.`);
-    process.exit(1);
+    throw new SigilError('stdin/stdout is not interactive. Re-run with --yes to confirm.');
   }
   if (!opts.yes) {
     const ok = await confirm({
@@ -110,9 +109,9 @@ export async function runMove(oldId: string, newId: string, opts: MoveOptions): 
   const result = executeMove(plan, catalog, getAllTargets(), loadCatalogSync, opts.catalogDir);
 
   if (!result.ok) {
-    console.error('✗ Move failed (rolled back):');
-    for (const e of result.errors) console.error(`  ${e}`);
-    process.exit(1);
+    throw new SigilError('Move failed (rolled back):', {
+      hint: result.errors.map(e => `  ${e}`).join('\n'),
+    });
   }
 
   console.log(`\n✓ Moved '${oldId}' → '${newId}'`);

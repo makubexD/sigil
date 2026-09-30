@@ -9,6 +9,7 @@ import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { getAllTargets } from '../targets';
 import { getArtifactDetail, formatDetailText } from '../query';
+import { notFoundError } from '../errors';
 
 export interface GetOptions {
   catalogDir: string;
@@ -22,9 +23,11 @@ export async function runGet(id: string, opts: GetOptions): Promise<void> {
 
   const artifact = resolved.byId.get(id);
   if (!artifact) {
-    const available = rawCatalog.artifacts.map(a => a.id).join(', ');
-    console.error(`✗ Artifact '${id}' not found. Available: ${available || '(none)'}`);
-    process.exit(1);
+    throw notFoundError(
+      'Artifact',
+      id,
+      rawCatalog.artifacts.map(a => a.id),
+    );
   }
 
   const detail = getArtifactDetail(artifact, rawCatalog, targets);

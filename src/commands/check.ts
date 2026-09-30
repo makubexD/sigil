@@ -13,6 +13,7 @@ import { getAllTargets } from '../targets';
 import { checkSourceArtifact } from '../authoring/check-source';
 import { scanContent, formatScanFindings } from '../trust/scan';
 import { normPath } from '../paths';
+import { SigilError } from '../errors';
 
 export interface CheckOptions {
   catalogDir: string;
@@ -28,11 +29,9 @@ export async function runCheck(files: string[], opts: CheckOptions): Promise<voi
 
   // Resolve which files to check
   if (files.length === 0) {
-    console.error('✗ No files specified. Pass file path(s) as arguments.');
-    console.error(
-      '  Example: sigil check catalog/languages/csharp/skills/cs-generate-tests/SKILL.md',
-    );
-    process.exit(1);
+    throw new SigilError('No files specified. Pass file path(s) as arguments.', {
+      hint: '  Example: sigil check catalog/languages/csharp/skills/cs-generate-tests/SKILL.md',
+    });
   }
 
   // Expand directories to all artifact files within them
@@ -103,5 +102,7 @@ export async function runCheck(files: string[], opts: CheckOptions): Promise<voi
   console.log(
     `\n${totalViolations === 0 ? '✓' : '✗'} ${checkedCount} artifact(s) checked, ${totalViolations} violation(s) found.`,
   );
-  if (totalViolations > 0) process.exit(1);
+  if (totalViolations > 0) {
+    throw new SigilError(`${totalViolations} violation(s) found — see above.`);
+  }
 }

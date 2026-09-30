@@ -15,6 +15,7 @@ import { reverseMerge, serialize } from '../config-merge';
 import { CONFIG_KINDS } from '../select';
 import { isInteractiveTTY } from '../wizard';
 import type { ConfigRoot, ConfigMergeOp, MergeStrategy } from '../types';
+import { SigilError } from '../errors';
 
 export interface UninstallOptions {
   projectDir: string;
@@ -31,8 +32,7 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
   try {
     manifest = loadManifest(opts.projectDir);
   } catch (err) {
-    console.error(`✗ ${(err as Error).message}`);
-    process.exit(1);
+    throw new SigilError((err as Error).message, { cause: err });
   }
 
   // Validate all ids exist in the manifest for this target
@@ -40,9 +40,9 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
     id => !manifest.entries.some(e => e.id === id && e.target === targetName),
   );
   if (notFound.length > 0) {
-    console.error(`✗ Not installed (target '${targetName}'): ${notFound.join(', ')}`);
-    console.error(`  Run \`sigil status\` to see installed artifacts.`);
-    process.exit(1);
+    throw new SigilError(`Not installed (target '${targetName}'): ${notFound.join(', ')}`, {
+      hint: '  Run `sigil status` to see installed artifacts.',
+    });
   }
 
   const { pathsToDelete, removedEntries } = removeEntries(manifest, ids, targetName);
@@ -95,8 +95,7 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
   // Confirm
   const isTTY = isInteractiveTTY();
   if (!opts.yes && !isTTY) {
-    console.error('✗ stdin/stdout is not interactive. Re-run with --yes to confirm.');
-    process.exit(1);
+    throw new SigilError('stdin/stdout is not interactive. Re-run with --yes to confirm.');
   }
   if (!opts.yes) {
     const ok = await confirm({

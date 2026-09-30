@@ -10,6 +10,7 @@ import { getAllTargets } from '../targets';
 import { addPlatforms, removePlatforms, setPlatforms } from '../authoring/platforms';
 import { writeArtifactFrontmatter } from '../authoring/frontmatter';
 import { checkSourceArtifact } from '../authoring/check-source';
+import { notFoundError, SigilError } from '../errors';
 
 export interface RetargetOptions {
   add?: string | undefined;
@@ -22,12 +23,10 @@ export interface RetargetOptions {
 
 export async function runRetarget(id: string, opts: RetargetOptions): Promise<void> {
   if (!opts.add && !opts.remove && !opts.to) {
-    console.error('✗ Specify at least one of: --add, --remove, --to');
-    process.exit(1);
+    throw new SigilError('Specify at least one of: --add, --remove, --to');
   }
   if ((opts.add ? 1 : 0) + (opts.remove ? 1 : 0) + (opts.to ? 1 : 0) > 1) {
-    console.error('✗ Use only one of --add, --remove, or --to per invocation.');
-    process.exit(1);
+    throw new SigilError('Use only one of --add, --remove, or --to per invocation.');
   }
 
   const catalog = await loadCatalog(opts.catalogDir);
@@ -35,9 +34,11 @@ export async function runRetarget(id: string, opts: RetargetOptions): Promise<vo
 
   const artifact = catalog.byId.get(id);
   if (!artifact) {
-    const available = catalog.artifacts.map(a => a.id).join(', ');
-    console.error(`✗ Artifact '${id}' not found. Available: ${available || '(none)'}`);
-    process.exit(1);
+    throw notFoundError(
+      'Artifact',
+      id,
+      catalog.artifacts.map(a => a.id),
+    );
   }
 
   const kind = artifact.kind;
@@ -77,8 +78,8 @@ export async function runRetarget(id: string, opts: RetargetOptions): Promise<vo
 
   // Fail on errors
   if (mutResult.errors.length > 0) {
-    for (const e of mutResult.errors) console.error(`  ✗  ${e}`);
-    process.exit(1);
+    const rest = mutResult.errors.slice(1).join('\n');
+    throw new SigilError(mutResult.errors[0]!, rest ? { hint: rest } : {});
   }
 
   if (mutResult.noOp) {

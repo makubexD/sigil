@@ -19,6 +19,7 @@ import {
 } from '../wizard';
 import { checkSourceArtifact } from '../authoring/check-source';
 import { normPath } from '../paths';
+import { SigilError } from '../errors';
 import { headerFor } from '../authoring/header';
 import { setPlatforms } from '../authoring/platforms';
 
@@ -48,13 +49,12 @@ export async function runNew(kind: string | undefined, opts: NewOptions): Promis
 
   if (needsWizard) {
     if (!isTTY) {
-      console.error(
-        '✗ No kind provided and stdin/stdout is not an interactive terminal.\n' +
+      throw new SigilError('No kind provided and stdin/stdout is not an interactive terminal.', {
+        hint:
           `  Provide a kind: sigil new <kind> --name <name> --yes\n` +
           `  Valid kinds: ${validKinds.join(', ')}\n\n` +
           '  Or run in an interactive terminal to use the guided wizard.',
-      );
-      process.exit(1);
+      });
     }
     // Load catalog for the wizard (language list + reference data)
     const rawCatalog = await loadCatalog(opts.catalogDir);
@@ -71,16 +71,16 @@ export async function runNew(kind: string | undefined, opts: NewOptions): Promis
   } else {
     // Flags path — validate inputs
     if (!effectiveKind) {
-      console.error(
-        '✗ No kind specified and --yes skips the wizard.\n' +
+      throw new SigilError('No kind specified and --yes skips the wizard.', {
+        hint:
           `  Provide a kind: sigil new <kind> --name <name> --yes\n` +
           `  Valid kinds: ${validKinds.join(', ')}`,
-      );
-      process.exit(1);
+      });
     }
     if (!isArtifactKind(effectiveKind)) {
-      console.error(`✗ Unknown kind '${effectiveKind}'. Valid kinds: ${validKinds.join(', ')}`);
-      process.exit(1);
+      throw new SigilError(
+        `Unknown kind '${effectiveKind}'. Valid kinds: ${validKinds.join(', ')}`,
+      );
     }
     // Parse --platforms flag
     if (opts.platforms) {
@@ -95,8 +95,9 @@ export async function runNew(kind: string | undefined, opts: NewOptions): Promis
         targets,
       );
       if (errors.length > 0) {
-        for (const e of errors) console.error(`  ✗  ${e}`);
-        process.exit(1);
+        throw new SigilError('Invalid --platforms.', {
+          hint: errors.map(e => `  ✗  ${e}`).join('\n'),
+        });
       }
       restrictedPlatforms = normalized;
     }
@@ -140,9 +141,9 @@ export async function runNew(kind: string | undefined, opts: NewOptions): Promis
 
   // Check for existing file
   if (fs.existsSync(outPath)) {
-    console.error(`✗ File already exists: ${outPath}`);
-    console.error('  Use a different --name, or delete the existing file first.');
-    process.exit(1);
+    throw new SigilError(`File already exists: ${outPath}`, {
+      hint: '  Use a different --name, or delete the existing file first.',
+    });
   }
 
   fs.writeFileSync(outPath, header, 'utf-8');

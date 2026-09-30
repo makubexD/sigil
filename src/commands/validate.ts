@@ -8,6 +8,7 @@
 import { loadCatalog } from '../load';
 import { validateCatalog } from '../validate';
 import { getAllTargets } from '../targets';
+import { SigilError } from '../errors';
 
 export interface ValidateOptions {
   catalogDir: string;
@@ -20,15 +21,12 @@ export async function runValidate(opts: ValidateOptions): Promise<void> {
   const result = validateCatalog(catalog, getAllTargets());
 
   for (const w of result.warnings) console.warn(`  ⚠  ${w}`);
-  for (const e of result.errors) {
-    console.error(`  ✗  [${e.artifactId}] ${e.error}`);
-    console.error(`     ${e.filePath}`);
-  }
 
   if (result.valid) {
     console.log(`\n✓ All ${catalog.artifacts.length} artifact(s) are valid.`);
-  } else {
-    console.error(`\n✗ ${result.errors.length} error(s) found.`);
-    process.exit(1);
+    return;
   }
+
+  const lines = result.errors.map(e => `  ✗  [${e.artifactId}] ${e.error}\n     ${e.filePath}`);
+  throw new SigilError(`${result.errors.length} error(s) found.`, { hint: lines.join('\n') });
 }

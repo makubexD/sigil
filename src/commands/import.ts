@@ -14,6 +14,7 @@ import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
 import { checkSourceArtifact } from '../authoring/check-source';
 import { normPath, basenameOfId } from '../paths';
+import { SigilError } from '../errors';
 import {
   discoverFiles,
   buildImportPlan,
@@ -67,8 +68,7 @@ export interface ImportOptions {
 export async function runImport(sourceDir: string, opts: ImportOptions): Promise<void> {
   const absSourceDir = path.resolve(sourceDir);
   if (!fs.existsSync(absSourceDir)) {
-    console.error(`✗ Source directory not found: ${absSourceDir}`);
-    process.exit(1);
+    throw new SigilError(`Source directory not found: ${absSourceDir}`);
   }
 
   const lang = opts.language;
@@ -257,8 +257,7 @@ export async function runImport(sourceDir: string, opts: ImportOptions): Promise
   );
 
   if (!ok) {
-    console.error('\nFix the errors above and re-run. Use sigil check <file> for details.');
-    process.exit(1);
+    throw new SigilError('Fix the errors above and re-run. Use sigil check <file> for details.');
   }
 
   console.log('\nNext steps:');

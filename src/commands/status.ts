@@ -8,6 +8,7 @@
 import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets';
 import { loadManifest, computeStatus } from '../manifest';
+import { SigilError } from '../errors';
 
 export interface StatusOptions {
   projectDir: string;
@@ -25,8 +26,7 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
   try {
     manifest = loadManifest(opts.projectDir);
   } catch (err) {
-    console.error(`✗ ${(err as Error).message}`);
-    process.exit(1);
+    throw new SigilError((err as Error).message, { cause: err });
   }
 
   if (manifest.entries.length === 0) {

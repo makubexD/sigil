@@ -24,12 +24,7 @@ import { checkOutputContract } from '../targets/output-contract';
 import { computeInstallStates } from '../install-state';
 import { applyMerge, serialize } from '../config-merge';
 import { resolveConfigRoot } from '../config-utils';
-import {
-  loadManifest,
-  saveManifest,
-  upsertEntries,
-  upsertConfigEntry,
-} from '../manifest';
+import { loadManifest, saveManifest, upsertEntries, upsertConfigEntry } from '../manifest';
 import {
   loadAndValidate,
   writeFilesSync,
@@ -437,7 +432,9 @@ export async function runAdd(selectors: string[], opts: AddOpts): Promise<void> 
       (configWrittenCount > 0 ? ` (${configWrittenCount} JSON merge(s))` : '') +
       (upToDateIds.length > 0 ? `, ${upToDateIds.length} already up to date (skipped)` : '') +
       (skippedConflict > 0 ? `, ${skippedConflict} skipped (conflicts)` : '') +
-      (skipped.length > 0 ? `, ${skipped.length} artifact(s) not supported by '${targetName}'` : ''),
+      (skipped.length > 0
+        ? `, ${skipped.length} artifact(s) not supported by '${targetName}'`
+        : ''),
   );
 
   if (written > 0) {

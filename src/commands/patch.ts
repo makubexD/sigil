@@ -10,6 +10,7 @@
  * @module
  */
 
+import fs from 'node:fs';
 import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
 import { checkSourceArtifact } from '../authoring/check-source';
@@ -195,7 +196,7 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
 
   // ── Transactional apply: write → validate → rollback on error ─────────────
   if (Object.keys(effectivePatch).length > 0) {
-    const originalContent = require('fs').readFileSync(artifact.filePath, 'utf-8') as string;
+    const originalContent = fs.readFileSync(artifact.filePath, 'utf-8') as string;
     try {
       writeArtifactFrontmatter(artifact.filePath, effectivePatch);
     } catch (err) {
@@ -220,7 +221,7 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
       );
 
       if (blocking.length > 0) {
-        require('fs').writeFileSync(artifact.filePath, originalContent, 'utf-8');
+        fs.writeFileSync(artifact.filePath, originalContent, 'utf-8');
         console.error('✗ Patch rolled back — would break validation:');
         for (const v of blocking) console.error(`  ${v.problem}`);
         process.exit(1);

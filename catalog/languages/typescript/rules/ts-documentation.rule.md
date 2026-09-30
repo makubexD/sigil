@@ -7,8 +7,6 @@ language: typescript
 appliesTo:
   - "**/*.ts"
   - "**/*.tsx"
-severity: recommended
-extends: []
 tags:
   - typescript
   - documentation

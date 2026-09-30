@@ -7,13 +7,10 @@ language: angular
 appliesTo:
   - "**/*.html"
   - "**/*.component.ts"
-severity: recommended
-extends: []
 tags:
   - angular
   - templates
 ---
-
 
 ## Control Flow
 > **Discovery rule:** detect which control flow the project uses. **Built-in `@if`/`@for`/`@switch`**

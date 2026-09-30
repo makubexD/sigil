@@ -8,8 +8,6 @@ appliesTo:
   - "**/*Tests.cs"
   - "**/*Test.cs"
   - "**/tests/**/*.cs"
-severity: recommended
-extends: []
 tags:
   - csharp
   - testing

@@ -7,7 +7,6 @@ language: angular
 appliesTo:
   - "**/*.ts"
   - "**/*.html"
-severity: recommended
 extends:
   - shared/clean-code
 tags:
@@ -15,7 +14,6 @@ tags:
   - code
   - quality
 ---
-
 
 ## SEARCH FIRST Principle
 Before creating any class, component, service, directive, pipe, or module, search the codebase for similar patterns. If 80%+ overlap with the same concern exists, extend the existing code — do not create a new one. If less than 80% overlap or a genuinely different concern, create new. If uncertain whether overlap is sufficient, ask before proceeding.

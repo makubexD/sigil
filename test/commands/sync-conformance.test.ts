@@ -452,6 +452,17 @@ describe('conformance rule: redundant-default', () => {
     const patchedKeys = edits.map(e => Object.keys(e!.frontmatterPatch!)[0]).sort();
     assert.deepEqual(patchedKeys, ['extends', 'severity']);
   });
+
+  it('does not flag appliesTo even when it equals the schema default ["**/*"]', () => {
+    // Regression guard: appliesTo's presence vs. absence is behaviorally meaningful to
+    // CLAUDE_SCAFFOLD_RULE_SPEC (an authored ["**/*"] still emits paths:, an omitted appliesTo
+    // emits no frontmatter at all) even though both resolve to the same schema default VALUE.
+    // The first version of this rule didn't know that and stripped it from 5 real catalog files
+    // — caught by test/targets/claude-code.test.ts's scaffold test, not by this rule's own tests.
+    const catalog = makeCatalog([ruleArtifact({ appliesTo: ['**/*'] })]);
+    const findings = runConformance(catalog, [], { ruleId: 'redundant-default' });
+    assert.equal(findings.length, 0);
+  });
 });
 
 describe('conformance scoping — --kind/--language/--provider/--rule', () => {

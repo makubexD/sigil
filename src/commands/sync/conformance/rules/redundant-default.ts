@@ -12,11 +12,29 @@
  *
  * The fix is a pure deletion (`frontmatterPatch: { [key]: undefined }`), so this is `mechanical`.
  *
+ * NOT every schema default is inert, though — `RuleSchema.appliesTo` defaults to `["**\/*"]`, but
+ * `CLAUDE_SCAFFOLD_RULE_SPEC` (claude-code/spec/rule.ts) reads the RAW, un-defaulted frontmatter
+ * (load.ts never runs artifacts through zod; validate.ts checks against the schema but never
+ * writes defaults back onto `artifact.frontmatter`) and gates its `paths:` block on `appliesTo`
+ * being present at all: an authored `appliesTo: ["**\/*"]` still emits `paths: ["**\/*"]`, while an
+ * omitted `appliesTo` emits no frontmatter block and the rule loads unconditionally every
+ * session — a real behavioral difference the schema default's *value* equality hides. This first
+ * shipped version of the rule treated the two as interchangeable and stripped `appliesTo` from 5
+ * files, which a scaffold test caught immediately (see EXCLUDED_FIELDS below).
+ *
  * @module
  */
 import { z } from 'zod';
 import { getSchema } from '../../../../schema/index';
 import type { ConformanceRule, ConformanceFinding, ArtifactEdit } from '../types';
+
+/**
+ * Fields where "authored value equals the schema default" is NOT behaviorally inert, because at
+ * least one adapter distinguishes "authored, happens to equal the default" from "never authored"
+ * — see this module's header for `appliesTo`'s case. Extend this set only when a field has the
+ * same presence-vs-absence-matters shape; do not use it to silence a genuinely redundant field.
+ */
+const EXCLUDED_FIELDS: ReadonlySet<string> = new Set(['appliesTo']);
 
 /** Deep-equality good enough for frontmatter values: primitives, arrays, and plain objects. */
 function deepEqual(a: unknown, b: unknown): boolean {
@@ -49,7 +67,7 @@ function findingsForArtifact(
 ): ConformanceFinding[] {
   const findings: ConformanceFinding[] = [];
   for (const [key, value] of Object.entries(artifact.frontmatter)) {
-    if (value === undefined) continue;
+    if (value === undefined || EXCLUDED_FIELDS.has(key)) continue;
     const def = fieldDefault(shape, key);
     if (def === undefined || !deepEqual(value, def)) continue;
     findings.push({

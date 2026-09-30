@@ -12,8 +12,6 @@ appliesTo:
 appliesToRationale: >-
   Git conventions govern the commit/PR workflow, not any specific file being edited,
   so a narrower glob would never actually gate residency.
-severity: recommended
-extends: []
 tags:
   - git
   - shared

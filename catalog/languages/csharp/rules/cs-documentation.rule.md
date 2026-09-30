@@ -6,8 +6,6 @@ description: C# documentation standards — XML doc comments, what to document, 
 language: csharp
 appliesTo:
   - "**/*.cs"
-severity: recommended
-extends: []
 tags:
   - csharp
   - documentation

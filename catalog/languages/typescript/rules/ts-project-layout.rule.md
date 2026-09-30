@@ -9,8 +9,6 @@ appliesTo:
   - package.json
   - eslint.config.*
   - "*.code-workspace"
-severity: recommended
-extends: []
 tags:
   - typescript
   - project

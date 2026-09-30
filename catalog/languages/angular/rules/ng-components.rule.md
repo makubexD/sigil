@@ -7,13 +7,10 @@ language: angular
 appliesTo:
   - "**/*.component.ts"
   - "**/*.directive.ts"
-severity: recommended
-extends: []
 tags:
   - angular
   - components
 ---
-
 
 ## Change Detection: OnPush by Default
 Set `changeDetection: ChangeDetectionStrategy.OnPush` on every component. OnPush re-renders only

@@ -8,7 +8,6 @@ appliesTo:
   - "**/*.ts"
   - "**/*.tsx"
 severity: required
-extends: []
 tags:
   - typescript
   - security

@@ -6,13 +6,10 @@ description: RxJS conventions — subscription teardown, flattening operators, e
 language: angular
 appliesTo:
   - "**/*.ts"
-severity: recommended
-extends: []
 tags:
   - angular
   - rxjs
 ---
-
 
 > **Discovery rule:** this rule applies where the project uses RxJS — `Observable`, `pipe(`, the
 > `async` pipe, or `Subject`. In code that has moved to signals for local state, prefer `ng-signals`

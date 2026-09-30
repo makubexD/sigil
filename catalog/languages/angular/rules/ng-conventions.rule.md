@@ -6,14 +6,12 @@ description: Angular/TypeScript conventions — typing, naming, file structure, 
 language: angular
 appliesTo:
   - "**/*.ts"
-severity: recommended
 extends:
   - shared/clean-code
 tags:
   - angular
   - conventions
 ---
-
 
 ## Types, Not `any`
 Annotate every public method signature and return type. Avoid `any` — it disables the

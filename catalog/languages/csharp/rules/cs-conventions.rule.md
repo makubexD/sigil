@@ -7,7 +7,6 @@ language: csharp
 appliesTo:
   - "**/*.cs"
   - "**/*.csproj"
-severity: recommended
 extends:
   - shared/clean-code
 tags:

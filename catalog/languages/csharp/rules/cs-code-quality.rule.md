@@ -6,7 +6,6 @@ description: Search-first protocol + structural size limits (method/param caps) 
 language: csharp
 appliesTo:
   - "**/*.cs"
-severity: recommended
 extends:
   - shared/clean-code
 tags:
@@ -14,6 +13,7 @@ tags:
   - code
   - quality
 ---
+
 ## SEARCH FIRST Protocol
 Before creating any class, method, or module, search the codebase for similar patterns. If 80%+
 overlap with the same concern exists, extend the existing code — do not create a new one. If less

@@ -6,13 +6,10 @@ description: Angular/TypeScript documentation standards — TSDoc, public API, c
 language: angular
 appliesTo:
   - "**/*.ts"
-severity: recommended
-extends: []
 tags:
   - angular
   - documentation
 ---
-
 
 ## TSDoc Style
 Document every exported symbol with TSDoc. Use the standard block tags — `@param`, `@returns`,

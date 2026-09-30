@@ -7,8 +7,6 @@ language: csharp
 appliesTo:
   - "**/*.csproj"
   - "**/Directory.Packages.props"
-severity: recommended
-extends: []
 tags:
   - csharp
   - dependencies

@@ -7,7 +7,6 @@ language: csharp
 appliesTo:
   - "**/*.cs"
 severity: required
-extends: []
 tags:
   - csharp
   - security

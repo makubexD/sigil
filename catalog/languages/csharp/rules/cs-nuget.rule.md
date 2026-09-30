@@ -8,8 +8,6 @@ appliesTo:
   - "**/*.csproj"
   - "**/*.props"
   - "**/nuget.config"
-severity: recommended
-extends: []
 tags:
   - csharp
   - nuget

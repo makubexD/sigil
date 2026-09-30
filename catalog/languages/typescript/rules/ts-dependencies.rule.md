@@ -8,8 +8,6 @@ appliesTo:
   - package.json
   - "**/*.ts"
   - "**/*.tsx"
-severity: recommended
-extends: []
 tags:
   - typescript
   - dependencies

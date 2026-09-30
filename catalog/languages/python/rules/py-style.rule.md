@@ -6,7 +6,6 @@ description: Python-specific style rules. Extends the shared clean-code baseline
 language: python
 appliesTo:
   - "**/*.py"
-severity: recommended
 extends:
   - shared/clean-code
 tags:
@@ -14,6 +13,7 @@ tags:
   - style
   - pep8
 ---
+
 - **Type hints everywhere.** Annotate every function signature and public variable. Use `from __future__ import annotations` for forward references. Use `X | None` (Python 3.10+) instead of `Optional[X]`.
 - **Dataclasses and typed dicts over plain dicts.** Prefer `@dataclass` or `TypedDict` for structured data. Plain dicts with string keys are not self-documenting.
 - **f-strings for formatting.** Use f-strings (`f"{value}"`) not `%` formatting or `.format()`.

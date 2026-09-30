@@ -10,8 +10,6 @@ appliesTo:
   - "**/*.targets"
   - "**/.editorconfig"
   - "**/*.sln"
-severity: recommended
-extends: []
 tags:
   - csharp
   - project

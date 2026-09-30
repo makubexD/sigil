@@ -8,12 +8,10 @@ appliesTo:
   - "**/*.ts"
   - "**/*.html"
 severity: required
-extends: []
 tags:
   - angular
   - security
 ---
-
 
 ## Secrets and Credentials
 Anything compiled into the application bundle is **public** — users can read it in DevTools.

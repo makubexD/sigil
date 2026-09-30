@@ -6,8 +6,6 @@ description: C# async/await correctness — no sync-over-async, no async void, C
 language: csharp
 appliesTo:
   - "**/*.cs"
-severity: recommended
-extends: []
 tags:
   - csharp
   - async

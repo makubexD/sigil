@@ -9,8 +9,6 @@ appliesTo:
   - "**/*.spec.ts"
   - "**/*.test.tsx"
   - "**/*.spec.tsx"
-severity: recommended
-extends: []
 tags:
   - typescript
   - testing

@@ -6,13 +6,10 @@ description: Vitest + TestBed conventions — AAA pattern, builder helpers, it.e
 language: angular
 appliesTo:
   - "**/*.spec.ts"
-severity: recommended
-extends: []
 tags:
   - angular
   - testing
 ---
-
 
 ## AAA Pattern
 Every test has three sections separated by blank lines:

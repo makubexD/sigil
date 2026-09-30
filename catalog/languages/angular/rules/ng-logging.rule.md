@@ -6,13 +6,10 @@ description: Angular logging conventions — logger abstraction, levels, no secr
 language: angular
 appliesTo:
   - "**/*.ts"
-severity: recommended
-extends: []
 tags:
   - angular
   - logging
 ---
-
 
 ## Use a Logger Abstraction
 Route diagnostics through an injectable `LoggerService`, not scattered `console.*` calls. A single

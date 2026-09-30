@@ -7,7 +7,6 @@ language: angular
 appliesTo:
   - "**/*"
 appliesToRationale: Matches shared/git — it governs commit/PR workflow, not any specific file.
-severity: recommended
 extends: [shared/git]
 tags:
   - angular

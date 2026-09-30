@@ -6,8 +6,6 @@ description: C# logging conventions — ILogger<T>, structured templates, no sec
 language: csharp
 appliesTo:
   - "**/*.cs"
-severity: recommended
-extends: []
 tags:
   - csharp
   - logging

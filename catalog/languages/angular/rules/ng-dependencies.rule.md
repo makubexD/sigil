@@ -7,13 +7,10 @@ language: angular
 appliesTo:
   - package.json
   - "**/*.ts"
-severity: recommended
-extends: []
 tags:
   - angular
   - dependencies
 ---
-
 
 ## Pin and Lock
 Every dependency must be resolved through a committed lock file. Commit `package-lock.json`

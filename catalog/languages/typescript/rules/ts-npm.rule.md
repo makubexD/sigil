@@ -8,8 +8,6 @@ appliesTo:
   - package.json
   - package-lock.json
   - .npmrc
-severity: recommended
-extends: []
 tags:
   - typescript
   - npm

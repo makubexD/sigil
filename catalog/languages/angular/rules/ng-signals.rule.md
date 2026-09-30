@@ -6,13 +6,10 @@ description: Angular signals conventions — signal/computed/effect, derivation,
 language: angular
 appliesTo:
   - "**/*.ts"
-severity: recommended
-extends: []
 tags:
   - angular
   - signals
 ---
-
 
 > **Discovery rule:** this rule applies where the project uses signals — `signal(`, `computed(`,
 > `effect(`, or signal `input()`/`model()`. For asynchronous streams (HTTP, events) the project may

@@ -7,7 +7,6 @@ language: typescript
 appliesTo:
   - "**/*.ts"
   - "**/*.tsx"
-severity: recommended
 extends:
   - shared/clean-code
 tags:

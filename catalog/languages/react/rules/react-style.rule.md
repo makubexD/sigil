@@ -9,7 +9,6 @@ language: react
 appliesTo:
   - "**/*.tsx"
   - "**/*.jsx"
-severity: recommended
 extends:
   - shared/clean-code
 tags:

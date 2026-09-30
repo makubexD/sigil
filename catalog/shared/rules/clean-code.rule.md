@@ -8,8 +8,6 @@ appliesTo:
 appliesToRationale: >-
   The rule is language-agnostic by design, so any narrower glob would exclude a language
   this rule is meant to cover.
-severity: recommended
-extends: []
 tags:
   - quality
   - baseline

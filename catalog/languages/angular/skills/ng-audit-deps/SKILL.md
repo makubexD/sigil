@@ -22,12 +22,7 @@ tags:
   - audit
   - dependencies
   - security
----
-
-## When to Use
-
-Use before releases, when adding new dependencies, or periodically as a maintenance check. Produces a read-only report; no dependency changes are made.
-
+whenToUse: Use before releases, when adding new dependencies, or periodically as a maintenance check. Produces a read-only report; no dependency changes are made.
 ---
 
 # Audit Dependencies

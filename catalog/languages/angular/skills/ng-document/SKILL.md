@@ -22,12 +22,7 @@ tags:
   - angular
   - document
   - documentation
----
-
-## When to Use
-
-Use when public symbols, components, or services are missing TSDoc, or after adding new public API surface. Pass a target file; omit to scan for undocumented public symbols across the source.
-
+whenToUse: Use when public symbols, components, or services are missing TSDoc, or after adding new public API surface. Pass a target file; omit to scan for undocumented public symbols across the source.
 ---
 
 # Document

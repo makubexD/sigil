@@ -23,12 +23,7 @@ tags:
   - csharp
   - scaffold
   - project
----
-
-## When to Use
-
-Use when adding a new project to an existing .NET solution. Pass the project name and optional type. Never overwrites existing files; confirms before editing the .sln.
-
+whenToUse: Use when adding a new project to an existing .NET solution. Pass the project name and optional type. Never overwrites existing files; confirms before editing the .sln.
 ---
 
 # Scaffold Project

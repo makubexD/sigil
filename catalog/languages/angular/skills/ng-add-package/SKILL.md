@@ -21,12 +21,7 @@ tags:
   - add
   - package
   - npm
----
-
-## When to Use
-
-Use to add a new dependency to an Angular project. Pass the package name, optional version, and --dev for a devDependency. Vets the package (CVEs, types, ESM, Angular peer compatibility, license) before installing and undoes the change on failure.
-
+whenToUse: Use to add a new dependency to an Angular project. Pass the package name, optional version, and --dev for a devDependency. Vets the package (CVEs, types, ESM, Angular peer compatibility, license) before installing and undoes the change on failure.
 ---
 
 # Add Package

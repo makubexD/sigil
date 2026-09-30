@@ -23,12 +23,7 @@ tags:
   - angular
   - generate
   - component
----
-
-## When to Use
-
-Use to add a new building block to an Angular project. Pass the name and optionally a --type (defaults to component). Discovers the project's selector prefix, era, and test layout, prefers the Angular CLI when present, and never overwrites existing files.
-
+whenToUse: Use to add a new building block to an Angular project. Pass the name and optionally a --type (defaults to component). Discovers the project's selector prefix, era, and test layout, prefers the Angular CLI when present, and never overwrites existing files.
 ---
 
 # Generate Component

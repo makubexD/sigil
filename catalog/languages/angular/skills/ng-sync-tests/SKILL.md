@@ -22,12 +22,7 @@ tags:
   - angular
   - sync
   - tests
----
-
-## When to Use
-
-Use after multiple source files have changed and the spec suite has drifted — missing specs for new components, stale specs for renamed symbols, orphaned specs for deleted files. Run with --scope=all for a full audit; default --scope=changed targets only files modified in the current working tree.
-
+whenToUse: Use after multiple source files have changed and the spec suite has drifted — missing specs for new components, stale specs for renamed symbols, orphaned specs for deleted files. Run with --scope=all for a full audit; default --scope=changed targets only files modified in the current working tree.
 ---
 
 # Sync Tests

@@ -22,12 +22,7 @@ tags:
   - add
   - package
   - nuget
----
-
-## When to Use
-
-Use any time you need to add a new NuGet dependency. Pass the package ID; optionally pin a version and add --dev for analyzer/test-only packages (PrivateAssets="all"). Confirms before adding if vetting flags risk.
-
+whenToUse: "Use any time you need to add a new NuGet dependency. Pass the package ID; optionally pin a version and add --dev for analyzer/test-only packages (PrivateAssets=\"all\"). Confirms before adding if vetting flags risk."
 ---
 
 # Add Package

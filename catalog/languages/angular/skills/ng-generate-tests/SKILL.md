@@ -22,12 +22,7 @@ tags:
   - angular
   - generate
   - tests
----
-
-## When to Use
-
-Use when a source file lacks a spec or when new public members have been added without corresponding test coverage. Pass the target file path as the argument; omit to scan for untested files and choose interactively.
-
+whenToUse: Use when a source file lacks a spec or when new public members have been added without corresponding test coverage. Pass the target file path as the argument; omit to scan for untested files and choose interactively.
 ---
 
 # Generate Tests

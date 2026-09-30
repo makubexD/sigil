@@ -22,12 +22,7 @@ tags:
   - csharp
   - document
   - documentation
----
-
-## When to Use
-
-Use when public members are missing XML doc comments, or after adding new public API surface. Pass a target file; omit to scan for undocumented public symbols across the source.
-
+whenToUse: Use when public members are missing XML doc comments, or after adding new public API surface. Pass a target file; omit to scan for undocumented public symbols across the source.
 ---
 
 # Document

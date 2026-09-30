@@ -20,12 +20,7 @@ tags:
   - typescript
   - release
   - publish
----
-
-## When to Use
-
-Run manually before cutting a release tag. Pass the target version number as the argument. Does not tag, push, or publish — it produces a checklist and changelog draft for human review.
-
+whenToUse: Run manually before cutting a release tag. Pass the target version number as the argument. Does not tag, push, or publish — it produces a checklist and changelog draft for human review.
 ---
 
 # Release Preparation

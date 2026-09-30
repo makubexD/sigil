@@ -16,6 +16,7 @@ import { providerKindCoverageRule } from './rules/provider-kind-coverage';
 import { deprecatedHygieneRule } from './rules/deprecated-hygiene';
 import { declaredButUnemittedRule } from './rules/declared-but-unemitted';
 import { redundantDefaultRule } from './rules/redundant-default';
+import { descriptionBudgetRule } from './rules/description-budget';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -28,4 +29,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   deprecatedHygieneRule,
   declaredButUnemittedRule,
   redundantDefaultRule,
+  descriptionBudgetRule,
 ];

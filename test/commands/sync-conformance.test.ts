@@ -191,6 +191,82 @@ describe('conformance rule: when-to-use-lift — fix', () => {
   });
 });
 
+describe('conformance rule: when-to-use-quality', () => {
+  it('flags a skill with no whenToUse authored at all', () => {
+    const catalog = makeCatalog([makeSkillArtifact()]); // no whenToUse in frontmatter
+    const findings = runConformance(catalog, [], { ruleId: 'when-to-use-quality' });
+    assert.equal(findings.length, 1);
+    assert.match(findings[0]!.detail, /no whenToUse authored at all/);
+  });
+
+  it('flags a whenToUse with no quoted trigger phrases', () => {
+    const catalog = makeCatalog([
+      makeSkillArtifact({
+        frontmatter: {
+          id: 'csharp/cs-probe',
+          kind: 'skill',
+          name: 'cs-probe',
+          language: 'csharp',
+          whenToUse: 'Use this to probe things.',
+        },
+      }),
+    ]);
+    const findings = runConformance(catalog, [], { ruleId: 'when-to-use-quality' });
+    assert.equal(findings.length, 1);
+    assert.match(findings[0]!.detail, /no quoted trigger phrases/);
+  });
+
+  it('does not flag a whenToUse already shaped like the exemplar (quoted phrases)', () => {
+    const catalog = makeCatalog([
+      makeSkillArtifact({
+        frontmatter: {
+          id: 'csharp/cs-probe',
+          kind: 'skill',
+          name: 'cs-probe',
+          language: 'csharp',
+          whenToUse: 'Use when "probing things" is requested.',
+        },
+      }),
+    ]);
+    const findings = runConformance(catalog, [], { ruleId: 'when-to-use-quality' });
+    assert.equal(findings.length, 0);
+  });
+});
+
+describe('conformance rule: description-budget', () => {
+  function skillWithLengths(descLen: number, wtuLen: number): Artifact {
+    return makeSkillArtifact({
+      frontmatter: {
+        id: 'csharp/cs-probe',
+        kind: 'skill',
+        name: 'cs-probe',
+        language: 'csharp',
+        description: 'd'.repeat(descLen),
+        whenToUse: 'w'.repeat(wtuLen),
+      },
+    });
+  }
+
+  it('flags a skill whose description + whenToUse exceeds the 1,536-char cap', () => {
+    const catalog = makeCatalog([skillWithLengths(800, 800)]);
+    const findings = runConformance(catalog, [], { ruleId: 'description-budget' });
+    assert.equal(findings.length, 1);
+    assert.match(findings[0]!.detail, /1600 chars exceeds/);
+  });
+
+  it('does not flag a skill under the cap', () => {
+    const catalog = makeCatalog([skillWithLengths(500, 500)]);
+    const findings = runConformance(catalog, [], { ruleId: 'description-budget' });
+    assert.equal(findings.length, 0);
+  });
+
+  it('does not flag a skill exactly at the cap boundary', () => {
+    const catalog = makeCatalog([skillWithLengths(768, 768)]);
+    const findings = runConformance(catalog, [], { ruleId: 'description-budget' });
+    assert.equal(findings.length, 0);
+  });
+});
+
 describe('conformance rule: body-density', () => {
   it('flags a skill body over the line-count threshold', () => {
     const longBody = Array.from({ length: 120 }, (_, i) => `line ${i}`).join('\n');

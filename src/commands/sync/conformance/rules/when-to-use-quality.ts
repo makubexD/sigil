@@ -5,6 +5,13 @@
  * (so `when-to-use-lift` won't flag it) but still weak for dispatch — rewriting to the exemplar's
  * shape needs judgment, so this is `editorial`, not `mechanical`.
  *
+ * Also flags a skill with NO `whenToUse` at all and no `## When to Use` body section to lift
+ * (`when-to-use-lift` only fires when there IS a body section to extract — a skill with neither
+ * fell through both rules undetected, e.g. python/py-pytest-testing and react/component-testing,
+ * found by the 2026-08 frontmatter audit). Same editorial task either way: author one from scratch
+ * or rewrite a weak one — the model instruction already handles "no existing whenToUse" via its
+ * own judgment, so one detect()/editorialTask() pair covers both cases.
+ *
  * @module
  */
 import type { ConformanceRule, ConformanceFinding, EditorialTask } from '../types';
@@ -16,14 +23,16 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
   for (const artifact of ctx.catalog.artifacts) {
     if (artifact.kind !== 'skill') continue;
     const whenToUse = artifact.frontmatter.whenToUse;
-    if (typeof whenToUse !== 'string' || whenToUse.trim() === '') continue;
-    if (whenToUse.includes('"')) continue; // already has quoted trigger phrases, exemplar shape
+    const isMissing = typeof whenToUse !== 'string' || whenToUse.trim() === '';
+    if (!isMissing && whenToUse.includes('"')) continue; // already exemplar-shaped
     findings.push({
       ruleId: 'when-to-use-quality',
       severity: 'warning',
       artifactId: artifact.id,
       filePath: artifact.filePath,
-      detail: `whenToUse has no quoted trigger phrases (exemplar: ${EXEMPLAR_ID})`,
+      detail: isMissing
+        ? `no whenToUse authored at all (exemplar: ${EXEMPLAR_ID})`
+        : `whenToUse has no quoted trigger phrases (exemplar: ${EXEMPLAR_ID})`,
     });
   }
   return findings;
@@ -36,7 +45,7 @@ function editorialTask(finding: ConformanceFinding): EditorialTask | undefined {
     filePath: finding.filePath,
     kind: 'skill',
     instruction:
-      `Rewrite the whenToUse frontmatter field to match the shape of ${EXEMPLAR_ID}'s ` +
+      `Author or rewrite the whenToUse frontmatter field to match the shape of ${EXEMPLAR_ID}'s ` +
       'whenToUse: 2-3 concrete quoted trigger phrases a user would actually type ' +
       '(e.g. "are my dependencies up to date", "audit my deps"), followed by one sentence ' +
       'naming what it produces, followed by an explicit "Complements <sibling-id>" clause if ' +

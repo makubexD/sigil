@@ -112,14 +112,14 @@ describe('O — Wizard: config-scope for mcp', () => {
       require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     // Wizard steps (in order for this path):
     //   target → scope:browse → kind sub-menu:__all__ (All types) → language:'' (all) →
-    //   groupMultiselect picks → deps:no → overwrite:no → configScope:user → proceed:proceed
+    //   groupMultiselect picks → [deps auto-skipped: selection is config-kind only] →
+    //   overwrite:no → configScope:user → proceed:proceed
     const restore = mockClack([
       'claude', // step: target
       'browse', // step: scope → Browse & pick
       '__all__', // step: kind sub-menu → All types (mix anything)
       '', // step: crossKindPicker language pre-filter ('' = all languages)
       ['mcp:shared/ado', 'mcp:shared/maku-jam'], // step: groupMultiselect artifact picker
-      'no', // step: deps → No
       'no', // step: overwrite → No
       'user', // step: configScope → user
       'proceed', // step: proceed → Proceed with install
@@ -129,7 +129,7 @@ describe('O — Wizard: config-scope for mcp', () => {
       assert.ok(result, 'runWizard should not return null');
       assert.equal(result.target, 'claude');
       assert.deepEqual(result.selectors, ['mcp:shared/ado', 'mcp:shared/maku-jam']);
-      assert.equal(result.includeDeps, false);
+      assert.equal(result.includeDeps, true, 'deps step auto-skipped for config-only selection');
       assert.equal(result.overwrite, false);
       assert.equal(result.configScope, 'user', 'configScope step should yield user scope');
     } finally {
@@ -146,7 +146,7 @@ describe('O — Wizard: config-scope for mcp', () => {
       '__all__', // step: kind sub-menu → All types (mix anything)
       '', // step: language pre-filter
       ['mcp:shared/context-mode'], // step: picker
-      'no', // step: deps
+      // [deps auto-skipped: selection is config-kind only]
       'no', // step: overwrite
       'project', // step: configScope → project
       'proceed', // step: proceed

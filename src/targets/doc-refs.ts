@@ -98,18 +98,20 @@ export const VSCODE_INSTRUCTIONS_DOC: DocRef = {
 export const CLAUDE_AGENTS_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/sub-agents',
   title: 'Claude Code — Subagents',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-08-10',
   covers:
-    'agent .md frontmatter: name, description, model/effort/maxTurns/isolation, disallowedTools',
+    'agent .md frontmatter: name, description, model/effort/maxTurns/isolation, tools ' +
+    '(omitted = inherits every tool), disallowedTools',
 };
 
 export const COPILOT_AGENTS_DOC: DocRef = {
   url: 'https://docs.github.com/en/copilot/reference/custom-agents-configuration',
   title: 'GitHub Copilot — Custom agents configuration reference',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-08-10',
   covers:
-    '.agent.md YAML frontmatter table: name (optional), description (required), target, tools, ' +
-    'model, disable-model-invocation. Does NOT state the .github/agents/ file location — see ' +
+    '.agent.md YAML frontmatter table: name (optional), description (required), target, ' +
+    'tools (omitted = defaults to all tools; comma-string or YAML array), model, ' +
+    'disable-model-invocation. Does NOT state the .github/agents/ file location — see ' +
     'COPILOT_CREATE_AGENTS_DOC for that half.',
 };
 

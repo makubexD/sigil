@@ -20,6 +20,8 @@ import type {
 } from '../../dist-cli/commands/sync/conformance/editorial-model-client';
 import { getAllTargets } from '../../dist-cli/targets/index';
 import type { Artifact, LoadedCatalog, Target } from '../../dist-cli/types';
+import { loadCatalog } from '../../dist-cli/load';
+import { CATALOG_DIR } from '../helpers/catalog';
 
 function makeCatalog(artifacts: Artifact[]): LoadedCatalog {
   return {
@@ -336,6 +338,68 @@ describe('conformance rule: deprecated-hygiene', () => {
     };
     const catalog = makeCatalog([artifact]);
     const findings = runConformance(catalog, [], { ruleId: 'deprecated-hygiene' });
+    assert.equal(findings.length, 0);
+  });
+});
+
+describe('conformance rule: declared-but-unemitted', () => {
+  function agentWithFrontmatter(frontmatter: Record<string, unknown>): Artifact {
+    return {
+      id: 'typescript/ts-probe',
+      kind: 'agent',
+      filePath: '/fake/ts-probe.agent.md',
+      frontmatter: { id: 'typescript/ts-probe', kind: 'agent', name: 'ts-probe', ...frontmatter },
+      body: 'body',
+    } as Artifact;
+  }
+
+  it('passes against the real catalog and registered specs (regression guard for the tools gap)', async () => {
+    // Real-catalog regression guard: this is the exact shape that caught `tools` being authored
+    // on ~26 agents but mapped by neither provider spec — see declared-but-unemitted.ts's header.
+    // Loading the actual catalog here (not just registered targets, like provider-kind-coverage's
+    // guard) is required because the bug was in *catalog content* versus *spec coverage*, not in
+    // target registration.
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const findings = runConformance(catalog, [], { ruleId: 'declared-but-unemitted' });
+    assert.equal(findings.length, 0);
+  });
+
+  it('flags a frontmatter key no registered spec for that kind maps', () => {
+    const catalog = makeCatalog([agentWithFrontmatter({ bogusField: 'nope' })]);
+    const findings = runConformance(catalog, [], { ruleId: 'declared-but-unemitted' });
+    assert.equal(findings.length, 1);
+    assert.match(findings[0]!.detail, /'bogusField'/);
+  });
+
+  it('does not flag a mapped field like tools', () => {
+    const catalog = makeCatalog([agentWithFrontmatter({ tools: ['Read', 'Grep'] })]);
+    const findings = runConformance(catalog, [], { ruleId: 'declared-but-unemitted' });
+    assert.equal(findings.length, 0);
+  });
+
+  it('does not flag sigil-internal BaseFields like description/tags/severity', () => {
+    const catalog = makeCatalog([
+      agentWithFrontmatter({ description: 'desc', tags: ['x'], severity: 'recommended' }),
+    ]);
+    const findings = runConformance(catalog, [], { ruleId: 'declared-but-unemitted' });
+    assert.equal(findings.length, 0);
+  });
+
+  it('does not flag config kinds (hook/settings/mcp) — they are JSON merges, not KindEmitSpec renders', () => {
+    const hook: Artifact = {
+      id: 'shared/probe-hook',
+      kind: 'hook',
+      filePath: '/fake/probe.hook.md',
+      frontmatter: {
+        id: 'shared/probe-hook',
+        kind: 'hook',
+        event: 'PreToolUse',
+        command: 'echo hi',
+      },
+      body: 'body',
+    } as Artifact;
+    const catalog = makeCatalog([hook]);
+    const findings = runConformance(catalog, [], { ruleId: 'declared-but-unemitted' });
     assert.equal(findings.length, 0);
   });
 });

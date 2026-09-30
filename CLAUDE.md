@@ -79,6 +79,18 @@ linking, use `npm run sigil -- <args>`.
   now fails `--check` on this gap; config kinds (`hook`/`settings`/`mcp`) are JSON merges, not
   markdown renders, and are citation-covered instead via `AGGREGATE_DOC_REFS`
   (`src/targets/all-emit-specs.ts`).
+- **Every catalog frontmatter field authored on a whole-file kind must be mapped by at least one
+  provider's `KindEmitSpec`.** `tools` (`AgentSchema`) was authored on ~26 agents — several
+  explicitly read-only in their own `description` — but mapped by neither `CLAUDE_AGENT_SPEC` nor
+  `COPILOT_AGENT_SPEC` for a full release cycle; both providers default an absent `tools` to *all*
+  tools, so every emitted agent silently inherited full write access until the 2026-08-10 audit
+  caught it (fixed in `claude-code/spec/agent.ts` / `copilot/spec/agent.ts`). The
+  `declared-but-unemitted` conformance rule (`src/commands/sync/conformance/rules/`) now fails
+  `--check` on this gap; it is derived from each spec's `FieldMapping[]`, not a hand-listed field
+  set, so a future unmapped field is caught automatically. A small allowlist
+  (`SIGIL_INTERNAL_FIELDS` in that rule file) excludes fields that are deliberately sigil-internal
+  (`tags`, `severity`, `uses`, …) — extend that list only for fields that genuinely never reach a
+  provider by design, never to silence a real gap.
 
 ## Architecture
 

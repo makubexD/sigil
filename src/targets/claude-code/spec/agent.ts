@@ -41,6 +41,21 @@ const disallowedToolsMapping: FieldMapping = {
   serialize: v => `disallowedTools: ${JSON.stringify(v)}`,
 };
 
+/**
+ * Vendor-neutral `tools` (schema/index.ts's AgentSchema) mapped straight through — catalog authors
+ * already write Claude-native tool names (Read, Grep, Bash, …) here. Omitted = "Inherits every
+ * tool available to subagents" per CLAUDE_AGENTS_DOC; an authored, non-empty list scopes it down.
+ * This was authored on ~26 agents but unmapped for a full release cycle — see the
+ * declared-but-unemitted conformance rule that now guards against a repeat.
+ */
+const toolsMapping: FieldMapping = {
+  from: 'tools',
+  to: 'tools',
+  required: false,
+  when: fm => Array.isArray(fm.tools) && (fm.tools as string[]).length > 0,
+  serialize: v => `tools: ${(v as string[]).join(', ')}`,
+};
+
 const AGENT_FRONTMATTER: readonly FieldMapping[] = [
   nameMapping,
   descriptionMapping,
@@ -48,6 +63,7 @@ const AGENT_FRONTMATTER: readonly FieldMapping[] = [
   claudeHintMapping('effort'),
   claudeHintMapping('maxTurns'),
   claudeHintMapping('isolation'),
+  toolsMapping,
   disallowedToolsMapping,
 ];
 

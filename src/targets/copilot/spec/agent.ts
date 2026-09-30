@@ -27,6 +27,19 @@ const descriptionMapping: FieldMapping = {
   serialize: v => `description: ${yamlScalar(v as string)}`,
 };
 
+/**
+ * Vendor-neutral `tools` (schema/index.ts's AgentSchema), same source field the Claude spec
+ * consumes. Copilot's docs accept both a comma-separated string and a YAML array — a JSON array
+ * literal satisfies the YAML-array form. Omitted = "defaults to all tools" per COPILOT_AGENTS_DOC.
+ */
+const toolsMapping: FieldMapping = {
+  from: 'tools',
+  to: 'tools',
+  required: false,
+  when: fm => Array.isArray(fm.tools) && (fm.tools as string[]).length > 0,
+  serialize: v => `tools: ${JSON.stringify(v)}`,
+};
+
 const titleAndBoundarySection: BodySectionSpec = {
   id: 'titleAndBoundary',
   position: 'before',
@@ -41,7 +54,7 @@ export const COPILOT_AGENT_SPEC: KindEmitSpec = {
   kind: 'agent',
   outputPath: artifact => `.github/agents/${artifact.frontmatter.name as string}.agent.md`,
   pathPattern: /\.github\/agents\/.*\.agent\.md$/,
-  frontmatter: [nameMapping, descriptionMapping],
+  frontmatter: [nameMapping, descriptionMapping, toolsMapping],
   emitEmptyFrontmatter: true,
   body: [titleAndBoundarySection],
   forbiddenKeys: ['applyTo'],

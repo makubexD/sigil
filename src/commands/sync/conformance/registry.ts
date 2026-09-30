@@ -14,6 +14,7 @@ import { appliesToRationaleRule } from './rules/applies-to-rationale';
 import { relatedArtifactsRule } from './rules/related-artifacts';
 import { providerKindCoverageRule } from './rules/provider-kind-coverage';
 import { deprecatedHygieneRule } from './rules/deprecated-hygiene';
+import { declaredButUnemittedRule } from './rules/declared-but-unemitted';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -24,4 +25,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   relatedArtifactsRule,
   providerKindCoverageRule,
   deprecatedHygieneRule,
+  declaredButUnemittedRule,
 ];

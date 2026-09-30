@@ -2,9 +2,9 @@
 
 # Live-prompt campaign — results
 
-Runs: pilot, full, verify · 83 probes · ✅ PASS 61 · 🔶 FINDING 6 · ℹ️ INFO 4 · 🟡 PARTIAL 3 · ❌ FAIL 9
+Runs: pilot, full, verify, stability, copilot-gaps, f3 · 95 probes · ✅ PASS 71 · 🔶 FINDING 7 · ℹ️ INFO 4 · 🟡 PARTIAL 3 · ❌ FAIL 10
 
-Spend: ~$7.88 Claude (all attempts) · 46 Copilot premium requests.
+Spend: ~$8.66 Claude (all attempts) · 57 Copilot premium requests.
 
 Legend: ✅ pass · ❌ fail · 🟡 partial (no rule loaded outside its globs, some expected rules not named — soft) ·
 🔶 finding (works as the catalog declares, but the declaration looks wrong) · ⚪ invalid · ℹ️ control run · ² passed on retry.
@@ -28,13 +28,46 @@ Probes: P1 inventory · P2 skill dispatch · P3 agent dispatch (P3n: no hint) ·
 
 ### copilot
 
-| K | P1 | P2 | P2b | P3 | P3b | P3n | P4 | P5 | P5c | P6 | P6b | P9 | P10 |
-|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
-| K2 | ✅ | ✅ |  | ❌ |  | 🔶 | ✅ | ✅ | ℹ️ | ❌ | ❌ | ✅ | ❌ |
-| K3 |  | ✅ |  | ✅ |  | 🔶 | ✅ | ✅ | ℹ️ | ❌ |  |  |  |
-| K5 |  | ✅ |  | ✅ | ✅ |  | ✅ | ✅ |  | ❌ | ❌ |  |  |
-| K7 |  | ✅ | ✅ | ✅ |  |  | ✅ | ✅ |  | ❌ | ❌ |  |  |
+| K | P1 | P2 | P2b | P3 | P3b | P3n | P4 | P5 | P5c | P6 | P6b | P9 | P9c | P10 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| K1 | ✅ |  |  | ❌ |  |  | ✅ |  |  |  |  |  | 🔶 |  |
+| K2 | ✅ | ✅ |  | ❌ |  | 🔶 | ✅ | ✅ | ℹ️ | ❌ | ❌ | ✅ |  | ❌ |
+| K3 |  | ✅ |  | ✅ |  | 🔶 | ✅ | ✅ | ℹ️ | ❌ |  |  |  |  |
+| K4 |  | ✅ |  | ✅ |  |  | ✅ | ✅ |  |  |  |  |  |  |
+| K5 |  | ✅ |  | ✅ | ✅ |  | ✅ | ✅ |  | ❌ | ❌ |  |  |  |
+| K6 |  | ✅ |  | ✅ |  |  | ✅ | ✅ |  |  |  |  |  |  |
+| K7 |  | ✅ | ✅ | ✅ |  |  | ✅ | ✅ |  | ❌ | ❌ |  |  |  |
 
+## Dispatch stability
+
+| Run | Provider | K | Probe | Passes |
+|---|---|---|---|---|
+| stability | claude | K2 | P2 | 3/3 |
+| stability | claude | K2 | P3 | 3/3 |
+| stability | claude | K3 | P2 | 3/3 |
+| stability | claude | K3 | P3 | 3/3 |
+| stability | claude | K4 | P2 | 3/3 |
+| stability | claude | K4 | P3 | 3/3 |
+| stability | claude | K5 | P3 | 3/3 |
+| stability | claude | K5 | P3b | 3/3 |
+| stability | claude | K6 | P2 | 3/3 |
+| stability | claude | K6 | P3 | 3/3 |
+| stability | claude | K7 | P2 | 3/3 |
+| stability | claude | K7 | P2b | 3/3 |
+| stability | claude | K7 | P3 | 3/3 |
+| stability | copilot | K2 | P2 | 3/3 |
+| stability | copilot | K2 | P3 | 3/3 |
+| stability | copilot | K3 | P2 | 3/3 |
+| stability | copilot | K3 | P3 | 2/3 |
+| stability | copilot | K4 | P2 | 3/3 |
+| stability | copilot | K4 | P3 | 3/3 |
+| stability | copilot | K5 | P3 | 3/3 |
+| stability | copilot | K5 | P3b | 3/3 |
+| stability | copilot | K6 | P2 | 3/3 |
+| stability | copilot | K6 | P3 | 3/3 |
+| stability | copilot | K7 | P2 | 3/3 |
+| stability | copilot | K7 | P2b | 3/3 |
+| stability | copilot | K7 | P3 | 3/3 |
 
 ## Combinations
 
@@ -101,6 +134,10 @@ Probes: P1 inventory · P2 skill dispatch · P3 agent dispatch (P3n: no hint) ·
 | claude | K7 | P5 | PASS | follows every checked rule | $0.128 | [raw](results/full/raw/claude-K7-P5-a1.jsonl) |
 | claude | K7 | P6 | PASS | 9/9 rules: python-py-async python-py-code-quality python-py-conventions python-py-documentation python-py-git python-py-logging python-py-project-layout python-py-security shared-cli-rules | $0.106 | [raw](results/verify/raw/claude-K7-P6-a1.jsonl) |
 | claude | K7 | P6b | PASS | 8/8 rules: typescript-ts-async typescript-ts-code-quality typescript-ts-conventions typescript-ts-dependencies typescript-ts-documentation typescript-ts-git typescript-ts-logging typescript-ts-security | $0.116 | [raw](results/full/raw/claude-K7-P6b-a1.jsonl) |
+| copilot | K1 | P1 | PASS | 1 agents, 0 skills installed; all seen | 1 req | [raw](results/copilot-gaps/raw/copilot-K1-P1-a1.jsonl) |
+| copilot | K1 | P3 | FAIL | dispatched security-review; expected /code-reviewer/ |  | [raw](results/copilot-gaps/raw/copilot-K1-P3-a2.jsonl) |
+| copilot | K1 | P4 | PASS | recall 3/5; missed hardcoded-fallback-secret shell-injection | 1 req | [raw](results/copilot-gaps/raw/copilot-K1-P4-a1.jsonl) |
+| copilot | K1 | P9c | FINDING | answered without opening the prompt file | 1 req | [raw](results/copilot-gaps/raw/copilot-K1-P9c-a1.jsonl) |
 | copilot | K2 | P1 | PASS | 7 agents, 7 skills installed; all seen | 1 req | [raw](results/full/raw/copilot-K2-P1-a1.jsonl) |
 | copilot | K2 | P2 | PASS | skill → ts-add-package |  | [raw](results/full/raw/copilot-K2-P2-a1.jsonl) |
 | copilot | K2 | P3 | FAIL | dispatched security-review; expected /ts-code-reviewer\|ts-security-auditor/ |  | [raw](results/verify/raw/copilot-K2-P3-a2.jsonl) |
@@ -111,7 +148,7 @@ Probes: P1 inventory · P2 skill dispatch · P3 agent dispatch (P3n: no hint) ·
 | copilot | K2 | P6 | FAIL | none of 8 expected rules named | 1 req | [raw](results/full/raw/copilot-K2-P6-a2.jsonl) |
 | copilot | K2 | P6b | FAIL | none of 4 expected rules named | 1 req | [raw](results/full/raw/copilot-K2-P6b-a2.jsonl) |
 | copilot | K2 | P9 | PASS | ran and explained the diff | 1 req | [raw](results/full/raw/copilot-K2-P9-a1.jsonl) |
-| copilot | K2 | P10 | FAIL | server filesystem not loaded (have: context-mode, github-mcp-server) | 1 req | [raw](results/verify/raw/copilot-K2-P10-a2.jsonl) |
+| copilot | K2 | P10 | FAIL | server filesystem not loaded (have: context-mode, github-mcp-server) | 1 req | [raw](results/f3/raw/copilot-K2-P10-a2.jsonl) |
 | copilot | K3 | P2 | PASS | skill → py-add-package |  | [raw](results/full/raw/copilot-K3-P2-a1.jsonl) |
 | copilot | K3 | P3 | PASS | task → py-security-auditor |  | [raw](results/full/raw/copilot-K3-P3-a1.jsonl) |
 | copilot | K3 | P3n | FINDING | no agent dispatched; answered directly | 1 req | [raw](results/full/raw/copilot-K3-P3n-a1.jsonl) |
@@ -119,6 +156,10 @@ Probes: P1 inventory · P2 skill dispatch · P3 agent dispatch (P3n: no hint) ·
 | copilot | K3 | P5 | PASS | follows every checked rule | 1 req | [raw](results/full/raw/copilot-K3-P5-a1.jsonl) |
 | copilot | K3 | P5c | INFO | follows every checked rule | 1 req | [raw](results/full/raw/copilot-K3-P5c-a1.jsonl) |
 | copilot | K3 | P6 | FAIL | none of 8 expected rules named | 1 req | [raw](results/full/raw/copilot-K3-P6-a2.jsonl) |
+| copilot | K4 | P2 | PASS | skill → cs-add-package |  | [raw](results/copilot-gaps/raw/copilot-K4-P2-a1.jsonl) |
+| copilot | K4 | P3 | PASS | task → cs-code-reviewer |  | [raw](results/copilot-gaps/raw/copilot-K4-P3-a1.jsonl) |
+| copilot | K4 | P4 | PASS | recall 6/6 | 1 req | [raw](results/copilot-gaps/raw/copilot-K4-P4-a1.jsonl) |
+| copilot | K4 | P5 | PASS | follows every checked rule | 1 req | [raw](results/copilot-gaps/raw/copilot-K4-P5-a1.jsonl) |
 | copilot | K5 | P2 | PASS | skill → ng-generate-component |  | [raw](results/full/raw/copilot-K5-P2-a1.jsonl) |
 | copilot | K5 | P3 | PASS | task → ng-code-reviewer |  | [raw](results/full/raw/copilot-K5-P3-a1.jsonl) |
 | copilot | K5 | P3b | PASS | task → ts-code-reviewer |  | [raw](results/full/raw/copilot-K5-P3b-a1.jsonl) |
@@ -126,6 +167,10 @@ Probes: P1 inventory · P2 skill dispatch · P3 agent dispatch (P3n: no hint) ·
 | copilot | K5 | P5 | PASS | follows every checked rule | 1 req | [raw](results/full/raw/copilot-K5-P5-a1.jsonl) |
 | copilot | K5 | P6 | FAIL | none of 18 expected rules named | 1 req | [raw](results/full/raw/copilot-K5-P6-a2.jsonl) |
 | copilot | K5 | P6b | FAIL | none of 5 expected rules named | 1 req | [raw](results/full/raw/copilot-K5-P6b-a2.jsonl) |
+| copilot | K6 | P2 | PASS | skill → react-generate-tests |  | [raw](results/copilot-gaps/raw/copilot-K6-P2-a1.jsonl) |
+| copilot | K6 | P3 | PASS | task → react-code-reviewer |  | [raw](results/copilot-gaps/raw/copilot-K6-P3-a1.jsonl) |
+| copilot | K6 | P4 | PASS | recall 6/6 | 1 req | [raw](results/copilot-gaps/raw/copilot-K6-P4-a1.jsonl) |
+| copilot | K6 | P5 | PASS | follows every checked rule | 1 req | [raw](results/copilot-gaps/raw/copilot-K6-P5-a1.jsonl) |
 | copilot | K7 | P2 | PASS | skill → cli |  | [raw](results/full/raw/copilot-K7-P2-a1.jsonl) |
 | copilot | K7 | P2b | PASS | skill → wizard |  | [raw](results/full/raw/copilot-K7-P2b-a1.jsonl) |
 | copilot | K7 | P3 | PASS | task → cli-auditor |  | [raw](results/full/raw/copilot-K7-P3-a1.jsonl) |

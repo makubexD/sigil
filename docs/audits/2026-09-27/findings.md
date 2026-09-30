@@ -73,3 +73,39 @@ Re-run K2 P10 after trusting `C:\WorkspaceMaku\TestCaI` once.
 `security-review` agent even with the language now named. Python, Angular and CLI prompts picked the
 catalog agent. This is recorded as a provider preference, not a catalog defect; naming the agent
 ("use ts-security-auditor") works on both providers.
+
+## Follow-up runs (2026-09-28/29)
+
+### Dispatch stability (run `stability`, `--repeat 3`, no retries)
+
+Each skill-dispatch (P2) and agent-dispatch (P3) probe in K2–K7 ran 3 times per provider.
+
+| Provider | Skill dispatch | Agent dispatch | Misses                                          |
+| -------- | -------------- | -------------- | ----------------------------------------------- |
+| Claude   | 18/18          | 21/21          | none                                            |
+| Copilot  | 18/18          | 20/21          | K3 P3 #2: built-in `security-review` over py-\* |
+
+Claude cost: $0.78. A single pass in the main campaign was representative, not luck.
+
+**F5 revisited:** after the language-named descriptions, Copilot K2 P3 picked `ts-code-reviewer` 3 of
+3 times. The earlier re-probe's miss, and K3's one miss here, show Copilot's built-in reviewer
+still wins now and then for a "bugs and security problems" prompt. This is a provider preference.
+It happens occasionally, not every time.
+
+### Copilot on K1, K4 and K6 (run `copilot-gaps`)
+
+| K   | Result                                                                                                                                                                                             |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| K4  | 4/4: `cs-add-package`, `cs-code-reviewer`, recall 6/6, edit follows every checked rule                                                                                                             |
+| K6  | 4/4: `react-generate-tests`, `react-code-reviewer`, recall 6/6, edit follows every checked rule                                                                                                    |
+| K1  | P1 inventory ✅; P3 ❌ ×2: built-in `security-review` over the language-agnostic `code-reviewer` (same preference as F5); P4 recall 3/5 ✅ (≥ 0.6); P9c 🔶 answered without opening `explain-diff` |
+
+K1 P9c: whether Copilot CLI opens a `.prompt.md` for a plain-language request depends on the model.
+K2 P9 used it on the stronger tier. No catalog change is proposed.
+
+### F3 live check
+
+Still ❌: `copilot mcp list` in TestCaI shows no workspace servers. Copilot CLI 1.0.89 keeps trust as
+`trustedFolders` in `~/.copilot/settings.json`, and accepting the interactive prompt did not
+persist it here. Re-run `--provider copilot --only K2:P10,K1:P10` once TestCaI is in that list. The
+emitted `.mcp.json` is covered by `test/targets/copilot-mcp-cli.test.ts`.

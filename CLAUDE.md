@@ -52,7 +52,7 @@ recursive generics force deep type-inference. `npm run build` now sets this auto
 compile it separately before running `npm test`:
 
 ```bash
-npx tsc --outDir test test/pipeline.test.ts --module commonjs --target ES2020 --esModuleInterop --skipLibCheck
+npx tsc --outDir test test/pipeline.test.ts --module commonjs --target ES2022 --esModuleInterop --skipLibCheck
 ```
 
 The test file imports from `../dist-cli/…`, so source edits need a full `npm run build` to take

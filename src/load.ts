@@ -47,7 +47,7 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
       const langId = path.basename(path.dirname(yamlPath));
       languages.set(langId, { id: langId, ...meta });
     } catch (err) {
-      throw new Error(`[load] Failed to parse language.yaml at ${yamlPath}: ${err}`);
+      throw new Error(`[load] Failed to parse language.yaml at ${yamlPath}`, { cause: err });
     }
   }
 
@@ -87,7 +87,7 @@ function parseArtifactFile(filePath: string): Artifact | null {
   try {
     raw = fs.readFileSync(filePath, 'utf-8');
   } catch (err) {
-    throw new Error(`[load] Cannot read file ${filePath}: ${err}`);
+    throw new Error(`[load] Cannot read file ${filePath}`, { cause: err });
   }
 
   const parsed = matter(raw);

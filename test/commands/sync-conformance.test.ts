@@ -13,6 +13,7 @@ import path from 'node:path';
 import { runConformance } from '../../dist-cli/commands/sync/conformance/detect';
 import { applyMechanicalFindings } from '../../dist-cli/commands/sync/conformance/fix-mechanical';
 import { runEditorialFindings } from '../../dist-cli/commands/sync/conformance/fix-editorial';
+import { applyFrontmatterPatch } from '../../dist-cli/commands/sync/conformance/frontmatter-patch';
 import type {
   EditorialModelClient,
   EditorialProposal,
@@ -39,6 +40,53 @@ function makeSkillArtifact(overrides: Partial<Artifact> = {}): Artifact {
     ...overrides,
   } as Artifact;
 }
+
+describe('applyFrontmatterPatch — overwriting an existing key', () => {
+  it('replaces a single-line key with a new value (not just adds beside it)', () => {
+    // Regression test: the original implementation built the "added" list from a Map it had
+    // already deleted the key from while scanning "kept" — overwriting an EXISTING key silently
+    // dropped it entirely instead of replacing it. Adding a brand-new key never exercised this
+    // path, which is why it went unnoticed until an editorial rule overwrote one for real.
+    const lines = ['id: test/probe', 'kind: skill', 'whenToUse: old text', 'name: probe'];
+    const result = applyFrontmatterPatch(lines, { whenToUse: 'new text' });
+    assert.deepEqual(result, [
+      'id: test/probe',
+      'kind: skill',
+      'name: probe',
+      'whenToUse: new text',
+    ]);
+  });
+
+  it('drops every continuation line of a multi-line value being overwritten', () => {
+    // A block scalar (`appliesTo:` style array, or `>-` folded scalar) spans multiple indented
+    // lines — only the header line matching `key:` must never be enough to drop the whole value.
+    const lines = [
+      'id: test/probe',
+      'appliesTo:',
+      '  - "**/*.ts"',
+      '  - "**/*.tsx"',
+      'severity: recommended',
+    ];
+    const result = applyFrontmatterPatch(lines, { appliesTo: ['**/*.mts'] });
+    assert.deepEqual(result, [
+      'id: test/probe',
+      'severity: recommended',
+      'appliesTo:\n  - "**/*.mts"',
+    ]);
+  });
+
+  it('adding a brand-new key still appends it without touching existing lines', () => {
+    const lines = ['id: test/probe', 'kind: skill'];
+    const result = applyFrontmatterPatch(lines, { whenToUse: 'new text' });
+    assert.deepEqual(result, ['id: test/probe', 'kind: skill', 'whenToUse: new text']);
+  });
+
+  it('undefined removes an existing key entirely', () => {
+    const lines = ['id: test/probe', 'deprecated: true'];
+    const result = applyFrontmatterPatch(lines, { deprecated: undefined });
+    assert.deepEqual(result, ['id: test/probe']);
+  });
+});
 
 describe('conformance rule: when-to-use-lift', () => {
   it('flags a skill with "## When to Use" body prose and no whenToUse frontmatter', () => {
@@ -426,5 +474,105 @@ describe('editorial pass — the four correctness rails', () => {
     const results = await runEditorialFindings(findings, { catalog, targets: [] }, throwingClient);
     assert.equal(results[0]!.status, 'rejected');
     assert.match(results[0]!.reason ?? '', /ANTHROPIC_API_KEY/);
+  });
+
+  it('preserves untouched double-quoted frontmatter values (no full reserialize)', async () => {
+    // Regression test: the editorial write path used to fully reserialize the frontmatter block
+    // (same class of bug as the mechanical writer had), silently stripping intentional
+    // double-quoting from every field the proposal never touched.
+    fs.writeFileSync(
+      filePath,
+      '---\nid: csharp/cs-probe\nkind: rule\ntitle: "Probe (parens)"\n' +
+        'description: "A probe rule: with a colon."\nappliesTo:\n  - "**/*.cs"\n---\n\nBody text.',
+      'utf-8',
+    );
+    const { catalog, findings } = ruleFinding();
+    const goodClient: EditorialModelClient = async () =>
+      ({
+        frontmatterPatch: { appliesToRationale: 'Scoped to C# project files only.' },
+      }) as EditorialProposal;
+
+    const results = await runEditorialFindings(findings, { catalog, targets: [] }, goodClient);
+
+    assert.equal(results[0]!.status, 'written');
+    const written = fs.readFileSync(filePath, 'utf-8');
+    assert.match(written, /title: "Probe \(parens\)"/);
+    assert.match(written, /description: "A probe rule: with a colon\."/);
+    assert.match(written, /appliesToRationale: Scoped to C# project files only\./);
+  });
+});
+
+describe('editorial pass — findings sharing one file do not race', () => {
+  let tmpDir: string;
+  let filePath: string;
+
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-editorial-race-'));
+    filePath = path.join(tmpDir, 'SKILL.md');
+    fs.writeFileSync(
+      filePath,
+      '---\nid: typescript/ts-probe\nkind: skill\ntitle: Probe\ndescription: A probe skill.\n' +
+        'name: ts-probe\nlanguage: typescript\nwhenToUse: terse text\n---\n\nline 0\nline 1\nline 2',
+      'utf-8',
+    );
+  });
+
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  it('applies two editorial findings on the same artifact without one clobbering the other', async () => {
+    // Regression test: when-to-use-quality and body-density can both fire on one skill (this
+    // happened for real on typescript/ts-release). Run concurrently, the second task's "before"
+    // snapshot predates the first task's write, so its write silently erased the first task's
+    // change. Tasks sharing a file must now be chained, not raced.
+    const artifact: Artifact = {
+      id: 'typescript/ts-probe',
+      kind: 'skill',
+      filePath,
+      frontmatter: {
+        id: 'typescript/ts-probe',
+        kind: 'skill',
+        title: 'Probe',
+        description: 'A probe skill.',
+        name: 'ts-probe',
+        language: 'typescript',
+        whenToUse: 'terse text',
+      },
+      body: 'line 0\nline 1\nline 2',
+    };
+    const catalog = makeCatalog([artifact]);
+    const findings = [
+      {
+        ruleId: 'when-to-use-quality',
+        severity: 'warning' as const,
+        artifactId: 'typescript/ts-probe',
+        filePath,
+        detail: 'terse',
+      },
+      {
+        ruleId: 'body-density',
+        severity: 'warning' as const,
+        artifactId: 'typescript/ts-probe',
+        filePath,
+        detail: 'long',
+      },
+    ];
+
+    const modelClient: EditorialModelClient = async task => {
+      if (task.ownedFields.includes('whenToUse')) {
+        return { frontmatterPatch: { whenToUse: 'Use when probing things is requested.' } };
+      }
+      return { body: 'line 0\nline 1' };
+    };
+
+    const results = await runEditorialFindings(findings, { catalog, targets: [] }, modelClient);
+
+    assert.equal(results.filter(r => r.status === 'written').length, 2);
+    const written = fs.readFileSync(filePath, 'utf-8');
+    assert.match(written, /whenToUse: Use when probing things is requested\./);
+    assert.doesNotMatch(written, /whenToUse: terse text/);
+    assert.match(written, /line 0\nline 1/);
+    assert.doesNotMatch(written, /line 2/);
   });
 });

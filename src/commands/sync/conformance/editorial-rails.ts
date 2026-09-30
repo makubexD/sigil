@@ -8,11 +8,11 @@
  */
 import matter from 'gray-matter';
 import { getSchema } from '../../../schema/index';
-import { serializeYamlEntry } from '../../../authoring/frontmatter';
 import { renderArtifact } from '../../../targets/emit';
 import { deriveContracts, checkOutputContract } from '../../../targets/output-contract';
 import { ALL_PROVIDER_SPECS } from '../../../targets/all-emit-specs';
 import type { ResolvedArtifact } from '../../../types';
+import { applyFrontmatterPatch, splitFrontmatterBlock } from './frontmatter-patch';
 import type { EditorialTask } from './types';
 
 /** Frontmatter keys no editorial task may ever change, regardless of `ownedFields`. */
@@ -71,15 +71,24 @@ export interface UnparsedCandidate {
   readonly reason: string;
 }
 
-/** Rail 1: the candidate file re-parses as valid frontmatter + body. */
+/**
+ * Rail 1: the candidate file re-parses as valid frontmatter + body.
+ *
+ * Builds the write-ready content from the ORIGINAL raw file plus only the patch — byte-preserving
+ * every untouched frontmatter line (see frontmatter-patch.ts's header for why: a full
+ * parse-and-reserialize silently strips intentional quoting from fields the proposal never
+ * touched). `frontmatterPatch` is undefined for a body-only proposal.
+ */
 export function tryParseCandidate(
-  frontmatter: Record<string, unknown>,
-  body: string,
+  originalRaw: string,
+  frontmatterPatch: Record<string, unknown> | undefined,
+  bodyAfter: string,
 ): ParsedCandidate | UnparsedCandidate {
-  const yamlBlock = Object.entries(frontmatter)
-    .map(([key, value]) => serializeYamlEntry(key, value))
-    .join('\n');
-  const content = `---\n${yamlBlock}\n---\n\n${body.trim()}\n`;
+  const { frontmatterLines } = splitFrontmatterBlock(originalRaw);
+  const newFrontmatter = frontmatterPatch
+    ? applyFrontmatterPatch(frontmatterLines, frontmatterPatch)
+    : frontmatterLines;
+  const content = `---\n${newFrontmatter.join('\n')}\n---\n\n${bodyAfter.trim()}\n`;
   try {
     const parsed = matter(content);
     if (typeof parsed.data !== 'object' || parsed.data === null) {

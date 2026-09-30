@@ -152,9 +152,14 @@ Level 3 — LANGUAGE (injected only where relevant):
 ```
 
 **History invariant:** pass-through / auto-forward steps must **never** push a history frame — only
-steps that actually rendered a prompt do. Violating this causes `history.pop()` to return the
-wrong step and produces "← Back" loops. The `all` branch of `narrow` is a pass-through (no prompt)
-and must NOT push `'narrow'` (the bug that was fixed: `src/wizard/add.ts` `narrow` step, `all` branch).
+steps that actually rendered a prompt do. Violating this causes back-navigation to return the wrong
+step and produces "← Back" loops (the bug that was originally found in the hand-rolled `narrow` step's
+`all` branch). As of the step-registry rewrite (`src/wizard/engine.ts`), this is enforced structurally
+rather than by convention: `history.push` exists in exactly one place — inside `runSteps`, on the
+`'next'` outcome, for a step whose `run()` actually executed. A step skipped via `shouldShow` never
+runs, so it can never push a stale frame. See `src/wizard/steps/add/` for the step list and
+`src/wizard/steps/new/fields-confirm.ts` for the one case (text-entry + confirm) modeled as a single
+step with its own internal loop because the original never gave that transition its own history frame.
 
 **`Browse & pick` → kind sub-menu:** shows "All types (mix anything)" first, then each present kind
 with its artifact count (Skills, Agents, Rules, Commands, Workflows, Hooks, Settings, MCPs).
@@ -179,8 +184,9 @@ only; the user checks every item they want to install.
 the selection, and always shows `Config scope: <value>` + `Destination: <fullPath  › section>` when
 config kinds are in the selection — even when scope equals the `project` default.
 
-**`ScopeChoice`** (`src/wizard/types.ts`): `'all' | 'pack' | 'browse'`. State
-`kindPick?: ArtifactKind` is set when `browse` is chosen and a specific kind is selected.
+**`ScopeChoice`** (`src/wizard/steps/add/state.ts`): `'all' | 'pack' | 'browse'`. State
+`kindPick?: ArtifactKind` is set when `browse` is chosen and a specific kind is selected; `browseAll?:
+boolean` records which of the two "Pick specific items" sub-pickers (all-types vs. single-kind) ran.
 
 **Curated packs (`packs.yaml`):** packs are mix-anything bundles expressed with explicit bare-id
 `artifacts:` lists (e.g. `csharp/cs-generate-tests`, no `kind:` prefix). When a pack contains skills
@@ -429,7 +435,8 @@ GitHub Copilot (2 scopes — no distinct local MCP scope in VS Code):
 **Blast-radius warning.** Driven by `ConfigScopeInfo.blastRadius === 'all-projects'` (provider-agnostic).
 The warning note names the concrete `fullPath  › section` target(s) from the chosen scope's `destinations`.
 The CLI also prints `fullPath  › section` in the `(merged)` confirmation line and in dry-run previews
-(derived by `mergeOpSection()` from the op's fragment structure, so the output mirrors what the scope menu showed).
+(read directly from `ConfigMergeOp.section`, set by each target's `scaffoldConfig` using the identical
+derivation `configScopes()` uses, so the two can't drift apart).
 
 **`.sigil.bak` backup.** Written **once, pristine** before the first home-directory write to preserve
 the original file state. On every subsequent run (backup already exists) the CLI still prints
@@ -454,92 +461,106 @@ Surfaced at two points:
 
 ### `src/` module map
 
-| Path                                  | Responsibility                                                                                                                                            |
-| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `cli.ts`                              | CLI entry — Commander wiring only; thin `.action(runX)` delegation to `commands/`                                                                         |
-| `cli-helpers.ts`                      | Shared CLI utilities: `PKG_ROOT`, `pkg`, `resolveDefault`, `loadAndValidate`, `writeFilesSync`, `partitionFiles`, `detectProjectTarget`, `mergeOpSection` |
-| `config-utils.ts`                     | `resolveConfigRoot` — maps `ConfigRoot` values to absolute filesystem paths                                                                               |
-| `commands/add.ts`                     | `runAdd` — the full `sigil add` handler                                                                                                                   |
-| `commands/build.ts`                   | `runBuild` — compile catalog to dist/<target>/                                                                                                            |
-| `commands/check.ts`                   | `runCheck` — validate catalog source artifact files                                                                                                       |
-| `commands/complete.ts`                | `runComplete` — tab-completion candidates for shell scripts                                                                                               |
-| `commands/completion.ts`              | `runCompletion` — print bash/zsh/fish tab-completion scripts                                                                                              |
-| `commands/delete.ts`                  | `runDelete` — remove an artifact from the catalog source                                                                                                  |
-| `commands/edit.ts`                    | `runEdit` — update title, description, tags of a catalog artifact                                                                                         |
-| `commands/get.ts`                     | `runGet` — show full detail for a single catalog artifact                                                                                                 |
-| `commands/import.ts`                  | `runImport` — import a portable Claude template directory                                                                                                 |
-| `commands/index.ts`                   | `runIndex` — emit dist/registry.json                                                                                                                      |
-| `commands/init.ts`                    | `runInit` — prepare a consumer project for a target platform                                                                                              |
-| `commands/list.ts`                    | `runList` — list catalog artifacts with optional filters                                                                                                  |
-| `commands/move.ts`                    | `runMove` + `loadCatalogSync` — atomic rename with referrer rewrite                                                                                       |
-| `commands/new.ts`                     | `runNew` — scaffold an authoring template for a new artifact                                                                                              |
-| `commands/patch.ts`                   | `runPatch` — update any field(s) of a catalog artifact (transactional)                                                                                    |
-| `commands/release.ts`                 | `runRelease` — bump version, rebuild, update CHANGELOG, commit + tag                                                                                      |
-| `commands/retarget.ts`                | `runRetarget` — change platform targeting without touching artifact body                                                                                  |
-| `commands/search.ts`                  | `runSearch` — free-text search over catalog (id/title/description/tags)                                                                                   |
-| `commands/status.ts`                  | `runStatus` — show health of artifacts installed in a consumer project                                                                                    |
-| `commands/uninstall.ts`               | `runUninstall` — remove installed artifacts (refcount-aware)                                                                                              |
-| `commands/update.ts`                  | `runUpdate` + `isFileDrifted` — refresh installed artifacts; DRY drift check via `sha256`                                                                 |
-| `commands/validate.ts`                | `runValidate` — schema + reference-graph integrity check                                                                                                  |
-| `wizard/add.ts`                       | Step-machine guided `add` wizard (interactive TTY path)                                                                                                   |
-| `wizard/new.ts`                       | `sigil new` wizard                                                                                                                                        |
-| `wizard/edit.ts`                      | `sigil edit` wizard                                                                                                                                       |
-| `wizard/command-strings.ts`           | `buildEquivalentCommand`, `printEquivalentCommand`                                                                                                        |
-| `wizard/types.ts`                     | `ScopeChoice`, `WizardResult`, `TARGET_META`, `isInteractiveTTY`                                                                                          |
-| `wizard/state-display.ts`             | Install-state legend rendering                                                                                                                            |
-| `load.ts`                             | `loadCatalog` — reads `catalog/` into `LoadedCatalog`                                                                                                     |
-| `validate.ts`                         | `validateCatalog` — schema + reference-graph integrity                                                                                                    |
-| `resolve.ts`                          | `resolveCatalog` — `extends`/`uses` expansion → `ResolvedCatalog`                                                                                         |
-| `registry.ts`                         | `buildRegistry` — flat per-artifact index for `dist/registry.json`                                                                                        |
-| `types.ts`                            | All shared TypeScript types and interfaces                                                                                                                |
-| `kinds.ts`                            | `KIND_REGISTRY`, `ALL_KINDS`, `CONFIG_KINDS`, `isArtifactKind`, `isConfigKind`                                                                            |
-| `select/selection.ts`                 | `resolveSelection`, `artifactLanguage`, `isAgnostic`, `artifactTargetsPlatform`                                                                           |
-| `select/closure.ts`                   | `computeClosure` — `uses` dependency closure                                                                                                              |
-| `select/grouping.ts`                  | `groupArtifactsByLanguage`, `partitionConfigKinds`, `availableKinds`                                                                                      |
-| `select/vocabulary.ts`                | `kindNoun`, `kindPlural`, `kindHint`, `artifactLabel`, `artifactHint`                                                                                     |
-| `manifest/types.ts`                   | `ManifestEntry`, `Manifest`, `ArtifactStatus`, `StatusResult`                                                                                             |
-| `manifest/io.ts`                      | `loadManifest`, `saveManifest`, `manifestPath`                                                                                                            |
-| `manifest/hash.ts`                    | `sha256`, `hashFiles`                                                                                                                                     |
-| `manifest/mutate.ts`                  | `upsertEntries`, `upsertConfigEntry`, `removeEntries`                                                                                                     |
-| `manifest/status.ts`                  | `computeStatus`, `recordedHashes`                                                                                                                         |
-| `install-state.ts`                    | `computeInstallStates` — 6-state model (new/foreign/up-to-date/drifted/outdated/missing)                                                                  |
-| `config-merge/primitives.ts`          | `deepEqual`, `deepMerge`, `pruneEmpty`, `canonicalize`, `serialize`                                                                                       |
-| `config-merge/apply.ts`               | `applyMerge` — merge fragment into existing JSON object                                                                                                   |
-| `config-merge/reverse.ts`             | `reverseMerge` — undo sigil's contribution                                                                                                                |
-| `config-merge/drift.ts`               | `detectConfigDrift`                                                                                                                                       |
-| `authoring/check-source.ts`           | `checkSourceArtifact` — validate catalog source files at authoring time                                                                                   |
-| `authoring/frontmatter.ts`            | `writeArtifactFrontmatter`, `serializeScalar`                                                                                                             |
-| `authoring/header.ts`                 | `headerFor` — sigil-managed banner comment                                                                                                                |
-| `authoring/platforms.ts`              | `addPlatforms`, `removePlatforms`, `setPlatforms`                                                                                                         |
-| `authoring/update/descriptors.ts`     | `FieldDescriptor` registry (`COMMON_FIELDS`, `KIND_FIELDS`)                                                                                               |
-| `authoring/update/patch-build.ts`     | `buildFieldPatch` — per-field-group update decomposition                                                                                                  |
-| `authoring/update/apply.ts`           | `applyPatchTransactionally` — write + validate + rollback                                                                                                 |
-| `authoring/import/discover.ts`        | Source-template directory discovery                                                                                                                       |
-| `authoring/import/plan.ts`            | `planImport`                                                                                                                                              |
-| `authoring/import/translate.ts`       | Source frontmatter → catalog frontmatter translation                                                                                                      |
-| `authoring/import/execute.ts`         | `executeImport`                                                                                                                                           |
-| `authoring/move/plan.ts`              | `planMove`                                                                                                                                                |
-| `authoring/move/execute.ts`           | `executeMove` — atomic rename with LIFO rollback                                                                                                          |
-| `trust/scan/rules.ts`                 | 11 security scan rules (`secret/*`, `injection/*`)                                                                                                        |
-| `trust/scan/scanner.ts`               | `scanContent`, `formatScanFindings`                                                                                                                       |
-| `trust/scan/types.ts`                 | `ScanSeverity`, `ScanFinding`, `ScanResult`                                                                                                               |
-| `trust/scan/allowlist.ts`             | `loadAllowlist`                                                                                                                                           |
-| `targets/index.ts`                    | Target registry — `registerTarget`, `getAllTargets`, `getTarget`                                                                                          |
-| `targets/claude-code/index.ts`        | `ClaudeCodeTarget` adapter                                                                                                                                |
-| `targets/claude-code/plugin-build.ts` | Plugin build helpers                                                                                                                                      |
-| `targets/claude-code/scaffold.ts`     | Scaffold helpers                                                                                                                                          |
-| `targets/claude-code/config.ts`       | Config scope definitions (file paths, roots, section keys)                                                                                                |
-| `targets/copilot/index.ts`            | `CopilotTarget` adapter                                                                                                                                   |
-| `targets/copilot/scaffold.ts`         | Copilot scaffold helpers                                                                                                                                  |
-| `targets/copilot/build-helpers.ts`    | Copilot build helpers                                                                                                                                     |
-| `targets/output-contract.ts`          | `checkOutputContract`                                                                                                                                     |
-| `targets/prompt-args.ts`              | `translatePromptArgs`                                                                                                                                     |
-| `targets/yaml-util.ts`                | `yamlScalar` — safe YAML scalar serialization                                                                                                             |
-| `schema/index.ts`                     | Zod schemas (single source of truth for all JSON schemas)                                                                                                 |
-| `schema/emit.ts`                      | Generates `schema/*.schema.json` from Zod schemas                                                                                                         |
-| `release.ts`                          | `bumpVersion`, `promoteChangelog`                                                                                                                         |
-| `query/detail.ts`                     | `getArtifactDetail`, `formatDetailText`                                                                                                                   |
-| `query/search.ts`                     | `searchArtifacts`, `formatSearchResults`                                                                                                                  |
+| Path                                  | Responsibility                                                                                                                                                                 |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `cli.ts`                              | CLI entry — Commander wiring only; thin `.action(runX)` delegation to `commands/`; ends with `program.parseAsync(process.argv).catch(handleFatal)`                             |
+| `cli-error.ts`                        | `handleFatal` — the single `process.exit` in the codebase; formats `SigilError` (or any thrown error) and exits                                                                |
+| `cli-helpers.ts`                      | Shared CLI utilities: `PKG_ROOT`, `pkg`, `resolveDefault`, `requireValidCatalog`, `loadAndValidate`, `writeFilesSync`, `partitionFiles`, `detectProjectTarget`                 |
+| `errors.ts`                           | `SigilError`, `EXIT`, `notFoundError` — the error taxonomy every command throws instead of calling `process.exit`                                                              |
+| `paths.ts`                            | `normPath`, `basenameOfId` — small path-string helpers shared across commands/authoring/targets                                                                                |
+| `refs.ts`                             | `checkReferences` — shared `extends`/`uses.rules`/`uses.agents` dangling-reference walk (validate.ts + authoring/check-source.ts each keep their own error-message formatting) |
+| `config-utils.ts`                     | `resolveConfigRoot` — maps `ConfigRoot` values to absolute filesystem paths                                                                                                    |
+| `commands/add/plan.ts`                | `buildAddPlan` — wizard/flags dispatch, selection, install-state detection, scaffold calls, conflict partitioning → one `AddPlan`                                              |
+| `commands/add/execute.ts`             | `executeAddPlan` — writes files, updates the manifest, installs config-kind merges                                                                                             |
+| `commands/add/render.ts`              | `renderDryRun`, `renderOutcome` — both read the same `AddPlan`; dry-run is a renderer, not a separate code path                                                                |
+| `commands/add/index.ts`               | `runAdd` — orchestrator: `buildAddPlan` → dry-run? `renderDryRun` : `executeAddPlan` → `renderOutcome`                                                                         |
+| `commands/shared/artifact.ts`         | `requireArtifact` — look up by id or throw the standard not-found `SigilError`                                                                                                 |
+| `commands/shared/manifest.ts`         | `requireManifest` — load the install manifest or throw a `SigilError`                                                                                                          |
+| `commands/shared/contract.ts`         | `renderViolations` — format output-conformance violations for a `SigilError` hint                                                                                              |
+| `commands/build.ts`                   | `runBuild` — compile catalog to dist/<target>/                                                                                                                                 |
+| `commands/check.ts`                   | `runCheck` — validate catalog source artifact files                                                                                                                            |
+| `commands/complete.ts`                | `runComplete` — tab-completion candidates for shell scripts                                                                                                                    |
+| `commands/completion.ts`              | `runCompletion` — print bash/zsh/fish tab-completion scripts                                                                                                                   |
+| `commands/delete.ts`                  | `runDelete` — remove an artifact from the catalog source                                                                                                                       |
+| `commands/edit.ts`                    | `runEdit` — update title, description, tags of a catalog artifact                                                                                                              |
+| `commands/get.ts`                     | `runGet` — show full detail for a single catalog artifact                                                                                                                      |
+| `commands/import.ts`                  | `runImport` — import a portable Claude template directory                                                                                                                      |
+| `commands/index.ts`                   | `runIndex` — emit dist/registry.json                                                                                                                                           |
+| `commands/init.ts`                    | `runInit` — prepare a consumer project for a target platform                                                                                                                   |
+| `commands/list.ts`                    | `runList` — list catalog artifacts with optional filters                                                                                                                       |
+| `commands/move.ts`                    | `runMove` + `loadCatalogSync` — atomic rename with referrer rewrite                                                                                                            |
+| `commands/new.ts`                     | `runNew` — scaffold an authoring template for a new artifact                                                                                                                   |
+| `commands/patch.ts`                   | `runPatch` — update any field(s) of a catalog artifact (transactional)                                                                                                         |
+| `commands/release.ts`                 | `runRelease` — bump version, rebuild, update CHANGELOG, commit + tag                                                                                                           |
+| `commands/retarget.ts`                | `runRetarget` — change platform targeting without touching artifact body                                                                                                       |
+| `commands/search.ts`                  | `runSearch` — free-text search over catalog (id/title/description/tags)                                                                                                        |
+| `commands/status.ts`                  | `runStatus` — show health of artifacts installed in a consumer project                                                                                                         |
+| `commands/uninstall.ts`               | `runUninstall` — remove installed artifacts (refcount-aware)                                                                                                                   |
+| `commands/update.ts`                  | `runUpdate` + `isFileDrifted` — refresh installed artifacts (whole-file + config-kind); DRY drift check via `sha256`/`detectConfigDrift`                                       |
+| `commands/validate.ts`                | `runValidate` — schema + reference-graph integrity check                                                                                                                       |
+| `wizard/engine.ts`                    | `runSteps`, `WizardStep`, `StepOutcome` — the step-registry driver shared by both wizards; owns all history push/pop                                                           |
+| `wizard/add.ts`                       | Thin entry point: builds `AddWizardState` and calls `runSteps(ADD_STEPS, state)`                                                                                               |
+| `wizard/steps/add/*.ts`               | 11 `add`-wizard steps (target, scope, pack, browseKind, crossKindPicker, kindPicker, language, deps, overwrite, configScope, proceed) + `state.ts`/`options.ts`                |
+| `wizard/new.ts`                       | Thin entry point + `buildEquivalentNewCommand`: builds `NewWizardState` and calls `runSteps(NEW_STEPS, state)`                                                                 |
+| `wizard/steps/new/*.ts`               | 4 `new`-wizard steps (kind, platforms, language, fieldsConfirm — text-entry + confirm as one step, see its own doc comment) + `state.ts`                                       |
+| `wizard/edit.ts`                      | `sigil edit` wizard                                                                                                                                                            |
+| `wizard/command-strings.ts`           | `buildEquivalentCommand`, `printEquivalentCommand`                                                                                                                             |
+| `wizard/types.ts`                     | `WizardResult`, `NewWizardResult`, `EditWizardResult`, `isInteractiveTTY`                                                                                                      |
+| `wizard/state-display.ts`             | Install-state legend rendering                                                                                                                                                 |
+| `load.ts`                             | `loadCatalog` — reads `catalog/` into `LoadedCatalog`                                                                                                                          |
+| `validate.ts`                         | `validateCatalog` — schema + reference-graph integrity                                                                                                                         |
+| `resolve.ts`                          | `resolveCatalog` — `extends`/`uses` expansion → `ResolvedCatalog`                                                                                                              |
+| `registry.ts`                         | `buildRegistry` — flat per-artifact index for `dist/registry.json`                                                                                                             |
+| `types.ts`                            | All shared TypeScript types and interfaces, incl. `Target.authoringFields`/`displayName`/`installHint`, `ConfigMergeOp.section`, `AuthoringField`                              |
+| `kinds.ts`                            | `KIND_REGISTRY` (+ `hasUsesClosure`/`isDirectoryBacked`/`requiresLanguage` capability flags), `ALL_KINDS`, `CONFIG_KINDS`, `isArtifactKind`, `isConfigKind`                    |
+| `select/selection.ts`                 | `resolveSelection`, `artifactLanguage`, `isAgnostic`, `artifactTargetsPlatform`                                                                                                |
+| `select/closure.ts`                   | `computeClosure` — `uses` dependency closure                                                                                                                                   |
+| `select/grouping.ts`                  | `groupArtifactsByLanguage`, `partitionConfigKinds`, `availableKinds`                                                                                                           |
+| `select/vocabulary.ts`                | `kindNoun`, `kindPlural`, `kindHint`, `artifactLabel`, `artifactHint`                                                                                                          |
+| `manifest/types.ts`                   | `ManifestEntry`, `Manifest`, `ArtifactStatus`, `StatusResult`                                                                                                                  |
+| `manifest/io.ts`                      | `loadManifest`, `saveManifest`, `manifestPath`                                                                                                                                 |
+| `manifest/hash.ts`                    | `sha256`, `hashFiles`                                                                                                                                                          |
+| `manifest/mutate.ts`                  | `upsertEntries`, `upsertConfigEntry`, `removeEntries`                                                                                                                          |
+| `manifest/status.ts`                  | `computeStatus`, `recordedHashes`                                                                                                                                              |
+| `install-state.ts`                    | `computeInstallStates` — 6-state model (new/foreign/up-to-date/drifted/outdated/missing)                                                                                       |
+| `config-merge/primitives.ts`          | `deepEqual`, `deepMerge`, `pruneEmpty`, `canonicalize`, `serialize`                                                                                                            |
+| `config-merge/apply.ts`               | `applyMerge` — merge fragment into existing JSON object                                                                                                                        |
+| `config-merge/reverse.ts`             | `reverseMerge` — undo sigil's contribution                                                                                                                                     |
+| `config-merge/drift.ts`               | `detectConfigDrift`                                                                                                                                                            |
+| `authoring/check-source.ts`           | `checkSourceArtifact` — validate catalog source files at authoring time                                                                                                        |
+| `authoring/frontmatter.ts`            | `writeArtifactFrontmatter`, `serializeScalar`                                                                                                                                  |
+| `authoring/header.ts`                 | `headerFor` — sigil-managed banner comment                                                                                                                                     |
+| `authoring/platforms.ts`              | `addPlatforms`, `removePlatforms`, `setPlatforms`                                                                                                                              |
+| `authoring/update/descriptors.ts`     | `FieldDescriptor` registry (`COMMON_FIELDS`, `KIND_FIELDS`)                                                                                                                    |
+| `authoring/update/patch-build.ts`     | `buildFieldPatch` — per-field-group update decomposition                                                                                                                       |
+| `authoring/update/apply.ts`           | `applyPatchTransactionally` — write + validate + rollback                                                                                                                      |
+| `authoring/import/discover.ts`        | Source-template directory discovery                                                                                                                                            |
+| `authoring/import/plan.ts`            | `planImport`                                                                                                                                                                   |
+| `authoring/import/translate.ts`       | Source frontmatter → catalog frontmatter translation                                                                                                                           |
+| `authoring/import/execute.ts`         | `executeImport`                                                                                                                                                                |
+| `authoring/move/plan.ts`              | `planMove`                                                                                                                                                                     |
+| `authoring/move/execute.ts`           | `executeMove` — atomic rename with LIFO rollback                                                                                                                               |
+| `trust/scan/rules.ts`                 | 11 security scan rules (`secret/*`, `injection/*`)                                                                                                                             |
+| `trust/scan/scanner.ts`               | `scanContent`, `formatScanFindings`                                                                                                                                            |
+| `trust/scan/types.ts`                 | `ScanSeverity`, `ScanFinding`, `ScanResult`                                                                                                                                    |
+| `trust/scan/allowlist.ts`             | `loadAllowlist`                                                                                                                                                                |
+| `targets/index.ts`                    | Target registry — `registerTarget`, `getAllTargets`, `getTarget`, `defaultTargetName`                                                                                          |
+| `targets/shared/boundary.ts`          | `renderBoundarySection` — shared "## Boundary" renderer (was triplicated across claude-code/plugin-build.ts + both copilot files)                                              |
+| `targets/claude-code/index.ts`        | `ClaudeCodeTarget` adapter (declares `displayName`, `installHint`, `authoringFields` for the `claude:` frontmatter namespace)                                                  |
+| `targets/claude-code/plugin-build.ts` | Plugin build helpers                                                                                                                                                           |
+| `targets/claude-code/scaffold.ts`     | Scaffold helpers                                                                                                                                                               |
+| `targets/claude-code/config.ts`       | Config scope definitions (file paths, roots, section keys)                                                                                                                     |
+| `targets/copilot/index.ts`            | `CopilotTarget` adapter                                                                                                                                                        |
+| `targets/copilot/scaffold.ts`         | Copilot scaffold helpers                                                                                                                                                       |
+| `targets/copilot/build-helpers.ts`    | Copilot build helpers                                                                                                                                                          |
+| `targets/output-contract.ts`          | `checkOutputContract`                                                                                                                                                          |
+| `targets/prompt-args.ts`              | `translatePromptArgs`                                                                                                                                                          |
+| `targets/yaml-util.ts`                | `yamlScalar` — safe YAML scalar serialization                                                                                                                                  |
+| `schema/index.ts`                     | Zod schemas (single source of truth for all JSON schemas)                                                                                                                      |
+| `schema/emit.ts`                      | Generates `schema/*.schema.json` from Zod schemas                                                                                                                              |
+| `release.ts`                          | `bumpVersion`, `promoteChangelog`                                                                                                                                              |
+| `query/detail.ts`                     | `getArtifactDetail`, `formatDetailText`                                                                                                                                        |
+| `query/search.ts`                     | `searchArtifacts`, `formatSearchResults`                                                                                                                                       |
 
 ### 4-stage pipeline
 

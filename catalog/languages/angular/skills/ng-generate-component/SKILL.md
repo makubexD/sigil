@@ -14,7 +14,7 @@ allowedTools:
   - Bash
   - Glob
   - Grep
-argumentHint: "\"<name> [--type=component|directive|service|pipe|guard]\""
+argumentHint: "<name> [--type=component|directive|service|pipe|guard]"
 uses:
   rules:
     - angular/ng-components

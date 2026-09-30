@@ -13,7 +13,7 @@ allowedTools:
   - Glob
   - Grep
   - Edit
-argumentHint: "\"<package> [version] [--dev]\""
+argumentHint: "<package> [version] [--dev]"
 uses:
   rules:
     - angular/ng-dependencies

@@ -12,7 +12,7 @@ allowedTools:
   - Bash
   - Glob
   - Grep
-argumentHint: "\"(no arguments)\""
+argumentHint: "(no arguments)"
 uses:
   rules:
     - angular/ng-dependencies

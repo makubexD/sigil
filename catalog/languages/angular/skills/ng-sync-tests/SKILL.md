@@ -14,7 +14,7 @@ allowedTools:
   - Bash
   - Glob
   - Grep
-argumentHint: "\"[--scope=changed|all] (default: changed)\""
+argumentHint: "[--scope=changed|all] (default: changed)"
 uses:
   rules:
     - angular/ng-testing

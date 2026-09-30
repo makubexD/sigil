@@ -242,6 +242,19 @@ export function checkSourceArtifact(
     }
   }
 
+  // ── 4b. argumentHint: must not carry embedded quote characters ────────────
+  // gray-matter parses YAML, so a value like `argumentHint: "\"foo\""` is not a
+  // typo caught elsewhere — it round-trips to the string `"foo"` (quotes included)
+  // and gets double-quoted again by every adapter's yamlScalar()/serializeScalar(),
+  // producing visibly broken frontmatter in the emitted SKILL.md/prompt file.
+  const argumentHint = artifact.frontmatter.argumentHint as string | undefined;
+  if (argumentHint && (argumentHint.startsWith('"') || argumentHint.endsWith('"'))) {
+    v.push({
+      file,
+      problem: `argumentHint '${argumentHint}' contains embedded quote characters — author it as a plain string (e.g. '<package> [version]'), not a quoted string within the YAML value`,
+    });
+  }
+
   // ── 5. platforms: field validation ────────────────────────────────────────
   const platforms = artifact.frontmatter.platforms as string[] | undefined;
   if (platforms && platforms.length > 0) {

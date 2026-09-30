@@ -12,7 +12,7 @@ allowedTools:
   - Bash
   - Glob
   - Grep
-argumentHint: "\"<version> (e.g. 1.2.0)\""
+argumentHint: "<version> (e.g. 1.2.0)"
 uses:
   rules:
     - angular/ng-conventions

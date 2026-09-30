@@ -14,7 +14,7 @@ allowedTools:
   - Bash
   - Glob
   - Grep
-argumentHint: "\"[file-or-component] (optional)\""
+argumentHint: "[file-or-component] (optional)"
 uses:
   rules:
     - angular/ng-testing

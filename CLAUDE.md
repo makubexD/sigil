@@ -71,6 +71,14 @@ linking, use `npm run sigil -- <args>`.
   always written) and `conflicting` (exists, never touched without `--overwrite`).
 - **`resolveSelection()`** (`src/select/selection.ts`) checks each artifact's kind against
   `target.supportedKinds`; unsupported kinds go to `skipped[]` — warn-and-skip, not an error.
+- **Every whole-file kind (`skill`/`agent`/`rule`/`prompt`/`workflow`) a target declares in
+  `supportedKinds` must have a matching `KindEmitSpec`.** `copilot/workflow` was declared supported
+  with no spec for a full release cycle — no derived output contract, no doc citation — until the
+  2026-08-07 catalog-conformance audit caught it (see `docs/decisions/catalog-conformance-audit-2026-08.md`).
+  `sigil sync`'s `provider-kind-coverage` conformance rule (`src/commands/sync/conformance/rules/`)
+  now fails `--check` on this gap; config kinds (`hook`/`settings`/`mcp`) are JSON merges, not
+  markdown renders, and are citation-covered instead via `AGGREGATE_DOC_REFS`
+  (`src/targets/all-emit-specs.ts`).
 
 ## Architecture
 

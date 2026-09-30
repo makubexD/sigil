@@ -51,7 +51,7 @@ jobs:
       - name: Validate catalog
         run: npm run validate
 
-      - name: Check template + provider-doc drift
+      - name: Check template drift + catalog conformance + provider-doc staleness
         run: node dist-cli/cli.js sync --check
 
       - name: Run tests

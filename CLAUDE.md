@@ -316,6 +316,7 @@ IDs, renders files, and runs per-file `checkSourceArtifact` validation. No AI �
 CI-safe.
 
 Key flags:
+
 - `--language <lang>` — required; target catalog language key (e.g. `csharp`, `typescript`)
 - `--display-name <name>` — overrides the language's `displayName` in generated titles
 - `--create-language` — scaffold `language.yaml` if the language dir doesn't exist yet
@@ -326,16 +327,16 @@ Key flags:
 
 **Source→catalog field mapping:**
 
-| Kind | Source field | Catalog field |
-|---|---|---|
-| rule | `paths` | `appliesTo` (default `['**/*']`) |
-| rule | _(none)_ | `severity: recommended`; `extends: []` synthesized |
-| agent | `tools` (comma string) | `tools` (array) |
-| skill | `allowed-tools` (comma string) | `allowedTools` (array) — new optional schema field |
-| skill | `argument-hint` | `argumentHint` — new optional schema field |
-| skill | `disable-model-invocation` | `disableModelInvocation` — new optional schema field |
-| skill | `when_to_use` | Prepended to body as `## When to Use` section (NOT in description) |
-| all | _(slug)_ | `id: <lang>/<slug>`; `title` via slugToTitle; `tags` from slug words |
+| Kind  | Source field                   | Catalog field                                                        |
+| ----- | ------------------------------ | -------------------------------------------------------------------- |
+| rule  | `paths`                        | `appliesTo` (default `['**/*']`)                                     |
+| rule  | _(none)_                       | `severity: recommended`; `extends: []` synthesized                   |
+| agent | `tools` (comma string)         | `tools` (array)                                                      |
+| skill | `allowed-tools` (comma string) | `allowedTools` (array) — new optional schema field                   |
+| skill | `argument-hint`                | `argumentHint` — new optional schema field                           |
+| skill | `disable-model-invocation`     | `disableModelInvocation` — new optional schema field                 |
+| skill | `when_to_use`                  | Prepended to body as `## When to Use` section (NOT in description)   |
+| all   | _(slug)_                       | `id: <lang>/<slug>`; `title` via slugToTitle; `tags` from slug words |
 
 **Content quality is a separate concern.** The import command produces a mechanical baseline:
 `uses: { rules: [], agents: [] }` (empty), `extends: []`, and fallback titles. Wiring deps, setting
@@ -453,73 +454,92 @@ Surfaced at two points:
 
 ### `src/` module map
 
-| Path | Responsibility |
-|------|----------------|
-| `cli.ts` | CLI entry — Commander wiring only; thin `.action(runX)` delegation to `commands/` |
-| `cli-helpers.ts` | Shared CLI utilities: `PKG_ROOT`, `pkg`, `resolveDefault`, `loadAndValidate`, `writeFilesSync`, `partitionFiles`, `detectProjectTarget`, `mergeOpSection` |
-| `config-utils.ts` | `resolveConfigRoot` — maps `ConfigRoot` values to absolute filesystem paths |
-| `commands/add.ts` | `runAdd` — the full `sigil add` handler |
-| `commands/patch.ts` | `runPatch` — the full `sigil patch` handler |
-| `commands/<name>.ts` | One file per remaining command (`build`, `validate`, `status`, `update`, `import`, …) |
-| `wizard/add.ts` | Step-machine guided `add` wizard (interactive TTY path) |
-| `wizard/new.ts` | `sigil new` wizard |
-| `wizard/edit.ts` | `sigil edit` wizard |
-| `wizard/command-strings.ts` | `buildEquivalentCommand`, `printEquivalentCommand` |
-| `wizard/types.ts` | `ScopeChoice`, `WizardResult`, `TARGET_META`, `isInteractiveTTY` |
-| `wizard/state-display.ts` | Install-state legend rendering |
-| `load.ts` | `loadCatalog` — reads `catalog/` into `LoadedCatalog` |
-| `validate.ts` | `validateCatalog` — schema + reference-graph integrity |
-| `resolve.ts` | `resolveCatalog` — `extends`/`uses` expansion → `ResolvedCatalog` |
-| `registry.ts` | `buildRegistry` — flat per-artifact index for `dist/registry.json` |
-| `types.ts` | All shared TypeScript types and interfaces |
-| `kinds.ts` | `KIND_REGISTRY`, `ALL_KINDS`, `CONFIG_KINDS`, `isArtifactKind`, `isConfigKind` |
-| `select/selection.ts` | `resolveSelection`, `artifactLanguage`, `isAgnostic`, `artifactTargetsPlatform` |
-| `select/closure.ts` | `computeClosure` — `uses` dependency closure |
-| `select/grouping.ts` | `groupArtifactsByLanguage`, `partitionConfigKinds`, `availableKinds` |
-| `select/vocabulary.ts` | `kindNoun`, `kindPlural`, `kindHint`, `artifactLabel`, `artifactHint` |
-| `manifest/types.ts` | `ManifestEntry`, `Manifest`, `ArtifactStatus`, `StatusResult` |
-| `manifest/io.ts` | `loadManifest`, `saveManifest`, `manifestPath` |
-| `manifest/hash.ts` | `sha256`, `hashFiles` |
-| `manifest/mutate.ts` | `upsertEntries`, `upsertConfigEntry`, `removeEntries` |
-| `manifest/status.ts` | `computeStatus`, `recordedHashes` |
-| `install-state.ts` | `computeInstallStates` — 6-state model (new/foreign/up-to-date/drifted/outdated/missing) |
-| `config-merge/primitives.ts` | `deepEqual`, `deepMerge`, `pruneEmpty`, `canonicalize`, `serialize` |
-| `config-merge/apply.ts` | `applyMerge` — merge fragment into existing JSON object |
-| `config-merge/reverse.ts` | `reverseMerge` — undo sigil's contribution |
-| `config-merge/drift.ts` | `detectConfigDrift` |
-| `authoring/check-source.ts` | `checkSourceArtifact` — validate catalog source files at authoring time |
-| `authoring/frontmatter.ts` | `writeArtifactFrontmatter`, `serializeScalar` |
-| `authoring/header.ts` | `headerFor` — sigil-managed banner comment |
-| `authoring/platforms.ts` | `addPlatforms`, `removePlatforms`, `setPlatforms` |
-| `authoring/update/descriptors.ts` | `FieldDescriptor` registry (`COMMON_FIELDS`, `KIND_FIELDS`) |
-| `authoring/update/patch-build.ts` | `buildFieldPatch` — per-field-group update decomposition |
-| `authoring/update/apply.ts` | `applyPatchTransactionally` — write + validate + rollback |
-| `authoring/import/discover.ts` | Source-template directory discovery |
-| `authoring/import/plan.ts` | `planImport` |
-| `authoring/import/translate.ts` | Source frontmatter → catalog frontmatter translation |
-| `authoring/import/execute.ts` | `executeImport` |
-| `authoring/move/plan.ts` | `planMove` |
-| `authoring/move/execute.ts` | `executeMove` — atomic rename with LIFO rollback |
-| `trust/scan/rules.ts` | 11 security scan rules (`secret/*`, `injection/*`) |
-| `trust/scan/scanner.ts` | `scanContent`, `formatScanFindings` |
-| `trust/scan/types.ts` | `ScanSeverity`, `ScanFinding`, `ScanResult` |
-| `trust/scan/allowlist.ts` | `loadAllowlist` |
-| `targets/index.ts` | Target registry — `registerTarget`, `getAllTargets`, `getTarget` |
-| `targets/claude-code/index.ts` | `ClaudeCodeTarget` adapter |
-| `targets/claude-code/plugin-build.ts` | Plugin build helpers |
-| `targets/claude-code/scaffold.ts` | Scaffold helpers |
-| `targets/claude-code/config.ts` | Config scope definitions (file paths, roots, section keys) |
-| `targets/copilot/index.ts` | `CopilotTarget` adapter |
-| `targets/copilot/scaffold.ts` | Copilot scaffold helpers |
-| `targets/copilot/build-helpers.ts` | Copilot build helpers |
-| `targets/output-contract.ts` | `checkOutputContract` |
-| `targets/prompt-args.ts` | `translatePromptArgs` |
-| `targets/yaml-util.ts` | `yamlScalar` — safe YAML scalar serialization |
-| `schema/index.ts` | Zod schemas (single source of truth for all JSON schemas) |
-| `schema/emit.ts` | Generates `schema/*.schema.json` from Zod schemas |
-| `release.ts` | `bumpVersion`, `promoteChangelog` |
-| `query/detail.ts` | `getArtifactDetail`, `formatDetailText` |
-| `query/search.ts` | `searchArtifacts`, `formatSearchResults` |
+| Path                                  | Responsibility                                                                                                                                            |
+| ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cli.ts`                              | CLI entry — Commander wiring only; thin `.action(runX)` delegation to `commands/`                                                                         |
+| `cli-helpers.ts`                      | Shared CLI utilities: `PKG_ROOT`, `pkg`, `resolveDefault`, `loadAndValidate`, `writeFilesSync`, `partitionFiles`, `detectProjectTarget`, `mergeOpSection` |
+| `config-utils.ts`                     | `resolveConfigRoot` — maps `ConfigRoot` values to absolute filesystem paths                                                                               |
+| `commands/add.ts`                     | `runAdd` — the full `sigil add` handler                                                                                                                   |
+| `commands/build.ts`                   | `runBuild` — compile catalog to dist/<target>/                                                                                                            |
+| `commands/check.ts`                   | `runCheck` — validate catalog source artifact files                                                                                                       |
+| `commands/complete.ts`                | `runComplete` — tab-completion candidates for shell scripts                                                                                               |
+| `commands/completion.ts`              | `runCompletion` — print bash/zsh/fish tab-completion scripts                                                                                              |
+| `commands/delete.ts`                  | `runDelete` — remove an artifact from the catalog source                                                                                                  |
+| `commands/edit.ts`                    | `runEdit` — update title, description, tags of a catalog artifact                                                                                         |
+| `commands/get.ts`                     | `runGet` — show full detail for a single catalog artifact                                                                                                 |
+| `commands/import.ts`                  | `runImport` — import a portable Claude template directory                                                                                                 |
+| `commands/index.ts`                   | `runIndex` — emit dist/registry.json                                                                                                                      |
+| `commands/init.ts`                    | `runInit` — prepare a consumer project for a target platform                                                                                              |
+| `commands/list.ts`                    | `runList` — list catalog artifacts with optional filters                                                                                                  |
+| `commands/move.ts`                    | `runMove` + `loadCatalogSync` — atomic rename with referrer rewrite                                                                                       |
+| `commands/new.ts`                     | `runNew` — scaffold an authoring template for a new artifact                                                                                              |
+| `commands/patch.ts`                   | `runPatch` — update any field(s) of a catalog artifact (transactional)                                                                                    |
+| `commands/release.ts`                 | `runRelease` — bump version, rebuild, update CHANGELOG, commit + tag                                                                                      |
+| `commands/retarget.ts`                | `runRetarget` — change platform targeting without touching artifact body                                                                                  |
+| `commands/search.ts`                  | `runSearch` — free-text search over catalog (id/title/description/tags)                                                                                   |
+| `commands/status.ts`                  | `runStatus` — show health of artifacts installed in a consumer project                                                                                    |
+| `commands/uninstall.ts`               | `runUninstall` — remove installed artifacts (refcount-aware)                                                                                              |
+| `commands/update.ts`                  | `runUpdate` + `isFileDrifted` — refresh installed artifacts; DRY drift check via `sha256`                                                                 |
+| `commands/validate.ts`                | `runValidate` — schema + reference-graph integrity check                                                                                                  |
+| `wizard/add.ts`                       | Step-machine guided `add` wizard (interactive TTY path)                                                                                                   |
+| `wizard/new.ts`                       | `sigil new` wizard                                                                                                                                        |
+| `wizard/edit.ts`                      | `sigil edit` wizard                                                                                                                                       |
+| `wizard/command-strings.ts`           | `buildEquivalentCommand`, `printEquivalentCommand`                                                                                                        |
+| `wizard/types.ts`                     | `ScopeChoice`, `WizardResult`, `TARGET_META`, `isInteractiveTTY`                                                                                          |
+| `wizard/state-display.ts`             | Install-state legend rendering                                                                                                                            |
+| `load.ts`                             | `loadCatalog` — reads `catalog/` into `LoadedCatalog`                                                                                                     |
+| `validate.ts`                         | `validateCatalog` — schema + reference-graph integrity                                                                                                    |
+| `resolve.ts`                          | `resolveCatalog` — `extends`/`uses` expansion → `ResolvedCatalog`                                                                                         |
+| `registry.ts`                         | `buildRegistry` — flat per-artifact index for `dist/registry.json`                                                                                        |
+| `types.ts`                            | All shared TypeScript types and interfaces                                                                                                                |
+| `kinds.ts`                            | `KIND_REGISTRY`, `ALL_KINDS`, `CONFIG_KINDS`, `isArtifactKind`, `isConfigKind`                                                                            |
+| `select/selection.ts`                 | `resolveSelection`, `artifactLanguage`, `isAgnostic`, `artifactTargetsPlatform`                                                                           |
+| `select/closure.ts`                   | `computeClosure` — `uses` dependency closure                                                                                                              |
+| `select/grouping.ts`                  | `groupArtifactsByLanguage`, `partitionConfigKinds`, `availableKinds`                                                                                      |
+| `select/vocabulary.ts`                | `kindNoun`, `kindPlural`, `kindHint`, `artifactLabel`, `artifactHint`                                                                                     |
+| `manifest/types.ts`                   | `ManifestEntry`, `Manifest`, `ArtifactStatus`, `StatusResult`                                                                                             |
+| `manifest/io.ts`                      | `loadManifest`, `saveManifest`, `manifestPath`                                                                                                            |
+| `manifest/hash.ts`                    | `sha256`, `hashFiles`                                                                                                                                     |
+| `manifest/mutate.ts`                  | `upsertEntries`, `upsertConfigEntry`, `removeEntries`                                                                                                     |
+| `manifest/status.ts`                  | `computeStatus`, `recordedHashes`                                                                                                                         |
+| `install-state.ts`                    | `computeInstallStates` — 6-state model (new/foreign/up-to-date/drifted/outdated/missing)                                                                  |
+| `config-merge/primitives.ts`          | `deepEqual`, `deepMerge`, `pruneEmpty`, `canonicalize`, `serialize`                                                                                       |
+| `config-merge/apply.ts`               | `applyMerge` — merge fragment into existing JSON object                                                                                                   |
+| `config-merge/reverse.ts`             | `reverseMerge` — undo sigil's contribution                                                                                                                |
+| `config-merge/drift.ts`               | `detectConfigDrift`                                                                                                                                       |
+| `authoring/check-source.ts`           | `checkSourceArtifact` — validate catalog source files at authoring time                                                                                   |
+| `authoring/frontmatter.ts`            | `writeArtifactFrontmatter`, `serializeScalar`                                                                                                             |
+| `authoring/header.ts`                 | `headerFor` — sigil-managed banner comment                                                                                                                |
+| `authoring/platforms.ts`              | `addPlatforms`, `removePlatforms`, `setPlatforms`                                                                                                         |
+| `authoring/update/descriptors.ts`     | `FieldDescriptor` registry (`COMMON_FIELDS`, `KIND_FIELDS`)                                                                                               |
+| `authoring/update/patch-build.ts`     | `buildFieldPatch` — per-field-group update decomposition                                                                                                  |
+| `authoring/update/apply.ts`           | `applyPatchTransactionally` — write + validate + rollback                                                                                                 |
+| `authoring/import/discover.ts`        | Source-template directory discovery                                                                                                                       |
+| `authoring/import/plan.ts`            | `planImport`                                                                                                                                              |
+| `authoring/import/translate.ts`       | Source frontmatter → catalog frontmatter translation                                                                                                      |
+| `authoring/import/execute.ts`         | `executeImport`                                                                                                                                           |
+| `authoring/move/plan.ts`              | `planMove`                                                                                                                                                |
+| `authoring/move/execute.ts`           | `executeMove` — atomic rename with LIFO rollback                                                                                                          |
+| `trust/scan/rules.ts`                 | 11 security scan rules (`secret/*`, `injection/*`)                                                                                                        |
+| `trust/scan/scanner.ts`               | `scanContent`, `formatScanFindings`                                                                                                                       |
+| `trust/scan/types.ts`                 | `ScanSeverity`, `ScanFinding`, `ScanResult`                                                                                                               |
+| `trust/scan/allowlist.ts`             | `loadAllowlist`                                                                                                                                           |
+| `targets/index.ts`                    | Target registry — `registerTarget`, `getAllTargets`, `getTarget`                                                                                          |
+| `targets/claude-code/index.ts`        | `ClaudeCodeTarget` adapter                                                                                                                                |
+| `targets/claude-code/plugin-build.ts` | Plugin build helpers                                                                                                                                      |
+| `targets/claude-code/scaffold.ts`     | Scaffold helpers                                                                                                                                          |
+| `targets/claude-code/config.ts`       | Config scope definitions (file paths, roots, section keys)                                                                                                |
+| `targets/copilot/index.ts`            | `CopilotTarget` adapter                                                                                                                                   |
+| `targets/copilot/scaffold.ts`         | Copilot scaffold helpers                                                                                                                                  |
+| `targets/copilot/build-helpers.ts`    | Copilot build helpers                                                                                                                                     |
+| `targets/output-contract.ts`          | `checkOutputContract`                                                                                                                                     |
+| `targets/prompt-args.ts`              | `translatePromptArgs`                                                                                                                                     |
+| `targets/yaml-util.ts`                | `yamlScalar` — safe YAML scalar serialization                                                                                                             |
+| `schema/index.ts`                     | Zod schemas (single source of truth for all JSON schemas)                                                                                                 |
+| `schema/emit.ts`                      | Generates `schema/*.schema.json` from Zod schemas                                                                                                         |
+| `release.ts`                          | `bumpVersion`, `promoteChangelog`                                                                                                                         |
+| `query/detail.ts`                     | `getArtifactDetail`, `formatDetailText`                                                                                                                   |
+| `query/search.ts`                     | `searchArtifacts`, `formatSearchResults`                                                                                                                  |
 
 ### 4-stage pipeline
 
@@ -601,17 +621,17 @@ When adding new authoring fields that may contain these characters, ensure the v
 
 **Key field differences between source and what each platform expects:**
 
-| Source field              | Claude Code emits                                            | Copilot emits                                                         |
-| ------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
-| `appliesTo:` (skill/rule) | `paths:` (SKILL.md or rules)                                 | `applyTo:` (`.instructions.md` only; NOT in SKILL.md or prompt files) |
-| `allowedTools?: string[]` | `allowed-tools: <csv>` in SKILL.md                           | _(skipped — not in Copilot SKILL.md spec)_                            |
-| `argumentHint?: string`   | `argument-hint: "<hint>"` in SKILL.md                        | _(skipped)_                                                           |
-| `disableModelInvocation?: boolean` | `disable-model-invocation: true` in SKILL.md        | _(skipped)_                                                           |
-| `prompt` body `{{name}}`  | `$name` (via `arguments:` frontmatter list)                  | `${input:name}` (VS Code input variable, 2-part only)                 |
-| `prompt` frontmatter      | `description:` + `argument-hint:` + `arguments:` (YAML list) | `agent: agent` + `description:` + `tools:`                            |
-| skill frontmatter         | `name:` + `description:` + `paths:`                          | `name:` + `description:` only (no `applyTo`/`paths:`)                 |
-| —                         | flat `marketplace.json`: `name/owner/plugins[]`              | —                                                                     |
-| —                         | —                                                            | `.agent.md` extension + `description:` (required by Copilot spec)     |
+| Source field                       | Claude Code emits                                            | Copilot emits                                                         |
+| ---------------------------------- | ------------------------------------------------------------ | --------------------------------------------------------------------- |
+| `appliesTo:` (skill/rule)          | `paths:` (SKILL.md or rules)                                 | `applyTo:` (`.instructions.md` only; NOT in SKILL.md or prompt files) |
+| `allowedTools?: string[]`          | `allowed-tools: <csv>` in SKILL.md                           | _(skipped — not in Copilot SKILL.md spec)_                            |
+| `argumentHint?: string`            | `argument-hint: "<hint>"` in SKILL.md                        | _(skipped)_                                                           |
+| `disableModelInvocation?: boolean` | `disable-model-invocation: true` in SKILL.md                 | _(skipped)_                                                           |
+| `prompt` body `{{name}}`           | `$name` (via `arguments:` frontmatter list)                  | `${input:name}` (VS Code input variable, 2-part only)                 |
+| `prompt` frontmatter               | `description:` + `argument-hint:` + `arguments:` (YAML list) | `agent: agent` + `description:` + `tools:`                            |
+| skill frontmatter                  | `name:` + `description:` + `paths:`                          | `name:` + `description:` only (no `applyTo`/`paths:`)                 |
+| —                                  | flat `marketplace.json`: `name/owner/plugins[]`              | —                                                                     |
+| —                                  | —                                                            | `.agent.md` extension + `description:` (required by Copilot spec)     |
 
 The `appliesTo` field stays unchanged in `catalog/` source and the zod schema — only adapters translate it.
 

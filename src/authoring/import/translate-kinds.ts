@@ -4,9 +4,9 @@
  *
  * @module
  */
-import { slugToTitle } from './translate';
+import { slugToTitle } from './translate-shared';
 import { splitToolsString, tagsFromSlug, computeDroppedFields } from './translate-helpers';
-import type { TranslateOptions, CatalogFrontmatter, TranslateResult } from './translate';
+import type { TranslateOptions, CatalogFrontmatter, TranslateResult } from './translate-shared';
 
 /** Builds a rule's CatalogFrontmatter from its translated fields. */
 function buildRuleFrontmatter(

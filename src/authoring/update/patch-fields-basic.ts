@@ -7,8 +7,8 @@
  *
  * @module
  */
-import type { UpdateOps, PatchCtx } from './patch-build';
-import { patchList } from './patch-build';
+import type { UpdateOps, PatchCtx } from './patch-types';
+import { patchList } from './patch-types';
 
 export function applyTitle(ctx: PatchCtx, ops: UpdateOps): boolean {
   if (ops.title === undefined) return false;

@@ -3,11 +3,11 @@ id: typescript/ts-architecture-reviewer
 kind: agent
 title: Architecture Reviewer (TypeScript)
 description: >-
-  Use to review the structural and design-level health of a TypeScript codebase
-  — module coupling, cohesion, layering, circular imports, and SOLID adherence
-  at package scale. Read-only; returns a prioritized findings report. Analyzes
-  the module graph and design boundaries. Use proactively when adding new
-  modules, refactoring module boundaries, or when the codebase feels tangled.
+  Use to review the structural and design-level health of a TypeScript codebase — module coupling,
+  cohesion, layering, circular imports, and SOLID adherence at package scale. Makes no edits (Bash
+  is read-only by instruction, not sandboxed); returns a prioritized findings report. Analyzes the
+  module graph and design boundaries. Use proactively when adding new modules, refactoring module
+  boundaries, or when the codebase feels tangled.
 name: ts-architecture-reviewer
 language: typescript
 tools:

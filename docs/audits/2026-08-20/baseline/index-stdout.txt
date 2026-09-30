@@ -1,0 +1,2 @@
+✓ C:\WorkspaceMaku\MakuAgentCatalogAI\dist\registry.json  (96 artifacts, 8 kinds, 5 languages)
+exit: 0

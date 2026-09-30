@@ -5,6 +5,8 @@
 import path from 'path';
 import type { Artifact, LoadedCatalog } from '../../types';
 import { SKILL_FILENAME, ID_PART_COUNT } from '../../paths';
+import { KEBAB_ID_RE } from '../../schema/shared';
+import { resolveContained } from '../../cli-helpers';
 
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 
@@ -17,8 +19,21 @@ import { SKILL_FILENAME, ID_PART_COUNT } from '../../paths';
  *                             (skill: catalog/shared/skills/<name>/SKILL.md)
  *   - id = "<lang>/<name>"  → catalog/languages/<lang>/{kind}s/<name>.{kind}.md
  *                             (skill: catalog/languages/<lang>/skills/<name>/SKILL.md)
+ *
+ * `newId` is validated against the same `KEBAB_ID_RE` the schema enforces on every catalog
+ * artifact's `id` field before any path is computed, and the computed destination is re-checked
+ * with `resolveContained()` — the same defense-in-depth pattern `cli-helpers.ts`'s `writeFilesSync`
+ * uses. `move` previously only checked `!prefix || !name`, so an id like `shared/../../escape`
+ * (an id `.split('/')` still destructures into a truthy prefix/name pair) reached `moveFiles`'s
+ * `fs.mkdirSync`/rename unchecked — found by the round-4 (2026-08-23) audit's dogfooded
+ * `ts-security-auditor` run, F22's sibling gap in a command outside the original fix's scope.
  */
 export function computeDestinationPath(newId: string, kind: string, catalogDir: string): string {
+  if (!KEBAB_ID_RE.test(newId)) {
+    throw new Error(
+      `Invalid id '${newId}' — id must be namespaced kebab-case (e.g. "shared/foo", "typescript/foo-bar")`,
+    );
+  }
   const [prefix, name] = newId.split('/');
   if (!prefix || !name) {
     throw new Error(`Invalid id '${newId}' — must be '<prefix>/<name>'`);
@@ -29,10 +44,11 @@ export function computeDestinationPath(newId: string, kind: string, catalogDir: 
       ? path.join(catalogDir, 'shared')
       : path.join(catalogDir, 'languages', prefix);
 
-  if (kind === 'skill') {
-    return path.join(base, 'skills', name, SKILL_FILENAME);
-  }
-  return path.join(base, `${kind}s`, `${name}.${kind}.md`);
+  const relPath =
+    kind === 'skill'
+      ? path.join('skills', name, SKILL_FILENAME)
+      : path.join(`${kind}s`, `${name}.${kind}.md`);
+  return resolveContained(base, relPath);
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

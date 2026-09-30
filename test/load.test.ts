@@ -27,22 +27,34 @@ describe('Load phase', () => {
       catalog.byId.has('csharp/cs-generate-tests'),
       'csharp/cs-generate-tests skill exists',
     );
-    assert.ok(catalog.byId.has('csharp/cs-api-architect'), 'csharp/cs-api-architect agent exists');
-
-    assert.ok(catalog.byId.has('python/py-style'), 'python/py-style rule exists');
+    // csharp/cs-api-architect was merged into cs-architecture-reviewer (2026-08-24 catalog
+    // round 5) and deleted — asserting its absence guards against an accidental re-add.
     assert.ok(
-      catalog.byId.has('python/py-pytest-testing'),
-      'python/py-pytest-testing skill exists',
+      catalog.byId.has('csharp/cs-architecture-reviewer'),
+      'csharp/cs-architecture-reviewer agent exists',
+    );
+    assert.ok(
+      !catalog.byId.has('csharp/cs-api-architect'),
+      'csharp/cs-api-architect was merged and deleted, not re-added',
     );
 
-    assert.ok(catalog.byId.has('react/react-style'), 'react/react-style rule exists');
-    assert.ok(catalog.byId.has('react/component-testing'), 'react/component-testing skill exists');
+    assert.ok(catalog.byId.has('python/py-conventions'), 'python/py-conventions rule exists');
+    assert.ok(
+      catalog.byId.has('python/py-generate-tests'),
+      'python/py-generate-tests skill exists',
+    );
+
+    assert.ok(catalog.byId.has('react/react-conventions'), 'react/react-conventions rule exists');
+    assert.ok(
+      catalog.byId.has('react/react-generate-tests'),
+      'react/react-generate-tests skill exists',
+    );
   });
 
   it('loads skill reference files', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
-    // react/component-testing has a references/ directory with testing-library.md
-    const skill = catalog.byId.get('react/component-testing');
+    // react/react-generate-tests has a references/ directory with testing-library.md
+    const skill = catalog.byId.get('react/react-generate-tests');
     assert.ok(skill, 'skill exists');
     assert.ok(skill.references && skill.references.length > 0, 'skill has references');
     assert.equal(skill.references![0]!.name, 'testing-library.md');

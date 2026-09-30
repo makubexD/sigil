@@ -6,7 +6,8 @@
       "properties": {
         "id": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:\\/[a-z0-9]+(?:-[a-z0-9]+)*){1,2}$"
         },
         "kind": {
           "type": "string",
@@ -59,7 +60,8 @@
         },
         "name": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
         },
         "language": {
           "type": "string",
@@ -146,8 +148,7 @@
         "kind",
         "title",
         "description",
-        "name",
-        "language"
+        "name"
       ],
       "additionalProperties": false
     }

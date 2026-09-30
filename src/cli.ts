@@ -228,7 +228,7 @@ program
 program
   .command('update [ids...]')
   .description(
-    'Refresh installed artifacts to the current bundled catalog version. Skips drifted files unless --force.',
+    'Refresh installed artifacts to the current bundled catalog version, including hook/settings/mcp fragments the catalog changed. Skips drifted files and edited config values unless --force.',
   )
   .option('--project-dir <dir>', 'Consumer project root', process.cwd())
   .option('--target <name>', 'Target platform (auto-detected if omitted)')

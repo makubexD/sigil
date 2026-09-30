@@ -13,6 +13,7 @@ import {
   applyMerge,
   reverseMerge,
   detectConfigDrift,
+  classifyConfigDrift,
 } from '../dist-cli/config-merge/index';
 import type { ConfigMergeOp } from '../dist-cli/types';
 
@@ -262,6 +263,96 @@ describe('K — Config merge (config-merge.ts)', () => {
     assert.ok(detectConfigDrift(live as any, op), 'drift — contributed allow entry removed');
   });
 
+  // ── classifyConfigDrift (F14 — docs/decisions/catalog-usage-audit-2026-08-21.md) ───────────────
+
+  it('classifyConfigDrift: missing when the whole contributed top-level key is gone', () => {
+    // The exact F14 shape: the hooks key sigil merged in is entirely absent; permissions
+    // (an unrelated, untouched top-level key) is still there.
+    const op: ConfigMergeOp = {
+      file: '.claude/settings.json',
+      fragment: {
+        hooks: { PreToolUse: [{ matcher: 'Edit', hooks: [{ type: 'command', command: 'x' }] }] },
+      },
+      strategy: { hooks: 'array-append' },
+    };
+    const live = { permissions: { allow: ['Bash(npm run *)'] } };
+    assert.equal(classifyConfigDrift(live as any, op), 'missing');
+  });
+
+  it('classifyConfigDrift: modified when a contributed leaf is present but changed', () => {
+    const op: ConfigMergeOp = {
+      file: '.claude/settings.json',
+      fragment: { model: 'claude-opus-4-8' },
+      strategy: {},
+    };
+    const live = { model: 'claude-sonnet-4-6' };
+    assert.equal(classifyConfigDrift(live as any, op), 'modified');
+  });
+
+  it('classifyConfigDrift: missing (not modified) when one of two contributed array items is gone', () => {
+    // array-union/array-append are provably non-destructive to re-apply — union dedupes, append
+    // only concatenates — so a partially-present array is still safe to auto-restore, not a case
+    // requiring --force the way an overwritten object-spread leaf is.
+    const op: ConfigMergeOp = {
+      file: '.claude/settings.json',
+      fragment: { permissions: { allow: ['Bash(npm run *)', 'Bash(git status)'] } },
+      strategy: { permissions: 'array-union' },
+    };
+    const live = { permissions: { allow: ['Bash(npm run *)'] } }; // one of the two survived
+    assert.equal(classifyConfigDrift(live as any, op), 'missing');
+  });
+
+  it('classifyConfigDrift: modified when a sigil-owned array-union key becomes an incompatible type (round-4 audit F48)', () => {
+    // A user or another tool overwrote the whole `permissions` key with a scalar instead of the
+    // object-of-arrays sigil contributed. This determines --force gating (F14) and was an
+    // untested branch (classifyArrayStrategy's `!isPlainObject(current) → 'modified'`) until the
+    // round-4 dogfooded ts-debugger run flagged the coverage gap.
+    const op: ConfigMergeOp = {
+      file: '.claude/settings.json',
+      fragment: { permissions: { allow: ['Bash(npm run *)'] } },
+      strategy: { permissions: 'array-union' },
+    };
+    const live = { permissions: 'not-an-object' };
+    assert.equal(classifyConfigDrift(live as any, op), 'modified');
+  });
+
+  it('classifyConfigDrift: modified when a sigil-owned object-spread leaf becomes an incompatible type (round-4 audit F48)', () => {
+    const op: ConfigMergeOp = {
+      file: '.claude/settings.json',
+      fragment: { env: { FOO: 'a' } },
+      strategy: {},
+    };
+    const live = { env: 'not-an-object' };
+    assert.equal(classifyConfigDrift(live as any, op), 'modified');
+  });
+
+  it('classifyConfigDrift: intact when the user edits only their own keys', () => {
+    const op: ConfigMergeOp = {
+      file: '.claude/settings.json',
+      fragment: { model: 'claude-opus-4-8' },
+      strategy: {},
+    };
+    const live = { model: 'claude-opus-4-8', env: { USER_KEY: 'changed' } };
+    assert.equal(classifyConfigDrift(live as any, op), 'intact');
+  });
+
+  it('classifyConfigDrift: missing for an array-strategy fragment absent entirely', () => {
+    const op: ConfigMergeOp = {
+      file: '.claude/settings.json',
+      fragment: { permissions: { allow: ['Bash(npm run *)'] } },
+      strategy: { permissions: 'array-union' },
+    };
+    const live = {}; // permissions key never existed
+    assert.equal(classifyConfigDrift(live as any, op), 'missing');
+  });
+
+  it('detectConfigDrift stays true for both missing and modified (boolean wrapper unchanged)', () => {
+    const missingOp: ConfigMergeOp = { file: 'x.json', fragment: { a: 1 }, strategy: {} };
+    const modifiedOp: ConfigMergeOp = { file: 'x.json', fragment: { a: 1 }, strategy: {} };
+    assert.ok(detectConfigDrift({} as any, missingOp));
+    assert.ok(detectConfigDrift({ a: 2 } as any, modifiedOp));
+  });
+
   // ── reverseMerge ──────────────────────────────────────────────────────────────
 
   it('reverseMerge: removes contributed scalar leaf', () => {
@@ -347,5 +438,48 @@ describe('K — Config merge (config-merge.ts)', () => {
     const allow = (restored.permissions as any)?.allow as string[];
     assert.equal(allow.length, 1, 'restored has 1 entry');
     assert.ok(allow.includes('Bash(git status)'), 'original entry preserved');
+  });
+
+  // 2026-08-22 audit F24: apply.ts/reverse.ts/drift.ts's merge/assign loops didn't apply
+  // FORBIDDEN_KEYS the way primitives.ts's deepMerge/pruneEmpty already do. `JSON.parse` (not an
+  // object literal, which special-cases `__proto__` as prototype assignment rather than an own
+  // enumerable key) is what actually produces the exploitable own-property shape, matching how a
+  // real config fragment reaches this code as parsed JSON.
+  describe('prototype-pollution guard (F24)', () => {
+    it('applyMerge ignores a top-level __proto__ key in the fragment', () => {
+      const fragment = JSON.parse('{"__proto__":{"polluted":true},"safe":"ok"}');
+      const op: ConfigMergeOp = { file: 'x.json', fragment, strategy: {} };
+      const result = applyMerge({}, op);
+      assert.equal(({} as any).polluted, undefined, 'Object.prototype not polluted');
+      assert.equal(result.safe, 'ok', 'the safe sibling key still merges normally');
+    });
+
+    it('applyMerge ignores a __proto__ sub-key under an array-union object-of-arrays fragment', () => {
+      const permissions = JSON.parse('{"__proto__":["x"],"allow":["Bash(npm run *)"]}');
+      const op: ConfigMergeOp = {
+        file: '.claude/settings.json',
+        fragment: { permissions },
+        strategy: { permissions: 'array-union' },
+      };
+      const result = applyMerge({}, op);
+      assert.equal(({} as any).polluted, undefined, 'Object.prototype not polluted');
+      assert.deepEqual((result.permissions as any).allow, ['Bash(npm run *)']);
+    });
+
+    it('reverseMerge ignores a top-level __proto__ key in the fragment', () => {
+      const fragment = JSON.parse('{"__proto__":{"a":1},"safe":"ok"}');
+      const op: ConfigMergeOp = { file: 'x.json', fragment, strategy: {} };
+      const live = { safe: 'ok', untouched: true };
+      const result = reverseMerge(live as any, op);
+      assert.equal(({} as any).polluted, undefined, 'Object.prototype not polluted');
+      assert.equal(result.untouched, true, 'unrelated live content untouched');
+    });
+
+    it('classifyConfigDrift ignores a top-level __proto__ key without throwing', () => {
+      const fragment = JSON.parse('{"__proto__":{"a":1},"safe":"ok"}');
+      const op: ConfigMergeOp = { file: 'x.json', fragment, strategy: {} };
+      const drift = classifyConfigDrift({ safe: 'ok' } as any, op);
+      assert.equal(drift, 'intact', 'the safe key matches; __proto__ is skipped, not scored');
+    });
   });
 });

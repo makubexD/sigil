@@ -3,10 +3,11 @@ id: angular/ng-debugger
 kind: agent
 title: Debugger (Angular)
 description: >-
-  Use to investigate a failing test, traceback, or unexpected runtime behaviour
-  in isolation and return the root cause plus a verified minimal fix. Makes
-  behavior-changing fixes; does not do behavior-preserving restructuring. Use
-  proactively when tests fail or an error is reported.
+  Use to investigate a failing Angular test, traceback, or unexpected runtime
+  behaviour in isolation and return the root cause plus a verified minimal
+  fix. Makes behavior-changing fixes; does not do behavior-preserving
+  restructuring. Use proactively when Angular tests fail or an error is
+  reported.
 name: ng-debugger
 language: angular
 tools:

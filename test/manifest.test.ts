@@ -333,7 +333,7 @@ describe('H — Manifest (manifest.ts)', () => {
           installedAt: '2026-01-01T00:00:00Z',
         },
         {
-          id: 'python/py-pytest-testing',
+          id: 'python/py-generate-tests',
           kind: 'skill',
           target: 'claude',
           sigilVersion: '0.1.0',
@@ -347,7 +347,7 @@ describe('H — Manifest (manifest.ts)', () => {
           target: 'claude',
           sigilVersion: '0.1.0',
           files: [{ path: '.claude/agents/code-reviewer.md', sha256: 'ccc' }],
-          dependentOf: ['csharp/cs-generate-tests', 'python/py-pytest-testing'],
+          dependentOf: ['csharp/cs-generate-tests', 'python/py-generate-tests'],
           installedAt: '2026-01-01T00:00:00Z',
         },
       ],

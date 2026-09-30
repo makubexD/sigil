@@ -8,5 +8,6 @@ import { CLAUDE_DIRECTORY_DOC, CLAUDE_RULES_DOC, CLAUDE_SKILLS_DOC } from '../do
 export const CLAUDE_LEXICON: ProviderLexicon = {
   'conventions-file': { value: 'CLAUDE.md', doc: CLAUDE_DIRECTORY_DOC },
   'rules-dir': { value: '.claude/rules/', doc: CLAUDE_RULES_DOC },
+  'skills-dir': { value: '.claude/skills/', doc: CLAUDE_SKILLS_DOC },
   arguments: { value: '$ARGUMENTS', doc: CLAUDE_SKILLS_DOC },
 };

@@ -1,6 +1,6 @@
 /**
- * Static declarative metadata for the Copilot target adapter — supported kinds,
- * init scaffolding dirs, project-detection markers, and display vocabulary.
+ * Static declarative metadata for the Copilot target adapter — init scaffolding dirs,
+ * project-detection markers, and display vocabulary.
  *
  * Split out of `index.ts` because none of this is behavior — it's data the
  * `CopilotTarget` class exposes as readonly fields.
@@ -8,17 +8,6 @@
  * @module
  */
 import type { ArtifactKind, KindVocabulary } from '../../types';
-
-// Copilot supports mcp (via .vscode/mcp.json) but NOT hook or settings — those are Claude Code only.
-// hook/settings absent from this list → existing warn-and-skip covers them.
-export const COPILOT_SUPPORTED_KINDS: ArtifactKind[] = [
-  'skill',
-  'agent',
-  'rule',
-  'prompt',
-  'workflow',
-  'mcp',
-];
 
 /** Directories created by `sigil init --target copilot`. */
 export const COPILOT_INIT_DIRS: string[] = [

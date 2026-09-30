@@ -3,10 +3,10 @@ id: csharp/cs-code-reviewer
 kind: agent
 title: Code Reviewer (.NET / C#)
 description: >-
-  Use to review a diff, file, or scope for correctness, security, and quality
-  against the project's documented conventions. Fast per-change generalist gate
-  — read-only; returns a severity-ranked report. Use proactively after
-  non-trivial changes.
+  Use to review a diff, file, or scope for correctness, security, and quality against the
+  project's documented conventions. Fast per-change generalist gate — makes no edits (Bash is
+  read-only by instruction, not sandboxed); returns a severity-ranked report. Use proactively
+  after non-trivial changes.
 name: cs-code-reviewer
 language: csharp
 tools:

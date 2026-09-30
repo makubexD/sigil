@@ -70,31 +70,13 @@ Follow the project's documented test conventions. Discover them from `{sigil:con
 - **Constructor setup.** Use constructor injection for per-test arrange; `IDisposable.Dispose` for cleanup.
 
 ```csharp
-public sealed class CalendarParserTests : IDisposable
+public sealed class CalendarParserTests
 {
     private static readonly string ValidIcs = "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nEND:VCALENDAR";
-    private static readonly DateOnly TestDate = new(2026, 6, 10);
-
     private readonly Mock<ILogger<CalendarParser>> _logger = new();
     private readonly CalendarParser _sut;
 
-    public CalendarParserTests()
-    {
-        _sut = new CalendarParser(_logger.Object);
-    }
-
-    [Fact]
-    public async Task ParseAsync_Returns_Empty_When_No_Events()
-    {
-        // Arrange
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(ValidIcs));
-
-        // Act
-        var result = await _sut.ParseAsync(stream);
-
-        // Assert
-        Assert.Empty(result);
-    }
+    public CalendarParserTests() => _sut = new CalendarParser(_logger.Object);
 
     [Theory]
     [InlineData(null)]
@@ -102,9 +84,7 @@ public sealed class CalendarParserTests : IDisposable
     public async Task ParseAsync_Throws_When_Input_IsNullOrEmpty(string? input)
     {
         // Arrange
-        using var stream = input is null
-            ? null
-            : new MemoryStream(Encoding.UTF8.GetBytes(input));
+        using var stream = input is null ? null : new MemoryStream(Encoding.UTF8.GetBytes(input));
 
         // Act
         var act = () => _sut.ParseAsync(stream!);
@@ -112,12 +92,11 @@ public sealed class CalendarParserTests : IDisposable
         // Assert
         await Assert.ThrowsAsync<ArgumentNullException>(act);
     }
-
-    public void Dispose() { /* nothing to clean up here */ }
 }
 ```
 
-Do **not** create `__init__.cs` or `AssemblyInfo.cs` files unless the project already uses them.
+Add `: IDisposable` + a `Dispose()` only when the fixture actually holds a disposable resource. Do
+**not** create `__init__.cs` or `AssemblyInfo.cs` files unless the project already uses them.
 
 ## Step 5 — Run and report
 

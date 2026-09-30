@@ -1,6 +1,6 @@
 /**
  * Static declarative metadata for the Claude Code target adapter — the
- * `sigil patch` authoring surface, supported kinds, init scaffolding dirs,
+ * `sigil patch` authoring surface, init scaffolding dirs,
  * project-detection markers, and display vocabulary.
  *
  * Split out of `index.ts` because none of this is behavior — it's data the
@@ -33,17 +33,6 @@ export const CLAUDE_AUTHORING_FIELDS: AuthoringField[] = [
     description: 'Set claude.isolation: worktree (agent only)',
     kinds: ['agent'],
   },
-];
-
-export const CLAUDE_SUPPORTED_KINDS: ArtifactKind[] = [
-  'skill',
-  'agent',
-  'rule',
-  'prompt',
-  'workflow',
-  'hook',
-  'settings',
-  'mcp',
 ];
 
 /** Directories created by `sigil init --target claude`. */

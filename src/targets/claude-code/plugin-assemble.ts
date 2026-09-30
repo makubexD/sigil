@@ -9,6 +9,10 @@ import type { ResolvedCatalog, ResolvedArtifact, FileMap, Pack } from '../../typ
 import { SKILL_FILENAME } from '../../paths';
 import { JSON_INDENT } from '../../json-util';
 import { buildPluginSkillMd, buildAgentMd, buildWorkflowMd } from './plugin-build';
+import type { ArtifactKind } from '../../types';
+import { nativeKinds } from '../capabilities';
+import { CLAUDE_CAPABILITIES } from './capabilities';
+import type { TargetCapabilities } from '../capability-types';
 
 /** Build the `plugin.json` manifest content for a pack. */
 function buildPluginJson(pack: Pack, version: string, homepage: string | undefined): string {
@@ -41,10 +45,14 @@ function computeSharedAgentIds(
   agents: ResolvedArtifact[],
   packInstallSet: Set<string>,
 ): Set<string> {
+  // Set lookup instead of agents.some() per (skill, resolvedAgentId) pair below — was
+  // O(skills * resolvedAgentIds * agents); fixed in the 2026-08-26 round after a dogfooded
+  // ts-performance-profiler run flagged it (see docs/audits/2026-08-25/register.md's backlog).
+  const agentIds = new Set(agents.map(a => a.id));
   const sharedAgentIds = new Set<string>();
   for (const skill of skills) {
     for (const agentId of skill.resolvedAgentIds ?? []) {
-      if (!agents.some(a => a.id === agentId)) {
+      if (!agentIds.has(agentId)) {
         sharedAgentIds.add(agentId);
         packInstallSet.add(agentId);
       }
@@ -133,6 +141,38 @@ export interface BuildPluginOptions {
   homepage?: string | undefined;
 }
 
+/**
+ * Kinds this assembler has a writer for. This lists implementation coverage, not support — support
+ * is CLAUDE_CAPABILITIES' plugin channel; test/targets/capabilities.test.ts asserts every native
+ * plugin kind appears here, so a capability row flip fails `npm test`, not a release build.
+ */
+export const WRITABLE_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
+  'skill',
+  'agent',
+  'workflow',
+]);
+
+/**
+ * Returns a lookup of the pack's artifacts per kind, limited to the kinds `capabilities` marks
+ * `native` on the plugin channel (`via`-kinds such as rules travel inside skills instead). Throws
+ * when a kind is marked native but has no writer here, so flipping a capability row can never
+ * silently drop artifacts from a plugin.
+ */
+export function pluginMembersByKind(
+  packArtifacts: ResolvedArtifact[],
+  capabilities: TargetCapabilities = CLAUDE_CAPABILITIES,
+): (kind: ArtifactKind) => ResolvedArtifact[] {
+  const native = nativeKinds({ capabilities }, 'plugin');
+  const unwritable = native.filter(kind => !WRITABLE_PLUGIN_KINDS.has(kind));
+  if (unwritable.length > 0) {
+    throw new Error(
+      `claude plugin channel marks [${unwritable.join(', ')}] native but plugin-assemble.ts has no ` +
+        'writer for them — add one or change the row in claude-code/capabilities.ts',
+    );
+  }
+  return kind => (native.includes(kind) ? packArtifacts.filter(a => a.kind === kind) : []);
+}
+
 /** Build all plugin files for a single pack. */
 export function buildPlugin(options: BuildPluginOptions): FileMap {
   const { pack, packArtifacts, catalog, version, homepage } = options;
@@ -141,9 +181,10 @@ export function buildPlugin(options: BuildPluginOptions): FileMap {
 
   files[`${prefix}/.claude-plugin/plugin.json`] = buildPluginJson(pack, version, homepage);
 
-  const skills = packArtifacts.filter(a => a.kind === 'skill');
-  const agents = packArtifacts.filter(a => a.kind === 'agent');
-  const workflows = packArtifacts.filter(a => a.kind === 'workflow');
+  const members = pluginMembersByKind(packArtifacts);
+  const skills = members('skill');
+  const agents = members('agent');
+  const workflows = members('workflow');
 
   // Build the co-install set for the plugin: pack artifacts + shared agents.
   // Used by buildAgentMd for conditional Boundary section rendering.

@@ -23,11 +23,16 @@ function findDriftedPaths(
   removedEntries: ManifestEntry[],
   projectDir: string,
 ): string[] {
+  // Index once by path instead of re-flattening removedEntries on every iteration below — was
+  // O(pathsToDelete * removedEntries) via a fresh flatMap().find() per path; fixed in the
+  // 2026-08-26 round (same fix as uninstall.ts's identical helper) after a dogfooded
+  // ts-performance-profiler run flagged it (see docs/audits/2026-08-25/register.md's backlog).
+  const recordedByPath = new Map(removedEntries.flatMap(e => e.files).map(f => [f.path, f]));
   const driftedPaths: string[] = [];
   for (const p of pathsToDelete) {
     const fullPath = path.join(projectDir, p);
     if (!fs.existsSync(fullPath)) continue;
-    const recorded = removedEntries.flatMap(e => e.files).find(f => f.path === p);
+    const recorded = recordedByPath.get(p);
     if (recorded) {
       const diskHash = sha256(fs.readFileSync(fullPath, 'utf-8'));
       if (diskHash !== recorded.sha256) driftedPaths.push(p);

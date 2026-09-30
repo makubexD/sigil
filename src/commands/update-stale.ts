@@ -93,11 +93,16 @@ export function rebuildEntryFiles(
 ): ManifestFile[] {
   const keptStale = new Set(keptStalePaths);
   const carriedOver = entry.files.filter(mf => keptStale.has(mf.path));
+  // Index once by path instead of an entry.files.find() per fresh file below — was
+  // O(freshFiles * entry.files); fixed in the 2026-08-26 round after a dogfooded
+  // ts-performance-profiler run flagged the sibling pattern in uninstall.ts/prune-apply.ts (see
+  // docs/audits/2026-08-25/register.md's backlog).
+  const shaByPath = new Map(entry.files.map(mf => [mf.path, mf.sha256]));
   const freshRecorded = Object.keys(freshFiles).map(relPath => {
     const fullPath = path.join(projectDir, relPath);
     const sha = fs.existsSync(fullPath)
       ? sha256(fs.readFileSync(fullPath, 'utf-8'))
-      : (entry.files.find(mf => mf.path === relPath)?.sha256 ?? '');
+      : (shaByPath.get(relPath) ?? '');
     return { path: relPath, sha256: sha };
   });
   return [...freshRecorded, ...carriedOver];

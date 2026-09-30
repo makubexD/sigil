@@ -8,10 +8,10 @@
  * serialize     — order-preserving JSON string for disk writes
  */
 
-import type { ConfigMergeOp, MergeStrategy } from '../types';
+import type { ConfigMergeOp, MergeStrategy, ConfigRoot } from '../types';
 import { JSON_INDENT } from '../json-util';
 
-export type { ConfigMergeOp, MergeStrategy };
+export type { ConfigMergeOp, MergeStrategy, ConfigRoot };
 
 // ─── Deep equality ────────────────────────────────────────────────────────────
 
@@ -50,7 +50,12 @@ export function deepEqual(a: unknown, b: unknown): boolean {
  * Keys that, if present in external input, would mutate the prototype chain
  * of all plain objects in this process. Guard every merge/assign loop against these.
  */
-const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+export const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** True when `value` is a plain (non-array, non-null) object. */
+export function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
 
 /** True when both `v` and `existing` are mergeable plain objects (not arrays, not null). */
 function bothPlainObjects(v: unknown, existing: unknown): boolean {

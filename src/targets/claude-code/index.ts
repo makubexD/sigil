@@ -56,12 +56,13 @@ import {
 } from './target-helpers';
 import {
   CLAUDE_AUTHORING_FIELDS,
-  CLAUDE_SUPPORTED_KINDS,
   CLAUDE_INIT_DIRS,
   CLAUDE_PROJECT_MARKERS,
   CLAUDE_VOCABULARY,
 } from './metadata';
 import { CLAUDE_OUTPUT_CONTRACTS } from './contracts';
+import { CLAUDE_CAPABILITIES } from './capabilities';
+import type { TargetCapabilities } from '../capability-types';
 
 export { ConfigDestination, resolveClaudeConfigDestination } from './config';
 
@@ -71,7 +72,7 @@ export class ClaudeCodeTarget implements Target {
   readonly installHint = 'writes to .claude/';
 
   readonly authoringFields: AuthoringField[] = CLAUDE_AUTHORING_FIELDS;
-  readonly supportedKinds: ArtifactKind[] = CLAUDE_SUPPORTED_KINDS;
+  readonly capabilities: TargetCapabilities = CLAUDE_CAPABILITIES;
   readonly initDirs: string[] = CLAUDE_INIT_DIRS;
   readonly projectMarkers: string[] = CLAUDE_PROJECT_MARKERS;
   readonly vocabulary: Partial<Record<ArtifactKind, KindVocabulary>> = CLAUDE_VOCABULARY;

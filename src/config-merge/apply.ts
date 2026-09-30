@@ -10,12 +10,7 @@
  */
 
 import type { ConfigMergeOp, MergeStrategy } from '../types';
-import { deepEqual, deepMerge } from './primitives';
-
-/** True when `value` is a plain (non-array, non-null) object. */
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
+import { deepEqual, deepMerge, isPlainObject, FORBIDDEN_KEYS } from './primitives';
 
 /** Dedup-union `incomingArr` onto `currentArr`, using deepEqual for membership. */
 function unionArrays(currentArr: unknown[], incomingArr: unknown[]): unknown[] {
@@ -26,6 +21,24 @@ function unionArrays(currentArr: unknown[], incomingArr: unknown[]): unknown[] {
   return union;
 }
 
+/** Union-merges an object-of-arrays (e.g. `permissions: { allow, deny, ask }`) sub-key by sub-key. */
+function unionObjectOfArrays(
+  currentObj: Record<string, unknown>,
+  incoming: Record<string, unknown>,
+): Record<string, unknown> {
+  const merged: Record<string, unknown> = { ...currentObj };
+  for (const [subKey, subIncoming] of Object.entries(incoming)) {
+    if (FORBIDDEN_KEYS.has(subKey)) continue; // prototype-pollution guard
+    if (Array.isArray(subIncoming)) {
+      const subCurrent = Array.isArray(merged[subKey]) ? (merged[subKey] as unknown[]) : [];
+      merged[subKey] = unionArrays(subCurrent, subIncoming as unknown[]);
+    } else {
+      merged[subKey] = subIncoming;
+    }
+  }
+  return merged;
+}
+
 /** `array-union` strategy: flat array union, or per-subkey union for an object-of-arrays. */
 function applyArrayUnionStrategy(current: unknown, incoming: unknown): unknown {
   if (Array.isArray(incoming)) {
@@ -34,18 +47,7 @@ function applyArrayUnionStrategy(current: unknown, incoming: unknown): unknown {
     return unionArrays(currentArr, incoming as unknown[]);
   }
   if (isPlainObject(incoming)) {
-    // Object-of-arrays union (e.g. permissions: { allow, deny, ask })
-    const currentObj = isPlainObject(current) ? current : {};
-    const merged: Record<string, unknown> = { ...currentObj };
-    for (const [subKey, subIncoming] of Object.entries(incoming)) {
-      if (Array.isArray(subIncoming)) {
-        const subCurrent = Array.isArray(merged[subKey]) ? (merged[subKey] as unknown[]) : [];
-        merged[subKey] = unionArrays(subCurrent, subIncoming as unknown[]);
-      } else {
-        merged[subKey] = subIncoming;
-      }
-    }
-    return merged;
+    return unionObjectOfArrays(isPlainObject(current) ? current : {}, incoming);
   }
   return undefined;
 }
@@ -68,6 +70,7 @@ function applyArrayAppendStrategy(current: unknown, incoming: unknown): unknown 
   }
   const mergedObj: Record<string, unknown> = { ...current };
   for (const [eventKey, eventItems] of Object.entries(incoming)) {
+    if (FORBIDDEN_KEYS.has(eventKey)) continue; // prototype-pollution guard
     const existingItems = Array.isArray(mergedObj[eventKey])
       ? (mergedObj[eventKey] as unknown[])
       : [];
@@ -79,6 +82,19 @@ function applyArrayAppendStrategy(current: unknown, incoming: unknown): unknown 
   return mergedObj;
 }
 
+/** Applies one top-level key's merge strategy; returns the new value, or `undefined` to skip. */
+function applyOneKey(current: unknown, incoming: unknown, strat: MergeStrategy): unknown {
+  if (strat === 'array-union') {
+    // Original behavior: when incoming is neither array nor object, leave result[topKey]
+    // untouched (the switch's array-union case had no matching branch, so no assignment ran).
+    return Array.isArray(incoming) || isPlainObject(incoming)
+      ? applyArrayUnionStrategy(current, incoming)
+      : undefined;
+  }
+  if (strat === 'array-append') return applyArrayAppendStrategy(current, incoming);
+  return applyObjectSpreadStrategy(current, incoming);
+}
+
 export function applyMerge(
   existing: Record<string, unknown>,
   op: ConfigMergeOp,
@@ -86,20 +102,10 @@ export function applyMerge(
   const result = { ...existing };
 
   for (const [topKey, incoming] of Object.entries(op.fragment)) {
+    if (FORBIDDEN_KEYS.has(topKey)) continue; // prototype-pollution guard
     const strat: MergeStrategy = op.strategy[topKey] ?? 'object-spread';
-    const current = result[topKey];
-
-    if (strat === 'array-union') {
-      // Original behavior: when incoming is neither array nor object, leave result[topKey]
-      // untouched (the switch's array-union case had no matching branch, so no assignment ran).
-      if (Array.isArray(incoming) || isPlainObject(incoming)) {
-        result[topKey] = applyArrayUnionStrategy(current, incoming);
-      }
-    } else if (strat === 'array-append') {
-      result[topKey] = applyArrayAppendStrategy(current, incoming);
-    } else {
-      result[topKey] = applyObjectSpreadStrategy(current, incoming);
-    }
+    const applied = applyOneKey(result[topKey], incoming, strat);
+    if (applied !== undefined || strat !== 'array-union') result[topKey] = applied;
   }
 
   return result;

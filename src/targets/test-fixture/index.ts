@@ -11,13 +11,15 @@
  *   - `compile()` reads `resolvedSlots` directly and reorders them, instead of the default
  *     `resolvedBody` concatenation — proving BodySectionSpec's documented escape hatch
  *     (src/targets/spec-types.ts) is real, not aspirational.
- *   - `supportedKinds` excludes 'rule' — exercises resolveSelection's warn-and-skip path
+ *   - its scaffold capabilities exclude 'rule' — exercises resolveSelection's warn-and-skip path
  *     (src/select/selector-resolve.ts) for a kind this target does not scaffold.
  *
  * @module
  */
 import { z } from 'zod';
-import type { ArtifactKind, CompileOptions, FileMap, ResolvedCatalog, Target } from '../../types';
+import type { CompileOptions, FileMap, ResolvedCatalog, Target } from '../../types';
+import type { TargetCapabilities } from '../capability-types';
+import { channelFromNativeKinds } from '../capabilities';
 
 /**
  * The one provider-specific field this fixture contributes, under its own `test-fixture:`
@@ -52,7 +54,9 @@ function renderFixtureSkill(artifact: ResolvedCatalog['artifacts'][number]): str
 export class TestFixtureTarget implements Target {
   readonly name = 'test-fixture';
   readonly displayName = 'Test Fixture';
-  readonly supportedKinds: ArtifactKind[] = ['skill'];
+  readonly capabilities: TargetCapabilities = {
+    scaffold: channelFromNativeKinds(['skill'], 'the test fixture scaffolds skills only'),
+  };
   readonly frontmatterExtensions = FIXTURE_FRONTMATTER_EXTENSION;
 
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {

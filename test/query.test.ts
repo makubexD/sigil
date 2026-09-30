@@ -93,11 +93,11 @@ describe('F2 — getArtifactDetail', () => {
     const detail = getArtifactDetail(artifact, catalog, targets);
 
     assert.ok(
-      detail.reverseDependents.includes('python/py-pytest-testing'),
-      'py-pytest-testing uses it',
+      detail.reverseDependents.includes('python/py-generate-tests'),
+      'py-generate-tests uses it',
     );
     assert.ok(
-      detail.reverseDependents.includes('react/component-testing'),
+      detail.reverseDependents.includes('react/react-generate-tests'),
       'react-testing uses it',
     );
   });
@@ -155,8 +155,8 @@ describe('F2 — getArtifactDetail', () => {
       '"used by" section present',
     );
     assert.ok(
-      lines.some(l => l.includes('py-pytest-testing')),
-      'py-pytest-testing listed as dependent',
+      lines.some(l => l.includes('py-generate-tests')),
+      'py-generate-tests listed as dependent',
     );
   });
 });

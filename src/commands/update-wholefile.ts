@@ -39,6 +39,7 @@ async function scaffoldFreshFiles(
       projectDir: opts.projectDir,
       overwrite: true,
       includeDeps: false,
+      ...(opts.installedIds ? { coInstallSet: new Set(opts.installedIds) } : {}),
     });
   } catch (err) {
     console.error(`  ✗  ${entry.id}: scaffold failed — ${(err as Error).message}`);

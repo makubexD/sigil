@@ -15,20 +15,24 @@ import { renderArtifactFile } from '../authoring/import';
 import { stripLanguagePrefix } from '../authoring/import/translate';
 import type { ImportPlan, ImportItem } from '../authoring/import/plan';
 
-/** Finds existing catalog artifacts in other languages that share the same topic slug. */
-function findSameTopicMatches(
-  topic: string,
-  catalog: LoadedCatalog,
-  lang: string,
-): LoadedCatalog['artifacts'] {
-  return catalog.artifacts.filter(a => {
-    if ((a.frontmatter.language as string | undefined) === lang) return false;
-    const aTopic = stripLanguagePrefix(
+/**
+ * Groups every catalog artifact by its language-prefix-stripped topic slug once, so
+ * `computeOverlapLines` does a Map lookup per incoming item instead of a full-catalog `.filter()`
+ * per item — was O(items * catalogSize); fixed as part of the 2026-08-26 round after a dogfooded
+ * `ts-performance-profiler` run flagged it (docs/audits/2026-08-25/register.md's backlog).
+ */
+function groupArtifactsByTopic(catalog: LoadedCatalog): Map<string, LoadedCatalog['artifacts']> {
+  const byTopic = new Map<string, LoadedCatalog['artifacts']>();
+  for (const a of catalog.artifacts) {
+    const topic = stripLanguagePrefix(
       String(a.frontmatter.name ?? basenameOfId(a.id)),
       String(a.frontmatter.language ?? ''),
     );
-    return aTopic === topic;
-  });
+    const group = byTopic.get(topic) ?? [];
+    byTopic.set(topic, group);
+    group.push(a);
+  }
+  return byTopic;
 }
 
 /**
@@ -40,10 +44,13 @@ export function computeOverlapLines(
   catalog: LoadedCatalog,
   lang: string,
 ): string[] {
+  const byTopic = groupArtifactsByTopic(catalog);
   const overlapLines: string[] = [];
   for (const item of plan.items) {
     const topic = stripLanguagePrefix(basenameOfId(item.frontmatter.id), lang);
-    const matches = findSameTopicMatches(topic, catalog, lang);
+    const matches = (byTopic.get(topic) ?? []).filter(
+      a => (a.frontmatter.language as string | undefined) !== lang,
+    );
     if (matches.length > 0) {
       overlapLines.push(`  ${item.frontmatter.id}  ←→  ${matches.map(m => m.id).join(', ')}`);
     }

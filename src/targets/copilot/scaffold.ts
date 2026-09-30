@@ -55,7 +55,7 @@ export function scaffoldSkill(
 
 /**
  * Rules scaffold to .github/instructions/<slug>.instructions.md.
- * Shared (no language) rules get applyTo: "**" instead of language-specific globs.
+ * `applyTo` comes from the authored `appliesTo`, whatever the language; `"**"` only when absent.
  */
 export function scaffoldRule(rule: ResolvedArtifact, files: FileMap): void {
   const slug = rule.id.replace(/\//g, '-');

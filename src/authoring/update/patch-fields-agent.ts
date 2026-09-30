@@ -7,8 +7,8 @@
  *
  * @module
  */
-import type { UpdateOps, PatchCtx } from './patch-build';
-import { patchList } from './patch-build';
+import type { UpdateOps, PatchCtx } from './patch-types';
+import { patchList } from './patch-types';
 
 /** Shared shape for an agent-only list field's set/add/remove ops. */
 interface AgentListFieldOps {

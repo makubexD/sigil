@@ -6,7 +6,8 @@
       "properties": {
         "id": {
           "type": "string",
-          "minLength": 1
+          "minLength": 1,
+          "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*(?:\\/[a-z0-9]+(?:-[a-z0-9]+)*){1,2}$"
         },
         "kind": {
           "type": "string",
@@ -84,6 +85,12 @@
         "command": {
           "type": "string",
           "minLength": 1
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
         },
         "timeout": {
           "type": "integer",

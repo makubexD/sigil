@@ -3,10 +3,10 @@ id: angular/ng-api-compat-reviewer
 kind: agent
 title: API Compatibility Reviewer (Angular)
 description: >-
-  Use to review the public API surface of an Angular library package for
-  backward compatibility and recommend a SemVer bump. Read-only; never modifies
-  files. Classifies breaking vs behavioral vs additive changes for a publishable
-  library. Use proactively before publishing a library release.
+  Use to review the public API surface of an Angular library package for backward compatibility
+  and recommend a SemVer bump. Makes no edits (Bash is read-only by instruction, not sandboxed).
+  Classifies breaking vs behavioral vs additive changes for a publishable library. Use proactively
+  before publishing a library release.
 name: ng-api-compat-reviewer
 language: angular
 tools:

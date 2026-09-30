@@ -261,4 +261,61 @@ describe('Validate phase', () => {
       'no warning when the hardcoded import is explicitly framed as an example',
     );
   });
+
+  // 2026-08-22 audit F22: id/name are interpolated directly into output file paths with no
+  // separate containment check, so schema-level rejection is the primary defense.
+  it('rejects a skill whose name is not kebab-case (path-traversal guard, F22)', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+
+    const fakeSkill = {
+      id: 'test/fake-path-traversal-skill',
+      kind: 'skill' as const,
+      filePath: '/fake/fake-path-traversal.SKILL.md',
+      frontmatter: {
+        id: 'test/fake-path-traversal-skill',
+        kind: 'skill',
+        title: 'Fake Skill',
+        description: 'A fake skill with an unsafe name.',
+        name: '../../../etc/evil',
+        language: 'typescript',
+      },
+      body: 'Body.',
+    };
+    catalog.artifacts.push(fakeSkill);
+    catalog.byId.set(fakeSkill.id, fakeSkill);
+
+    const result = validateCatalog(catalog);
+    assert.ok(!result.valid, 'should be invalid');
+    assert.ok(
+      result.errors.some(e => e.artifactId === 'test/fake-path-traversal-skill'),
+      'schema error reported for the unsafe name',
+    );
+  });
+
+  it('rejects an id containing ".." (path-traversal guard, F22)', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+
+    const fakeRule = {
+      id: '../escaped/rule',
+      kind: 'rule' as const,
+      filePath: '/fake/escaped.rule.md',
+      frontmatter: {
+        id: '../escaped/rule',
+        kind: 'rule',
+        title: 'Fake Rule',
+        description: 'A fake rule with an unsafe id.',
+        severity: 'recommended',
+      },
+      body: '- Fake rule body.',
+    };
+    catalog.artifacts.push(fakeRule);
+    catalog.byId.set(fakeRule.id, fakeRule);
+
+    const result = validateCatalog(catalog);
+    assert.ok(!result.valid, 'should be invalid');
+    assert.ok(
+      result.errors.some(e => e.artifactId === '../escaped/rule'),
+      'schema error reported for the unsafe id',
+    );
+  });
 });

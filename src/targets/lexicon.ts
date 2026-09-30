@@ -29,7 +29,7 @@ import type { DocRef } from './spec-types';
  * side-by-side as documentation ABOUT sigil's own multi-provider behavior, not a per-provider
  * instruction. That prose is correct verbatim on every provider; there is nothing to translate.
  */
-export const LEXICON_TERMS = ['conventions-file', 'rules-dir', 'arguments'] as const;
+export const LEXICON_TERMS = ['conventions-file', 'rules-dir', 'skills-dir', 'arguments'] as const;
 
 export type LexiconTerm = (typeof LEXICON_TERMS)[number];
 

@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { loadCatalog } from '../../dist-cli/load';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
+import { loadResolvedCatalog } from '../helpers/catalog';
 import { buildInstructionsFile } from '../../dist-cli/targets/copilot/build-helpers';
 import { COPILOT_SKILL_SPEC } from '../../dist-cli/targets/copilot/spec/skill';
 import { renderArtifact } from '../../dist-cli/targets/emit';
@@ -124,10 +125,10 @@ describe('Copilot target', () => {
     assert.ok(!skillMd.includes('paths:'), 'no paths: in SKILL.md');
 
     // Supporting files (references) must be written alongside SKILL.md for skills that have them.
-    // Use react/component-testing which has references/testing-library.md
-    const reactSkillMd = files['.github/skills/component-testing/SKILL.md'];
-    assert.ok(reactSkillMd, '.github/skills/component-testing/SKILL.md emitted');
-    const reactRef = files['.github/skills/component-testing/references/testing-library.md'];
+    // Use react/react-generate-tests which has references/testing-library.md
+    const reactSkillMd = files['.github/skills/react-generate-tests/SKILL.md'];
+    assert.ok(reactSkillMd, '.github/skills/react-generate-tests/SKILL.md emitted');
+    const reactRef = files['.github/skills/react-generate-tests/references/testing-library.md'];
     assert.ok(
       reactRef,
       'references/testing-library.md emitted alongside SKILL.md (bug-fix: was silently dropped)',
@@ -238,8 +239,8 @@ describe('Copilot scaffold: prompt with args', () => {
       'cs-generate-tests (a skill) must NOT appear in .github/prompts/',
     );
     assert.ok(
-      !promptKeys.some(k => k.includes('py-pytest-testing')),
-      'py-pytest-testing (a skill) must NOT appear in .github/prompts/',
+      !promptKeys.some(k => k.includes('py-generate-tests')),
+      'py-generate-tests (a skill) must NOT appear in .github/prompts/',
     );
 
     // Skills must appear in skills/ with no unresolved {{ placeholders
@@ -256,5 +257,31 @@ describe('Copilot scaffold: prompt with args', () => {
       .forEach(k => {
         assert.ok(!unresolvedPlaceholder.test(files[k]!), `no unresolved {{placeholder}} in ${k}`);
       });
+  });
+});
+
+describe('Copilot build — shared rules keep their appliesTo scoping', () => {
+  it('should give a narrowly scoped shared rule its own applyTo instructions file', async () => {
+    const files = await new CopilotTarget().compile(await loadResolvedCatalog(), {
+      version: '0.0.0',
+      packs: [],
+    });
+
+    const scoped = files['.github/instructions/shared-cli-rules.instructions.md'];
+    assert.ok(scoped?.includes('applyTo: "**/cli/**'), 'shared/cli-rules keeps its applyTo globs');
+    assert.ok(
+      !files['.github/copilot-instructions.md']?.includes("This project's command-line interface"),
+      'a scoped rule must not be folded into the repo-wide copilot-instructions.md',
+    );
+  });
+
+  it('should keep repo-wide shared rules in copilot-instructions.md', async () => {
+    const files = await new CopilotTarget().compile(await loadResolvedCatalog(), {
+      version: '0.0.0',
+      packs: [],
+    });
+
+    assert.ok(files['.github/copilot-instructions.md']?.includes('Commit Messages'), 'shared/git');
+    assert.ok(!('.github/instructions/shared-git.instructions.md' in files));
   });
 });

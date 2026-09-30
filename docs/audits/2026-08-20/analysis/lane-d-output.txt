@@ -1,0 +1,28 @@
+=== Lane D: cross-language family body-shingle overlap (8-word shingles, containment ratio) ===
+Families with 2+ language siblings: 24
+  skill:release                avgOverlap=0.272  members=3  totalLines=319
+  rule:code-quality            avgOverlap=0.244  members=3  totalLines=220
+  agent:debugger               avgOverlap=0.242  members=3  totalLines=328
+  agent:refactor-specialist    avgOverlap=0.228  members=3  totalLines=379
+  agent:code-reviewer          avgOverlap=0.213  members=3  totalLines=403
+  skill:sync-tests             avgOverlap=0.145  members=3  totalLines=341
+  skill:audit-deps             avgOverlap=0.092  members=3  totalLines=369
+  skill:generate-tests         avgOverlap=0.091  members=3  totalLines=323
+  skill:document               avgOverlap=0.084  members=3  totalLines=370
+  skill:scaffold-project       avgOverlap=0.066  members=2  totalLines=323
+  rule:git                     avgOverlap=0.064  members=3  totalLines=150
+  agent:architecture-reviewer  avgOverlap=0.062  members=3  totalLines=445
+  agent:security-auditor       avgOverlap=0.06  members=3  totalLines=435
+  agent:performance-profiler   avgOverlap=0.056  members=3  totalLines=437
+  rule:conventions             avgOverlap=0.053  members=3  totalLines=501
+  rule:documentation           avgOverlap=0.047  members=3  totalLines=333
+  skill:add-package            avgOverlap=0.038  members=3  totalLines=363
+  rule:dependencies            avgOverlap=0.033  members=3  totalLines=260
+  rule:logging                 avgOverlap=0.031  members=3  totalLines=303
+  rule:testing                 avgOverlap=0.026  members=3  totalLines=437
+  agent:api-compat-reviewer    avgOverlap=0.019  members=3  totalLines=431
+  rule:async                   avgOverlap=0.005  members=2  totalLines=345
+  rule:security                avgOverlap=0  members=3  totalLines=383
+  rule:project-layout          avgOverlap=0  members=2  totalLines=347
+
+Families at >=0.5 avg overlap: 0, totaling 0 lines across their members.

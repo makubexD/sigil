@@ -17,17 +17,19 @@ Point-in-time session retrospectives, kept only while still load-bearing. See
 [decisions/README.md](decisions/README.md) for the full archive index — including summaries of
 superseded logs that were deleted (recoverable via the commit hash listed there).
 
-| Decision log                                                                                           | Topic                                                      |
-| ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------- |
-| [decisions/catalog-import-migration.md](decisions/catalog-import-migration.md)                         | `_Others` import migration — design decisions and bug log  |
-| [decisions/skill-dispatch-audit-2026-08.md](decisions/skill-dispatch-audit-2026-08.md)                 | Why skills never dispatched; `whenToUse` vs `description`  |
-| [decisions/template-extraction-evidence-2026-08.md](decisions/template-extraction-evidence-2026-08.md) | Line-level duplication audit — why only `mcp-note` shipped |
+| Decision log                                                                                           | Topic                                                                            |
+| ------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| [decisions/catalog-import-migration.md](decisions/catalog-import-migration.md)                         | `_Others` import migration — design decisions and bug log                        |
+| [decisions/skill-dispatch-audit-2026-08.md](decisions/skill-dispatch-audit-2026-08.md)                 | Why skills never dispatched; `whenToUse` vs `description`                        |
+| [decisions/template-extraction-evidence-2026-08.md](decisions/template-extraction-evidence-2026-08.md) | Line-level duplication audit — why only `mcp-note` shipped                       |
+| [decisions/distribution-channels-2026-09.md](decisions/distribution-channels-2026-09.md)               | Scaffold vs. plugin marketplaces — cost, kind support, capability model, roadmap |
 
 ## Reference
 
 | Reference                                                    | Covers                                                                              |
 | ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
 | [reference/spec.md](reference/spec.md)                       | Artifact kinds, frontmatter schema, platform mapping, CLI reference, trust scanning |
+| [reference/capabilities.md](reference/capabilities.md)       | Generated: which kinds each target delivers per channel (scaffold / plugin)         |
 | [reference/config-kinds.md](reference/config-kinds.md)       | `mcp` / `hook` / `settings` merge model, scope tables                               |
 | [reference/troubleshooting.md](reference/troubleshooting.md) | Common errors, FAQ, validation violations                                           |
 

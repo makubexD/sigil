@@ -5,7 +5,7 @@
  * that absence is the unsupported-kind statement for those two config kinds. `workflow` DOES have
  * a spec (COPILOT_WORKFLOW_SPEC) even though it renders through the exact same shape as `prompt`
  * (see prompt.ts's buildPromptLikeSpec) — without its own entry here, `workflow` would be a
- * declared-supported kind (COPILOT_SUPPORTED_KINDS) with no contract and no doc citation, which
+ * natively emitted kind (./capabilities.ts) with no contract and no doc citation, which
  * is exactly the gap the 2026-08-07 audit closed (see provider-kind-coverage conformance rule).
  */
 import type { KindEmitSpec } from '../../spec-types';

@@ -56,6 +56,36 @@ sigil build
 # 17 file(s) written to dist/claude/
 ```
 
+### Shared (stack-agnostic) skills
+
+A skill whose guidance applies across stacks omits `language:` and lives under
+`catalog/shared/skills/<name>/` (`sigil new skill --name <name>` with no `--language`). Put
+per-stack detail in the skill's own `references/` files (e.g. `references/stack-go.md`) and tell
+the model in `SKILL.md` when to read each one — the body loads only on invocation and each
+reference only when read. Only flat `references/*.md` files ship with a skill: `validate` warns
+when `SKILL.md` or a reference names a `references/<file>` that doesn't exist, or any `assets/` or
+`scripts/` path. Write paths relative to the skill root (the folder holding `SKILL.md`), including
+inside reference files. Shared skills belong to no language pack; install them by id
+(`sigil add skill:shared/<name>`). `shared/cli` and `shared/wizard` are the worked examples.
+
+### Provider-neutral bodies: `{sigil:<term>}`
+
+Never write a provider's literal (`CLAUDE.md`, `$ARGUMENTS`, `.claude/rules/`) in a body. Use the
+neutral token; each target replaces it at render time (`src/targets/<provider>/lexicon.ts`):
+
+| Token                      | Claude Code       | Copilot                      |
+| -------------------------- | ----------------- | ---------------------------- |
+| `{sigil:conventions-file}` | `CLAUDE.md`       | `AGENTS.md`                  |
+| `{sigil:rules-dir}`        | `.claude/rules/`  | `.github/instructions/`      |
+| `{sigil:skills-dir}`       | `.claude/skills/` | `.github/skills/`            |
+| `{sigil:arguments}`        | `$ARGUMENTS`      | "the request you were given" |
+
+`sigil sync --check` fails on a provider literal in a body (`provider-term-leak`).
+
+An agent can preload skills on Claude Code with `claude: { skills: [<skill id>] }`. `validate`
+rejects an id that isn't a skill, or a skill whose `name` isn't its id's last segment, and
+`sigil add` warns when the agent is installed without it.
+
 ---
 
 ## Add a rule that extends the shared baseline (DRY)
@@ -206,9 +236,9 @@ _measured_, not assumed — extract a template because three or more sibling art
 prose, never because they merely resemble each other (a cross-language audit found most sibling
 skills/agents/rules diverge substantially once you look past matching headings — see
 [docs/decisions/template-extraction-evidence-2026-08.md](../decisions/template-extraction-evidence-2026-08.md)
-for that finding). `catalog/shared/templates/mcp-note.template.md` is the one
-template in the catalog today, covering the four `shared/*.mcp.md` artifacts' shared authoring-hint
-comment. Where a `kind: template` artifact exists for your kind
+for that finding). Three templates ship today in `catalog/shared/templates/`:
+`mcp-note` (the four `shared/*.mcp.md` artifacts' shared authoring-hint comment), `code-quality`,
+and `release-skill`. Where a `kind: template` artifact exists for your kind
 (`catalog/shared/templates/*.template.md`), author against it instead of copying a sibling file —
 the `workflow-skill` example below illustrates the mechanism generically for when a genuine
 duplication case appears:

@@ -62,9 +62,8 @@ sigil add skill:csharp/cs-generate-tests
 
 ```
 .claude/skills/cs-generate-tests/SKILL.md
-.claude/skills/cs-generate-tests/references/assertions.md
-.claude/rules/csharp-cs-conventions.md      ← C# style (+ clean-code baseline folded in)
-.claude/agents/code-reviewer.md           ← shared code-reviewer agent
+.claude/rules/csharp-cs-testing.md          ← C# testing rule (path-scoped via paths:)
+.claude/agents/cs-code-reviewer.md          ← C# code-reviewer agent
 ```
 
 Claude Code loads `.claude/rules/*.md` natively on every session. The rule and agent are
@@ -84,15 +83,15 @@ Add the Python pytest skill to a repo using GitHub Copilot Chat:
 
 ```bash
 sigil init --target copilot
-sigil add skill:python/py-pytest-testing --target copilot
+sigil add skill:python/py-generate-tests --target copilot
 ```
 
 **What gets written:**
 
 ```
-.github/skills/pytest-testing/SKILL.md
-.github/skills/py-pytest-testing/references/fixtures.md
-.github/instructions/python-py-style.instructions.md   ← applyTo: "**/*.py"
+.github/skills/py-generate-tests/SKILL.md
+.github/skills/py-generate-tests/references/fixtures.md
+.github/instructions/python-py-conventions.instructions.md   ← applyTo: "**/*.py"
 .github/agents/code-reviewer.agent.md
 ```
 
@@ -101,9 +100,9 @@ loads `.github/skills/*/SKILL.md` as native Agent Skills (invocable as `/name`).
 
 ---
 
-## Install the whole .NET pack as a Claude plugin
+## Install the .NET tooling pack as a Claude plugin
 
-Compile and install the plugin so any Claude Code user can `/plugin install dotnet-pack` without
+Compile and install the plugin so any Claude Code user can `/plugin install dotnet-tooling@sigil` without
 needing this repo locally:
 
 ```bash
@@ -114,7 +113,7 @@ sigil build --target claude
 
 # 2. In Claude Code, point at the generated marketplace:
 # /plugin marketplace add /path/to/sigil/dist/claude
-# /plugin install dotnet-pack
+# /plugin install dotnet-tooling@sigil
 ```
 
 **Plugin layout:**
@@ -122,11 +121,11 @@ sigil build --target claude
 ```
 dist/claude/
   .claude-plugin/marketplace.json
-  plugins/dotnet-pack/
+  plugins/dotnet-tooling/
     .claude-plugin/plugin.json     ← version = npm package version
     skills/cs-generate-tests/SKILL.md  ← rule bodies inlined under ## Applied Rules
-    agents/code-reviewer.md
-    agents/cs-api-architect.md
+    agents/cs-code-reviewer.md
+    agents/cs-architecture-reviewer.md
 ```
 
 ---
@@ -142,14 +141,14 @@ sigil list --kind skill         # filter by kind: skill | agent | rule | prompt
 **Expected output (all):**
 
 ```
-SKILL (3)
+SKILL (…)
   csharp/cs-generate-tests [csharp] — Use when adding or reviewing unit tests in a C#/.NET project.
-  python/py-pytest-testing [python] — Use when adding or reviewing pytest tests in a Python project.
-  react/component-testing [react] — Use when writing or reviewing React component tests.
+  python/py-generate-tests [python] — Use when adding or reviewing pytest tests in a Python project.
+  react/react-generate-tests [react] — Use when writing or reviewing React component tests.
 
 AGENT (4)
   shared/code-reviewer — Thorough code review agent for any language.
-  csharp/cs-api-architect [csharp] — …
+  csharp/cs-architecture-reviewer [csharp] — …
 
 RULE (4)  PROMPT (2)
 ```
@@ -245,8 +244,9 @@ sigil update
 sigil update csharp/cs-conventions   # single artifact
 ```
 
-`reason` names _why_ an entry is `outdated` rather than leaving you to guess — a template revision
-bump, an `extends`/`uses` ancestor change, or a plain content edit. This is purely diagnostic on the
+`reason` names _why_ an entry is `outdated` when sigil can tell — today, a template revision bump.
+Other catalog changes are not detected by `status` yet (and config kinds never show as outdated);
+`sigil update` applies them regardless. This is purely diagnostic on the
 consumer side: the propagation itself is still `update` (single artifact or, with no ids, everything).
 Catalog **authors** — not consumers — are the ones who run `sigil sync` to find and mechanically fix
 artifacts that drifted from their _own_ template; see `docs/guides/authoring.md` § Keeping artifacts
@@ -260,17 +260,17 @@ sigil uninstall skill:csharp/cs-generate-tests
 
 **Status values at a glance:**
 
-| Status       | Meaning                                                             |
-| ------------ | ------------------------------------------------------------------- |
-| `up-to-date` | Files match what the current catalog would produce                  |
-| `outdated`   | Catalog changed since you installed — run `sigil update`            |
-| `drifted`    | You edited a file — `update` skips it; `update --force` replaces it |
-| `missing`    | A sigil-owned file was deleted — `update` restores it               |
-| `orphaned`   | Artifact removed from the catalog — safe to `sigil uninstall`       |
+| Status       | Meaning                                                              |
+| ------------ | -------------------------------------------------------------------- |
+| `up-to-date` | Files match what the current catalog would produce                   |
+| `outdated`   | The artifact's template changed since you installed — `sigil update` |
+| `drifted`    | You edited a file — `update` skips it; `update --force` replaces it  |
+| `missing`    | A sigil-owned file was deleted — `update` restores it                |
+| `orphaned`   | Artifact removed from the catalog — safe to `sigil uninstall`        |
 
 **Detection at pick time.** `add` and the interactive wizard consult the manifest **before**
 writing, via `computeInstallStates` (`src/install-state.ts`), reusing the same `computeStatus`
-(`manifest.ts:326`) engine as `sigil status` above. This surfaces a 6-state model per candidate
+(`src/manifest/status.ts`) engine as `sigil status` above. This surfaces a 6-state model per candidate
 artifact — a superset of the 5 status values, adding `foreign` for files sigil didn't write:
 
 | State        | manifest | disk | content                        | Default action                             |

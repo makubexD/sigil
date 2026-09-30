@@ -3,12 +3,11 @@ id: csharp/cs-security-auditor
 kind: agent
 title: Security Auditor (.NET / C#)
 description: >-
-  Use to conduct a deep, codebase-wide security audit and produce a prioritized
-  remediation report. Read-only; never modifies files. Sweeps the entire
-  codebase for threat-surface issues: hardcoded secrets, injection, unsafe
-  deserialization, broken authn/authz, and NuGet CVEs. Use proactively before
-  releases, when adding authentication or external I/O, or when handling
-  sensitive data.
+  Use to conduct a deep, codebase-wide security audit and produce a prioritized remediation
+  report. Makes no edits (Bash is read-only by instruction, not sandboxed). Sweeps the entire
+  codebase for threat-surface issues: hardcoded secrets, injection, unsafe deserialization, broken
+  authn/authz, and NuGet CVEs. Use proactively before releases, when adding authentication or
+  external I/O, or when handling sensitive data.
 name: cs-security-auditor
 language: csharp
 tools:

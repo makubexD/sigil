@@ -2,7 +2,7 @@
 id: angular/ng-generate-component
 kind: skill
 title: "Generate Component (Angular)"
-description: "Scaffold a component, directive, service, pipe, or guard plus its spec, following the project's discovered era and conventions"
+description: "Scaffold an Angular component, directive, service, pipe, or guard plus its spec, following the project's discovered era and conventions"
 name: ng-generate-component
 language: angular
 allowedTools:

@@ -42,11 +42,11 @@ packs:
     displayName: Python Starter
     description: >
       Complete setup for Python development.
-      Includes the py-pytest-testing skill (plus its Python style rule and the
+      Includes the py-generate-tests skill (plus its Python conventions rule and the
       shared code-reviewer agent as automatically resolved deps), the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
     artifacts:
-      - python/py-pytest-testing
+      - python/py-generate-tests
       - shared/filesystem
       - shared/protect-config
       - shared/allow-dev-tools
@@ -55,11 +55,11 @@ packs:
     displayName: React Starter
     description: >
       Complete setup for React development.
-      Includes the component-testing skill (plus its React style rule and the
+      Includes the react-generate-tests skill (plus its React conventions rule and the
       shared code-reviewer agent as automatically resolved deps), the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
     artifacts:
-      - react/component-testing
+      - react/react-generate-tests
       - shared/filesystem
       - shared/protect-config
       - shared/allow-dev-tools

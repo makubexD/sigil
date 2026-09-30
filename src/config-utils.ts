@@ -51,3 +51,30 @@ export function resolveConfigRoot(root: ConfigRoot | undefined, projectDir: stri
       return projectDir;
   }
 }
+
+/** True when `root` writes to a directory shared across all of the user's projects. */
+export function isHomeScopedRoot(root: ConfigRoot | undefined): boolean {
+  return root === 'home' || root === 'vscode-user';
+}
+
+/**
+ * Writes a pristine `.sigil.bak` before the first write/delete of a home-scoped config file;
+ * warns either way. Must be called before ANY write or delete of a file at a home-scoped root —
+ * originally implemented only in `sigil add`'s write path (`commands/add/execute-config.ts`),
+ * which meant `sigil update`/`sigil uninstall` silently skipped this guarantee for the exact
+ * files it protects (2026-08-22 audit F23,
+ * docs/decisions/catalog-benchmark-audit-2026-08-22.md). No-ops if `fullPath` doesn't exist yet
+ * (nothing to back up).
+ */
+export function ensureHomeBackup(fullPath: string): void {
+  if (!fs.existsSync(fullPath)) return;
+  const bakPath = `${fullPath}.sigil.bak`;
+  if (!fs.existsSync(bakPath)) {
+    fs.copyFileSync(fullPath, bakPath);
+    console.warn(`\n  ⚠  Writing to ${fullPath} — this file affects ALL your projects.`);
+    console.warn(`  ⚠  Backup saved → ${bakPath}`);
+    console.warn(`  ⚠  Review the diff before committing: diff "${bakPath}" "${fullPath}"\n`);
+  } else {
+    console.warn(`  ⚠  Existing backup kept → ${bakPath}  (compare before committing)`);
+  }
+}

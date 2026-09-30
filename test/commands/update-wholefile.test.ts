@@ -14,12 +14,13 @@ import type { ManifestEntry } from '../../dist-cli/manifest/types';
 import type { ResolvedCatalog, Target } from '../../dist-cli/types';
 import type { UpdateOptions } from '../../dist-cli/commands/update';
 import { withTempDir, withTempDirAsync } from '../helpers/temp-dir';
+import { channelFromNativeKinds } from '../../dist-cli/targets/capabilities';
 
 /** A Target stub whose scaffold() always returns the given fixed file map. */
 function makeFakeTarget(files: Record<string, string>): Target {
   return {
     name: 'fake',
-    supportedKinds: [],
+    capabilities: { scaffold: channelFromNativeKinds([], 'fake') },
     async scaffold() {
       return files;
     },

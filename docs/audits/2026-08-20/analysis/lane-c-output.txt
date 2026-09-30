@@ -1,0 +1,6 @@
+=== Lane C: context budget per language ===
+typescript: 11 rules -> 1644 lines on ANY matching-file edit | 7 skills -> 3249 chars in skill listing
+csharp: 11 rules -> 1515 lines on ANY matching-file edit | 7 skills -> 2934 chars in skill listing
+angular: 12 rules -> 1153 lines on ANY matching-file edit | 7 skills -> 2944 chars in skill listing
+python: 1 rules -> 54 lines on ANY matching-file edit | 1 skills -> 390 chars in skill listing
+react: 1 rules -> 58 lines on ANY matching-file edit | 1 skills -> 449 chars in skill listing

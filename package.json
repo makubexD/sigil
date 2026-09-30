@@ -1,6 +1,7 @@
 {
   "name": "sigil",
   "version": "0.1.0",
+  "type": "commonjs",
   "description": "Vendor-neutral AI skills, agents, rules, and prompts — compiled to Claude Code, GitHub Copilot, and more.",
   "keywords": [
     "ai",
@@ -26,6 +27,16 @@
   "bin": {
     "sigil": "./dist-cli/cli.js"
   },
+  "main": "./dist-cli/index.js",
+  "types": "./dist-cli/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist-cli/index.d.ts",
+      "require": "./dist-cli/index.js",
+      "default": "./dist-cli/index.js"
+    },
+    "./package.json": "./package.json"
+  },
   "files": [
     "catalog/",
     "schema/",
@@ -41,7 +52,7 @@
   },
   "scripts": {
     "clean": "node -e \"const fs=require('fs');fs.rmSync('dist-cli',{recursive:true,force:true});fs.rmSync('test-compiled',{recursive:true,force:true})\"",
-    "build": "npm run clean && cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js",
+    "build": "npm run clean && cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js && node dist-cli/targets/emit-capability-doc.js",
     "build:watch": "tsc -p tsconfig.build.json --watch",
     "build:test": "tsc -p tsconfig.test.json",
     "pretest": "npm run build && npm run build:test",

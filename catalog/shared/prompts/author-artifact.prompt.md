@@ -48,7 +48,7 @@ Ask: "Should this go to all AIs (recommended) or only specific ones?" Default to
 | skill    | ✓ SKILL.md           | ✓ SKILL.md             |
 | agent    | ✓ subagent           | ✓ custom agent         |
 | rule     | ✓ memory rule        | ✓ instructions file    |
-| prompt   | ✓ custom command     | ✓ prompt file          |
+| prompt   | ✓ user-invoked skill | ✓ prompt file          |
 
 **Vocabulary note**: the same catalog kind has different names per AI. The adapter translates
 automatically. Never add "For Claude only:" sections — one body, multiple outputs.
@@ -57,7 +57,7 @@ automatically. Never add "For Claude only:" sections — one body, multiple outp
 
 Collect the following (suggest sensible defaults):
 - **Kind**: confirmed in Step 1.
-- **Language**: "Is this for a specific programming language (csharp, python, react) or shared?" Skills require a language; agents, rules, and prompts are optional.
+- **Language**: "Is this for a specific programming language (csharp, python, react) or shared?" Language is optional for every kind — omit it for a stack-agnostic artifact under `catalog/shared/`.
 - **Name**: kebab-case, e.g. `ef-core-migrations`. Used as the invocation name.
 - **Title**: human-readable, e.g. "EF Core Migrations".
 - **Description**: one-liner for catalog listings.

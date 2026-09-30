@@ -26,7 +26,7 @@ function compareByKindThenId(a: ResolvedArtifact, b: ResolvedArtifact): number {
 /**
  * Returns the distinct artifact kinds present in the given array, in KIND_ORDER.
  * Used by the wizard to build "By kind" option lists from only the artifact kinds
- * that are actually available (after target.supportedKinds filtering).
+ * that are actually available (after filtering by the target's capability table).
  */
 export function availableKinds(artifacts: ResolvedArtifact[]): ArtifactKind[] {
   const present = new Set(artifacts.map(a => a.kind));

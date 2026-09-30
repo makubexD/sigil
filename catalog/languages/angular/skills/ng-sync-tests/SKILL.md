@@ -2,7 +2,7 @@
 id: angular/ng-sync-tests
 kind: skill
 title: "Sync Tests (Angular)"
-description: "Sync the spec suite with source code — add missing specs, update stale ones, and remove orphaned specs (with confirmation before deletion)"
+description: "Sync an Angular spec suite with source code — add missing specs, update stale ones, and remove orphaned specs (with confirmation before deletion)"
 name: ng-sync-tests
 language: angular
 allowedTools:

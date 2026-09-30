@@ -17,8 +17,9 @@
  */
 import type { Artifact, LoadedCatalog, SourceViolation } from '../types';
 import { getSchema } from '../schema/index';
-import type { Target, ArtifactKind } from '../types';
+import type { Target } from '../types';
 import type { CheckCtx } from './check-source-ctx';
+import { supportsKind } from '../targets/capabilities';
 import {
   checkIdConsistency,
   checkKindMatchesPath,
@@ -81,9 +82,7 @@ function checkPlatformNames(ctx: CheckCtx, platforms: string[]): void {
   const file = artifact.filePath;
   const allTargetNames = new Set(targets.map(t => t.name));
   const kindSupporting = new Set(
-    targets
-      .filter(t => !t.supportedKinds || t.supportedKinds.includes(artifact.kind as ArtifactKind))
-      .map(t => t.name),
+    targets.filter(t => supportsKind(t, artifact.kind)).map(t => t.name),
   );
 
   for (const p of platforms) {

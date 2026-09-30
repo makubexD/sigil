@@ -14,6 +14,7 @@ import { validateCatalog } from '../dist-cli/validate';
 import { resolveCatalog } from '../dist-cli/resolve';
 import { resolveSelection } from '../dist-cli/select/selector-resolve';
 import { TestFixtureTarget } from '../dist-cli/targets/test-fixture';
+import { supportedKinds } from '../dist-cli/targets/capabilities';
 import type { Artifact, LoadedCatalog } from '../dist-cli/types';
 
 const TEMPLATE_ID = 'test-fixture/templates/reversible';
@@ -126,7 +127,7 @@ describe('extensibility — a synthetic third provider needs zero core edits', (
       filters: {},
       catalog: resolved,
       packs: [],
-      supportedKinds: fixture.supportedKinds!,
+      supportedKinds: supportedKinds(fixture),
       targetName: fixture.name,
     });
 

@@ -58,7 +58,10 @@ export const RULES: ScanRule[] = [
     id: 'secret/github-token',
     severity: 'error',
     description: 'GitHub personal access token',
-    pattern: /ghp_[A-Za-z0-9]{36,}/,
+    // Covers the legacy classic-PAT prefix (ghp_) and the newer fine-grained/scoped prefixes:
+    // gho_ (OAuth), ghu_ (user-to-server), ghs_ (server-to-server), ghr_ (refresh), and the
+    // long-form fine-grained PAT (github_pat_...).
+    pattern: /gh[oprsu]_[A-Za-z0-9]{36,}|github_pat_[A-Za-z0-9_]{20,}/,
   },
   {
     id: 'secret/anthropic-key',
@@ -71,6 +74,40 @@ export const RULES: ScanRule[] = [
     severity: 'error',
     description: 'OpenAI API key',
     pattern: /sk-(?:proj-)?[A-Za-z0-9]{20,}/,
+  },
+  // Round-4 (2026-08-23) audit F36: the rule set previously covered only AWS/PEM/GitHub/
+  // Anthropic/OpenAI — a dogfooded ts-security-auditor run flagged the gap against Slack, Stripe,
+  // Google, npm, and JWT formats, all common enough to be worth a dedicated pattern rather than
+  // relying on the generic api-key/bearer-token/password catch-alls above.
+  {
+    id: 'secret/slack-token',
+    severity: 'error',
+    description: 'Slack API token',
+    pattern: /xox[baprs]-[A-Za-z0-9-]{10,}/,
+  },
+  {
+    id: 'secret/stripe-key',
+    severity: 'error',
+    description: 'Stripe API key',
+    pattern: /\b(?:sk|pk)_live_[A-Za-z0-9]{16,}/,
+  },
+  {
+    id: 'secret/google-api-key',
+    severity: 'error',
+    description: 'Google API key',
+    pattern: /AIza[A-Za-z0-9_-]{35}/,
+  },
+  {
+    id: 'secret/npm-token',
+    severity: 'error',
+    description: 'npm access token',
+    pattern: /npm_[A-Za-z0-9]{36}/,
+  },
+  {
+    id: 'secret/jwt',
+    severity: 'warn',
+    description: 'JSON Web Token',
+    pattern: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/,
   },
 
   // ── Config artifact security (hooks / MCP execute shell commands) ─────────
@@ -91,37 +128,42 @@ export const RULES: ScanRule[] = [
   },
 
   // ── Prompt injection heuristics ────────────────────────────────────────────
+  // `globalPattern`, not `pattern`: these run against the whole joined content instead of one
+  // line at a time, so a payload split across a newline (`"ignore all\nprevious instructions"`)
+  // can't evade detection just because no single line contains the full phrase — `\s+` inside
+  // each pattern already matches a literal newline, it's the per-line scan that was the gap
+  // (2026-08-22 audit F26).
   {
     id: 'injection/ignore-previous',
     severity: 'error',
     description: 'Prompt override phrase',
-    pattern: /ignore\s+(all\s+)?(previous|prior|above)\s+instructions?/i,
+    globalPattern: /ignore\s+(all\s+)?(previous|prior|above)\s+instructions?/i,
   },
   {
     id: 'injection/disregard-system',
     severity: 'error',
     description: 'System-prompt disregard phrase',
-    pattern: /disregard\s+(the\s+)?(system\s+prompt|previous\s+instructions?)/i,
+    globalPattern: /disregard\s+(the\s+)?(system\s+prompt|previous\s+instructions?)/i,
   },
   {
     id: 'injection/jailbreak-override',
     severity: 'error',
     description: 'Jailbreak override phrase',
-    pattern: /\byou\s+(?:must|shall|will)\s+(?:now\s+)?(?:act|pretend|behave|forget|ignore)/i,
+    globalPattern: /\byou\s+(?:must|shall|will)\s+(?:now\s+)?(?:act|pretend|behave|forget|ignore)/i,
   },
   {
     id: 'injection/data-exfil-url',
     severity: 'warn',
     description: 'Potential data exfiltration URL pattern',
     // Looks for "fetch/curl/request <external-url>" with suspicious query params
-    pattern:
+    globalPattern:
       /(?:fetch|curl|request|wget|http\.get)\s*\(\s*['"`]https?:\/\/[^'"` ]+\?[^'"` ]+\b(?:data|token|key|secret|content|output)\b/i,
   },
   {
     id: 'injection/role-switch',
     severity: 'warn',
     description: 'Suspicious role-switch instruction',
-    pattern: /from\s+now\s+on[,\s]+(?:you\s+are|act\s+as|pretend\s+to\s+be)/i,
+    globalPattern: /from\s+now\s+on[,\s]+(?:you\s+are|act\s+as|pretend\s+to\s+be)/i,
   },
 ];
 

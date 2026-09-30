@@ -16,6 +16,7 @@
  */
 import fs from 'fs';
 import path from 'path';
+import { FORBIDDEN_KEYS } from '../../config-merge/primitives';
 
 /** YAML frontmatter fence, as it appears at the start and end of a source file. */
 const FRONTMATTER_FENCE = '---';
@@ -93,7 +94,16 @@ function parseFrontmatterLine(
   return { key, value: parseScalarValue(valStr), nextIndex: i + 1 };
 }
 
-/** Parses frontmatter line-by-line (see parseMarkdown's doc comment for the tolerant format). */
+/**
+ * Parses frontmatter line-by-line (see parseMarkdown's doc comment for the tolerant format).
+ *
+ * `key` comes verbatim from an externally-authored file being imported via `sigil import` — the
+ * one real untrusted-input boundary this parser serves — so it is guarded against
+ * `__proto__`/`constructor`/`prototype` the same way every merge/assign loop in `config-merge/` is
+ * (round-6 catalog audit, 2026-08-25: found by a dogfooded `ts-security-auditor` run while
+ * re-verifying an unrelated fix; `fm` is a plain object literal, so bracket assignment on a
+ * forbidden key would invoke the inherited `Object.prototype.__proto__` setter).
+ */
 function parseFrontmatterLines(frontmatterText: string): Record<string, unknown> {
   const fm: Record<string, unknown> = {};
   const lines = frontmatterText.split('\n');
@@ -104,7 +114,7 @@ function parseFrontmatterLines(frontmatterText: string): Record<string, unknown>
       i++;
       continue;
     }
-    fm[parsed.key] = parsed.value;
+    if (!FORBIDDEN_KEYS.has(parsed.key)) fm[parsed.key] = parsed.value;
     i = parsed.nextIndex;
   }
   return fm;

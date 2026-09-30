@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { stripLanguagePrefix } from './translate';
+import { stripLanguagePrefix } from './translate-shared';
 
 /**
  * Split a comma-string tools field into a string array.

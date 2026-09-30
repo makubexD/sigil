@@ -107,6 +107,20 @@ describe('J — Move planner (authoring/move.ts)', () => {
     );
   });
 
+  it('computeDestinationPath rejects a path-traversal id (F32, round-4 audit)', () => {
+    assert.throws(
+      () => computeDestinationPath('shared/../../escape', 'rule', FAKE_CATALOG_DIR),
+      /kebab-case/,
+    );
+  });
+
+  it('computeDestinationPath rejects a non-kebab-case id (F32, round-4 audit)', () => {
+    assert.throws(
+      () => computeDestinationPath('shared/Not_Kebab', 'rule', FAKE_CATALOG_DIR),
+      /kebab-case/,
+    );
+  });
+
   it('summarizePlan includes the self id-update + all referrer rewrites', () => {
     const catalog = buildFakeCatalog();
     const plan = planMove(

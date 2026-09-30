@@ -36,18 +36,11 @@ Parse `{sigil:arguments}`:
 
 ## Step 1 — Discover repo layout
 
-- Locate the solution root: `.sln` or `Directory.Build.props`.
-- Determine if **Central Package Management** is active:
-  ```bash
-  grep -l "ManagePackageVersionsCentrally" . --include="*.props" -r
-  ```
-- Identify the target project(s) to add the `<PackageReference>` to (from delegation context or ask
-  the user if ambiguous).
-- Check whether the package is already referenced:
-  ```bash
-  grep -r "<PackageReference Include=\"<package-id>\"" . --include="*.csproj" --include="*.props"
-  ```
-  If found, report the existing version and ask whether to update instead of add.
+Locate the solution root (`.sln`/`Directory.Build.props`), determine if **Central Package
+Management** is active (`grep -l "ManagePackageVersionsCentrally" . --include="*.props" -r`),
+identify the target project(s) (from delegation context or ask if ambiguous), and check whether the
+package is already referenced (`grep -r "<PackageReference Include=\"<package-id>\"" . --include="*.csproj" --include="*.props"`) —
+if found, report the existing version and ask whether to update instead of add.
 
 ## Step 2 — Vet the package
 
@@ -57,16 +50,12 @@ Parse `{sigil:arguments}`:
 dotnet list package --vulnerable --include-transitive 2>&1
 ```
 
-Check https://www.nuget.org/packages/<package-id> for:
-1. **Maintenance status** — last release date, download trend, GitHub issues. Flag if last release > 18 months ago.
-2. **License** — MIT/Apache/BSD are typically acceptable; GPL/AGPL require review for commercial projects. Flag non-permissive licenses.
-3. **Transitive footprint** — does it add many transitive dependencies? Run:
-   ```bash
-   dotnet add <project.csproj> package <package-id> --dry-run 2>&1 || true
-   ```
-4. **BCL alternative** — can `System.*` or `Microsoft.Extensions.*` already cover this need?
-   If yes, recommend the BCL alternative and stop.
-5. **Source** — is it published on `nuget.org` (or your org's trusted feed)? Is it author-signed?
+Check https://www.nuget.org/packages/<package-id> for: **maintenance status** (last release date,
+download trend, open issues — flag if last release > 18 months ago); **license** (MIT/Apache/BSD
+typically fine, GPL/AGPL needs review for commercial projects); **transitive footprint** (`dotnet
+add <project.csproj> package <package-id> --dry-run 2>&1 || true` previews what else gets added);
+**BCL alternative** (can `System.*`/`Microsoft.Extensions.*` already cover this? If yes, recommend
+it and stop); **source** (published on `nuget.org`/the org's trusted feed, author-signed?).
 
 **If vetting flags a risk:** present the finding and ask for explicit confirmation before proceeding.
 
@@ -80,41 +69,18 @@ Check https://www.nuget.org/packages/<package-id> for:
 
 ## Step 4 — Add through Central Package Management
 
-**If CPM is active** (preferred):
-
-Add the version pin to `Directory.Packages.props`:
-```xml
-<!-- Directory.Packages.props -->
-<ItemGroup>
-    <PackageVersion Include="<package-id>" Version="<version>" />
-</ItemGroup>
-```
-
-Add a **versionless** `<PackageReference>` to the target `.csproj`:
-```xml
-<PackageReference Include="<package-id>" />
-```
-
-For `--dev` (analyzer/build-only):
-```xml
-<PackageReference Include="<package-id>">
-    <PrivateAssets>all</PrivateAssets>
-    <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
-</PackageReference>
-```
+**If CPM is active** (preferred): add the version pin to `Directory.Packages.props`
+(`<PackageVersion Include="<package-id>" Version="<version>" />` inside `<ItemGroup>`), then add a
+**versionless** `<PackageReference Include="<package-id>" />` to the target `.csproj`. For `--dev`
+(analyzer/build-only), add `<PrivateAssets>all</PrivateAssets>` and `<IncludeAssets>runtime; build;
+native; contentfiles; analyzers</IncludeAssets>` as children of that `<PackageReference>`.
 
 **If CPM is not active:** add a pinned `<PackageReference Include="<package-id>" Version="<version>" />` directly to the target `.csproj` and recommend enabling CPM (see `cs-nuget`).
 
 ## Step 5 — Restore and refresh lock file
 
-```bash
-dotnet restore
-```
-
-If a `packages.lock.json` exists, verify it was updated:
-```bash
-git diff packages.lock.json
-```
+`dotnet restore`, then if `packages.lock.json` exists, verify it was updated (`git diff
+packages.lock.json`).
 
 ## Step 6 — Run the quality gate
 

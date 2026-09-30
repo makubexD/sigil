@@ -1,0 +1,33 @@
+{
+  "totalArtifacts": 99,
+  "danglingRefs": [],
+  "orphans": [
+    {
+      "id": "python/py-architect",
+      "kind": "agent",
+      "path": "languages/python/agents/py-architect.agent.md"
+    },
+    {
+      "id": "react/react-architect",
+      "kind": "agent",
+      "path": "languages/react/agents/react-architect.agent.md"
+    },
+    {
+      "id": "shared/ado",
+      "kind": "mcp",
+      "path": "shared/mcps/ado.mcp.md"
+    },
+    {
+      "id": "shared/context-mode",
+      "kind": "mcp",
+      "path": "shared/mcps/context-mode.mcp.md"
+    },
+    {
+      "id": "shared/maku-jam",
+      "kind": "mcp",
+      "path": "shared/mcps/maku-jam.mcp.md"
+    }
+  ],
+  "dispatchOnlyAgents": ["python/py-architect", "react/react-architect"],
+  "packCount": 9
+}

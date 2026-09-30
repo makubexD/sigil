@@ -11,6 +11,10 @@
 import type { DocRef, KindEmitSpec } from './spec-types';
 import { CLAUDE_EMIT_SPECS } from './claude-code/spec';
 import { COPILOT_EMIT_SPECS } from './copilot/spec';
+import { CLAUDE_CAPABILITIES } from './claude-code/capabilities';
+import { COPILOT_CAPABILITIES } from './copilot/capabilities';
+import { CHANNELS, type TargetCapabilities } from './capability-types';
+import { ALL_KINDS } from '../kinds';
 import {
   COPILOT_INSTRUCTIONS_DOC,
   VSCODE_INSTRUCTIONS_DOC,
@@ -64,10 +68,28 @@ const AGGREGATE_DOC_REFS: readonly SourcedDocRef[] = [
   { source: 'copilot .vscode/mcp.json aggregate', doc: VSCODE_MCP_DOC },
 ];
 
+/**
+ * Citations carried by capability rows (`via` rows, and `none` rows that name a platform limit) —
+ * see capability-types.ts. `native` rows cite through their KindEmitSpec instead.
+ */
+function capabilityDocs(provider: string, capabilities: TargetCapabilities): SourcedDocRef[] {
+  return CHANNELS.flatMap(channel => {
+    const table = capabilities[channel];
+    if (!table) return [];
+    return ALL_KINDS.flatMap(kind => {
+      const support = table[kind];
+      const docs = support.mode === 'native' ? [] : (support.docs ?? []);
+      return docs.map(doc => ({ source: `${provider} capability ${channel}/${kind}`, doc }));
+    });
+  });
+}
+
 export const ALL_PROVIDER_DOC_REFS: readonly SourcedDocRef[] = [
   ...specDocs('claude', CLAUDE_EMIT_SPECS),
   ...specDocs('copilot', COPILOT_EMIT_SPECS),
   ...AGGREGATE_DOC_REFS,
+  ...capabilityDocs('claude', CLAUDE_CAPABILITIES),
+  ...capabilityDocs('copilot', COPILOT_CAPABILITIES),
 ];
 
 /** One spec paired with its provider-qualified label — the `supersededBy` surfacing input. */

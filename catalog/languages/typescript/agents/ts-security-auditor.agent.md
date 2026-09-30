@@ -3,12 +3,11 @@ id: typescript/ts-security-auditor
 kind: agent
 title: Security Auditor (TypeScript)
 description: >-
-  Use to conduct a deep, codebase-wide security audit and produce a prioritized
-  remediation report. Read-only; never modifies files. Sweeps the entire
-  codebase for threat-surface issues: hardcoded secrets, injection, prototype
-  pollution, unsafe deserialization, and dependency CVEs. Use proactively before
-  releases, when adding authentication or external I/O, or when handling
-  sensitive data.
+  Use to conduct a deep, codebase-wide security audit and produce a prioritized remediation
+  report. Makes no edits (Bash is read-only by instruction, not sandboxed). Sweeps the entire
+  codebase for threat-surface issues: hardcoded secrets, injection, prototype pollution, unsafe
+  deserialization, and dependency CVEs. Use proactively before releases, when adding
+  authentication or external I/O, or when handling sensitive data.
 name: ts-security-auditor
 language: typescript
 tools:
@@ -76,6 +75,13 @@ Read in order:
 - `Object.assign(target, untrustedSource)` or lodash `_.merge` / `_.set` with external data.
 - `JSON.parse` result used directly as a target for property spread.
 - Lookup tables built as `{}` from external keys — use `Object.create(null)` instead.
+- When a codebase declares a shared guard invariant (e.g. a `FORBIDDEN_KEYS`/`__proto__`-blocklist
+  pattern used across several merge/assign functions), grep for **every** call site of that guard
+  and verify each one individually applies it — do not spot-check one representative site and
+  extrapolate. A regression that silently drops the guard from a single sibling function is exactly
+  the kind of miss a representative sample cannot catch (see the 2026-08-23 catalog audit's recall
+  control, where this class of regression was caught by a generalist reviewer checking every site
+  but missed here by checking only one).
 
 **Unsafe deserialization and untrusted input**
 - `JSON.parse` result cast with `as SomeType` without schema validation — use zod/valibot.

@@ -1,8 +1,8 @@
 /**
  * Claude Code `agent` emission spec — one layout shared by both compile (`agents/<name>.md` in
  * the plugin) and scaffold (`.claude/agents/<name>.md`) paths; unlike skill, agent has no
- * variant split. `claude:` namespace hints (model/effort/maxTurns/isolation) are flattened to
- * top-level frontmatter keys, and `disallowedTools` is emitted as a JSON array when present.
+ * variant split. `claude:` namespace hints (model/effort/maxTurns/isolation/skills) are flattened
+ * to top-level frontmatter keys, and `disallowedTools` is emitted as a JSON array when present.
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { yamlScalar } from '../../yaml-util';
@@ -35,6 +35,24 @@ function claudeHintMapping(key: 'model' | 'effort' | 'maxTurns' | 'isolation'): 
   };
 }
 
+/**
+ * `claude.skills` — catalog skill ids, emitted as Claude's subagent `skills:` preload list of skill
+ * *names*. `validate` rejects an unknown or non-skill id and a preloaded skill whose name isn't its
+ * id's last segment (src/refs.ts), so no catalog lookup is needed here.
+ * Scaffold names resolve against `.claude/skills/<name>`; skills inside a plugin are namespaced
+ * (`<plugin>:<name>`), so only author this on agents whose skill is scaffolded alongside them.
+ */
+const claudeSkillsMapping: FieldMapping = {
+  from: 'claude.skills',
+  to: 'skills',
+  required: false,
+  when: fm => ((fm.claude as { skills?: string[] } | undefined)?.skills ?? []).length > 0,
+  serialize: v =>
+    ['skills:', ...(v as string[]).map(id => `  - ${id.slice(id.lastIndexOf('/') + 1)}`)].join(
+      '\n',
+    ),
+};
+
 const disallowedToolsMapping: FieldMapping = {
   from: 'disallowedTools',
   to: 'disallowedTools',
@@ -65,6 +83,7 @@ const AGENT_FRONTMATTER: readonly FieldMapping[] = [
   claudeHintMapping('effort'),
   claudeHintMapping('maxTurns'),
   claudeHintMapping('isolation'),
+  claudeSkillsMapping,
   toolsMapping,
   disallowedToolsMapping,
 ];

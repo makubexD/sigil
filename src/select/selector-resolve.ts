@@ -152,10 +152,10 @@ function applySelectionFilters(
 /** Classifies one candidate as target-unsupported or platform-restricted, else undefined. */
 function classifySkippedArtifact(
   a: ResolvedArtifact,
-  supportedSet: Set<string>,
+  supportedSet: Set<string> | undefined,
   targetName: string | undefined,
 ): SkippedArtifact | undefined {
-  if (supportedSet.size > 0 && !supportedSet.has(a.kind)) {
+  if (supportedSet && !supportedSet.has(a.kind)) {
     return { id: a.id, kind: a.kind, reason: `kind '${a.kind}' is not supported for this target` };
   }
   if (targetName && !artifactTargetsPlatform(a, targetName)) {
@@ -168,10 +168,10 @@ function classifySkippedArtifact(
 /** Partitions filtered candidates into target-supported ids vs. skipped (kind/platform). */
 function partitionSupportedAndSkipped(
   candidates: ResolvedArtifact[],
-  supportedKinds: ArtifactKind[],
+  supportedKinds: readonly ArtifactKind[] | undefined,
   targetName: string | undefined,
 ): SelectionResult {
-  const supportedSet = new Set<string>(supportedKinds);
+  const supportedSet = supportedKinds ? new Set<string>(supportedKinds) : undefined;
   const ids: string[] = [];
   const skipped: SkippedArtifact[] = [];
 
@@ -197,8 +197,11 @@ export interface ResolveSelectionOptions {
   catalog: ResolvedCatalog;
   /** Pack list from packs.yaml. */
   packs: Pack[];
-  /** Kinds the chosen target can scaffold (empty = treat all as supported). */
-  supportedKinds: ArtifactKind[];
+  /**
+   * Kinds the chosen target can scaffold (its capability table). Omit for no kind filter (the
+   * wizard previews selections before a target is applied); `[]` means the target supports nothing.
+   */
+  supportedKinds?: readonly ArtifactKind[] | undefined;
   /** Optional platform name — used to apply platform restriction. */
   targetName?: string;
 }

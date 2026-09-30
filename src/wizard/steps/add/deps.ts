@@ -16,7 +16,6 @@ function selectionHasClosure(s: AddWizardState): boolean {
     filters: { language: s.language },
     catalog: s.ctx.catalog,
     packs: s.ctx.packs,
-    supportedKinds: [],
   });
   return ids.some(id => hasUsesClosure(s.ctx.catalog.byId.get(id)?.kind ?? ''));
 }
@@ -55,7 +54,6 @@ function showDepsNote(s: AddWizardState): void {
     filters: { language: s.language },
     catalog: s.ctx.catalog,
     packs: s.ctx.packs,
-    supportedKinds: [],
   });
   const cp: ClosurePreview = computeClosure(primaryIds, s.ctx.catalog);
   note(buildDepsNoteBody(ct, cp), 'About dependencies');

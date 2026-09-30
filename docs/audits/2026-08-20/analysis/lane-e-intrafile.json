@@ -1,0 +1,23 @@
+[
+  {
+    "id": "angular/ng-generate-component",
+    "kind": "skill",
+    "overlap": 0.571,
+    "snippetA": "@Component({\n  selector: 'app-user-profile',\n  changeDetection: ChangeDetectionStrategy.OnPush,\n  te",
+    "snippetB": "@Component({\n  selector: 'app-user-profile',\n  changeDetection: ChangeDetectionStrategy.OnPush,\n  te"
+  },
+  {
+    "id": "csharp/cs-security",
+    "kind": "rule",
+    "overlap": 0.727,
+    "snippetA": "// Correct — Dapper parameterized\nvar user = await conn.QueryFirstOrDefaultAsync<User>(\n    \"SELECT ",
+    "snippetB": "// Wrong — string concatenation\nvar user = await conn.QueryFirstOrDefaultAsync<User>(\n    $\"SELECT *"
+  },
+  {
+    "id": "csharp/cs-scaffold-project",
+    "kind": "skill",
+    "overlap": 0.667,
+    "snippetA": "Based on `--type`:\n- `lib` → `src/<name>/<name>.csproj` + matching `tests/<name>.Tests/<name>.Tests.",
+    "snippetB": "Create `tests/<name>.Tests/<name>.Tests.csproj`:\n```xml\n<Project Sdk=\"Microsoft.NET.Sdk\">\n  <Propert"
+  }
+]

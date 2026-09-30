@@ -1,0 +1,28 @@
+
+> sigil@0.1.0 check
+> npm run lint && npm run format:check && npm run check-doc-comments && npm test
+
+
+> sigil@0.1.0 lint
+> eslint src test
+
+
+> sigil@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+[[33mwarn[39m] .mcp.json
+[[33mwarn[39m] docs/audits/2026-08-20/analysis/lane-a-refs.json
+[[33mwarn[39m] docs/audits/2026-08-20/analysis/lane-b-collision.json
+[[33mwarn[39m] docs/audits/2026-08-20/analysis/lane-c-budget.json
+[[33mwarn[39m] docs/audits/2026-08-20/analysis/lane-d-duplication.json
+[[33mwarn[39m] docs/audits/2026-08-20/analysis/lane-e-intrafile.json
+[[33mwarn[39m] docs/audits/2026-08-20/register.md
+[[33mwarn[39m] docs/audits/2026-08-20/tools/lane-a-refs.js
+[[33mwarn[39m] docs/audits/2026-08-20/tools/lane-b-collision.js
+[[33mwarn[39m] docs/audits/2026-08-20/tools/lane-d-duplication.js
+[[33mwarn[39m] docs/audits/2026-08-20/tools/lane-e-intrafile.js
+[[33mwarn[39m] docs/decisions/catalog-quality-audit-2026-08.md
+[[33mwarn[39m] src/commands/sync/conformance/rules/catalog-symmetry.ts
+[[33mwarn[39m] Code style issues found in 13 files. Run Prettier with --write to fix.
+exit: 1

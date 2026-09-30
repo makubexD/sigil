@@ -3,11 +3,12 @@ id: angular/ng-refactor-specialist
 kind: agent
 title: Refactor Specialist (Angular)
 description: >-
-  Use to perform behavior-preserving refactors — extract component/service,
-  rename symbols, decompose large modules, eliminate duplication, break circular
-  dependencies/DI. Applies changes and verifies the test suite stays green.
-  Never changes observable behavior. Use proactively after a feature is working
-  and tests pass, when code quality needs improvement without risk.
+  Use to perform behavior-preserving refactors on an Angular codebase —
+  extract component/service, rename symbols, decompose large modules,
+  eliminate duplication, break circular dependencies/DI. Applies changes and
+  verifies the test suite stays green. Never changes observable behavior. Use
+  proactively after an Angular feature is working and tests pass, when code
+  quality needs improvement without risk.
 name: ng-refactor-specialist
 language: angular
 tools:

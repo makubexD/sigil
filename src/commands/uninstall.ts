@@ -47,11 +47,16 @@ function findDriftedPaths(
   removedEntries: ManifestEntry[],
   projectDir: string,
 ): string[] {
+  // Index once by path instead of re-flattening removedEntries on every iteration below — was
+  // O(pathsToDelete * removedEntries) via a fresh flatMap().find() per path; fixed in the
+  // 2026-08-26 round after a dogfooded ts-performance-profiler run flagged it (see
+  // docs/audits/2026-08-25/register.md's backlog).
+  const recordedByPath = new Map(removedEntries.flatMap(e => e.files).map(f => [f.path, f]));
   const driftedPaths: string[] = [];
   for (const p of pathsToDelete) {
     const fullPath = path.join(projectDir, p);
     if (!fs.existsSync(fullPath)) continue;
-    const recorded = removedEntries.flatMap(e => e.files).find(f => f.path === p);
+    const recorded = recordedByPath.get(p);
     if (recorded) {
       const diskHash = sha256(fs.readFileSync(fullPath, 'utf-8'));
       if (diskHash !== recorded.sha256) driftedPaths.push(p);
@@ -124,6 +129,18 @@ async function confirmUninstall(
 }
 
 /** Deletes whole-file kind files (skipping drifted ones unless --force), pruning empty dirs. */
+/** Best-effort removal of `dir` if it's now empty — ENOENT/ENOTEMPTY are expected, not errors. */
+function removeIfEmptyDir(dir: string): void {
+  try {
+    if (fs.readdirSync(dir).length === 0) fs.rmdirSync(dir);
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code !== 'ENOENT' && code !== 'ENOTEMPTY') {
+      console.warn(`  ⚠  Could not remove empty directory ${dir}: ${(err as Error).message}`);
+    }
+  }
+}
+
 function deleteWholeFiles(
   pathsToDelete: string[],
   driftedPaths: string[],
@@ -134,14 +151,12 @@ function deleteWholeFiles(
     const fullPath = path.join(opts.projectDir, p);
     try {
       fs.unlinkSync(fullPath);
-      // Remove empty parent directories (best-effort)
-      const dir = path.dirname(fullPath);
-      if (fs.readdirSync(dir).length === 0) {
-        fs.rmdirSync(dir);
-      }
-    } catch {
-      // If file was already missing, that's fine
+    } catch (err) {
+      if ((err as NodeJS.ErrnoException).code === 'ENOENT') continue; // already missing — fine
+      console.warn(`  ⚠  Could not remove ${fullPath}: ${(err as Error).message}`);
+      continue;
     }
+    removeIfEmptyDir(path.dirname(fullPath));
   }
 }
 

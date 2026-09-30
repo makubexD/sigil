@@ -2,6 +2,7 @@
  * Core type definitions for the sigil compiler pipeline.
  * These interfaces flow through Load → Validate → Resolve → Emit.
  */
+import type { TargetCapabilities } from './targets/capability-types';
 
 // ─── Artifact kinds ──────────────────────────────────────────────────────────
 
@@ -379,11 +380,12 @@ export interface Target {
   ): Promise<ConfigMergeOp[]>;
 
   /**
-   * Artifact kinds this target can scaffold.
-   * Kinds absent from this list trigger a warn-and-skip during `add` rather than an error.
-   * If omitted, all kinds are considered supported (adapters should declare this explicitly).
+   * Which artifact kinds this target delivers on each channel (scaffold / plugin) — the single
+   * declaration of kind support, read through src/targets/capabilities.ts (`supportedKinds`,
+   * `supportsKind`, `nativeKinds`). Kinds a channel marks `none` trigger a warn-and-skip during
+   * `add` rather than an error. Declared in src/targets/<provider>/capabilities.ts.
    */
-  supportedKinds?: ArtifactKind[];
+  readonly capabilities: TargetCapabilities;
 
   /**
    * Platform-native vocabulary for each artifact kind.

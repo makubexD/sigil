@@ -1,0 +1,16 @@
+
+> sigil@0.1.0 check
+> npm run lint && npm run format:check && npm run check-doc-comments && npm test
+
+
+> sigil@0.1.0 lint
+> eslint src test
+
+
+> sigil@0.1.0 format:check
+> prettier --check .
+
+Checking formatting...
+[[33mwarn[39m] .mcp.json
+[[33mwarn[39m] Code style issues found in the above file. Run Prettier with --write to fix.
+exit: 1

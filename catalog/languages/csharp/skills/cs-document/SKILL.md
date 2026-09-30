@@ -72,26 +72,13 @@ public static bool IsWeekend(DateOnly d) => d.DayOfWeek is DayOfWeek.Saturday or
 
 **Full doc comment (non-trivial method):**
 ```csharp
-/// <summary>
-/// Merges calendar rows and developer-activity rows into a unified daily timeline.
-/// </summary>
-/// <param name="calendarRows">
-/// Calendar rows in chronological order; preserved verbatim in the output.
-/// </param>
-/// <param name="devRows">
-/// Developer-activity rows used to fill remaining time up to the daily cap.
-/// </param>
-/// <param name="cancellationToken">Propagated to any async operations performed during merge.</param>
-/// <returns>
-/// A merged list of <see cref="TimesheetRow"/> objects sorted by start time, never <see langword="null"/>.
-/// </returns>
-/// <exception cref="ArgumentNullException">
-/// Thrown when <paramref name="calendarRows"/> or <paramref name="devRows"/> is <see langword="null"/>.
-/// </exception>
+/// <summary>Merges calendar rows and developer-activity rows into a unified daily timeline.</summary>
+/// <param name="calendarRows">Calendar rows in chronological order; preserved verbatim in the output.</param>
+/// <param name="devRows">Developer-activity rows used to fill remaining time up to the daily cap.</param>
+/// <returns>A merged list sorted by start time, never <see langword="null"/>.</returns>
+/// <exception cref="ArgumentNullException">Thrown when either parameter is <see langword="null"/>.</exception>
 public async Task<IReadOnlyList<TimesheetRow>> MergeAsync(
-    IReadOnlyList<TimesheetRow> calendarRows,
-    IReadOnlyList<DevDayRow> devRows,
-    CancellationToken cancellationToken = default)
+    IReadOnlyList<TimesheetRow> calendarRows, IReadOnlyList<DevDayRow> devRows)
 ```
 
 **`interface` contract:**

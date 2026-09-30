@@ -3,10 +3,10 @@ id: angular/ng-code-reviewer
 kind: agent
 title: Code Reviewer (Angular)
 description: >-
-  Use to review a diff, file, or scope for correctness, security, and quality
-  against the project's documented conventions. Fast per-change generalist gate
-  — read-only; returns a severity-ranked report. Use proactively after
-  non-trivial changes.
+  Use to review an Angular diff, file, or scope for correctness, security, and quality against the
+  project's documented conventions. Fast per-change generalist gate — makes no edits (Bash is
+  read-only by instruction, not sandboxed); returns a severity-ranked report. Use proactively
+  after non-trivial Angular changes.
 name: ng-code-reviewer
 language: angular
 tools:

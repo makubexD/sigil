@@ -19,6 +19,7 @@ import type {
   EditorialProposal,
 } from '../../dist-cli/commands/sync/conformance/editorial-model-client';
 import { getAllTargets } from '../../dist-cli/targets/index';
+import { channelFromNativeKinds } from '../../dist-cli/targets/capabilities';
 import type { Artifact, LoadedCatalog, Target } from '../../dist-cli/types';
 import { loadCatalog } from '../../dist-cli/load';
 import { CATALOG_DIR } from '../helpers/catalog';
@@ -373,13 +374,30 @@ describe('conformance rule: provider-kind-coverage', () => {
   it('flags a target declaring a whole-file kind with no matching spec', () => {
     const fakeTarget: Target = {
       name: 'fake-provider',
-      supportedKinds: ['skill'],
+      capabilities: { scaffold: channelFromNativeKinds(['skill'], 'fake') },
       compile: async () => ({}),
     };
     const catalog = makeCatalog([]);
     const findings = runConformance(catalog, [fakeTarget], { ruleId: 'provider-kind-coverage' });
     assert.equal(findings.length, 1);
     assert.equal(findings[0]!.provider, 'fake-provider');
+  });
+
+  it('checks each channel against specs whose variant matches that channel', () => {
+    // claude's rule spec is variant 'scaffold' only — native on scaffold is covered, on plugin not.
+    const pluginRuleTarget: Target = {
+      name: 'claude',
+      capabilities: {
+        scaffold: channelFromNativeKinds(['rule'], 'fake'),
+        plugin: channelFromNativeKinds(['rule'], 'fake'),
+      },
+      compile: async () => ({}),
+    };
+    const findings = runConformance(makeCatalog([]), [pluginRuleTarget], {
+      ruleId: 'provider-kind-coverage',
+    });
+    assert.equal(findings.length, 1);
+    assert.match(findings[0]!.detail, /plugin channel/);
   });
 });
 

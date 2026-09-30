@@ -12,19 +12,40 @@
  */
 import type { ConformanceRule, ConformanceFinding, EditorialTask } from '../types';
 
+type Artifact = Parameters<ConformanceRule['detect']>[0]['catalog']['artifacts'][number];
+
 function hasRelatedArtifacts(frontmatter: Record<string, unknown>): boolean {
   return Array.isArray(frontmatter.relatedArtifacts) && frontmatter.relatedArtifacts.length > 0;
 }
 
+/**
+ * Groups agent artifacts by language once, so `detect()`/`candidateSiblings()` do a Map lookup per
+ * artifact instead of re-scanning the whole catalog per artifact. Was an O(n²) full-catalog
+ * `.filter()` inside the per-artifact loop (once in `detect`, again in `candidateSiblings` for
+ * every finding) — flagged by a dogfooded `ts-performance-profiler` run during the 2026-08-25
+ * catalog audit's recall re-measurement (docs/audits/2026-08-25/register.md) and fixed here in the
+ * 2026-08-26 round.
+ */
+function groupAgentsByLanguage(artifacts: readonly Artifact[]): Map<unknown, Artifact[]> {
+  const byLanguage = new Map<unknown, Artifact[]>();
+  for (const a of artifacts) {
+    if (a.kind !== 'agent') continue;
+    const lang = a.frontmatter.language;
+    const group = byLanguage.get(lang) ?? [];
+    byLanguage.set(lang, group);
+    group.push(a);
+  }
+  return byLanguage;
+}
+
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
   const findings: ConformanceFinding[] = [];
+  const byLanguage = groupAgentsByLanguage(ctx.catalog.artifacts);
   for (const artifact of ctx.catalog.artifacts) {
     if (artifact.kind !== 'agent') continue;
     if (hasRelatedArtifacts(artifact.frontmatter)) continue;
     const language = artifact.frontmatter.language;
-    const siblingCount = ctx.catalog.artifacts.filter(
-      a => a.kind === 'agent' && a.id !== artifact.id && a.frontmatter.language === language,
-    ).length;
+    const siblingCount = (byLanguage.get(language) ?? []).filter(a => a.id !== artifact.id).length;
     if (siblingCount === 0) continue; // nothing plausible to cross-reference
     findings.push({
       ruleId: 'related-artifacts',
@@ -42,8 +63,9 @@ function candidateSiblings(
   artifactId: string,
   language: unknown,
 ): string[] {
-  return ctx.catalog.artifacts
-    .filter(a => a.kind === 'agent' && a.id !== artifactId && a.frontmatter.language === language)
+  const byLanguage = groupAgentsByLanguage(ctx.catalog.artifacts);
+  return (byLanguage.get(language) ?? [])
+    .filter(a => a.id !== artifactId)
     .map(a => `${a.id} — ${String(a.frontmatter.description ?? '')}`);
 }
 

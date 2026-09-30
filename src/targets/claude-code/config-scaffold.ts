@@ -10,11 +10,13 @@ import { basenameOfId } from '../../paths';
 import { CLAUDE_MCP_SERVERS_KEY } from './config';
 import type { ConfigDestination } from './config';
 
-/** Builds the single hook entry ({type, command, timeout?}) from an artifact's frontmatter. */
+/** Builds the single hook entry ({type, command, args?, timeout?}) from an artifact's frontmatter. */
 function buildHookEntry(fm: Artifact['frontmatter']): Record<string, unknown> {
   const command = fm.command as string;
+  const args = fm.args as string[] | undefined;
   const timeout = fm.timeout as number | undefined;
   const hookEntry: Record<string, unknown> = { type: 'command', command };
+  if (args !== undefined) hookEntry.args = args;
   if (timeout !== undefined) hookEntry.timeout = timeout;
   return hookEntry;
 }

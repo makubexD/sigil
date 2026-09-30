@@ -7,6 +7,90 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Shared (stack-agnostic) skills: a skill may omit `language:` and live under
+  `catalog/shared/skills/`.
+- `shared/cli` and `shared/wizard` skills (one reference per stack), with their path-scoped rules
+  (`shared/cli-rules`, `shared/wizard-rules`) and auditor agents (`shared/cli-auditor`,
+  `shared/wizard-auditor`).
+- Decision record `docs/decisions/distribution-channels-2026-09.md` (scaffold vs. plugin
+  marketplaces, token cost, capability model, roadmap).
+
+- Per-target capability tables (`src/targets/<provider>/capabilities.ts`): the single declaration of
+  which kinds each target delivers on each channel (scaffold / plugin), and the generated
+  `docs/reference/capabilities.md` matrix.
+
+- Hooks accept `args` (exec form: `command` is spawned directly with these arguments, no shell).
+- `claude: { skills: [<skill id>] }` on agents: emitted as Claude Code's subagent `skills:` preload
+  field (skill names), validated like `uses:`.
+
+- `validate` warns when a skill names a `references/<file>` it doesn't ship, or an `assets/` or
+  `scripts/` path (not emitted by any target).
+- Body-lexicon term `{sigil:skills-dir}` (`.claude/skills/` / `.github/skills/`).
+
+### Changed
+
+- `Target.supportedKinds` replaced by `Target.capabilities`; kind support is read through
+  `src/targets/capabilities.ts`. The Claude plugin assembler now derives plugin members from the
+  plugin channel instead of a hard-coded kind filter. No change to emitted output.
+- `provider-kind-coverage` checks every channel, honouring a spec's `variant`.
+- README Quick Start restructured: fastest path, individual picks, a cost callout, and one
+  collapsible section per tool.
+
+- Agent descriptions that said "read-only" while granting `Bash` now say "Makes no edits (Bash is
+  read-only by instruction, not sandboxed)": Bash can write files, and nothing enforces the claim.
+- `shared/cli-rules` and `shared/wizard-rules` globs are scoped to source files (one glob per
+  extension), so they no longer load for the skills' own markdown, build output, or `node_modules`.
+- `shared/cli` / `shared/wizard` content fixes from an install audit: stale `stacks/` paths, a
+  hijacked fuget.org link and a dead Spectre.Console API link, System.CommandLine usage errors on
+  stdout, Typer ≥ 0.26 no longer running on the `click` package, one colour precedence across rule
+  and references, a crash in the wizard engine sketch, and about 25 smaller accuracy fixes.
+- The shared auditor agents preload their skill and find `references/auditor.md` by a fixed
+  search order instead of an open-ended search.
+
+### Fixed
+
+- `sigil build --target copilot` folded every language-less rule into `copilot-instructions.md`,
+  widening a narrowly scoped shared rule (e.g. `shared/cli-rules`) to the whole repository. Only
+  repo-wide rules (no `appliesTo`, or every-file globs) go there now; scoped rules get their own
+  `applyTo` instructions file.
+- `shared/protect-config` never blocked anything: it read a `CLAUDE_TOOL_INPUT` environment
+  variable that Claude Code does not set (hook input arrives as JSON on stdin), and its `.env`
+  pattern missed `.env.local`. It now reads `tool_input.file_path`, resolves the real path, runs
+  in exec form so a PowerShell-run hook still returns exit code 2, and allows `.env.*.example`
+  templates and `secrets.*.ts` source files.
+- Re-running `sigil add` for an installed hook appended a second copy, and `sigil update` never
+  applied a changed hook, setting or MCP fragment from the catalog. Both now replace the recorded
+  fragment (reverse it, then merge the new one).
+- `sigil update` re-rendered files without the install set, stripping every Boundary ("See also")
+  section, and `sigil add` counted only direct picks, so dependencies lost Boundary entries for each
+  other. Both now use everything installed for the target, so an `update` right after `add` changes
+  nothing.
+- `resolveSelection` treated an empty supported-kind list as "everything supported"; omitting the
+  list now means no filter, and `[]` means the target supports nothing.
+
+- `sigil check` reported a wrong-kind `template:` reference as "only agents valid here".
+- A config fragment whose top-level keys changed between catalog releases was never matched to
+  its record, so `update` kept restoring the old one and re-`add` left it behind. Records are
+  now matched by file and root.
+- `update` and `uninstall` followed a config path from the manifest (`.sigil/manifest.json`, which
+  is committed and editable) outside its root; they now refuse.
+- `update` restored a missing config fragment from the manifest's copy, so an edited
+  `.sigil/manifest.json` could add any hook command. It now writes only the catalog's fragment
+  and skips a recorded one the catalog doesn't have.
+- `add` recorded a config fragment even when it skipped the file (invalid JSON), so the next
+  `update` stacked it beside the old one.
+- `sigil add` warns when an agent preloads a skill that isn't installed, and `validate`
+  rejects a preloaded skill whose name isn't its id's last segment (the emitted `skills:` entry
+  would name a missing skill).
+- `shared/protect-config` also blocks `*.env`, `.env-*`, `.netrc`, `.pgpass`, `*.ppk`, `*.jks`,
+  `*.keystore`, and drive-relative Windows paths (`C:new.pem`).
+
+### Removed
+
+- The internal `requiresLanguage` kind-descriptor flag (no kind requires a language any more).
+
 ## [0.1.0] - 2026-06-22
 
 ### Added

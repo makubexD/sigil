@@ -36,14 +36,11 @@ Parse `{sigil:arguments}`:
 
 ## Step 1 — Discover repo standards
 
-Read the following to understand what "standards pre-wired" means for this solution:
-- `Directory.Build.props` — TFM, `<Nullable>`, `<LangVersion>`, `<ImplicitUsings>`, analyzer settings.
-- `Directory.Packages.props` — CPM-managed package versions in use.
-- `.editorconfig` — code style and analyzer severities.
-- `{sigil:conventions-file}` — documented architecture layers and naming conventions.
-- An existing similar project's `.csproj` as a reference.
-
-If none of these exist, prompt the user for the target TFM and whether CPM is in use before proceeding.
+Read `Directory.Build.props` (TFM, `<Nullable>`, `<LangVersion>`, `<ImplicitUsings>`, analyzer
+settings), `Directory.Packages.props` (CPM-managed package versions), `.editorconfig` (code style
+and analyzer severities), `{sigil:conventions-file}` (architecture layers, naming), and an existing
+similar project's `.csproj` as a reference — this is what "standards pre-wired" means for this
+solution. If none of these exist, prompt the user for the target TFM and whether CPM is in use.
 
 ## Step 2 — Determine placement
 
@@ -62,25 +59,16 @@ Create `src/<name>/<name>.csproj` inheriting shared properties from `Directory.B
 ```xml
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <!-- TFM, Nullable, LangVersion, TreatWarningsAsErrors — all inherited from Directory.Build.props -->
+    <!-- TFM/Nullable/LangVersion/TreatWarningsAsErrors inherit from Directory.Build.props -->
     <OutputType>Library</OutputType>  <!-- Exe for console/web -->
     <RootNamespace><name></RootNamespace>
     <AssemblyName><name></AssemblyName>
-    <!-- Uncomment for library packages: -->
-    <!-- <GenerateDocumentationFile>true</GenerateDocumentationFile> -->
   </PropertyGroup>
 </Project>
 ```
 
-Create a seed file `src/<name>/GlobalUsings.cs`:
-```csharp
-// Global using directives for <name>.
-// Add project-wide usings here; keep this file minimal.
-global using System;
-global using System.Collections.Generic;
-```
-
-Create a seed type file demonstrating the project's conventions (file-scoped namespace, NRT, XML docs):
+Create `src/<name>/GlobalUsings.cs` (project-wide `global using` directives, kept minimal) and a
+seed type file demonstrating the project's conventions — file-scoped namespace, NRT, XML docs:
 ```csharp
 // src/<name>/<PrimaryType>.cs
 namespace <name>;
@@ -94,22 +82,9 @@ public sealed class <PrimaryType>
 }
 ```
 
-For **console** type, create `Program.cs` with `async Task Main`:
-```csharp
-namespace <name>;
-
-internal static class Program
-{
-    private static async Task<int> Main(string[] args)
-    {
-        // TODO: wire IHostBuilder or a minimal DI root here
-        await Task.CompletedTask;
-        return 0;
-    }
-}
-```
-
-For **web** type, create a minimal ASP.NET Core `Program.cs` with `IHostBuilder`.
+For **console**, create `Program.cs` with `private static async Task<int> Main(string[] args)`
+wiring `IHostBuilder` or a minimal DI root. For **web**, create a minimal ASP.NET Core `Program.cs`
+with `IHostBuilder`. Both replace the seed type file above rather than sitting alongside it.
 
 ## Step 4 — Scaffold the test project (unless `--type=test`)
 
@@ -136,10 +111,8 @@ Create `tests/<name>.Tests/<name>.Tests.csproj`:
 </Project>
 ```
 
-If CPM is **not** active, add version attributes to all `<PackageReference>` entries from the
-existing test projects as a reference.
-
-Create a seed test file demonstrating conventions:
+If CPM is **not** active, add version attributes to all `<PackageReference>` entries, mirroring an
+existing test project. Create a seed test file demonstrating conventions:
 ```csharp
 // tests/<name>.Tests/<PrimaryType>Tests.cs
 namespace <name>.Tests;
@@ -147,15 +120,7 @@ namespace <name>.Tests;
 public sealed class <PrimaryType>Tests
 {
     [Fact]
-    public void Placeholder_Should_Pass()
-    {
-        // Arrange — TODO: replace with real test data
-
-        // Act
-
-        // Assert
-        Assert.True(true);
-    }
+    public void Placeholder_Should_Pass() => Assert.True(true); // TODO: replace with a real test
 }
 ```
 

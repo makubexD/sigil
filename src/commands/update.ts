@@ -18,6 +18,7 @@ import type { ManifestEntry, Manifest } from '../manifest/types';
 import type { ResolvedCatalog, Target } from '../types';
 import { SigilError } from '../errors';
 import { isConfigEntry, updateConfigEntry } from './update-config';
+import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 
 export { isFileDrifted } from './update-wholefile';
@@ -29,6 +30,12 @@ export interface UpdateOptions {
   packs: string;
   force: boolean;
   dryRun: boolean;
+  /**
+   * Every artifact id installed for this target — set by runUpdate from the manifest, not a CLI
+   * flag. Re-rendering needs it for the same reason `add` passes its install set: a Boundary
+   * section lists only related artifacts that are installed alongside.
+   */
+  installedIds?: ReadonlySet<string> | undefined;
 }
 
 /** Filters manifest entries by target (and by explicit ids, when provided). */
@@ -97,7 +104,9 @@ async function updateOneEntry(
   }
 
   if (isConfigEntry(entry)) {
-    return { updated: updateConfigEntry(entry, opts), skippedDriftCount: 0, orphaned: false };
+    const freshOps = await catalogConfigOps(entry.id, ctx, opts.projectDir);
+    const updated = updateConfigEntry(entry, opts, freshOps);
+    return { updated, skippedDriftCount: 0, orphaned: false };
   }
 
   const result = await updateWholeFileEntry(entry, resolved, target, opts);
@@ -135,6 +144,7 @@ interface UpdateRunSetup {
   manifest: Manifest;
   entries: ManifestEntry[];
   catalogIds: Set<string>;
+  installedIds: Set<string>;
 }
 
 /** Loads + validates everything runUpdate needs; prints the "nothing to update" message and
@@ -144,6 +154,11 @@ function assertTargetSupportsUpdate(target: Target, targetName: string): void {
   if (!target.scaffold) {
     throw new SigilError(`Target '${targetName}' does not support the update command.`);
   }
+}
+
+/** Every artifact id the manifest records for `targetName` (see UpdateOptions.installedIds). */
+function installedIdsFor(manifest: Manifest, targetName: string): Set<string> {
+  return new Set(manifest.entries.filter(e => e.target === targetName).map(e => e.id));
 }
 
 async function prepareUpdateRun(
@@ -165,20 +180,21 @@ async function prepareUpdateRun(
   }
 
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  return { resolved, target, manifest, entries, catalogIds };
+  const installedIds = installedIdsFor(manifest, targetName);
+  return { resolved, target, manifest, entries, catalogIds, installedIds };
 }
 
 export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<void> {
   const setup = await prepareUpdateRun(ids, opts);
   if (!setup) return;
-  const { resolved, target, manifest, entries, catalogIds } = setup;
+  const { resolved, target, manifest, entries, catalogIds, installedIds } = setup;
 
   console.log('');
   const { updatedCount, skippedDrift, orphanedCount } = await updateAllEntries(entries, {
     catalogIds,
     resolved,
     target,
-    opts,
+    opts: { ...opts, installedIds },
   });
 
   if (!opts.dryRun) {

@@ -5,8 +5,8 @@
  * @module
  */
 import fs from 'node:fs';
-import path from 'node:path';
-import { resolveConfigRoot } from '../config-utils';
+import { resolveContained } from '../cli-helpers';
+import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
 import { reverseMerge, serialize } from '../config-merge';
 import type { ConfigRoot, ConfigMergeOp, MergeStrategy } from '../types';
 import type { ManifestEntry } from '../manifest';
@@ -45,12 +45,13 @@ function reverseMergeOneConfigFile(
   projectDir: string,
 ): boolean {
   const rootDir = resolveConfigRoot((cf.root as ConfigRoot | undefined) ?? 'project', projectDir);
-  const fullPath = path.join(rootDir, cf.file);
-  const isHomeWrite = cf.root === 'home' || cf.root === 'vscode-user';
+  const fullPath = resolveContained(rootDir, cf.file); // the manifest is editable: stay in root
+  const isHomeWrite = isHomeScopedRoot(cf.root as ConfigRoot | undefined);
   const displayPath = isHomeWrite ? fullPath : cf.file;
   if (!fs.existsSync(fullPath)) return false;
 
   try {
+    if (isHomeWrite) ensureHomeBackup(fullPath);
     const live = JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
     const cleaned = reverseMerge(live, buildConfigMergeOpFromEntry(cf));
     writeReversedConfigFile(fullPath, cleaned, displayPath);

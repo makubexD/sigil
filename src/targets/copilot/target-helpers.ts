@@ -76,15 +76,30 @@ export function buildScopeDestinations(
     });
 }
 
-/** Builds the copilot-instructions.md + language instructions files from catalog rules. */
+/** Globs that mean "every file" — a rule scoped only to these belongs in the repo-wide aggregate. */
+const REPO_WIDE_GLOBS: ReadonlySet<string> = new Set(['**', '**/*']);
+
+/**
+ * True for a language-less rule with no `appliesTo`, or one scoped only to every file. Any other
+ * rule — including a language-less one with narrowed globs — needs its own `applyTo` file: folding
+ * it into copilot-instructions.md would silently widen it to the whole repository (CLAUDE.md's
+ * `appliesTo` invariant).
+ */
+function isRepoWideRule(rule: ResolvedCatalog['artifacts'][number]): boolean {
+  if (rule.frontmatter.language) return false;
+  const globs = rule.frontmatter.appliesTo as string[] | undefined;
+  return !globs || globs.every(glob => REPO_WIDE_GLOBS.has(glob));
+}
+
+/** Builds copilot-instructions.md (repo-wide rules) + one instructions file per scoped rule. */
 export function buildRuleFiles(rules: ResolvedCatalog['artifacts'], files: FileMap): void {
-  const sharedRules = rules.filter(r => !r.frontmatter.language);
-  if (sharedRules.length > 0) {
-    files['.github/copilot-instructions.md'] = buildCopilotInstructions(sharedRules);
+  const repoWideRules = rules.filter(isRepoWideRule);
+  if (repoWideRules.length > 0) {
+    files['.github/copilot-instructions.md'] = buildCopilotInstructions(repoWideRules);
   }
 
-  const languageRules = rules.filter(r => r.frontmatter.language);
-  for (const rule of languageRules) {
+  const scopedRules = rules.filter(r => !isRepoWideRule(r));
+  for (const rule of scopedRules) {
     const slug = rule.id.replace(/\//g, '-');
     files[`.github/instructions/${slug}.instructions.md`] = buildInstructionsFile(rule);
   }

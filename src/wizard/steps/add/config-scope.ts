@@ -11,7 +11,6 @@ function resolvedIds(s: AddWizardState): string[] {
     filters: { language: s.language },
     catalog: s.ctx.catalog,
     packs: s.ctx.packs,
-    supportedKinds: [],
   }).ids;
 }
 

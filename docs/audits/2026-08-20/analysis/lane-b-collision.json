@@ -1,0 +1,170 @@
+[
+  {
+    "kind": "agent",
+    "a": "angular/ng-code-reviewer",
+    "b": "csharp/cs-code-reviewer",
+    "similarity": 1
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-code-reviewer",
+    "b": "typescript/ts-code-reviewer",
+    "similarity": 1
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-debugger",
+    "b": "typescript/ts-debugger",
+    "similarity": 1
+  },
+  {
+    "kind": "agent",
+    "a": "csharp/cs-code-reviewer",
+    "b": "typescript/ts-code-reviewer",
+    "similarity": 1
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-debugger",
+    "b": "csharp/cs-debugger",
+    "similarity": 0.864
+  },
+  {
+    "kind": "agent",
+    "a": "csharp/cs-debugger",
+    "b": "typescript/ts-debugger",
+    "similarity": 0.864
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-refactor-specialist",
+    "b": "typescript/ts-refactor-specialist",
+    "similarity": 0.759
+  },
+  {
+    "kind": "agent",
+    "a": "csharp/cs-security-auditor",
+    "b": "typescript/ts-security-auditor",
+    "similarity": 0.721
+  },
+  {
+    "kind": "skill",
+    "a": "angular/ng-release",
+    "b": "csharp/cs-release",
+    "similarity": 0.699
+  },
+  {
+    "kind": "skill",
+    "a": "csharp/cs-release",
+    "b": "typescript/ts-release",
+    "similarity": 0.657
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-security-auditor",
+    "b": "typescript/ts-security-auditor",
+    "similarity": 0.652
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-security-auditor",
+    "b": "csharp/cs-security-auditor",
+    "similarity": 0.642
+  },
+  {
+    "kind": "agent",
+    "a": "csharp/cs-refactor-specialist",
+    "b": "typescript/ts-refactor-specialist",
+    "similarity": 0.638
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-refactor-specialist",
+    "b": "csharp/cs-refactor-specialist",
+    "similarity": 0.627
+  },
+  {
+    "kind": "skill",
+    "a": "angular/ng-release",
+    "b": "typescript/ts-release",
+    "similarity": 0.574
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-architecture-reviewer",
+    "b": "typescript/ts-architecture-reviewer",
+    "similarity": 0.557
+  },
+  {
+    "kind": "skill",
+    "a": "angular/ng-sync-tests",
+    "b": "csharp/cs-sync-tests",
+    "similarity": 0.515
+  },
+  {
+    "kind": "agent",
+    "a": "csharp/cs-performance-profiler",
+    "b": "typescript/ts-performance-profiler",
+    "similarity": 0.507
+  },
+  {
+    "kind": "skill",
+    "a": "angular/ng-document",
+    "b": "csharp/cs-document",
+    "similarity": 0.382
+  },
+  {
+    "kind": "skill",
+    "a": "angular/ng-generate-tests",
+    "b": "csharp/cs-generate-tests",
+    "similarity": 0.364
+  },
+  {
+    "kind": "agent",
+    "a": "csharp/cs-architecture-reviewer",
+    "b": "typescript/ts-architecture-reviewer",
+    "similarity": 0.316
+  },
+  {
+    "kind": "skill",
+    "a": "csharp/cs-audit-deps",
+    "b": "typescript/ts-audit-deps",
+    "similarity": 0.272
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-architecture-reviewer",
+    "b": "csharp/cs-architecture-reviewer",
+    "similarity": 0.265
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-performance-profiler",
+    "b": "typescript/ts-performance-profiler",
+    "similarity": 0.247
+  },
+  {
+    "kind": "agent",
+    "a": "angular/ng-performance-profiler",
+    "b": "csharp/cs-performance-profiler",
+    "similarity": 0.242
+  },
+  {
+    "kind": "skill",
+    "a": "angular/ng-audit-deps",
+    "b": "csharp/cs-audit-deps",
+    "similarity": 0.211
+  },
+  {
+    "kind": "skill",
+    "a": "csharp/cs-sync-tests",
+    "b": "typescript/ts-sync-tests",
+    "similarity": 0.196
+  },
+  {
+    "kind": "skill",
+    "a": "csharp/cs-scaffold-project",
+    "b": "typescript/ts-scaffold-project",
+    "similarity": 0.154
+  }
+]

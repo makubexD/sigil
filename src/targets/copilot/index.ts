@@ -4,8 +4,8 @@
  * Full build (compile): emits the .github/ directory layout that Copilot reads natively.
  *   dist/copilot/
  *     .github/
- *       copilot-instructions.md           ← shared baseline rules (apply to all files)
- *       instructions/<lang>-style.instructions.md
+ *       copilot-instructions.md           ← repo-wide rules (no appliesTo, or every-file globs)
+ *       instructions/<slug>.instructions.md ← every scoped rule, with or without a language
  *       skills/<skill-name>/SKILL.md
  *       prompts/<slug>.prompt.md
  *       AGENTS.md
@@ -44,12 +44,9 @@ import type {
 import { resolveCopilotConfigDestination } from './config';
 import { buildAgentsMd } from './build-helpers';
 import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
-import {
-  COPILOT_SUPPORTED_KINDS,
-  COPILOT_INIT_DIRS,
-  COPILOT_PROJECT_MARKERS,
-  COPILOT_VOCABULARY,
-} from './metadata';
+import { COPILOT_CAPABILITIES } from './capabilities';
+import type { TargetCapabilities } from '../capability-types';
+import { COPILOT_INIT_DIRS, COPILOT_PROJECT_MARKERS, COPILOT_VOCABULARY } from './metadata';
 import {
   CONFIG_SCOPES,
   buildScopeDestinations,
@@ -67,7 +64,7 @@ export class CopilotTarget implements Target {
   readonly displayName = 'GitHub Copilot';
   readonly installHint = 'writes to .github/';
 
-  readonly supportedKinds: ArtifactKind[] = COPILOT_SUPPORTED_KINDS;
+  readonly capabilities: TargetCapabilities = COPILOT_CAPABILITIES;
   readonly initDirs: string[] = COPILOT_INIT_DIRS;
   readonly projectMarkers: string[] = COPILOT_PROJECT_MARKERS;
   readonly vocabulary: Partial<Record<ArtifactKind, KindVocabulary>> = COPILOT_VOCABULARY;

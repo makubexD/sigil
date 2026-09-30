@@ -1,0 +1,30 @@
+=== Lane B: dispatch-collision matrix (trigram Jaccard >= 0.12) ===
+Pairs found: 28
+  [agent] angular/ng-code-reviewer  <->  csharp/cs-code-reviewer   sim=1
+  [agent] angular/ng-code-reviewer  <->  typescript/ts-code-reviewer   sim=1
+  [agent] angular/ng-debugger  <->  typescript/ts-debugger   sim=1
+  [agent] csharp/cs-code-reviewer  <->  typescript/ts-code-reviewer   sim=1
+  [agent] angular/ng-debugger  <->  csharp/cs-debugger   sim=0.864
+  [agent] csharp/cs-debugger  <->  typescript/ts-debugger   sim=0.864
+  [agent] angular/ng-refactor-specialist  <->  typescript/ts-refactor-specialist   sim=0.759
+  [agent] csharp/cs-security-auditor  <->  typescript/ts-security-auditor   sim=0.721
+  [skill] angular/ng-release  <->  csharp/cs-release   sim=0.699
+  [skill] csharp/cs-release  <->  typescript/ts-release   sim=0.657
+  [agent] angular/ng-security-auditor  <->  typescript/ts-security-auditor   sim=0.652
+  [agent] angular/ng-security-auditor  <->  csharp/cs-security-auditor   sim=0.642
+  [agent] csharp/cs-refactor-specialist  <->  typescript/ts-refactor-specialist   sim=0.638
+  [agent] angular/ng-refactor-specialist  <->  csharp/cs-refactor-specialist   sim=0.627
+  [skill] angular/ng-release  <->  typescript/ts-release   sim=0.574
+  [agent] angular/ng-architecture-reviewer  <->  typescript/ts-architecture-reviewer   sim=0.557
+  [skill] angular/ng-sync-tests  <->  csharp/cs-sync-tests   sim=0.515
+  [agent] csharp/cs-performance-profiler  <->  typescript/ts-performance-profiler   sim=0.507
+  [skill] angular/ng-document  <->  csharp/cs-document   sim=0.382
+  [skill] angular/ng-generate-tests  <->  csharp/cs-generate-tests   sim=0.364
+  [agent] csharp/cs-architecture-reviewer  <->  typescript/ts-architecture-reviewer   sim=0.316
+  [skill] csharp/cs-audit-deps  <->  typescript/ts-audit-deps   sim=0.272
+  [agent] angular/ng-architecture-reviewer  <->  csharp/cs-architecture-reviewer   sim=0.265
+  [agent] angular/ng-performance-profiler  <->  typescript/ts-performance-profiler   sim=0.247
+  [agent] angular/ng-performance-profiler  <->  csharp/cs-performance-profiler   sim=0.242
+  [skill] angular/ng-audit-deps  <->  csharp/cs-audit-deps   sim=0.211
+  [skill] csharp/cs-sync-tests  <->  typescript/ts-sync-tests   sim=0.196
+  [skill] csharp/cs-scaffold-project  <->  typescript/ts-scaffold-project   sim=0.154

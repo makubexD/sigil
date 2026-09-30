@@ -23,6 +23,9 @@ const SNIPPET_CONTEXT_CHARS = 20;
 
 // ─── Binary extension guard ────────────────────────────────────────────────────
 
+// .svg deliberately excluded — it's plain-text/XML, not binary, and can carry an embedded
+// injection payload or an inline-allowlist bypass comment; skipping it entirely would scan
+// nothing (2026-08-22 audit F26).
 const BINARY_EXTENSIONS = new Set([
   '.png',
   '.jpg',
@@ -30,7 +33,6 @@ const BINARY_EXTENSIONS = new Set([
   '.gif',
   '.webp',
   '.ico',
-  '.svg',
   '.pdf',
   '.zip',
   '.tar',
@@ -146,17 +148,50 @@ function scanGlobalPattern(rule: (typeof RULES)[number], ctx: ScanCtx): ScanFind
   };
 }
 
+/**
+ * True when `rule` is allowlisted for this scan. Inline `<!-- sigil-allow: … -->` comments (found
+ * inside the very content being scanned) only ever suppress `warn`-severity rules — an `error`
+ * rule can only be silenced via `.sigil/allow.json`'s out-of-band, curator-controlled entries.
+ * Otherwise a malicious artifact could simply append the comment naming the rule that would have
+ * flagged it and neutralize the scanner for exactly the actor it's meant to catch (2026-08-22
+ * audit F26).
+ */
+function isAllowed(
+  rule: (typeof RULES)[number],
+  externalAllowed: Set<string>,
+  inlineAllowed: Set<string>,
+): boolean {
+  if (externalAllowed.has(rule.id)) return true;
+  return rule.severity === 'warn' && inlineAllowed.has(rule.id);
+}
+
 /** Runs every non-allowlisted rule against the content, collecting one finding per matching rule. */
-function runRules(ctx: ScanCtx, allAllowed: Set<string>): ScanFinding[] {
+function runRules(
+  ctx: ScanCtx,
+  externalAllowed: Set<string>,
+  inlineAllowed: Set<string>,
+): ScanFinding[] {
   const findings: ScanFinding[] = [];
   for (const rule of RULES) {
-    if (allAllowed.has(rule.id)) continue;
+    if (isAllowed(rule, externalAllowed, inlineAllowed)) continue;
     const lineFinding = scanLinePattern(rule, ctx);
     if (lineFinding) findings.push(lineFinding);
     const globalFinding = scanGlobalPattern(rule, ctx);
     if (globalFinding) findings.push(globalFinding);
   }
   return findings;
+}
+
+/** Builds the ScanCtx and runs every rule; the pure core of {@link scanContent}. */
+function scanFindings(
+  filePath: string,
+  rawContent: string,
+  allowedRules: Set<string>,
+): ScanFinding[] {
+  const inlineAllowed = extractInlineAllowlist(rawContent);
+  const lines = rawContent.split('\n');
+  const frontmatterEnd = findFrontmatterEnd(lines);
+  return runRules({ lines, frontmatterEnd, rawContent, filePath }, allowedRules, inlineAllowed);
 }
 
 /**
@@ -175,12 +210,7 @@ export function scanContent(
     return { level: 'ok', findings: [] };
   }
 
-  const inlineAllowed = extractInlineAllowlist(rawContent);
-  const allAllowed = new Set([...allowedRules, ...inlineAllowed]);
-  const lines = rawContent.split('\n');
-  const frontmatterEnd = findFrontmatterEnd(lines);
-
-  const findings = runRules({ lines, frontmatterEnd, rawContent, filePath }, allAllowed);
+  const findings = scanFindings(filePath, rawContent, allowedRules);
 
   const level: ScanSeverity = findings.some(f => f.severity === 'error')
     ? 'error'

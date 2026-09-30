@@ -8,12 +8,12 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { applyMerge, serialize } from '../../config-merge';
-import { resolveConfigRoot } from '../../config-utils';
-import { upsertConfigEntry } from '../../manifest';
+import { replaceMerge, serialize } from '../../config-merge';
+import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../../config-utils';
+import { previousOpFor, upsertConfigEntry } from '../../manifest';
 import { pkg } from '../../cli-helpers';
 import type { ConfigMergeOp, ConfigRoot, ResolvedCatalog, Target } from '../../types';
-import type { Manifest } from '../../manifest';
+import type { Manifest, ManifestEntry } from '../../manifest';
 import type { AddPlan } from './plan';
 
 export interface ConfigInstallOutcome {
@@ -34,34 +34,29 @@ function readExistingConfigJson(fullPath: string, id: string): Record<string, un
   }
 }
 
-/** Writes a pristine `.sigil.bak` before the first home-directory write; warns either way. */
-function ensureHomeBackup(fullPath: string): void {
-  const bakPath = `${fullPath}.sigil.bak`;
-  if (!fs.existsSync(bakPath)) {
-    fs.copyFileSync(fullPath, bakPath);
-    console.warn(`\n  ⚠  Writing to ${fullPath} — this file affects ALL your projects.`);
-    console.warn(`  ⚠  Backup saved → ${bakPath}`);
-    console.warn(`  ⚠  Review the diff before committing: diff "${bakPath}" "${fullPath}"\n`);
-  } else {
-    console.warn(`  ⚠  Existing backup kept → ${bakPath}  (compare before committing)`);
-  }
-}
-
-/** Applies one ConfigMergeOp to disk; returns true if a file was written. */
-function applyConfigMergeOp(op: ConfigMergeOp, id: string, projectDir: string): boolean {
+/**
+ * Applies one ConfigMergeOp to disk; returns true if a file was written. `previous` is the
+ * fragment an earlier install of the same artifact recorded for this destination: it is reversed
+ * first, so re-installing replaces sigil's fragment instead of stacking a second copy.
+ */
+function applyConfigMergeOp(
+  op: ConfigMergeOp,
+  previous: ConfigMergeOp | undefined,
+  id: string,
+  projectDir: string,
+): boolean {
   const rootDir = resolveConfigRoot(op.root as ConfigRoot | undefined, projectDir);
   const fullPath = path.join(rootDir, op.file);
-  const isHomeWrite = op.root === 'home' || op.root === 'vscode-user';
   const opSecSuffix = op.section ? `  › ${op.section}` : '';
 
   const existing = readExistingConfigJson(fullPath, id);
   if (existing === undefined) return false;
 
-  if (isHomeWrite && fs.existsSync(fullPath)) {
+  if (isHomeScopedRoot(op.root as ConfigRoot | undefined)) {
     ensureHomeBackup(fullPath);
   }
 
-  const merged = applyMerge(existing, op);
+  const merged = replaceMerge(existing, previous, op);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
   fs.writeFileSync(fullPath, serialize(merged), 'utf-8');
   console.log(`  ${fullPath}${opSecSuffix}  (merged: ${id})`);
@@ -70,18 +65,32 @@ function applyConfigMergeOp(op: ConfigMergeOp, id: string, projectDir: string): 
 
 interface ConfigArtifactResult {
   written: number;
-  /** True whenever `upsertConfigEntry` ran — mirrors the original's unconditional call
-   * once `ops.length > 0`, independent of how many individual ops actually wrote a file. */
+  /** True whenever `upsertConfigEntry` ran: at least one op was written, or an earlier
+   * record still describes a file this install skipped. */
   upserted: boolean;
 }
 
-/** Applies every ConfigMergeOp for one artifact; returns how many actually wrote a file. */
-function applyAllConfigMergeOps(ops: ConfigMergeOp[], id: string, projectDir: string): number {
+/**
+ * Applies every ConfigMergeOp for one artifact. `toRecord` is what the manifest should now
+ * describe: each written op, or — where a file was skipped (invalid JSON) — the fragment
+ * recorded before, since that is still what the file holds.
+ */
+function applyAllConfigMergeOps(
+  ops: ConfigMergeOp[],
+  installed: ManifestEntry | undefined,
+  id: string,
+  projectDir: string,
+): { written: number; toRecord: ConfigMergeOp[] } {
+  const toRecord: ConfigMergeOp[] = [];
   let written = 0;
   for (const op of ops) {
-    if (applyConfigMergeOp(op, id, projectDir)) written++;
+    const previous = previousOpFor(installed, op);
+    if (applyConfigMergeOp(op, previous, id, projectDir)) {
+      written++;
+      toRecord.push(op);
+    } else if (previous) toRecord.push(previous);
   }
-  return written;
+  return { written, toRecord };
 }
 
 /** Shared context threaded through the config-install helpers below. */
@@ -113,15 +122,15 @@ async function scaffoldAndApplyConfig(
   artifact: { kind: string },
   ctx: InstallCtx,
 ): Promise<ConfigArtifactResult> {
-  const ops: ConfigMergeOp[] = await ctx.target.scaffoldConfig!(
-    id,
-    ctx.resolved,
-    ctx.plan.scaffoldOpts,
-  );
+  const { target, resolved, plan } = ctx;
+  const ops: ConfigMergeOp[] = await target.scaffoldConfig!(id, resolved, plan.scaffoldOpts);
   if (ops.length === 0) return { written: 0, upserted: false };
 
-  const written = applyAllConfigMergeOps(ops, id, ctx.plan.opts.projectDir);
-  recordConfigEntry(id, artifact.kind, ops, ctx);
+  const installed = ctx.manifest.entries.find(e => e.id === id && e.target === ctx.targetName);
+  const applied = applyAllConfigMergeOps(ops, installed, id, plan.opts.projectDir);
+  const { written, toRecord } = applied;
+  if (toRecord.length === 0) return { written, upserted: false };
+  recordConfigEntry(id, artifact.kind, toRecord, ctx);
   return { written, upserted: true };
 }
 

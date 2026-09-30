@@ -137,7 +137,6 @@ export const proceedStep: WizardStep<AddWizardState> = {
       filters: { language: s.language },
       catalog: s.ctx.catalog,
       packs: s.ctx.packs,
-      supportedKinds: [],
     });
     const cp: ClosurePreview = computeClosure(primaryIds, s.ctx.catalog);
 

@@ -1,0 +1,4 @@
+Validating catalog at: C:\WorkspaceMaku\MakuAgentCatalogAI\catalog
+
+✓ All 96 artifact(s) are valid.
+exit: 0

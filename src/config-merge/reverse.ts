@@ -10,12 +10,7 @@
  */
 
 import type { ConfigMergeOp, MergeStrategy } from '../types';
-import { deepEqual, pruneEmpty } from './primitives';
-
-/** True when `value` is a plain (non-array, non-null) object. */
-function isPlainObject(value: unknown): value is Record<string, unknown> {
-  return value !== null && typeof value === 'object' && !Array.isArray(value);
-}
+import { deepEqual, pruneEmpty, isPlainObject, FORBIDDEN_KEYS } from './primitives';
 
 /** Filters `items` that deep-equal to remove out of `arr`. */
 function removeDeepEqualItems(arr: unknown[], items: unknown[]): unknown[] {
@@ -29,6 +24,7 @@ function removeContributedSubArrays(
 ): Record<string, unknown> {
   const cleaned: Record<string, unknown> = { ...current };
   for (const [subKey, subContrib] of Object.entries(contributed)) {
+    if (FORBIDDEN_KEYS.has(subKey)) continue; // prototype-pollution guard
     if (Array.isArray(subContrib) && Array.isArray(cleaned[subKey])) {
       cleaned[subKey] = removeDeepEqualItems(cleaned[subKey] as unknown[], subContrib);
     } else if (!Array.isArray(subContrib) && deepEqual(cleaned[subKey], subContrib)) {
@@ -83,6 +79,7 @@ export function reverseMerge(
   let result = { ...existing };
 
   for (const [topKey, contributed] of Object.entries(op.fragment)) {
+    if (FORBIDDEN_KEYS.has(topKey)) continue; // prototype-pollution guard
     if (!(topKey in result)) continue;
     const strat: MergeStrategy = op.strategy[topKey] ?? 'object-spread';
     const current = result[topKey];
@@ -120,6 +117,7 @@ function removeContributed(
 ): Record<string, unknown> {
   const result = { ...current };
   for (const [k, contributedVal] of Object.entries(contributed)) {
+    if (FORBIDDEN_KEYS.has(k)) continue; // prototype-pollution guard
     if (!(k in result)) continue;
     const currentVal = result[k];
 

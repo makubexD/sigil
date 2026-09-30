@@ -3,11 +3,12 @@ id: typescript/ts-api-compat-reviewer
 kind: agent
 title: API Compatibility Reviewer (TypeScript)
 description: >-
-  Use to review public API and type-surface compatibility for published npm
-  packages before a release. Read-only; returns a Breaking/Behavioral/Compatible
-  tiered report with a SemVer recommendation. Specializes in what callers see:
-  exported types, the exports map, and runtime-behavioral contracts. Use before
-  any release that could affect downstream consumers.
+  Use to review whether bumping a package's major version, or any other change, will break
+  downstream consumers — public API and type-surface compatibility for published npm packages
+  before a release. Makes no edits (Bash is read-only by instruction, not sandboxed); returns a
+  Breaking/Behavioral/Compatible tiered report with a SemVer recommendation. Specializes in what
+  callers see: exported types, the exports map, and runtime-behavioral contracts. Use before any
+  release that could affect downstream consumers.
 name: ts-api-compat-reviewer
 language: typescript
 tools:

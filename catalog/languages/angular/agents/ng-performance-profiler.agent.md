@@ -3,12 +3,12 @@ id: angular/ng-performance-profiler
 kind: agent
 title: Performance Profiler (Angular)
 description: >-
-  Use to analyze change-detection cost, bundle size, algorithmic complexity, and
-  runtime anti-patterns — function calls in templates, missing track/trackBy,
-  N+1 I/O, needless allocations, zone thrash. Can run build/profiling tools if
-  available. Measures and reasons about runtime behavior. Use proactively when
-  adding data-heavy views, external I/O, or after a performance regression is
-  reported.
+  Use to profile an Angular app for performance issues: change-detection cost,
+  bundle size, algorithmic complexity, and runtime anti-patterns — function
+  calls in templates, missing track/trackBy, N+1 I/O, needless allocations,
+  zone thrash. Can run build/profiling tools if available. Measures and
+  reasons about runtime behavior. Use proactively when adding data-heavy
+  Angular views, external I/O, or after a performance regression is reported.
 name: ng-performance-profiler
 language: angular
 tools:

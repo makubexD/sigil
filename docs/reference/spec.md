@@ -37,6 +37,7 @@ native **Agent Skill** on both Claude Code (`.claude/skills/<name>/SKILL.md`) an
 (agentskills.io). Invoked as `/name` in both tools.
 
 **File:** `catalog/languages/<lang>/skills/<name>/SKILL.md`  
+**For stack-agnostic skills:** `catalog/shared/skills/<name>/SKILL.md` (omit `language:`)  
 **Invoked as:** `skill:csharp/cs-generate-tests` in the CLI
 
 ```yaml
@@ -79,8 +80,15 @@ claude: # Claude-namespaced hints; other adapters ignore this block
   model: sonnet
   effort: medium
   maxTurns: 10
+  skills: [shared/cli] # preloaded into the subagent at startup; emitted as `skills: [cli]`
 ---
 ```
+
+`claude.skills` takes catalog skill **ids** (checked by `validate` like `uses:`) and is emitted as
+Claude Code's subagent `skills:` field with each skill's name. Preloading injects the skill's
+`SKILL.md`, not its `references/`, so the agent still reads any reference file it needs. Author it
+only on agents whose skill is scaffolded alongside them: plugin skills are namespaced
+(`<plugin>:<name>`).
 
 The `claude:` block is intentionally namespaced. If a `copilot:` or `cursor:` block is needed in
 future, the pattern is identical — the adapter reads its own namespace and ignores others.
@@ -207,14 +215,14 @@ Sourced from `src/targets/doc-refs.ts` — the one place provider doc URLs are d
 there carries a `verifiedOn` date and is staleness-tracked by `sigil sync --stale` (see § Templates
 below for what that command checks).
 
-| Catalog kind      | Claude Code native artifact                                        | GitHub Copilot native artifact                                                       |
-| ----------------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------ |
-| `skill`           | **Agent Skill** — `.claude/skills/<name>/SKILL.md`                 | **Agent Skill** — `.github/skills/<name>/SKILL.md`                                   |
-| `prompt`          | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`          | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                 |
-| `agent`           | **Subagent** — `.claude/agents/<name>.md`                          | **Custom agent** — `.github/agents/<name>.agent.md`                                  |
-| `rule` (shared)   | **Memory rule** — `.claude/rules/<slug>.md` (no path filter)       | **Global instructions** — `.github/copilot-instructions.md`                          |
-| `rule` (language) | **Memory rule** — `.claude/rules/<slug>.md` (`paths:` frontmatter) | **Scoped instructions** — `.github/instructions/<slug>.instructions.md` (`applyTo:`) |
-| `workflow`        | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`          | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                 |
+| Catalog kind       | Claude Code native artifact                                                   | GitHub Copilot native artifact                                                                                               |
+| ------------------ | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| `skill`            | **Agent Skill** — `.claude/skills/<name>/SKILL.md`                            | **Agent Skill** — `.github/skills/<name>/SKILL.md`                                                                           |
+| `prompt`           | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`                     | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                                                         |
+| `agent`            | **Subagent** — `.claude/agents/<name>.md`                                     | **Custom agent** — `.github/agents/<name>.agent.md`                                                                          |
+| `rule` (repo-wide) | **Memory rule** — `.claude/rules/<slug>.md` (no `appliesTo` → no path filter) | **Global instructions** — `.github/copilot-instructions.md` (full build); an `applyTo: "**"` instructions file (`sigil add`) |
+| `rule` (scoped)    | **Memory rule** — `.claude/rules/<slug>.md` (`paths:` frontmatter)            | **Scoped instructions** — `.github/instructions/<slug>.instructions.md` (`applyTo:`), with or without a `language`           |
+| `workflow`         | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`                     | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                                                         |
 
 **Key vocabulary rules:**
 
@@ -233,14 +241,14 @@ below for what that command checks).
 
 ## Canonical → platform mapping
 
-| Canonical kind    | Claude Code plugin (`dist/claude/`)      | Claude Code scaffold (`.claude/`)                | GitHub Copilot (`.github/`)              |
-| ----------------- | ---------------------------------------- | ------------------------------------------------ | ---------------------------------------- |
-| `skill`           | `skills/<name>/SKILL.md` + `references/` | `.claude/skills/<name>/SKILL.md` + `references/` | `skills/<name>/SKILL.md` + `references/` |
-| `agent`           | `agents/<name>.md`                       | `.claude/agents/<name>.md`                       | `agents/<name>.agent.md`                 |
-| `rule` (shared)   | folded into skill SKILL.md               | `.claude/rules/<slug>.md` (no frontmatter)       | `copilot-instructions.md`                |
-| `rule` (language) | folded into skill SKILL.md               | `.claude/rules/<slug>.md` (`paths:` frontmatter) | `instructions/<slug>.instructions.md`    |
-| `prompt`          | `skills/<slug>/SKILL.md`                 | `.claude/skills/<slug>/SKILL.md`                 | `prompts/<slug>.prompt.md`               |
-| `workflow`        | `skills/<slug>/SKILL.md`                 | `.claude/skills/<slug>/SKILL.md`                 | `prompts/<slug>.prompt.md`               |
+| Canonical kind     | Claude Code plugin (`dist/claude/`)      | Claude Code scaffold (`.claude/`)                | GitHub Copilot (`.github/`)              |
+| ------------------ | ---------------------------------------- | ------------------------------------------------ | ---------------------------------------- |
+| `skill`            | `skills/<name>/SKILL.md` + `references/` | `.claude/skills/<name>/SKILL.md` + `references/` | `skills/<name>/SKILL.md` + `references/` |
+| `agent`            | `agents/<name>.md`                       | `.claude/agents/<name>.md`                       | `agents/<name>.agent.md`                 |
+| `rule` (repo-wide) | folded into skill SKILL.md               | `.claude/rules/<slug>.md` (no frontmatter)       | `copilot-instructions.md`                |
+| `rule` (scoped)    | folded into skill SKILL.md               | `.claude/rules/<slug>.md` (`paths:` frontmatter) | `instructions/<slug>.instructions.md`    |
+| `prompt`           | — (not packaged into plugins yet)        | `.claude/skills/<slug>/SKILL.md`                 | `prompts/<slug>.prompt.md`               |
+| `workflow`         | `skills/<slug>/SKILL.md`                 | `.claude/skills/<slug>/SKILL.md`                 | `prompts/<slug>.prompt.md`               |
 
 **Emitted frontmatter notes:**
 
@@ -275,12 +283,13 @@ below for what that command checks).
 
 | Path                                                 | Contents                                                  |
 | ---------------------------------------------------- | --------------------------------------------------------- |
-| `catalog/shared/`                                    | Cross-language artifacts (rules, agents, prompts)         |
+| `catalog/shared/`                                    | Cross-language artifacts (skills, rules, agents, prompts) |
 | `catalog/languages/<lang>/`                          | Language-specific skills, rules, agents                   |
 | `catalog/languages/<lang>/language.yaml`             | Display name, file globs, icon                            |
 | `catalog/languages/<lang>/skills/<name>/SKILL.md`    | Skill entry point                                         |
 | `catalog/languages/<lang>/skills/<name>/references/` | Supplementary docs bundled with the skill                 |
-| `packs.yaml`                                         | Groups languages into installable packs                   |
+| `catalog/shared/skills/<name>/SKILL.md`              | Stack-agnostic (language-less) skill, plus `references/`  |
+| `packs.yaml`                                         | Curated bundles (explicit `artifacts:` or `languages:`)   |
 | `schema/*.schema.json`                               | JSON Schemas for editor autocomplete (generated from zod) |
 
 ---
@@ -304,7 +313,7 @@ this table cannot drift from `src/cli.ts` again.
 | `sigil check [files...]`           | Validate catalog source artifact files (schema, id/path/language, references, platforms). Exits non-zero on violations.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | `sigil import <source-dir>`        | Import a portable Claude template directory into the catalog as first-class artifacts.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `sigil status`                     | Show health status of artifacts installed in a consumer project. `reason` names _why_ a non-up-to-date entry is that way (e.g. a template revision bump, missing files, local edits).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `sigil update [ids...]`            | Refresh installed artifacts to the current bundled catalog version. Skips drifted files unless `--force`. No ids = update everything.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `sigil update [ids...]`            | Refresh installed artifacts to the current bundled catalog version, including hook/settings/mcp fragments the catalog changed. Skips drifted files and edited config values unless `--force`. No ids = update everything.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `sigil sync [template-id]`         | **Catalog-author side of propagation.** Two analyzers share one report/`--check`/`--apply` surface: template drift (artifact content vs its declared `template:`, `mechanical` vs `review`) and **conformance** (every catalog artifact vs the current provider standard — `src/commands/sync/conformance/`, see below), plus stale `docs:` citations. Omit `template-id` to scan every template. `--check` exits non-zero on drift, a conformance error, or a stale doc; `--apply` writes mechanical fixes for both analyzers (refuses on a dirty tree); `--apply --editorial` also runs the model-backed conformance pass; `--rule`/`--kind`/`--language`/`--provider` scope conformance for mass-change review; `--changed-since <ref>` scopes template drift to a diff; `--stale <months>` tunes doc-staleness (default 6); `--json` for machine-readable output. |
 | `sigil uninstall <ids...>`         | Remove installed artifacts from a consumer project. Refcount-aware.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `sigil patch <id>`                 | Update any field(s) of an existing catalog artifact. Transactional: rolls back on validation failure.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
@@ -343,13 +352,13 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
 - **11 rules** across two namespaces: `secret/*` (AWS keys, Anthropic/OpenAI/GitHub tokens, bearer
   tokens, generic API keys) and `injection/*` (jailbreak overrides, "ignore previous instructions",
   role-switch, data-exfil URL patterns).
-- **Severity:** `error` (blocks install under `--strict`) or `warn` (surface only).
+- **Severity:** `error` (fails `sigil check --trust --strict`) or `warn` (surface only).
 - **Allowlist:** inline `<!-- sigil-allow: rule/id -->` in the file body, or a per-project
   `.sigil/allow.json` `{ "allow": [...] }`.
 - Binary extensions (`.png`, `.jpg`, `.pdf`, etc.) are skipped entirely.
 
-Surfaced at two points: `sigil check <file> --trust` (authoring time) and
-`sigil add / update --strict` (install time — aborts on `error`-level findings).
+Surfaced by `sigil check <file> --trust` (authoring time); `--strict` makes warnings fail too.
+`sigil add` / `update` do not run the scanner.
 
 ---
 
@@ -369,11 +378,11 @@ ships as one version:
 Three independent axes, each with exactly one owner. Scaling to a new language, a new platform, or a
 new kind is additive in every case — none of them requires editing another axis's files.
 
-| Axis                                       | Owner                                                                     | Scales by                                                    |
-| ------------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| **Kind** (what an artifact _is_)           | `KIND_REGISTRY` (`src/kinds.ts`) + one zod schema (`src/schema/index.ts`) | one registry entry per new kind                              |
-| **Provider** (where it goes)               | `registerTarget()` + `src/targets/<provider>/`                            | one directory per new provider                               |
-| **Kind × Provider** (how it renders there) | `src/targets/<provider>/spec/<kind>.ts`                                   | one small file per supported pair; **absence = unsupported** |
+| Axis                                       | Owner                                                                     | Scales by                                                                                         |
+| ------------------------------------------ | ------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| **Kind** (what an artifact _is_)           | `KIND_REGISTRY` (`src/kinds.ts`) + one zod schema (`src/schema/index.ts`) | one registry entry per new kind                                                                   |
+| **Provider** (where it goes)               | `registerTarget()` + `src/targets/<provider>/`                            | one directory per new provider                                                                    |
+| **Kind × Provider** (how it renders there) | `src/targets/<provider>/spec/<kind>.ts`                                   | one small file per `native` (kind, channel) pair; support itself is declared in `capabilities.ts` |
 
 Two extension points keep the axes from leaking into each other — see them worked through below:
 **frontmatter namespaces** (a provider's own fields never touch the neutral schema) and **template
@@ -392,17 +401,27 @@ slots** (a provider can rearrange a body without a catalog-side change).
    ```typescript
    export interface Target {
      name: string;
+     capabilities: TargetCapabilities; // see step 4
      compile(catalog: ResolvedCatalog, options: CompileOptions): Promise<FileMap>;
      scaffold?(artifactId, catalog, options): Promise<FileMap>; // optional
    }
    ```
 2. Register in `src/targets/index.ts` with `registerTarget(new YourTarget())`.
 3. The `--target <name>` CLI flag and `dist/<name>/` output directory work automatically.
-4. For each kind the platform supports, add one `KindEmitSpec` under
+4. Declare kind support once, in `src/targets/<platform>/capabilities.ts`: a `TargetCapabilities`
+   (`src/targets/capability-types.ts`) with one row per kind for each channel the platform has
+   (`scaffold`, and `plugin` if it ships marketplace plugins) — `native`, `via` (carried inside
+   another artifact, with a doc citation), or `none` (warn-and-skip on `sigil add`, with a
+   reason rendered in the generated matrix). The `Record<ArtifactKind, …>` type makes a missing kind a compile error. Nothing else
+   hand-lists kinds: selection's warn-and-skip, `validate`'s platform checks, the wizard and the
+   plugin assembler all read the table through `src/targets/capabilities.ts`, and `npm run build`
+   regenerates the matrix in [capabilities.md](capabilities.md) from it.
+5. For each kind the platform emits `native`, add one `KindEmitSpec` under
    `src/targets/<platform>/spec/<kind>.ts` (see § Emit specs below) and list it in that directory's
-   `index.ts` export array. A kind with no spec file is simply unsupported by that platform — no
-   sentinel value, no `if` branch elsewhere in the codebase.
-5. If the platform needs fields no other provider has (e.g. a model override, an effort setting),
+   `index.ts` export array. `provider-kind-coverage` fails `sigil sync --check` when a `native`
+   whole-file kind has no spec for its channel (a spec with no `variant`, or `variant` equal to the
+   channel id).
+6. If the platform needs fields no other provider has (e.g. a model override, an effort setting),
    declare them on `Target.frontmatterExtensions`, never as bare fields in `src/schema/index.ts`:
 
    ```typescript
@@ -420,12 +439,12 @@ slots** (a provider can rearrange a body without a catalog-side change).
    `skillContext`) lived un-namespaced on the neutral `SkillSchema` — a second provider had nowhere
    to put its own equivalents without `SkillSchema` becoming the union of every provider's fields.
 
-6. If a kind's vocabulary is genuinely owned by one provider today (Claude's `hook`/`settings`
+7. If a kind's vocabulary is genuinely owned by one provider today (Claude's `hook`/`settings`
    lifecycle enums are Claude Code's own vocabulary, not a cross-provider standard), that is declared
    on `KindDescriptor.ownedBy` (`src/kinds.ts`) rather than pretended-neutral. `validate` warns the
-   moment a second target declares `supportedKinds` for an `ownedBy`-nonempty kind — that warning is
+   moment a second target's capability table supports an `ownedBy`-nonempty kind — that warning is
    the signal the vocabulary must move into per-provider namespaces before a second provider ships it.
-7. Add one **body lexicon** table: `src/targets/<platform>/lexicon.ts` exporting a `ProviderLexicon`
+8. Add one **body lexicon** table: `src/targets/<platform>/lexicon.ts` exporting a `ProviderLexicon`
    (`src/targets/lexicon.ts`) with a `{value, doc}` entry for every term in `LEXICON_TERMS`. Wire it
    onto every `KindEmitSpec`'s `lexicon:` field — `renderArtifact()` (`src/targets/emit.ts`) applies
    it unconditionally, so a body written once (`Read {sigil:conventions-file}...`) resolves to each
@@ -434,7 +453,7 @@ slots** (a provider can rearrange a body without a catalog-side change).
    `src/targets/lexicon.ts`'s header and `docs/decisions/provider-neutral-body-lexicon-2026-08.md`
    for the audit that found bodies had no equivalent mechanism at all. Also add each of your
    provider's `bodyForbids` entries: `UNTRANSLATED_TOKEN_FORBID` (a `{sigil:}` token surviving to
-   output means an unknown term or a spec that forgot step 7) on every spec, plus
+   output means an unknown term or a spec that forgot step 8) on every spec, plus
    `CLAUDE_LITERAL_FORBIDS_ON_COPILOT`-style entries for any OTHER provider's literal your provider
    must never see (`src/targets/lexicon-forbid.ts`) — this is the second net that catches a
    hardcoded literal an author typed instead of using the lexicon token in the first place.
@@ -451,7 +470,8 @@ slots** (a provider can rearrange a body without a catalog-side change).
 2. Add its zod schema to `SCHEMAS` in `src/schema/index.ts`; `npm run build` regenerates
    `schema/<kind>.schema.json` from it — commit both.
 3. Each provider that supports the new kind adds a `KindEmitSpec` for it (see below). A provider
-   that doesn't support it simply adds no file — `supportedKinds` derives from the spec directory.
+   that doesn't support it adds no spec and marks the kind `none` in its `capabilities.ts` — every
+   target's table must gain a row for the new kind, or the build fails to compile.
 
 ### Emit specs: how a kind renders on one provider
 
@@ -534,7 +554,7 @@ slots against the template's declared `slots:` and substitutes each marker, prod
 `ResolvedArtifact.resolvedBody` (the default rendering every provider gets for free) plus the
 unflattened `resolvedSlots` / `templateId` fields consumed by provider specs that need to diverge.
 An artifact without `template:` is unaffected — hand-authored bodies remain valid for one-offs.
-Templates are never emitted to `dist/` — they are excluded from every provider's `supportedKinds`.
+Templates are never emitted to `dist/` — every provider's capability table marks `template` as `none`.
 
 **Propagating a template change** — when a template's shared prose or slot list changes, every
 artifact built against it needs its output regenerated. `sigil sync` is the command for that; see the

@@ -34,7 +34,7 @@ const PACKS_CURATED = [
     displayName: 'React Starter',
     description: 'React development setup',
     artifacts: [
-      'react/component-testing',
+      'react/react-generate-tests',
       'shared/filesystem',
       'shared/protect-config',
       'shared/allow-dev-tools',
@@ -50,13 +50,25 @@ describe('R — resolveSelection / language helpers', () => {
     resolvedCatalog = resolveCatalog(cat) as ResolvedCatalog;
   });
 
+  it('should skip every candidate when the target supports no kinds (empty list is not a wildcard)', () => {
+    const { ids, skipped } = resolveSelection({
+      selectors: ['pack:essentials'],
+      filters: {},
+      catalog: resolvedCatalog,
+      packs: PACKS_CURATED,
+      supportedKinds: [],
+    });
+
+    assert.deepEqual(ids, []);
+    assert.equal(skipped.length, 5);
+  });
+
   it('resolveSelection pack:essentials returns exactly the 5 agnostic artifact IDs', () => {
     const { ids } = resolveSelection({
       selectors: ['pack:essentials'],
       filters: {},
       catalog: resolvedCatalog,
       packs: PACKS_CURATED,
-      supportedKinds: [],
     });
     const expected = [
       'shared/filesystem',
@@ -78,10 +90,9 @@ describe('R — resolveSelection / language helpers', () => {
       filters: {},
       catalog: resolvedCatalog,
       packs: PACKS_CURATED,
-      supportedKinds: [],
     });
     const expected = [
-      'react/component-testing',
+      'react/react-generate-tests',
       'shared/filesystem',
       'shared/protect-config',
       'shared/allow-dev-tools',
@@ -99,13 +110,12 @@ describe('R — resolveSelection / language helpers', () => {
       filters: {},
       catalog: resolvedCatalog,
       packs: PACKS_CURATED,
-      supportedKinds: [],
     });
     const cp = computeClosure(ids, resolvedCatalog);
     const depIds = cp.dependencies.map(d => d.artifact.id);
     assert.ok(
-      depIds.includes('react/react-style'),
-      'react-starter closure must include react/react-style (via skill uses.rules)',
+      depIds.includes('react/react-conventions'),
+      'react-starter closure must include react/react-conventions (via skill uses.rules)',
     );
     assert.ok(
       depIds.includes('shared/code-reviewer'),
@@ -119,7 +129,6 @@ describe('R — resolveSelection / language helpers', () => {
       filters: { language: 'react' },
       catalog: resolvedCatalog,
       packs: PACKS_CURATED,
-      supportedKinds: [],
     });
     // All config kinds must survive the react language filter
     const configIds = resolvedCatalog.artifacts
@@ -128,11 +137,12 @@ describe('R — resolveSelection / language helpers', () => {
     for (const id of configIds) {
       assert.ok(ids.includes(id), `${id} must survive the react language filter (agnostic)`);
     }
-    // Shared agnostic artifacts (no language tag) must also survive, EXCEPT
-    // shared/clean-code and shared/git — react/react-style extends shared/clean-code and
-    // survives this same filter, so its body is already inlined via resolvedBody; installing
-    // both would write the base rule's content twice (see dropInlinedBaseRules).
-    const inlinedElsewhere = new Set(['shared/clean-code']);
+    // Shared agnostic artifacts (no language tag) must also survive, EXCEPT any base rule that
+    // is inlined by exactly one surviving react-owned rule under this filter (see
+    // dropInlinedBaseRules) — react/react-code-quality extends shared/clean-code and
+    // react/react-git extends shared/git; both base rules' bodies are already inlined via
+    // resolvedBody, so installing the base too would write the content twice.
+    const inlinedElsewhere = new Set(['shared/clean-code', 'shared/git']);
     const agnosticIds = resolvedCatalog.artifacts
       .filter(a => isAgnostic(a) && !inlinedElsewhere.has(a.id))
       .map(a => a.id);
@@ -141,7 +151,11 @@ describe('R — resolveSelection / language helpers', () => {
     }
     assert.ok(
       !ids.includes('shared/clean-code'),
-      'shared/clean-code must be dropped — its body is inlined into react/react-style, which also survives this filter',
+      'shared/clean-code must be dropped — its body is inlined into react/react-code-quality, which also survives this filter',
+    );
+    assert.ok(
+      !ids.includes('shared/git'),
+      'shared/git must be dropped — its body is inlined into react/react-git, which also survives this filter',
     );
   });
 

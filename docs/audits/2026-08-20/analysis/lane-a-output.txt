@@ -1,0 +1,12 @@
+=== Lane A: reference graph ===
+Dangling refs: 0
+Orphans (not in any pack, not extended/used/templated): 5
+  python/py-architect [agent]
+  react/react-architect [agent]
+  shared/ado [mcp]
+  shared/context-mode [mcp]
+  shared/maku-jam [mcp]
+Agents reachable only by description dispatch (no uses.agents/relatedArtifacts ref): 3
+  csharp/cs-api-architect
+  python/py-architect
+  react/react-architect

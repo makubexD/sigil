@@ -203,27 +203,53 @@ export function executeMove(options: ExecuteMoveOptions): MoveResult {
 
 // ─── Private I/O helpers ──────────────────────────────────────────────────────
 
+/**
+ * `EXDEV` ("cross-device link") is the one rename failure the copy+delete fallback exists for —
+ * renaming across filesystems/mount points is unsupported by the OS, not an error. Any other
+ * code (`EACCES`, `ENOENT`, a Windows file lock) is a real failure and must propagate, not be
+ * silently reinterpreted as "fall back to copy". Found by the round-4 (2026-08-23) audit's
+ * dogfooded `ts-code-reviewer` run: the previous bare `catch {}` masked every rename failure
+ * behind the fallback, the same "catch the narrowest type possible" violation F22-27 already
+ * fixed elsewhere in this codebase (see CLAUDE.md's invariant list).
+ */
+function pushRenameBackRollback(src: string, dest: string, rollbackSteps: Array<() => void>): void {
+  rollbackSteps.push(() => {
+    try {
+      fs.renameSync(dest, src);
+    } catch {
+      // Best-effort rollback — ignore secondary errors
+    }
+  });
+}
+
+/** Registered BEFORE copying so a mid-copy throw still gets its partial destination cleaned up. */
+function pushRemoveDestRollback(dest: string, rollbackSteps: Array<() => void>): void {
+  rollbackSteps.push(() => {
+    try {
+      removeRecursive(dest);
+      // Note: can't restore the source — best effort only
+    } catch {
+      // Best-effort rollback — ignore secondary errors
+    }
+  });
+}
+
+/**
+ * `EXDEV` ("cross-device link") is the one rename failure the copy+delete fallback exists for.
+ * Any other code (`EACCES`, `ENOENT`, a Windows file lock) is a real failure and must propagate,
+ * not be silently reinterpreted as "fall back to copy" — found by the round-4 (2026-08-23)
+ * audit's dogfooded `ts-code-reviewer` run (the previous bare `catch {}` masked every rename
+ * failure), the same "catch the narrowest type possible" class F22-27 already fixed elsewhere.
+ */
 function renameOrCopy(src: string, dest: string, rollbackSteps: Array<() => void>): void {
   try {
     fs.renameSync(src, dest);
-    rollbackSteps.push(() => {
-      try {
-        fs.renameSync(dest, src);
-      } catch {
-        // Best-effort rollback — ignore secondary errors
-      }
-    });
-  } catch {
-    // Cross-device rename fails on some systems — fall back to copy+delete
+    pushRenameBackRollback(src, dest, rollbackSteps);
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code !== 'EXDEV') throw err;
+    // Cross-device rename — fall back to copy+delete.
+    pushRemoveDestRollback(dest, rollbackSteps);
     copyRecursive(src, dest);
-    rollbackSteps.push(() => {
-      try {
-        removeRecursive(dest);
-        // Note: can't restore the source — best effort only
-      } catch {
-        // Best-effort rollback — ignore secondary errors
-      }
-    });
     removeRecursive(src);
   }
 }

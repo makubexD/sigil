@@ -8,7 +8,7 @@
 import { z } from 'zod';
 import type { ArtifactKind } from '../types';
 import { CONFIG_SCOPES } from '../types';
-import { BaseFields } from './shared';
+import { BaseFields, KEBAB_NAME_RE } from './shared';
 import { TemplateSchema } from './template';
 
 export { TemplateSchema } from './template';
@@ -53,11 +53,16 @@ export const SkillSchema = z.object({
   template: z.string().optional(),
   /**
    * Invocation name — becomes the Claude Code /name command and Copilot
-   * /prompt-name trigger. Must be kebab-case.
+   * /prompt-name trigger. Must be kebab-case — enforced, since adapters interpolate this
+   * directly into an output file path with no separate containment check (F22).
    */
-  name: z.string().min(1),
-  /** Language this skill belongs to. Must match a catalog/languages/<lang>/ directory. */
-  language: z.string().min(1),
+  name: z.string().min(1).regex(KEBAB_NAME_RE, 'name must be kebab-case'),
+  /**
+   * Language this skill belongs to. Must match a catalog/languages/<lang>/ directory.
+   * Omit for a shared, stack-agnostic skill (catalog/shared/skills/) — e.g. one that carries a
+   * reference file per stack instead of belonging to a single language namespace.
+   */
+  language: z.string().min(1).optional(),
   /**
    * Reuse references: which shared/language rules and agents this skill depends on.
    * The resolver expands these at build time — nothing is copied in the source.
@@ -125,8 +130,8 @@ export const AgentSchema = z.object({
   kind: z.literal('agent'),
   /** Optional: id of a `template` artifact whose slots compose this artifact's body. */
   template: z.string().optional(),
-  /** Invocation name — kebab-case. */
-  name: z.string().min(1),
+  /** Invocation name — kebab-case, enforced (F22 — interpolated directly into an output path). */
+  name: z.string().min(1).regex(KEBAB_NAME_RE, 'name must be kebab-case'),
   /**
    * Optional: language this agent is scoped to.
    * Omit for shared agents that work across all languages.
@@ -153,6 +158,11 @@ export const AgentSchema = z.object({
       effort: z.enum(['low', 'medium', 'high']).optional(),
       maxTurns: z.number().int().positive().optional(),
       isolation: z.enum(['worktree']).optional(),
+      /**
+       * Catalog skill ids preloaded into the subagent's context at startup (Claude Code's
+       * `skills:` field). Validated by the reference graph; the adapter emits skill names.
+       */
+      skills: z.array(z.string().min(1)).optional(),
     })
     .optional(),
   /**
@@ -277,8 +287,17 @@ export const HookSchema = z.object({
    * Only used for PreToolUse/PostToolUse. Defaults to '*' (all tools).
    */
   matcher: z.string().optional().default('*'),
-  /** Shell command to run when the hook fires. */
+  /**
+   * Shell command to run when the hook fires, or — with `args` — the executable to spawn.
+   */
   command: z.string().min(1, 'command is required'),
+  /**
+   * Exec form: when set, `command` is spawned directly with these arguments and no shell
+   * (code.claude.com/docs/en/hooks, "Exec form and shell form"). Prefer it for any hook whose
+   * exit code matters: on Windows without Git Bash, shell-form hooks run through PowerShell,
+   * which reports a native command's exit code 2 as 1, so a blocking hook stops blocking.
+   */
+  args: z.array(z.string()).optional(),
   /** Optional timeout in milliseconds for the hook command. */
   timeout: z.number().int().positive().optional(),
 });

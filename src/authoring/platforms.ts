@@ -5,16 +5,14 @@
  * its kind", the `platforms:` field should be absent (not listed explicitly). This
  * module enforces that normalization and provides add/remove/set helpers.
  */
-import type { Target, ArtifactKind } from '../types';
+import type { Target } from '../types';
+import { supportsKind } from '../targets/capabilities';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-/**
- * Returns every registered target whose supportedKinds includes the given kind.
- * Targets that declare no supportedKinds are treated as supporting everything.
- */
+/** Returns every registered target that delivers the given kind on its scaffold channel. */
 export function kindSupportingTargets(kind: string, targets: Target[]): Target[] {
-  return targets.filter(t => !t.supportedKinds || t.supportedKinds.includes(kind as ArtifactKind));
+  return targets.filter(t => supportsKind(t, kind));
 }
 
 /**

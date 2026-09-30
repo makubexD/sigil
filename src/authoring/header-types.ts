@@ -15,7 +15,7 @@ export interface HeaderValues {
   // Skill + Agent required
   /** Kebab-case invocation name (required for skill/agent). */
   name?: string | undefined;
-  /** Language (required for skill; optional for agent/rule). */
+  /** Language — optional for every kind; omitted = shared (catalog/shared/). */
   language?: string | undefined;
 
   // Platforms restriction (absent = DRY default: all supporting targets)

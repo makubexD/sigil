@@ -2,7 +2,7 @@
 id: angular/ng-generate-tests
 kind: skill
 title: "Generate Tests (Angular)"
-description: "Generate a Vitest + TestBed suite for a file or component following the project's documented test conventions"
+description: "Generate a Vitest + TestBed suite for an Angular file or component, following the project's documented test conventions"
 name: ng-generate-tests
 language: angular
 allowedTools:

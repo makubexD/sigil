@@ -8,6 +8,7 @@ import { resolveSelection, type SkippedArtifact } from '../../select';
 import { SigilError } from '../../errors';
 import { computeInstallStates } from '../../install-state';
 import type { PlanCtx } from './plan-context';
+import { supportedKinds } from '../../targets/capabilities';
 
 /** Resolves the candidate artifact ids + skipped list for this install; wraps errors in SigilError. */
 export function resolveIds(
@@ -20,7 +21,7 @@ export function resolveIds(
       filters,
       catalog: ctx.resolved,
       packs: ctx.packs,
-      supportedKinds: ctx.target.supportedKinds ?? [],
+      supportedKinds: supportedKinds(ctx.target),
       targetName: ctx.targetName,
     });
   } catch (err) {

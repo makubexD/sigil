@@ -3,10 +3,10 @@ id: typescript/ts-code-reviewer
 kind: agent
 title: Code Reviewer (TypeScript)
 description: >-
-  Use to review a diff, file, or scope for correctness, security, and quality
-  against the project's documented conventions. Fast per-change generalist gate
-  — read-only; returns a severity-ranked report. Use proactively after
-  non-trivial changes.
+  Use to review a diff, file, or scope for bugs, correctness, security, and quality issues against
+  the project's documented conventions. Fast per-change generalist gate — makes no edits (Bash is
+  read-only by instruction, not sandboxed); returns a severity-ranked report. Use proactively
+  after non-trivial changes.
 name: ts-code-reviewer
 language: typescript
 tools:

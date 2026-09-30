@@ -18,6 +18,7 @@ import { resolveInputs } from './resolve-inputs';
 import { resolveIds, computeUpToDateIds } from './plan-ids';
 import { computePrimaryPaths, scaffoldWholeFiles } from './plan-scaffold';
 import type { PlanCtx } from './plan-context';
+import { coInstallSetFor } from './co-install';
 import type { FileMap, ConfigScope, ResolvedCatalog, Target } from '../../types';
 import type { AddOpts } from './index';
 
@@ -181,7 +182,7 @@ async function runScaffoldPhase(
     overwrite: ctx.inputs.overwrite,
     includeDeps: ctx.inputs.includeDeps,
     scope: ctx.inputs.scope,
-    coInstallSet: new Set(wholeFileIds),
+    coInstallSet: coInstallSetFor(ctx, wholeFileIds),
   };
 
   const primaryPaths = await computePrimaryPaths(ctx, wholeFileIds, scaffoldOpts);

@@ -1,0 +1,41 @@
+
+  ✓  shared/author-artifact  [up-to-date]
+  ✓  shared/explain-diff  [up-to-date]
+  ✓  typescript/ts-api-compat-reviewer  [up-to-date]
+  ✓  typescript/ts-architecture-reviewer  [up-to-date]
+  ✓  typescript/ts-code-reviewer  [up-to-date]
+  ✓  typescript/ts-debugger  [up-to-date]
+  ✓  typescript/ts-performance-profiler  [up-to-date]
+  ✓  typescript/ts-refactor-specialist  [up-to-date]
+  ✓  typescript/ts-security-auditor  [up-to-date]
+  ✓  typescript/ts-async  [up-to-date]
+  ✓  typescript/ts-code-quality  [up-to-date]
+  ✓  typescript/ts-conventions  [up-to-date]
+  ✓  typescript/ts-dependencies  [up-to-date]
+  ✓  typescript/ts-documentation  [up-to-date]
+  ✓  typescript/ts-git  [up-to-date]
+  ✓  typescript/ts-logging  [up-to-date]
+  ✓  typescript/ts-npm  [up-to-date]
+  ✓  typescript/ts-project-layout  [up-to-date]
+  ✓  typescript/ts-security  [up-to-date]
+  ✓  typescript/ts-testing  [up-to-date]
+  ✓  typescript/ts-add-package  [up-to-date]
+  ✓  typescript/ts-audit-deps  [up-to-date]
+  ✓  typescript/ts-document  [up-to-date]
+  ✓  typescript/ts-release  [up-to-date]
+  ✓  typescript/ts-scaffold-project  [up-to-date]
+  ✓  typescript/ts-sync-tests  [up-to-date]
+  ✓  typescript/ts-generate-tests  [up-to-date]
+  ~  shared/protect-config  [drifted]
+     local edits differ from installed content: .claude/settings.json
+     ~ .claude/settings.json
+  ✓  shared/allow-dev-tools  [up-to-date]
+  ✓  shared/code-reviewer  [up-to-date]
+  ✓  shared/context-mode  [up-to-date]
+  ✓  shared/filesystem  [up-to-date]
+
+  32 artifact(s): 31 up-to-date, 1 drifted
+
+  Run `sigil update` to refresh outdated artifacts.
+
+exit: 0

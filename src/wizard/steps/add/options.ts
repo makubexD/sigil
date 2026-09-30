@@ -72,7 +72,6 @@ function resolvePackIds(pack: Pack, catalog: ResolvedCatalog, packs: Pack[]): st
     filters: {},
     catalog,
     packs,
-    supportedKinds: [],
   }).ids;
 }
 

@@ -13,9 +13,10 @@ allowedTools:
   - Edit
 argumentHint: "<package-id> [version] [--dev]"
 whenToUse: >-
-  Use any time a new npm dependency needs adding — "add <package>", "install <package>", "I need
-  a library for X". Confirms before adding if vetting flags risk. Not for updating an
-  already-installed package's version — this skill's value is the pre-install vetting.
+  Use any time a new npm package needs adding — "add <package>", "install <package>", "I need
+  a library for X". Confirms before adding if vetting flags risk. Scoped to bringing in a package
+  that is not yet installed — not for bumping an existing package to a newer release, which needs
+  no vetting workflow.
 uses:
   rules:
     - typescript/ts-dependencies

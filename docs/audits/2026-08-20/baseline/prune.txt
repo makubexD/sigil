@@ -1,0 +1,4 @@
+
+✓ Nothing to prune — no orphaned or deprecated artifacts installed.
+
+exit: 0

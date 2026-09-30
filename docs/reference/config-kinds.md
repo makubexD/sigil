@@ -5,6 +5,22 @@
 Config kinds merge into user-owned JSON files instead of writing whole files. This is the sole
 home for their merge model, provider-declared scope model, and wizard treatment.
 
+## Hook fields
+
+A `kind: hook` artifact (`src/schema/index.ts`, `HookSchema`) becomes one entry under
+`hooks.<event>` in Claude Code's settings (`src/targets/claude-code/config-scaffold.ts`):
+
+| Field     | Meaning                                                           |
+| --------- | ----------------------------------------------------------------- |
+| `event`   | Claude Code lifecycle event (`PreToolUse`, `PostToolUse`, …)      |
+| `matcher` | Tool-name pattern, for tool events; defaults to `*`               |
+| `command` | Shell command to run or, with `args`, the executable to spawn     |
+| `args`    | Exec form: `command` is spawned with these arguments and no shell |
+| `timeout` | Optional timeout                                                  |
+
+Use exec form for any hook whose exit code matters. On Windows without Git Bash, shell-form hooks
+run through PowerShell, which reports exit code 2 (block) as 1 (no block).
+
 ## Serialization: `serialize` vs `canonicalize`
 
 Two serializers, never interchangeable:
@@ -15,6 +31,65 @@ Two serializers, never interchangeable:
 - **`canonicalize(obj)`** (`src/config-merge/primitives.ts`) — **sorted** (stable key order). Used
   only for deterministic fragment hashing (`manifest/hash.ts sha256(canonicalize(fragment))`).
   Never used as the disk writer.
+
+## Drift and repair
+
+`sigil status`/`sigil update` classify a live config file's relationship to sigil's recorded
+fragment three ways (`classifyConfigDrift`, `src/config-merge/drift.ts`), not as a single
+drifted/not-drifted boolean:
+
+- **`intact`** — the live file still contains exactly what sigil contributed. No action.
+- **`missing`** — sigil's fragment (or part of it) is entirely absent from the live file.
+  Re-merging is purely additive (there is nothing of the user's to clobber), so `sigil update`
+  **restores it without `--force`**.
+- **`modified`** — a value sigil contributed is present but changed. Overwriting it would discard
+  a real user edit, so `sigil update` requires `--force` and otherwise skips with a message
+  explaining why.
+
+`array-union`/`array-append` fragments (hooks, permission lists) always classify as `missing`
+rather than `modified` when an item can't be found — both strategies are non-destructive to
+re-apply, so there's no overwrite risk to gate behind a flag the way there is for `object-spread`'s
+leaf assignment; restoring one appends a fresh copy alongside whatever the user has, rather than
+refusing. See `docs/decisions/catalog-usage-audit-2026-08-21.md` (F14) for the incident that
+established this.
+
+What `update` writes always comes from the bundled catalog, never from the manifest.
+`.sigil/manifest.json` is committed and anyone can edit it, so its record only says which
+fragment is installed where. A restore writes the catalog's current op for that file and root.
+A recorded fragment the catalog has no op for is skipped with a note (re-run `sigil add`).
+
+## Re-install and catalog changes replace, never stack
+
+A config fragment sigil already installed is **replaced**, not merged a second time
+(`replaceMerge`, `src/config-merge/replace.ts`): the recorded fragment is reversed first (only
+values still exactly as sigil wrote them are removed), then the new one is merged. Two writers use
+it:
+
+- **`sigil add`** of an artifact that is already installed. Without this, a hook (`array-append`)
+  was appended again on every re-install.
+- **`sigil update`**, when the catalog's current fragment for a recorded destination differs from
+  the recorded one. The manifest records a fragment's file and root, not the scope that chose it,
+  so update renders the artifact for every scope and matches on file, root and top-level keys. The
+  manifest entry is rewritten with the new fragment. An `object-spread` value the user changed
+  still needs `--force`; for array fragments a user-edited copy simply stays beside the new one.
+
+`sigil status` does not yet report "catalog changed" for config kinds; `sigil update` is what
+detects and applies it.
+
+## `.sigil.bak` home-directory backup
+
+Any write or delete to a home-scoped config file (`ConfigRoot: 'home' | 'vscode-user'` — files like
+`~/.claude.json` or the VS Code user-profile `mcp.json`, which affect **every** project, not just
+the current one) takes a pristine `.sigil.bak` copy before the first such write, via the shared
+`ensureHomeBackup()` helper (`src/config-utils.ts`). This applies uniformly across all three
+config-JSON writers — `sigil add`, `sigil update`, and `sigil uninstall`
+(`commands/add/execute-config.ts`, `commands/update-config.ts`, `commands/uninstall-config.ts`) —
+after the 2026-08-22 audit found the backup implemented only in `add`'s path, leaving `update`'s
+re-merges and `uninstall`'s deletes/rewrites of the same home-scoped files with no safety net (F23,
+`docs/decisions/catalog-benchmark-audit-2026-08-22.md`). The backup is written once, pristine; a
+second write to the same file in the same session keeps the existing backup and just warns that
+it's still there. Project-scoped config files (`.claude/settings.json`, `.mcp.json`) are protected
+by git instead — no `.bak` is written for them.
 
 ## Wizard: config kinds are first-class, never language-gated
 
@@ -37,8 +112,8 @@ Two serializers, never interchangeable:
 **Vocabulary for config kinds** — both targets declare `vocabulary` entries so `kindPlural`/
 `kindNoun`/`kindHint` return readable labels (e.g. `'MCPs'` not `'Mcps'`):
 
-- Claude: `mcp`, `hook`, `settings` vocabulary in `src/targets/claude-code/index.ts`.
-- Copilot: `mcp` vocabulary in `src/targets/copilot/index.ts`.
+- Claude: `mcp`, `hook`, `settings` vocabulary in `src/targets/claude-code/metadata.ts`.
+- Copilot: `mcp` vocabulary in `src/targets/copilot/metadata.ts`.
 
 ## Provider-declared scope model (`Target.configScopes`)
 

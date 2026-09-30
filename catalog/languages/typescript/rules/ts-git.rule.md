@@ -7,7 +7,8 @@ language: typescript
 appliesTo:
   - "**/*"
 appliesToRationale: Matches shared/git — it governs commit/PR workflow, not any specific file.
-extends: [shared/git]
+extends:
+  - shared/git
 tags:
   - typescript
   - git

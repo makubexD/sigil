@@ -45,7 +45,8 @@ Level 2 — TYPE sub-menu (only under "Pick specific items"):
   MCP servers · Hooks · Settings
 
 Level 3 — LANGUAGE (injected only where relevant):
-  · Language-bound kinds (skills / style rules / architects) → "Narrow to a language? (optional)"
+  · Code kinds (skill / agent / rule / prompt / workflow) → "Narrow to a language? (optional)";
+    language-less (shared) artifacts group under `shared`
   · Config kinds (MCP / Hooks / Settings) → straight to picker, NEVER asked about language
   · "Everything" → same optional skippable filter with note that MCPs/hooks/settings always included
 ```
@@ -125,9 +126,10 @@ list deps manually. The shipped set is:
 
 - `essentials` — 5 agnostic tools (Filesystem MCP, hook, settings, 2 prompts). No language.
 - `dotnet-starter` / `python-starter` / `react-starter` — language skill + 3 config essentials.
-  The skill's deps (style rule + code-reviewer) are added automatically via the `deps` step.
-  Config kinds in packs are silently skipped during `catalog:build` (plugins contain only
-  skills/agents/workflows); they are installed only via `sigil add` / `sigil update`.
+  The skill's deps (its `uses:` rules and agents, e.g. `cs-testing` + `cs-code-reviewer`) are
+  added automatically via the `deps` step. Kinds the Claude plugin channel doesn't package
+  (config kinds and prompts — see `docs/reference/capabilities.md`) are skipped during
+  `catalog:build`; they are installed only via `sigil add` / `sigil update`.
 
 **Dependency closure UX (plan box):** the `uses:` dependency is purely authored YAML frontmatter
 in each SKILL.md (e.g. `uses: { rules: [csharp/cs-conventions], agents: [shared/code-reviewer] }`) —

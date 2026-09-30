@@ -12,6 +12,7 @@ allowedTools:
   - Grep
 argumentHint: "<version> (e.g. 2.1.0)"
 disableModelInvocation: true
+template: shared/templates/release-skill
 uses:
   rules:
     - csharp/cs-conventions
@@ -22,17 +23,7 @@ tags:
   - publish
 whenToUse: "Run manually via `/cs-release <version>` before cutting a release tag — e.g. \"prepare a release\", \"cut version 2.1.0\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review."
 ---
-
-# Release Preparation
-
-**Target version:** {sigil:arguments}
-
-> This skill is **user-invoked only** (`disable-model-invocation: true`). It prepares
-> the release but does **not** create a tag, push to remote, or publish to NuGet.
-> All final actions require human confirmation.
-
-## Step 1 — Verify quality gates
-
+<!-- slot: quality-gates -->
 Discover and run the project's full quality gate:
 
 ```bash
@@ -45,26 +36,7 @@ dotnet test --no-build
 
 **If any gate fails: stop and report.** Do not proceed — a release with failing gates is blocked.
 
-## Step 2 — Check the working tree
-
-```bash
-git status --porcelain
-git stash list
-```
-
-If there are uncommitted changes or stashes, **report and stop** — a release must be cut from a
-clean working tree.
-
-Note the current branch and whether it is ahead of or behind the remote:
-```bash
-git log --oneline origin/main..HEAD
-```
-
-## Step 3 — Determine the version
-
-**If `{sigil:arguments}` is provided:** use that as the target version.
-
-**If `{sigil:arguments}` is empty:**
+<!-- slot: version-determination -->
 1. Read the current version from `Directory.Build.props`, `Directory.Packages.props`, or the library
    `.csproj` (`<Version>`, `<VersionPrefix>`, or `<AssemblyVersion>`).
 2. Read recent commits (Step 4) and suggest a version bump:
@@ -72,10 +44,8 @@ git log --oneline origin/main..HEAD
    - Only `fix:` / `refactor:` / `chore:` / `perf:` commits → **patch** bump (`X.Y.Z+1`).
    - A commit body containing `BREAKING CHANGE:` → **major** bump (`X+1.0.0`).
    - A `cs-api-compat-reviewer` report with Breaking-tier findings → **major** bump regardless.
-3. Ask the user to confirm the version before proceeding.
 
-## Step 4 — Generate changelog
-
+<!-- slot: changelog-format -->
 ```bash
 git log $(git describe --tags --abbrev=0)..HEAD --oneline --no-merges
 ```
@@ -103,8 +73,7 @@ Group commits by type and produce a changelog section:
 - <refactor, chore, docs, ci, test commits>
 ```
 
-Omit sections with no entries.
-
+<!-- slot: api-compat-step -->
 ## Step 5 — Check API compatibility
 
 If a `cs-api-compat-reviewer` report was produced for this branch, include its SemVer recommendation
@@ -114,8 +83,7 @@ Note: cs-api-compat-reviewer was not run. For library packages, run it before re
 no unintentional breaking changes.
 ```
 
-## Step 6 — Output release checklist
-
+<!-- slot: checklist-and-next-steps -->
 ```
 ## Release Checklist — v<version>
 

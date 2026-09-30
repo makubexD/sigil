@@ -252,6 +252,21 @@ export const CLAUDE_PLUGIN_MANIFEST_DOC: DocRef = {
     '(explicit plugin.json version > marketplace entry version > git SHA > "unknown").',
 };
 
+/**
+ * What a plugin can carry — the page that states a plugin can't ship rules/CLAUDE.md (write them
+ * as a skill) and that a plugin-root settings.json honors only `agent`/`subagentStatusLine`.
+ * Cited by src/targets/claude-code/capabilities.ts for the plugin channel's rule/settings rows.
+ */
+export const CLAUDE_PLUGIN_COMPONENTS_DOC: DocRef = {
+  url: 'https://code.claude.com/docs/en/plugins/components',
+  title: 'Claude Code — Plugin components',
+  verifiedOn: '2026-09-26',
+  covers:
+    'Plugins do not load a CLAUDE.md at the plugin root ("To include instructions in a plugin, ' +
+    'write them as a skill") and a plugin settings.json applies only `agent` and ' +
+    '`subagentStatusLine` — why the plugin channel inlines rules into skills and carries no settings.',
+};
+
 /** `marketplace.json` — the distribution catalog listing plugins, a distinct file and page from plugin.json. */
 export const CLAUDE_PLUGIN_MARKETPLACES_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/plugin-marketplaces',

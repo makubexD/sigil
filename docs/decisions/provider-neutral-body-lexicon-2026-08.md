@@ -59,7 +59,7 @@ catalog body (neutral {sigil:<term>} tokens)  →  renderArtifact()  →  provid
   rule's `resolvedBody`) — not opt-in, the same reason `{{name}}` translation was reliable and this
   wasn't.
 
-Three terms only, deliberately: `conventions-file` (`CLAUDE.md` / `AGENTS.md`), `rules-dir`
+Three terms at first, deliberately (a fourth was added later, see the update below): `conventions-file` (`CLAUDE.md` / `AGENTS.md`), `rules-dir`
 (`.claude/rules/` / `.github/instructions/`), `arguments` (`$ARGUMENTS` / "the request you were
 given"). A fourth candidate — `product` ("Claude Code" / "GitHub Copilot") — was cut during
 implementation: several catalog artifacts (mcp install notes, the `author-artifact` prompt)
@@ -67,6 +67,12 @@ legitimately name both products side-by-side as documentation ABOUT sigil's own 
 behavior, not a per-provider instruction; adding that term would have flagged genuinely correct
 prose as a leak. Matches the standing "minimum, no noise" preference — a term earns a place only
 when it fixes a real, found leak.
+
+**Update 2026-09-27:** a fourth term, `skills-dir` (`.claude/skills/` / `.github/skills/`), met
+that bar. The shared `cli-auditor`/`wizard-auditor` agents must tell the model where their skill's
+`references/auditor.md` lives, and `platform-path-leak` correctly flagged the first draft's
+hardcoded `.claude/skills/` path as wrong on Copilot. User-level folders differ further
+(`~/.claude/skills` vs `~/.copilot/skills`), so bodies name those in prose, not by path.
 
 ## 3. The second net
 

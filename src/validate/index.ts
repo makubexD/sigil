@@ -19,6 +19,8 @@
  *      (error); unused slots / stale docs (warning).
  *  10. (warning) `extends`/`uses.rules`/`uses.agents`/`template`         — deprecated-checks.ts
  *      references a `deprecated:` artifact.
+ *  11. (warning) A skill points at a bundled path that doesn't ship     — skill-path-check.ts
+ *      (`references/<missing>`, `assets/`, `scripts/`).
  */
 import type { LoadedCatalog, Target, ValidationResult } from '../types';
 import type { ValidateCtx } from './types';
@@ -29,6 +31,7 @@ import { checkPlatforms, checkOwnedByKindConflicts } from './platform-checks';
 import { detectExtendsCycles } from './cycles';
 import { checkArtifactTemplate, checkTemplatesCatalogWide } from './template-checks';
 import { checkDeprecatedReferences } from './deprecated-checks';
+import { checkSkillPaths } from './skill-path-check';
 
 export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[]): ValidationResult {
   const ctx: ValidateCtx = { catalog, knownTargets, errors: [], warnings: [] };
@@ -41,6 +44,7 @@ export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[])
     checkHardcodedRunner(ctx, artifact);
     checkArtifactTemplate(ctx, artifact);
     checkDeprecatedReferences(ctx, artifact);
+    checkSkillPaths(ctx, artifact);
   }
 
   checkDuplicateAncestorScope(ctx);

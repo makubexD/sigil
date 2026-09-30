@@ -86,12 +86,27 @@ export async function loadAndValidate(
 // ─── File I/O helpers ─────────────────────────────────────────────────────────
 
 /**
+ * Resolves `relPath` under `outputDir` and throws if it escapes — defense-in-depth against a
+ * malformed `FileMap` key reaching the write path (schema-level `id`/`name` regexes are the
+ * primary guard; this is the second net in case a target's own path template is ever wrong).
+ * See docs/decisions/catalog-benchmark-audit-2026-08-22.md F22.
+ */
+export function resolveContained(outputDir: string, relPath: string): string {
+  const root = path.resolve(outputDir);
+  const full = path.resolve(root, relPath);
+  if (full !== root && !full.startsWith(root + path.sep)) {
+    throw new SigilError(`Refusing to write outside output directory: ${relPath}`);
+  }
+  return full;
+}
+
+/**
  * Writes a FileMap to outputDir, creating parent directories as needed.
  * Always overwrites — caller is responsible for calling partitionFiles first.
  */
 export function writeFilesSync(files: FileMap, outputDir: string): void {
   for (const [relPath, content] of Object.entries(files)) {
-    const fullPath = path.join(outputDir, relPath);
+    const fullPath = resolveContained(outputDir, relPath);
     fs.mkdirSync(path.dirname(fullPath), { recursive: true });
     fs.writeFileSync(fullPath, content, 'utf-8');
   }
@@ -109,7 +124,7 @@ export function partitionFiles(
   const conflicting: FileMap = {};
 
   for (const [relPath, content] of Object.entries(files)) {
-    const fullPath = path.join(outputDir, relPath);
+    const fullPath = resolveContained(outputDir, relPath);
     if (fs.existsSync(fullPath)) {
       conflicting[relPath] = content;
     } else {

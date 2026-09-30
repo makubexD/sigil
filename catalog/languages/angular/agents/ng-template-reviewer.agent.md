@@ -3,11 +3,11 @@ id: angular/ng-template-reviewer
 kind: agent
 title: Template Reviewer (Angular)
 description: >-
-  Use to review the component + template layer — OnPush/change-detection
-  correctness, control-flow track correctness, async-pipe vs leak-prone manual
-  subscribe, template binding cost, and accessibility. Read-only; returns a
-  severity-ranked report. Reviews the view layer specifically. Use proactively
-  after building or changing components and templates.
+  Use to review an Angular component + template layer — OnPush/change-detection correctness,
+  control-flow track correctness, async-pipe vs leak-prone manual subscribe, template binding
+  cost, and accessibility. Makes no edits (Bash is read-only by instruction, not sandboxed);
+  returns a severity-ranked report. Reviews the view layer specifically. Use proactively after
+  building or changing Angular components and templates.
 name: ng-template-reviewer
 language: angular
 tools:

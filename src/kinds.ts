@@ -40,8 +40,6 @@ export interface KindDescriptor {
   readonly hasUsesClosure: boolean;
   /** True when the artifact's source (and scaffolded output) is a directory, not a single file. */
   readonly isDirectoryBacked: boolean;
-  /** True when the artifact must belong to a specific language (no shared/ variant exists). */
-  readonly requiresLanguage: boolean;
   /**
    * Registered target names whose published vocabulary DEFINES this kind's frontmatter shape
    * (e.g. hook's `event`/`matcher` fields are Claude Code's lifecycle-hook vocabulary verbatim).
@@ -77,7 +75,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
       'Describe what this MCP server provides. The server: above is merged into .mcp.json.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    requiresLanguage: false,
     ownedBy: [],
   },
   hook: {
@@ -88,7 +85,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     bodyComment: 'Describe what this hook does and when it fires. The command: above is executed.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    requiresLanguage: false,
     // event/matcher are Claude Code's lifecycle-hook vocabulary verbatim — see kinds.ts header.
     ownedBy: ['claude'],
   },
@@ -101,7 +97,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
       'Describe what this settings fragment configures. Fields above are merged into settings.json.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    requiresLanguage: false,
     // permissions/statusLine/model mirror Claude Code's settings.json shape verbatim.
     ownedBy: ['claude'],
   },
@@ -114,7 +109,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     bodyComment: 'Write the prompt body. Use {{placeholder}} for args.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    requiresLanguage: false,
     ownedBy: [],
   },
   skill: {
@@ -125,7 +119,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     bodyComment: 'Describe what the AI should do when this skill is invoked.',
     hasUsesClosure: true,
     isDirectoryBacked: true,
-    requiresLanguage: true,
     ownedBy: [],
   },
   agent: {
@@ -136,7 +129,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     bodyComment: 'Define the agent persona and instructions below.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    requiresLanguage: false,
     ownedBy: [],
   },
   rule: {
@@ -147,7 +139,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     bodyComment: 'Add rule bullets below. Extend with extends: for DRY inheritance.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    requiresLanguage: false,
     ownedBy: [],
   },
   workflow: {
@@ -158,7 +149,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     bodyComment: 'Describe what this workflow does. The steps: list above drives execution order.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    requiresLanguage: false,
     ownedBy: [],
   },
   template: {
@@ -173,7 +163,6 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
       'Define slot markers (<!-- slot: key --> ) for each entry in slots: above, plus any shared prose around them.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    requiresLanguage: false,
     ownedBy: [],
   },
 };
@@ -234,9 +223,4 @@ export function hasUsesClosure(kind: string): boolean {
 /** True when `kind`'s artifacts are directory-backed (skill only — SKILL.md + assets). */
 export function isDirectoryBacked(kind: string): boolean {
   return isArtifactKind(kind) && KIND_REGISTRY[kind].isDirectoryBacked;
-}
-
-/** True when `kind` must belong to a specific language — no shared/ variant exists (skill only). */
-export function requiresLanguage(kind: string): boolean {
-  return isArtifactKind(kind) && KIND_REGISTRY[kind].requiresLanguage;
 }

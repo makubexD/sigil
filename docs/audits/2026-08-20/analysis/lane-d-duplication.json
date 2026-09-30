@@ -1,0 +1,824 @@
+[
+  {
+    "family": "skill:release",
+    "members": [
+      {
+        "id": "angular/ng-release",
+        "lines": 101
+      },
+      {
+        "id": "csharp/cs-release",
+        "lines": 116
+      },
+      {
+        "id": "typescript/ts-release",
+        "lines": 102
+      }
+    ],
+    "totalLines": 319,
+    "avgPairwiseOverlap": 0.272,
+    "pairs": [
+      {
+        "a": "angular/ng-release",
+        "b": "csharp/cs-release",
+        "overlap": 0.164
+      },
+      {
+        "a": "angular/ng-release",
+        "b": "typescript/ts-release",
+        "overlap": 0.094
+      },
+      {
+        "a": "csharp/cs-release",
+        "b": "typescript/ts-release",
+        "overlap": 0.557
+      }
+    ]
+  },
+  {
+    "family": "rule:code-quality",
+    "members": [
+      {
+        "id": "angular/ng-code-quality",
+        "lines": 59
+      },
+      {
+        "id": "csharp/cs-code-quality",
+        "lines": 75
+      },
+      {
+        "id": "typescript/ts-code-quality",
+        "lines": 86
+      }
+    ],
+    "totalLines": 220,
+    "avgPairwiseOverlap": 0.244,
+    "pairs": [
+      {
+        "a": "angular/ng-code-quality",
+        "b": "csharp/cs-code-quality",
+        "overlap": 0.18
+      },
+      {
+        "a": "angular/ng-code-quality",
+        "b": "typescript/ts-code-quality",
+        "overlap": 0.291
+      },
+      {
+        "a": "csharp/cs-code-quality",
+        "b": "typescript/ts-code-quality",
+        "overlap": 0.26
+      }
+    ]
+  },
+  {
+    "family": "agent:debugger",
+    "members": [
+      {
+        "id": "angular/ng-debugger",
+        "lines": 97
+      },
+      {
+        "id": "csharp/cs-debugger",
+        "lines": 109
+      },
+      {
+        "id": "typescript/ts-debugger",
+        "lines": 122
+      }
+    ],
+    "totalLines": 328,
+    "avgPairwiseOverlap": 0.242,
+    "pairs": [
+      {
+        "a": "angular/ng-debugger",
+        "b": "csharp/cs-debugger",
+        "overlap": 0.457
+      },
+      {
+        "a": "angular/ng-debugger",
+        "b": "typescript/ts-debugger",
+        "overlap": 0.13
+      },
+      {
+        "a": "csharp/cs-debugger",
+        "b": "typescript/ts-debugger",
+        "overlap": 0.139
+      }
+    ]
+  },
+  {
+    "family": "agent:refactor-specialist",
+    "members": [
+      {
+        "id": "angular/ng-refactor-specialist",
+        "lines": 122
+      },
+      {
+        "id": "csharp/cs-refactor-specialist",
+        "lines": 125
+      },
+      {
+        "id": "typescript/ts-refactor-specialist",
+        "lines": 132
+      }
+    ],
+    "totalLines": 379,
+    "avgPairwiseOverlap": 0.228,
+    "pairs": [
+      {
+        "a": "angular/ng-refactor-specialist",
+        "b": "csharp/cs-refactor-specialist",
+        "overlap": 0.384
+      },
+      {
+        "a": "angular/ng-refactor-specialist",
+        "b": "typescript/ts-refactor-specialist",
+        "overlap": 0.157
+      },
+      {
+        "a": "csharp/cs-refactor-specialist",
+        "b": "typescript/ts-refactor-specialist",
+        "overlap": 0.142
+      }
+    ]
+  },
+  {
+    "family": "agent:code-reviewer",
+    "members": [
+      {
+        "id": "angular/ng-code-reviewer",
+        "lines": 128
+      },
+      {
+        "id": "csharp/cs-code-reviewer",
+        "lines": 121
+      },
+      {
+        "id": "typescript/ts-code-reviewer",
+        "lines": 154
+      }
+    ],
+    "totalLines": 403,
+    "avgPairwiseOverlap": 0.213,
+    "pairs": [
+      {
+        "a": "angular/ng-code-reviewer",
+        "b": "csharp/cs-code-reviewer",
+        "overlap": 0.467
+      },
+      {
+        "a": "angular/ng-code-reviewer",
+        "b": "typescript/ts-code-reviewer",
+        "overlap": 0.081
+      },
+      {
+        "a": "csharp/cs-code-reviewer",
+        "b": "typescript/ts-code-reviewer",
+        "overlap": 0.09
+      }
+    ]
+  },
+  {
+    "family": "skill:sync-tests",
+    "members": [
+      {
+        "id": "angular/ng-sync-tests",
+        "lines": 110
+      },
+      {
+        "id": "csharp/cs-sync-tests",
+        "lines": 128
+      },
+      {
+        "id": "typescript/ts-sync-tests",
+        "lines": 103
+      }
+    ],
+    "totalLines": 341,
+    "avgPairwiseOverlap": 0.145,
+    "pairs": [
+      {
+        "a": "angular/ng-sync-tests",
+        "b": "csharp/cs-sync-tests",
+        "overlap": 0.338
+      },
+      {
+        "a": "angular/ng-sync-tests",
+        "b": "typescript/ts-sync-tests",
+        "overlap": 0.031
+      },
+      {
+        "a": "csharp/cs-sync-tests",
+        "b": "typescript/ts-sync-tests",
+        "overlap": 0.066
+      }
+    ]
+  },
+  {
+    "family": "skill:audit-deps",
+    "members": [
+      {
+        "id": "angular/ng-audit-deps",
+        "lines": 116
+      },
+      {
+        "id": "csharp/cs-audit-deps",
+        "lines": 126
+      },
+      {
+        "id": "typescript/ts-audit-deps",
+        "lines": 127
+      }
+    ],
+    "totalLines": 369,
+    "avgPairwiseOverlap": 0.092,
+    "pairs": [
+      {
+        "a": "angular/ng-audit-deps",
+        "b": "csharp/cs-audit-deps",
+        "overlap": 0.076
+      },
+      {
+        "a": "angular/ng-audit-deps",
+        "b": "typescript/ts-audit-deps",
+        "overlap": 0.061
+      },
+      {
+        "a": "csharp/cs-audit-deps",
+        "b": "typescript/ts-audit-deps",
+        "overlap": 0.14
+      }
+    ]
+  },
+  {
+    "family": "skill:generate-tests",
+    "members": [
+      {
+        "id": "angular/ng-generate-tests",
+        "lines": 83
+      },
+      {
+        "id": "csharp/cs-generate-tests",
+        "lines": 136
+      },
+      {
+        "id": "typescript/ts-generate-tests",
+        "lines": 104
+      }
+    ],
+    "totalLines": 323,
+    "avgPairwiseOverlap": 0.091,
+    "pairs": [
+      {
+        "a": "angular/ng-generate-tests",
+        "b": "csharp/cs-generate-tests",
+        "overlap": 0.206
+      },
+      {
+        "a": "angular/ng-generate-tests",
+        "b": "typescript/ts-generate-tests",
+        "overlap": 0.033
+      },
+      {
+        "a": "csharp/cs-generate-tests",
+        "b": "typescript/ts-generate-tests",
+        "overlap": 0.033
+      }
+    ]
+  },
+  {
+    "family": "skill:document",
+    "members": [
+      {
+        "id": "angular/ng-document",
+        "lines": 114
+      },
+      {
+        "id": "csharp/cs-document",
+        "lines": 134
+      },
+      {
+        "id": "typescript/ts-document",
+        "lines": 122
+      }
+    ],
+    "totalLines": 370,
+    "avgPairwiseOverlap": 0.084,
+    "pairs": [
+      {
+        "a": "angular/ng-document",
+        "b": "csharp/cs-document",
+        "overlap": 0.188
+      },
+      {
+        "a": "angular/ng-document",
+        "b": "typescript/ts-document",
+        "overlap": 0.037
+      },
+      {
+        "a": "csharp/cs-document",
+        "b": "typescript/ts-document",
+        "overlap": 0.027
+      }
+    ]
+  },
+  {
+    "family": "skill:scaffold-project",
+    "members": [
+      {
+        "id": "csharp/cs-scaffold-project",
+        "lines": 215
+      },
+      {
+        "id": "typescript/ts-scaffold-project",
+        "lines": 108
+      }
+    ],
+    "totalLines": 323,
+    "avgPairwiseOverlap": 0.066,
+    "pairs": [
+      {
+        "a": "csharp/cs-scaffold-project",
+        "b": "typescript/ts-scaffold-project",
+        "overlap": 0.066
+      }
+    ]
+  },
+  {
+    "family": "rule:git",
+    "members": [
+      {
+        "id": "angular/ng-git",
+        "lines": 42
+      },
+      {
+        "id": "csharp/cs-git",
+        "lines": 52
+      },
+      {
+        "id": "typescript/ts-git",
+        "lines": 56
+      }
+    ],
+    "totalLines": 150,
+    "avgPairwiseOverlap": 0.064,
+    "pairs": [
+      {
+        "a": "angular/ng-git",
+        "b": "csharp/cs-git",
+        "overlap": 0.085
+      },
+      {
+        "a": "angular/ng-git",
+        "b": "typescript/ts-git",
+        "overlap": 0.064
+      },
+      {
+        "a": "csharp/cs-git",
+        "b": "typescript/ts-git",
+        "overlap": 0.043
+      }
+    ]
+  },
+  {
+    "family": "agent:architecture-reviewer",
+    "members": [
+      {
+        "id": "angular/ng-architecture-reviewer",
+        "lines": 127
+      },
+      {
+        "id": "csharp/cs-architecture-reviewer",
+        "lines": 147
+      },
+      {
+        "id": "typescript/ts-architecture-reviewer",
+        "lines": 171
+      }
+    ],
+    "totalLines": 445,
+    "avgPairwiseOverlap": 0.062,
+    "pairs": [
+      {
+        "a": "angular/ng-architecture-reviewer",
+        "b": "csharp/cs-architecture-reviewer",
+        "overlap": 0.086
+      },
+      {
+        "a": "angular/ng-architecture-reviewer",
+        "b": "typescript/ts-architecture-reviewer",
+        "overlap": 0.058
+      },
+      {
+        "a": "csharp/cs-architecture-reviewer",
+        "b": "typescript/ts-architecture-reviewer",
+        "overlap": 0.042
+      }
+    ]
+  },
+  {
+    "family": "agent:security-auditor",
+    "members": [
+      {
+        "id": "angular/ng-security-auditor",
+        "lines": 131
+      },
+      {
+        "id": "csharp/cs-security-auditor",
+        "lines": 140
+      },
+      {
+        "id": "typescript/ts-security-auditor",
+        "lines": 164
+      }
+    ],
+    "totalLines": 435,
+    "avgPairwiseOverlap": 0.06,
+    "pairs": [
+      {
+        "a": "angular/ng-security-auditor",
+        "b": "csharp/cs-security-auditor",
+        "overlap": 0.117
+      },
+      {
+        "a": "angular/ng-security-auditor",
+        "b": "typescript/ts-security-auditor",
+        "overlap": 0.032
+      },
+      {
+        "a": "csharp/cs-security-auditor",
+        "b": "typescript/ts-security-auditor",
+        "overlap": 0.031
+      }
+    ]
+  },
+  {
+    "family": "agent:performance-profiler",
+    "members": [
+      {
+        "id": "angular/ng-performance-profiler",
+        "lines": 137
+      },
+      {
+        "id": "csharp/cs-performance-profiler",
+        "lines": 148
+      },
+      {
+        "id": "typescript/ts-performance-profiler",
+        "lines": 152
+      }
+    ],
+    "totalLines": 437,
+    "avgPairwiseOverlap": 0.056,
+    "pairs": [
+      {
+        "a": "angular/ng-performance-profiler",
+        "b": "csharp/cs-performance-profiler",
+        "overlap": 0.09
+      },
+      {
+        "a": "angular/ng-performance-profiler",
+        "b": "typescript/ts-performance-profiler",
+        "overlap": 0.041
+      },
+      {
+        "a": "csharp/cs-performance-profiler",
+        "b": "typescript/ts-performance-profiler",
+        "overlap": 0.036
+      }
+    ]
+  },
+  {
+    "family": "rule:conventions",
+    "members": [
+      {
+        "id": "angular/ng-conventions",
+        "lines": 143
+      },
+      {
+        "id": "csharp/cs-conventions",
+        "lines": 163
+      },
+      {
+        "id": "typescript/ts-conventions",
+        "lines": 195
+      }
+    ],
+    "totalLines": 501,
+    "avgPairwiseOverlap": 0.053,
+    "pairs": [
+      {
+        "a": "angular/ng-conventions",
+        "b": "csharp/cs-conventions",
+        "overlap": 0.036
+      },
+      {
+        "a": "angular/ng-conventions",
+        "b": "typescript/ts-conventions",
+        "overlap": 0.034
+      },
+      {
+        "a": "csharp/cs-conventions",
+        "b": "typescript/ts-conventions",
+        "overlap": 0.088
+      }
+    ]
+  },
+  {
+    "family": "rule:documentation",
+    "members": [
+      {
+        "id": "angular/ng-documentation",
+        "lines": 95
+      },
+      {
+        "id": "csharp/cs-documentation",
+        "lines": 109
+      },
+      {
+        "id": "typescript/ts-documentation",
+        "lines": 129
+      }
+    ],
+    "totalLines": 333,
+    "avgPairwiseOverlap": 0.047,
+    "pairs": [
+      {
+        "a": "angular/ng-documentation",
+        "b": "csharp/cs-documentation",
+        "overlap": 0.14
+      },
+      {
+        "a": "angular/ng-documentation",
+        "b": "typescript/ts-documentation",
+        "overlap": 0
+      },
+      {
+        "a": "csharp/cs-documentation",
+        "b": "typescript/ts-documentation",
+        "overlap": 0
+      }
+    ]
+  },
+  {
+    "family": "skill:add-package",
+    "members": [
+      {
+        "id": "angular/ng-add-package",
+        "lines": 99
+      },
+      {
+        "id": "csharp/cs-add-package",
+        "lines": 152
+      },
+      {
+        "id": "typescript/ts-add-package",
+        "lines": 112
+      }
+    ],
+    "totalLines": 363,
+    "avgPairwiseOverlap": 0.038,
+    "pairs": [
+      {
+        "a": "angular/ng-add-package",
+        "b": "csharp/cs-add-package",
+        "overlap": 0
+      },
+      {
+        "a": "angular/ng-add-package",
+        "b": "typescript/ts-add-package",
+        "overlap": 0.003
+      },
+      {
+        "a": "csharp/cs-add-package",
+        "b": "typescript/ts-add-package",
+        "overlap": 0.111
+      }
+    ]
+  },
+  {
+    "family": "rule:dependencies",
+    "members": [
+      {
+        "id": "angular/ng-dependencies",
+        "lines": 67
+      },
+      {
+        "id": "csharp/cs-dependencies",
+        "lines": 95
+      },
+      {
+        "id": "typescript/ts-dependencies",
+        "lines": 98
+      }
+    ],
+    "totalLines": 260,
+    "avgPairwiseOverlap": 0.033,
+    "pairs": [
+      {
+        "a": "angular/ng-dependencies",
+        "b": "csharp/cs-dependencies",
+        "overlap": 0.086
+      },
+      {
+        "a": "angular/ng-dependencies",
+        "b": "typescript/ts-dependencies",
+        "overlap": 0.011
+      },
+      {
+        "a": "csharp/cs-dependencies",
+        "b": "typescript/ts-dependencies",
+        "overlap": 0.003
+      }
+    ]
+  },
+  {
+    "family": "rule:logging",
+    "members": [
+      {
+        "id": "angular/ng-logging",
+        "lines": 78
+      },
+      {
+        "id": "csharp/cs-logging",
+        "lines": 115
+      },
+      {
+        "id": "typescript/ts-logging",
+        "lines": 110
+      }
+    ],
+    "totalLines": 303,
+    "avgPairwiseOverlap": 0.031,
+    "pairs": [
+      {
+        "a": "angular/ng-logging",
+        "b": "csharp/cs-logging",
+        "overlap": 0.078
+      },
+      {
+        "a": "angular/ng-logging",
+        "b": "typescript/ts-logging",
+        "overlap": 0.006
+      },
+      {
+        "a": "csharp/cs-logging",
+        "b": "typescript/ts-logging",
+        "overlap": 0.009
+      }
+    ]
+  },
+  {
+    "family": "rule:testing",
+    "members": [
+      {
+        "id": "angular/ng-testing",
+        "lines": 111
+      },
+      {
+        "id": "csharp/cs-testing",
+        "lines": 150
+      },
+      {
+        "id": "typescript/ts-testing",
+        "lines": 176
+      }
+    ],
+    "totalLines": 437,
+    "avgPairwiseOverlap": 0.026,
+    "pairs": [
+      {
+        "a": "angular/ng-testing",
+        "b": "csharp/cs-testing",
+        "overlap": 0.069
+      },
+      {
+        "a": "angular/ng-testing",
+        "b": "typescript/ts-testing",
+        "overlap": 0.002
+      },
+      {
+        "a": "csharp/cs-testing",
+        "b": "typescript/ts-testing",
+        "overlap": 0.006
+      }
+    ]
+  },
+  {
+    "family": "agent:api-compat-reviewer",
+    "members": [
+      {
+        "id": "angular/ng-api-compat-reviewer",
+        "lines": 114
+      },
+      {
+        "id": "csharp/cs-api-compat-reviewer",
+        "lines": 144
+      },
+      {
+        "id": "typescript/ts-api-compat-reviewer",
+        "lines": 173
+      }
+    ],
+    "totalLines": 431,
+    "avgPairwiseOverlap": 0.019,
+    "pairs": [
+      {
+        "a": "angular/ng-api-compat-reviewer",
+        "b": "csharp/cs-api-compat-reviewer",
+        "overlap": 0.008
+      },
+      {
+        "a": "angular/ng-api-compat-reviewer",
+        "b": "typescript/ts-api-compat-reviewer",
+        "overlap": 0.008
+      },
+      {
+        "a": "csharp/cs-api-compat-reviewer",
+        "b": "typescript/ts-api-compat-reviewer",
+        "overlap": 0.04
+      }
+    ]
+  },
+  {
+    "family": "rule:async",
+    "members": [
+      {
+        "id": "csharp/cs-async",
+        "lines": 149
+      },
+      {
+        "id": "typescript/ts-async",
+        "lines": 196
+      }
+    ],
+    "totalLines": 345,
+    "avgPairwiseOverlap": 0.005,
+    "pairs": [
+      {
+        "a": "csharp/cs-async",
+        "b": "typescript/ts-async",
+        "overlap": 0.005
+      }
+    ]
+  },
+  {
+    "family": "rule:security",
+    "members": [
+      {
+        "id": "angular/ng-security",
+        "lines": 91
+      },
+      {
+        "id": "csharp/cs-security",
+        "lines": 133
+      },
+      {
+        "id": "typescript/ts-security",
+        "lines": 159
+      }
+    ],
+    "totalLines": 383,
+    "avgPairwiseOverlap": 0,
+    "pairs": [
+      {
+        "a": "angular/ng-security",
+        "b": "csharp/cs-security",
+        "overlap": 0
+      },
+      {
+        "a": "angular/ng-security",
+        "b": "typescript/ts-security",
+        "overlap": 0
+      },
+      {
+        "a": "csharp/cs-security",
+        "b": "typescript/ts-security",
+        "overlap": 0
+      }
+    ]
+  },
+  {
+    "family": "rule:project-layout",
+    "members": [
+      {
+        "id": "csharp/cs-project-layout",
+        "lines": 168
+      },
+      {
+        "id": "typescript/ts-project-layout",
+        "lines": 179
+      }
+    ],
+    "totalLines": 347,
+    "avgPairwiseOverlap": 0,
+    "pairs": [
+      {
+        "a": "csharp/cs-project-layout",
+        "b": "typescript/ts-project-layout",
+        "overlap": 0
+      }
+    ]
+  }
+]

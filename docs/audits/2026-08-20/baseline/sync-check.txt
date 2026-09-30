@@ -1,0 +1,18 @@
+0 artifact(s) drifted from their template (0 mechanical, 0 review):
+
+
+Superseded provider formats (advisory — does not fail --check):
+  [copilot/prompt] superseded by 'copilot/skill' — VS Code documents prompt files as not read by the Agent Host; recommends agent skills.
+  [copilot/workflow] superseded by 'copilot/skill' — VS Code documents prompt files as not read by the Agent Host; recommends agent skills.
+
+Conformance findings (0 error — fails --check, 9 warning — advisory):
+  [warning] body-density — angular/ng-release: body is 107 lines (target ~90, exemplar: typescript/ts-audit-deps)
+  [warning] body-density — csharp/cs-add-package: body is 124 lines (target ~90, exemplar: typescript/ts-audit-deps)
+  [warning] body-density — react/component-testing: body is 141 lines (target ~90, exemplar: typescript/ts-audit-deps)
+  [warning] body-density — csharp/cs-document: body is 106 lines (target ~90, exemplar: typescript/ts-audit-deps)
+  [warning] body-density — csharp/cs-generate-tests: body is 108 lines (target ~90, exemplar: typescript/ts-audit-deps)
+  [warning] body-density — csharp/cs-release: body is 122 lines (target ~90, exemplar: typescript/ts-audit-deps)
+  [warning] body-density — csharp/cs-scaffold-project: body is 186 lines (target ~90, exemplar: typescript/ts-audit-deps)
+  [warning] body-density — python/py-pytest-testing: body is 123 lines (target ~90, exemplar: typescript/ts-audit-deps)
+  [warning] body-density — typescript/ts-release: body is 102 lines (target ~90, exemplar: typescript/ts-audit-deps)
+exit: 0

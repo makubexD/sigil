@@ -4,7 +4,7 @@
 import { z } from 'zod';
 import type { Artifact, ArtifactKind, Target } from '../types';
 import { getSchema } from '../schema/index';
-import { checkReferences, type RefCheck } from '../refs';
+import { checkReferences, describeRefProblem, type RefCheck } from '../refs';
 import type { ValidateCtx } from './types';
 
 /**
@@ -34,18 +34,9 @@ function composeSchema(kind: string, knownTargets: Target[] | undefined) {
 
 /** Renders one RefCheck in validate's established per-field wording. */
 function formatRefError(check: RefCheck): string {
-  if (check.problem === 'dangling') {
-    return `Dangling ${check.field} reference: '${check.ref}' does not exist in the catalog`;
-  }
-  const validityNote =
-    check.field === 'extends'
-      ? 'only rules can be extended'
-      : check.field === 'uses.rules'
-        ? 'only rules are valid here'
-        : check.field === 'uses.agents'
-          ? 'only agents are valid here'
-          : 'only kind: template artifacts are valid here';
-  return `Invalid ${check.field}: '${check.ref}' has kind '${check.actualKind}' — ${validityNote}`;
+  const prefix =
+    check.problem === 'dangling' ? `Dangling ${check.field} reference` : `Invalid ${check.field}`;
+  return `${prefix}: '${check.ref}' ${describeRefProblem(check)}`;
 }
 
 /** Pushes one schema-parse error per issue found. */

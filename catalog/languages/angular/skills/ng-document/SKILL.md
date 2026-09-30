@@ -2,7 +2,7 @@
 id: angular/ng-document
 kind: skill
 title: "Document (Angular)"
-description: "Generate or update TSDoc and module-level documentation following the project's documented documentation style"
+description: "Generate or update TSDoc and module-level documentation for Angular code, following the project's documented documentation style"
 name: ng-document
 language: angular
 allowedTools:

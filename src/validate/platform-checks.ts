@@ -1,9 +1,10 @@
 /**
  * §5: each `platforms:` entry must be a registered target that supports this artifact's kind.
  */
-import type { Artifact, ArtifactKind } from '../types';
+import type { Artifact } from '../types';
 import type { ValidateCtx } from './types';
 import { KIND_REGISTRY } from '../kinds';
+import { supportsKind } from '../targets/capabilities';
 
 interface PlatformNameSets {
   readonly allTargetNames: Set<string>;
@@ -38,9 +39,7 @@ export function checkPlatforms(ctx: ValidateCtx, artifact: Artifact): void {
   const sets: PlatformNameSets = {
     allTargetNames: new Set(ctx.knownTargets.map(t => t.name)),
     kindSupporting: new Set(
-      ctx.knownTargets
-        .filter(t => !t.supportedKinds || t.supportedKinds.includes(artifact.kind as ArtifactKind))
-        .map(t => t.name),
+      ctx.knownTargets.filter(t => supportsKind(t, artifact.kind)).map(t => t.name),
     ),
   };
   for (const p of platforms) {
@@ -52,7 +51,7 @@ export function checkPlatforms(ctx: ValidateCtx, artifact: Artifact): void {
  * §8 (catalog-wide, warning): a kind whose KIND_REGISTRY.ownedBy names exactly one target may
  * legitimately model that target's vocabulary directly in its neutral schema (there is nothing
  * to keep neutral yet — see kinds.ts). The moment a SECOND registered target declares
- * `supportedKinds` including that kind, the assumption breaks: the kind's shape needs to move
+ * support for that kind (its capability table), the assumption breaks: the kind's shape needs to move
  * behind Target.frontmatterExtensions namespaces before two providers' vocabularies collide in
  * one neutral schema. This is the tripwire that catches that moment instead of leaving it to be
  * discovered as a bug in a third provider's adapter.
@@ -65,7 +64,7 @@ export function checkOwnedByKindConflicts(ctx: ValidateCtx): void {
   for (const descriptor of Object.values(KIND_REGISTRY)) {
     if (descriptor.ownedBy.length === 0) continue;
     const supporters = ctx.knownTargets
-      .filter(t => !t.supportedKinds || t.supportedKinds.includes(descriptor.kind))
+      .filter(t => supportsKind(t, descriptor.kind))
       .map(t => t.name);
     const uninvited = supporters.filter(name => !descriptor.ownedBy.includes(name));
     if (uninvited.length > 0) {

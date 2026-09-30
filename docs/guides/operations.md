@@ -67,16 +67,16 @@ sigil build --target claude
 sigil build --target copilot
 
 # Inspect generated output
-ls dist/claude/plugins/dotnet-pack/skills/cs-generate-tests/
-# SKILL.md  references/
+ls dist/claude/plugins/dotnet-tooling/skills/cs-generate-tests/
+# SKILL.md
 
 # Verify rule bodies are inlined in the plugin SKILL.md
-grep "Applied Rules" dist/claude/plugins/dotnet-pack/skills/cs-generate-tests/SKILL.md
+grep "Applied Rules" dist/claude/plugins/dotnet-tooling/skills/cs-generate-tests/SKILL.md
 # ## Applied Rules
 
 # Verify plugin.json carries the package version
-cat dist/claude/plugins/dotnet-pack/.claude-plugin/plugin.json
-# { "name": "dotnet-pack", "version": "0.1.0", … }
+cat dist/claude/plugins/dotnet-tooling/.claude-plugin/plugin.json
+# { "name": "dotnet-tooling", "version": "0.1.0", … }
 
 # Regenerate JSON Schemas from zod (runs automatically as part of npm run build)
 node dist-cli/schema/emit.js

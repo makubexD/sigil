@@ -5,7 +5,8 @@
  *   project/local → .vscode/mcp.json  (workspace scope — no distinct local; local aliases project)
  *   user          → mcp.json in VS Code user-profile dir (resolved by CLI as 'vscode-user' root)
  *
- * hook/settings are Claude Code-only; Copilot target declares only 'mcp' in supportedKinds.
+ * hook/settings are Claude Code-only; Copilot's capability table (./capabilities.ts) marks only
+ * 'mcp' of the config kinds as supported.
  */
 import type { ConfigScope, ConfigRoot } from '../../types';
 
@@ -28,6 +29,6 @@ export function resolveCopilotConfigDestination(
         return { file: '.vscode/mcp.json', root: 'project' };
     }
   }
-  // Unreachable for other kinds (caller guards on supportedKinds)
+  // Unreachable for other kinds (callers guard on the capability table via supportsKind)
   throw new Error(`resolveCopilotConfigDestination: unsupported kind '${kind}'`);
 }

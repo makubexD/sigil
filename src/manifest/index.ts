@@ -25,6 +25,7 @@ export { manifestPath, loadManifest, saveManifest } from './io';
 export { sha256, hashFiles } from './hash';
 export { upsertEntries } from './mutate';
 export { upsertConfigEntry } from './mutate-config';
+export { recordedOp, sameDestination, previousOpFor } from './config-fragments';
 export { removeEntries } from './mutate-remove';
 export { computeStatus, recordedHashes } from './status';
 export type { CurrentTemplateOf } from './status';

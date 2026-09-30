@@ -7,7 +7,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { detectConfigDrift } from '../config-merge';
+import { classifyConfigDrift } from '../config-merge';
 import type { ConfigMergeOp, MergeStrategy } from '../types';
 import type { ManifestConfigMerge, ManifestEntry } from './types';
 
@@ -29,6 +29,18 @@ function toConfigMergeOp(cf: ManifestConfigMerge): ConfigMergeOp {
   };
 }
 
+/**
+ * Labels a non-intact drift class for display. `missing` and `modified` used to be
+ * indistinguishable (both just "drifted") — see F14 (docs/decisions/catalog-usage-audit-2026-08-21.md):
+ * that ambiguity is what let `sigil update` silently decline to repair a fragment that was simply
+ * gone, since it read identically to a real user edit that needed `--force` to safely overwrite.
+ */
+function driftLabel(file: string, drift: 'missing' | 'modified'): string {
+  return drift === 'missing'
+    ? `${file} (fragment missing — restorable via 'sigil update')`
+    : `${file} (values changed — needs 'sigil update --force')`;
+}
+
 /** Checks one config-fragment record against its live on-disk JSON file. */
 function checkOneConfigFile(
   cf: ManifestConfigMerge,
@@ -46,7 +58,8 @@ function checkOneConfigFile(
     driftedFiles.push(cf.file); // unreadable JSON counts as drift
     return;
   }
-  if (detectConfigDrift(live, toConfigMergeOp(cf))) driftedFiles.push(cf.file);
+  const drift = classifyConfigDrift(live, toConfigMergeOp(cf));
+  if (drift !== 'intact') driftedFiles.push(driftLabel(cf.file, drift));
 }
 
 /** Checks every config-fragment record on `entry` against its live on-disk JSON file. */

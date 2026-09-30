@@ -47,7 +47,7 @@ const PACKS_CURATED = [
     displayName: 'React Starter',
     description: 'React development setup',
     artifacts: [
-      'react/component-testing',
+      'react/react-generate-tests',
       'shared/filesystem',
       'shared/protect-config',
       'shared/allow-dev-tools',

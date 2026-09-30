@@ -3,12 +3,12 @@ id: angular/ng-architecture-reviewer
 kind: agent
 title: Architecture Reviewer (Angular)
 description: >-
-  Use to review the structural and design-level health of a codebase —
-  module/standalone boundaries, feature coupling, layering, dependency
-  direction, circular imports/DI, and SOLID adherence at package scale.
-  Read-only; returns a prioritized findings report. Analyzes the module graph
-  and design boundaries. Use proactively when adding new feature areas,
-  refactoring module boundaries, or when the codebase feels tangled.
+  Use to review the structural and design-level health of an Angular codebase — module/standalone
+  boundaries, feature coupling, layering, dependency direction, circular imports/DI, and SOLID
+  adherence at package scale. Makes no edits (Bash is read-only by instruction, not sandboxed);
+  returns a prioritized findings report. Analyzes the module graph and design boundaries. Use
+  proactively when adding new Angular feature areas, refactoring module boundaries, or when the
+  codebase feels tangled.
 name: ng-architecture-reviewer
 language: angular
 tools:

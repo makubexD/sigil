@@ -1,0 +1,199 @@
+{
+  "typescript": {
+    "ruleCount": 11,
+    "agentCount": 7,
+    "skillCount": 7,
+    "editAnySourceFileTotalLines": 1644,
+    "editTriggerBreakdown": [
+      {
+        "id": "typescript/ts-async",
+        "effectiveLines": 196
+      },
+      {
+        "id": "typescript/ts-code-quality",
+        "effectiveLines": 111
+      },
+      {
+        "id": "typescript/ts-conventions",
+        "effectiveLines": 195
+      },
+      {
+        "id": "typescript/ts-dependencies",
+        "effectiveLines": 98
+      },
+      {
+        "id": "typescript/ts-documentation",
+        "effectiveLines": 129
+      },
+      {
+        "id": "typescript/ts-git",
+        "effectiveLines": 141
+      },
+      {
+        "id": "typescript/ts-logging",
+        "effectiveLines": 110
+      },
+      {
+        "id": "typescript/ts-npm",
+        "effectiveLines": 150
+      },
+      {
+        "id": "typescript/ts-project-layout",
+        "effectiveLines": 179
+      },
+      {
+        "id": "typescript/ts-security",
+        "effectiveLines": 159
+      },
+      {
+        "id": "typescript/ts-testing",
+        "effectiveLines": 176
+      }
+    ],
+    "skillListingTotalChars": 3290
+  },
+  "csharp": {
+    "ruleCount": 11,
+    "agentCount": 7,
+    "skillCount": 7,
+    "editAnySourceFileTotalLines": 1515,
+    "editTriggerBreakdown": [
+      {
+        "id": "csharp/cs-async",
+        "effectiveLines": 149
+      },
+      {
+        "id": "csharp/cs-code-quality",
+        "effectiveLines": 100
+      },
+      {
+        "id": "csharp/cs-conventions",
+        "effectiveLines": 188
+      },
+      {
+        "id": "csharp/cs-dependencies",
+        "effectiveLines": 95
+      },
+      {
+        "id": "csharp/cs-documentation",
+        "effectiveLines": 109
+      },
+      {
+        "id": "csharp/cs-git",
+        "effectiveLines": 137
+      },
+      {
+        "id": "csharp/cs-logging",
+        "effectiveLines": 115
+      },
+      {
+        "id": "csharp/cs-nuget",
+        "effectiveLines": 171
+      },
+      {
+        "id": "csharp/cs-project-layout",
+        "effectiveLines": 168
+      },
+      {
+        "id": "csharp/cs-security",
+        "effectiveLines": 133
+      },
+      {
+        "id": "csharp/cs-testing",
+        "effectiveLines": 150
+      }
+    ],
+    "skillListingTotalChars": 2934
+  },
+  "angular": {
+    "ruleCount": 14,
+    "agentCount": 8,
+    "skillCount": 7,
+    "editAnySourceFileTotalLines": 1402,
+    "editTriggerBreakdown": [
+      {
+        "id": "angular/ng-async",
+        "effectiveLines": 121
+      },
+      {
+        "id": "angular/ng-code-quality",
+        "effectiveLines": 84
+      },
+      {
+        "id": "angular/ng-components",
+        "effectiveLines": 101
+      },
+      {
+        "id": "angular/ng-conventions",
+        "effectiveLines": 168
+      },
+      {
+        "id": "angular/ng-dependencies",
+        "effectiveLines": 67
+      },
+      {
+        "id": "angular/ng-documentation",
+        "effectiveLines": 95
+      },
+      {
+        "id": "angular/ng-git",
+        "effectiveLines": 127
+      },
+      {
+        "id": "angular/ng-logging",
+        "effectiveLines": 78
+      },
+      {
+        "id": "angular/ng-project-layout",
+        "effectiveLines": 128
+      },
+      {
+        "id": "angular/ng-rxjs",
+        "effectiveLines": 79
+      },
+      {
+        "id": "angular/ng-security",
+        "effectiveLines": 91
+      },
+      {
+        "id": "angular/ng-signals",
+        "effectiveLines": 76
+      },
+      {
+        "id": "angular/ng-templates",
+        "effectiveLines": 76
+      },
+      {
+        "id": "angular/ng-testing",
+        "effectiveLines": 111
+      }
+    ],
+    "skillListingTotalChars": 2944
+  },
+  "python": {
+    "ruleCount": 1,
+    "agentCount": 1,
+    "skillCount": 1,
+    "editAnySourceFileTotalLines": 54,
+    "editTriggerBreakdown": [
+      {
+        "id": "python/py-style",
+        "effectiveLines": 54
+      }
+    ],
+    "skillListingTotalChars": 390
+  },
+  "react": {
+    "ruleCount": 1,
+    "agentCount": 1,
+    "skillCount": 1,
+    "editAnySourceFileTotalLines": 58,
+    "editTriggerBreakdown": [
+      {
+        "id": "react/react-style",
+        "effectiveLines": 58
+      }
+    ],
+    "skillListingTotalChars": 449
+  }
+}

@@ -1,0 +1,22 @@
+
+> sigil@0.1.0 check
+> npm run lint && npm run format:check && npm run check-doc-comments && npm test
+
+
+> sigil@0.1.0 lint
+> eslint src test
+
+
+C:\WorkspaceMaku\MakuAgentCatalogAI\src\authoring\check-source-conventions.ts
+  117:1   error  Function 'requireTwoPartId' has too many lines (22). Maximum allowed is 20  max-lines-per-function
+  121:26  error  No magic number: 3                                                          no-magic-numbers
+
+C:\WorkspaceMaku\MakuAgentCatalogAI\src\commands\sync\conformance\rules\catalog-symmetry.ts
+  30:1   error  Function 'detect' has too many lines (40). Maximum allowed is 20  max-lines-per-function
+  30:1   error  Function 'detect' has a complexity of 15. Maximum allowed is 10   complexity
+  41:30  error  No magic number: 2                                                no-magic-numbers
+  59:28  error  No magic number: 2                                                no-magic-numbers
+
+✖ 6 problems (6 errors, 0 warnings)
+
+exit: 1

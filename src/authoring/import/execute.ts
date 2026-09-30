@@ -12,6 +12,7 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 import { checkSourceArtifact } from '../check-source';
+import { scanContent } from '../../trust/scan';
 import { renderArtifactFile } from './plan';
 import type { ImportItem } from './plan';
 import type { LoadedCatalog, Target } from '../../types';
@@ -55,6 +56,22 @@ export interface ExecuteOptions {
   overwrite?: boolean;
 }
 
+/**
+ * Trust-scans rendered import content before it ever reaches disk. `sigil import` brings in
+ * externally-authored artifacts — the one real boundary where untrusted content enters the
+ * catalog — yet until the 2026-08-23 round-4 audit (F30) the trust scanner's only production
+ * call site was `sigil check --trust`, a separate, opt-in command run against files already
+ * inside the catalog. An imported artifact could carry a secret or an injection payload and
+ * land in `catalog/` with zero scan. Error-level findings block the write unconditionally (no
+ * `--trust`/`--strict` opt-in here, unlike `check`) — import is exactly the boundary the scanner
+ * exists for. Warn-level findings are reported but do not block, matching `check`'s own default.
+ */
+function scanImportContent(content: string, destPath: string): string[] {
+  const scanResult = scanContent(destPath, content);
+  if (scanResult.level !== 'error') return [];
+  return scanResult.findings.map(f => `[trust] ${f.rule} (line ${f.line}): ${f.snippet}`);
+}
+
 /** Renders content and validates it against the catalog; throws-free — returns violations. */
 function renderAndValidate(
   item: ImportItem,
@@ -64,7 +81,8 @@ function renderAndValidate(
   const content = renderArtifactFile(item.frontmatter, item.body);
   const artifact = makeArtifactFromContent(content, item.destPath);
   const violations = checkSourceArtifact(artifact, catalog, targets);
-  return { content, violations: violations.map(v => v.problem) };
+  const trustViolations = scanImportContent(content, item.destPath);
+  return { content, violations: [...violations.map(v => v.problem), ...trustViolations] };
 }
 
 /** Writes rendered content to disk, creating parent directories as needed. */

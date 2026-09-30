@@ -5,6 +5,7 @@
 import type { ResolvedArtifact, LoadedCatalog, Target } from '../types';
 import { artifactTargetsPlatform } from '../select';
 import { hasUsesClosure } from '../kinds';
+import { supportsKind } from '../targets/capabilities';
 
 export interface ArtifactDetail {
   id: string;
@@ -68,7 +69,7 @@ function computeReverseDependents(artifactId: string, rawCatalog: LoadedCatalog)
 function computeTargetPlatforms(artifact: ResolvedArtifact, targets: Target[]): string[] {
   return targets
     .filter(t => {
-      if (t.supportedKinds && !t.supportedKinds.includes(artifact.kind as never)) return false;
+      if (!supportsKind(t, artifact.kind)) return false;
       return artifactTargetsPlatform(artifact, t.name);
     })
     .map(t => t.name);

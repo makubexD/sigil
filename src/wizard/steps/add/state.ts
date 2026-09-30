@@ -6,6 +6,7 @@
  */
 import type { ResolvedCatalog, Pack, ArtifactKind, Target } from '../../../types';
 import type { ArtifactInstallState } from '../../../install-state';
+import { supportsKind } from '../../../targets/capabilities';
 
 export type ScopeChoice = 'all' | 'pack' | 'browse';
 
@@ -46,8 +47,7 @@ export function chosenTarget(s: AddWizardState): Target | undefined {
 /** Catalog artifacts supported by the chosen target (or the full catalog before one is chosen). */
 export function visibleArtifacts(s: AddWizardState) {
   const ct = chosenTarget(s);
-  const kindSet = new Set<string>(ct?.supportedKinds ?? []);
-  return kindSet.size === 0
-    ? s.ctx.catalog.artifacts
-    : s.ctx.catalog.artifacts.filter(a => kindSet.has(a.kind));
+  return ct
+    ? s.ctx.catalog.artifacts.filter(a => supportsKind(ct, a.kind))
+    : s.ctx.catalog.artifacts;
 }

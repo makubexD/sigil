@@ -9,11 +9,15 @@
  *   primitives — deepEqual, pruneEmpty, canonicalize, serialize, deepMerge
  *   apply      — applyMerge (merge fragment into existing object)
  *   reverse    — reverseMerge (undo sigil's contribution)
- *   drift      — detectConfigDrift (detect whether sigil's keys were changed)
+ *   replace    — replaceMerge (reverse a previously installed fragment, then apply the new one)
+ *   drift      — detectConfigDrift (detect whether sigil's keys were changed), classifyConfigDrift
+ *               (missing vs modified — see drift.ts's header for why the distinction matters)
  */
 
-export type { ConfigMergeOp, MergeStrategy } from './primitives';
+export type { ConfigMergeOp, MergeStrategy, ConfigRoot } from './primitives';
 export { deepEqual, pruneEmpty, canonicalize, serialize } from './primitives';
 export { applyMerge } from './apply';
 export { reverseMerge } from './reverse';
-export { detectConfigDrift } from './drift';
+export { replaceMerge } from './replace';
+export { detectConfigDrift, classifyConfigDrift } from './drift';
+export type { DriftClass } from './drift';

@@ -7,22 +7,13 @@
  */
 import path from 'path';
 import type { ArtifactKind } from '../types';
-import { checkReferences, type RefCheck } from '../refs';
+import { checkReferences, describeRefProblem, type RefCheck } from '../refs';
 import { normPath, SKILL_FILENAME, ID_PART_COUNT } from '../paths';
 import type { CheckCtx } from './check-source-ctx';
 
-/** Renders one RefCheck in check-source.ts's established per-field wording. */
+/** Renders one RefCheck in check-source.ts's established wording. */
 function formatRefViolation(check: RefCheck): string {
-  if (check.problem === 'dangling') {
-    return `${check.field}: '${check.ref}' does not exist in the catalog`;
-  }
-  const validityNote =
-    check.field === 'extends'
-      ? 'only rules can be extended'
-      : check.field === 'uses.rules'
-        ? 'only rules valid here'
-        : 'only agents valid here';
-  return `${check.field}: '${check.ref}' has kind '${check.actualKind}' — ${validityNote}`;
+  return `${check.field}: '${check.ref}' ${describeRefProblem(check)}`;
 }
 
 /** Returns true when `s` is kebab-case (lowercase letters, digits, hyphens). */
@@ -107,9 +98,31 @@ function checkLanguageConsistency(
   }
 }
 
-/** Validates the `<prefix>/<name>` id shape; returns the parts or pushes a violation and null. */
+const TEMPLATE_ID_PART_COUNT = 3;
+
+/**
+ * `kind: template` gets a one-off exception: `shared/templates/<name>` (3 parts, fixed middle
+ * segment) — the `templates/` sub-namespace is the documented layout (CLAUDE.md's "Templates +
+ * emit specs" section, catalog/shared/templates/*.template.md) and predates this checker.
+ */
+function requireTemplateId(ctx: CheckCtx): [string, string] | null {
+  const { artifact, v } = ctx;
+  const parts = artifact.id.split('/');
+  if (parts.length === TEMPLATE_ID_PART_COUNT && parts[0] && parts[1] === 'templates' && parts[2]) {
+    return [parts[0], parts[2]];
+  }
+  v.push({
+    file: artifact.filePath,
+    problem: `template id '${artifact.id}' must follow the convention '<language>/templates/<name>' or 'shared/templates/<name>'`,
+  });
+  return null;
+}
+
+/** Validates the id shape; returns [prefix, name] or pushes a violation and null. */
 function requireTwoPartId(ctx: CheckCtx): [string, string] | null {
   const { artifact, v } = ctx;
+  if (artifact.kind === 'template') return requireTemplateId(ctx);
+
   const parts = artifact.id.split('/');
   if (parts.length === ID_PART_COUNT && parts[0] && parts[1]) {
     return [parts[0], parts[1]];

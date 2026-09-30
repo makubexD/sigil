@@ -172,13 +172,16 @@ project-layout · one ecosystem rule (nuget/npm/packaging, language-specific).
 
 ### Shared (stack-agnostic) skills
 
-Each carries one reference file per stack (Node/TypeScript, Python, Go, Rust, .NET) and pulls in
-its path-scoped rule and auditor agent through `uses:`.
+`shared/cli` and `shared/wizard` each carry one reference file per stack (Node/TypeScript,
+Python, Go, Rust, .NET) and pull in their path-scoped rule and auditor agent through `uses:`.
+`shared/feature` is a user-invoked conductor (`/feature <what to build>`) over
+[agent-skills](https://github.com/addyosmani/agent-skills), which you install separately.
 
-| ID              | Title                                          | Pulls in                                       |
-| --------------- | ---------------------------------------------- | ---------------------------------------------- |
-| `shared/cli`    | CLI Design (Small-Language Grammar)            | `shared/cli-rules`, `shared/cli-auditor`       |
-| `shared/wizard` | Setup Wizard Design (Front End over CLI Flags) | `shared/wizard-rules`, `shared/wizard-auditor` |
+| ID               | Title                                             | Pulls in                                       |
+| ---------------- | ------------------------------------------------- | ---------------------------------------------- |
+| `shared/cli`     | CLI Design (Small-Language Grammar)               | `shared/cli-rules`, `shared/cli-auditor`       |
+| `shared/wizard`  | Setup Wizard Design (Front End over CLI Flags)    | `shared/wizard-rules`, `shared/wizard-auditor` |
+| `shared/feature` | Feature Conductor (Gated Spec-Driven Development) | — (requires agent-skills)                      |
 
 ### Shared agents and rules
 

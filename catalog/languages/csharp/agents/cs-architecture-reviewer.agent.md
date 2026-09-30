@@ -46,7 +46,7 @@ Discover the solution root from `.sln` files or `Directory.Build.props`.
 ## 2. Discover architecture intent
 
 - Read `CLAUDE.md` — look for an "Architecture" section, layer diagram, or subpackage descriptions.
-- Read `.claude/` rules if present.
+- Read any rules files present.
 - Scan `Directory.Build.props` and each `.csproj` for TFMs, analyzer settings, and `<ProjectReference>` declarations.
 - Look for architecture decision records (`docs/adr/`, `decisions/`).
 - Note stated layering (e.g. `Core` → `Application` → `Infrastructure` → `API`); violations of declared boundaries are Major findings.

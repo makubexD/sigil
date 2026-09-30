@@ -14,6 +14,7 @@ tags:
   - conventions
   - dotnet
   - style
+appliesToRationale: Scoped to C# source and project files because these conventions span both language-level style (naming, nullability, records) and project-level settings (file-scoped namespaces are declared per-project).
 ---
 
 ## Nullable Reference Types (NRT), Not `object` or `dynamic`

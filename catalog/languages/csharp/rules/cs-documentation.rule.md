@@ -9,6 +9,7 @@ appliesTo:
 tags:
   - csharp
   - documentation
+appliesToRationale: Scoped to C# source because XML doc comments are authored on public members there; project and config files have no doc-comment surface.
 ---
 
 ## XML Doc Comment Style

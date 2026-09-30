@@ -11,6 +11,7 @@ appliesTo:
 tags:
   - csharp
   - testing
+appliesToRationale: Scoped to test files and the tests/ tree because these xUnit conventions apply only to test code, not production source.
 ---
 
 ## AAA Pattern

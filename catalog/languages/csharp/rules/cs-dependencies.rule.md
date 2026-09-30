@@ -10,6 +10,7 @@ appliesTo:
 tags:
   - csharp
   - dependencies
+appliesToRationale: Scoped to project and Central Package Management files because that is where dependencies are declared and pinned — the concern doesn't exist in .cs source.
 ---
 
 ## Prefer the BCL Before Adding a NuGet Package

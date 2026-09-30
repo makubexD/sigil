@@ -23,7 +23,7 @@ tags:
   - csharp
   - scaffold
   - project
-whenToUse: Use when adding a new project to an existing .NET solution. Pass the project name and optional type. Never overwrites existing files; confirms before editing the .sln.
+whenToUse: "Run via `/cs-scaffold-project <name>` when adding a new project to an existing .NET solution — e.g. \"scaffold a new library project\", \"add a Reporting project to the solution\". Pass the project name and optional `--type`. Never overwrites existing files; confirms before editing the .sln."
 ---
 
 # Scaffold Project

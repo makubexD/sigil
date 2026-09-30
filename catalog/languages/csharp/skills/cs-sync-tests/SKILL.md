@@ -22,7 +22,7 @@ tags:
   - csharp
   - sync
   - tests
-whenToUse: Use after multiple source files have changed and the test suite has drifted — missing tests for new public members, stale tests for renamed symbols, orphaned tests for deleted files. Run with --scope=all for a full audit; default --scope=changed targets only files modified in the current working tree.
+whenToUse: "Run via `/cs-sync-tests` after multiple source files have changed and the test suite has drifted — e.g. \"sync my tests\", \"find missing and orphaned tests\". Default scope targets only files changed in the working tree; pass `--scope=all` for a full-solution audit. Complements cs-generate-tests, which targets one file at a time."
 ---
 
 # Sync Tests
@@ -64,7 +64,7 @@ For each in-scope source file:
 
 1. Derive the expected test file path using the mirroring convention.
 2. **Test file does not exist:** create it. Follow the project's documented conventions — discover
-   from `CLAUDE.md`, `.claude/` rules, or by reading existing tests:
+   from `CLAUDE.md`, any rules files present, or by reading existing tests:
    - AAA with `// Arrange` / `// Act` / `// Assert`.
    - One behaviour per test; `Method_Should_Behavior_When_Condition` names.
    - Moq for I/O boundaries; test pure logic directly.

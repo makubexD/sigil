@@ -22,7 +22,7 @@ tags:
   - csharp
   - document
   - documentation
-whenToUse: Use when public members are missing XML doc comments, or after adding new public API surface. Pass a target file; omit to scan for undocumented public symbols across the source.
+whenToUse: "Run via `/cs-document [file]` when public members are missing XML doc comments — e.g. \"document this class\", \"find undocumented public API\". Omit the argument to scan the whole source for undocumented symbols."
 ---
 
 # Document
@@ -44,7 +44,7 @@ whenToUse: Use when public members are missing XML doc comments, or after adding
 ## Step 2 — Discover documentation style
 
 Do **not** assume a style. Discover it:
-- Read `CLAUDE.md` and `.claude/` rules if present.
+- Read `CLAUDE.md` and any rules files present.
 - Check `Directory.Build.props` for `<GenerateDocumentationFile>true</GenerateDocumentationFile>`.
 - Check `.editorconfig` for `dotnet_diagnostic.CS1591.severity` (missing XML comment).
 - Read 2–3 existing doc comments in the project to identify the in-use style and level of detail.

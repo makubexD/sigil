@@ -9,6 +9,7 @@ appliesTo:
 tags:
   - csharp
   - async
+appliesToRationale: Scoped to C# source because async/await correctness only applies to compiled C# code — there is no equivalent concern in config or project files.
 ---
 
 ## Never Block on Async Code (Sync-over-Async)

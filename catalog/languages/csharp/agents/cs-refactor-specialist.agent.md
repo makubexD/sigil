@@ -55,7 +55,7 @@ If the baseline has failures, **stop and report** — do not refactor a codebase
 
 Also run `dotnet build -warnaserror` to record baseline warning count.
 
-Discover conventions (check `CLAUDE.md`, `.claude/` rules if present, `.editorconfig`, infer from existing code). Every new line you write must follow them.
+Discover conventions (check `CLAUDE.md`, any rules files present, `.editorconfig`, infer from existing code). Every new line you write must follow them.
 
 ### 2. Identify and plan the refactor
 

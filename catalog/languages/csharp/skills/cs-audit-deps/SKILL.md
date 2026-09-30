@@ -22,7 +22,7 @@ tags:
   - audit
   - dependencies
   - security
-whenToUse: Use before releases, when adding new dependencies, or periodically as a maintenance check. Produces a read-only report; no dependency changes are made. Complements cs-security-auditor (which handles code-level vulnerabilities).
+whenToUse: "Run via `/cs-audit-deps` before a release or as a periodic maintenance check — e.g. \"audit my NuGet dependencies\", \"check for known CVEs in my packages\". Produces a read-only report; no dependency changes are made. Complements cs-security-auditor, which handles code-level vulnerabilities rather than dependency CVEs."
 ---
 
 # Audit NuGet Dependencies

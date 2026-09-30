@@ -9,6 +9,7 @@ appliesTo:
 tags:
   - csharp
   - logging
+appliesToRationale: Scoped to C# source because ILogger calls only occur in application code; project and config files never log.
 ---
 
 ## Use `ILogger<T>`, Not `Console.WriteLine`

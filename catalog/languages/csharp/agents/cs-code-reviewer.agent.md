@@ -48,7 +48,7 @@ If the repository is not a git repo, review all `.cs` and `.csproj` files in the
 
 Do **not** assume conventions. Discover them at runtime:
 - Read root `CLAUDE.md` and any `CLAUDE.md` files in subdirectories you visit.
-- Read any `.md` files under `.claude/` (rules, guidelines) — if the directory exists.
+- Read any documented rules or guidelines present in the project.
 - Read `.editorconfig`, `Directory.Build.props`, `Directory.Packages.props`, `.csproj` files.
 - Check style configs: `<Nullable>`, `<TreatWarningsAsErrors>`, `<AnalysisLevel>`, `<AnalysisMode>`.
 - Infer from neighboring code patterns if no documentation exists.

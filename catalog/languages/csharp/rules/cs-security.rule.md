@@ -10,6 +10,7 @@ severity: required
 tags:
   - csharp
   - security
+appliesToRationale: Scoped to C# source because every threat surface this rule covers — secrets, injection, deserialization, randomness — is exercised in application code, not project or config files.
 ---
 
 ## Secrets and Credentials

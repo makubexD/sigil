@@ -11,6 +11,7 @@ appliesTo:
 tags:
   - csharp
   - nuget
+appliesToRationale: Scoped to project, MSBuild props, and nuget.config files because NuGet hygiene — CPM, lock files, source mapping, signing — is entirely a package-management concern with no equivalent in .cs source.
 ---
 
 ## Central Package Management (CPM)

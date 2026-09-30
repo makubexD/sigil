@@ -12,6 +12,7 @@ tags:
   - csharp
   - code
   - quality
+appliesToRationale: Scoped to C# source because these structural and SOLID principles govern class/method design, which only exists in .cs files.
 ---
 
 ## SEARCH FIRST Protocol

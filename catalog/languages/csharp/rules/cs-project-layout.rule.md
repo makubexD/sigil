@@ -14,6 +14,7 @@ tags:
   - csharp
   - project
   - layout
+appliesToRationale: Scoped to solution, project, MSBuild, and editorconfig files because solution structure and the analyzer control plane are configured there, not in .cs source.
 ---
 
 ## Solution Structure

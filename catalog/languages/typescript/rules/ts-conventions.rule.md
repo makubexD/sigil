@@ -16,6 +16,7 @@ severity: recommended
 tags:
   - typescript
   - conventions
+appliesToRationale: Covers every TypeScript module extension (including explicit ESM .mts and CJS .cts) since naming, typing, and control-flow conventions apply regardless of module system.
 ---
 
 ## `unknown` over `any`

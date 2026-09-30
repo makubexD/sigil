@@ -12,6 +12,7 @@ extends: []
 tags:
   - typescript
   - logging
+appliesToRationale: Structured-logger and level-discipline guidance applies to TypeScript source where logging calls are written — not relevant to config or non-code files.
 ---
 
 ## Use a Structured Logger

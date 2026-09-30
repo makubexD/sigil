@@ -13,6 +13,7 @@ extends: []
 tags:
   - typescript
   - npm
+appliesToRationale: Scoped to npm's own manifest, lockfile, and registry-config files — the exact three files supply-chain hygiene (lockfile integrity, token hygiene) concerns.
 ---
 
 ## Lockfile Integrity

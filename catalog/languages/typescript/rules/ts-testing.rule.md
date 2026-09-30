@@ -14,6 +14,7 @@ extends: []
 tags:
   - typescript
   - testing
+appliesToRationale: Scoped to test files only (both .test. and .spec. naming, both .ts and .tsx) — testing conventions like AAA and mocking do not apply to non-test source.
 ---
 
 > Example shown with Vitest syntax (`vi.fn`, `vi.mock`, `it.each`) — the structural conventions

@@ -15,6 +15,7 @@ tags:
   - typescript
   - project
   - layout
+appliesToRationale: Scoped to the project's structural configuration files — tsconfig strictness, package.json exports map, lint config, and workspace file — not source files, since layout is a config-level concern.
 ---
 
 ## One Concern Per File

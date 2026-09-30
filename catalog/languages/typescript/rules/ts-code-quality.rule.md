@@ -14,6 +14,7 @@ tags:
   - typescript
   - code
   - quality
+appliesToRationale: Structural size limits and the search-first protocol apply to TypeScript source; scoped narrower than the shared/clean-code base it extends, which has no language to restrict to.
 ---
 
 ## SEARCH FIRST Protocol

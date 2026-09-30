@@ -20,42 +20,31 @@ tags:
   - typescript
   - release
   - publish
-whenToUse: Run manually before cutting a release tag. Pass the target version number as the argument. Does not tag, push, or publish — it produces a checklist and changelog draft for human review.
+whenToUse: "Run manually via `/ts-release <version>` before cutting a release tag — e.g. \"prepare a release\", \"cut version 2.1.0\", \"generate a release checklist\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review. Complements ts-api-compat-reviewer, which determines the correct SemVer bump from the public API diff."
 ---
 
 # Release Preparation
 
 **Target version:** $ARGUMENTS
 
-> This skill is **user-invoked only** (`disable-model-invocation: true`). It prepares the release
-> but does **not** create a tag, push to remote, or publish to npm. All final actions require human
-> confirmation.
+> User-invoked only — does not tag, push, or publish. All final actions require human confirmation.
 
 ## Step 1 — Verify quality gates
 
-Check `package.json` scripts for a combined gate (`check`/`validate`/`ci`/`prepublishOnly`) and run
-that. Only if none exists, fall back to running the type checker, linter, and `scripts.test`
-separately — discover the test command from `package.json`, never hardcode a specific runner.
+Discover the combined gate from `package.json` scripts (`check`/`validate`/`ci`/`prepublishOnly`) and run it; fall back to the type checker, linter, and `scripts.test` separately only if none exists. Run the formatter check too if one is configured (`.prettierrc*` / `biome.json`); otherwise note "formatter not configured".
 
-**Formatter (optional):** check for `.prettierrc*` / `biome.json`. If present, run
-`prettier --check .` or `biome check .`. If absent, skip and note "formatter not configured".
-
-**If any gate fails: stop and report.** Do not proceed — a release with failing gates is blocked.
+**If any gate fails: stop and report.** A release with failing gates is blocked.
 
 ## Step 2 — Check the working tree
 
 ```bash
 git status --porcelain
 git stash list
+git log --oneline origin/main..HEAD   # note branch position vs remote
 ```
 
 If there are uncommitted changes or stashes, **report and stop** — a release must be cut from a
 clean working tree.
-
-Note the current branch and whether it is ahead of the remote:
-```bash
-git log --oneline origin/main..HEAD
-```
 
 ## Step 3 — Determine the version
 
@@ -82,19 +71,14 @@ Group commits by type and produce a changelog section:
 
 ```markdown
 ## [<version>] — <today's date>
-
 ### ⚠️ Breaking Changes
 - <summary of BREAKING CHANGE commits or ts-api-compat-reviewer Breaking findings>
-
 ### Features
 - <summary of feat: commits>
-
 ### Bug Fixes
 - <summary of fix: commits>
-
 ### Performance
 - <summary of perf: commits>
-
 ### Refactoring / Other
 - <refactor, chore, docs, ci, test commits>
 ```

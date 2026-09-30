@@ -46,7 +46,7 @@ convention). If a narrow scope is specified in the delegation message, use it.
 
 Read in order:
 1. `CLAUDE.md` — stated security invariants (e.g. "secrets only from env vars").
-2. `.claude/` rules — especially `ts-security.md`.
+2. The project's documented conventions and any rules files present — especially the `ts-security` rule's stated invariants.
 3. `package.json` — runtime dependencies that introduce attack surface (HTTP servers, template
    engines, ORMs, auth libraries, file upload handlers).
 4. Existing security tooling: `eslint-plugin-security`, `eslint-plugin-no-unsanitized`,

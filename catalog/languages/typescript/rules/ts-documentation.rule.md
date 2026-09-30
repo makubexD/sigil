@@ -12,6 +12,7 @@ extends: []
 tags:
   - typescript
   - documentation
+appliesToRationale: TSDoc conventions apply only to TypeScript source with exportable symbols — excluded from config and non-source files with nothing to document.
 ---
 
 ## TSDoc Style

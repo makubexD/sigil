@@ -12,6 +12,7 @@ extends: []
 tags:
   - typescript
   - security
+appliesToRationale: Security invariants (secrets, injection, deserialization) apply to TypeScript source where the risky operations are written; required severity reflects that violations here are not optional.
 ---
 
 ## Secrets and Credentials

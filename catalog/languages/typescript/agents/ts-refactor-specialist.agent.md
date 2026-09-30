@@ -53,7 +53,7 @@ Run the full suite and **record the baseline**: N passed, M failed, coverage %. 
 failures, **stop and report** — distinguishing a regression from a pre-existing failure is impossible
 without a clean baseline. Do not proceed until the baseline is clean.
 
-Discover conventions from `CLAUDE.md`, `.claude/` rules, and by reading neighboring code.
+Discover conventions from `CLAUDE.md`, any rules files present, and by reading neighboring code.
 
 ### 2. Identify and plan the refactor
 

@@ -46,7 +46,7 @@ List the top candidates by undocumented export count and ask the user to choose 
 ## Step 2 — Discover documentation style
 
 Do not assume. Read in order:
-1. `CLAUDE.md` and `.claude/` rules for stated documentation conventions.
+1. `CLAUDE.md` and any rules files present for stated documentation conventions.
 2. `package.json` for TypeDoc or API Extractor configuration.
 3. 2–3 existing TSDoc comments in the codebase to determine the project's style and tag usage.
 

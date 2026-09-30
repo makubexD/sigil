@@ -12,6 +12,7 @@ extends: []
 tags:
   - typescript
   - async
+appliesToRationale: Promise/async-await correctness only applies to TypeScript/TSX source — excluded from config, markdown, and other non-TS files where the concern does not exist.
 ---
 
 ## No Floating Promises

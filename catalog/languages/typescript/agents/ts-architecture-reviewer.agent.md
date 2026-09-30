@@ -49,7 +49,7 @@ test files (analyze test coupling separately only if requested). Source root fro
 Read in order:
 1. `CLAUDE.md` "Architecture" section — stated layer diagram, subpackage descriptions, module
    boundaries, and invariants (e.g. "domain must not import infrastructure").
-2. `.claude/` rules — especially `ts-code-quality` (coupling limits) and `ts-project-layout` (layout intent).
+2. The project's documented conventions and any rules files present — especially `ts-code-quality` (coupling limits) and `ts-project-layout` (layout intent).
 3. `package.json` workspaces — declared packages and their intended responsibilities.
 4. `tsconfig.json` project references — formal compile-time dependency graph.
 5. ADRs (`docs/adr/`, `decisions/`) — past architectural decisions.

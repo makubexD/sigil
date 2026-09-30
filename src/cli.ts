@@ -34,7 +34,7 @@ import { loadCatalog } from './load';
 import { validateCatalog } from './validate';
 import { resolveCatalog } from './resolve';
 import { getAllTargets, getTarget } from './targets';
-import { resolveSelection, CONFIG_KINDS } from './select';
+import { CONFIG_KINDS } from './select';
 import { ALL_KINDS, isArtifactKind } from './kinds';
 import {
   isInteractiveTTY,

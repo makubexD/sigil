@@ -15,7 +15,6 @@ import {
   multiselect,
   groupMultiselect,
   note,
-  log,
   isCancel,
   cancel,
 } from '@clack/prompts';

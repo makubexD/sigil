@@ -195,7 +195,6 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
 
   // ── Transactional apply: write → validate → rollback on error ─────────────
   if (Object.keys(effectivePatch).length > 0) {
-    // eslint-disable-next-line @typescript-eslint/no-var-requires
     const originalContent = require('fs').readFileSync(artifact.filePath, 'utf-8') as string;
     try {
       writeArtifactFrontmatter(artifact.filePath, effectivePatch);
@@ -221,7 +220,6 @@ export async function runPatch(id: string, opts: PatchOpts): Promise<void> {
       );
 
       if (blocking.length > 0) {
-        // eslint-disable-next-line @typescript-eslint/no-var-requires
         require('fs').writeFileSync(artifact.filePath, originalContent, 'utf-8');
         console.error('✗ Patch rolled back — would break validation:');
         for (const v of blocking) console.error(`  ${v.problem}`);

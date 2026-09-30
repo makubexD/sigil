@@ -5,7 +5,7 @@
  *
  * Also exports shared constants and language helpers used by the other sub-modules.
  */
-import type { ResolvedCatalog, ResolvedArtifact, Pack, ArtifactKind, Target } from '../types';
+import type { ResolvedCatalog, ResolvedArtifact, Pack, ArtifactKind } from '../types';
 import { KIND_ORDER as _KIND_ORDER, CONFIG_KINDS as _CONFIG_KINDS } from '../kinds';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────

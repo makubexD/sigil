@@ -11,22 +11,31 @@ module.exports = tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
-  // Project-specific overrides (src + test TypeScript)
+  // Project-specific overrides (src + test TypeScript) — type-aware lint rules
   {
     files: ['src/**/*.ts', 'test/**/*.ts'],
+    languageOptions: {
+      parserOptions: {
+        // Automatic tsconfig discovery (typescript-eslint v8+). Discovers tsconfig.json
+        // and tsconfig.test.json via projectService so type-aware rules work on all files.
+        projectService: true,
+        tsconfigRootDir: __dirname,
+      },
+    },
     rules: {
-      // Warn rather than error on `any` — used in src for flexibility; common in tests for stubs
-      '@typescript-eslint/no-explicit-any': 'warn',
-      // preserve-caught-error (ESLint 10 built-in) requires Error({ cause: err }) but
-      // our TypeScript target is ES2020; ES2022.error is not yet in the lib config.
-      // Defer until the lib target is updated to include ES2022.error.
-      'preserve-caught-error': 'off',
+      // All `any` uses must be explicitly suppressed with @ts-expect-error — one site in
+      // schema/emit.ts already has a suppression comment; all others are errors.
+      '@typescript-eslint/no-explicit-any': 'error',
+      // Every Promise must be awaited, returned, or handled — no silent fire-and-forget.
+      // Commander .action(async cb) is handled internally by Commander; those are safe.
+      '@typescript-eslint/no-floating-promises': 'error',
       // Ignore underscore-prefixed params, vars, and caught errors (_overwrite, _e, etc.)
       '@typescript-eslint/no-unused-vars': [
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
-      // Allow `require()` in the schema emitter, other build-time CJS files, and tests
+      // Allow `require()` in the schema emitter, other build-time CJS files, and tests.
+      // Note: verbatimModuleSyntax is deferred (ESM migration) so CJS require() stays.
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
@@ -38,6 +47,7 @@ module.exports = tseslint.config(
       'dist/**',
       'node_modules/**',
       'schema/**',
+      'test-compiled/**',
       'test/*.js',
       'eslint.config.js',
     ],

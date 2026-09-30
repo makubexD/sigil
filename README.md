@@ -56,11 +56,11 @@ to your current directory.
 ```bash
 # Claude Code project
 sigil add                              # interactive guided wizard
-sigil add skill:csharp/xunit-testing  # or pick directly
+sigil add skill:csharp/cs-generate-tests  # or pick directly
 
 # GitHub Copilot project
 sigil add --target copilot            # wizard, auto-writes .github/
-sigil add skill:python/pytest-testing --target copilot
+sigil add skill:python/py-pytest-testing --target copilot
 ```
 
 ### Path B — Native Claude marketplace plugin
@@ -74,33 +74,53 @@ sigil build --target claude
 # /plugin install dotnet-pack
 ```
 
-## Available artifacts (v0.1)
+## Available artifacts
 
-### Skills
+The catalog ships **96 artifacts** across 5 languages. Use `sigil list` to browse; use
+`sigil search <query>` to find by keyword.
+
+**Languages:** `csharp` (.NET / C#) · `typescript` · `angular` · `python` · `react` · `shared` (all languages)
+
+**Packs** (install a curated bundle at once):
+
+| Pack                 | Contents                                                |
+| -------------------- | ------------------------------------------------------- |
+| `essentials`         | Filesystem MCP, config protection, dev-tool permissions |
+| `dotnet-starter`     | xUnit testing skill + deps + essentials                 |
+| `dotnet-tooling`     | All cs- skills, agents, and rules                       |
+| `typescript-starter` | Generate-tests, document, release skills + essentials   |
+| `typescript-tooling` | All ts- skills, agents, and rules                       |
+| `angular-starter`    | Generate-tests, generate-component skills + essentials  |
+| `angular-tooling`    | All ng- skills, agents, and rules                       |
+| `python-starter`     | pytest testing skill + deps + essentials                |
+| `react-starter`      | component-testing skill + deps + essentials             |
+
+**Selected skills per language (7 each for cs-/ts-/ng-):** generate-tests · scaffold-project ·
+document · add-package · audit-deps · release · sync-tests.
+
+**Selected agents per language (7–8 each):** code-reviewer · debugger · refactor-specialist ·
+security-auditor · performance-profiler · architecture-reviewer · api-compat-reviewer.
+
+**Rules per language (11–12 each):** async · conventions · code-quality · dependencies ·
+documentation · git · logging · security · testing · project-layout · (language-specific extras).
+
+### Core pre-import skills
 
 | ID                        | Title                         | Language |
 | ------------------------- | ----------------------------- | -------- |
-| `csharp/xunit-testing`    | Write xUnit Tests for .NET    | C#       |
-| `python/pytest-testing`   | Write pytest Tests for Python | Python   |
+| `csharp/cs-generate-tests`    | Write xUnit Tests for .NET    | C#       |
+| `python/py-pytest-testing`   | Write pytest Tests for Python | Python   |
 | `react/component-testing` | Write React Component Tests   | React    |
 
-### Agents
+### Shared agents and rules
 
 | ID                            | Title              | Scope         |
 | ----------------------------- | ------------------ | ------------- |
 | `shared/code-reviewer`        | Code Reviewer      | All languages |
-| `csharp/dotnet-api-architect` | .NET API Architect | C#            |
-| `python/python-architect`     | Python Architect   | Python        |
+| `csharp/cs-api-architect` | .NET API Architect | C#            |
+| `python/py-architect`     | Python Architect   | Python        |
 | `react/react-architect`       | React Architect    | React         |
-
-### Rules
-
-| ID                    | Title                 | Scope      |
-| --------------------- | --------------------- | ---------- |
-| `shared/clean-code`   | Clean Code Baseline   | All files  |
-| `csharp/dotnet-style` | .NET / C# Style       | `**/*.cs`  |
-| `python/python-style` | Python Style          | `**/*.py`  |
-| `react/react-style`   | React Component Style | `**/*.tsx` |
+| `shared/clean-code`           | Clean Code Baseline | All files    |
 
 ### Prompts
 

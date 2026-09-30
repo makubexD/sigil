@@ -122,7 +122,7 @@ If your skill uses an existing rule or agent, declare it in `uses:` — do not i
 ```yaml
 uses:
   rules:
-    - csharp/dotnet-style
+    - csharp/cs-conventions
   agents:
     - shared/code-reviewer
 ```

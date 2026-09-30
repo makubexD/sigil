@@ -20,7 +20,7 @@ selector and `--yes`:
 
 ```bash
 sigil add all --yes
-sigil add skill:csharp/xunit-testing --yes
+sigil add skill:csharp/cs-generate-tests --yes
 ```
 
 ---
@@ -31,8 +31,8 @@ Existing files are never overwritten by default. Use `--overwrite` to replace th
 to preview what would change:
 
 ```bash
-sigil add skill:csharp/xunit-testing --dry-run --yes   # preview only
-sigil add skill:csharp/xunit-testing --overwrite --yes  # replace
+sigil add skill:csharp/cs-generate-tests --dry-run --yes   # preview only
+sigil add skill:csharp/cs-generate-tests --overwrite --yes  # replace
 ```
 
 ---

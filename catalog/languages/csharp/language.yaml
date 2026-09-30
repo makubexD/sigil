@@ -5,4 +5,8 @@ globs:
   - "**/*.sln"
   - "**/*.razor"
   - "**/*.cshtml"
+  - "**/*.props"
+  - "**/*.targets"
+  - "**/global.json"
+  - "**/.editorconfig"
 icon: "⚙️"

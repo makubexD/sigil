@@ -8,8 +8,14 @@
 | Guide                                        | Who it's for                                 | Covers                                          |
 | -------------------------------------------- | -------------------------------------------- | ----------------------------------------------- |
 | [guides/consuming.md](guides/consuming.md)   | Developers adding skills to a project        | Wizard, `add`, `list`, `init`, shell completion |
-| [guides/authoring.md](guides/authoring.md)   | Contributors adding artifacts to the catalog | New skill / rule / language walkthroughs        |
+| [guides/authoring.md](guides/authoring.md)   | Contributors adding artifacts to the catalog | New skill / rule / language / import walkthroughs |
 | [guides/operations.md](guides/operations.md) | Maintainers & CI                             | Build targets, CI gate, `release` command       |
+
+## Decisions
+
+| Decision log                                                                             | Topic                                                        |
+| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| [decisions/catalog-import-migration.md](decisions/catalog-import-migration.md)           | `_Others` import migration — design decisions and bug log    |
 
 ## Reference
 
@@ -37,6 +43,7 @@
 | `sigil add all --yes`          | Bulk-install the entire catalog (CI-safe)                          |
 | `sigil list --kind rule`       | Browse available artifacts before authoring duplicates             |
 | `sigil new <kind>`             | Start a new catalog artifact with the correct frontmatter template |
+| `sigil import <dir>`           | Import a portable Claude template directory into the catalog       |
 | `sigil validate`               | Schema + reference-graph checks — run before every build and in CI |
 | `sigil build --target claude`  | Compile the Claude Code plugin layout to `dist/claude/`            |
 | `sigil build --target copilot` | Compile the Copilot layout to `dist/copilot/`                      |

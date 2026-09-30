@@ -1,0 +1,31 @@
+/**
+ * select — selector resolution, vocabulary, closure, and grouping helpers.
+ *
+ * Sub-modules:
+ *   selection — resolveSelection, kind constants, language helpers (artifactLanguage, isAgnostic)
+ *   vocabulary — kindNoun/kindPlural/kindHint, artifactLabel/artifactHint, artifactTargetsPlatform
+ *   closure   — computeClosure, ClosureEntry, ClosurePreview
+ *   grouping  — groupArtifactsByLanguage, availableKinds, buildLanguageOptions, partitionConfigKinds
+ */
+
+export type { SelectionFilters, SkippedArtifact, SelectionResult } from './selection';
+export {
+  KIND_ORDER,
+  CONFIG_KINDS,
+  resolveSelection,
+  artifactLanguage,
+  isAgnostic,
+  artifactTargetsPlatform,
+} from './selection';
+
+export { kindNoun, kindPlural, kindHint, artifactLabel, artifactHint } from './vocabulary';
+
+export type { ClosureEntry, ClosurePreview } from './closure';
+export { computeClosure } from './closure';
+
+export {
+  availableKinds,
+  buildLanguageOptions,
+  groupArtifactsByLanguage,
+  partitionConfigKinds,
+} from './grouping';

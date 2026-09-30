@@ -1,7 +1,12 @@
 displayName: "Python"
 globs:
   - "**/*.py"
+  - "**/*.pyi"
+  - "**/*.ipynb"
   - "**/pyproject.toml"
   - "**/setup.cfg"
+  - "**/setup.py"
   - "**/requirements*.txt"
+  - "**/Pipfile"
+  - "**/tox.ini"
 icon: "🐍"

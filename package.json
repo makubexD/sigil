@@ -42,7 +42,9 @@
   "scripts": {
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js",
     "build:watch": "tsc -p tsconfig.build.json --watch",
-    "test": "node --test test/pipeline.test.js",
+    "build:test": "tsc -p tsconfig.test.json",
+    "pretest": "npm run build && npm run build:test",
+    "test": "node --test \"test-compiled/**/*.test.js\"",
     "validate": "node dist-cli/cli.js validate",
     "catalog:build": "node dist-cli/cli.js build",
     "sigil": "node dist-cli/cli.js",
@@ -55,6 +57,7 @@
   "dependencies": {
     "@clack/prompts": "^0.8.2",
     "commander": "^12.1.0",
+    "picocolors": "^1.1.1",
     "fast-glob": "^3.3.2",
     "gray-matter": "^4.0.3",
     "js-yaml": "^4.1.0",

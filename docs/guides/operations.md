@@ -25,7 +25,7 @@ Recipes for catalog maintainers: running the CI gate, inspecting build output, a
 #     rules: [csharp/does-not-exist]
 
 sigil validate
-# ✗  [csharp/xunit-testing] uses.rules references unknown artifact 'csharp/does-not-exist'
+# ✗  [csharp/cs-generate-tests] uses.rules references unknown artifact 'csharp/does-not-exist'
 # ✗ 1 error(s) found.
 # exit code 1
 ```
@@ -46,11 +46,11 @@ sigil build --target claude
 sigil build --target copilot
 
 # Inspect generated output
-ls dist/claude/plugins/dotnet-pack/skills/xunit-testing/
+ls dist/claude/plugins/dotnet-pack/skills/cs-generate-tests/
 # SKILL.md  references/
 
 # Verify rule bodies are inlined in the plugin SKILL.md
-grep "Applied Rules" dist/claude/plugins/dotnet-pack/skills/xunit-testing/SKILL.md
+grep "Applied Rules" dist/claude/plugins/dotnet-pack/skills/cs-generate-tests/SKILL.md
 # ## Applied Rules
 
 # Verify plugin.json carries the package version

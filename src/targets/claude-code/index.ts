@@ -404,6 +404,8 @@ export class ClaudeCodeTarget implements Target {
           // mcp-local scope: wrap fragment under projects.<absProjectDir>.mcpServers
           // so deep-merge leaves other project entries intact.
           const [topKey, ...nested] = dest.wrapPath;
+          // wrapPath is always non-empty when set (validated at construction time)
+          if (!topKey) throw new Error('[claude] mcp wrapPath must have at least one key');
           let inner: Record<string, unknown> = {
             [CLAUDE_MCP_SERVERS_KEY]: { [serverName]: serverConfig },
           };

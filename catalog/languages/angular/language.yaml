@@ -1,0 +1,10 @@
+displayName: "Angular"
+globs:
+  - "**/*.ts"
+  - "**/*.html"
+  - "**/*.scss"
+  - "**/*.css"
+  - "**/*.less"
+  - "**/angular.json"
+  - "**/package.json"
+icon: "🅰️"

@@ -6,6 +6,13 @@
     "outDir": "./dist-cli",
     "rootDir": "./src",
     "strict": true,
+    // Additional strictness beyond the strict bundle
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "exactOptionalPropertyTypes": true,
+    // Note: verbatimModuleSyntax is deferred — it requires ESM migration
+    // (module: NodeNext + .js import specifiers) which risks the published
+    // bin path. Documented deferral per ts-project-layout rule.
     "esModuleInterop": true,
     "skipLibCheck": true,
     "declaration": true,

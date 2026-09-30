@@ -7,6 +7,31 @@
  */
 import { z } from 'zod';
 import type { ArtifactKind } from '../types';
+import { CONFIG_SCOPES } from '../types';
+
+// ─── Related artifact reference ───────────────────────────────────────────────
+
+/**
+ * A structured cross-reference to a sibling artifact.
+ * Replaces hard-coded catalog IDs in `## Boundary` body prose and descriptions.
+ * Adapters render escalation/routing sections conditionally — only when the
+ * referenced artifact is co-present in the install/build set.
+ */
+const RelatedArtifactSchema = z.object({
+  /** Catalog artifact ID of the related artifact (e.g. "csharp/cs-security-auditor"). */
+  id: z.string().min(1),
+  /**
+   * Nature of the relationship:
+   *   escalates-to  — delegate to this artifact when this one's scope is exceeded.
+   *   complements   — parallel specialist with a distinct, non-overlapping scope.
+   *   see-also      — loosely related; surfaced for discovery, no strong routing implied.
+   */
+  relation: z.enum(['escalates-to', 'complements', 'see-also']),
+  /** One-line explanation shown in the rendered Boundary section. */
+  reason: z.string().min(1),
+});
+
+export type RelatedArtifact = z.infer<typeof RelatedArtifactSchema>;
 
 // ─── Shared fields ────────────────────────────────────────────────────────────
 
@@ -64,6 +89,28 @@ export const SkillSchema = z.object({
     })
     .optional()
     .default({}),
+  /**
+   * Tool capabilities the skill is allowed to use (platform-specific invocation).
+   * Emitted as `allowed-tools:` in Claude Code SKILL.md frontmatter.
+   * Absent = platform default (no restriction).
+   */
+  allowedTools: z.array(z.string()).optional(),
+  /**
+   * Autocomplete hint shown in the /name picker (e.g. "[file] [--flag]").
+   * Emitted as `argument-hint:` in Claude Code SKILL.md frontmatter.
+   */
+  argumentHint: z.string().optional(),
+  /**
+   * When true the skill is invoked by the user, not by the AI itself.
+   * Emitted as `disable-model-invocation: true` in Claude Code SKILL.md.
+   * Use for workflow scripts like a release command.
+   */
+  disableModelInvocation: z.boolean().optional(),
+  /**
+   * Structured cross-references to sibling artifacts.
+   * Adapters render these conditionally when co-present siblings are installed.
+   */
+  relatedArtifacts: z.array(RelatedArtifactSchema).optional(),
 });
 
 // ─── Agent ───────────────────────────────────────────────────────────────────
@@ -101,6 +148,13 @@ export const AgentSchema = z.object({
       isolation: z.enum(['worktree']).optional(),
     })
     .optional(),
+  /**
+   * Structured cross-references to sibling artifacts.
+   * Adapters render these as a Boundary/Escalation section ONLY when the
+   * referenced artifacts are co-present in the install or build set.
+   * Replaces hard-coded catalog IDs in body prose and descriptions.
+   */
+  relatedArtifacts: z.array(RelatedArtifactSchema).optional(),
 });
 
 // ─── Rule ─────────────────────────────────────────────────────────────────────
@@ -119,6 +173,11 @@ export const RuleSchema = z.object({
    * The resolver flattens chains at build time; cycles are a validation error.
    */
   extends: z.array(z.string()).optional().default([]),
+  /**
+   * Structured cross-references to sibling artifacts.
+   * Adapters render these conditionally when co-present siblings are installed.
+   */
+  relatedArtifacts: z.array(RelatedArtifactSchema).optional(),
 });
 
 // ─── Prompt ───────────────────────────────────────────────────────────────────
@@ -160,6 +219,117 @@ export const WorkflowSchema = z.object({
     .min(1),
 });
 
+// ─── Hook ─────────────────────────────────────────────────────────────────────
+
+const HOOK_EVENTS = [
+  'PreToolUse',
+  'PostToolUse',
+  'UserPromptSubmit',
+  'SubagentStop',
+  'Stop',
+  'SessionStart',
+  'Notification',
+] as const;
+
+export const HookSchema = z.object({
+  ...BaseFields,
+  kind: z.literal('hook'),
+  /** Optional: language scope for this hook. Omit for shared/all-language hooks. */
+  language: z.string().optional(),
+  /**
+   * Default install scope recommended by the catalog author.
+   * Overridable by --scope flag or wizard selection at install time.
+   * 'project' (default) = .claude/settings.json (git-committed).
+   * 'local'             = .claude/settings.local.json (gitignored).
+   * 'user'              = ~/.claude/settings.json (user-global).
+   */
+  defaultScope: z.enum(CONFIG_SCOPES).optional(),
+  /**
+   * Claude Code lifecycle event that triggers this hook.
+   * Maps directly to the settings.json hooks key.
+   */
+  event: z.enum(HOOK_EVENTS),
+  /**
+   * Tool-name regex filter — Claude Code `matcher` field.
+   * Only used for PreToolUse/PostToolUse. Defaults to '*' (all tools).
+   */
+  matcher: z.string().optional().default('*'),
+  /** Shell command to run when the hook fires. */
+  command: z.string().min(1, 'command is required'),
+  /** Optional timeout in milliseconds for the hook command. */
+  timeout: z.number().int().positive().optional(),
+});
+
+// ─── Settings ─────────────────────────────────────────────────────────────────
+
+export const SettingsSchema = z.object({
+  ...BaseFields,
+  kind: z.literal('settings'),
+  /** Optional: language scope. Omit for global settings. */
+  language: z.string().optional(),
+  /**
+   * Default install scope recommended by the catalog author.
+   * 'project' (default) = .claude/settings.json.
+   * 'local'             = .claude/settings.local.json.
+   * 'user'              = ~/.claude/settings.json.
+   */
+  defaultScope: z.enum(CONFIG_SCOPES).optional(),
+  /**
+   * Permissions fragment — merged into settings.json permissions using array-union.
+   * Allows adding to allow/deny/ask lists without replacing existing entries.
+   */
+  permissions: z
+    .object({
+      allow: z.array(z.string()).optional(),
+      deny: z.array(z.string()).optional(),
+      ask: z.array(z.string()).optional(),
+    })
+    .optional(),
+  /** Environment variable additions — merged per-key (incoming wins on collision). */
+  env: z.record(z.string(), z.string()).optional(),
+  /** Claude model override. */
+  model: z.string().optional(),
+  /** Status line configuration — passed through to settings.json as-is. */
+  statusLine: z.unknown().optional(),
+});
+
+// ─── MCP ──────────────────────────────────────────────────────────────────────
+
+const StdioServerSchema = z.object({
+  /** Shell command to launch the MCP server process. */
+  command: z.string().min(1, 'command is required'),
+  /** Arguments to pass to the command. */
+  args: z.array(z.string()).optional(),
+  /** Environment variables for the server process. */
+  env: z.record(z.string(), z.string()).optional(),
+});
+
+const RemoteServerSchema = z.object({
+  type: z.enum(['http', 'sse']),
+  /** Full URL of the remote MCP server endpoint. */
+  url: z.string().url(),
+  /** HTTP headers to include (e.g. Authorization). */
+  headers: z.record(z.string(), z.string()).optional(),
+});
+
+export const McpSchema = z.object({
+  ...BaseFields,
+  kind: z.literal('mcp'),
+  /** Optional: language scope. Omit for shared MCP servers. */
+  language: z.string().optional(),
+  /**
+   * Default install scope recommended by the catalog author.
+   * Claude: 'project' = .mcp.json; 'local' = ~/.claude.json per-project; 'user' = ~/.claude.json.
+   * Copilot: 'project'/'local' = .vscode/mcp.json; 'user' = VS Code user-profile mcp.json.
+   */
+  defaultScope: z.enum(CONFIG_SCOPES).optional(),
+  /**
+   * The MCP server config — either stdio (command + args) or remote (type + url).
+   * The server key in mcpServers defaults to the artifact's `name` field.
+   */
+  server: z.union([StdioServerSchema, RemoteServerSchema]),
+});
+
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
 const SCHEMAS = {
@@ -168,6 +338,9 @@ const SCHEMAS = {
   rule: RuleSchema,
   prompt: PromptSchema,
   workflow: WorkflowSchema,
+  hook: HookSchema,
+  settings: SettingsSchema,
+  mcp: McpSchema,
 } as const;
 
 export type AnySchema = (typeof SCHEMAS)[keyof typeof SCHEMAS];
@@ -188,3 +361,6 @@ export type AgentFrontmatter = z.infer<typeof AgentSchema>;
 export type RuleFrontmatter = z.infer<typeof RuleSchema>;
 export type PromptFrontmatter = z.infer<typeof PromptSchema>;
 export type WorkflowFrontmatter = z.infer<typeof WorkflowSchema>;
+export type HookFrontmatter = z.infer<typeof HookSchema>;
+export type SettingsFrontmatter = z.infer<typeof SettingsSchema>;
+export type McpFrontmatter = z.infer<typeof McpSchema>;

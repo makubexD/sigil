@@ -16,12 +16,29 @@ import matter from 'gray-matter';
 
 /**
  * Serialise a scalar value to a safe YAML representation.
- * Strings containing `:`, `"`, `#`, or newlines are double-quoted.
+ * Strings that contain YAML-special characters are double-quoted.
  * Booleans, numbers, and null emit as plain scalars.
+ *
+ * Characters that require quoting:
+ *   - `\n`  — literal newline in string value
+ *   - `:`   — key-value separator (e.g. "Fix: the bug")
+ *   - `"`   — would escape out of a double-quoted context
+ *   - `#`   at start — comment marker
+ *   - `*`   at start — YAML alias anchor (`**\/*.cs` is read as alias `*` + `/*.cs`)
+ *   - `[`   at start — YAML flow sequence indicator (`[optional]` is read as sequence)
+ *   - `{`   at start — YAML flow mapping indicator
  */
 function serializeScalar(val: unknown): string {
   if (typeof val === 'string') {
-    if (val.includes('\n') || val.includes(':') || val.includes('"') || val.startsWith('#')) {
+    if (
+      val.includes('\n') ||
+      val.includes(':') ||
+      val.includes('"') ||
+      val.startsWith('#') ||
+      val.startsWith('*') || // glob patterns: **/*.cs triggers YAML alias parsing unquoted
+      val.startsWith('[') || // flow sequence: [optional] treated as array literal
+      val.startsWith('{') // flow mapping
+    ) {
       return `"${val.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`;
     }
     return val;
@@ -64,7 +81,16 @@ export function serializeYamlEntry(key: string, val: unknown): string {
   }
   if (typeof val === 'object' && val !== null) {
     const lines = Object.entries(val as Record<string, unknown>)
-      .map(([ik, iv]) => `  ${ik}: ${serializeScalar(iv)}`)
+      .map(([ik, iv]) => {
+        // Nested arrays (e.g. uses.rules / uses.agents) must render as block sequences,
+        // not comma-joined scalars — serializeScalar(array) would call String(array).
+        if (Array.isArray(iv)) {
+          if (iv.length === 0) return `  ${ik}: []`;
+          const items = iv.map(item => `    - ${serializeScalar(item)}`).join('\n');
+          return `  ${ik}:\n${items}`;
+        }
+        return `  ${ik}: ${serializeScalar(iv)}`;
+      })
       .join('\n');
     return `${key}:\n${lines}`;
   }

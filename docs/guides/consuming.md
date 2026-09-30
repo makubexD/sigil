@@ -43,7 +43,7 @@ The **Install plan** box (shown before "Proceed?") previews the full resolved ar
 
 ```bash
 sigil add all --yes
-sigil add skill:csharp/xunit-testing --yes
+sigil add skill:csharp/cs-generate-tests --yes
 ```
 
 ---
@@ -55,15 +55,15 @@ Scaffold the xUnit testing skill (+ its rule + agent dependency) into a C# repo:
 ```bash
 # In your C# project root
 sigil init --target claude
-sigil add skill:csharp/xunit-testing
+sigil add skill:csharp/cs-generate-tests
 ```
 
 **What gets written:**
 
 ```
-.claude/skills/xunit-testing/SKILL.md
-.claude/skills/xunit-testing/references/assertions.md
-.claude/rules/csharp-dotnet-style.md      ← C# style (+ clean-code baseline folded in)
+.claude/skills/cs-generate-tests/SKILL.md
+.claude/skills/cs-generate-tests/references/assertions.md
+.claude/rules/csharp-cs-conventions.md      ← C# style (+ clean-code baseline folded in)
 .claude/agents/code-reviewer.md           ← shared code-reviewer agent
 ```
 
@@ -73,7 +73,7 @@ scaffolded from the `uses:` dependency closure automatically.
 ```bash
 # If .claude/ already exists, init is optional.
 # Use --overwrite only if you want to replace existing files:
-sigil add skill:csharp/xunit-testing --overwrite
+sigil add skill:csharp/cs-generate-tests --overwrite
 ```
 
 ---
@@ -84,15 +84,15 @@ Add the Python pytest skill to a repo using GitHub Copilot Chat:
 
 ```bash
 sigil init --target copilot
-sigil add skill:python/pytest-testing --target copilot
+sigil add skill:python/py-pytest-testing --target copilot
 ```
 
 **What gets written:**
 
 ```
 .github/skills/pytest-testing/SKILL.md
-.github/skills/pytest-testing/references/fixtures.md
-.github/instructions/python-python-style.instructions.md   ← applyTo: "**/*.py"
+.github/skills/py-pytest-testing/references/fixtures.md
+.github/instructions/python-py-style.instructions.md   ← applyTo: "**/*.py"
 .github/agents/code-reviewer.agent.md
 ```
 
@@ -124,9 +124,9 @@ dist/claude/
   .claude-plugin/marketplace.json
   plugins/dotnet-pack/
     .claude-plugin/plugin.json     ← version = npm package version
-    skills/xunit-testing/SKILL.md  ← rule bodies inlined under ## Applied Rules
+    skills/cs-generate-tests/SKILL.md  ← rule bodies inlined under ## Applied Rules
     agents/code-reviewer.md
-    agents/dotnet-api-architect.md
+    agents/cs-api-architect.md
 ```
 
 ---
@@ -143,13 +143,13 @@ sigil list --kind skill         # filter by kind: skill | agent | rule | prompt
 
 ```
 SKILL (3)
-  csharp/xunit-testing [csharp] — Use when adding or reviewing unit tests in a C#/.NET project.
-  python/pytest-testing [python] — Use when adding or reviewing pytest tests in a Python project.
+  csharp/cs-generate-tests [csharp] — Use when adding or reviewing unit tests in a C#/.NET project.
+  python/py-pytest-testing [python] — Use when adding or reviewing pytest tests in a Python project.
   react/component-testing [react] — Use when writing or reviewing React component tests.
 
 AGENT (4)
   shared/code-reviewer — Thorough code review agent for any language.
-  csharp/dotnet-api-architect [csharp] — …
+  csharp/cs-api-architect [csharp] — …
 
 RULE (4)  PROMPT (2)
 ```
@@ -181,8 +181,8 @@ By default `add skill:...` writes the skill **plus** the rules and agents it ref
 `--no-deps` if you manage those separately:
 
 ```bash
-sigil add skill:csharp/xunit-testing --no-deps --target claude --yes
-# Only writes: .claude/skills/xunit-testing/SKILL.md + references/
+sigil add skill:csharp/cs-generate-tests --no-deps --target claude --yes
+# Only writes: .claude/skills/cs-generate-tests/SKILL.md + references/
 ```
 
 ---
@@ -211,15 +211,52 @@ Existing files are **never overwritten** by default:
 
 ```bash
 # First install — 4 files written
-sigil add skill:csharp/xunit-testing --yes
+sigil add skill:csharp/cs-generate-tests --yes
 
 # Second install — conflict advisory
-sigil add skill:csharp/xunit-testing --yes
+sigil add skill:csharp/cs-generate-tests --yes
 # ⚠  4 file(s) already exist and were NOT overwritten.
 # Re-run with --overwrite to replace them.
 
-sigil add skill:csharp/xunit-testing --overwrite --yes
+sigil add skill:csharp/cs-generate-tests --overwrite --yes
 ```
+
+---
+
+## Keep installs healthy over time
+
+After the initial install, sigil tracks what it wrote in `.sigil/manifest.json` — a small JSON
+ledger that records each artifact, its files, and the SHA-256 hash of every file at install time.
+
+> **Commit this file.** `.sigil/manifest.json` is project state, not a build artifact. Committing
+> it means every team member and every CI run can use the lifecycle commands below without losing
+> install history.
+
+```bash
+# See the current health of everything sigil installed
+sigil status
+# ID                          STATUS       FILES
+# csharp/cs-generate-tests        up-to-date   SKILL.md, references/assertions.md
+# shared/code-reviewer        drifted      agents/code-reviewer.md   ← you edited it
+# csharp/cs-conventions         outdated     rules/csharp-cs-conventions.md   ← catalog updated
+
+# Re-scaffold outdated artifacts (skips files you edited — use --force to overwrite those too)
+sigil update
+sigil update csharp/cs-conventions   # single artifact
+
+# Remove an artifact and its files (refcount-aware: shared deps are kept if other skills need them)
+sigil uninstall skill:csharp/cs-generate-tests
+```
+
+**Status values at a glance:**
+
+| Status | Meaning |
+| ------------ | ------------------------------------------------------------ |
+| `up-to-date` | Files match what the current catalog would produce |
+| `outdated` | Catalog changed since you installed — run `sigil update` |
+| `drifted` | You edited a file — `update` skips it; `update --force` replaces it |
+| `missing` | A sigil-owned file was deleted — `update` restores it |
+| `orphaned` | Artifact removed from the catalog — safe to `sigil uninstall` |
 
 ---
 
@@ -237,7 +274,7 @@ sigil completion fish | source
 ```
 
 After sourcing: `sigil add <Tab>` suggests `all`, `pack:dotnet-pack`, `kind:skill`,
-`skill:csharp/xunit-testing`, etc. Flag values also complete: `--target <Tab>` → `claude copilot`.
+`skill:csharp/cs-generate-tests`, etc. Flag values also complete: `--target <Tab>` → `claude copilot`.
 
 ---
 
@@ -248,7 +285,7 @@ After sourcing: `sigil add <Tab>` suggests `all`, `pack:dotnet-pack`, `kind:skil
 
 ```bash
 # Monorepo: install into a specific package
-sigil add skill:csharp/xunit-testing --project-dir packages/my-api --yes
+sigil add skill:csharp/cs-generate-tests --project-dir packages/my-api --yes
 ```
 
 Claude Code writes to `.claude/`; Copilot writes to `.github/`. Target auto-detection checks for

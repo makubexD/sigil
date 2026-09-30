@@ -167,12 +167,18 @@ export function checkSourceArtifact(
 
   // ── 3. Duplicate id ────────────────────────────────────────────────────────
   // If the catalog already has this id AND it refers to a different file, it's a duplicate.
+  // Normalise path separators before comparing — on Windows the catalog may use forward slashes
+  // while destPath uses backslashes, causing false-positive duplicates on --overwrite.
   const existing = catalog.byId.get(id);
-  if (existing && existing.filePath !== artifact.filePath) {
-    v.push({
-      file,
-      problem: `Duplicate id '${id}' — already used by ${existing.filePath}`,
-    });
+  if (existing) {
+    const normExisting = existing.filePath.replace(/\\/g, '/');
+    const normArtifact = artifact.filePath.replace(/\\/g, '/');
+    if (normExisting !== normArtifact) {
+      v.push({
+        file,
+        problem: `Duplicate id '${id}' — already used by ${existing.filePath}`,
+      });
+    }
   }
 
   // ── 4. Reference integrity ─────────────────────────────────────────────────
@@ -220,6 +226,19 @@ export function checkSourceArtifact(
   for (const step of steps ?? []) {
     if (!catalog.byId.has(step.ref)) {
       v.push({ file, problem: `workflow step ref '${step.ref}' does not exist in the catalog` });
+    }
+  }
+
+  // relatedArtifacts — referenced IDs must exist in the catalog
+  const related = artifact.frontmatter.relatedArtifacts as
+    | Array<{ id: string; relation: string; reason: string }>
+    | undefined;
+  for (const entry of related ?? []) {
+    if (!catalog.byId.has(entry.id)) {
+      v.push({
+        file,
+        problem: `relatedArtifacts: '${entry.id}' does not exist in the catalog`,
+      });
     }
   }
 

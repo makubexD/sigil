@@ -5,7 +5,15 @@
 
 // ─── Artifact kinds ──────────────────────────────────────────────────────────
 
-export type ArtifactKind = 'skill' | 'agent' | 'rule' | 'prompt' | 'workflow';
+export type ArtifactKind =
+  | 'skill'
+  | 'agent'
+  | 'rule'
+  | 'prompt'
+  | 'workflow'
+  | 'hook'
+  | 'settings'
+  | 'mcp';
 
 /**
  * A reference file bundled alongside a skill (e.g. references/assertions.md).
@@ -21,7 +29,7 @@ export interface ReferenceFile {
  * Produced by the Load phase; consumed by Validate and Resolve.
  */
 export interface Artifact {
-  id: string; // e.g. "csharp/xunit-testing" or "shared/clean-code"
+  id: string; // e.g. "csharp/cs-generate-tests" or "shared/clean-code"
   kind: ArtifactKind;
   filePath: string; // absolute path to the source .md file
   frontmatter: Record<string, unknown>;
@@ -80,6 +88,117 @@ export interface ResolvedCatalog {
  * Target adapters return this; the CLI then writes it to dist/<target>/.
  */
 export type FileMap = Record<string, string>;
+
+// ─── Config merge ops (for hook / settings / mcp kinds) ──────────────────────
+
+/**
+ * Merge strategy for a single top-level JSON key.
+ *
+ *   object-spread — deep-merge (incoming wins per leaf). Used for env, scalars.
+ *   array-union   — union + dedup. Used for permissions.allow/deny/ask.
+ *   array-append  — concatenate without dedup. Used for hooks arrays.
+ */
+export type MergeStrategy = 'object-spread' | 'array-union' | 'array-append';
+
+/**
+ * Canonical install scope values for config-kind artifacts.
+ * Single source of truth — derive ConfigScope from this constant so any
+ * z.enum([...]) or allowedValues list can reference CONFIG_SCOPES directly.
+ *
+ * Scope semantics:
+ *   project — shared, git-committed (default). Writes inside projectDir.
+ *   local   — personal, not committed. Writes inside projectDir (.local.json variants)
+ *             OR inside the home dir for Claude MCP scope.
+ *   user    — user-global, applies across all projects. Writes to home dir.
+ */
+export const CONFIG_SCOPES = ['project', 'local', 'user'] as const;
+
+/** Derived from CONFIG_SCOPES — prefer that constant for runtime validation. */
+export type ConfigScope = (typeof CONFIG_SCOPES)[number];
+
+/** Union of the artifact kinds that produce config-merge operations rather than whole files. */
+export type ConfigKind = 'hook' | 'settings' | 'mcp';
+
+/**
+ * Symbolic root that the CLI resolves to an absolute directory path.
+ *
+ *   project    — the consumer project root (opts.projectDir). Default.
+ *   home       — os.homedir(). Used for Claude user/local MCP + user settings.
+ *   vscode-user — VS Code user-profile directory (platform-specific). Used for Copilot user MCP.
+ */
+export type ConfigRoot = 'project' | 'home' | 'vscode-user';
+
+/**
+ * One merge operation produced by a target adapter's scaffoldConfig().
+ * Represents "I want to contribute `fragment` to `file` using per-key strategies."
+ */
+export interface ConfigMergeOp {
+  /** Relative path inside the resolved root (e.g. ".claude/settings.json"). */
+  file: string;
+  /**
+   * Symbolic root that the CLI resolves to an absolute directory.
+   * Defaults to 'project' when absent (backward-compatible).
+   */
+  root?: ConfigRoot | undefined;
+  /** The JSON sub-tree sigil owns (catalog-display fields like `description` stripped). */
+  fragment: Record<string, unknown>;
+  /** Per top-level key merge strategy; keys absent from this map default to object-spread. */
+  strategy: Record<string, MergeStrategy>;
+}
+
+// ─── Config-scope descriptor (provider-declared) ──────────────────────────────
+
+/**
+ * One concrete file destination for a (scope, kind) pair, with the absolute path pre-resolved.
+ * Produced by Target.configScopes() so the wizard and CLI never need to hardcode paths.
+ */
+export interface ConfigScopeDestination {
+  kind: ConfigKind;
+  /** Relative path inside the resolved root (e.g. '.claude/settings.local.json'). */
+  file: string;
+  root: ConfigRoot;
+  /** Absolute path, already resolved for the given projectDir. Display-ready for the user. */
+  fullPath: string;
+  /**
+   * Human-readable JSON key-path where the fragment lands INSIDE the file, using ' › ' as
+   * separator (e.g. 'projects › /abs/proj › mcpServers', or 'mcpServers'). Present only when
+   * the fragment nests below the file root — used to disambiguate scopes that share a file.
+   * Classic case: Claude mcp 'local' and 'user' both write ~/.claude.json, but 'local' goes
+   * under projects.<dir>.mcpServers while 'user' goes under the top-level mcpServers key.
+   * Undefined means the fragment merges at the file root (settings, hook, etc.).
+   */
+  section?: string | undefined;
+}
+
+/**
+ * A scope option a target offers for config-kind installs.
+ * Targets return an array of these from configScopes(), ordered by documented precedence
+ * (highest-priority scope first). The wizard renders each as a select option whose hint
+ * shows the full absolute path(s) so users know exactly where each scope writes.
+ */
+export interface ConfigScopeInfo {
+  /** CLI flag value and internal state key. */
+  value: ConfigScope;
+  /** Display label shown in the wizard select. */
+  label: string;
+  /**
+   * Priority rank per the platform's documentation, 1 = highest priority.
+   * Used to sort the menu (ascending) and annotate the label.
+   */
+  precedence: number;
+  /** True when the file is git-committed and shared with collaborators. */
+  shared: boolean;
+  /**
+   * 'project' — write only affects this repository.
+   * 'all-projects' — write affects ALL user projects (home-dir or user-profile file).
+   * Drives the blast-radius warning shown before confirming user-scope installs.
+   */
+  blastRadius: 'project' | 'all-projects';
+  /** Short human-readable note shown alongside the full path hint. */
+  description: string;
+  /** Pre-resolved destination for each config kind in the current selection. */
+  destinations: ConfigScopeDestination[];
+}
 
 // ─── Target vocabulary + output contracts ─────────────────────────────────────
 
@@ -157,7 +276,7 @@ export interface CompileOptions {
    * Written into generated marketplace.json and plugin.json author URL fields.
    * Falls back to a placeholder when absent.
    */
-  homepage?: string;
+  homepage?: string | undefined;
 }
 
 export interface ScaffoldOptions {
@@ -170,6 +289,19 @@ export interface ScaffoldOptions {
    * Defaults to true — a skill scaffold normally writes its rule and agent dependencies.
    */
   includeDeps?: boolean;
+  /**
+   * Install scope for config-kind artifacts (hook, settings, mcp).
+   * Controls which destination file is written to. Defaults to 'project'.
+   * Ignored for whole-file kinds (skill, agent, rule, prompt, workflow).
+   */
+  scope?: ConfigScope;
+  /**
+   * The set of artifact IDs being co-installed in this session.
+   * Adapters use this to conditionally render `relatedArtifacts` Boundary sections —
+   * only emitting escalation entries whose targets are actually being installed alongside
+   * this artifact. When absent, no Boundary section is rendered (avoids dangling refs).
+   */
+  coInstallSet?: Set<string>;
 }
 
 /**
@@ -188,7 +320,7 @@ export interface Target {
 
   /**
    * Partial scaffold: emit only the files needed for one artifact and its closure.
-   * Called by `sigil add`.
+   * Called by `sigil add` for whole-file kinds (skill, agent, rule, prompt, workflow).
    * May be omitted if the target doesn't support partial installs.
    */
   scaffold?(
@@ -196,6 +328,18 @@ export interface Target {
     catalog: ResolvedCatalog,
     options: ScaffoldOptions,
   ): Promise<FileMap>;
+
+  /**
+   * Config scaffold: emit merge operations for config-kind artifacts
+   * (hook, settings, mcp). These merge into user-owned JSON files rather than
+   * writing whole files. Called by `sigil add` when artifact.kind is a config kind.
+   * May be omitted if the target doesn't support config kinds.
+   */
+  scaffoldConfig?(
+    artifactId: string,
+    catalog: ResolvedCatalog,
+    options: ScaffoldOptions,
+  ): Promise<ConfigMergeOp[]>;
 
   /**
    * Artifact kinds this target can scaffold.
@@ -215,12 +359,42 @@ export interface Target {
   vocabulary?: Partial<Record<ArtifactKind, KindVocabulary>>;
 
   /**
+   * Scope options this target offers for config-kind installs, ordered by documented precedence
+   * (highest-priority first). Each destination's fullPath is pre-resolved for the given projectDir,
+   * so the wizard and CLI can show the full absolute target path without any provider-specific
+   * branching in the UI layer. Return an empty array (or omit) if this target has no config kinds.
+   *
+   * Example ordering: Claude returns [local, project, user] (local overrides project overrides user).
+   * Copilot returns [project, user] (no distinct local MCP scope in VS Code).
+   */
+  configScopes?(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[];
+
+  /**
    * Output-conformance contracts for this target's emitted files.
    * Checked by `build` and `add` after emit; any violation causes a non-zero exit.
    * Each entry maps a path regex to required/forbidden frontmatter keys and body constraints.
    * Files matching no entry are skipped (aggregate files like AGENTS.md have no fixed shape).
    */
   outputContracts?: ContractEntry[];
+
+  /**
+   * Directories created by `sigil init` for this target (relative to project root).
+   * Declaring them here lets the `init` command iterate all targets without hardcoding
+   * target names or directory structures in shared CLI code.
+   *
+   * Example: Claude Code declares ['.claude/skills', '.claude/rules', '.claude/agents', '.claude/commands']
+   */
+  initDirs?: string[];
+
+  /**
+   * File-system markers that indicate this target is already installed in a project.
+   * `detectProjectTarget` scans getAllTargets() in registration order and returns the
+   * first target whose marker directories (relative to projectDir) are present on disk.
+   * Declaring them here removes the need for a hardcoded dir→name switch in the CLI.
+   *
+   * Example: Claude Code declares ['.claude'], Copilot declares ['.github']
+   */
+  projectMarkers?: string[];
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────

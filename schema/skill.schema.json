@@ -73,6 +73,48 @@
           },
           "additionalProperties": false,
           "default": {}
+        },
+        "allowedTools": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "argumentHint": {
+          "type": "string"
+        },
+        "disableModelInvocation": {
+          "type": "boolean"
+        },
+        "relatedArtifacts": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "minLength": 1
+              },
+              "relation": {
+                "type": "string",
+                "enum": [
+                  "escalates-to",
+                  "complements",
+                  "see-also"
+                ]
+              },
+              "reason": {
+                "type": "string",
+                "minLength": 1
+              }
+            },
+            "required": [
+              "id",
+              "relation",
+              "reason"
+            ],
+            "additionalProperties": false
+          }
         }
       },
       "required": [

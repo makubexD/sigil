@@ -37,11 +37,11 @@ native **Agent Skill** on both Claude Code (`.claude/skills/<name>/SKILL.md`) an
 (agentskills.io). Invoked as `/name` in both tools.
 
 **File:** `catalog/languages/<lang>/skills/<name>/SKILL.md`  
-**Invoked as:** `skill:csharp/xunit-testing` in the CLI
+**Invoked as:** `skill:csharp/cs-generate-tests` in the CLI
 
 ```yaml
 ---
-id: csharp/xunit-testing
+id: csharp/cs-generate-tests
 kind: skill
 name: xunit-testing
 title: Write xUnit Tests for .NET
@@ -52,7 +52,7 @@ appliesTo:
   - '**/*.csproj'
 uses:
   rules:
-    - csharp/dotnet-style # resolves at build time; inherited rules folded in
+    - csharp/cs-conventions # resolves at build time; inherited rules folded in
   agents:
     - shared/code-reviewer # bundled alongside the skill in the plugin
 tags: [csharp, testing, xunit]
@@ -94,7 +94,7 @@ Coding guidelines that apply to a scope of files. Rules can inherit from other r
 
 ```yaml
 ---
-id: csharp/dotnet-style
+id: csharp/cs-conventions
 kind: rule
 title: .NET / C# Style
 language: csharp
@@ -150,7 +150,7 @@ kind: workflow
 title: Ship a New C# Feature
 description: Complete workflow from implementation to tested, reviewed PR.
 steps:
-  - ref: csharp/xunit-testing
+  - ref: csharp/cs-generate-tests
     description: Write tests first
   - ref: shared/code-reviewer
     description: Review the implementation
@@ -176,7 +176,7 @@ current rule's body. Cycles are detected at validation time and reported as hard
 
 ```yaml
 uses:
-  rules: [csharp/dotnet-style]
+  rules: [csharp/cs-conventions]
   agents: [shared/code-reviewer]
 ```
 
@@ -221,8 +221,8 @@ Adapters then decide how to materialise the closure:
 
 **Emitted frontmatter notes:**
 
-- **Claude skill SKILL.md:** uses `paths:` (translated from `appliesTo`). `description` is double-quoted.
-- **Copilot skill SKILL.md:** uses only `name` and `description` — no `applyTo` or `paths:`.
+- **Claude skill SKILL.md:** uses `paths:` (translated from `appliesTo`). `description` is double-quoted. Optional skill fields: `allowed-tools: <csv>` (from `allowedTools`), `argument-hint: "<hint>"` (from `argumentHint`), `disable-model-invocation: true` (from `disableModelInvocation`).
+- **Copilot skill SKILL.md:** uses only `name` and `description` — no `applyTo`, `paths:`, or optional Claude-only fields.
 - **Copilot prompt files:** use `agent: agent`. `applyTo` is not valid here. Body uses `${input:name}`.
 - **Claude custom commands:** `description:`, `argument-hint:`, and `arguments:` frontmatter. Body uses `$name`.
 - **Copilot agent files:** require `.agent.md` extension and `description:` frontmatter.
@@ -268,8 +268,8 @@ Adapters then decide how to materialise the closure:
 | `all`                        | Every artifact in the catalog         |
 | `pack:dotnet-pack`           | Every artifact in a named pack        |
 | `kind:agent`                 | Every artifact of that kind           |
-| `skill:csharp/xunit-testing` | One explicit artifact (kind-prefixed) |
-| `csharp/xunit-testing`       | One explicit artifact (bare ID)       |
+| `skill:csharp/cs-generate-tests` | One explicit artifact (kind-prefixed) |
+| `csharp/cs-generate-tests`       | One explicit artifact (bare ID)       |
 
 **Key `add` flags:** `--target claude|copilot`, `--kind skill,agent`, `--exclude prompt`,
 `--language csharp`, `--no-deps`, `--dry-run`, `--overwrite`, `--yes`, `--project-dir <dir>`,

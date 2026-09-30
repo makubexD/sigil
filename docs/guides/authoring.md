@@ -31,7 +31,7 @@ appliesTo:
   - "**/*Tests.cs"
 uses:
   rules:
-    - csharp/dotnet-style      # inherits clean-code baseline automatically
+    - csharp/cs-conventions      # inherits clean-code baseline automatically
   agents:
     - shared/code-reviewer
 tags: [csharp, testing, integration]
@@ -88,6 +88,32 @@ extends:
 
 The resolver emits the clean-code body + ts-style body oldest-first. You never copy the baseline
 bullets into the TypeScript file.
+
+---
+
+## Import an existing portable-template directory
+
+**Goal:** fold a pre-built Claude template directory (the `rules/` · `agents/` · `skills/` layout)
+into the catalog as schema-validated artifacts.
+
+```bash
+# Preview — coverage report shows source→dest mapping, dropped fields, any unclassified files
+sigil import path/to/.ClaudeFoo --language foo --create-language --dry-run
+
+# Self-review the coverage report, correct any issues, then execute:
+sigil import path/to/.ClaudeFoo --language foo --create-language --yes
+
+# Wire deps, polish titles (content-refinement stage, separate from mechanical import)
+sigil patch foo/foo-generate-tests --set-uses.agents='["shared/code-reviewer"]'
+```
+
+Source→catalog field mapping: `paths` → `appliesTo`; `tools` (comma string) → `tools[]`;
+`allowed-tools` → `allowedTools`; `argument-hint` → `argumentHint`;
+`disable-model-invocation` → `disableModelInvocation`; `when_to_use` → prepended to body.
+
+See [docs/decisions/catalog-import-migration.md](../decisions/catalog-import-migration.md) for
+the full field map, known YAML pitfalls (glob patterns, `[` chars in argument hints), and the
+content-refinement follow-up checklist.
 
 ---
 

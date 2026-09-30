@@ -1,0 +1,9 @@
+displayName: "TypeScript"
+globs:
+  - "**/*.ts"
+  - "**/*.tsx"
+  - "**/*.mts"
+  - "**/*.cts"
+  - "**/tsconfig.json"
+  - "**/package.json"
+icon: "🔷"

@@ -9,7 +9,16 @@
 import fs from 'fs';
 import path from 'path';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import { SkillSchema, AgentSchema, RuleSchema, PromptSchema, WorkflowSchema } from './index';
+import {
+  SkillSchema,
+  AgentSchema,
+  RuleSchema,
+  PromptSchema,
+  WorkflowSchema,
+  HookSchema,
+  SettingsSchema,
+  McpSchema,
+} from './index';
 
 const OUTPUT_DIR = path.resolve(__dirname, '../../schema');
 
@@ -21,6 +30,9 @@ const SCHEMAS: Array<{ name: string; schema: any }> = [
   { name: 'rule', schema: RuleSchema },
   { name: 'prompt', schema: PromptSchema },
   { name: 'workflow', schema: WorkflowSchema },
+  { name: 'hook', schema: HookSchema },
+  { name: 'settings', schema: SettingsSchema },
+  { name: 'mcp', schema: McpSchema },
 ];
 
 function run(): void {

@@ -915,7 +915,7 @@ program
           const rendered = renderArtifactFile(item.frontmatter, item.body);
           const frontmatterMatch = rendered.match(/^---\n([\s\S]*?)\n---/);
           if (frontmatterMatch) {
-            for (const line of frontmatterMatch[1].split('\n')) {
+            for (const line of (frontmatterMatch[1] ?? '').split('\n')) {
               console.log(`    ${line}`);
             }
           }
@@ -2043,7 +2043,8 @@ program
       '    sigil completion fish | source        # fish',
   )
   .action((shell = 'bash') => {
-    const binPath = process.argv[1];
+    // process.argv[1] is the CLI entry point — always set when invoked as a command
+    const binPath = process.argv[1] ?? '';
 
     switch (shell) {
       case 'bash':

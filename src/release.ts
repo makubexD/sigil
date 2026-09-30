@@ -26,7 +26,7 @@ export function bumpVersion(current: string, level: string): string {
     throw new Error(`Current version '${current}' is not valid semver (expected x.y.z).`);
   }
 
-  const [, maMajor, miMinor, paPatch] = match.map(Number);
+  const [, maMajor = 0, miMinor = 0, paPatch = 0] = match.map(Number);
 
   switch (level) {
     case 'major':

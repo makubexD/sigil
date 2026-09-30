@@ -41,7 +41,8 @@ function extractInlineAllowlist(content: string): Set<string> {
   const re = /<!--\s*sigil-allow:\s*([^\s>]+)\s*-->/gi;
   let m: RegExpExecArray | null;
   while ((m = re.exec(content)) !== null) {
-    allowed.add(m[1]);
+    // m[1] is the first capture group — always present when the pattern matches
+    allowed.add(m[1] ?? '');
   }
   return allowed;
 }
@@ -89,11 +90,13 @@ export function scanContent(
       for (let i = 0; i < lines.length; i++) {
         if (rule.frontmatterOnly && frontmatterEnd >= 0 && i > frontmatterEnd) continue;
 
-        const match = rule.pattern.exec(lines[i]);
+        // lines[i] is in-bounds (loop guard i < lines.length)
+        const line = lines[i] ?? '';
+        const match = rule.pattern.exec(line);
         if (match) {
-          const snippet = lines[i].slice(
+          const snippet = line.slice(
             Math.max(0, match.index - 20),
-            Math.min(lines[i].length, match.index + match[0].length + 20),
+            Math.min(line.length, match.index + match[0].length + 20),
           );
           const redacted = snippet.replace(
             match[0],

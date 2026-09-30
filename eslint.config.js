@@ -11,11 +11,11 @@ module.exports = tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
 
-  // Project-specific overrides
+  // Project-specific overrides (src + test TypeScript)
   {
-    files: ['src/**/*.ts'],
+    files: ['src/**/*.ts', 'test/**/*.ts'],
     rules: {
-      // Warn rather than error on `any` — the codebase uses it in a few places for flexibility
+      // Warn rather than error on `any` — used in src for flexibility; common in tests for stubs
       '@typescript-eslint/no-explicit-any': 'warn',
       // preserve-caught-error (ESLint 10 built-in) requires Error({ cause: err }) but
       // our TypeScript target is ES2020; ES2022.error is not yet in the lib config.
@@ -26,13 +26,20 @@ module.exports = tseslint.config(
         'warn',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
-      // Allow `require()` in the schema emitter and other build-time CJS files
+      // Allow `require()` in the schema emitter, other build-time CJS files, and tests
       '@typescript-eslint/no-require-imports': 'off',
     },
   },
 
-  // Ignore generated and non-source files
+  // Ignore generated and non-source files (eslint.config.js is CJS, not linted as source)
   {
-    ignores: ['dist-cli/**', 'dist/**', 'node_modules/**', 'schema/**', 'test/*.js'],
+    ignores: [
+      'dist-cli/**',
+      'dist/**',
+      'node_modules/**',
+      'schema/**',
+      'test/*.js',
+      'eslint.config.js',
+    ],
   },
 );

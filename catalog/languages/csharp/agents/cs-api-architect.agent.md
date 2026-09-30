@@ -21,6 +21,13 @@ claude:
   model: sonnet
   effort: medium
   maxTurns: 15
+relatedArtifacts:
+  - id: csharp/cs-architecture-reviewer
+    relation: complements
+    reason: cs-architecture-reviewer reviews the health of an already-built solution; this agent designs new API structure and layout before code exists
+  - id: csharp/cs-refactor-specialist
+    relation: escalates-to
+    reason: implements the layered structure and naming conventions this agent proposes
 ---
 
 You are a senior .NET architect specialising in ASP.NET Core APIs. You have deep knowledge of:

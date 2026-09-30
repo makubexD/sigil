@@ -8,7 +8,7 @@ description: >-
 server:
   command: "npx"
   args: ["-y", "@modelcontextprotocol/server-filesystem", "."]
-tags: [mcp, filesystem, tools]
+tags: [mcp, filesystem, tools, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 ---

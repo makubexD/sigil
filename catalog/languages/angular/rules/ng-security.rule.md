@@ -7,7 +7,7 @@ language: angular
 appliesTo:
   - "**/*.ts"
   - "**/*.html"
-severity: recommended
+severity: required
 extends: []
 tags:
   - angular

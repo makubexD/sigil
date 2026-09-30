@@ -13,7 +13,7 @@ command: |
     echo "sigil-hook: blocked write to protected config file" >&2
     exit 2
   fi
-tags: [security, safety]
+tags: [security, safety, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 ---

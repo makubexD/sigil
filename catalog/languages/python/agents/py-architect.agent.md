@@ -10,6 +10,11 @@ tags:
   - architecture
   - fastapi
   - django
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 claude:
   model: sonnet
   effort: medium

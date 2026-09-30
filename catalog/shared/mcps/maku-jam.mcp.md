@@ -8,7 +8,7 @@ description: >-
 server:
   type: "http"
   url: "https://mcp.jam.dev/mcp"
-tags: [mcp, remote, http, jam]
+tags: [mcp, remote, http, jam, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 # defaultScope: project  # recommended install scope: project | local | user

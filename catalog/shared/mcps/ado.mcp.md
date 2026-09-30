@@ -19,7 +19,7 @@ server:
     - "work-items"
   env:
     ADO_MCP_PERSONAL_TOKEN: "${env:ADO_MCP_PERSONAL_TOKEN}"
-tags: [mcp, azure-devops, ado, work-items]
+tags: [mcp, azure-devops, ado, work-items, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 # defaultScope: project  # recommended install scope: project | local | user

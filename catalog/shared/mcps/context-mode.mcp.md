@@ -7,7 +7,7 @@ description: >-
   which must be installed globally and available on PATH.
 server:
   command: "context-mode"
-tags: [mcp, context, tools]
+tags: [mcp, context, tools, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 # defaultScope: project  # recommended install scope: project | local | user

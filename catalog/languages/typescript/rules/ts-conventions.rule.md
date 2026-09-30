@@ -10,7 +10,8 @@ appliesTo:
   - "**/*.mts"
   - "**/*.cts"
 severity: recommended
-extends: []
+extends:
+  - shared/clean-code
 tags:
   - typescript
   - conventions

@@ -6,7 +6,7 @@ description: C# security invariants — secrets, SQL injection, deserialization,
 language: csharp
 appliesTo:
   - "**/*.cs"
-severity: recommended
+severity: required
 extends: []
 tags:
   - csharp

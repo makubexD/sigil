@@ -14,7 +14,7 @@ permissions:
     - "Bash(npx tsc *)"
     - "Bash(npx eslint *)"
     - "Bash(npx prettier *)"
-tags: [permissions, developer-experience]
+tags: [permissions, developer-experience, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 ---

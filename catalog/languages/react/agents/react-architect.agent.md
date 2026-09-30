@@ -12,6 +12,11 @@ tags:
   - typescript
   - architecture
   - state-management
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 claude:
   model: sonnet
   effort: medium

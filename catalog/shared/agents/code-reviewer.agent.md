@@ -10,6 +10,11 @@ tags:
   - review
   - quality
   - shared
+tools:
+  - Read
+  - Grep
+  - Glob
+  - Bash
 claude:
   model: sonnet
   effort: medium

@@ -7,7 +7,8 @@ language: angular
 appliesTo:
   - "**/*.ts"
 severity: recommended
-extends: []
+extends:
+  - shared/clean-code
 tags:
   - angular
   - conventions

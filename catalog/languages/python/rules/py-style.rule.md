@@ -12,6 +12,7 @@ tags:
   - python
   - style
   - pep8
+appliesToRationale: Scoped to Python source because these PEP 8 and idiom rules only apply to .py files — there is no equivalent concern in pyproject.toml or other config.
 ---
 
 - **Type hints everywhere.** Annotate every function signature and public variable. Use `from __future__ import annotations` for forward references. Use `X | None` (Python 3.10+) instead of `Optional[X]`.

@@ -7,8 +7,11 @@ import { loadCatalog } from '../../dist-cli/load';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
 import { buildInstructionsFile } from '../../dist-cli/targets/copilot/build-helpers';
+import { COPILOT_SKILL_SPEC } from '../../dist-cli/targets/copilot/spec/skill';
+import { renderArtifact } from '../../dist-cli/targets/emit';
+import type { ResolvedArtifact } from '../../dist-cli/types';
 import { CATALOG_DIR } from '../helpers/catalog';
-import { makeRule } from '../helpers/fixtures';
+import { makeRule, makeSkill } from '../helpers/fixtures';
 
 const VERSION = '0.1.0';
 const PACKS = [
@@ -165,11 +168,14 @@ describe('Copilot target', () => {
       'authored whenToUse prose present verbatim',
     );
 
-    // A skill authoring no whenToUse frontmatter and no body heading must not gain one.
-    const reactSkillMd = files['.github/skills/component-testing/SKILL.md'];
-    assert.ok(reactSkillMd, 'component-testing SKILL.md emitted');
+    // A skill authoring no whenToUse frontmatter must not gain a "## When to Use" section.
+    // Synthetic fixture rather than a real catalog skill — every catalog skill now authors
+    // whenToUse (the 2026-08 audit's when-to-use-quality rule closed that gap), so this
+    // negative case would otherwise silently stop being exercised as content changes.
+    const noWhenToUseSkill = makeSkill({ whenToUse: undefined }) as unknown as ResolvedArtifact;
+    const rendered = renderArtifact(COPILOT_SKILL_SPEC, noWhenToUseSkill, {});
     assert.ok(
-      !reactSkillMd.includes('## When to Use'),
+      !rendered.includes('## When to Use'),
       'no When to Use section when whenToUse was never authored',
     );
   });

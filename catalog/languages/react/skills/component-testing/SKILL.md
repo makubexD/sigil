@@ -18,6 +18,7 @@ tags:
   - rtl
   - vitest
   - jest
+whenToUse: "Use when adding, updating, or reviewing tests for a React component — e.g. \"write tests for UserCard\", \"test this form submission\", \"check accessibility in this component's tests\". Covers React Testing Library queries, user-event interactions, async queries, mocking, and accessibility assertions."
 ---
 
 # Writing React Component Tests

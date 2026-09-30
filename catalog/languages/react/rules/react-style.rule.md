@@ -16,6 +16,7 @@ tags:
   - typescript
   - hooks
   - style
+appliesToRationale: Scoped to component files (.tsx/.jsx) because these hooks and composition conventions apply only to React component code, not plain TypeScript modules or config.
 ---
 
 - **Function components only.** Never write class components for new code. Use function components with hooks.

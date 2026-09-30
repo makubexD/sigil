@@ -30,6 +30,12 @@ export interface KindDescriptor {
   readonly displayOrder: number;
   /** Body placeholder comment emitted by `sigil new` for this kind. */
   readonly bodyComment: string;
+  /** True when this kind can declare `uses:` and therefore has a dependency closure. */
+  readonly hasUsesClosure: boolean;
+  /** True when the artifact's source (and scaffolded output) is a directory, not a single file. */
+  readonly isDirectoryBacked: boolean;
+  /** True when the artifact must belong to a specific language (no shared/ variant exists). */
+  readonly requiresLanguage: boolean;
 }
 
 // ─── Registry (one entry per ArtifactKind — compiler-enforced) ───────────────
@@ -49,12 +55,18 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     displayOrder: 0,
     bodyComment:
       'Describe what this MCP server provides. The server: above is merged into .mcp.json.',
+    hasUsesClosure: false,
+    isDirectoryBacked: false,
+    requiresLanguage: false,
   },
   hook: {
     kind: 'hook',
     isConfig: true,
     displayOrder: 1,
     bodyComment: 'Describe what this hook does and when it fires. The command: above is executed.',
+    hasUsesClosure: false,
+    isDirectoryBacked: false,
+    requiresLanguage: false,
   },
   settings: {
     kind: 'settings',
@@ -62,6 +74,9 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     displayOrder: 2,
     bodyComment:
       'Describe what this settings fragment configures. Fields above are merged into settings.json.',
+    hasUsesClosure: false,
+    isDirectoryBacked: false,
+    requiresLanguage: false,
   },
   // Code kinds — write whole files, may be language-scoped
   prompt: {
@@ -69,30 +84,45 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     isConfig: false,
     displayOrder: 3,
     bodyComment: 'Write the prompt body. Use {{placeholder}} for args.',
+    hasUsesClosure: false,
+    isDirectoryBacked: false,
+    requiresLanguage: false,
   },
   skill: {
     kind: 'skill',
     isConfig: false,
     displayOrder: 4,
     bodyComment: 'Describe what the AI should do when this skill is invoked.',
+    hasUsesClosure: true,
+    isDirectoryBacked: true,
+    requiresLanguage: true,
   },
   agent: {
     kind: 'agent',
     isConfig: false,
     displayOrder: 5,
     bodyComment: 'Define the agent persona and instructions below.',
+    hasUsesClosure: false,
+    isDirectoryBacked: false,
+    requiresLanguage: false,
   },
   rule: {
     kind: 'rule',
     isConfig: false,
     displayOrder: 6,
     bodyComment: 'Add rule bullets below. Extend with extends: for DRY inheritance.',
+    hasUsesClosure: false,
+    isDirectoryBacked: false,
+    requiresLanguage: false,
   },
   workflow: {
     kind: 'workflow',
     isConfig: false,
     displayOrder: 7,
     bodyComment: 'Describe what this workflow does. The steps: list above drives execution order.',
+    hasUsesClosure: false,
+    isDirectoryBacked: false,
+    requiresLanguage: false,
   },
 };
 
@@ -144,4 +174,19 @@ export function isArtifactKind(k: string): k is ArtifactKind {
  */
 export function isConfigKind(k: string): k is ConfigKind {
   return CONFIG_KINDS.has(k as ArtifactKind);
+}
+
+/** True when `kind` can declare `uses:` and therefore has a dependency closure (skill only). */
+export function hasUsesClosure(kind: string): boolean {
+  return isArtifactKind(kind) && KIND_REGISTRY[kind].hasUsesClosure;
+}
+
+/** True when `kind`'s artifacts are directory-backed (skill only — SKILL.md + assets). */
+export function isDirectoryBacked(kind: string): boolean {
+  return isArtifactKind(kind) && KIND_REGISTRY[kind].isDirectoryBacked;
+}
+
+/** True when `kind` must belong to a specific language — no shared/ variant exists (skill only). */
+export function requiresLanguage(kind: string): boolean {
+  return isArtifactKind(kind) && KIND_REGISTRY[kind].requiresLanguage;
 }

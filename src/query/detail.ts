@@ -4,6 +4,7 @@
  */
 import type { ResolvedArtifact, LoadedCatalog, Target } from '../types';
 import { artifactTargetsPlatform } from '../select';
+import { hasUsesClosure } from '../kinds';
 
 export interface ArtifactDetail {
   id: string;
@@ -67,7 +68,7 @@ export function getArtifactDetail(
   // Reverse-dependent scan: skills whose uses.rules or uses.agents include this id
   const reverseDependents: string[] = [];
   for (const a of rawCatalog.artifacts) {
-    if (a.kind !== 'skill') continue;
+    if (!hasUsesClosure(a.kind)) continue;
     const uses = a.frontmatter.uses as { rules?: string[]; agents?: string[] } | undefined;
     const usesRule = (uses?.rules ?? []).includes(artifact.id);
     const usesAgent = (uses?.agents ?? []).includes(artifact.id);

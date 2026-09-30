@@ -8,6 +8,7 @@
  * Pure function — no I/O, no target coupling.
  */
 import type { ResolvedCatalog, ResolvedArtifact } from '../types';
+import { hasUsesClosure } from '../kinds';
 
 /**
  * One artifact in the dependency closure, annotated with which skills pulled it in.
@@ -50,7 +51,7 @@ export function computeClosure(primaryIds: string[], catalog: ResolvedCatalog): 
   const depVia = new Map<string, Set<string>>();
 
   for (const artifact of primary) {
-    if (artifact.kind !== 'skill') continue;
+    if (!hasUsesClosure(artifact.kind)) continue;
 
     for (const rule of artifact.resolvedRules ?? []) {
       if (!primarySet.has(rule.id)) {

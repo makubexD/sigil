@@ -29,6 +29,7 @@ import {
 import type { ResolvedCatalog, Target } from '../types';
 import { buildLanguageOptions } from '../select';
 import { kindSupportingTargets, setPlatforms } from '../authoring/platforms';
+import { requiresLanguage } from '../kinds';
 import { TARGET_META } from './types';
 import type { NewWizardResult } from './types';
 
@@ -148,7 +149,7 @@ export async function runNewWizard(
 
     // ── 2: Language ──────────────────────────────────────────────────────────
     if (step === 2) {
-      const isSkill = s.kind === 'skill';
+      const isSkill = !!s.kind && requiresLanguage(s.kind);
       const langOpts = buildLanguageOptions(catalog.artifacts);
       // Skills must belong to a specific language (shared skills don't exist)
       const filtered = isSkill ? langOpts.filter(o => o.value !== '') : langOpts;

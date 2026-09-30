@@ -12,6 +12,7 @@ import path from 'path';
 import { resolveCatalog } from '../resolve';
 import { getTarget } from '../targets';
 import { resolveSelection, CONFIG_KINDS } from '../select';
+import { hasUsesClosure } from '../kinds';
 import {
   isInteractiveTTY,
   runWizard,
@@ -301,7 +302,7 @@ export async function runAdd(selectors: string[], opts: AddOpts): Promise<void> 
       if (effectiveIncludeDeps) {
         for (const id of wholeFileIds) {
           const a = resolved.byId.get(id);
-          if (a?.kind !== 'skill') continue;
+          if (!a || !hasUsesClosure(a.kind)) continue;
           for (const rule of a.resolvedRules ?? []) {
             if (!wholeFileIds.includes(rule.id)) {
               const existing = depMap.get(rule.id) ?? [];

@@ -11,6 +11,7 @@ import { confirm, isCancel, cancel, note } from '@clack/prompts';
 import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { isInteractiveTTY } from '../wizard';
+import { hasUsesClosure, isDirectoryBacked } from '../kinds';
 
 export interface DeleteOptions {
   catalogDir: string;
@@ -33,7 +34,7 @@ export async function runDelete(id: string, opts: DeleteOptions): Promise<void> 
   // Find skills whose resolved rules or agent IDs include this artifact.
   const dependents: string[] = [];
   for (const a of resolvedCatalog.artifacts) {
-    if (a.kind !== 'skill') continue;
+    if (!hasUsesClosure(a.kind)) continue;
     const usesRule = (a.resolvedRules ?? []).some(r => r.id === id);
     const usesAgent = (a.resolvedAgentIds ?? []).includes(id);
     if (usesRule || usesAgent) {
@@ -42,7 +43,7 @@ export async function runDelete(id: string, opts: DeleteOptions): Promise<void> 
   }
 
   // Determine what will be removed
-  const isSkill = artifact.kind === 'skill';
+  const isSkill = isDirectoryBacked(artifact.kind);
   const targetPath = isSkill
     ? path.dirname(artifact.filePath) // remove the whole skill directory
     : artifact.filePath; // remove the single file

@@ -33,7 +33,7 @@ import {
   CONFIG_KINDS,
   KIND_ORDER,
 } from '../select';
-import { ALL_KINDS } from '../kinds';
+import { ALL_KINDS, hasUsesClosure } from '../kinds';
 import type { ClosurePreview } from '../select';
 import { getAllTargets } from '../targets';
 import { computeInstallStates, type ArtifactInstallState } from '../install-state';
@@ -77,12 +77,12 @@ function packContentHint(
   try {
     const { ids } = resolveSelection([`pack:${pack.name}`], {}, catalog, packs, []);
     const kindCounts = new Map<string, number>();
-    let hasSkill = false;
+    let hasDepsClosure = false;
     for (const id of ids) {
       const a = catalog.byId.get(id);
       if (!a) continue;
       kindCounts.set(a.kind, (kindCounts.get(a.kind) ?? 0) + 1);
-      if (a.kind === 'skill') hasSkill = true;
+      if (hasUsesClosure(a.kind)) hasDepsClosure = true;
     }
     // Display order from kinds.ts (config first, then code kinds — single source of truth).
     const displayOrder = ALL_KINDS;
@@ -99,7 +99,7 @@ function packContentHint(
         if (count) parts.push(`${count} ${kindPlural(target, k)}`);
       }
     }
-    if (hasSkill) parts.push('+deps');
+    if (hasDepsClosure) parts.push('+deps');
     return parts.join(' · ') || pack.displayName;
   } catch {
     return pack.displayName;

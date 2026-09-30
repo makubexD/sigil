@@ -12,9 +12,24 @@ import { CATALOG_DIR } from '../helpers/catalog';
 
 const VERSION = '0.1.0';
 const PACKS = [
-  { name: 'dotnet-pack', displayName: '.NET / C# Pack', description: 'C# skills and agents', languages: ['csharp'] },
-  { name: 'python-pack', displayName: 'Python Pack', description: 'Python skills and agents', languages: ['python'] },
-  { name: 'react-pack', displayName: 'React Pack', description: 'React skills and agents', languages: ['react'] },
+  {
+    name: 'dotnet-pack',
+    displayName: '.NET / C# Pack',
+    description: 'C# skills and agents',
+    languages: ['csharp'],
+  },
+  {
+    name: 'python-pack',
+    displayName: 'Python Pack',
+    description: 'Python skills and agents',
+    languages: ['python'],
+  },
+  {
+    name: 'react-pack',
+    displayName: 'React Pack',
+    description: 'React skills and agents',
+    languages: ['react'],
+  },
 ];
 
 describe('checkOutputContract — green paths (existing output passes)', () => {
@@ -74,7 +89,9 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
-    const files = await target.scaffold!('csharp/cs-generate-tests', resolved, { projectDir: '/fake' });
+    const files = await target.scaffold!('csharp/cs-generate-tests', resolved, {
+      projectDir: '/fake',
+    });
     const violations = checkOutputContract(files, target.outputContracts ?? []);
     assert.deepEqual(
       violations,
@@ -91,7 +108,9 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     // ts-generate-tests carries argumentHint → emits argument-hint: in SKILL.md
-    const files = await target.scaffold!('typescript/ts-generate-tests', resolved, { projectDir: '/fake' });
+    const files = await target.scaffold!('typescript/ts-generate-tests', resolved, {
+      projectDir: '/fake',
+    });
     const violations = checkOutputContract(files, target.outputContracts ?? []);
     assert.deepEqual(
       violations,

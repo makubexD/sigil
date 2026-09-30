@@ -30,7 +30,9 @@ export function computeStatus(
   catalogIds: Set<string>,
   scaffoldHashFn?: (id: string, target: string) => Map<string, string> | null,
 ): StatusResult[] {
-  return manifest.entries.map(entry => statusForEntry(entry, projectDir, catalogIds, scaffoldHashFn));
+  return manifest.entries.map(entry =>
+    statusForEntry(entry, projectDir, catalogIds, scaffoldHashFn),
+  );
 }
 
 function statusForEntry(

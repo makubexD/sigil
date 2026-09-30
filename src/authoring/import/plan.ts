@@ -71,8 +71,10 @@ export function renderArtifactFile(frontmatter: CatalogFrontmatter, body: string
 
   if (frontmatter.kind === 'skill') {
     if (frontmatter.appliesTo !== undefined) entries.push(['appliesTo', frontmatter.appliesTo]);
-    if (frontmatter.allowedTools !== undefined) entries.push(['allowedTools', frontmatter.allowedTools]);
-    if (frontmatter.argumentHint !== undefined) entries.push(['argumentHint', frontmatter.argumentHint]);
+    if (frontmatter.allowedTools !== undefined)
+      entries.push(['allowedTools', frontmatter.allowedTools]);
+    if (frontmatter.argumentHint !== undefined)
+      entries.push(['argumentHint', frontmatter.argumentHint]);
     if (frontmatter.disableModelInvocation === true) entries.push(['disableModelInvocation', true]);
   }
 
@@ -102,7 +104,8 @@ export function renderArtifactFile(frontmatter: CatalogFrontmatter, body: string
       usesBlock = 'uses:\n  rules: []\n  agents: []';
     } else {
       const ruleLines = rules.length > 0 ? `\n${rules.map(r => `    - ${r}`).join('\n')}` : ' []';
-      const agentLines = agents.length > 0 ? `\n${agents.map(a => `    - ${a}`).join('\n')}` : ' []';
+      const agentLines =
+        agents.length > 0 ? `\n${agents.map(a => `    - ${a}`).join('\n')}` : ' []';
       usesBlock = `uses:\n  rules:${ruleLines}\n  agents:${agentLines}`;
     }
     // Insert uses block before tags (last entry)
@@ -138,11 +141,15 @@ export function buildImportPlan(discovered: DiscoveredFile[], opts: PlanOptions)
   const droppedFieldsSummary: ImportPlan['droppedFieldsSummary'] = [];
 
   for (const file of discovered) {
-    const { frontmatter: translated, droppedFields, bodyPrefix, descriptionSynthesized } =
-      translateFrontmatter(file.kind, file.slug, file.frontmatter, {
-        language: opts.language,
-        displayName: opts.displayName,
-      });
+    const {
+      frontmatter: translated,
+      droppedFields,
+      bodyPrefix,
+      descriptionSynthesized,
+    } = translateFrontmatter(file.kind, file.slug, file.frontmatter, {
+      language: opts.language,
+      displayName: opts.displayName,
+    });
 
     const destPath = computeDestinationPath(translated.id, file.kind, opts.catalogDir);
 

@@ -26,9 +26,10 @@ import { CLAUDE_MCP_SERVERS_KEY } from './targets/claude-code/config';
 export const PKG_ROOT = path.resolve(__dirname, '..');
 
 /** Package metadata, read once at startup. */
-export const pkg = JSON.parse(
-  fs.readFileSync(path.resolve(PKG_ROOT, 'package.json'), 'utf-8'),
-) as { version: string; homepage?: string };
+export const pkg = JSON.parse(fs.readFileSync(path.resolve(PKG_ROOT, 'package.json'), 'utf-8')) as {
+  version: string;
+  homepage?: string;
+};
 
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 

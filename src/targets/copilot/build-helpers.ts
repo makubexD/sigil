@@ -125,9 +125,7 @@ export function buildPromptFile(prompt: ResolvedArtifact): string {
  */
 export function buildAgentsMd(agents: ResolvedArtifact[], catalog?: ResolvedCatalog): string {
   // In the full build, all agents in the file are co-present.
-  const installSet = catalog
-    ? new Set(agents.map(a => a.id))
-    : undefined;
+  const installSet = catalog ? new Set(agents.map(a => a.id)) : undefined;
 
   const sections = agents.map(agent => {
     const name = agent.frontmatter.name as string;
@@ -137,9 +135,10 @@ export function buildAgentsMd(agents: ResolvedArtifact[], catalog?: ResolvedCata
     // Conditional Boundary section — only for co-present related artifacts
     const boundaryLines: string[] = [];
     if (installSet && catalog) {
-      const related = (agent.frontmatter.relatedArtifacts as
-        | Array<{ id: string; relation: string; reason: string }>
-        | undefined) ?? [];
+      const related =
+        (agent.frontmatter.relatedArtifacts as
+          | Array<{ id: string; relation: string; reason: string }>
+          | undefined) ?? [];
       const coPresent = related.filter(r => r.id !== agent.id && installSet.has(r.id));
 
       if (coPresent.length > 0) {
@@ -175,9 +174,7 @@ export function buildAgentsMd(agents: ResolvedArtifact[], catalog?: ResolvedCata
     }
 
     const bodySection =
-      boundaryLines.length > 0
-        ? [...boundaryLines, agent.body].join('\n')
-        : agent.body;
+      boundaryLines.length > 0 ? [...boundaryLines, agent.body].join('\n') : agent.body;
 
     return [`## ${name}`, '', `**${title}**`, '', description, '', bodySection].join('\n');
   });

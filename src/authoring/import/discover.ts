@@ -84,33 +84,50 @@ function parseMarkdown(filePath: string): { frontmatter: Record<string, unknown>
     // lines[i] is guaranteed to exist since i < lines.length
     const line: string = lines[i] ?? '';
     // Skip blank lines
-    if (!line.trim()) { i++; continue; }
+    if (!line.trim()) {
+      i++;
+      continue;
+    }
 
     // Indented line (part of a previous list) — handled inline below
-    if (line.startsWith('  ') || line.startsWith('\t')) { i++; continue; }
+    if (line.startsWith('  ') || line.startsWith('\t')) {
+      i++;
+      continue;
+    }
 
     // Match "key: value" or "key:" (bare)
     const colonIdx = line.indexOf(':');
-    if (colonIdx === -1) { i++; continue; }
+    if (colonIdx === -1) {
+      i++;
+      continue;
+    }
 
     const key = line.slice(0, colonIdx).trim();
     const rawVal = line.slice(colonIdx + 1);
     const valStr = rawVal.trimStart();
 
-    if (!key) { i++; continue; }
+    if (!key) {
+      i++;
+      continue;
+    }
 
     // Check if next lines are indented list items (e.g. paths:, tools:)
     const listItems: string[] = [];
     if (valStr === '' || valStr === '\n') {
       // Collect indented child lines
       let j = i + 1;
-      while (j < lines.length && ((lines[j] ?? '').startsWith('  ') || (lines[j] ?? '').startsWith('\t'))) {
+      while (
+        j < lines.length &&
+        ((lines[j] ?? '').startsWith('  ') || (lines[j] ?? '').startsWith('\t'))
+      ) {
         let item = (lines[j] ?? '').trim();
         // Strip "- " list-item marker
         if (item.startsWith('- ')) item = item.slice(2);
         // Strip surrounding YAML quotes so "**/*.cs" stays as **/*.cs
-        if ((item.startsWith('"') && item.endsWith('"')) ||
-            (item.startsWith("'") && item.endsWith("'"))) {
+        if (
+          (item.startsWith('"') && item.endsWith('"')) ||
+          (item.startsWith("'") && item.endsWith("'"))
+        ) {
           item = item.slice(1, -1);
         }
         listItems.push(item);
@@ -124,13 +141,18 @@ function parseMarkdown(filePath: string): { frontmatter: Record<string, unknown>
     }
 
     // Scalar value
-    if (valStr === 'true') { fm[key] = true; }
-    else if (valStr === 'false') { fm[key] = false; }
-    else if (valStr !== '' && !isNaN(Number(valStr))) { fm[key] = Number(valStr); }
-    else {
+    if (valStr === 'true') {
+      fm[key] = true;
+    } else if (valStr === 'false') {
+      fm[key] = false;
+    } else if (valStr !== '' && !isNaN(Number(valStr))) {
+      fm[key] = Number(valStr);
+    } else {
       // Strip surrounding quotes if present
-      if ((valStr.startsWith('"') && valStr.endsWith('"')) ||
-          (valStr.startsWith("'") && valStr.endsWith("'"))) {
+      if (
+        (valStr.startsWith('"') && valStr.endsWith('"')) ||
+        (valStr.startsWith("'") && valStr.endsWith("'"))
+      ) {
         fm[key] = valStr.slice(1, -1);
       } else {
         fm[key] = valStr;

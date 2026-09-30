@@ -53,13 +53,14 @@ describe('runEditWizard', () => {
   };
 
   it('happy path: user accepts all prefilled values and confirms — returns result', async () => {
-    const { runEditWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runEditWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     // Steps: title (prefilled) → description (prefilled) → tags → confirm
     const restore = mockClack([
-      'Clean Code',            // title (keep current)
+      'Clean Code', // title (keep current)
       'A clean code style guide.', // description (keep current)
-      'style, quality',        // tags (keep current)
-      true,                    // confirm save
+      'style, quality', // tags (keep current)
+      true, // confirm save
     ]);
     try {
       const result = await runEditWizard(FAKE_ARTIFACT);
@@ -73,12 +74,13 @@ describe('runEditWizard', () => {
   });
 
   it('user changes title and description, confirms — returns updated result', async () => {
-    const { runEditWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runEditWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const restore = mockClack([
-      'Updated Clean Code',               // new title
+      'Updated Clean Code', // new title
       'Revised description for the rule.', // new description
-      'style',                             // tags (trimmed comma list)
-      true,                                // confirm
+      'style', // tags (trimmed comma list)
+      true, // confirm
     ]);
     try {
       const result = await runEditWizard(FAKE_ARTIFACT);
@@ -92,12 +94,13 @@ describe('runEditWizard', () => {
   });
 
   it('user leaves tags blank — returns empty tags array', async () => {
-    const { runEditWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runEditWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const restore = mockClack([
-      'Clean Code',             // title
+      'Clean Code', // title
       'A clean code style guide.', // description
-      '  ',                     // blank tags input → empty array
-      true,                     // confirm
+      '  ', // blank tags input → empty array
+      true, // confirm
     ]);
     try {
       const result = await runEditWizard(FAKE_ARTIFACT);
@@ -109,7 +112,8 @@ describe('runEditWizard', () => {
   });
 
   it('user declines the confirm prompt — returns null', async () => {
-    const { runEditWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runEditWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const restore = mockClack([
       'Clean Code',
       'A clean code style guide.',
@@ -125,7 +129,8 @@ describe('runEditWizard', () => {
   });
 
   it('isCancel on title prompt — returns null', async () => {
-    const { runEditWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runEditWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const ex = clackMod.exports;
     const orig = { ...ex };
 
@@ -137,7 +142,8 @@ describe('runEditWizard', () => {
     ex['note'] = () => {};
     ex['cancel'] = () => {};
     ex['log'] = { info: () => {}, warn: () => {}, error: () => {} };
-    ex['isCancel'] = (v: unknown) => v !== null && typeof v === 'object' && CANCEL_SYMBOL in (v as object);
+    ex['isCancel'] = (v: unknown) =>
+      v !== null && typeof v === 'object' && CANCEL_SYMBOL in (v as object);
     ex['text'] = async () => cancelObj;
     ex['confirm'] = async () => true;
 
@@ -150,7 +156,8 @@ describe('runEditWizard', () => {
   });
 
   it('prefills title from current frontmatter value', async () => {
-    const { runEditWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runEditWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const ex = clackMod.exports;
     const orig = { ...ex };
 

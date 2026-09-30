@@ -7,7 +7,11 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { buildFieldPatch, getEditableFields, applyPatchTransactionally } from '../../dist-cli/authoring/update';
+import {
+  buildFieldPatch,
+  getEditableFields,
+  applyPatchTransactionally,
+} from '../../dist-cli/authoring/update';
 import { getAllTargets } from '../../dist-cli/targets';
 import type { Artifact } from '../../dist-cli/types';
 
@@ -223,7 +227,11 @@ severity: recommended
   }
 
   function cleanup(dir: string): void {
-    try { fs.rmSync(dir, { recursive: true }); } catch { /* best-effort */ }
+    try {
+      fs.rmSync(dir, { recursive: true });
+    } catch {
+      /* best-effort */
+    }
   }
 
   /**

@@ -7,7 +7,7 @@ import type { ResolvedArtifact, ResolvedCatalog } from '../types';
 /** A single search result with its relevance score. */
 export interface SearchResult {
   artifact: ResolvedArtifact;
-  score: number;       // higher = more relevant
+  score: number; // higher = more relevant
   matchedFields: string[]; // which fields matched the query
 }
 

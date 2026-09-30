@@ -104,14 +104,9 @@ export function scaffoldPrompt(prompt: ResolvedArtifact, files: FileMap): void {
   // Translate {{name}} placeholders → $name (Claude's $name substitution syntax).
   const body = toClaudePlaceholders(prompt.body);
 
-  files[`.claude/commands/${slug}.md`] = [
-    fmLines.join('\n'),
-    '',
-    `# ${title}`,
-    '',
-    body,
-    '',
-  ].join('\n');
+  files[`.claude/commands/${slug}.md`] = [fmLines.join('\n'), '', `# ${title}`, '', body, ''].join(
+    '\n',
+  );
 }
 
 export function scaffoldWorkflow(workflow: ResolvedArtifact, files: FileMap): void {

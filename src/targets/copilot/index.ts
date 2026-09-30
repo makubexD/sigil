@@ -68,14 +68,7 @@ export class CopilotTarget implements Target {
 
   // Copilot supports mcp (via .vscode/mcp.json) but NOT hook or settings — those are Claude Code only.
   // hook/settings absent from this list → existing warn-and-skip covers them.
-  readonly supportedKinds: ArtifactKind[] = [
-    'skill',
-    'agent',
-    'rule',
-    'prompt',
-    'workflow',
-    'mcp',
-  ];
+  readonly supportedKinds: ArtifactKind[] = ['skill', 'agent', 'rule', 'prompt', 'workflow', 'mcp'];
 
   /** Directories created by `sigil init --target copilot`. */
   readonly initDirs: string[] = ['.github/instructions', '.github/prompts', '.github/agents'];
@@ -90,10 +83,26 @@ export class CopilotTarget implements Target {
    * Both platforms share the Agent Skills open standard for `skill`.
    */
   readonly vocabulary: Partial<Record<ArtifactKind, KindVocabulary>> = {
-    skill: { noun: 'skill', plural: 'Skills', hint: 'Agent Skills (open standard, agentskills.io)' },
-    agent: { noun: 'agent', plural: 'Agents', hint: 'custom agents (invoked as @name in Copilot Chat)' },
-    rule: { noun: 'instructions', plural: 'Instructions', hint: 'coding guidelines (.instructions.md with applyTo)' },
-    prompt: { noun: 'prompt', plural: 'Prompts', hint: 'prompt files invoked as /name in Copilot Chat' },
+    skill: {
+      noun: 'skill',
+      plural: 'Skills',
+      hint: 'Agent Skills (open standard, agentskills.io)',
+    },
+    agent: {
+      noun: 'agent',
+      plural: 'Agents',
+      hint: 'custom agents (invoked as @name in Copilot Chat)',
+    },
+    rule: {
+      noun: 'instructions',
+      plural: 'Instructions',
+      hint: 'coding guidelines (.instructions.md with applyTo)',
+    },
+    prompt: {
+      noun: 'prompt',
+      plural: 'Prompts',
+      hint: 'prompt files invoked as /name in Copilot Chat',
+    },
     workflow: { noun: 'prompt', plural: 'Prompts', hint: 'multi-step workflows as prompt files' },
     mcp: { noun: 'MCP server', plural: 'MCPs', hint: 'external MCP servers' },
   };

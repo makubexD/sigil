@@ -34,11 +34,11 @@ Renaming an agent required hand-editing prose in N other files.
 
 Three alternatives were considered:
 
-| Alternative | Pros | Cons | Decision |
-|---|---|---|---|
-| Keep hard-coded body prose | Zero change | Dangling refs; ID leakage; manual maintenance | Rejected |
-| Remove Boundary entirely | Simplest; self-contained | Loses specialist-routing intelligence for multi-agent | Rejected |
-| `relatedArtifacts` + conditional render | Machine-readable; no dangling refs; routing preserved | More schema surface | **Chosen** |
+| Alternative                             | Pros                                                  | Cons                                                  | Decision   |
+| --------------------------------------- | ----------------------------------------------------- | ----------------------------------------------------- | ---------- |
+| Keep hard-coded body prose              | Zero change                                           | Dangling refs; ID leakage; manual maintenance         | Rejected   |
+| Remove Boundary entirely                | Simplest; self-contained                              | Loses specialist-routing intelligence for multi-agent | Rejected   |
+| `relatedArtifacts` + conditional render | Machine-readable; no dangling refs; routing preserved | More schema surface                                   | **Chosen** |
 
 **Design implemented:**
 
@@ -61,6 +61,7 @@ Three alternatives were considered:
 ### Relationship graph encoded
 
 Three relation types:
+
 - `escalates-to` — delegate this category of work to the sibling (primary specialist)
 - `complements` — distinct scope, same peer tier
 - `see-also` — cross-kind reference (agent → skill, e.g. `cs-security-auditor` → `csharp/cs-audit-deps`)
@@ -78,6 +79,7 @@ in `resolve.ts` prepends the shared clean-code body to language-specific quality
 ### `uses` wiring
 
 All `*-generate-tests` skills already had `uses.rules` wired at import time. In this session:
+
 - `uses.agents` confirmed wired: `cs-generate-tests` → `cs-code-reviewer`, similarly for ts/ng.
 - `*-audit-deps` skills confirmed: `uses.rules` + `uses.agents` already fully wired.
 
@@ -132,19 +134,19 @@ via natural fallback behavior.
 
 New `ACRONYM_MAP` in `slugToTitle` applies before Title-Casing:
 
-| Slug word | Output |
-|---|---|
-| `rxjs` | `RxJS` |
-| `api` | `API` |
-| `http` | `HTTP` |
-| `https` | `HTTPS` |
-| `cli` | `CLI` |
-| `sql` | `SQL` |
-| `ui` | `UI` |
-| `ux` | `UX` |
-| `nuget` | `NuGet` |
-| `sdk` | `SDK` |
-| `orm` | `ORM` |
+| Slug word | Output  |
+| --------- | ------- |
+| `rxjs`    | `RxJS`  |
+| `api`     | `API`   |
+| `http`    | `HTTP`  |
+| `https`   | `HTTPS` |
+| `cli`     | `CLI`   |
+| `sql`     | `SQL`   |
+| `ui`      | `UI`    |
+| `ux`      | `UX`    |
+| `nuget`   | `NuGet` |
+| `sdk`     | `SDK`   |
+| `orm`     | `ORM`   |
 
 The `ng-rxjs` title regression (`Rxjs` → `RxJS`) is now fixed at the importer level.
 
@@ -183,6 +185,7 @@ New module `src/registry.ts` — pure function `buildRegistry(catalog, version, 
 `Registry` object. No I/O in the module; I/O in callers.
 
 Per-artifact record:
+
 ```json
 {
   "id": "csharp/cs-generate-tests",
@@ -222,6 +225,7 @@ which platforms the artifact targets. This mirrors the behavior of `sigil build`
 ## Verification
 
 All sessions ended with:
+
 - `npm run validate` → ✓ All 94 artifact(s) valid
 - `npm run catalog:build` → ✓ 70 + 65 + registry.json (94 artifacts)
 - `npm test` → 347/347 passing, 0 failures

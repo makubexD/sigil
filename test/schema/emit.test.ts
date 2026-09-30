@@ -16,7 +16,10 @@ describe('schema/emit — committed schema files', () => {
   it('all expected *.schema.json files exist', () => {
     for (const kind of EXPECTED_KINDS) {
       const p = path.join(SCHEMA_DIR, `${kind}.schema.json`);
-      assert.ok(fs.existsSync(p), `schema/${kind}.schema.json must exist (run npm run build to regenerate)`);
+      assert.ok(
+        fs.existsSync(p),
+        `schema/${kind}.schema.json must exist (run npm run build to regenerate)`,
+      );
     }
   });
 
@@ -31,7 +34,10 @@ describe('schema/emit — committed schema files', () => {
         assert.fail(`schema/${kind}.schema.json is not valid JSON: ${e}`);
       }
       // zodToJsonSchema emits { $ref: '#/definitions/<name>', definitions: {...} }
-      assert.ok(typeof parsed['$ref'] === 'string', `${kind}.schema.json must have a top-level $ref`);
+      assert.ok(
+        typeof parsed['$ref'] === 'string',
+        `${kind}.schema.json must have a top-level $ref`,
+      );
       assert.ok(
         (parsed['$ref'] as string).includes(`${kind}-frontmatter`),
         `${kind}.schema.json $ref must reference ${kind}-frontmatter definition; got ${parsed['$ref']}`,
@@ -44,7 +50,10 @@ describe('schema/emit — committed schema files', () => {
       const p = path.join(SCHEMA_DIR, `${kind}.schema.json`);
       const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
       const defs = parsed['definitions'] as Record<string, unknown> | undefined;
-      assert.ok(typeof defs === 'object' && defs !== null, `${kind}.schema.json must have definitions`);
+      assert.ok(
+        typeof defs === 'object' && defs !== null,
+        `${kind}.schema.json must have definitions`,
+      );
       assert.ok(
         `${kind}-frontmatter` in defs,
         `${kind}.schema.json definitions must include ${kind}-frontmatter`,
@@ -73,10 +82,7 @@ describe('schema/emit — committed schema files', () => {
       const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
       const props = defs[`${kind}-frontmatter`].properties as Record<string, unknown>;
       for (const field of ['id', 'kind', 'title', 'description']) {
-        assert.ok(
-          field in props,
-          `${kind}.schema.json must define field "${field}" in properties`,
-        );
+        assert.ok(field in props, `${kind}.schema.json must define field "${field}" in properties`);
       }
     }
   });

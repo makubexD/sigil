@@ -88,7 +88,9 @@ function buildSkillLines(v: HeaderValues): string[] {
   const lines: string[] = [];
   lines.push(`name: ${v.name ?? 'TODO'}`);
   lines.push(`language: ${v.language ?? 'TODO'}`);
-  lines.push(`# appliesTo:   # file globs that trigger this skill's context — defaults to ['**/*']`);
+  lines.push(
+    `# appliesTo:   # file globs that trigger this skill's context — defaults to ['**/*']`,
+  );
   if (v.usesRules && v.usesRules.length > 0) {
     lines.push('uses:');
     lines.push('  rules:');
@@ -119,7 +121,9 @@ function buildAgentLines(v: HeaderValues): string[] {
     if (v.claudeEffort) lines.push(`  effort: ${v.claudeEffort}`);
     if (v.claudeMaxTurns) lines.push(`  maxTurns: ${v.claudeMaxTurns}`);
   } else {
-    lines.push('# claude:        # model: sonnet | effort: medium | maxTurns: 15 | isolation: worktree');
+    lines.push(
+      '# claude:        # model: sonnet | effort: medium | maxTurns: 15 | isolation: worktree',
+    );
   }
   lines.push('# tools:          # vendor-neutral capabilities: codebase, terminal, web-search ...');
   return lines;
@@ -137,7 +141,9 @@ function buildRuleLines(v: HeaderValues): string[] {
     lines.push('extends:');
     for (const r of v.extendsRules) lines.push(`  - ${r}`);
   } else {
-    lines.push('# extends:       # parent rule IDs for DRY inheritance — bodies prepended at build');
+    lines.push(
+      '# extends:       # parent rule IDs for DRY inheritance — bodies prepended at build',
+    );
   }
   lines.push('# appliesTo:     # file globs — defaults to ["**/*"]');
   return lines;
@@ -160,11 +166,7 @@ function buildPromptLines(v: HeaderValues): string[] {
 }
 
 function buildWorkflowLines(_v: HeaderValues): string[] {
-  return [
-    'steps:',
-    '  - ref: TODO    # artifact ID to run',
-    '  # - ref: <another-artifact-id>',
-  ];
+  return ['steps:', '  - ref: TODO    # artifact ID to run', '  # - ref: <another-artifact-id>'];
 }
 
 function buildHookLines(_v: HeaderValues): string[] {

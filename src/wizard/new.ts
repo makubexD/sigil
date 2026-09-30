@@ -15,7 +15,17 @@
  * Caller must check `isInteractiveTTY()` before invoking.
  * Returns `null` when the user cancels at any step.
  */
-import { intro, outro, select, multiselect, text, note, log, cancel, isCancel } from '@clack/prompts';
+import {
+  intro,
+  outro,
+  select,
+  multiselect,
+  text,
+  note,
+  log,
+  cancel,
+  isCancel,
+} from '@clack/prompts';
 import type { ResolvedCatalog, Target } from '../types';
 import { buildLanguageOptions } from '../select';
 import { kindSupportingTargets, setPlatforms } from '../authoring/platforms';

@@ -23,14 +23,17 @@ describe('Load phase', () => {
 
     // Language artifacts
     assert.ok(catalog.byId.has('csharp/cs-conventions'), 'csharp/cs-conventions rule exists');
-    assert.ok(catalog.byId.has('csharp/cs-generate-tests'), 'csharp/cs-generate-tests skill exists');
     assert.ok(
-      catalog.byId.has('csharp/cs-api-architect'),
-      'csharp/cs-api-architect agent exists',
+      catalog.byId.has('csharp/cs-generate-tests'),
+      'csharp/cs-generate-tests skill exists',
     );
+    assert.ok(catalog.byId.has('csharp/cs-api-architect'), 'csharp/cs-api-architect agent exists');
 
     assert.ok(catalog.byId.has('python/py-style'), 'python/py-style rule exists');
-    assert.ok(catalog.byId.has('python/py-pytest-testing'), 'python/py-pytest-testing skill exists');
+    assert.ok(
+      catalog.byId.has('python/py-pytest-testing'),
+      'python/py-pytest-testing skill exists',
+    );
 
     assert.ok(catalog.byId.has('react/react-style'), 'react/react-style rule exists');
     assert.ok(catalog.byId.has('react/component-testing'), 'react/component-testing skill exists');

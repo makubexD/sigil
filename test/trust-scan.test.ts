@@ -7,7 +7,12 @@ import assert from 'node:assert/strict';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { scanContent, formatScanFindings, RULE_DESCRIPTIONS, loadAllowlist } from '../dist-cli/trust/scan';
+import {
+  scanContent,
+  formatScanFindings,
+  RULE_DESCRIPTIONS,
+  loadAllowlist,
+} from '../dist-cli/trust/scan';
 import { CATALOG_DIR } from './helpers/catalog';
 
 describe('I — Trust scanner (trust/scan.ts)', () => {
@@ -212,7 +217,11 @@ describe('loadAllowlist', () => {
   }
 
   function cleanTempDir(dir: string): void {
-    try { fs.rmSync(dir, { recursive: true }); } catch { /* best-effort */ }
+    try {
+      fs.rmSync(dir, { recursive: true });
+    } catch {
+      /* best-effort */
+    }
   }
 
   it('returns empty set when .sigil/allow.json does not exist', () => {

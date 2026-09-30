@@ -127,9 +127,7 @@ export function buildAgentMd(
   if (installSet && catalog) {
     const related = (fm.relatedArtifacts as RelatedArtifact[] | undefined) ?? [];
     // Filter to co-present entries only (excluding self — though self won't be in related)
-    const coPresent = related.filter(
-      r => r.id !== agent.id && installSet.has(r.id),
-    );
+    const coPresent = related.filter(r => r.id !== agent.id && installSet.has(r.id));
 
     if (coPresent.length > 0) {
       const escalates = coPresent.filter(r => r.relation === 'escalates-to');

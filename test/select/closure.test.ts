@@ -46,10 +46,7 @@ describe('computeClosure', () => {
 
     assert.equal(primary.length, 2, 'two primary artifacts');
     const depIds = dependencies.map(d => d.artifact.id);
-    assert.ok(
-      !depIds.includes('csharp/cs-testing'),
-      'directly-selected rule not in dependencies',
-    );
+    assert.ok(!depIds.includes('csharp/cs-testing'), 'directly-selected rule not in dependencies');
     assert.ok(depIds.includes('csharp/cs-code-reviewer'), 'agent is still a dependency');
   });
 

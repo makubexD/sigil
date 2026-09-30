@@ -106,21 +106,21 @@ documentation · git · logging · security · testing · project-layout · (lan
 
 ### Core pre-import skills
 
-| ID                        | Title                         | Language |
-| ------------------------- | ----------------------------- | -------- |
-| `csharp/cs-generate-tests`    | Write xUnit Tests for .NET    | C#       |
-| `python/py-pytest-testing`   | Write pytest Tests for Python | Python   |
-| `react/component-testing` | Write React Component Tests   | React    |
+| ID                         | Title                         | Language |
+| -------------------------- | ----------------------------- | -------- |
+| `csharp/cs-generate-tests` | Write xUnit Tests for .NET    | C#       |
+| `python/py-pytest-testing` | Write pytest Tests for Python | Python   |
+| `react/component-testing`  | Write React Component Tests   | React    |
 
 ### Shared agents and rules
 
-| ID                            | Title              | Scope         |
-| ----------------------------- | ------------------ | ------------- |
-| `shared/code-reviewer`        | Code Reviewer      | All languages |
-| `csharp/cs-api-architect` | .NET API Architect | C#            |
-| `python/py-architect`     | Python Architect   | Python        |
-| `react/react-architect`       | React Architect    | React         |
-| `shared/clean-code`           | Clean Code Baseline | All files    |
+| ID                        | Title               | Scope         |
+| ------------------------- | ------------------- | ------------- |
+| `shared/code-reviewer`    | Code Reviewer       | All languages |
+| `csharp/cs-api-architect` | .NET API Architect  | C#            |
+| `python/py-architect`     | Python Architect    | Python        |
+| `react/react-architect`   | React Architect     | React         |
+| `shared/clean-code`       | Clean Code Baseline | All files     |
 
 ### Prompts
 

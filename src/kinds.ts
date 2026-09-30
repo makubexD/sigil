@@ -54,8 +54,7 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     kind: 'hook',
     isConfig: true,
     displayOrder: 1,
-    bodyComment:
-      'Describe what this hook does and when it fires. The command: above is executed.',
+    bodyComment: 'Describe what this hook does and when it fires. The command: above is executed.',
   },
   settings: {
     kind: 'settings',
@@ -100,9 +99,9 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
 // ─── Derived constants ────────────────────────────────────────────────────────
 
 /** All kinds sorted by displayOrder (config first, then code kinds). */
-export const ALL_KINDS: ArtifactKind[] = (
-  Object.values(KIND_REGISTRY) as KindDescriptor[]
-).sort((a, b) => a.displayOrder - b.displayOrder).map(d => d.kind);
+export const ALL_KINDS: ArtifactKind[] = (Object.values(KIND_REGISTRY) as KindDescriptor[])
+  .sort((a, b) => a.displayOrder - b.displayOrder)
+  .map(d => d.kind);
 
 /**
  * Canonical kind ordering for selector parsing and grouping sort.
@@ -129,9 +128,7 @@ export const KIND_ORDER: ArtifactKind[] = [
  *   - manifest/status.ts CONFIG_ENTRY_KINDS (deleted, now imports this)
  *   - types.ts ConfigKind (the type is kept; this is the runtime counterpart)
  */
-export const CONFIG_KINDS = new Set<ArtifactKind>(
-  ALL_KINDS.filter(k => KIND_REGISTRY[k].isConfig),
-);
+export const CONFIG_KINDS = new Set<ArtifactKind>(ALL_KINDS.filter(k => KIND_REGISTRY[k].isConfig));
 
 /**
  * Type-guard: returns true when `k` is any valid artifact kind.

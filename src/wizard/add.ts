@@ -490,7 +490,7 @@ export async function runWizard(
 
       if (langKeys.length <= 1) {
         // langKeys[0] is guaranteed non-undefined here (length === 1 branch)
-      const flatItems = langKeys.length === 1 ? (byLang[langKeys[0]!] ?? items) : items;
+        const flatItems = langKeys.length === 1 ? (byLang[langKeys[0]!] ?? items) : items;
         const opts: PO[] = [
           { value: BACK, label: '← Back', hint: '' },
           ...flatItems.map(a => {

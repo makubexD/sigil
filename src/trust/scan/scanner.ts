@@ -21,8 +21,17 @@ const SNIPPET_MAX_LEN = 80;
 // ─── Binary extension guard ────────────────────────────────────────────────────
 
 const BINARY_EXTENSIONS = new Set([
-  '.png', '.jpg', '.jpeg', '.gif', '.webp', '.ico',
-  '.svg', '.pdf', '.zip', '.tar', '.gz',
+  '.png',
+  '.jpg',
+  '.jpeg',
+  '.gif',
+  '.webp',
+  '.ico',
+  '.svg',
+  '.pdf',
+  '.zip',
+  '.tar',
+  '.gz',
 ]);
 
 function isBinaryPath(filePath: string): boolean {
@@ -100,7 +109,9 @@ export function scanContent(
           );
           const redacted = snippet.replace(
             match[0],
-            match[0].slice(0, SECRET_MASK_PREFIX_LEN) + '***' + match[0].slice(-SECRET_MASK_SUFFIX_LEN),
+            match[0].slice(0, SECRET_MASK_PREFIX_LEN) +
+              '***' +
+              match[0].slice(-SECRET_MASK_SUFFIX_LEN),
           );
           findings.push({
             rule: rule.id,
@@ -115,9 +126,7 @@ export function scanContent(
     }
 
     if (rule.globalPattern) {
-      const source = rule.frontmatterOnly
-        ? lines.slice(0, frontmatterEnd).join('\n')
-        : rawContent;
+      const source = rule.frontmatterOnly ? lines.slice(0, frontmatterEnd).join('\n') : rawContent;
       const match = rule.globalPattern.exec(source);
       if (match) {
         const lineNum = rawContent.slice(0, match.index).split('\n').length;

@@ -10,9 +10,24 @@ import { CATALOG_DIR } from '../helpers/catalog';
 
 const VERSION = '0.1.0';
 const PACKS = [
-  { name: 'dotnet-pack', displayName: '.NET / C# Pack', description: 'C# skills and agents', languages: ['csharp'] },
-  { name: 'python-pack', displayName: 'Python Pack', description: 'Python skills and agents', languages: ['python'] },
-  { name: 'react-pack', displayName: 'React Pack', description: 'React skills and agents', languages: ['react'] },
+  {
+    name: 'dotnet-pack',
+    displayName: '.NET / C# Pack',
+    description: 'C# skills and agents',
+    languages: ['csharp'],
+  },
+  {
+    name: 'python-pack',
+    displayName: 'Python Pack',
+    description: 'Python skills and agents',
+    languages: ['python'],
+  },
+  {
+    name: 'react-pack',
+    displayName: 'React Pack',
+    description: 'React skills and agents',
+    languages: ['react'],
+  },
 ];
 
 describe('Claude Code target', () => {
@@ -78,7 +93,9 @@ describe('Claude Code target', () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
-    const files = await target.scaffold!('csharp/cs-generate-tests', resolved, { projectDir: '/fake' });
+    const files = await target.scaffold!('csharp/cs-generate-tests', resolved, {
+      projectDir: '/fake',
+    });
 
     assert.ok('.claude/skills/cs-generate-tests/SKILL.md' in files, 'skill scaffolded');
     assert.ok('.claude/rules/csharp-cs-testing.md' in files, 'rule scaffolded');
@@ -89,7 +106,9 @@ describe('Claude Code target', () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
-    const files = await target.scaffold!('csharp/cs-generate-tests', resolved, { projectDir: '/fake' });
+    const files = await target.scaffold!('csharp/cs-generate-tests', resolved, {
+      projectDir: '/fake',
+    });
 
     const languageRule = files['.claude/rules/csharp-cs-testing.md'];
     assert.ok(languageRule, 'csharp rule scaffolded');

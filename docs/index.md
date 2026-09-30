@@ -5,17 +5,17 @@
 
 ## Guides
 
-| Guide                                        | Who it's for                                 | Covers                                          |
-| -------------------------------------------- | -------------------------------------------- | ----------------------------------------------- |
-| [guides/consuming.md](guides/consuming.md)   | Developers adding skills to a project        | Wizard, `add`, `list`, `init`, shell completion |
+| Guide                                        | Who it's for                                 | Covers                                            |
+| -------------------------------------------- | -------------------------------------------- | ------------------------------------------------- |
+| [guides/consuming.md](guides/consuming.md)   | Developers adding skills to a project        | Wizard, `add`, `list`, `init`, shell completion   |
 | [guides/authoring.md](guides/authoring.md)   | Contributors adding artifacts to the catalog | New skill / rule / language / import walkthroughs |
-| [guides/operations.md](guides/operations.md) | Maintainers & CI                             | Build targets, CI gate, `release` command       |
+| [guides/operations.md](guides/operations.md) | Maintainers & CI                             | Build targets, CI gate, `release` command         |
 
 ## Decisions
 
-| Decision log                                                                             | Topic                                                        |
-| ---------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| [decisions/catalog-import-migration.md](decisions/catalog-import-migration.md)           | `_Others` import migration — design decisions and bug log    |
+| Decision log                                                                   | Topic                                                     |
+| ------------------------------------------------------------------------------ | --------------------------------------------------------- |
+| [decisions/catalog-import-migration.md](decisions/catalog-import-migration.md) | `_Others` import migration — design decisions and bug log |
 
 ## Reference
 

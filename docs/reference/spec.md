@@ -263,11 +263,11 @@ Adapters then decide how to materialise the closure:
 
 **Selectors for `add` (variadic, combinable):**
 
-| Selector                     | Expands to                            |
-| ---------------------------- | ------------------------------------- |
-| `all`                        | Every artifact in the catalog         |
-| `pack:dotnet-pack`           | Every artifact in a named pack        |
-| `kind:agent`                 | Every artifact of that kind           |
+| Selector                         | Expands to                            |
+| -------------------------------- | ------------------------------------- |
+| `all`                            | Every artifact in the catalog         |
+| `pack:dotnet-pack`               | Every artifact in a named pack        |
+| `kind:agent`                     | Every artifact of that kind           |
 | `skill:csharp/cs-generate-tests` | One explicit artifact (kind-prefixed) |
 | `csharp/cs-generate-tests`       | One explicit artifact (bare ID)       |
 

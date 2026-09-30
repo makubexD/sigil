@@ -81,9 +81,10 @@ export function scaffoldAgent(
   // ── Conditional Boundary section ──────────────────────────────────────────
   const boundaryLines: string[] = [];
   if (installSet && catalog) {
-    const related = (agent.frontmatter.relatedArtifacts as
-      | Array<{ id: string; relation: string; reason: string }>
-      | undefined) ?? [];
+    const related =
+      (agent.frontmatter.relatedArtifacts as
+        | Array<{ id: string; relation: string; reason: string }>
+        | undefined) ?? [];
     const coPresent = related.filter(r => r.id !== agent.id && installSet.has(r.id));
 
     if (coPresent.length > 0) {
@@ -93,8 +94,7 @@ export function scaffoldAgent(
 
       const formatEntry = (r: { id: string; reason: string }): string => {
         const sibling = catalog.byId.get(r.id);
-        const sibName =
-          (sibling?.frontmatter.name as string | undefined) ?? r.id.split('/').pop()!;
+        const sibName = (sibling?.frontmatter.name as string | undefined) ?? r.id.split('/').pop()!;
         const sibTitle = (sibling?.frontmatter.title as string | undefined) ?? sibName;
         return `- **${sibTitle}** (\`${sibName}\`) — ${r.reason}`;
       };
@@ -119,17 +119,11 @@ export function scaffoldAgent(
   }
 
   const bodySection =
-    boundaryLines.length > 0
-      ? [...boundaryLines, agent.body].join('\n')
-      : agent.body;
+    boundaryLines.length > 0 ? [...boundaryLines, agent.body].join('\n') : agent.body;
 
-  files[`.github/agents/${name}.agent.md`] = [
-    frontmatter,
-    `# ${title}`,
-    '',
-    bodySection,
-    '',
-  ].join('\n');
+  files[`.github/agents/${name}.agent.md`] = [frontmatter, `# ${title}`, '', bodySection, ''].join(
+    '\n',
+  );
 }
 
 export function scaffoldPrompt(prompt: ResolvedArtifact, files: FileMap): void {

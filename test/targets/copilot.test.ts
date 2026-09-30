@@ -10,9 +10,24 @@ import { CATALOG_DIR } from '../helpers/catalog';
 
 const VERSION = '0.1.0';
 const PACKS = [
-  { name: 'dotnet-pack', displayName: '.NET / C# Pack', description: 'C# skills and agents', languages: ['csharp'] },
-  { name: 'python-pack', displayName: 'Python Pack', description: 'Python skills and agents', languages: ['python'] },
-  { name: 'react-pack', displayName: 'React Pack', description: 'React skills and agents', languages: ['react'] },
+  {
+    name: 'dotnet-pack',
+    displayName: '.NET / C# Pack',
+    description: 'C# skills and agents',
+    languages: ['csharp'],
+  },
+  {
+    name: 'python-pack',
+    displayName: 'Python Pack',
+    description: 'Python skills and agents',
+    languages: ['python'],
+  },
+  {
+    name: 'react-pack',
+    displayName: 'React Pack',
+    description: 'React skills and agents',
+    languages: ['react'],
+  },
 ];
 
 describe('Copilot target', () => {

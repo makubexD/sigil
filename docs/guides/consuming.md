@@ -250,13 +250,13 @@ sigil uninstall skill:csharp/cs-generate-tests
 
 **Status values at a glance:**
 
-| Status | Meaning |
-| ------------ | ------------------------------------------------------------ |
-| `up-to-date` | Files match what the current catalog would produce |
-| `outdated` | Catalog changed since you installed — run `sigil update` |
-| `drifted` | You edited a file — `update` skips it; `update --force` replaces it |
-| `missing` | A sigil-owned file was deleted — `update` restores it |
-| `orphaned` | Artifact removed from the catalog — safe to `sigil uninstall` |
+| Status       | Meaning                                                             |
+| ------------ | ------------------------------------------------------------------- |
+| `up-to-date` | Files match what the current catalog would produce                  |
+| `outdated`   | Catalog changed since you installed — run `sigil update`            |
+| `drifted`    | You edited a file — `update` skips it; `update --force` replaces it |
+| `missing`    | A sigil-owned file was deleted — `update` restores it               |
+| `orphaned`   | Artifact removed from the catalog — safe to `sigil uninstall`       |
 
 ---
 

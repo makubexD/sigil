@@ -42,15 +42,15 @@ the table is a **compile error**, not a silent gap. This is the intended safety 
 
 ### Band 1 — Adding an artifact kind touches ~15 raw conditionals
 
-| File | Site | Problem |
-|---|---|---|
-| `src/authoring/header.ts` | `switch(kind)` L87–225 (8 cases) | No compile-time check; omitting a case produces a broken stub |
-| `src/authoring/header.ts` | Ternary ladder L245–262 (8 branches) | Hard-coded body-comment per kind |
-| `src/types.ts` | `ArtifactKind` union | Correct — compiler enforces updates here |
-| `src/select/selection.ts` | `KIND_PREFIXES = [...]` (8 literals) | Independent re-declaration |
-| `src/schema/emit.ts` | 8-element inline array | Independent re-declaration |
-| `src/cli.ts` | 8-element `validKinds` array | Independent re-declaration |
-| `src/wizard/add.ts` | `displayOrder = [...]` (8 literals) | Independent re-declaration |
+| File                      | Site                                 | Problem                                                       |
+| ------------------------- | ------------------------------------ | ------------------------------------------------------------- |
+| `src/authoring/header.ts` | `switch(kind)` L87–225 (8 cases)     | No compile-time check; omitting a case produces a broken stub |
+| `src/authoring/header.ts` | Ternary ladder L245–262 (8 branches) | Hard-coded body-comment per kind                              |
+| `src/types.ts`            | `ArtifactKind` union                 | Correct — compiler enforces updates here                      |
+| `src/select/selection.ts` | `KIND_PREFIXES = [...]` (8 literals) | Independent re-declaration                                    |
+| `src/schema/emit.ts`      | 8-element inline array               | Independent re-declaration                                    |
+| `src/cli.ts`              | 8-element `validKinds` array         | Independent re-declaration                                    |
+| `src/wizard/add.ts`       | `displayOrder = [...]` (8 literals)  | Independent re-declaration                                    |
 
 **Total**: the 8-kind list was independently re-typed in **5 files** with no shared authority.
 
@@ -87,13 +87,13 @@ All phases ran `npm run build && npm test` → **348/348 green** before proceedi
 
 ```typescript
 export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
-  mcp:      { kind: 'mcp',      isConfig: true,  displayOrder: 0, bodyComment: '…' },
-  hook:     { kind: 'hook',     isConfig: true,  displayOrder: 1, bodyComment: '…' },
-  settings: { kind: 'settings', isConfig: true,  displayOrder: 2, bodyComment: '…' },
-  prompt:   { kind: 'prompt',   isConfig: false, displayOrder: 3, bodyComment: '…' },
-  skill:    { kind: 'skill',    isConfig: false, displayOrder: 4, bodyComment: '…' },
-  agent:    { kind: 'agent',    isConfig: false, displayOrder: 5, bodyComment: '…' },
-  rule:     { kind: 'rule',     isConfig: false, displayOrder: 6, bodyComment: '…' },
+  mcp: { kind: 'mcp', isConfig: true, displayOrder: 0, bodyComment: '…' },
+  hook: { kind: 'hook', isConfig: true, displayOrder: 1, bodyComment: '…' },
+  settings: { kind: 'settings', isConfig: true, displayOrder: 2, bodyComment: '…' },
+  prompt: { kind: 'prompt', isConfig: false, displayOrder: 3, bodyComment: '…' },
+  skill: { kind: 'skill', isConfig: false, displayOrder: 4, bodyComment: '…' },
+  agent: { kind: 'agent', isConfig: false, displayOrder: 5, bodyComment: '…' },
+  rule: { kind: 'rule', isConfig: false, displayOrder: 6, bodyComment: '…' },
   workflow: { kind: 'workflow', isConfig: false, displayOrder: 7, bodyComment: '…' },
 };
 ```
@@ -112,14 +112,14 @@ The 8-case `switch` became a `KIND_HEADER_BUILDERS: Record<ArtifactKind, KindHea
 
 ```typescript
 const KIND_HEADER_BUILDERS: Record<ArtifactKind, KindHeaderBuilder> = {
-  skill:    buildSkillLines,
-  agent:    buildAgentLines,
-  rule:     buildRuleLines,
-  prompt:   buildPromptLines,
+  skill: buildSkillLines,
+  agent: buildAgentLines,
+  rule: buildRuleLines,
+  prompt: buildPromptLines,
   workflow: buildWorkflowLines,
-  hook:     buildHookLines,
+  hook: buildHookLines,
   settings: buildSettingsLines,
-  mcp:      buildMcpLines,
+  mcp: buildMcpLines,
 };
 ```
 
@@ -161,6 +161,7 @@ A third target now requires **zero** edits in `cli.ts`.
 ### Phase 5 — Structural extraction: `src/commands/` + `src/cli-helpers.ts`
 
 **New `src/cli-helpers.ts`** — shared utilities with no Commander dependency:
+
 - `pkg`, `PKG_ROOT`, `resolveDefault` — catalog root anchoring
 - `loadAndValidate` — catalog load + validation gate + packs parsing
 - `writeFilesSync`, `partitionFiles` — file I/O helpers
@@ -204,14 +205,14 @@ commands — the business logic lives where it can be unit-tested in isolation.
 
 ## Follow-up roadmap (deferred)
 
-| Priority | Work | Payoff |
-|---|---|---|
-| High | Extract the remaining ~20 `cli.ts` command closures to `src/commands/` | `cli.ts` becomes a pure Commander wiring file; each command is independently testable |
-| High | Typed `Record<StepName, StepHandler>` step-table for `wizard/add.ts` | Eliminates 11 `if (step === …)` string-dispatched branches, ~13 cancel guards, ~11 back-unwind blocks |
-| Medium | Kind-driven import pipeline (`src/authoring/import/`) | Currently locked to `skill|agent|rule`; adding `workflow` or `hook` import requires editing the pipeline |
-| Low | `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` in tsconfig | Surfaces index-access nullability bugs statically; estimate ~30 annotation sites |
-| Low | Collapse triple-scaffold in `commands/add.ts` | Currently calls `target.scaffold!()` up to 3× per artifact (primary-paths, all-files, manifest); one pre-computed pass reduces network/disk I/O |
+| Priority | Work                                                                   | Payoff                                                                                                                                          |
+| -------- | ---------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ----- | --------------------------------------------------------------------- |
+| High     | Extract the remaining ~20 `cli.ts` command closures to `src/commands/` | `cli.ts` becomes a pure Commander wiring file; each command is independently testable                                                           |
+| High     | Typed `Record<StepName, StepHandler>` step-table for `wizard/add.ts`   | Eliminates 11 `if (step === …)` string-dispatched branches, ~13 cancel guards, ~11 back-unwind blocks                                           |
+| Medium   | Kind-driven import pipeline (`src/authoring/import/`)                  | Currently locked to `skill                                                                                                                      | agent | rule`; adding `workflow`or`hook` import requires editing the pipeline |
+| Low      | `noUncheckedIndexedAccess` + `exactOptionalPropertyTypes` in tsconfig  | Surfaces index-access nullability bugs statically; estimate ~30 annotation sites                                                                |
+| Low      | Collapse triple-scaffold in `commands/add.ts`                          | Currently calls `target.scaffold!()` up to 3× per artifact (primary-paths, all-files, manifest); one pre-computed pass reduces network/disk I/O |
 
 ---
 
-*Session: 2026-07-30 · Phases 1–5 implemented · 348/348 tests green*
+_Session: 2026-07-30 · Phases 1–5 implemented · 348/348 tests green_

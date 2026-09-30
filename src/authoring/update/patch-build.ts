@@ -135,7 +135,11 @@ function applyTags(
   if (ops.setTags === undefined && ops.addTags === undefined && ops.removeTags === undefined)
     return false;
   const current = (fm.tags as string[] | undefined) ?? [];
-  const updated = patchList(current, { set: ops.setTags, add: ops.addTags, remove: ops.removeTags });
+  const updated = patchList(current, {
+    set: ops.setTags,
+    add: ops.addTags,
+    remove: ops.removeTags,
+  });
   if (JSON.stringify(updated) === JSON.stringify(current)) return false;
   patch.tags = updated;
   return true;
@@ -243,12 +247,24 @@ function applyUses(
   const currentRules = currentUses.rules ?? [];
   const currentAgents = currentUses.agents ?? [];
   const updatedRules =
-    ops.setUsesRules !== undefined || ops.addUsesRules !== undefined || ops.removeUsesRules !== undefined
-      ? patchList(currentRules, { set: ops.setUsesRules, add: ops.addUsesRules, remove: ops.removeUsesRules })
+    ops.setUsesRules !== undefined ||
+    ops.addUsesRules !== undefined ||
+    ops.removeUsesRules !== undefined
+      ? patchList(currentRules, {
+          set: ops.setUsesRules,
+          add: ops.addUsesRules,
+          remove: ops.removeUsesRules,
+        })
       : currentRules;
   const updatedAgents =
-    ops.setUsesAgents !== undefined || ops.addUsesAgents !== undefined || ops.removeUsesAgents !== undefined
-      ? patchList(currentAgents, { set: ops.setUsesAgents, add: ops.addUsesAgents, remove: ops.removeUsesAgents })
+    ops.setUsesAgents !== undefined ||
+    ops.addUsesAgents !== undefined ||
+    ops.removeUsesAgents !== undefined
+      ? patchList(currentAgents, {
+          set: ops.setUsesAgents,
+          add: ops.addUsesAgents,
+          remove: ops.removeUsesAgents,
+        })
       : currentAgents;
   if (
     JSON.stringify(updatedRules) === JSON.stringify(currentRules) &&
@@ -273,7 +289,11 @@ function applyTools(
     return false;
   }
   const current = (fm.tools as string[] | undefined) ?? [];
-  const updated = patchList(current, { set: ops.setTools, add: ops.addTools, remove: ops.removeTools });
+  const updated = patchList(current, {
+    set: ops.setTools,
+    add: ops.addTools,
+    remove: ops.removeTools,
+  });
   if (JSON.stringify(updated) === JSON.stringify(current)) return false;
   patch.tools = updated.length ? updated : undefined;
   return true;
@@ -339,7 +359,9 @@ function applyClaude(
   if (ops.claudeEffort !== undefined) {
     const valid = ['low', 'medium', 'high'];
     if (!valid.includes(ops.claudeEffort)) {
-      errors.push(`Invalid claude.effort '${ops.claudeEffort}'. Must be one of: ${valid.join(', ')}`);
+      errors.push(
+        `Invalid claude.effort '${ops.claudeEffort}'. Must be one of: ${valid.join(', ')}`,
+      );
     } else {
       updated.effort = ops.claudeEffort;
     }
@@ -354,7 +376,9 @@ function applyClaude(
   if (ops.claudeIsolation !== undefined) {
     const valid = ['worktree'];
     if (!valid.includes(ops.claudeIsolation)) {
-      errors.push(`Invalid claude.isolation '${ops.claudeIsolation}'. Must be one of: ${valid.join(', ')}`);
+      errors.push(
+        `Invalid claude.isolation '${ops.claudeIsolation}'. Must be one of: ${valid.join(', ')}`,
+      );
     } else {
       updated.isolation = ops.claudeIsolation;
     }

@@ -33,9 +33,7 @@ describe('serializeYamlEntry', () => {
   });
 
   it('array of objects emits block sequence of mappings', () => {
-    const result = serializeYamlEntry('hooks', [
-      { event: 'PreToolUse', command: 'echo hi' },
-    ]);
+    const result = serializeYamlEntry('hooks', [{ event: 'PreToolUse', command: 'echo hi' }]);
     assert.ok(result.includes('  - event: PreToolUse'), `first entry: ${result}`);
     assert.ok(result.includes('    command: echo hi'), `subsequent entry: ${result}`);
   });
@@ -88,7 +86,11 @@ describe('writeArtifactFrontmatter', () => {
   }
 
   function cleanTempFile(p: string): void {
-    try { fs.rmSync(path.dirname(p), { recursive: true }); } catch { /* best-effort */ }
+    try {
+      fs.rmSync(path.dirname(p), { recursive: true });
+    } catch {
+      /* best-effort */
+    }
   }
 
   const MINIMAL_MD = `---
@@ -134,7 +136,10 @@ Body text here.
       // Primary assertion: description key is gone
       assert.ok(!raw.includes('description:'), `description field must be removed; raw: ${raw}`);
       // Secondary: title key still present (value may be quoted; check the key only)
-      assert.ok(raw.includes('title:'), `title key must remain after deleting description; raw: ${raw}`);
+      assert.ok(
+        raw.includes('title:'),
+        `title key must remain after deleting description; raw: ${raw}`,
+      );
       // The body must also survive
       assert.ok(raw.includes('Body text here.'), 'body preserved after deletion');
     } finally {

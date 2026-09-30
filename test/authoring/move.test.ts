@@ -234,7 +234,11 @@ describe('executeMove', () => {
   }
 
   function cleanup(dir: string): void {
-    try { fs.rmSync(dir, { recursive: true }); } catch { /* best-effort */ }
+    try {
+      fs.rmSync(dir, { recursive: true });
+    } catch {
+      /* best-effort */
+    }
   }
 
   it('moves the rule file and rewrites the referrer uses.rules', () => {
@@ -275,7 +279,10 @@ describe('executeMove', () => {
 
       // Referrer must have updated uses.rules
       const xunitContent = fs.readFileSync(xunitPath, 'utf-8');
-      assert.ok(xunitContent.includes('shared/better-code'), 'referrer uses.rules updated to new id');
+      assert.ok(
+        xunitContent.includes('shared/better-code'),
+        'referrer uses.rules updated to new id',
+      );
       assert.ok(!xunitContent.includes('shared/clean-code'), 'old id removed from referrer');
 
       // Moved artifact's id field must be updated
@@ -321,11 +328,15 @@ describe('executeMove', () => {
 
       // loadFn returns empty catalog (new id not found)
       const emptyLoadFn = (_dir: string): LoadedCatalog =>
-        ({ artifacts: [], byId: new Map(), languages: new Map() } as unknown as LoadedCatalog);
+        ({ artifacts: [], byId: new Map(), languages: new Map() }) as unknown as LoadedCatalog;
 
       const result = executeMove(plan, catalog, getAllTargets(), emptyLoadFn, tempDir);
       // If new id is absent from reloaded catalog, executeMove skips validation → ok
-      assert.equal(result.ok, true, 'absent new id in reloaded catalog is treated as ok (no violations)');
+      assert.equal(
+        result.ok,
+        true,
+        'absent new id in reloaded catalog is treated as ok (no violations)',
+      );
     } finally {
       cleanup(tempDir);
     }

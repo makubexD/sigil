@@ -6,7 +6,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'path';
 import os from 'os';
-import { resolveClaudeConfigDestination, ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
+import {
+  resolveClaudeConfigDestination,
+  ClaudeCodeTarget,
+} from '../../dist-cli/targets/claude-code';
 import { resolveCopilotConfigDestination } from '../../dist-cli/targets/copilot';
 import { resolveConfigRoot } from '../../dist-cli/config-utils';
 import { applyMerge, reverseMerge } from '../../dist-cli/config-merge';

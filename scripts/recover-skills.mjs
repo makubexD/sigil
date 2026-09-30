@@ -246,7 +246,10 @@ function buildCatalogFile(skill, compiledData, body) {
 
   const allowedToolsRaw = compiledData['allowed-tools'];
   const allowedTools = allowedToolsRaw
-    ? allowedToolsRaw.split(',').map(s => s.trim()).filter(Boolean)
+    ? allowedToolsRaw
+        .split(',')
+        .map(s => s.trim())
+        .filter(Boolean)
     : [];
   const allowedToolsYaml = allowedTools.map(t => `  - ${t}`).join('\n');
 
@@ -255,13 +258,9 @@ function buildCatalogFile(skill, compiledData, body) {
 
   // rules / agents wiring — inline [] when empty, block when non-empty
   const rulesLine =
-    skill.rules.length > 0
-      ? `\n${skill.rules.map(r => `    - ${r}`).join('\n')}`
-      : ' []';
+    skill.rules.length > 0 ? `\n${skill.rules.map(r => `    - ${r}`).join('\n')}` : ' []';
   const agentsLine =
-    skill.agents.length > 0
-      ? `\n${skill.agents.map(a => `    - ${a}`).join('\n')}`
-      : ' []';
+    skill.agents.length > 0 ? `\n${skill.agents.map(a => `    - ${a}`).join('\n')}` : ' []';
 
   const tagsYaml = skill.tags.map(t => `  - ${t}`).join('\n');
 
@@ -300,7 +299,16 @@ let skipped = 0;
 const errors = [];
 
 for (const skill of SKILLS) {
-  const srcPath = join(ROOT, 'dist', 'claude', 'plugins', skill.plugin, 'skills', skill.slug, 'SKILL.md');
+  const srcPath = join(
+    ROOT,
+    'dist',
+    'claude',
+    'plugins',
+    skill.plugin,
+    'skills',
+    skill.slug,
+    'SKILL.md',
+  );
   const destPath = join(ROOT, 'catalog', 'languages', skill.lang, 'skills', skill.slug, 'SKILL.md');
 
   if (!existsSync(srcPath)) {

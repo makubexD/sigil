@@ -133,10 +133,12 @@ export function stripLanguagePrefix(slug: string, language: string): string {
  *   ts-audit-deps,     typescript, "TypeScript" → "Audit Deps (TypeScript)"
  */
 export function slugToTitle(slug: string, displayName: string, language?: string): string {
-  const withoutPrefix = language ? stripLanguagePrefix(slug, language) : slug.replace(/^(cs|ng|ts|py)-/, '');
+  const withoutPrefix = language
+    ? stripLanguagePrefix(slug, language)
+    : slug.replace(/^(cs|ng|ts|py)-/, '');
   const words = withoutPrefix
     .split('-')
-    .map(w => ACRONYM_MAP[w.toLowerCase()] ?? (w.charAt(0).toUpperCase() + w.slice(1)));
+    .map(w => ACRONYM_MAP[w.toLowerCase()] ?? w.charAt(0).toUpperCase() + w.slice(1));
   return `${words.join(' ')} (${displayName})`;
 }
 
@@ -180,9 +182,7 @@ function translateRule(
   const description = typeof sourceFm.description === 'string' ? sourceFm.description : '';
 
   // paths → appliesTo
-  const appliesTo = Array.isArray(sourceFm.paths)
-    ? (sourceFm.paths as string[])
-    : ['**/*'];
+  const appliesTo = Array.isArray(sourceFm.paths) ? (sourceFm.paths as string[]) : ['**/*'];
 
   // Track dropped fields
   const knownFields = new Set(['description', 'paths']);
@@ -251,7 +251,8 @@ function translateSkill(
   const droppedFields: string[] = [];
 
   const sourceDescription = typeof sourceFm.description === 'string' ? sourceFm.description : '';
-  const whenToUse = typeof sourceFm['when_to_use'] === 'string' ? sourceFm['when_to_use'].trim() : '';
+  const whenToUse =
+    typeof sourceFm['when_to_use'] === 'string' ? sourceFm['when_to_use'].trim() : '';
 
   // description stays single-line for the YAML header (multi-line strings break YAML serialization).
   // when_to_use is prepended to the body as a ## When to Use section instead.
@@ -274,8 +275,7 @@ function translateSkill(
     typeof sourceFm['argument-hint'] === 'string' ? sourceFm['argument-hint'] : undefined;
 
   // disable-model-invocation (hyphenated source key)
-  const disableModelInvocation =
-    sourceFm['disable-model-invocation'] === true ? true : undefined;
+  const disableModelInvocation = sourceFm['disable-model-invocation'] === true ? true : undefined;
 
   // Track dropped fields
   const knownFields = new Set([

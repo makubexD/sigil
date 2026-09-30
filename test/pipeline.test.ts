@@ -107,7 +107,6 @@ const PACKS = [
 
 // authoring/update.test.ts — see that file for G buildFieldPatch block
 
-
 // manifest.test.ts — see that file for H (manifest) + L (manifest config entries) blocks
 
 // trust-scan.test.ts — see that file for I (trust scanner) + M (config kinds) blocks

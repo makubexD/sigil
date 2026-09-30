@@ -96,7 +96,9 @@ describe('H — Manifest (manifest.ts)', () => {
         ['csharp/cs-generate-tests', { relPaths: [], kind: 'skill' }],
         ['shared/clean-code', { relPaths: [depRelPath], kind: 'rule' }],
       ]);
-      const depMap = new Map<string, string[]>([['shared/clean-code', ['csharp/cs-generate-tests']]]);
+      const depMap = new Map<string, string[]>([
+        ['shared/clean-code', ['csharp/cs-generate-tests']],
+      ]);
 
       upsertEntries(
         manifest as any,
@@ -276,7 +278,11 @@ describe('H — Manifest (manifest.ts)', () => {
       ],
     };
 
-    const { pathsToDelete } = removeEntries(manifest as any, ['csharp/cs-generate-tests'], 'claude');
+    const { pathsToDelete } = removeEntries(
+      manifest as any,
+      ['csharp/cs-generate-tests'],
+      'claude',
+    );
 
     assert.ok(
       !pathsToDelete.includes('.claude/agents/code-reviewer.md'),
@@ -314,7 +320,11 @@ describe('H — Manifest (manifest.ts)', () => {
     };
 
     // Removing xunit — it's the ONLY dependent of code-reviewer
-    const { pathsToDelete } = removeEntries(manifest as any, ['csharp/cs-generate-tests'], 'claude');
+    const { pathsToDelete } = removeEntries(
+      manifest as any,
+      ['csharp/cs-generate-tests'],
+      'claude',
+    );
 
     // Primary file is deleted
     assert.ok(pathsToDelete.includes('.claude/skills/xunit/SKILL.md'), 'primary file deleted');

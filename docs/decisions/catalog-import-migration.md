@@ -91,6 +91,7 @@ title polish, `extends` chain connections, and topic overlap review are content-
 handled afterward with `sigil patch`.
 
 **Rationale:** Mixing deterministic translation with heuristic judgment in one command:
+
 - Makes dry-run output unpredictable (different inference runs → different results)
 - Breaks the "CI-safe" property (non-deterministic)
 - Conflates schema validity (testable) with content quality (subjective)
@@ -119,6 +120,7 @@ preserved the surrounding quotes, so values became `"**/*.cs"` (string with inne
 `serializeYamlEntry` then double-quoted the already-quoted string, producing `- """**/*.cs"""`.
 
 **Fix (discover.ts):** After collecting list items, strip surrounding single or double quotes:
+
 ```
 if (item.startsWith('"') && item.endsWith('"')) item = item.slice(1, -1);
 ```
@@ -129,10 +131,13 @@ if (item.startsWith('"') && item.endsWith('"')) item = item.slice(1, -1);
 `serializeYamlEntry` produced `uses:\n  rules: \n  agents: ` (blank values) which is invalid YAML.
 
 **Fix (plan.ts):** Special-cased the `uses` block in `renderArtifactFile` with a hardcoded renderer:
+
 ```
 uses:\n  rules: []\n  agents: []
 ```
+
 For non-empty deps (content-refinement stage), uses an indented block sequence:
+
 ```
 uses:\n  rules:\n    - <ref>\n  agents:\n    - <ref>
 ```
@@ -163,6 +168,7 @@ files whose `argumentHint` started with `[`. The YAML spec treats `[` at the sta
 flow sequence literal.
 
 **Fix (frontmatter.ts — `serializeScalar`):** Added `val.startsWith('[')` and `val.startsWith('{')`:
+
 ```
 val.startsWith('*') ||  // glob: **/*.cs → YAML alias
 val.startsWith('[') ||  // flow sequence: [optional] → YAML array
@@ -178,33 +184,36 @@ path in the catalog used forward slashes (from the `path.normalize` in `loadCata
 `"C:/WorkspaceMaku/…"` ≠ `"C:\WorkspaceMaku\…"`.
 
 **Fix (check-source.ts):** Normalize both paths to forward slashes before comparing:
+
 ```typescript
 const normExisting = existing.filePath.replace(/\\/g, '/');
 const normArtifact = artifact.filePath.replace(/\\/g, '/');
-if (normExisting !== normArtifact) { /* report duplicate */ }
+if (normExisting !== normArtifact) {
+  /* report duplicate */
+}
 ```
 
 ---
 
 ## Source→Catalog Frontmatter Mapping
 
-| Source field | Catalog field | Notes |
-|---|---|---|
-| `description` (rule) | `description` | Single-line |
-| `paths` (rule) | `appliesTo` | Default `['**/*']` if absent |
-| _(synthesized)_ | `severity: recommended` | All imported rules |
-| _(synthesized)_ | `extends: []` | Empty; `extends: [shared/clean-code]` wired in quality stage |
-| `name` (agent) | `name` | Kept verbatim incl. prefix |
-| `tools` (agent, comma string) | `tools` (array) | Split on `,` + trim |
-| `description` (agent/skill) | `description` | Single-line only |
-| `when_to_use` (skill) | _(body prefix)_ | Prepended as `## When to Use` section |
-| `allowed-tools` (skill, comma string) | `allowedTools` (array) | New schema field |
-| `argument-hint` (skill) | `argumentHint` | New schema field |
-| `disable-model-invocation` (skill) | `disableModelInvocation` | New schema field |
-| _(synthesized)_ | `uses: { rules: [], agents: [] }` | Empty; wired in quality stage |
-| _(synthesized)_ | `id: <lang>/<slug>` | Language prefix + source slug |
-| _(synthesized)_ | `title` | slugToTitle: strip prefix, Title Case, append `(DisplayName)` |
-| _(synthesized)_ | `tags` | Language + slug words |
+| Source field                          | Catalog field                     | Notes                                                         |
+| ------------------------------------- | --------------------------------- | ------------------------------------------------------------- |
+| `description` (rule)                  | `description`                     | Single-line                                                   |
+| `paths` (rule)                        | `appliesTo`                       | Default `['**/*']` if absent                                  |
+| _(synthesized)_                       | `severity: recommended`           | All imported rules                                            |
+| _(synthesized)_                       | `extends: []`                     | Empty; `extends: [shared/clean-code]` wired in quality stage  |
+| `name` (agent)                        | `name`                            | Kept verbatim incl. prefix                                    |
+| `tools` (agent, comma string)         | `tools` (array)                   | Split on `,` + trim                                           |
+| `description` (agent/skill)           | `description`                     | Single-line only                                              |
+| `when_to_use` (skill)                 | _(body prefix)_                   | Prepended as `## When to Use` section                         |
+| `allowed-tools` (skill, comma string) | `allowedTools` (array)            | New schema field                                              |
+| `argument-hint` (skill)               | `argumentHint`                    | New schema field                                              |
+| `disable-model-invocation` (skill)    | `disableModelInvocation`          | New schema field                                              |
+| _(synthesized)_                       | `uses: { rules: [], agents: [] }` | Empty; wired in quality stage                                 |
+| _(synthesized)_                       | `id: <lang>/<slug>`               | Language prefix + source slug                                 |
+| _(synthesized)_                       | `title`                           | slugToTitle: strip prefix, Title Case, append `(DisplayName)` |
+| _(synthesized)_                       | `tags`                            | Language + slug words                                         |
 
 **Files with no frontmatter** (body-only markdown): `cs-code-quality.md`, `cs-git.md`. These
 received synthesized descriptions (`".NET / C# coding conventions and style guidelines."`). The body
@@ -273,11 +282,13 @@ These are explicitly not part of the mechanical import. They require human/AI ju
 ## Files Changed
 
 **Schema + adapters:**
+
 - `src/schema/index.ts` — added `allowedTools`, `argumentHint`, `disableModelInvocation` to `SkillSchema`
 - `src/targets/claude-code/plugin-build.ts` — emit new skill fields in plugin SKILL.md
 - `schema/skill.schema.json` — regenerated (auto, `npm run build`)
 
 **Import command:**
+
 - `src/authoring/import/discover.ts` — custom frontmatter parser (tolerates unquoted colons in descriptions)
 - `src/authoring/import/translate.ts` — pure per-kind frontmatter translator; `bodyPrefix` for `when_to_use`
 - `src/authoring/import/plan.ts` — destination path + file renderer; fixed `uses` block serialization
@@ -286,10 +297,12 @@ These are explicitly not part of the mechanical import. They require human/AI ju
 - `src/cli.ts` — `sigil import <source-dir>` command wiring
 
 **Bug fixes in shared utilities:**
+
 - `src/authoring/frontmatter.ts` — `serializeScalar`: quote `*`, `[`, `{` at start of value
 - `src/authoring/check-source.ts` — duplicate-id check: normalize path separators before comparing
 
 **New catalog content:**
+
 - `catalog/languages/typescript/language.yaml`
 - `catalog/languages/angular/language.yaml`
 - `catalog/languages/csharp/rules/cs-*.rule.md` (×11)
@@ -303,4 +316,5 @@ These are explicitly not part of the mechanical import. They require human/AI ju
 - `catalog/languages/angular/skills/ng-*/SKILL.md` (×7)
 
 **Packs:**
+
 - `packs.yaml` — added `dotnet-tooling`, `typescript-starter`, `typescript-tooling`, `angular-starter`, `angular-tooling`

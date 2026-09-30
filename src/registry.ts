@@ -91,8 +91,8 @@ export function buildRegistry(
 
     // Platforms: either declared in frontmatter or derived from all targets that support the kind
     const declaredPlatforms = fm.platforms as string[] | undefined;
-    const platforms = declaredPlatforms ??
-      allPlatformNames.filter(name => artifactTargetsPlatform(artifact, name));
+    const platforms =
+      declaredPlatforms ?? allPlatformNames.filter(name => artifactTargetsPlatform(artifact, name));
 
     const sha256 = filesha256(artifact.filePath);
 

@@ -108,7 +108,8 @@ describe('O — Wizard: config-scope for mcp', () => {
   }
 
   it('runWizard — mcp selection yields configScope:user for claude target', async () => {
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     // Wizard steps (in order for this path):
     //   target → scope:browse → kind sub-menu:__all__ (All types) → language:'' (all) →
     //   groupMultiselect picks → deps:no → overwrite:no → configScope:user → proceed:proceed
@@ -137,7 +138,8 @@ describe('O — Wizard: config-scope for mcp', () => {
   });
 
   it('runWizard — copilot target shows copilot scope hints and captures project scope', async () => {
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const restore = mockClack([
       'copilot', // step: target
       'browse', // step: scope → Browse & pick
@@ -161,7 +163,8 @@ describe('O — Wizard: config-scope for mcp', () => {
   });
 
   it('runWizard — non-config selection auto-skips configScope step (returns undefined)', async () => {
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     // Pick a skill (non-config kind) → configScope step should be skipped entirely
     const restore = mockClack([
       'claude', // target
@@ -261,7 +264,8 @@ describe('O — Wizard: config-scope for mcp', () => {
 
   it('individual picker — "Config — agnostic" group contains mcp artifacts, shared group excludes them', async () => {
     // This test captures the options object passed to groupMultiselect and inspects the group layout.
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
 
     let capturedOptions: Record<string, unknown[]> | undefined;
     const ex = clackMod.exports;
@@ -344,7 +348,8 @@ describe('O — Wizard: config-scope for mcp', () => {
     //   Everything · Recommended · Pick specific items
     // Language is no longer a top-level concept; packs are curated bundles.
     // Cross-kind picking is reachable via Pick specific items → All types (mix anything).
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
 
     let capturedScopeOpts: Array<{ value: string; label: string }> | undefined;
     const ex = clackMod.exports;
@@ -396,7 +401,8 @@ describe('O — Wizard: config-scope for mcp', () => {
   it('vocabulary — kindPlural for mcp returns "MCPs", not "Mcps"', () => {
     // After the vocabulary entries were added, kindPlural(claudeTarget, 'mcp') must
     // return 'MCPs' (not the generic fallback 'Mcps').
-    const { kindPlural } = require('../../dist-cli/select') as typeof import('../../dist-cli/select');
+    const { kindPlural } =
+      require('../../dist-cli/select') as typeof import('../../dist-cli/select');
     const { getAllTargets } =
       require('../../dist-cli/targets') as typeof import('../../dist-cli/targets');
     const claudeTarget = getAllTargets().find(t => t.name === 'claude');
@@ -413,7 +419,8 @@ describe('O — Wizard: config-scope for mcp', () => {
   it('runWizard — browse → mcp installs config agnostically (skips language + deps)', async () => {
     // browse scope → kind:mcp → multiselect two MCPs → overwrite:no → configScope:project → proceed
     // This flow must NOT consume a language answer or a deps answer (both are skipped for config kinds).
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const restore = mockClack([
       'claude', // target
       'browse', // scope → Browse by type
@@ -444,7 +451,8 @@ describe('O — Wizard: config-scope for mcp', () => {
   it('runWizard — browse → skill shows language filter and goes through deps', async () => {
     // browse scope → kind:skill → language '' (all) → groupMultiselect a skill → deps:yes → overwrite:no → proceed
     // Manually mock clack so we can intercept groupMultiselect AFTER setting up the base mock.
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
 
     let capturedOptions: Record<string, unknown[]> | undefined;
     const ex = clackMod.exports;
@@ -642,7 +650,8 @@ describe('O — Wizard: config-scope for mcp', () => {
   it('configScope wizard step — scope option hints contain absolute paths and descriptions', async () => {
     // Drive the wizard to the configScope select and capture its options.
     // Verifies that hints show full absolute paths (path.isAbsolute) and a description.
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const ex = clackMod.exports;
     const orig = { ...ex };
 
@@ -780,7 +789,8 @@ describe('R — back-navigation fix', () => {
     //   target:'claude' → scope:'all' → [narrow auto-advances] → language:'__back__'
     //   → scope shown again → scope:'all' → language:'' (all) → deps:'yes'
     //   → overwrite:'no' → configScope:'project' (all includes MCPs) → proceed:'proceed'
-    const { runWizard } = require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+    const { runWizard } =
+      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
     const restore = mockClack([
       'claude', // target
       'all', // scope → Everything (narrow is a silent pass-through)

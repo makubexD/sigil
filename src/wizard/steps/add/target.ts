@@ -2,7 +2,6 @@ import { select, isCancel, cancel } from '@clack/prompts';
 import { computeInstallStates } from '../../../install-state';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { visibleArtifacts, chosenTarget, type AddWizardState } from './state';
-import { TARGET_META } from '../../types';
 
 /** Clears downstream answers that depend on the chosen target, on target change. */
 function resetAfterTarget(s: AddWizardState): void {
@@ -23,8 +22,8 @@ export const targetStep: WizardStep<AddWizardState> = {
   async run(s): Promise<StepOutcome> {
     const targetOptions = s.ctx.scaffoldableTargets.map(t => ({
       value: t.name,
-      label: TARGET_META[t.name]?.label ?? t.name,
-      hint: TARGET_META[t.name]?.hint ?? '',
+      label: t.displayName ?? t.name,
+      hint: t.installHint ?? '',
     }));
     const answer = await select({
       message: `Install target  (detected: ${s.ctx.detectedTarget})`,

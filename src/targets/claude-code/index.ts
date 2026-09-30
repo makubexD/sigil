@@ -41,6 +41,7 @@ import type {
   KindVocabulary,
   ContractEntry,
   MergeStrategy,
+  AuthoringField,
 } from '../../types';
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
@@ -59,6 +60,33 @@ export { ConfigDestination, resolveClaudeConfigDestination } from './config';
 
 export class ClaudeCodeTarget implements Target {
   readonly name = 'claude';
+  readonly displayName = 'Claude Code';
+  readonly installHint = 'writes to .claude/';
+
+  /** `sigil patch` authoring surface for the `claude:` frontmatter namespace (agent only). */
+  readonly authoringFields: AuthoringField[] = [
+    {
+      key: 'model',
+      description: 'Set claude.model: haiku | sonnet | opus (agent only)',
+      kinds: ['agent'],
+    },
+    {
+      key: 'effort',
+      description: 'Set claude.effort: low | medium | high (agent only)',
+      kinds: ['agent'],
+    },
+    {
+      key: 'max-turns',
+      description: 'Set claude.maxTurns (agent only)',
+      kinds: ['agent'],
+      type: 'int',
+    },
+    {
+      key: 'isolation',
+      description: 'Set claude.isolation: worktree (agent only)',
+      kinds: ['agent'],
+    },
+  ];
 
   readonly supportedKinds: ArtifactKind[] = [
     'skill',
@@ -419,6 +447,9 @@ export class ClaudeCodeTarget implements Target {
               root: dest.root,
               fragment: { [topKey]: inner },
               strategy: { [topKey]: 'object-spread' },
+              // Same derivation as configScopes() above, so the scope-menu hint and the
+              // actual merge op always agree on the section string by construction.
+              section: [...dest.wrapPath, CLAUDE_MCP_SERVERS_KEY].join(' › '),
             },
           ];
         }
@@ -429,6 +460,7 @@ export class ClaudeCodeTarget implements Target {
             root: dest.root,
             fragment: { [CLAUDE_MCP_SERVERS_KEY]: { [serverName]: serverConfig } },
             strategy: { [CLAUDE_MCP_SERVERS_KEY]: 'object-spread' },
+            section: CLAUDE_MCP_SERVERS_KEY,
           },
         ];
       }

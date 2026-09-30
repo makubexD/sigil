@@ -11,7 +11,7 @@ import { hasUsesClosure } from '../../kinds';
 import { applyMerge, serialize } from '../../config-merge';
 import { resolveConfigRoot } from '../../config-utils';
 import { loadManifest, saveManifest, upsertEntries, upsertConfigEntry } from '../../manifest';
-import { writeFilesSync, mergeOpSection, pkg } from '../../cli-helpers';
+import { writeFilesSync, pkg } from '../../cli-helpers';
 import { printConflictAdvice } from '../../wizard';
 import type { ConfigMergeOp, ConfigRoot } from '../../types';
 import type { AddPlan } from './plan';
@@ -132,8 +132,7 @@ export async function executeAddPlan(plan: AddPlan): Promise<AddOutcome> {
           const rootDir = resolveConfigRoot(op.root as ConfigRoot | undefined, opts.projectDir);
           const fullPath = path.join(rootDir, op.file);
           const isHomeWrite = op.root === 'home' || op.root === 'vscode-user';
-          const opSec = mergeOpSection(op.fragment, artifact.kind);
-          const opSecSuffix = opSec ? `  › ${opSec}` : '';
+          const opSecSuffix = op.section ? `  › ${op.section}` : '';
 
           let existing: Record<string, unknown> = {};
           if (fs.existsSync(fullPath)) {

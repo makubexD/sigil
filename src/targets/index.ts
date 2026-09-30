@@ -41,4 +41,11 @@ export function getAllTargets(): Target[] {
   return [...registry.values()];
 }
 
+/** The default target: the first registered. Throws if the registry is somehow empty. */
+export function defaultTargetName(): string {
+  const first = registry.values().next().value as Target | undefined;
+  if (!first) throw new Error('No platform targets are registered.');
+  return first.name;
+}
+
 export { ClaudeCodeTarget, CopilotTarget };

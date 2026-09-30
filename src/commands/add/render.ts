@@ -8,7 +8,6 @@
  */
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
-import { mergeOpSection } from '../../cli-helpers';
 import { buildEquivalentCommand, printEquivalentCommand, isInteractiveTTY } from '../../wizard';
 import type { ConfigRoot } from '../../types';
 import type { AddPlan } from './plan';
@@ -38,8 +37,7 @@ export async function renderDryRun(plan: AddPlan): Promise<void> {
       for (const op of ops) {
         const rootDir = resolveConfigRoot(op.root as ConfigRoot | undefined, plan.opts.projectDir);
         const fullPath = path.join(rootDir, op.file);
-        const sec = mergeOpSection(op.fragment, artifact.kind);
-        const secSuffix = sec ? `  › ${sec}` : '';
+        const secSuffix = op.section ? `  › ${op.section}` : '';
         console.log(`  ~ ${fullPath}${secSuffix}  (config merge — ${artifact.kind})`);
       }
     }

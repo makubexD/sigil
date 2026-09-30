@@ -200,7 +200,7 @@ program
   .option('--dry-run', 'Preview without removing', false)
   .action(runUninstall);
 // ─── patch ────────────────────────────────────────────────────────────────────
-program
+const patchCmd = program
   .command('patch <id>')
   .description(
     'Update any field(s) of an existing catalog artifact. Transactional: rolls back on validation failure.',
@@ -231,11 +231,21 @@ program
   .option('--set-tools <list>', 'Replace tools (comma-separated, agent only)')
   .option('--add-disallowed-tool <tool>', 'Add to disallowedTools (agent only)')
   .option('--remove-disallowed-tool <tool>', 'Remove from disallowedTools (agent only)')
-  .option('--set-disallowed-tools <list>', 'Replace disallowedTools (comma-separated, agent only)')
-  .option('--claude-model <m>', 'Set claude.model: haiku | sonnet | opus (agent only)')
-  .option('--claude-effort <e>', 'Set claude.effort: low | medium | high (agent only)')
-  .option('--claude-max-turns <n>', 'Set claude.maxTurns (agent only)', parseInt)
-  .option('--claude-isolation <i>', 'Set claude.isolation: worktree (agent only)')
+  .option('--set-disallowed-tools <list>', 'Replace disallowedTools (comma-separated, agent only)');
+// Platform-namespaced authoring fields (e.g. --claude-model) are declared by each target
+// adapter's `authoringFields`, not hardcoded here — adding a target with its own authoring
+// surface requires no cli.ts changes.
+for (const t of getAllTargets()) {
+  for (const f of t.authoringFields ?? []) {
+    const flags = `--${t.name}-${f.key} <value>`;
+    if (f.type === 'int') {
+      patchCmd.option(flags, f.description, parseInt);
+    } else {
+      patchCmd.option(flags, f.description);
+    }
+  }
+}
+patchCmd
   .option('--add-platform <name>', 'Add a platform to platforms:')
   .option('--remove-platform <name>', 'Remove a platform from platforms:')
   .option(

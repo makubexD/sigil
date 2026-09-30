@@ -144,6 +144,14 @@ export interface ConfigMergeOp {
   fragment: Record<string, unknown>;
   /** Per top-level key merge strategy; keys absent from this map default to object-spread. */
   strategy: Record<string, MergeStrategy>;
+  /**
+   * Human-readable JSON key-path this fragment lands at, for display only
+   * (e.g. 'mcpServers', 'servers', 'projects › /abs/dir › mcpServers'). Set by the
+   * target's scaffoldConfig — it already knows this shape when building the op, so this
+   * mirrors `ConfigScopeInfo.destinations[].section` by construction rather than being
+   * re-derived from the fragment shape elsewhere.
+   */
+  section?: string | undefined;
 }
 
 // ─── Config-scope descriptor (provider-declared) ──────────────────────────────
@@ -395,6 +403,30 @@ export interface Target {
    * Example: Claude Code declares ['.claude'], Copilot declares ['.github']
    */
   projectMarkers?: string[];
+
+  /** Human-readable name shown in wizard pickers. Falls back to `name` when absent. */
+  displayName?: string;
+
+  /** One-line install-destination hint shown in wizard pickers (e.g. 'writes to .claude/'). */
+  installHint?: string;
+
+  /**
+   * Platform-namespaced authoring fields this target contributes to `sigil patch`.
+   * Each becomes a `--<target.name>-<key>` CLI option and writes to
+   * `<target.name>.<key>` in the artifact's source frontmatter. Lets a target declare
+   * its own authoring surface without cli.ts hardcoding per-platform flags.
+   */
+  authoringFields?: readonly AuthoringField[];
+}
+
+/** One platform-namespaced authoring field a target contributes to `sigil patch`/`sigil new`. */
+export interface AuthoringField {
+  /** Flag suffix and frontmatter key, e.g. 'model' → --claude-model → claude.model */
+  readonly key: string;
+  readonly description: string;
+  /** Kinds this field applies to; omitted = all kinds. */
+  readonly kinds?: readonly ArtifactKind[];
+  readonly type?: 'string' | 'int';
 }
 
 // ─── Validation ───────────────────────────────────────────────────────────────

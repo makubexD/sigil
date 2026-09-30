@@ -2,7 +2,6 @@ import { multiselect, note, isCancel, cancel } from '@clack/prompts';
 import { kindSupportingTargets, setPlatforms } from '../../../authoring/platforms';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { BACK, type NewWizardState } from './state';
-import { TARGET_META } from '../../types';
 
 /** Platform-targeting picker — auto-skipped when only one target supports the chosen kind. */
 export const platformsStep: WizardStep<NewWizardState> = {
@@ -20,8 +19,8 @@ export const platformsStep: WizardStep<NewWizardState> = {
       { value: BACK, label: '← Back', hint: 'return to kind selection' },
       ...supporting.map(t => ({
         value: t.name,
-        label: TARGET_META[t.name]?.label ?? t.name,
-        hint: TARGET_META[t.name]?.hint ?? '',
+        label: t.displayName ?? t.name,
+        hint: t.installHint ?? '',
       })),
     ];
     const pickedPlatforms = await multiselect({

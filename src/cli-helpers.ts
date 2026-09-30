@@ -12,9 +12,8 @@ import path from 'path';
 import yaml from 'js-yaml';
 import { loadCatalog } from './load';
 import { validateCatalog } from './validate';
-import { getAllTargets } from './targets';
+import { getAllTargets, defaultTargetName } from './targets';
 import type { FileMap, PacksConfig } from './types';
-import { CLAUDE_MCP_SERVERS_KEY } from './targets/claude-code/config';
 import { SigilError } from './errors';
 
 // ─── Package root & version ───────────────────────────────────────────────────
@@ -127,7 +126,7 @@ export function detectProjectTarget(
   opts: { verbose: boolean } = { verbose: false },
 ): string {
   const targets = getAllTargets();
-  const defaultTarget = targets[0]?.name ?? 'claude';
+  const defaultTarget = defaultTargetName();
 
   for (const target of targets) {
     const markers = target.projectMarkers ?? [];
@@ -151,33 +150,4 @@ export function detectProjectTarget(
     );
   }
   return defaultTarget;
-}
-
-// ─── Display helpers ──────────────────────────────────────────────────────────
-
-/**
- * Derives the in-file JSON key-path where a config merge op's fragment lands, for display only.
- * Returns e.g. 'projects › /abs/path › mcpServers' (Claude mcp local scope),
- * 'mcpServers' (Claude mcp user/project), 'servers' (Copilot mcp), or undefined for non-mcp ops.
- * Drives the section suffix in dry-run preview and merged-confirmation lines so the output
- * mirrors what the scope-menu hint showed the user before they confirmed.
- */
-export function mergeOpSection(
-  fragment: Record<string, unknown>,
-  kind: string,
-): string | undefined {
-  if (kind !== 'mcp') return undefined;
-  const keys = Object.keys(fragment);
-  if (keys.length !== 1) return undefined;
-  const topKey = keys[0];
-  if (topKey === 'projects') {
-    // local mcp: { projects: { <absProjectDir>: { mcpServers: {…} } } }
-    const inner = fragment[topKey] as Record<string, unknown>;
-    const dirKey = Object.keys(inner)[0];
-    return dirKey
-      ? `projects › ${dirKey} › ${CLAUDE_MCP_SERVERS_KEY}`
-      : `projects › … › ${CLAUDE_MCP_SERVERS_KEY}`;
-  }
-  // user/project mcp (CLAUDE_MCP_SERVERS_KEY) or Copilot mcp ('servers') — top key IS the section
-  return topKey;
 }

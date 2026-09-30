@@ -66,6 +66,8 @@ export { CopilotConfigDestination, resolveCopilotConfigDestination } from './con
 
 export class CopilotTarget implements Target {
   readonly name = 'copilot';
+  readonly displayName = 'GitHub Copilot';
+  readonly installHint = 'writes to .github/';
 
   // Copilot supports mcp (via .vscode/mcp.json) but NOT hook or settings — those are Claude Code only.
   // hook/settings absent from this list → existing warn-and-skip covers them.
@@ -328,6 +330,7 @@ export class CopilotTarget implements Target {
         root: dest.root,
         fragment: { [COPILOT_MCP_SERVERS_KEY]: { [serverName]: serverConfig } },
         strategy: { [COPILOT_MCP_SERVERS_KEY]: 'object-spread' },
+        section: COPILOT_MCP_SERVERS_KEY,
       },
     ];
   }

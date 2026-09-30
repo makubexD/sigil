@@ -3,12 +3,6 @@
  */
 import type { Target } from '../types';
 
-/** Friendly labels and install-destination hints for known target names. */
-export const TARGET_META: Record<string, { label: string; hint: string }> = {
-  claude: { label: 'Claude Code', hint: 'writes to .claude/' },
-  copilot: { label: 'GitHub Copilot', hint: 'writes to .github/' },
-};
-
 export interface WizardResult {
   /** Platform target (claude or copilot). */
   target: string;

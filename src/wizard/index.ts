@@ -1,4 +1,4 @@
-export { TARGET_META, isInteractiveTTY } from './types';
+export { isInteractiveTTY } from './types';
 export type { WizardResult, NewWizardResult, EditWizardResult } from './types';
 export { stateHintSuffix, renderStateLegend } from './state-display';
 export {

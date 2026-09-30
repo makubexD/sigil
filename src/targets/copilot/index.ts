@@ -41,7 +41,6 @@ import type {
   KindVocabulary,
   ContractEntry,
 } from '../../types';
-import { resolveCopilotConfigDestination } from './config';
 import { buildAgentsMd } from './build-helpers';
 import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
 import { COPILOT_CAPABILITIES } from './capabilities';
@@ -54,7 +53,7 @@ import {
   buildSkillFiles,
   buildPromptFiles,
   scaffoldByKind,
-  buildMcpConfigOp,
+  buildMcpConfigOps,
 } from './target-helpers';
 
 export { CopilotConfigDestination, resolveCopilotConfigDestination } from './config';
@@ -131,7 +130,7 @@ export class CopilotTarget implements Target {
    * Produce merge ops for mcp artifacts targeting VS Code / Copilot.
    *
    * Scope behaviour:
-   *   project / local → .vscode/mcp.json   (workspace, root: project)
+   *   project / local → .vscode/mcp.json (VS Code) + .mcp.json (Copilot CLI), root: project
    *   user            → mcp.json in VS Code user-profile dir (root: vscode-user)
    *
    * Note: VS Code has no separate "local" MCP scope — `local` aliases to workspace.
@@ -152,7 +151,6 @@ export class CopilotTarget implements Target {
 
     const scope: ConfigScope =
       options.scope ?? (artifact.frontmatter.defaultScope as ConfigScope | undefined) ?? 'project';
-    const dest = resolveCopilotConfigDestination('mcp', scope);
-    return [buildMcpConfigOp(artifact, dest)];
+    return buildMcpConfigOps(artifact, scope);
   }
 }

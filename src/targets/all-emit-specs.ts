@@ -26,6 +26,7 @@ import {
   CLAUDE_PLUGIN_MANIFEST_DOC,
   CLAUDE_PLUGIN_MARKETPLACES_DOC,
   VSCODE_MCP_DOC,
+  COPILOT_CLI_MCP_DOC,
 } from './doc-refs';
 
 /** One DocRef paired with a human-readable label identifying what cites it. */
@@ -66,6 +67,7 @@ const AGGREGATE_DOC_REFS: readonly SourcedDocRef[] = [
   { source: 'claude plugin.json aggregate', doc: CLAUDE_PLUGIN_MANIFEST_DOC },
   { source: 'claude marketplace.json aggregate', doc: CLAUDE_PLUGIN_MARKETPLACES_DOC },
   { source: 'copilot .vscode/mcp.json aggregate', doc: VSCODE_MCP_DOC },
+  { source: 'copilot .mcp.json aggregate (Copilot CLI)', doc: COPILOT_CLI_MCP_DOC },
 ];
 
 /**

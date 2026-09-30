@@ -87,6 +87,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `shared/protect-config` also blocks `*.env`, `.env-*`, `.netrc`, `.pgpass`, `*.ppk`, `*.jks`,
   `*.keystore`, and drive-relative Windows paths (`C:new.pem`).
 
+Found by the live-prompt campaign (`docs/audits/2026-09-27/findings.md`), which ran real prompts
+through Claude Code and Copilot CLI against seven install combinations:
+
+- Copilot CLI never loaded an MCP server that `sigil add --target copilot` installed: sigil wrote only
+  VS Code's `.vscode/mcp.json`, which the CLI doesn't read. A project-scope install now also merges
+  the server into `.mcp.json` (`mcpServers`).
+- Uninstalling an MCP server for one target also removed it for the other when both used
+  `.mcp.json`. A fragment another installed entry still records is now kept.
+- Copilot `.instructions.md` files had no `description`, so Copilot CLI's instruction index gave the
+  model only a file name to decide whether to open a rule. They now carry the rule's description.
+
 ### Removed
 
 - The internal `requiresLanguage` kind-descriptor flag (no kind requires a language any more).

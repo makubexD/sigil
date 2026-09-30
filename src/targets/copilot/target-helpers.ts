@@ -12,6 +12,7 @@ import type {
   ConfigScope,
   ConfigKind,
   ConfigScopeDestination,
+  ConfigRoot,
   ArtifactKind,
 } from '../../types';
 import path from 'path';
@@ -31,7 +32,11 @@ import {
   scaffoldPrompt,
   scaffoldWorkflow,
 } from './scaffold';
-import { COPILOT_MCP_SERVERS_KEY } from './mcp-key';
+import {
+  COPILOT_MCP_SERVERS_KEY,
+  COPILOT_CLI_MCP_FILE,
+  COPILOT_CLI_MCP_SERVERS_KEY,
+} from './mcp-key';
 
 /**
  * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
@@ -44,7 +49,7 @@ export const CONFIG_SCOPES = [
     precedence: 1,
     shared: true,
     blastRadius: 'project' as const,
-    description: 'workspace — .vscode/mcp.json, git-committed',
+    description: 'workspace — .vscode/mcp.json + .mcp.json (Copilot CLI), git-committed',
   },
   {
     value: 'user' as ConfigScope,
@@ -55,25 +60,35 @@ export const CONFIG_SCOPES = [
   },
 ];
 
-/** Builds one scope's mcp destination info, or [] when the kind isn't 'mcp' (Copilot-only). */
+/** The files one scope's mcp install writes: VS Code's, plus `.mcp.json` for Copilot CLI (project). */
+function mcpDestinations(
+  scope: ConfigScope,
+): { file: string; root: ConfigRoot; section: string }[] {
+  const vscode = {
+    ...resolveCopilotConfigDestination('mcp', scope),
+    section: COPILOT_MCP_SERVERS_KEY,
+  };
+  if (scope === 'user') return [vscode];
+  return [
+    vscode,
+    { file: COPILOT_CLI_MCP_FILE, root: 'project', section: COPILOT_CLI_MCP_SERVERS_KEY },
+  ];
+}
+
+/** Builds one scope's mcp destinations (the same files buildMcpConfigOps writes), or []. */
 export function buildScopeDestinations(
   kinds: ConfigKind[],
   scopeValue: ConfigScope,
   projectDir: string,
 ): ConfigScopeDestination[] {
-  return kinds
-    .filter(k => k === 'mcp')
-    .map(kind => {
-      const d = resolveCopilotConfigDestination('mcp', scopeValue);
-      return {
-        kind: kind as ConfigKind,
-        file: d.file,
-        root: d.root,
-        fullPath: path.join(resolveConfigRoot(d.root, projectDir), d.file),
-        // Copilot uses COPILOT_MCP_SERVERS_KEY (not 'mcpServers') — surface for display consistency.
-        section: COPILOT_MCP_SERVERS_KEY,
-      };
-    });
+  if (!kinds.includes('mcp')) return [];
+  return mcpDestinations(scopeValue).map(d => ({
+    kind: 'mcp' as ConfigKind,
+    file: d.file,
+    root: d.root,
+    fullPath: path.join(resolveConfigRoot(d.root, projectDir), d.file),
+    section: d.section,
+  }));
 }
 
 /** Globs that mean "every file" — a rule scoped only to these belongs in the repo-wide aggregate. */
@@ -172,23 +187,38 @@ export function scaffoldByKind(
   fn(artifact, catalog, files, options);
 }
 
-/** Builds the single mcp ConfigMergeOp for Copilot/VS Code (uses COPILOT_MCP_SERVERS_KEY). */
+type McpArtifact = NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>;
+
+/** Builds one mcp ConfigMergeOp: the server under `key` (VS Code `servers` unless told otherwise). */
 export function buildMcpConfigOp(
-  artifact: NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>,
+  artifact: McpArtifact,
   dest: ReturnType<typeof resolveCopilotConfigDestination>,
+  key: string = COPILOT_MCP_SERVERS_KEY,
 ): ConfigMergeOp {
   const fm = artifact.frontmatter;
   const server = fm.server as Record<string, unknown>;
   const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
   const { description: _d, ...serverConfig } = server as Record<string, unknown>;
   void _d;
-
-  // VS Code / Copilot uses COPILOT_MCP_SERVERS_KEY (not 'mcpServers' which is the Claude Code key)
   return {
     file: dest.file,
     root: dest.root,
-    fragment: { [COPILOT_MCP_SERVERS_KEY]: { [serverName]: serverConfig } },
-    strategy: { [COPILOT_MCP_SERVERS_KEY]: 'object-spread' },
-    section: COPILOT_MCP_SERVERS_KEY,
+    fragment: { [key]: { [serverName]: serverConfig } },
+    strategy: { [key]: 'object-spread' },
+    section: key,
   };
+}
+
+/**
+ * Every op one mcp install needs: VS Code's file for the scope, plus — for the project scope — the
+ * portable `.mcp.json` Copilot CLI reads (see COPILOT_CLI_MCP_FILE). The user scope stays VS
+ * Code-only; Copilot CLI's user file (`~/.copilot/mcp-config.json`) is not a sigil root.
+ */
+export function buildMcpConfigOps(artifact: McpArtifact, scope: ConfigScope): ConfigMergeOp[] {
+  const ops = [buildMcpConfigOp(artifact, resolveCopilotConfigDestination('mcp', scope))];
+  if (scope !== 'user') {
+    const cli = { file: COPILOT_CLI_MCP_FILE, root: 'project' as const };
+    ops.push(buildMcpConfigOp(artifact, cli, COPILOT_CLI_MCP_SERVERS_KEY));
+  }
+  return ops;
 }

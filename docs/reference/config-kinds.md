@@ -154,10 +154,15 @@ Claude Code (3 scopes, highest precedence first):
 
 GitHub Copilot (2 scopes — no distinct local MCP scope in VS Code):
 
-| Scope (precedence) | mcp                             |
-| ------------------ | ------------------------------- |
-| project (1)        | `.vscode/mcp.json`              |
-| user (2)           | VS Code user-profile `mcp.json` |
+| Scope (precedence) | mcp                                                                  |
+| ------------------ | -------------------------------------------------------------------- |
+| project (1)        | `.vscode/mcp.json` (`servers`, VS Code) + `.mcp.json` (`mcpServers`) |
+| user (2)           | VS Code user-profile `mcp.json`                                      |
+
+A project-scope Copilot install writes both files: Copilot CLI reads only `.mcp.json` /
+`.github/mcp.json`, never `.vscode/mcp.json` ([GitHub docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers#adding-per-repository-mcp-servers)).
+`.mcp.json` is the same file Claude Code's project scope uses, so with both targets installed one
+server entry serves both. The user scope stays VS Code-only.
 
 **Blast-radius warning.** Driven by `ConfigScopeInfo.blastRadius === 'all-projects'`
 (provider-agnostic). The warning note names the concrete `fullPath  › section` target(s) from the

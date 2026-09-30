@@ -110,7 +110,7 @@ describe('config fragments are replaced, not stacked', () => {
 
       const settings = JSON.parse(fs.readFileSync(path.join(dir, SETTINGS), 'utf8'));
       assert.equal(settings.env?.OLD, undefined, JSON.stringify(settings));
-      assert.ok(settings.permissions.allow.includes('Bash(git status)'));
+      assert.ok(settings.permissions.allow.includes('Bash(npm run *)'));
     });
   });
 

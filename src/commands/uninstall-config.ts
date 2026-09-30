@@ -10,6 +10,7 @@ import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config
 import { reverseMerge, serialize } from '../config-merge';
 import type { ConfigRoot, ConfigMergeOp, MergeStrategy } from '../types';
 import type { ManifestEntry } from '../manifest';
+import { CONFIG_KINDS } from '../select';
 
 /** Builds the ConfigMergeOp from a recorded manifest config-merge entry. */
 function buildConfigMergeOpFromEntry(
@@ -62,15 +63,42 @@ function reverseMergeOneConfigFile(
   }
 }
 
-/** Reverse-merges and removes sigil's contribution from each config-kind entry's JSON files. */
+type ConfigRecord = NonNullable<ManifestEntry['configFiles']>[number];
+
+/** The removed entries that merged into JSON config files (hook/settings/mcp with records). */
+export function configEntriesOf(removed: readonly ManifestEntry[]): ManifestEntry[] {
+  return removed.filter(e => CONFIG_KINDS.has(e.kind) && (e.configFiles?.length ?? 0) > 0);
+}
+
+/**
+ * The entry still installed that recorded the very same fragment in the same file — e.g. one MCP
+ * server installed for both claude and copilot lands in the shared `.mcp.json`. Reversing it for
+ * one target would take it away from the other.
+ */
+function sharedWith(cf: ConfigRecord, kept: readonly ManifestEntry[]): ManifestEntry | undefined {
+  const same = (k: ConfigRecord) =>
+    k.file === cf.file &&
+    (k.root ?? 'project') === (cf.root ?? 'project') &&
+    k.fragmentSha256 === cf.fragmentSha256;
+  return kept.find(e => (e.configFiles ?? []).some(same));
+}
+
+/**
+ * Reverse-merges and removes sigil's contribution from each config-kind entry's JSON files,
+ * except a fragment an entry in `kept` (the manifest after removal) still records.
+ */
 export function reverseMergeConfigEntries(
   configEntriesToRemove: ManifestEntry[],
   projectDir: string,
+  kept: readonly ManifestEntry[] = [],
 ): number {
   let configRemovedCount = 0;
   for (const entry of configEntriesToRemove) {
     for (const cf of entry.configFiles ?? []) {
-      if (reverseMergeOneConfigFile(cf, projectDir)) configRemovedCount++;
+      const owner = sharedWith(cf, kept);
+      if (owner)
+        console.log(`  =  ${cf.file}  (kept: still used by ${owner.id} for ${owner.target})`);
+      else if (reverseMergeOneConfigFile(cf, projectDir)) configRemovedCount++;
     }
   }
   return configRemovedCount;

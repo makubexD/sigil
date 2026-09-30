@@ -9,11 +9,10 @@ import path from 'node:path';
 import { confirm, isCancel, cancel } from '@clack/prompts';
 import { saveManifest, removeEntries, sha256 } from '../manifest';
 import { requireManifest } from './shared/manifest';
-import { CONFIG_KINDS } from '../select';
 import { isInteractiveTTY } from '../wizard';
 import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
-import { reverseMergeConfigEntries } from './uninstall-config';
+import { configEntriesOf, reverseMergeConfigEntries } from './uninstall-config';
 import type { PruneCandidates, PruneOptions } from './prune';
 
 /** Finds paths whose on-disk content no longer matches the manifest-recorded hash — same check
@@ -103,11 +102,10 @@ function writeRemoval(
   opts: PruneOptions,
 ): number {
   const { pathsToDelete, driftedPaths, removedEntries } = computed;
-  const configEntriesToRemove = removedEntries.filter(
-    e => CONFIG_KINDS.has(e.kind) && e.configFiles && e.configFiles.length > 0,
-  );
   deleteWholeFiles(pathsToDelete, driftedPaths, opts);
-  const configRemovedCount = reverseMergeConfigEntries(configEntriesToRemove, opts.projectDir);
+  const kept = manifest.entries; // removeEntries left only what stays installed
+  const configEntries = configEntriesOf(removedEntries);
+  const configRemovedCount = reverseMergeConfigEntries(configEntries, opts.projectDir, kept);
   saveManifest(opts.projectDir, manifest);
   return configRemovedCount;
 }

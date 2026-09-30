@@ -105,7 +105,7 @@ in every project on the machine.
 <summary><b>GitHub Copilot (VS Code / CLI / cloud agent)</b></summary>
 
 Writes `.github/skills/`, `.github/agents/`, `.github/instructions/*.instructions.md` (rules, with
-`applyTo:`), and prompt files; MCP merges into `.vscode/mcp.json`:
+`applyTo:`), and prompt files; MCP merges into `.vscode/mcp.json` and, for Copilot CLI, `.mcp.json`:
 
 ```bash
 sigil add --target copilot                        # wizard

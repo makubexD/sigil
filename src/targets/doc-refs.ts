@@ -284,6 +284,20 @@ export const VSCODE_MCP_DOC: DocRef = {
   verifiedOn: '2026-08-07',
   covers:
     '.vscode/mcp.json workspace-scope server configuration that ' +
-    'src/targets/copilot/config.ts merges into. Documents the same mcpServers shape as ' +
-    "CLAUDE_MCP_DOC on VS Code's side, plus the Agent Host forwarding caveat.",
+    'src/targets/copilot/config.ts merges into (top-level `servers` — the VS Code format), plus ' +
+    'the Agent Host forwarding caveat and the portable `.mcp.json` (`mcpServers`) alternative.',
+};
+
+/**
+ * `.mcp.json` for Copilot CLI — the CLI's own MCP page, whose per-repository table names
+ * `.mcp.json` / `.github/mcp.json` and states `.vscode/mcp.json` is not read.
+ */
+export const COPILOT_CLI_MCP_DOC: DocRef = {
+  url: 'https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers#adding-per-repository-mcp-servers',
+  title: 'GitHub Docs — Adding MCP servers for GitHub Copilot CLI',
+  verifiedOn: '2026-09-28',
+  covers:
+    'Project-level .mcp.json (mcpServers) that a project-scope copilot mcp install also merges ' +
+    'into (buildMcpConfigOps, src/targets/copilot/target-helpers.ts), because Copilot CLI never ' +
+    'reads .vscode/mcp.json.',
 };

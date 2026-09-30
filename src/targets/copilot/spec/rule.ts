@@ -8,6 +8,7 @@
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { COPILOT_INSTRUCTIONS_DOC, VSCODE_INSTRUCTIONS_DOC } from '../../doc-refs';
 import { COPILOT_LEXICON } from '../lexicon';
+import { yamlScalar } from '../../yaml-util';
 import { UNTRANSLATED_TOKEN_FORBID, CLAUDE_LITERAL_FORBIDS_ON_COPILOT } from '../../lexicon-forbid';
 
 const applyToMapping: FieldMapping = {
@@ -20,6 +21,18 @@ const applyToMapping: FieldMapping = {
     const appliesTo = authored && authored.length > 0 ? authored : ['**'];
     return `applyTo: "${appliesTo.join(',')}"`;
   },
+};
+
+/**
+ * Copilot CLI shows path-specific files as an index (applyTo | path | description) and lets the
+ * model decide which to open; VS Code uses `description` for on-demand discovery. Without it the
+ * model has only a file name to go on (2026-09-27 live-prompt campaign, Copilot debug log).
+ */
+const descriptionMapping: FieldMapping = {
+  from: 'description',
+  to: 'description',
+  required: true,
+  serialize: v => `description: ${yamlScalar(String(v).replace(/\s+/g, ' ').trim())}`,
 };
 
 const titleAndSourceSection: BodySectionSpec = {
@@ -38,7 +51,7 @@ export const COPILOT_RULE_SPEC: KindEmitSpec = {
   kind: 'rule',
   outputPath: artifact => `.github/instructions/${artifact.id.replace(/\//g, '-')}.instructions.md`,
   pathPattern: /\.github\/instructions\/.*\.instructions\.md$/,
-  frontmatter: [applyToMapping],
+  frontmatter: [applyToMapping, descriptionMapping],
   emitEmptyFrontmatter: false,
   body: [titleAndSourceSection],
   forbiddenKeys: ['name', 'agent'],

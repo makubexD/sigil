@@ -11,11 +11,10 @@ import { confirm, isCancel, cancel, note } from '@clack/prompts';
 import { detectProjectTarget } from '../cli-helpers';
 import { saveManifest, removeEntries, sha256 } from '../manifest';
 import { requireManifest } from './shared/manifest';
-import { CONFIG_KINDS } from '../select';
 import { isInteractiveTTY } from '../wizard';
 import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
-import { reverseMergeConfigEntries } from './uninstall-config';
+import { configEntriesOf, reverseMergeConfigEntries } from './uninstall-config';
 
 export interface UninstallOptions {
   projectDir: string;
@@ -195,13 +194,11 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
 
   const { pathsToDelete, removedEntries } = removeEntries(manifest, ids, targetName);
 
-  const configEntriesToRemove = removedEntries.filter(
-    e => CONFIG_KINDS.has(e.kind) && e.configFiles && e.configFiles.length > 0,
-  );
+  const configEntries = configEntriesOf(removedEntries);
   const driftedPaths = findDriftedPaths(pathsToDelete, removedEntries, opts.projectDir);
 
   if (opts.dryRun) {
-    printDryRunPreview(pathsToDelete, driftedPaths, configEntriesToRemove);
+    printDryRunPreview(pathsToDelete, driftedPaths, configEntries);
     return;
   }
 
@@ -209,7 +206,8 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
   if (!proceed) return;
 
   deleteWholeFiles(pathsToDelete, driftedPaths, opts);
-  const configRemovedCount = reverseMergeConfigEntries(configEntriesToRemove, opts.projectDir);
+  const kept = manifest.entries; // removeEntries left only what stays installed
+  const configRemovedCount = reverseMergeConfigEntries(configEntries, opts.projectDir, kept);
 
   saveManifest(opts.projectDir, manifest);
   printUninstallSummary(ids, { pathsToDelete, driftedPaths, configRemovedCount }, opts);

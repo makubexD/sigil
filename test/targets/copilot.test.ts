@@ -76,6 +76,23 @@ describe('Copilot target', () => {
     );
   });
 
+  it('buildInstructionsFile: emits the rule description for on-demand discovery', () => {
+    // Copilot CLI lists every path-specific file in an index (applyTo | path | description) and
+    // lets the model open the relevant ones; without a description the model sees only a file
+    // name (2026-09-27 live-prompt campaign). VS Code: "Include it for on-demand discovery."
+    const rule = makeRule({
+      id: 'shared/cli-rules',
+      description: 'CLI grammar: flags, help: exit codes',
+      appliesTo: ['**/cli/**/*.py'],
+    });
+
+    const content = buildInstructionsFile(
+      rule as unknown as Parameters<typeof buildInstructionsFile>[0],
+    );
+
+    assert.match(content, /^description: "CLI grammar: flags, help: exit codes"$/m);
+  });
+
   it('buildInstructionsFile: rule with no appliesTo at all falls back to **', () => {
     const rule = makeRule({
       id: 'shared/universal',

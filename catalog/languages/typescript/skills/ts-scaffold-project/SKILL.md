@@ -2,11 +2,15 @@
 id: typescript/ts-scaffold-project
 kind: skill
 title: "Scaffold Project (TypeScript)"
-description: "Scaffold a new package with project standards pre-wired — tsconfig, ESLint, ESM exports map, src/test layout, Vitest seed test — and add it to the workspace"
+description: "Scaffold a new package with the workspace's standards pre-wired — tsconfig, ESLint, ESM exports map, src/test layout, seed test — and add it to the workspace"
 name: ts-scaffold-project
 language: typescript
-appliesTo:
-  - "**/*"
+skillContext: fork
+whenToUse: >-
+  Use when adding a new package to an existing monorepo or initializing a new standalone
+  package — "scaffold a new package", "create a new lib/app/cli", "bootstrap a package for X".
+  Pass the package name and optional type. Never overwrites existing files; confirms before
+  editing the root workspace config.
 allowedTools:
   - Read
   - Write
@@ -27,183 +31,53 @@ tags:
   - project
 ---
 
-## When to Use
-
-Use when adding a new package to an existing monorepo or initializing a new standalone package. Pass the package name and optional type. Never overwrites existing files; confirms before editing the root workspace config.
-
----
-
 # Scaffold Project
 
 **Package name + type:** $ARGUMENTS
 
-Parse `$ARGUMENTS`:
-- First token → `<name>` (e.g. `@myorg/reporting`, `my-cli-tool`)
-- `--type=<lib|app|cli|test>` (default: `lib`)
+Parse `$ARGUMENTS`: first token → `<name>` (e.g. `@myorg/reporting`, `my-cli-tool`);
+`--type=<lib|app|cli|test>` (default: `lib`).
 
 ## Step 1 — Discover repo standards
 
-Read the following to understand what "standards pre-wired" means for this project:
-- Root `package.json` — workspaces config, `"type"`, `"engines"`, shared scripts.
-- `tsconfig.base.json` (or root `tsconfig.json`) — shared compiler options to extend.
-- `eslint.config.*` — enabled rules; confirm whether flat config or legacy.
-- `.prettierrc*` / `biome.json` — formatter config (optional).
-- `CLAUDE.md` — documented architecture layers and naming conventions.
-- An existing similar package as a reference (read its `package.json` and `tsconfig.json`).
-
-If none of these exist, prompt the user for the target Node.js version and whether this is an
-ESM-first project before proceeding.
+Read: root `package.json` (workspaces config, `"type"`, `"engines"`, shared scripts, and —
+critically — which test runner is actually a `devDependency` there or in a sibling package;
+never assume Vitest); `tsconfig.base.json`; `eslint.config.*`; `CLAUDE.md` for documented
+architecture/naming; and one existing similar package as a concrete reference. If none of these
+exist, ask the user for the target Node.js version, whether this is ESM-first, and which test
+runner to use before proceeding.
 
 ## Step 2 — Determine placement
 
-Based on `--type`:
-- `lib` → `packages/<name>/` with `src/index.ts` + `test/index.test.ts`
-- `app` → `apps/<name>/` with `src/index.ts` + `test/index.test.ts`
-- `cli` → `packages/<name>/` with `src/cli.ts` + `src/index.ts` + `test/cli.test.ts`
+- `lib` → `packages/<name>/` (`src/index.ts` + `test/index.test.ts`)
+- `app` → `apps/<name>/` (`src/index.ts` + `test/index.test.ts`)
+- `cli` → `packages/<name>/` (`src/cli.ts` + `src/index.ts` + `test/cli.test.ts`)
 - `test` → `test/<name>/` only (no source package)
 
-Use the root `package.json` `"workspaces"` glob to determine whether the path would be picked up
-automatically (e.g. `"packages/*"` covers `packages/<name>/`).
-
-Do not overwrite any existing file. If the target path already exists, **stop and report**.
+Check the root `package.json` `"workspaces"` glob covers the new path (e.g. `"packages/*"`).
+**Do not overwrite any existing file** — if the target path already exists, stop and report.
 
 ## Step 3 — Scaffold the package
 
-Create `<placement>/<name>/package.json`:
-
-```json
-{
-  "name": "<name>",
-  "version": "0.1.0",
-  "type": "module",
-  "exports": {
-    ".": {
-      "import": "./dist/index.js",
-      "types": "./dist/index.d.ts"
-    }
-  },
-  "files": ["dist"],
-  "scripts": {
-    "build": "tsc -p tsconfig.build.json",
-    "typecheck": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vitest run",
-    "test:watch": "vitest"
-  },
-  "devDependencies": {
-    "vitest": "*"
-  }
-}
-```
-
-Adjust for `--type=app` (no `exports` / `files`; may add a `"bin"` entry for `--type=cli`).
-If CPM / shared versions are in use, omit version numbers from devDependencies — inherit from root.
-
-Create `<placement>/<name>/tsconfig.json` extending the base:
-
-```json
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true
-  },
-  "include": ["src"]
-}
-```
-
-Create `<placement>/<name>/src/index.ts` with a seed export and TSDoc:
-
-```typescript
-/**
- * <name> — <one-line description>.
- *
- * @module
- */
-
-/**
- * Entry point for the <name> package.
- *
- * @param input - TODO: describe parameter.
- * @returns TODO: describe return value.
- */
-export function main(input: string): string {
-  // TODO: implement
-  return input;
-}
-```
-
-For `--type=cli`, also create `src/cli.ts`:
-
-```typescript
-#!/usr/bin/env node
-/**
- * CLI entry point for <name>.
- */
-
-const [, , ...args] = process.argv;
-// TODO: wire argument parsing and call main()
-process.exit(0);
-```
+Create `package.json`, `tsconfig.json`, `src/index.ts` (and `src/cli.ts` for `--type=cli`) —
+see `references/templates.md` for the worked examples, all keyed off the runner discovered in
+Step 1.
 
 ## Step 4 — Scaffold the test file (unless `--type=test`)
 
-Create `<placement>/<name>/test/index.test.ts`:
-
-```typescript
-import { describe, it, expect } from "vitest";
-import { main } from "../src/index.js";
-
-describe("main", () => {
-  it("should return the input unchanged as a placeholder", () => {
-    // Arrange
-    const input = "hello";
-
-    // Act
-    const result = main(input);
-
-    // Assert
-    expect(result).toBe(input);
-  });
-});
-```
+Create `test/index.test.ts` using the discovered runner's import/assertion style — see
+`references/templates.md` for the Vitest and `node:test` shapes.
 
 ## Step 5 — Add to workspace
 
-Present what will change before modifying anything:
-
-```
-The following will be added to the repository:
-
-  <placement>/<name>/package.json
-  <placement>/<name>/tsconfig.json
-  <placement>/<name>/src/index.ts
-  <placement>/<name>/test/index.test.ts
-
-Root workspace update (package.json "workspaces") may be needed: <yes / no — path already covered>
-
-Proceed? [y/N]
-```
-
-Wait for confirmation. If the root `package.json` `"workspaces"` glob does not already cover the
-new package path, add the path with `Edit`.
-
-Then run:
-```bash
-npm install
-```
+Present the file list and whether a root `package.json` `"workspaces"` update is needed; wait for
+explicit confirmation before editing the root config. Then run `npm install`.
 
 ## Step 6 — Build and test
 
-```bash
-tsc --noEmit -p <placement>/<name>/tsconfig.json
-npx vitest run <placement>/<name>/test/
-```
-
-If either fails, report the error — do not leave a broken package in the workspace.
+Run `tsc --noEmit -p <placement>/<name>/tsconfig.json` and the discovered test command scoped to
+the new package's `test/` directory. If either fails, report the error — do not leave a broken
+package in the workspace.
 
 ## Step 7 — Report
 
@@ -212,6 +86,7 @@ If either fails, report the error — do not leave a broken package in the works
 
 Package:  <placement>/<name>/
 Type:     <lib / app / cli / test>
+Runner:   <discovered in Step 1>
 Workspace: <already covered / added to root package.json>
 
 Files created:
@@ -224,7 +99,7 @@ Standards applied:
   ✅ ESM-first ("type": "module")
   ✅ Explicit exports map
   ✅ tsconfig extends base (strict, noUncheckedIndexedAccess, etc.)
-  ✅ Vitest seed test (AAA)
+  ✅ Seed test (AAA)
   ✅ TSDoc on public export
 
 Type check: ✅ passed  /  ❌ <error>

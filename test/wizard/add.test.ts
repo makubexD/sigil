@@ -59,12 +59,15 @@ describe('O — Wizard: config-scope for mcp', () => {
   // Load the real catalog so runWizard gets real artifact IDs
   let resolvedCatalog: ResolvedCatalog;
   let clackMod: { exports: Record<string, unknown> };
+  let pickerMod: { exports: Record<string, unknown> };
 
   beforeEach(async () => {
     const cat = await loadCatalog(CATALOG_DIR);
     resolvedCatalog = resolveCatalog(cat) as ResolvedCatalog;
     const clackKey = require.resolve('@clack/prompts');
     clackMod = require.cache[clackKey] as { exports: Record<string, unknown> };
+    const pickerKey = require.resolve('../../dist-cli/wizard/picker/index');
+    pickerMod = require.cache[pickerKey] as { exports: Record<string, unknown> };
   });
 
   /**
@@ -73,11 +76,23 @@ describe('O — Wizard: config-scope for mcp', () => {
    * `multiselect` returns the next value as an array (or the value itself if already an array).
    * `isCancel` always returns false.
    * All others (intro, outro, note, log, cancel) are no-ops.
+   *
+   * The `add` wizard's grouped/flat pickers no longer go through `@clack/prompts`'
+   * `groupMultiselect`/`multiselect` (see `src/wizard/picker/` — replaced to fix the
+   * phantom-selection bug at catalog scale). `pickArtifacts` in that module is mocked the same
+   * way — mutating its already-loaded require.cache exports object — so this queue-based harness
+   * still drives it without a real TTY.
+   *
    * Returns a restore() function that puts the originals back.
    */
   function mockClack(queue: Array<string | string[]>): () => void {
     const ex = clackMod.exports;
+    const pickerEx = pickerMod.exports;
     const orig = { ...ex };
+    // Only save/restore the one key we actually mutate — `pickerEx` also carries a getter-only
+    // re-export of @clack/core's `isCancel` (see index.ts), which throws on reassignment; call
+    // sites import isCancel from @clack/prompts instead (mocked above), so it's never touched here.
+    const pickerOrigPickArtifacts = pickerEx['pickArtifacts'];
 
     const pop = () => {
       if (queue.length === 0) throw new Error('clack mock: answer queue exhausted');
@@ -101,9 +116,14 @@ describe('O — Wizard: config-scope for mcp', () => {
     };
     ex['text'] = async (_opts: unknown) => pop();
     ex['confirm'] = async (_opts: unknown) => pop();
+    pickerEx['pickArtifacts'] = async (_opts: unknown) => {
+      const v = pop();
+      return Array.isArray(v) ? v : [v];
+    };
 
     return () => {
       for (const k of Object.keys(orig)) ex[k] = orig[k];
+      pickerEx['pickArtifacts'] = pickerOrigPickArtifacts;
     };
   }
 
@@ -263,16 +283,17 @@ describe('O — Wizard: config-scope for mcp', () => {
   });
 
   it('individual picker — "Config — agnostic" group contains mcp artifacts, shared group excludes them', async () => {
-    // This test captures the options object passed to groupMultiselect and inspects the group layout.
+    // This test captures the options object passed to pickArtifacts and inspects the group layout.
     const { runWizard } =
       require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
 
     let capturedOptions: Record<string, unknown[]> | undefined;
     const ex = clackMod.exports;
-    const origGroupMultiselect = ex['groupMultiselect'];
+    const pickerEx = pickerMod.exports;
+    const origPickArtifacts = pickerEx['pickArtifacts'];
 
-    // Replace groupMultiselect to capture options, then return our picks
-    ex['groupMultiselect'] = async (opts: { options: Record<string, unknown[]> }) => {
+    // Replace pickArtifacts to capture options, then return our picks
+    pickerEx['pickArtifacts'] = async (opts: { options: Record<string, unknown[]> }) => {
       capturedOptions = opts.options;
       // Return just the two mcp artifacts
       return ['mcp:shared/ado', 'mcp:shared/maku-jam'];
@@ -333,8 +354,8 @@ describe('O — Wizard: config-scope for mcp', () => {
         }
       }
     } finally {
-      // Restore clack
-      ex['groupMultiselect'] = origGroupMultiselect;
+      // Restore
+      pickerEx['pickArtifacts'] = origPickArtifacts;
       // Re-install safe no-ops (the next test's beforeEach will restore properly)
     }
   });
@@ -449,14 +470,17 @@ describe('O — Wizard: config-scope for mcp', () => {
   });
 
   it('runWizard — browse → skill shows language filter and goes through deps', async () => {
-    // browse scope → kind:skill → language '' (all) → groupMultiselect a skill → deps:yes → overwrite:no → proceed
-    // Manually mock clack so we can intercept groupMultiselect AFTER setting up the base mock.
+    // browse scope → kind:skill → language '' (all) → pickArtifacts a skill → deps:yes → overwrite:no → proceed
+    // Manually mock clack so we can intercept pickArtifacts AFTER setting up the base mock.
     const { runWizard } =
       require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
 
     let capturedOptions: Record<string, unknown[]> | undefined;
     const ex = clackMod.exports;
+    const pickerEx = pickerMod.exports;
     const orig = { ...ex };
+    // See mockClack's comment above on why only `pickArtifacts` is saved/restored here.
+    const pickerOrigPickArtifacts = pickerEx['pickArtifacts'];
 
     // Queue-based select (populates per call)
     const queue = [
@@ -485,8 +509,8 @@ describe('O — Wizard: config-scope for mcp', () => {
       const v = pop();
       return Array.isArray(v) ? v : [v];
     };
-    // groupMultiselect: capture options then return our pick
-    ex['groupMultiselect'] = async (opts: { options: Record<string, unknown[]> }) => {
+    // pickArtifacts: capture options then return our pick
+    pickerEx['pickArtifacts'] = async (opts: { options: Record<string, unknown[]> }) => {
       capturedOptions = opts.options;
       return ['skill:csharp/cs-generate-tests'];
     };
@@ -502,7 +526,7 @@ describe('O — Wizard: config-scope for mcp', () => {
         'configScope should be undefined for a skill (non-config kind)',
       );
       // The grouped picker must have been called — confirms language groups were built
-      assert.ok(capturedOptions !== undefined, 'groupMultiselect was called for skill picker');
+      assert.ok(capturedOptions !== undefined, 'pickArtifacts was called for skill picker');
       // No config kinds should appear in the skill picker groups
       for (const [groupKey, items] of Object.entries(capturedOptions!)) {
         if (groupKey === '⬆ Navigation') continue;
@@ -516,6 +540,7 @@ describe('O — Wizard: config-scope for mcp', () => {
       }
     } finally {
       for (const k of Object.keys(orig)) ex[k] = orig[k];
+      pickerEx['pickArtifacts'] = pickerOrigPickArtifacts;
     }
   });
 
@@ -653,17 +678,19 @@ describe('O — Wizard: config-scope for mcp', () => {
     const { runWizard } =
       require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const ex = clackMod.exports;
+    const pickerEx = pickerMod.exports;
     const orig = { ...ex };
+    const pickerOrigPickArtifacts = pickerEx['pickArtifacts'];
 
     let capturedScopeOptions: Array<{ value: string; label: string; hint: string }> | undefined;
     let selectCallIdx = 0;
-    // Steps: target(1) → scope(2) → kind=mcp(3) → kindPicker-multiselect → overwrite(4) → configScope(5) → proceed(6)
+    // Steps: target(1) → scope(2) → kind=mcp(3) → kindPicker-pickArtifacts → overwrite(4) → configScope(5) → proceed(6)
     // We capture on call 5 (configScope select).
     const answers = [
       'claude', // 1: target
       'browse', // 2: scope
       'mcp', // 3: kind sub-menu
-      // multiselect for config kinds — handled separately
+      // pickArtifacts for config kinds — handled separately
       'no', // 4: overwrite
       // 5: configScope — captured here, then we return 'project'
       'proceed', // 6: proceed
@@ -686,12 +713,13 @@ describe('O — Wizard: config-scope for mcp', () => {
       }
       return selectQueue.shift()!;
     };
-    ex['multiselect'] = async () => ['mcp:shared/ado']; // pick one MCP in kindPicker
+    pickerEx['pickArtifacts'] = async () => ['mcp:shared/ado']; // pick one MCP in kindPicker
 
     try {
       await runWizard(resolvedCatalog, PACKS_MINIMAL, 'claude', os.tmpdir());
     } finally {
       for (const k of Object.keys(orig)) ex[k] = orig[k];
+      pickerEx['pickArtifacts'] = pickerOrigPickArtifacts;
     }
 
     assert.ok(capturedScopeOptions !== undefined, 'configScope select must have been called');
@@ -740,17 +768,24 @@ describe('O — Wizard: config-scope for mcp', () => {
 describe('R — back-navigation fix', () => {
   let resolvedCatalog: ResolvedCatalog;
   let clackMod: { exports: Record<string, unknown> };
+  let pickerMod: { exports: Record<string, unknown> };
 
   beforeEach(async () => {
     const cat = await loadCatalog(CATALOG_DIR);
     resolvedCatalog = resolveCatalog(cat) as ResolvedCatalog;
     const clackKey = require.resolve('@clack/prompts');
     clackMod = require.cache[clackKey] as { exports: Record<string, unknown> };
+    const pickerKey = require.resolve('../../dist-cli/wizard/picker/index');
+    pickerMod = require.cache[pickerKey] as { exports: Record<string, unknown> };
   });
 
+  // See the "O" describe block above for why pickArtifacts is mocked alongside @clack/prompts.
   function mockClack(queue: Array<string | string[]>): () => void {
     const ex = clackMod.exports;
+    const pickerEx = pickerMod.exports;
     const orig = { ...ex };
+    // See the "O" describe block's mockClack for why only pickArtifacts is saved/restored.
+    const pickerOrigPickArtifacts = pickerEx['pickArtifacts'];
     const pop = () => {
       if (queue.length === 0) throw new Error('clack mock: answer queue exhausted');
       return queue.shift()!;
@@ -772,8 +807,13 @@ describe('R — back-navigation fix', () => {
     };
     ex['text'] = async (_opts: unknown) => pop();
     ex['confirm'] = async (_opts: unknown) => pop();
+    pickerEx['pickArtifacts'] = async (_opts: unknown) => {
+      const v = pop();
+      return Array.isArray(v) ? v : [v];
+    };
     return () => {
       for (const k of Object.keys(orig)) ex[k] = orig[k];
+      pickerEx['pickArtifacts'] = pickerOrigPickArtifacts;
     };
   }
 

@@ -18,6 +18,7 @@ export interface ValidateOptions {
 export async function runValidate(opts: ValidateOptions): Promise<void> {
   console.log(`Validating catalog at: ${opts.catalogDir}`);
   const catalog = await loadCatalog(opts.catalogDir);
+  for (const w of catalog.skipWarnings) console.warn(w);
   const result = validateCatalog(catalog, getAllTargets());
 
   for (const w of result.warnings) console.warn(`  ⚠  ${w}`);

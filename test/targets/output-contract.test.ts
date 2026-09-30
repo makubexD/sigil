@@ -121,24 +121,28 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
 });
 
 describe('checkOutputContract — red paths (violations detected)', () => {
-  it('Claude command with forbidden name: key is flagged', () => {
+  // Prompt/workflow kinds now render to the same .claude/skills/<name>/SKILL.md path as `skill`
+  // (custom commands merged into skills — see spec/prompt.ts's header). checkOutputContract()
+  // routes by path pattern alone, so these files are validated under the skill contract; see the
+  // "CONTRACT ROUTING NOTE" in spec/prompt.ts and spec/workflow.ts for why that's correct.
+  it('Claude skill (prompt/workflow layout) with forbidden paths: key is flagged', () => {
     const target = new ClaudeCodeTarget();
     const badFiles = {
-      '.claude/commands/my-cmd.md':
-        '---\ndescription: "Explain a diff"\nname: should-not-be-here\n---\nBody here',
+      '.claude/skills/my-cmd/SKILL.md':
+        '---\nname: my-cmd\ndescription: "Explain a diff"\npaths:\n  - "**/*.ts"\n---\nBody here',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
-    assert.ok(violations.length > 0, 'violation expected for forbidden name: key');
+    assert.ok(violations.length > 0, 'violation expected for forbidden paths: key');
     assert.ok(
-      violations.some(v => v.problem.includes("'name'")),
-      `violation message should mention 'name' — got: ${violations[0]!.problem}`,
+      violations.some(v => v.problem.includes("'paths'")),
+      `violation message should mention 'paths' — got: ${violations[0]!.problem}`,
     );
   });
 
-  it('Claude command without required description: is flagged', () => {
+  it('Claude skill (prompt/workflow layout) without required description: is flagged', () => {
     const target = new ClaudeCodeTarget();
     const badFiles = {
-      '.claude/commands/my-cmd.md': '---\nargument-hint: "[diff]"\n---\nBody',
+      '.claude/skills/my-cmd/SKILL.md': '---\nname: my-cmd\nargument-hint: "[diff]"\n---\nBody',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
     assert.ok(
@@ -147,28 +151,22 @@ describe('checkOutputContract — red paths (violations detected)', () => {
     );
   });
 
-  it('Claude command body with unresolved {{placeholder}} is flagged', () => {
-    const target = new ClaudeCodeTarget();
-    const badFiles = {
-      '.claude/commands/my-cmd.md': '---\ndescription: "foo"\n---\nPlease explain {{diff}} to me',
-    };
-    const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
-    assert.ok(
-      violations.some(v => v.problem.includes('{{')),
-      'unresolved {{ placeholder must be flagged',
-    );
-  });
+  // NOTE: unresolved {{…}} is intentionally NOT checked through checkOutputContract() for this
+  // path — real Claude skills (Angular) legitimately contain literal {{ }} template-binding
+  // syntax, so the skill contract that actually routes this path can't forbid it. See the
+  // "CONTRACT ROUTING NOTE" in src/targets/claude-code/spec/prompt.ts and the direct
+  // CLAUDE_PROMPT_SPEC.bodyForbids assertion in test/targets/claude-code.test.ts instead.
 
-  it('Claude command body with Copilot ${input:…} syntax is flagged', () => {
+  it('Claude skill (prompt/workflow layout) body with Copilot ${input:…} syntax is flagged', () => {
     const target = new ClaudeCodeTarget();
     const badFiles = {
-      '.claude/commands/my-cmd.md':
-        '---\ndescription: "foo"\n---\nPlease explain ${input:diff} to me',
+      '.claude/skills/my-cmd/SKILL.md':
+        '---\nname: my-cmd\ndescription: "foo"\n---\nPlease explain ${input:diff} to me',
     };
     const violations = checkOutputContract(badFiles, target.outputContracts ?? []);
     assert.ok(
       violations.some(v => v.problem.includes('${input:')),
-      'Copilot placeholder syntax in Claude command must be flagged',
+      'Copilot placeholder syntax in a Claude skill must be flagged',
     );
   });
 

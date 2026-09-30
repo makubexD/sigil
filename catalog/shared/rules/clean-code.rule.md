@@ -2,10 +2,12 @@
 id: shared/clean-code
 kind: rule
 title: Clean Code Baseline
-description: >-
-  Universal readability and quality rules applied across every language and file type.
+description: Universal readability and quality rules applied across every language and file type.
 appliesTo:
   - "**/*"
+appliesToRationale: >-
+  The rule is language-agnostic by design, so any narrower glob would exclude a language
+  this rule is meant to cover.
 severity: recommended
 extends: []
 tags:

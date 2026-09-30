@@ -194,12 +194,14 @@ describe('G — buildFieldPatch (authoring/update)', () => {
     assert.ok(names.includes('disallowedTools'));
   });
 
-  it('getEditableFields for skill includes uses.rules + uses.agents', () => {
+  it('getEditableFields for skill includes uses.rules + uses.agents, not appliesTo', () => {
     const fields = getEditableFields('skill' as any);
     const names = fields.map(f => f.field);
     assert.ok(names.includes('uses.rules'));
     assert.ok(names.includes('uses.agents'));
-    assert.ok(names.includes('appliesTo'));
+    // appliesTo was removed from SkillSchema — skills have no path-scoped loading, they
+    // dispatch by description/whenToUse relevance (see docs/decisions/ for the audit).
+    assert.ok(!names.includes('appliesTo'));
   });
 });
 
@@ -238,7 +240,9 @@ severity: recommended
    * Build a fake loadFn that returns the given artifact as the reloaded catalog.
    * This simulates loadCatalog succeeding after the write.
    */
-  function makeSuccessLoadFn(artifact: Artifact): Parameters<typeof applyPatchTransactionally>[4] {
+  function makeSuccessLoadFn(
+    artifact: Artifact,
+  ): Parameters<typeof applyPatchTransactionally>[0]['loadFn'] {
     return (_dir: string, _file: string) => ({
       catalog: {
         byId: new Map([[ARTIFACT_ID, artifact]]) as Map<string, Artifact>,
@@ -263,14 +267,14 @@ severity: recommended
         } as Record<string, unknown>,
         body: '## Guidelines\n- Prefer clarity over brevity.\n',
       };
-      const result = applyPatchTransactionally(
+      const result = applyPatchTransactionally({
         filePath,
-        { title: 'New Title' },
-        getAllTargets(),
-        ARTIFACT_ID,
-        makeSuccessLoadFn(artifactAfterPatch),
-        tmpDir,
-      );
+        patch: { title: 'New Title' },
+        targets: getAllTargets(),
+        artifactId: ARTIFACT_ID,
+        loadFn: makeSuccessLoadFn(artifactAfterPatch),
+        catalogDir: tmpDir,
+      });
       assert.equal(result.ok, true, 'patch succeeded');
       assert.equal(result.errors.length, 0, 'no blocking errors');
       const raw = fs.readFileSync(filePath, 'utf-8');
@@ -285,17 +289,17 @@ severity: recommended
     const original = fs.readFileSync(filePath, 'utf-8');
     try {
       // loadFn that throws — simulates a broken catalog reload
-      const throwingLoadFn: Parameters<typeof applyPatchTransactionally>[4] = () => {
+      const throwingLoadFn: Parameters<typeof applyPatchTransactionally>[0]['loadFn'] = () => {
         throw new Error('Simulated load failure');
       };
-      const result = applyPatchTransactionally(
+      const result = applyPatchTransactionally({
         filePath,
-        { title: 'New Title' },
-        getAllTargets(),
-        ARTIFACT_ID,
-        throwingLoadFn,
-        tmpDir,
-      );
+        patch: { title: 'New Title' },
+        targets: getAllTargets(),
+        artifactId: ARTIFACT_ID,
+        loadFn: throwingLoadFn,
+        catalogDir: tmpDir,
+      });
       assert.equal(result.ok, false, 'reports failure');
       assert.ok(result.errors.length > 0, 'errors are non-empty');
       // File must be restored to the original content
@@ -323,20 +327,20 @@ severity: recommended
         } as Record<string, unknown>,
         body: '',
       };
-      const warnLoadFn: Parameters<typeof applyPatchTransactionally>[4] = () => ({
+      const warnLoadFn: Parameters<typeof applyPatchTransactionally>[0]['loadFn'] = () => ({
         catalog: {
           byId: new Map([[ARTIFACT_ID, artifactWithDrift]]) as Map<string, Artifact>,
           artifacts: [artifactWithDrift],
         },
       });
-      const result = applyPatchTransactionally(
+      const result = applyPatchTransactionally({
         filePath,
-        { title: 'Updated Title' },
-        getAllTargets(),
-        ARTIFACT_ID,
-        warnLoadFn,
-        tmpDir,
-      );
+        patch: { title: 'Updated Title' },
+        targets: getAllTargets(),
+        artifactId: ARTIFACT_ID,
+        loadFn: warnLoadFn,
+        catalogDir: tmpDir,
+      });
       // Should succeed — dep-drift warnings don't block the patch
       assert.equal(result.ok, true, 'non-blocking violations leave ok=true');
       assert.equal(result.errors.length, 0, 'no blocking errors');

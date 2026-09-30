@@ -8,12 +8,33 @@
 const SEMVER_RE = /^(\d+)\.(\d+)\.(\d+)$/;
 
 /**
+ * Applies a bump level to an already-parsed [major, minor, patch] triple.
+ *
+ * @param level   - "patch" | "minor" | "major" | explicit "x.y.z"
+ * @returns the bumped version string
+ * @throws if `level` is unrecognised
+ */
+function applyBumpLevel(level: string, maMajor: number, miMinor: number, paPatch: number): string {
+  switch (level) {
+    case 'major':
+      return `${maMajor + 1}.0.0`;
+    case 'minor':
+      return `${maMajor}.${miMinor + 1}.0`;
+    case 'patch':
+      return `${maMajor}.${miMinor}.${paPatch + 1}`;
+    default:
+      throw new Error(
+        `Unknown release level '${level}'. Use patch, minor, major, or an explicit x.y.z version.`,
+      );
+  }
+}
+
+/**
  * Compute the next semver string.
  *
  * @param current - current version, e.g. "0.1.0"
  * @param level   - "patch" | "minor" | "major" | explicit "x.y.z"
  * @returns the bumped version string
- *
  * @throws if `current` is not valid semver, or if `level` is unrecognised
  */
 export function bumpVersion(current: string, level: string): string {
@@ -27,19 +48,7 @@ export function bumpVersion(current: string, level: string): string {
   }
 
   const [, maMajor = 0, miMinor = 0, paPatch = 0] = match.map(Number);
-
-  switch (level) {
-    case 'major':
-      return `${maMajor + 1}.0.0`;
-    case 'minor':
-      return `${maMajor}.${miMinor + 1}.0`;
-    case 'patch':
-      return `${maMajor}.${miMinor}.${paPatch + 1}`;
-    default:
-      throw new Error(
-        `Unknown release level '${level}'. Use patch, minor, major, or an explicit x.y.z version.`,
-      );
-  }
+  return applyBumpLevel(level, maMajor, miMinor, paPatch);
 }
 
 // ─── Changelog promotion ──────────────────────────────────────────────────────

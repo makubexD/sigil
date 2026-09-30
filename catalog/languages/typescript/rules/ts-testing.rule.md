@@ -2,7 +2,7 @@
 id: typescript/ts-testing
 kind: rule
 title: Testing (TypeScript)
-description: Vitest conventions — AAA pattern, builder helpers, it.each, mocking, coverage
+description: Test conventions — AAA pattern, builder helpers, parametrization, mocking, coverage
 language: typescript
 appliesTo:
   - "**/*.test.ts"
@@ -15,6 +15,11 @@ tags:
   - typescript
   - testing
 ---
+
+> Example shown with Vitest syntax (`vi.fn`, `vi.mock`, `it.each`) — the structural conventions
+> below (AAA, naming, fixture discipline, mock-only-at-boundaries) apply regardless of runner;
+> translate the syntax to whatever the project's `package.json` actually uses (`node:test`, Jest,
+> etc.) — never assume Vitest specifically.
 
 ## AAA Pattern
 
@@ -152,11 +157,9 @@ than calling `new Date()` directly — this makes the dependency explicit and te
 ## Coverage
 
 Discover the project's coverage command first: check `package.json` scripts for a `coverage`,
-`test:coverage`, or `check` task. Fallback:
-
-```bash
-vitest run --coverage
-```
+`test:coverage`, or `check` task. Only if none exists, fall back to the discovered runner's own
+coverage flag (e.g. `vitest run --coverage`, `jest --coverage`, or Node's built-in
+`node --test --experimental-test-coverage`) — never assume a specific runner.
 
 Minimum **70% statement/line coverage** across the package. Gaps on I/O-boundary adapters (network
 clients, filesystem wrappers) are acceptable when those boundaries are mocked in tests; gaps on

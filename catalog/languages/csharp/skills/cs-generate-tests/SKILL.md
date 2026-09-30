@@ -5,8 +5,6 @@ title: Generate Tests (.NET / C#)
 description: Generate an xUnit + Moq test suite for a C# file or class following the project's documented test conventions
 name: cs-generate-tests
 language: csharp
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Write

@@ -1,20 +1,141 @@
 /**
- * Manifest mutation helpers: upsert and remove.
- *
- * upsertEntries    — record whole-file artifacts (skill, agent, rule, prompt, workflow)
- * upsertConfigEntry — record config-kind artifacts (hook, settings, mcp) as fragments
- * removeEntries    — remove entries by ID, returning paths safe to delete from disk
+ * upsertEntries — record whole-file artifacts (skill, agent, rule, prompt, workflow) into the
+ * manifest. Config-kind upsert (mutate-config.ts) and entry removal (mutate-remove.ts) are split
+ * into sibling files to keep this one under the repo's own module-size threshold; both are
+ * re-exported from src/manifest/index.ts alongside this one.
  */
 import fs from 'fs';
 import path from 'path';
-import { canonicalize } from '../config-merge';
-import type { ConfigMergeOp } from '../types';
 import { sha256 } from './hash';
-import type { Manifest, ManifestEntry, ManifestFile, ManifestConfigMerge } from './types';
+import { mergeDependentOf } from './mutate-shared';
+import type { Manifest, ManifestEntry, ManifestFile } from './types';
 
 /** Unique key for a manifest entry: id + target combination. */
 function entryKey(id: string, target: string): string {
   return `${target}:${id}`;
+}
+
+/** Build `ManifestFile[]` (path + content hash) for a set of written relative paths. */
+function buildManifestFiles(relPaths: string[], projectDir: string): ManifestFile[] {
+  return relPaths.map(p => ({
+    path: p,
+    sha256: sha256(fs.readFileSync(path.join(projectDir, p), 'utf-8')),
+  }));
+}
+
+/** Shared context threaded through {@link upsertOneEntry} calls within a single {@link upsertEntries} run. */
+interface UpsertContext {
+  byKey: Map<string, ManifestEntry>;
+  target: string;
+  projectDir: string;
+  sigilVersion: string;
+  now: string;
+}
+
+/** One artifact's data to upsert into the manifest, besides the shared UpsertContext. */
+interface EntryInput {
+  id: string;
+  kind: string;
+  relPaths: string[];
+  dependentOf: string[];
+  /** The template this artifact composed against, and its revision, at scaffold time. */
+  template?: { id: string; revision: number } | undefined;
+}
+
+/** Updates an existing whole-file manifest entry in place with fresh files + timestamp. */
+function refreshExistingEntry(
+  existing: ManifestEntry,
+  ctx: UpsertContext,
+  files: ManifestFile[],
+  input: EntryInput,
+): void {
+  existing.files = files;
+  existing.sigilVersion = ctx.sigilVersion;
+  existing.installedAt = ctx.now;
+  existing.template = input.template;
+  mergeDependentOf(existing.dependentOf, input.dependentOf);
+}
+
+/** Builds a brand-new whole-file manifest entry for an id that isn't recorded yet. */
+function buildNewEntry(
+  ctx: UpsertContext,
+  input: EntryInput,
+  files: ManifestFile[],
+): ManifestEntry {
+  return {
+    id: input.id,
+    kind: input.kind,
+    target: ctx.target,
+    sigilVersion: ctx.sigilVersion,
+    files,
+    dependentOf: input.dependentOf,
+    installedAt: ctx.now,
+    template: input.template,
+  };
+}
+
+/** Upsert a single whole-file artifact entry into `ctx.byKey` (mutated in place). */
+function upsertOneEntry(ctx: UpsertContext, input: EntryInput): void {
+  const key = entryKey(input.id, ctx.target);
+  const files = buildManifestFiles(input.relPaths, ctx.projectDir);
+
+  const existing = ctx.byKey.get(key);
+  if (existing) {
+    refreshExistingEntry(existing, ctx, files, input);
+  } else {
+    ctx.byKey.set(key, buildNewEntry(ctx, input, files));
+  }
+}
+
+/** Parameters for {@link upsertEntries}, besides the manifest being mutated. */
+export interface UpsertEntriesOptions {
+  /** Platform name (e.g. "claude"). */
+  target: string;
+  /** IDs the user explicitly requested. */
+  primaryIds: string[];
+  /** Map of dep-id → list of primary IDs that depend on it. */
+  depMap: Map<string, string[]>;
+  /** Map of artifact-id → written FileMap paths. */
+  filesByArtifact: Map<
+    string,
+    { relPaths: string[]; kind: string; template?: { id: string; revision: number } | undefined }
+  >;
+  /** Consumer project root (for hashing). */
+  projectDir: string;
+  /** npm package version. */
+  sigilVersion: string;
+  /** ISO timestamp — stamped by the CLI layer, not Date.now(). */
+  now: string;
+}
+
+/** Upserts every primary pick (empty `dependentOf`). */
+function upsertPrimaryEntries(ctx: UpsertContext, options: UpsertEntriesOptions): void {
+  for (const id of options.primaryIds) {
+    const info = options.filesByArtifact.get(id);
+    if (!info) continue;
+    upsertOneEntry(ctx, {
+      id,
+      kind: info.kind,
+      relPaths: info.relPaths,
+      dependentOf: [],
+      template: info.template,
+    });
+  }
+}
+
+/** Upserts every dependency (parent-tagged via `dependentOf`). */
+function upsertDependencyEntries(ctx: UpsertContext, options: UpsertEntriesOptions): void {
+  for (const [depId, parents] of options.depMap) {
+    const info = options.filesByArtifact.get(depId);
+    if (!info) continue;
+    upsertOneEntry(ctx, {
+      id: depId,
+      kind: info.kind,
+      relPaths: info.relPaths,
+      template: info.template,
+      dependentOf: parents,
+    });
+  }
 }
 
 /**
@@ -24,167 +145,19 @@ function entryKey(id: string, target: string): string {
  * For each dependency, we record its files and append the parent ID to `dependentOf`
  * (if the dep is already recorded, we merge the parent into the existing entry).
  *
- * @param manifest         Current manifest (mutated in place).
- * @param target           Platform name (e.g. "claude").
- * @param primaryIds       IDs the user explicitly requested.
- * @param depMap           Map of dep-id → list of primary IDs that depend on it.
- * @param filesByArtifact  Map of artifact-id → written FileMap paths.
- * @param projectDir       Consumer project root (for hashing).
- * @param sigilVersion     npm package version.
- * @param now              ISO timestamp — stamped by the CLI layer, not Date.now().
+ * @param manifest Current manifest (mutated in place).
  */
-export function upsertEntries(
-  manifest: Manifest,
-  target: string,
-  primaryIds: string[],
-  depMap: Map<string, string[]>,
-  filesByArtifact: Map<string, { relPaths: string[]; kind: string }>,
-  projectDir: string,
-  sigilVersion: string,
-  now: string,
-): void {
-  const byKey = new Map<string, ManifestEntry>(
-    manifest.entries.map(e => [entryKey(e.id, e.target), e]),
-  );
-
-  const upsert = (id: string, kind: string, relPaths: string[], dependentOf: string[]): void => {
-    const key = entryKey(id, target);
-    const files: ManifestFile[] = relPaths.map(p => ({
-      path: p,
-      sha256: sha256(fs.readFileSync(path.join(projectDir, p), 'utf-8')),
-    }));
-
-    const existing = byKey.get(key);
-    if (existing) {
-      existing.files = files;
-      existing.sigilVersion = sigilVersion;
-      existing.installedAt = now;
-      for (const parent of dependentOf) {
-        if (!existing.dependentOf.includes(parent)) {
-          existing.dependentOf.push(parent);
-        }
-      }
-    } else {
-      const entry: ManifestEntry = {
-        id,
-        kind,
-        target,
-        sigilVersion,
-        files,
-        dependentOf,
-        installedAt: now,
-      };
-      byKey.set(key, entry);
-    }
+export function upsertEntries(manifest: Manifest, options: UpsertEntriesOptions): void {
+  const { target, projectDir, sigilVersion, now } = options;
+  const ctx: UpsertContext = {
+    byKey: new Map<string, ManifestEntry>(manifest.entries.map(e => [entryKey(e.id, e.target), e])),
+    target,
+    projectDir,
+    sigilVersion,
+    now,
   };
 
-  for (const id of primaryIds) {
-    const info = filesByArtifact.get(id);
-    if (info) upsert(id, info.kind, info.relPaths, []);
-  }
-
-  for (const [depId, parents] of depMap) {
-    const info = filesByArtifact.get(depId);
-    if (info) upsert(depId, info.kind, info.relPaths, parents);
-  }
-
-  manifest.entries = [...byKey.values()];
-}
-
-/**
- * Upsert a config-kind artifact (hook, settings, mcp) into the manifest.
- * Records ConfigMergeOps as partial-ownership fragments rather than whole-file hashes.
- *
- * @param manifest     Current manifest (mutated in place).
- * @param id           Artifact ID.
- * @param kind         Artifact kind ('hook' | 'settings' | 'mcp').
- * @param target       Platform adapter name.
- * @param ops          Merge ops produced by scaffoldConfig().
- * @param dependentOf  Parent IDs if this is a dep.
- * @param sigilVersion npm package version.
- * @param now          ISO timestamp — stamped by the CLI layer.
- */
-export function upsertConfigEntry(
-  manifest: Manifest,
-  id: string,
-  kind: string,
-  target: string,
-  ops: ConfigMergeOp[],
-  dependentOf: string[],
-  sigilVersion: string,
-  now: string,
-): void {
-  const existing = manifest.entries.find(e => e.id === id && e.target === target);
-
-  const configFiles: ManifestConfigMerge[] = ops.map(op => ({
-    file: op.file,
-    ...(op.root && op.root !== 'project' ? { root: op.root } : {}),
-    fragment: op.fragment,
-    strategy: op.strategy as Record<string, string>,
-    fragmentSha256: sha256(canonicalize(op.fragment)),
-  }));
-
-  if (existing) {
-    existing.configFiles = configFiles;
-    existing.sigilVersion = sigilVersion;
-    existing.installedAt = now;
-    for (const parent of dependentOf) {
-      if (!existing.dependentOf.includes(parent)) {
-        existing.dependentOf.push(parent);
-      }
-    }
-    return;
-  }
-
-  manifest.entries.push({
-    id,
-    kind,
-    target,
-    sigilVersion,
-    files: [],
-    configFiles,
-    dependentOf,
-    installedAt: now,
-  });
-}
-
-/**
- * Remove manifest entries for the given IDs + target, returning the file paths
- * that should be deleted from disk (refcount-aware: a file is only returned when
- * no remaining entry still references it).
- */
-export function removeEntries(
-  manifest: Manifest,
-  ids: string[],
-  target: string,
-): { pathsToDelete: string[]; removedEntries: ManifestEntry[] } {
-  const idSet = new Set(ids);
-
-  const removed: ManifestEntry[] = [];
-  const remaining: ManifestEntry[] = [];
-
-  for (const entry of manifest.entries) {
-    if (entry.target === target && idSet.has(entry.id)) {
-      removed.push(entry);
-    } else {
-      remaining.push(entry);
-    }
-  }
-
-  // Strip removed ids from the `dependentOf` lists of remaining entries
-  for (const entry of remaining) {
-    entry.dependentOf = entry.dependentOf.filter(d => !idSet.has(d));
-  }
-
-  manifest.entries = remaining;
-
-  // Paths safe to delete: referenced only by removed entries
-  const remainingPaths = new Set(
-    remaining.filter(e => e.target === target).flatMap(e => e.files.map(f => f.path)),
-  );
-
-  const removedPaths = removed.flatMap(e => e.files.map(f => f.path));
-  const pathsToDelete = removedPaths.filter(p => !remainingPaths.has(p));
-
-  return { pathsToDelete, removedEntries: removed };
+  upsertPrimaryEntries(ctx, options);
+  upsertDependencyEntries(ctx, options);
+  manifest.entries = [...ctx.byKey.values()];
 }

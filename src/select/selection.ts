@@ -5,7 +5,7 @@
  *
  * Also exports shared constants and language helpers used by the other sub-modules.
  */
-import type { ResolvedCatalog, ResolvedArtifact, Pack, ArtifactKind } from '../types';
+import type { ResolvedCatalog, ArtifactKind } from '../types';
 import { KIND_ORDER as _KIND_ORDER, CONFIG_KINDS as _CONFIG_KINDS } from '../kinds';
 
 // ─── Interfaces ───────────────────────────────────────────────────────────────
@@ -68,131 +68,54 @@ export function isAgnostic(a: { frontmatter: Record<string, unknown> }): boolean
   return artifactLanguage(a) === undefined;
 }
 
-// ─── Selector resolution ──────────────────────────────────────────────────────
+// ─── extends de-duplication (used inside resolveSelection, in selector-resolve.ts) ────
+
+/** Maps each base-rule id to the descendant id whose `extends` inlines it, first-wins. */
+function buildInlinedByMap(
+  ids: string[],
+  idSet: Set<string>,
+  catalog: ResolvedCatalog,
+): Map<string, string> {
+  const inlinedBy = new Map<string, string>();
+  for (const id of ids) {
+    const artifact = catalog.byId.get(id);
+    if (!artifact || artifact.kind !== 'rule') continue;
+    const extendsIds = (artifact.frontmatter.extends as string[] | undefined) ?? [];
+    for (const parentId of extendsIds) {
+      if (idSet.has(parentId) && !inlinedBy.has(parentId)) {
+        inlinedBy.set(parentId, id);
+      }
+    }
+  }
+  return inlinedBy;
+}
 
 /**
- * Resolve a list of selector strings + filters into a concrete set of artifact IDs.
- *
- * @param selectors       Raw selector strings from the CLI (e.g. 'all', 'pack:dotnet-pack').
- * @param filters         --kind/--exclude/--language flags.
- * @param catalog         Resolved catalog (all artifacts must be present).
- * @param packs           Pack list from packs.yaml.
- * @param supportedKinds  Kinds the chosen target can scaffold (empty = treat all as supported).
- * @param targetName      Optional platform name — used to apply platform restriction.
+ * Drop a base rule from the install set when a rule that `extends` it is also being
+ * installed — the base rule's body is already prepended into the descendant's
+ * `resolvedBody` (see resolve.ts's `resolveRule`), so installing both writes the base
+ * rule's content twice (once standalone, once inlined). Keeps the descendant; reports
+ * the base rule as skipped rather than silently vanishing it.
  */
-export function resolveSelection(
-  selectors: string[],
-  filters: SelectionFilters,
+export function dropInlinedBaseRules(
+  ids: string[],
   catalog: ResolvedCatalog,
-  packs: Pack[],
-  supportedKinds: ArtifactKind[],
-  targetName?: string,
-): SelectionResult {
-  const candidateIds: string[] = [];
-  const seen = new Set<string>();
+): { ids: string[]; skipped: SkippedArtifact[] } {
+  const inlinedBy = buildInlinedByMap(ids, new Set(ids), catalog);
 
-  const addId = (id: string): void => {
-    if (!seen.has(id)) {
-      seen.add(id);
-      candidateIds.push(id);
-    }
-  };
-
-  for (const selector of selectors) {
-    if (selector === 'all') {
-      catalog.artifacts.forEach(a => addId(a.id));
-      continue;
-    }
-
-    if (selector.startsWith('pack:')) {
-      const packName = selector.slice('pack:'.length);
-      const pack = packs.find(p => p.name === packName);
-      if (!pack) {
-        const available = packs.map(p => p.name).join(', ');
-        throw new Error(
-          `Unknown pack '${packName}'. Available packs: ${available || '(none — check packs.yaml)'}`,
-        );
-      }
-      const packLangs = new Set(pack.languages ?? []);
-      const packArtifactIds = new Set(pack.artifacts ?? []);
-      catalog.artifacts
-        .filter(a => {
-          if (packArtifactIds.size > 0) return packArtifactIds.has(a.id);
-          const lang = a.frontmatter.language as string | undefined;
-          return lang !== undefined && packLangs.has(lang);
-        })
-        .forEach(a => addId(a.id));
-      continue;
-    }
-
-    if (selector.startsWith('kind:')) {
-      const kind = selector.slice('kind:'.length) as ArtifactKind;
-      catalog.artifacts.filter(a => a.kind === kind).forEach(a => addId(a.id));
-      continue;
-    }
-
-    // kind-prefixed: "skill:csharp/xunit-testing", "agent:shared/code-reviewer", etc.
-    let id = selector;
-    for (const k of KIND_ORDER) {
-      if (selector.startsWith(`${k}:`)) {
-        id = selector.slice(`${k}:`.length);
-        break;
-      }
-    }
-
-    if (!catalog.byId.has(id)) {
-      throw new Error(`Artifact '${id}' not found. Run \`sigil list\` to see available artifacts.`);
-    }
-    addId(id);
-  }
-
-  // Apply --kind / --exclude / --language filters
-  let candidates: ResolvedArtifact[] = candidateIds
-    .map(id => catalog.byId.get(id)!)
-    .filter(Boolean);
-
-  if (filters.kinds && filters.kinds.length > 0) {
-    const kindSet = new Set(filters.kinds);
-    candidates = candidates.filter(a => kindSet.has(a.kind));
-  }
-
-  if (filters.exclude && filters.exclude.length > 0) {
-    const excludeSet = new Set(filters.exclude);
-    candidates = candidates.filter(a => !excludeSet.has(a.kind));
-  }
-
-  if (filters.language) {
-    candidates = candidates.filter(a => {
-      const lang = artifactLanguage(a);
-      return lang === filters.language || lang === undefined;
-    });
-  }
-
-  // Partition into supported and skipped
-  const supportedSet = new Set<string>(supportedKinds);
-  const ids: string[] = [];
   const skipped: SkippedArtifact[] = [];
+  const filteredIds = ids.filter(id => {
+    const inlinedInto = inlinedBy.get(id);
+    if (!inlinedInto) return true;
+    skipped.push({
+      id,
+      kind: 'rule',
+      reason: `inlined into ${inlinedInto} via extends — already delivered`,
+    });
+    return false;
+  });
 
-  for (const a of candidates) {
-    if (supportedSet.size > 0 && !supportedSet.has(a.kind)) {
-      skipped.push({
-        id: a.id,
-        kind: a.kind,
-        reason: `kind '${a.kind}' is not supported for this target`,
-      });
-    } else if (targetName && !artifactTargetsPlatform(a, targetName)) {
-      const restricted = (a.frontmatter.platforms as string[]).join(', ');
-      skipped.push({
-        id: a.id,
-        kind: a.kind,
-        reason: `restricted to platforms: [${restricted}]`,
-      });
-    } else {
-      ids.push(a.id);
-    }
-  }
-
-  return { ids, skipped };
+  return { ids: filteredIds, skipped };
 }
 
 // ─── Platform restriction helper (used inside resolveSelection) ───────────────

@@ -5,8 +5,6 @@ title: "Release Preparation (TypeScript)"
 description: "Prepare a release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification"
 name: ts-release
 language: typescript
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash
@@ -40,17 +38,9 @@ Run manually before cutting a release tag. Pass the target version number as the
 
 ## Step 1 — Verify quality gates
 
-Discover and run the project's full quality gate:
-
-```bash
-# Check package.json scripts for a combined gate
-# (look for: check, validate, ci, prepublishOnly)
-# Fallback: run the standard triple gate
-
-tsc --noEmit
-eslint .
-vitest run
-```
+Check `package.json` scripts for a combined gate (`check`/`validate`/`ci`/`prepublishOnly`) and run
+that. Only if none exists, fall back to running the type checker, linter, and `scripts.test`
+separately — discover the test command from `package.json`, never hardcode a specific runner.
 
 **Formatter (optional):** check for `.prettierrc*` / `biome.json`. If present, run
 `prettier --check .` or `biome check .`. If absent, skip and note "formatter not configured".
@@ -132,9 +122,7 @@ no unintentional breaking changes to the public type surface.
 ## Release Checklist — v<version>
 
 ### Quality gates
-✅ tsc: passed  /  ❌ failed
-✅ eslint: passed  /  ❌ N errors
-✅ vitest: N passed  /  ❌ N failed
+✅ <gate command>: passed  /  ❌ <failure detail>
 ✅ format: passed  /  ⏭ not configured  /  ❌ N files differ
 
 ### Working tree

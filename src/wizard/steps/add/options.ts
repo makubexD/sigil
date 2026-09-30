@@ -9,8 +9,9 @@ import type { Pack, ResolvedArtifact, Target, ArtifactKind } from '../../../type
 import { artifactHint, resolveSelection, kindNoun, kindPlural, KIND_ORDER } from '../../../select';
 import { ALL_KINDS, hasUsesClosure } from '../../../kinds';
 import type { ArtifactInstallState } from '../../../install-state';
-import { stateHintSuffix, renderStateLegend } from '../../state-display';
+import { stateLabelParts, renderStateLegend } from '../../state-display';
 import type { ResolvedCatalog } from '../../../types';
+import type { ItemRow } from '../../picker';
 
 /** Build a per-picker header summary like "  (3 already installed, 1 new)". */
 export function buildPickerSummary(
@@ -29,6 +30,52 @@ export function buildPickerSummary(
   return parts.length > 0 ? `  (${parts.join(', ')})` : '';
 }
 
+/** Counts each resolved id's kind, and whether any resolved artifact has a uses-closure. */
+function countKinds(
+  ids: string[],
+  catalog: ResolvedCatalog,
+): { counts: Map<string, number>; hasDepsClosure: boolean } {
+  const counts = new Map<string, number>();
+  let hasDepsClosure = false;
+  for (const id of ids) {
+    const a = catalog.byId.get(id);
+    if (!a) continue;
+    counts.set(a.kind, (counts.get(a.kind) ?? 0) + 1);
+    if (hasUsesClosure(a.kind)) hasDepsClosure = true;
+  }
+  return { counts, hasDepsClosure };
+}
+
+/** Renders "<count> <label>" parts in display order (config kinds first, then code kinds). */
+function renderKindCountParts(
+  kindCounts: Map<string, number>,
+  target: Target | undefined,
+): string[] {
+  const parts: string[] = [];
+  for (const k of ALL_KINDS) {
+    const count = kindCounts.get(k);
+    if (!count) continue;
+    parts.push(`${count} ${count === 1 ? kindNoun(target, k) : kindPlural(target, k)}`);
+  }
+  for (const k of KIND_ORDER) {
+    if (ALL_KINDS.includes(k as ArtifactKind)) continue;
+    const count = kindCounts.get(k);
+    if (count) parts.push(`${count} ${kindPlural(target, k)}`);
+  }
+  return parts;
+}
+
+/** Resolves a pack's member ids via the `pack:<name>` selector. */
+function resolvePackIds(pack: Pack, catalog: ResolvedCatalog, packs: Pack[]): string[] {
+  return resolveSelection({
+    selectors: [`pack:${pack.name}`],
+    filters: {},
+    catalog,
+    packs,
+    supportedKinds: [],
+  }).ids;
+}
+
 /**
  * Builds a short content-summary hint for a pack option in the "Which bundle?" picker.
  * E.g. "2 MCP servers · 1 hook · 1 settings · 1 skill (+deps)"
@@ -41,30 +88,8 @@ export function packContentHint(
   target: Target | undefined,
 ): string {
   try {
-    const { ids } = resolveSelection([`pack:${pack.name}`], {}, catalog, packs, []);
-    const kindCounts = new Map<string, number>();
-    let hasDepsClosure = false;
-    for (const id of ids) {
-      const a = catalog.byId.get(id);
-      if (!a) continue;
-      kindCounts.set(a.kind, (kindCounts.get(a.kind) ?? 0) + 1);
-      if (hasUsesClosure(a.kind)) hasDepsClosure = true;
-    }
-    // Display order from kinds.ts (config first, then code kinds — single source of truth).
-    const displayOrder = ALL_KINDS;
-    const parts: string[] = [];
-    for (const k of displayOrder) {
-      const count = kindCounts.get(k);
-      if (!count) continue;
-      const label = count === 1 ? kindNoun(target, k) : kindPlural(target, k);
-      parts.push(`${count} ${label}`);
-    }
-    for (const k of KIND_ORDER) {
-      if (!displayOrder.includes(k as ArtifactKind)) {
-        const count = kindCounts.get(k);
-        if (count) parts.push(`${count} ${kindPlural(target, k)}`);
-      }
-    }
+    const { counts, hasDepsClosure } = countKinds(resolvePackIds(pack, catalog, packs), catalog);
+    const parts = renderKindCountParts(counts, target);
     if (hasDepsClosure) parts.push('+deps');
     return parts.join(' · ') || pack.displayName;
   } catch {
@@ -72,23 +97,23 @@ export function packContentHint(
   }
 }
 
-export interface PickerOption {
-  value: string;
-  label: string;
-  hint: string;
-}
-
-/** Builds the "id (kindNoun) — hint" option for one artifact, tagged with its install state. */
+/** Builds the picker row for one artifact: structured fields, not a pre-joined label string — see
+ * `src/wizard/picker/` for why (fixed-column alignment + a detail pane instead of an inline hint). */
 export function toArtifactOption(
   a: ResolvedArtifact,
   target: Target | undefined,
   installStates: Map<string, ArtifactInstallState> | undefined,
-): PickerOption {
+): ItemRow {
   const is = installStates?.get(a.id);
+  const { glyph, label } = stateLabelParts(is?.state);
   return {
+    kind: 'item',
     value: `${a.kind}:${a.id}`,
-    label: `${a.id}  (${kindNoun(target, a.kind)})`,
-    hint: `${stateHintSuffix(is?.state)}  — ${artifactHint(a)}`,
+    id: a.id,
+    kindNoun: kindNoun(target, a.kind),
+    stateGlyph: glyph,
+    stateLabel: label,
+    description: artifactHint(a),
   };
 }
 

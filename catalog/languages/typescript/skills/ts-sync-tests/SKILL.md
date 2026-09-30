@@ -5,8 +5,12 @@ title: "Sync Tests (TypeScript)"
 description: "Sync the test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)"
 name: ts-sync-tests
 language: typescript
-appliesTo:
-  - "**/*"
+whenToUse: >-
+  Use after multiple source files have changed and the test suite has drifted — missing tests for
+  new exports, stale tests for renamed symbols, orphaned tests for deleted files. Also fires for
+  "sync the tests", "clean up orphaned tests", or "make sure tests match the current source". Not
+  for a single untested file with no drift to reconcile (see ts-generate-tests for that — it's
+  cheaper for the one-file case).
 allowedTools:
   - Read
   - Write
@@ -26,12 +30,6 @@ tags:
   - tests
 ---
 
-## When to Use
-
-Use after multiple source files have changed and the test suite has drifted — missing tests for new exports, stale tests for renamed symbols, orphaned tests for deleted files. Run with --scope=all for a full audit; default --scope=changed targets only files modified in the current working tree.
-
----
-
 # Sync Tests
 
 **Scope:** $ARGUMENTS (default: `--scope=changed`)
@@ -40,43 +38,34 @@ Use after multiple source files have changed and the test suite has drifted — 
 
 Parse `$ARGUMENTS` for `--scope=changed` (default) or `--scope=all`.
 
-**`changed`:** use the git working tree to identify modified files:
-```bash
-git status --porcelain
-git diff --name-only HEAD
-```
-Process results with Grep/Glob. Exclude: deleted source files (handle in Step 4), existing test
-files, lock files, generated files, and config files.
+**`changed`:** `git status --porcelain` / `git diff --name-only HEAD` for modified files. Exclude
+deleted source files (handled in Step 4), existing test files, lock/generated/config files.
 
 **`all`:** use Glob to enumerate every source file (`**/*.ts`, `**/*.tsx`) excluding test files
 (`*.test.*`, `*.spec.*`), `node_modules/`, `dist/`, `build/`, and generated files.
 
-## Step 2 — Discover layout
+## Step 2 — Discover the runner and layout
 
-Locate the source root and test root. Read `vitest.config.*` and `package.json` scripts. Read 2–3
-existing test files to confirm the mirroring pattern. Apply it consistently to all files in scope.
+Never assume a runner — read `package.json` `scripts.test`/`devDependencies` for which of
+`vitest`/`jest`/`node:test`/etc. is actually used. Read 2–3 existing test files to confirm the
+mirroring pattern and import style; apply both consistently to every file in scope.
 
 ## Step 3 — Add and update tests
 
 For each source file in scope:
 1. Derive the expected test file path from the discovered mirroring pattern.
-2. **If the test file is missing:** create it following the project's conventions (AAA, `it.each`,
-   mock only at I/O boundaries, named builders, `describe` blocks per subject).
+2. **If the test file is missing:** create it following `ts-testing` (loaded natively for
+   `**/*.test.ts` — AAA structure, naming, mocking discipline).
 3. **If the test file exists:** read both files side-by-side. Add tests for any exported symbol
    that has no corresponding test case. **Do not remove** existing tests — flag stale ones in the
    report instead; let a human decide whether to delete or update.
 
 ## Step 4 — Detect orphaned tests
 
-Orphaned tests are test files whose source counterpart no longer exists.
-
-```bash
-git status --porcelain
-```
-
-Lines starting with `D` (deleted) or `R` (renamed) indicate source files that may have left
-orphaned test files behind. Map each deleted/renamed source to its expected test path. Flag existing
-matches as orphan candidates. **Report only — make no deletions here.**
+Orphaned tests are test files whose source counterpart no longer exists. `git status --porcelain`
+lines starting with `D` (deleted) or `R` (renamed) indicate source files that may have left
+orphaned test files behind. Map each to its expected test path and flag existing matches as
+candidates. **Report only — make no deletions here.**
 
 ## Step 5 — Confirm before any deletion (GUARDRAIL)
 
@@ -96,8 +85,8 @@ does not respond, skip all deletions and record "orphans not removed — user de
 
 ## Step 6 — Run suite and report
 
-Discover the test command from `package.json` scripts. Fallback: `npx vitest run`. Fix any
-failures introduced by the new or updated tests before reporting.
+Run the test command discovered in Step 2 (the project's own `package.json` script, not a
+hardcoded runner invocation). Fix any failures introduced by the new or updated tests.
 
 ```
 ## Sync Results

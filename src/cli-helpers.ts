@@ -13,8 +13,14 @@ import yaml from 'js-yaml';
 import { loadCatalog } from './load';
 import { validateCatalog } from './validate';
 import { getAllTargets, defaultTargetName } from './targets';
-import type { FileMap, PacksConfig } from './types';
+import type { FileMap, PacksConfig, Target } from './types';
 import { SigilError } from './errors';
+
+/**
+ * Column width for the leading label in aligned CLI/wizard output lines (kind noun,
+ * conflict flag, etc.) — `label.padEnd(CLI_LABEL_COL_WIDTH)` before the id/value.
+ */
+export const CLI_LABEL_COL_WIDTH = 12;
 
 // ─── Package root & version ───────────────────────────────────────────────────
 
@@ -53,6 +59,7 @@ export async function requireValidCatalog(
   catalogDir: string,
 ): Promise<Awaited<ReturnType<typeof loadCatalog>>> {
   const catalog = await loadCatalog(catalogDir);
+  for (const warning of catalog.skipWarnings) console.warn(warning);
   const result = validateCatalog(catalog);
 
   if (!result.valid) {
@@ -115,6 +122,22 @@ export function partitionFiles(
 
 // ─── Target detection ─────────────────────────────────────────────────────────
 
+/** Prints the verbose "target detected via markers" line + the --target override hint. */
+function logDetectedTarget(target: Target, targets: Target[]): void {
+  const markerList = (target.projectMarkers ?? []).join(', ');
+  console.log(`  target: ${target.name}  (${markerList} found)`);
+  const names = targets.map(t => t.name).join('|');
+  console.log(`  Override with --target ${names} if needed.`);
+}
+
+/** Prints the verbose "no markers matched, defaulting" line. */
+function logDefaultTarget(defaultTarget: string, targets: Target[]): void {
+  const markerPaths = targets.flatMap(t => t.projectMarkers ?? []).join(', ');
+  console.log(
+    `  target: ${defaultTarget}  (no markers found: ${markerPaths}; defaulting to ${defaultTarget})`,
+  );
+}
+
 /**
  * Auto-detect the installed target by scanning each registered target's `projectMarkers`.
  * Targets are scanned in registration order (claude first, then copilot).
@@ -133,21 +156,11 @@ export function detectProjectTarget(
     if (markers.length === 0) continue;
     const allPresent = markers.every(m => fs.existsSync(path.join(projectDir, m)));
     if (allPresent) {
-      if (opts.verbose) {
-        const markerList = markers.join(', ');
-        console.log(`  target: ${target.name}  (${markerList} found)`);
-        const names = targets.map(t => t.name).join('|');
-        console.log(`  Override with --target ${names} if needed.`);
-      }
+      if (opts.verbose) logDetectedTarget(target, targets);
       return target.name;
     }
   }
 
-  if (opts.verbose) {
-    const markerPaths = targets.flatMap(t => t.projectMarkers ?? []).join(', ');
-    console.log(
-      `  target: ${defaultTarget}  (no markers found: ${markerPaths}; defaulting to ${defaultTarget})`,
-    );
-  }
+  if (opts.verbose) logDefaultTarget(defaultTarget, targets);
   return defaultTarget;
 }

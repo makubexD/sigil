@@ -8,13 +8,14 @@ import matter from 'gray-matter';
 import glob from 'fast-glob';
 import yaml from 'js-yaml';
 import type { Artifact, LanguageMetadata, LoadedCatalog, ReferenceFile } from './types';
+import { SKILL_FILENAME } from './paths';
 
 /**
  * File-extension patterns that identify each artifact kind.
  * SKILL.md is a special case: it is always a directory-based skill.
  */
 const ARTIFACT_PATTERNS = [
-  '**/SKILL.md',
+  `**/${SKILL_FILENAME}`,
   '**/*.rule.md',
   '**/*.agent.md',
   '**/*.prompt.md',
@@ -22,19 +23,12 @@ const ARTIFACT_PATTERNS = [
   '**/*.hook.md',
   '**/*.settings.md',
   '**/*.mcp.md',
+  '**/*.template.md',
 ];
 
-/**
- * Loads the entire catalog from catalogDir and returns a flat artifact list
- * plus language metadata from each language.yaml.
- *
- * @param catalogDir - Absolute path to the catalog/ directory.
- */
-export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
-  const artifacts: Artifact[] = [];
+/** Loads every language.yaml under catalogDir's languages/ subdirectories into a langId → metadata map. */
+async function loadLanguages(catalogDir: string): Promise<Map<string, LanguageMetadata>> {
   const languages = new Map<string, LanguageMetadata>();
-
-  // ── 1. Language metadata ──────────────────────────────────────────────────
   const langYamlPaths = await glob('languages/*/language.yaml', {
     cwd: catalogDir,
     absolute: true,
@@ -50,25 +44,15 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
       throw new Error(`[load] Failed to parse language.yaml at ${yamlPath}`, { cause: err });
     }
   }
+  return languages;
+}
 
-  // ── 2. Artifact files ─────────────────────────────────────────────────────
-  const filePaths = await glob(ARTIFACT_PATTERNS, {
-    cwd: catalogDir,
-    absolute: true,
-  });
-
-  for (const filePath of filePaths) {
-    const artifact = parseArtifactFile(filePath);
-    if (artifact) {
-      artifacts.push(artifact);
-    }
-  }
-
-  // Validate uniqueness of IDs
+/** Builds the id → artifact map, throwing if two artifacts declare the same id. */
+function indexById(artifacts: Artifact[]): Map<string, Artifact> {
   const byId = new Map<string, Artifact>();
   for (const artifact of artifacts) {
-    if (byId.has(artifact.id)) {
-      const existing = byId.get(artifact.id)!;
+    const existing = byId.get(artifact.id);
+    if (existing) {
       throw new Error(
         `[load] Duplicate artifact id '${artifact.id}'\n` +
           `  First:  ${existing.filePath}\n` +
@@ -77,12 +61,63 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
     }
     byId.set(artifact.id, artifact);
   }
-
-  return { artifacts, byId, languages };
+  return byId;
 }
 
-/** Parses one artifact file; returns null and warns if the file should be skipped. */
-function parseArtifactFile(filePath: string): Artifact | null {
+/**
+ * Loads the entire catalog from catalogDir and returns a flat artifact list
+ * plus language metadata from each language.yaml.
+ *
+ * @param catalogDir - Absolute path to the catalog/ directory.
+ */
+export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
+  const skipWarnings: string[] = [];
+  const languages = await loadLanguages(catalogDir);
+
+  const filePaths = await glob(ARTIFACT_PATTERNS, { cwd: catalogDir, absolute: true });
+  const artifacts = filePaths
+    .map(filePath => parseArtifactFile(filePath, skipWarnings))
+    .filter((a): a is Artifact => a !== null);
+
+  const byId = indexById(artifacts);
+  return { artifacts, byId, languages, skipWarnings };
+}
+
+/** Checks the two frontmatter fields every artifact requires, recording a skip reason if absent. */
+function missingRequiredField(
+  fm: Record<string, unknown>,
+  filePath: string,
+  skipWarnings: string[],
+): boolean {
+  if (!fm.id) {
+    skipWarnings.push(`[load] Skipping ${filePath}: missing 'id' in frontmatter`);
+    return true;
+  }
+  if (!fm.kind) {
+    skipWarnings.push(`[load] Skipping ${filePath}: missing 'kind' in frontmatter`);
+    return true;
+  }
+  return false;
+}
+
+/** Builds the Artifact object once its frontmatter has passed the required-field check. */
+function buildArtifact(filePath: string, fm: Record<string, unknown>, body: string): Artifact {
+  const artifact: Artifact = {
+    id: fm.id as string,
+    kind: fm.kind as Artifact['kind'],
+    filePath,
+    frontmatter: fm,
+    body,
+  };
+  // For skills: also load sibling references/ directory
+  if (fm.kind === 'skill') {
+    artifact.references = loadReferences(path.dirname(filePath));
+  }
+  return artifact;
+}
+
+/** Parses one artifact file; returns null and records a skip reason if it should be skipped. */
+function parseArtifactFile(filePath: string, skipWarnings: string[]): Artifact | null {
   let raw: string;
   try {
     raw = fs.readFileSync(filePath, 'utf-8');
@@ -92,30 +127,9 @@ function parseArtifactFile(filePath: string): Artifact | null {
 
   const parsed = matter(raw);
   const fm = parsed.data as Record<string, unknown>;
+  if (missingRequiredField(fm, filePath, skipWarnings)) return null;
 
-  if (!fm.id) {
-    console.warn(`[load] Skipping ${filePath}: missing 'id' in frontmatter`);
-    return null;
-  }
-  if (!fm.kind) {
-    console.warn(`[load] Skipping ${filePath}: missing 'kind' in frontmatter`);
-    return null;
-  }
-
-  const artifact: Artifact = {
-    id: fm.id as string,
-    kind: fm.kind as Artifact['kind'],
-    filePath,
-    frontmatter: fm,
-    body: parsed.content.trim(),
-  };
-
-  // For skills: also load sibling references/ directory
-  if (fm.kind === 'skill') {
-    artifact.references = loadReferences(path.dirname(filePath));
-  }
-
-  return artifact;
+  return buildArtifact(filePath, fm, parsed.content.trim());
 }
 
 /** Reads all *.md files inside <skillDir>/references/ and returns them as ReferenceFile[]. */

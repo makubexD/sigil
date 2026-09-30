@@ -45,7 +45,7 @@
     "build:watch": "tsc -p tsconfig.build.json --watch",
     "build:test": "tsc -p tsconfig.test.json",
     "pretest": "npm run build && npm run build:test",
-    "test": "node --test --experimental-test-coverage \"test-compiled/**/*.test.js\"",
+    "test": "node --test --experimental-test-coverage --test-coverage-exclude=\"test-compiled/**\" \"test-compiled/**/*.test.js\"",
     "validate": "node dist-cli/cli.js validate",
     "catalog:build": "node dist-cli/cli.js build",
     "sigil": "node dist-cli/cli.js",
@@ -54,7 +54,8 @@
     "lint:fix": "eslint src test --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "tsc --noEmit && npm run lint && npm run format:check && npm test"
+    "check-doc-comments": "node scripts/check-doc-comments.cjs",
+    "check": "npm run lint && npm run format:check && npm run check-doc-comments && npm test"
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",

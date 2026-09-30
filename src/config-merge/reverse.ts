@@ -12,6 +12,70 @@
 import type { ConfigMergeOp, MergeStrategy } from '../types';
 import { deepEqual, pruneEmpty } from './primitives';
 
+/** True when `value` is a plain (non-array, non-null) object. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** Filters `items` that deep-equal to remove out of `arr`. */
+function removeDeepEqualItems(arr: unknown[], items: unknown[]): unknown[] {
+  return arr.filter(item => !items.some(c => deepEqual(c, item)));
+}
+
+/** Removes sigil-contributed elements from each sub-array/sub-value of an object-of-arrays. */
+function removeContributedSubArrays(
+  current: Record<string, unknown>,
+  contributed: Record<string, unknown>,
+): Record<string, unknown> {
+  const cleaned: Record<string, unknown> = { ...current };
+  for (const [subKey, subContrib] of Object.entries(contributed)) {
+    if (Array.isArray(subContrib) && Array.isArray(cleaned[subKey])) {
+      cleaned[subKey] = removeDeepEqualItems(cleaned[subKey] as unknown[], subContrib);
+    } else if (!Array.isArray(subContrib) && deepEqual(cleaned[subKey], subContrib)) {
+      // Non-array sub-values (rare): remove if equal to contributed
+      delete cleaned[subKey];
+    }
+  }
+  return cleaned;
+}
+
+/** Reverses an `array-union` / `array-append` top-level key: filters out contributed elements. */
+function reverseArrayStrategy(current: unknown, contributed: unknown): unknown {
+  if (Array.isArray(contributed)) {
+    // Flat array: filter items contributed by sigil
+    return Array.isArray(current) ? removeDeepEqualItems(current, contributed) : current;
+  }
+
+  if (isPlainObject(contributed) && isPlainObject(current)) {
+    // Object (either hooks event-map or permissions sub-arrays)
+    return removeContributedSubArrays(current, contributed);
+  }
+
+  return current;
+}
+
+/**
+ * Reverses an `object-spread` top-level key. Returns the updated `result` object (a scalar
+ * removal deletes the key entirely, so the whole object — not just the value — is returned).
+ */
+function reverseObjectSpreadStrategy(
+  result: Record<string, unknown>,
+  topKey: string,
+  current: unknown,
+  contributed: unknown,
+): Record<string, unknown> {
+  if (isPlainObject(contributed) && isPlainObject(current)) {
+    return { ...result, [topKey]: removeContributed(current, contributed) };
+  }
+  // Scalar: remove only if still equal to what sigil installed
+  if (deepEqual(current, contributed)) {
+    const { [topKey]: _removed, ...rest } = result;
+    return rest;
+  }
+  // else: user modified it — leave alone
+  return result;
+}
+
 export function reverseMerge(
   existing: Record<string, unknown>,
   op: ConfigMergeOp,
@@ -23,73 +87,28 @@ export function reverseMerge(
     const strat: MergeStrategy = op.strategy[topKey] ?? 'object-spread';
     const current = result[topKey];
 
-    switch (strat) {
-      case 'array-union':
-      case 'array-append': {
-        if (Array.isArray(contributed)) {
-          // Flat array: filter items contributed by sigil
-          if (Array.isArray(current)) {
-            result[topKey] = (current as unknown[]).filter(
-              item => !(contributed as unknown[]).some(c => deepEqual(c, item)),
-            );
-          }
-        } else if (
-          contributed !== null &&
-          typeof contributed === 'object' &&
-          current !== null &&
-          typeof current === 'object' &&
-          !Array.isArray(current)
-        ) {
-          // Object (either hooks event-map or permissions sub-arrays):
-          // remove matching elements from each sub-array
-          const contributedObj = contributed as Record<string, unknown>;
-          const currentObj = current as Record<string, unknown>;
-          const cleaned: Record<string, unknown> = { ...currentObj };
-          for (const [subKey, subContrib] of Object.entries(contributedObj)) {
-            if (Array.isArray(subContrib) && Array.isArray(cleaned[subKey])) {
-              cleaned[subKey] = (cleaned[subKey] as unknown[]).filter(
-                item => !(subContrib as unknown[]).some(c => deepEqual(c, item)),
-              );
-            } else if (!Array.isArray(subContrib)) {
-              // Non-array sub-values (rare): remove if equal to contributed
-              if (deepEqual(cleaned[subKey], subContrib)) {
-                delete cleaned[subKey];
-              }
-            }
-          }
-          result[topKey] = cleaned;
-        }
-        break;
-      }
-
-      default: {
-        // object-spread: remove leaves contributed by sigil if unchanged
-        if (
-          contributed !== null &&
-          typeof contributed === 'object' &&
-          !Array.isArray(contributed) &&
-          current !== null &&
-          typeof current === 'object' &&
-          !Array.isArray(current)
-        ) {
-          result[topKey] = removeContributed(
-            current as Record<string, unknown>,
-            contributed as Record<string, unknown>,
-          );
-        } else {
-          // Scalar: remove only if still equal to what sigil installed
-          if (deepEqual(current, contributed)) {
-            const { [topKey]: _removed, ...rest } = result;
-            result = rest;
-          }
-          // else: user modified it — leave alone
-        }
-        break;
-      }
+    if (strat === 'array-union' || strat === 'array-append') {
+      result[topKey] = reverseArrayStrategy(current, contributed);
+    } else {
+      result = reverseObjectSpreadStrategy(result, topKey, current, contributed);
     }
   }
 
   return pruneEmpty(result);
+}
+
+/** Rebuilds `current` with key `k` marked for removal, preserving `rest`'s prior edits. */
+function mergeWithRemovedKey(
+  current: Record<string, unknown>,
+  rest: Record<string, unknown>,
+  k: string,
+): Record<string, unknown> {
+  return Object.assign({}, { ...current, ...rest }, { [k]: undefined });
+}
+
+/** Drops entries whose value is `undefined` (the removal marker used by removeContributed). */
+function pruneUndefinedEntries(obj: Record<string, unknown>): Record<string, unknown> {
+  return Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== undefined));
 }
 
 /**
@@ -104,27 +123,13 @@ function removeContributed(
     if (!(k in result)) continue;
     const currentVal = result[k];
 
-    if (
-      contributedVal !== null &&
-      typeof contributedVal === 'object' &&
-      !Array.isArray(contributedVal) &&
-      currentVal !== null &&
-      typeof currentVal === 'object' &&
-      !Array.isArray(currentVal)
-    ) {
-      result[k] = removeContributed(
-        currentVal as Record<string, unknown>,
-        contributedVal as Record<string, unknown>,
-      );
+    if (isPlainObject(contributedVal) && isPlainObject(currentVal)) {
+      result[k] = removeContributed(currentVal, contributedVal);
     } else if (deepEqual(currentVal, contributedVal)) {
-      const { [k]: _removed, ...rest } = result as Record<string, unknown>;
-      return removeContributed(
-        Object.assign({}, { ...current, ...rest }, { [k]: undefined }),
-        contributed,
-      );
+      const { [k]: _removed, ...rest } = result;
+      return removeContributed(mergeWithRemovedKey(current, rest, k), contributed);
     }
     // else: user modified — leave alone
   }
-  // Clean up undefined values
-  return Object.fromEntries(Object.entries(result).filter(([, v]) => v !== undefined));
+  return pruneUndefinedEntries(result);
 }

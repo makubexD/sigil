@@ -5,9 +5,6 @@ name: py-pytest-testing
 title: Write pytest Tests for Python
 description: Use when adding or reviewing unit and integration tests in a Python project. Covers project layout, fixtures, parametrize, mocking, and async test patterns.
 language: python
-appliesTo:
-  - "**/*.py"
-  - "**/pyproject.toml"
 uses:
   rules:
     - python/py-style

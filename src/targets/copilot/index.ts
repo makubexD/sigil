@@ -18,16 +18,14 @@
  *     agents/<name>.agent.md
  *
  * Sub-modules:
- *   config        — CopilotConfigDestination, resolveCopilotConfigDestination
- *   build-helpers — buildCopilotInstructions, buildInstructionsFile, buildSkillMd,
- *                   buildPromptFile, buildAgentsMd
- *   scaffold      — scaffoldSkill, scaffoldRule, scaffoldAgent, scaffoldPrompt, scaffoldWorkflow
+ *   config         — CopilotConfigDestination, resolveCopilotConfigDestination
+ *   build-helpers  — buildCopilotInstructions, buildInstructionsFile, buildSkillMd,
+ *                    buildPromptFile, buildAgentsMd
+ *   scaffold       — scaffoldSkill, scaffoldRule, scaffoldAgent, scaffoldPrompt, scaffoldWorkflow
+ *   mcp-key        — COPILOT_MCP_SERVERS_KEY
+ *   target-helpers — free-standing helpers backing the class methods below
  */
-/**
- * JSON section key where GitHub Copilot stores MCP server configs.
- * Copilot uses `servers` (not `mcpServers` which is the Claude Code convention).
- */
-export const COPILOT_MCP_SERVERS_KEY = 'servers';
+export { COPILOT_MCP_SERVERS_KEY } from './mcp-key';
 
 import type {
   Target,
@@ -43,24 +41,24 @@ import type {
   KindVocabulary,
   ContractEntry,
 } from '../../types';
-import path from 'path';
-import { resolveConfigRoot } from '../../config-utils';
 import { resolveCopilotConfigDestination } from './config';
-import { basenameOfId } from '../../paths';
+import { buildAgentsMd } from './build-helpers';
+import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
 import {
-  buildCopilotInstructions,
-  buildInstructionsFile,
-  buildSkillMd,
-  buildPromptFile,
-  buildAgentsMd,
-} from './build-helpers';
+  COPILOT_SUPPORTED_KINDS,
+  COPILOT_INIT_DIRS,
+  COPILOT_PROJECT_MARKERS,
+  COPILOT_VOCABULARY,
+} from './metadata';
 import {
-  scaffoldSkill,
-  scaffoldRule,
-  scaffoldAgent,
-  scaffoldPrompt,
-  scaffoldWorkflow,
-} from './scaffold';
+  CONFIG_SCOPES,
+  buildScopeDestinations,
+  buildRuleFiles,
+  buildSkillFiles,
+  buildPromptFiles,
+  scaffoldByKind,
+  buildMcpConfigOp,
+} from './target-helpers';
 
 export { CopilotConfigDestination, resolveCopilotConfigDestination } from './config';
 
@@ -69,46 +67,10 @@ export class CopilotTarget implements Target {
   readonly displayName = 'GitHub Copilot';
   readonly installHint = 'writes to .github/';
 
-  // Copilot supports mcp (via .vscode/mcp.json) but NOT hook or settings — those are Claude Code only.
-  // hook/settings absent from this list → existing warn-and-skip covers them.
-  readonly supportedKinds: ArtifactKind[] = ['skill', 'agent', 'rule', 'prompt', 'workflow', 'mcp'];
-
-  /** Directories created by `sigil init --target copilot`. */
-  readonly initDirs: string[] = ['.github/instructions', '.github/prompts', '.github/agents'];
-
-  /** Presence of .github/ signals this target is installed in the project. */
-  readonly projectMarkers: string[] = ['.github'];
-
-  /**
-   * GitHub Copilot's native artifact vocabulary (verified June 2026).
-   * A catalog `rule` maps to *instructions* on Copilot — "rule" is not a Copilot term.
-   * A catalog `prompt` maps to a *prompt file* — "command" is not a Copilot artifact type.
-   * Both platforms share the Agent Skills open standard for `skill`.
-   */
-  readonly vocabulary: Partial<Record<ArtifactKind, KindVocabulary>> = {
-    skill: {
-      noun: 'skill',
-      plural: 'Skills',
-      hint: 'Agent Skills (open standard, agentskills.io)',
-    },
-    agent: {
-      noun: 'agent',
-      plural: 'Agents',
-      hint: 'custom agents (invoked as @name in Copilot Chat)',
-    },
-    rule: {
-      noun: 'instructions',
-      plural: 'Instructions',
-      hint: 'coding guidelines (.instructions.md with applyTo)',
-    },
-    prompt: {
-      noun: 'prompt',
-      plural: 'Prompts',
-      hint: 'prompt files invoked as /name in Copilot Chat',
-    },
-    workflow: { noun: 'prompt', plural: 'Prompts', hint: 'multi-step workflows as prompt files' },
-    mcp: { noun: 'MCP server', plural: 'MCPs', hint: 'external MCP servers' },
-  };
+  readonly supportedKinds: ArtifactKind[] = COPILOT_SUPPORTED_KINDS;
+  readonly initDirs: string[] = COPILOT_INIT_DIRS;
+  readonly projectMarkers: string[] = COPILOT_PROJECT_MARKERS;
+  readonly vocabulary: Partial<Record<ArtifactKind, KindVocabulary>> = COPILOT_VOCABULARY;
 
   /**
    * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
@@ -116,134 +78,27 @@ export class CopilotTarget implements Target {
    * .vscode/mcp.json. So only two scopes are offered: Project (workspace) and User (profile).
    */
   configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
-    const SCOPES = [
-      {
-        value: 'project' as ConfigScope,
-        precedence: 1,
-        shared: true,
-        blastRadius: 'project' as const,
-        description: 'workspace — .vscode/mcp.json, git-committed',
-      },
-      {
-        value: 'user' as ConfigScope,
-        precedence: 2,
-        shared: false,
-        blastRadius: 'all-projects' as const,
-        description: 'VS Code user-profile — all workspaces',
-      },
-    ];
-    return SCOPES.map(sc => ({
+    return CONFIG_SCOPES.map(sc => ({
       ...sc,
       label: sc.value,
-      destinations: kinds
-        .filter(k => k === 'mcp')
-        .map(kind => {
-          const d = resolveCopilotConfigDestination('mcp', sc.value);
-          return {
-            kind: kind as ConfigKind,
-            file: d.file,
-            root: d.root,
-            fullPath: path.join(resolveConfigRoot(d.root, projectDir), d.file),
-            // Copilot uses COPILOT_MCP_SERVERS_KEY (not 'mcpServers') — surface for display consistency.
-            section: COPILOT_MCP_SERVERS_KEY,
-          };
-        }),
+      destinations: buildScopeDestinations(kinds, sc.value, projectDir),
     }));
   }
 
-  /**
-   * Output-conformance contracts for Copilot scaffold output.
-   * Checked by `build` and `add` after emit to enforce per-AI artifact shapes.
-   */
-  readonly outputContracts: ContractEntry[] = [
-    {
-      // Prompt file: agent + description required; no skill/Claude/instructions fields.
-      match: /\.github\/prompts\/.*\.prompt\.md$/,
-      label: 'Copilot prompt file',
-      contract: {
-        requiredKeys: ['agent', 'description'],
-        forbiddenKeys: ['applyTo', 'name', 'paths', 'arguments', 'argument-hint'],
-        bodyForbids: [
-          {
-            pattern: /\{\{/,
-            reason: 'unresolved {{…}} placeholder (should be translated to ${input:name})',
-          },
-        ],
-      },
-    },
-    {
-      // Agent Skill (open standard): name + description only; no path-matching fields.
-      match: /\.github\/skills\/.*\/SKILL\.md$/,
-      label: 'Copilot Agent Skill',
-      contract: {
-        requiredKeys: ['name', 'description'],
-        forbiddenKeys: ['applyTo', 'paths', 'agent'],
-      },
-    },
-    {
-      // Instructions file: applyTo required; no agent or name fields.
-      match: /\.github\/instructions\/.*\.instructions\.md$/,
-      label: 'Copilot instructions',
-      contract: {
-        requiredKeys: ['applyTo'],
-        forbiddenKeys: ['name', 'agent'],
-      },
-    },
-    {
-      // Agent: name + description required; no path-matching or prompt fields.
-      match: /\.github\/agents\/.*\.agent\.md$/,
-      label: 'Copilot agent',
-      contract: {
-        requiredKeys: ['name', 'description'],
-        forbiddenKeys: ['applyTo'],
-      },
-    },
-  ];
+  readonly outputContracts: ContractEntry[] = COPILOT_OUTPUT_CONTRACTS;
 
   // ── Full build ───────────────────────────────────────────────────────────────
 
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {
     const files: FileMap = {};
+    const byKind = (kind: ArtifactKind) => catalog.artifacts.filter(a => a.kind === kind);
 
-    const rules = catalog.artifacts.filter(a => a.kind === 'rule');
-    const skills = catalog.artifacts.filter(a => a.kind === 'skill');
-    const agents = catalog.artifacts.filter(a => a.kind === 'agent');
-    const prompts = catalog.artifacts.filter(a => a.kind === 'prompt');
-    const workflows = catalog.artifacts.filter(a => a.kind === 'workflow');
-
-    // copilot-instructions.md: baseline shared rules
-    const sharedRules = rules.filter(r => !r.frontmatter.language);
-    if (sharedRules.length > 0) {
-      files['.github/copilot-instructions.md'] = buildCopilotInstructions(sharedRules);
-    }
-
-    // instructions/*.instructions.md: language-specific rules
-    const languageRules = rules.filter(r => r.frontmatter.language);
-    for (const rule of languageRules) {
-      const slug = rule.id.replace(/\//g, '-');
-      files[`.github/instructions/${slug}.instructions.md`] = buildInstructionsFile(rule);
-    }
-
-    // skills/*/SKILL.md: native Agent Skills (open standard)
-    for (const skill of skills) {
-      const name = skill.frontmatter.name as string;
-      files[`.github/skills/${name}/SKILL.md`] = buildSkillMd(skill);
-      for (const ref of skill.references ?? []) {
-        files[`.github/skills/${name}/references/${ref.name}`] = ref.content;
-      }
-    }
-
-    // prompts/*.prompt.md: standalone prompts + workflows
-    for (const prompt of prompts) {
-      const slug = prompt.id.replace(/\//g, '-');
-      files[`.github/prompts/${slug}.prompt.md`] = buildPromptFile(prompt);
-    }
-    for (const workflow of workflows) {
-      const slug = workflow.id.replace(/\//g, '-');
-      files[`.github/prompts/${slug}.prompt.md`] = buildPromptFile(workflow);
-    }
+    buildRuleFiles(byKind('rule'), files);
+    buildSkillFiles(byKind('skill'), files);
+    buildPromptFiles(byKind('prompt'), byKind('workflow'), files);
 
     // AGENTS.md — pass catalog so Boundary sections can be rendered for co-present agents
+    const agents = byKind('agent');
     if (agents.length > 0) {
       files['.github/AGENTS.md'] = buildAgentsMd(agents, catalog);
     }
@@ -264,27 +119,7 @@ export class CopilotTarget implements Target {
     }
 
     const files: FileMap = {};
-
-    switch (artifact.kind) {
-      case 'skill':
-        scaffoldSkill(artifact, catalog, files, options);
-        break;
-      case 'agent':
-        scaffoldAgent(artifact, files, catalog, options.coInstallSet);
-        break;
-      case 'rule':
-        scaffoldRule(artifact, files);
-        break;
-      case 'prompt':
-        scaffoldPrompt(artifact, files);
-        break;
-      case 'workflow':
-        scaffoldWorkflow(artifact, files);
-        break;
-      default:
-        throw new Error(`Scaffolding not supported for kind '${artifact.kind}'`);
-    }
-
+    scaffoldByKind(artifact, catalog, files, options);
     return files;
   }
 
@@ -313,25 +148,9 @@ export class CopilotTarget implements Target {
       throw new Error(`Copilot scaffoldConfig only supports 'mcp' kind, got '${artifact.kind}'`);
     }
 
-    const fm = artifact.frontmatter;
     const scope: ConfigScope =
-      options.scope ?? (fm.defaultScope as ConfigScope | undefined) ?? 'project';
+      options.scope ?? (artifact.frontmatter.defaultScope as ConfigScope | undefined) ?? 'project';
     const dest = resolveCopilotConfigDestination('mcp', scope);
-
-    const server = fm.server as Record<string, unknown>;
-    const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
-    const { description: _d, ...serverConfig } = server as Record<string, unknown>;
-    void _d;
-
-    // VS Code / Copilot uses COPILOT_MCP_SERVERS_KEY (not 'mcpServers' which is the Claude Code key)
-    return [
-      {
-        file: dest.file,
-        root: dest.root,
-        fragment: { [COPILOT_MCP_SERVERS_KEY]: { [serverName]: serverConfig } },
-        strategy: { [COPILOT_MCP_SERVERS_KEY]: 'object-spread' },
-        section: COPILOT_MCP_SERVERS_KEY,
-      },
-    ];
+    return [buildMcpConfigOp(artifact, dest)];
   }
 }

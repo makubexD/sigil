@@ -10,13 +10,14 @@
  */
 import { resolveCatalog } from '../../resolve';
 import { getTarget } from '../../targets';
-import { resolveSelection, CONFIG_KINDS, type SkippedArtifact } from '../../select';
+import { CONFIG_KINDS, type SkippedArtifact } from '../../select';
 import { SigilError } from '../../errors';
-import { isInteractiveTTY, runWizard, printSkippedAdvice, type WizardResult } from '../../wizard';
-import { checkOutputContract } from '../../targets/output-contract';
-import { computeInstallStates } from '../../install-state';
-import { loadAndValidate, partitionFiles, detectProjectTarget } from '../../cli-helpers';
-import { renderViolations } from '../shared/contract';
+import { printSkippedAdvice } from '../../wizard';
+import { loadAndValidate, detectProjectTarget } from '../../cli-helpers';
+import { resolveInputs } from './resolve-inputs';
+import { resolveIds, computeUpToDateIds } from './plan-ids';
+import { computePrimaryPaths, scaffoldWholeFiles } from './plan-scaffold';
+import type { PlanCtx } from './plan-context';
 import type { FileMap, ConfigScope, ResolvedCatalog, Target } from '../../types';
 import type { AddOpts } from './index';
 
@@ -50,71 +51,25 @@ export interface AddPlan {
   readonly conflicting: FileMap;
 }
 
-/** Resolves the effective selectors/target/flags, running the wizard when needed. */
-async function resolveInputs(
-  selectors: string[],
-  opts: AddOpts,
-  resolved: ResolvedCatalog,
-  packs: Parameters<typeof runWizard>[1],
-): Promise<{
-  selectors: string[];
-  target: string | undefined;
-  includeDeps: boolean;
-  overwrite: boolean;
-  language: string | undefined;
-  scope: ConfigScope;
-} | null> {
-  const needsWizard = (selectors.length === 0 || opts.interactive) && !opts.yes;
-  const baseScope: ConfigScope = opts.settingsLocal
-    ? 'local'
-    : ((opts.scope as ConfigScope | undefined) ?? 'project');
-
-  if (!needsWizard) {
-    return {
-      selectors,
-      target: opts.target,
-      includeDeps: opts.deps !== false,
-      overwrite: opts.overwrite,
-      language: opts.language,
-      scope: baseScope,
-    };
+/** Resolves the target adapter for this install, throwing if it can't scaffold. */
+function resolveScaffoldTarget(targetName: string): Target {
+  const target = getTarget(targetName);
+  if (!target.scaffold) {
+    throw new SigilError(`Target '${targetName}' does not support the add command.`);
   }
-
-  if (!isInteractiveTTY()) {
-    throw new SigilError('No selectors provided and stdin/stdout is not an interactive terminal.', {
-      hint:
-        '  Provide at least one selector (e.g. `add all` or `add skill:csharp/cs-generate-tests`)\n' +
-        '  or use --yes to confirm non-interactive mode.\n\n' +
-        '  Available selectors:\n' +
-        '    all                         install the full catalog\n' +
-        '    pack:<name>                 install a named pack\n' +
-        '    kind:<kind>                 install all of a kind (skill/agent/rule/prompt)\n' +
-        '    <kind>:<id>                 install a specific artifact\n\n' +
-        '  Run `sigil list` to browse available artifacts.',
-    });
-  }
-
-  const detectedTarget = detectProjectTarget(opts.projectDir, { verbose: false });
-  const wizardResult: WizardResult | null = await runWizard(
-    resolved,
-    packs,
-    detectedTarget,
-    opts.projectDir,
-  );
-  if (!wizardResult) return null;
-
-  return {
-    selectors: wizardResult.selectors,
-    target: wizardResult.target,
-    includeDeps: wizardResult.includeDeps,
-    overwrite: wizardResult.overwrite,
-    language: wizardResult.language ?? opts.language,
-    scope: (wizardResult.configScope as ConfigScope | undefined) ?? baseScope,
-  };
+  return target;
 }
 
-/** Builds the full install plan, or returns null when the wizard was cancelled. */
-export async function buildAddPlan(selectors: string[], opts: AddOpts): Promise<AddPlan | null> {
+/** Splits a comma-separated CLI flag into a trimmed, non-empty list, or undefined when unset. */
+function splitCommaFlag(raw: string | undefined): string[] | undefined {
+  return raw
+    ?.split(',')
+    .map(k => k.trim())
+    .filter(Boolean);
+}
+
+/** Builds the plan context, resolving inputs/target; returns null when the wizard was cancelled. */
+async function buildPlanCtx(selectors: string[], opts: AddOpts): Promise<PlanCtx | null> {
   const { catalog, packsConfig } = await loadAndValidate(opts.catalogDir, opts.packs);
   const resolved = resolveCatalog(catalog);
 
@@ -122,131 +77,136 @@ export async function buildAddPlan(selectors: string[], opts: AddOpts): Promise<
   if (!inputs) return null;
 
   const targetName = inputs.target ?? detectProjectTarget(opts.projectDir, { verbose: true });
-  const target = getTarget(targetName);
-  if (!target.scaffold) {
-    throw new SigilError(`Target '${targetName}' does not support the add command.`);
-  }
+  const target = resolveScaffoldTarget(targetName);
 
-  const effectiveKinds = opts.kind
-    ?.split(',')
-    .map(k => k.trim())
-    .filter(Boolean);
-  const effectiveExclude = opts.exclude
-    ?.split(',')
-    .map(k => k.trim())
-    .filter(Boolean);
-  const filters = { kinds: effectiveKinds, exclude: effectiveExclude, language: inputs.language };
+  return { opts, resolved, target, targetName, inputs, packs: packsConfig.packs };
+}
 
-  let ids: string[];
-  let skipped: SkippedArtifact[];
-  try {
-    const result = resolveSelection(
-      inputs.selectors,
-      filters,
-      resolved,
-      packsConfig.packs,
-      target.supportedKinds ?? [],
-      targetName,
-    );
-    ids = result.ids;
-    skipped = result.skipped;
-  } catch (err) {
-    throw new SigilError((err as Error).message, { cause: err });
-  }
-
-  printSkippedAdvice(skipped, target);
-
-  // ── Manifest-aware install-state detection ─────────────────────────────────
-  let upToDateIds: string[] = [];
-  if (!opts.dryRun && ids.length > 0) {
-    try {
-      const installStates = await computeInstallStates(
-        ids,
-        target,
-        resolved,
-        opts.projectDir,
-        inputs.scope,
-      );
-      if (!inputs.overwrite) {
-        upToDateIds = ids.filter(id => installStates.get(id)?.state === 'up-to-date');
-        for (const id of upToDateIds) {
-          console.log(`  =  ${id}  (✓ already up to date — skipped)`);
-        }
-      }
-    } catch {
-      // State detection failed — proceed without skip logic (safe fallback)
-    }
-  }
-  const upToDateSet = new Set(upToDateIds);
-
+/** Splits resolved ids into whole-file vs config-kind, excluding already-up-to-date ids from both. */
+function partitionIdsByKind(
+  ids: string[],
+  resolved: ResolvedCatalog,
+  upToDateSet: Set<string>,
+): { wholeFileIds: string[]; configIds: string[] } {
   const wholeFileIds = ids.filter(
     id => !CONFIG_KINDS.has(resolved.byId.get(id)?.kind ?? '') && !upToDateSet.has(id),
   );
   const configIds = ids.filter(
     id => CONFIG_KINDS.has(resolved.byId.get(id)?.kind ?? '') && !upToDateSet.has(id),
   );
+  return { wholeFileIds, configIds };
+}
 
+/** Resolves candidate ids, prints skip advice, and splits them into whole-file vs config-kind. */
+async function resolveAndPartitionIds(
+  ctx: PlanCtx,
+  filters: Parameters<typeof resolveIds>[1],
+): Promise<{
+  skipped: SkippedArtifact[];
+  upToDateIds: string[];
+  wholeFileIds: string[];
+  configIds: string[];
+}> {
+  const { ids, skipped } = resolveIds(ctx, filters);
+  printSkippedAdvice(skipped, ctx.target);
+
+  const upToDateIds = await computeUpToDateIds(ctx, ids);
+  const { wholeFileIds, configIds } = partitionIdsByKind(ids, ctx.resolved, new Set(upToDateIds));
+
+  return { skipped, upToDateIds, wholeFileIds, configIds };
+}
+
+type EffectiveFields = Pick<
+  AddPlan,
+  | 'effectiveSelectors'
+  | 'effectiveLanguage'
+  | 'effectiveKinds'
+  | 'effectiveExclude'
+  | 'effectiveIncludeDeps'
+  | 'effectiveOverwrite'
+  | 'effectiveScope'
+>;
+
+/** Builds the "effective*" fields (echoing the resolved wizard/CLI inputs) of the AddPlan. */
+function buildEffectiveFields(
+  ctx: PlanCtx,
+  effective: { kinds: string[] | undefined; exclude: string[] | undefined },
+): EffectiveFields {
+  return {
+    effectiveSelectors: ctx.inputs.selectors,
+    effectiveLanguage: ctx.inputs.language,
+    effectiveKinds: effective.kinds,
+    effectiveExclude: effective.exclude,
+    effectiveIncludeDeps: ctx.inputs.includeDeps,
+    effectiveOverwrite: ctx.inputs.overwrite,
+    effectiveScope: ctx.inputs.scope,
+  };
+}
+
+/** Parameters for {@link assembleAddPlan} beyond the shared PlanCtx. */
+interface AssembleAddPlanOptions {
+  effective: { kinds: string[] | undefined; exclude: string[] | undefined };
+  partition: Awaited<ReturnType<typeof resolveAndPartitionIds>>;
+  scaffoldOpts: ScaffoldOpts;
+  files: { primaryPaths: Set<string>; toWrite: FileMap; conflicting: FileMap };
+}
+
+/** Assembles the final AddPlan from the context and every computed intermediate value. */
+function assembleAddPlan(ctx: PlanCtx, options: AssembleAddPlanOptions): AddPlan {
+  const { effective, partition, scaffoldOpts, files } = options;
+  return {
+    opts: ctx.opts,
+    resolved: ctx.resolved,
+    target: ctx.target,
+    targetName: ctx.targetName,
+    ...buildEffectiveFields(ctx, effective),
+    ...partition,
+    scaffoldOpts,
+    ...files,
+  };
+}
+
+/** Builds scaffoldOpts and runs the scaffold phase (primary-path pre-compute + main loop). */
+async function runScaffoldPhase(
+  ctx: PlanCtx,
+  wholeFileIds: string[],
+): Promise<{
+  scaffoldOpts: ScaffoldOpts;
+  primaryPaths: Set<string>;
+  toWrite: FileMap;
+  conflicting: FileMap;
+}> {
   const scaffoldOpts: ScaffoldOpts = {
-    projectDir: opts.projectDir,
-    overwrite: inputs.overwrite,
-    includeDeps: inputs.includeDeps,
-    scope: inputs.scope,
+    projectDir: ctx.opts.projectDir,
+    overwrite: ctx.inputs.overwrite,
+    includeDeps: ctx.inputs.includeDeps,
+    scope: ctx.inputs.scope,
     coInstallSet: new Set(wholeFileIds),
   };
 
-  // Pre-compute primary (no-dep) file paths for dep tagging in the summary listing.
-  const primaryPaths = new Set<string>();
-  if (inputs.includeDeps) {
-    const primaryScaffoldOpts = { ...scaffoldOpts, includeDeps: false };
-    for (const id of wholeFileIds) {
-      try {
-        const pFiles = await target.scaffold!(id, resolved, primaryScaffoldOpts);
-        for (const k of Object.keys(pFiles)) primaryPaths.add(k);
-      } catch {
-        /* ignore — the main scaffold loop below will surface real errors */
-      }
-    }
-  }
+  const primaryPaths = await computePrimaryPaths(ctx, wholeFileIds, scaffoldOpts);
+  const { toWrite, conflicting } = await scaffoldWholeFiles(ctx, wholeFileIds, scaffoldOpts);
+  return { scaffoldOpts, primaryPaths, toWrite, conflicting };
+}
 
-  const allFiles: FileMap = {};
-  for (const id of wholeFileIds) {
-    try {
-      const files = await target.scaffold!(id, resolved, scaffoldOpts);
-      Object.assign(allFiles, files);
-    } catch (err) {
-      throw new SigilError(`Failed to scaffold '${id}': ${(err as Error).message}`, { cause: err });
-    }
-  }
+/** Builds the full install plan, or returns null when the wizard was cancelled. */
+export async function buildAddPlan(selectors: string[], opts: AddOpts): Promise<AddPlan | null> {
+  const ctx = await buildPlanCtx(selectors, opts);
+  if (!ctx) return null;
 
-  const violations = checkOutputContract(allFiles, target.outputContracts ?? []);
-  if (violations.length > 0) {
-    throw new SigilError(
-      `${violations.length} output-conformance error(s). Install aborted — no files were written.`,
-      { hint: renderViolations(violations) },
-    );
-  }
+  const effective = { kinds: splitCommaFlag(opts.kind), exclude: splitCommaFlag(opts.exclude) };
+  const filters = { ...effective, language: ctx.inputs.language };
+  const partition = await resolveAndPartitionIds(ctx, filters);
 
-  const { toWrite, conflicting } = partitionFiles(allFiles, opts.projectDir);
+  const { scaffoldOpts, primaryPaths, toWrite, conflicting } = await runScaffoldPhase(
+    ctx,
+    partition.wholeFileIds,
+  );
 
-  return {
-    opts,
-    resolved,
-    target,
-    targetName,
-    effectiveSelectors: inputs.selectors,
-    effectiveLanguage: inputs.language,
-    effectiveKinds,
-    effectiveExclude,
-    effectiveIncludeDeps: inputs.includeDeps,
-    effectiveOverwrite: inputs.overwrite,
-    effectiveScope: inputs.scope,
-    skipped,
-    upToDateIds,
-    wholeFileIds,
-    configIds,
+  return assembleAddPlan(ctx, {
+    effective,
+    partition,
     scaffoldOpts,
-    primaryPaths,
-    toWrite,
-    conflicting,
-  };
+    files: { primaryPaths, toWrite, conflicting },
+  });
 }

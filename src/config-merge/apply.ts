@@ -12,6 +12,73 @@
 import type { ConfigMergeOp, MergeStrategy } from '../types';
 import { deepEqual, deepMerge } from './primitives';
 
+/** True when `value` is a plain (non-array, non-null) object. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** Dedup-union `incomingArr` onto `currentArr`, using deepEqual for membership. */
+function unionArrays(currentArr: unknown[], incomingArr: unknown[]): unknown[] {
+  const union = [...currentArr];
+  for (const item of incomingArr) {
+    if (!union.some(x => deepEqual(x, item))) union.push(item);
+  }
+  return union;
+}
+
+/** `array-union` strategy: flat array union, or per-subkey union for an object-of-arrays. */
+function applyArrayUnionStrategy(current: unknown, incoming: unknown): unknown {
+  if (Array.isArray(incoming)) {
+    // Flat array union (e.g. top-level allow list)
+    const currentArr = Array.isArray(current) ? (current as unknown[]) : [];
+    return unionArrays(currentArr, incoming as unknown[]);
+  }
+  if (isPlainObject(incoming)) {
+    // Object-of-arrays union (e.g. permissions: { allow, deny, ask })
+    const currentObj = isPlainObject(current) ? current : {};
+    const merged: Record<string, unknown> = { ...currentObj };
+    for (const [subKey, subIncoming] of Object.entries(incoming)) {
+      if (Array.isArray(subIncoming)) {
+        const subCurrent = Array.isArray(merged[subKey]) ? (merged[subKey] as unknown[]) : [];
+        merged[subKey] = unionArrays(subCurrent, subIncoming as unknown[]);
+      } else {
+        merged[subKey] = subIncoming;
+      }
+    }
+    return merged;
+  }
+  return undefined;
+}
+
+/** `object-spread` strategy (also the array-append fallback): deep-merge objects, else replace. */
+function applyObjectSpreadStrategy(current: unknown, incoming: unknown): unknown {
+  if (isPlainObject(incoming) && isPlainObject(current)) {
+    return deepMerge(current, incoming);
+  }
+  return incoming;
+}
+
+/**
+ * `array-append` strategy: `incoming` is an object keyed by event name whose values are
+ * arrays. Append per event key; don't replace same-event entries.
+ */
+function applyArrayAppendStrategy(current: unknown, incoming: unknown): unknown {
+  if (!isPlainObject(incoming) || !isPlainObject(current)) {
+    return applyObjectSpreadStrategy(current, incoming);
+  }
+  const mergedObj: Record<string, unknown> = { ...current };
+  for (const [eventKey, eventItems] of Object.entries(incoming)) {
+    const existingItems = Array.isArray(mergedObj[eventKey])
+      ? (mergedObj[eventKey] as unknown[])
+      : [];
+    mergedObj[eventKey] = [
+      ...existingItems,
+      ...(Array.isArray(eventItems) ? eventItems : [eventItems]),
+    ];
+  }
+  return mergedObj;
+}
+
 export function applyMerge(
   existing: Record<string, unknown>,
   op: ConfigMergeOp,
@@ -22,106 +89,16 @@ export function applyMerge(
     const strat: MergeStrategy = op.strategy[topKey] ?? 'object-spread';
     const current = result[topKey];
 
-    switch (strat) {
-      case 'array-union': {
-        if (Array.isArray(incoming)) {
-          // Flat array union (e.g. top-level allow list)
-          const currentArr = Array.isArray(current) ? (current as unknown[]) : [];
-          const incomingArr = incoming as unknown[];
-          const union = [...currentArr];
-          for (const item of incomingArr) {
-            if (!union.some(x => deepEqual(x, item))) union.push(item);
-          }
-          result[topKey] = union;
-        } else if (incoming !== null && typeof incoming === 'object' && !Array.isArray(incoming)) {
-          // Object-of-arrays union (e.g. permissions: { allow, deny, ask })
-          const incomingObj = incoming as Record<string, unknown>;
-          const currentObj =
-            current !== null && typeof current === 'object' && !Array.isArray(current)
-              ? (current as Record<string, unknown>)
-              : {};
-          const merged: Record<string, unknown> = { ...currentObj };
-          for (const [subKey, subIncoming] of Object.entries(incomingObj)) {
-            if (Array.isArray(subIncoming)) {
-              const subCurrent = Array.isArray(merged[subKey]) ? (merged[subKey] as unknown[]) : [];
-              const union = [...subCurrent];
-              for (const item of subIncoming as unknown[]) {
-                if (!union.some(x => deepEqual(x, item))) union.push(item);
-              }
-              merged[subKey] = union;
-            } else {
-              merged[subKey] = subIncoming;
-            }
-          }
-          result[topKey] = merged;
-        }
-        break;
+    if (strat === 'array-union') {
+      // Original behavior: when incoming is neither array nor object, leave result[topKey]
+      // untouched (the switch's array-union case had no matching branch, so no assignment ran).
+      if (Array.isArray(incoming) || isPlainObject(incoming)) {
+        result[topKey] = applyArrayUnionStrategy(current, incoming);
       }
-
-      case 'array-append': {
-        // For hook events: `incoming` is an object keyed by event name whose values are arrays.
-        // Append per event key; don't replace same-event entries.
-        if (
-          incoming !== null &&
-          typeof incoming === 'object' &&
-          !Array.isArray(incoming) &&
-          current !== null &&
-          typeof current === 'object' &&
-          !Array.isArray(current)
-        ) {
-          const currentObj = current as Record<string, unknown>;
-          const incomingObj = incoming as Record<string, unknown>;
-          const mergedObj: Record<string, unknown> = { ...currentObj };
-          for (const [eventKey, eventItems] of Object.entries(incomingObj)) {
-            const existing = Array.isArray(mergedObj[eventKey])
-              ? (mergedObj[eventKey] as unknown[])
-              : [];
-            mergedObj[eventKey] = [
-              ...existing,
-              ...(Array.isArray(eventItems) ? eventItems : [eventItems]),
-            ];
-          }
-          result[topKey] = mergedObj;
-        } else {
-          // Fallback: treat like object-spread
-          if (
-            incoming !== null &&
-            typeof incoming === 'object' &&
-            !Array.isArray(incoming) &&
-            current !== null &&
-            typeof current === 'object' &&
-            !Array.isArray(current)
-          ) {
-            result[topKey] = deepMerge(
-              current as Record<string, unknown>,
-              incoming as Record<string, unknown>,
-            );
-          } else {
-            result[topKey] = incoming;
-          }
-        }
-        break;
-      }
-
-      default: {
-        // object-spread
-        if (
-          incoming !== null &&
-          typeof incoming === 'object' &&
-          !Array.isArray(incoming) &&
-          current !== null &&
-          typeof current === 'object' &&
-          !Array.isArray(current)
-        ) {
-          result[topKey] = deepMerge(
-            current as Record<string, unknown>,
-            incoming as Record<string, unknown>,
-          );
-        } else {
-          result[topKey] = incoming;
-        }
-        break;
-      }
+    } else if (strat === 'array-append') {
+      result[topKey] = applyArrayAppendStrategy(current, incoming);
+    } else {
+      result[topKey] = applyObjectSpreadStrategy(current, incoming);
     }
   }
 

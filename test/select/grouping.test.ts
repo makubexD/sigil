@@ -12,6 +12,7 @@ import {
   availableKinds,
   buildLanguageOptions,
   CONFIG_KINDS,
+  KIND_ORDER,
 } from '../../dist-cli/select/index';
 import type { ResolvedArtifact } from '../../dist-cli/types';
 import { CATALOG_DIR } from '../helpers/catalog';
@@ -65,7 +66,7 @@ describe('groupArtifactsByLanguage', () => {
     const resolved = resolveCatalog(catalog);
 
     const groups = groupArtifactsByLanguage(resolved.artifacts);
-    const kindOrder = ['skill', 'agent', 'rule', 'prompt', 'workflow', 'hook', 'settings', 'mcp'];
+    const kindOrder: string[] = KIND_ORDER;
 
     for (const [groupKey, arts] of Object.entries(groups)) {
       for (let i = 1; i < arts.length; i++) {
@@ -154,7 +155,7 @@ describe('partitionConfigKinds', () => {
   });
 
   it('config partition is sorted by KIND_ORDER then id', () => {
-    const kindOrder = ['skill', 'agent', 'rule', 'prompt', 'workflow', 'hook', 'settings', 'mcp'];
+    const kindOrder: string[] = KIND_ORDER;
     const mockArtifacts = [
       { id: 'shared/b-mcp', kind: 'mcp', frontmatter: {}, body: '' },
       { id: 'shared/a-hook', kind: 'hook', frontmatter: {}, body: '' },
@@ -189,7 +190,7 @@ describe('availableKinds', () => {
     const resolved = resolveCatalog(catalog);
     const kinds = availableKinds(resolved.artifacts);
     // Must be a subset of KIND_ORDER — skill comes before agent, etc.
-    const kindOrder = ['skill', 'agent', 'rule', 'prompt', 'workflow', 'hook', 'settings', 'mcp'];
+    const kindOrder: string[] = KIND_ORDER;
     for (let i = 0; i < kinds.length - 1; i++) {
       assert.ok(
         kindOrder.indexOf(kinds[i]!) < kindOrder.indexOf(kinds[i + 1]!),

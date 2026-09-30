@@ -1,7 +1,8 @@
-import { select, isCancel, cancel } from '@clack/prompts';
+import { select, cancel } from '@clack/prompts';
 import { computeInstallStates } from '../../../install-state';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { visibleArtifacts, chosenTarget, type AddWizardState } from './state';
+import { resolveOutcome } from './prompt-helpers';
 
 /** Clears downstream answers that depend on the chosen target, on target change. */
 function resetAfterTarget(s: AddWizardState): void {
@@ -9,6 +10,34 @@ function resetAfterTarget(s: AddWizardState): void {
   s.language = undefined;
   s.kindPick = undefined;
   s.browseAll = undefined;
+}
+
+/** Recomputes install states for the chosen target's visible artifacts, if not already cached. */
+async function refreshInstallStates(s: AddWizardState): Promise<void> {
+  if (s.installStatesForTarget === s.target) return;
+  const ct = chosenTarget(s);
+  const targetName = s.target;
+  if (!ct || !targetName) return;
+
+  try {
+    s.installStates = await computeInstallStates({
+      candidateIds: visibleArtifacts(s).map(a => a.id),
+      target: ct,
+      catalog: s.ctx.catalog,
+      projectDir: s.ctx.projectDir,
+    });
+  } catch {
+    // State detection failed — proceed without annotations (all items appear as 'new').
+    s.installStates = new Map();
+  }
+  s.installStatesForTarget = targetName;
+}
+
+/** Applies the chosen target to state, resetting downstream answers if it changed. */
+function applyChosenTarget(s: AddWizardState, answer: string): void {
+  const changed = s.target !== undefined && s.target !== answer;
+  s.target = answer;
+  if (changed) resetAfterTarget(s);
 }
 
 /**
@@ -20,48 +49,26 @@ function resetAfterTarget(s: AddWizardState): void {
 export const targetStep: WizardStep<AddWizardState> = {
   id: 'target',
   async run(s): Promise<StepOutcome> {
-    const targetOptions = s.ctx.scaffoldableTargets.map(t => ({
-      value: t.name,
-      label: t.displayName ?? t.name,
-      hint: t.installHint ?? '',
-    }));
     const answer = await select({
       message: `Install target  (detected: ${s.ctx.detectedTarget})`,
-      options: targetOptions,
+      options: s.ctx.scaffoldableTargets.map(t => ({
+        value: t.name,
+        label: t.displayName ?? t.name,
+        hint: t.installHint ?? '',
+      })),
       initialValue: s.target ?? s.ctx.detectedTarget,
     });
-    if (isCancel(answer)) {
-      cancel('Install cancelled.');
-      return 'cancel';
-    }
+    const outcome = resolveOutcome(answer);
+    if (outcome) return outcome;
 
-    const changed = s.target !== undefined && s.target !== answer;
-    s.target = answer as string;
-    if (changed) resetAfterTarget(s);
+    applyChosenTarget(s, answer as string);
 
     if (visibleArtifacts(s).length === 0) {
       cancel(`No installable artifacts for target '${s.target}'.`);
       return 'cancel';
     }
 
-    if (s.installStatesForTarget !== s.target) {
-      const ct = chosenTarget(s);
-      if (ct) {
-        try {
-          s.installStates = await computeInstallStates(
-            visibleArtifacts(s).map(a => a.id),
-            ct,
-            s.ctx.catalog,
-            s.ctx.projectDir,
-          );
-        } catch {
-          // State detection failed — proceed without annotations (all items appear as 'new').
-          s.installStates = new Map();
-        }
-        s.installStatesForTarget = s.target;
-      }
-    }
-
+    await refreshInstallStates(s);
     return 'next';
   },
 };

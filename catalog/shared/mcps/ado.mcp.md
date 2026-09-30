@@ -1,6 +1,7 @@
 ---
 id: shared/ado
 kind: mcp
+template: shared/templates/mcp-note
 title: "Azure DevOps MCP Server"
 description: >-
   Connects Claude Code (and Copilot) to the Azure DevOps MCP server,
@@ -24,9 +25,7 @@ tags: [mcp, azure-devops, ado, work-items, shared]
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 # defaultScope: project  # recommended install scope: project | local | user
 ---
-
-<!-- Describe what this MCP server provides. The server: above is merged into .mcp.json. -->
-
+<!-- slot: details -->
 Installs the `@azure-devops/mcp` server connected to the `cr360dev` organisation,
 authenticated via Personal Access Token, exposing the `core`, `work`, and `work-items`
 ADO modules.

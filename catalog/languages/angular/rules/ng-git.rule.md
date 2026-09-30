@@ -2,10 +2,11 @@
 id: angular/ng-git
 kind: rule
 title: Git (Angular)
-description: Angular-specific git additions — .gitignore entries, public-surface deprecation, ng pre-push gate
+description: Angular-specific git additions — .gitignore entries, public-surface deprecation, ng pre-push gate.
 language: angular
 appliesTo:
   - "**/*"
+appliesToRationale: Matches shared/git — it governs commit/PR workflow, not any specific file.
 severity: recommended
 extends: [shared/git]
 tags:

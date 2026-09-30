@@ -25,12 +25,12 @@ describe('P — computeInstallStates', () => {
     const target = new ClaudeCodeTarget();
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-state-'));
     try {
-      const states = await computeInstallStates(
-        ['shared/clean-code'],
+      const states = await computeInstallStates({
+        candidateIds: ['shared/clean-code'],
         target,
-        resolvedCatalog,
-        dir,
-      );
+        catalog: resolvedCatalog,
+        projectDir: dir,
+      });
       const entry = states.get('shared/clean-code');
       assert.ok(entry, 'entry must be present');
       assert.equal(entry.state, 'new', `expected 'new', got '${entry.state}'`);
@@ -72,12 +72,12 @@ describe('P — computeInstallStates', () => {
         ],
       } as ReturnType<typeof loadManifest>);
 
-      const states = await computeInstallStates(
-        ['shared/clean-code'],
+      const states = await computeInstallStates({
+        candidateIds: ['shared/clean-code'],
         target,
-        resolvedCatalog,
-        dir,
-      );
+        catalog: resolvedCatalog,
+        projectDir: dir,
+      });
       const entry = states.get('shared/clean-code');
       assert.ok(entry, 'entry must be present');
       assert.equal(entry.state, 'up-to-date', `expected 'up-to-date', got '${entry.state}'`);
@@ -123,12 +123,12 @@ describe('P — computeInstallStates', () => {
       const firstRelPath = Object.keys(freshFiles)[0]!;
       fs.writeFileSync(path.join(dir, firstRelPath), '# User-modified content\n', 'utf-8');
 
-      const states = await computeInstallStates(
-        ['shared/clean-code'],
+      const states = await computeInstallStates({
+        candidateIds: ['shared/clean-code'],
         target,
-        resolvedCatalog,
-        dir,
-      );
+        catalog: resolvedCatalog,
+        projectDir: dir,
+      });
       const entry = states.get('shared/clean-code');
       assert.ok(entry, 'entry must be present');
       assert.equal(entry.state, 'drifted', `expected 'drifted', got '${entry.state}'`);
@@ -167,12 +167,12 @@ describe('P — computeInstallStates', () => {
         ],
       } as ReturnType<typeof loadManifest>);
 
-      const states = await computeInstallStates(
-        ['shared/clean-code'],
+      const states = await computeInstallStates({
+        candidateIds: ['shared/clean-code'],
         target,
-        resolvedCatalog,
-        dir,
-      );
+        catalog: resolvedCatalog,
+        projectDir: dir,
+      });
       const entry = states.get('shared/clean-code');
       assert.ok(entry, 'entry must be present');
       assert.equal(entry.state, 'missing', `expected 'missing', got '${entry.state}'`);
@@ -198,12 +198,12 @@ describe('P — computeInstallStates', () => {
       }
       // No manifest written — directory has no .sigil/manifest.json
 
-      const states = await computeInstallStates(
-        ['shared/clean-code'],
+      const states = await computeInstallStates({
+        candidateIds: ['shared/clean-code'],
         target,
-        resolvedCatalog,
-        dir,
-      );
+        catalog: resolvedCatalog,
+        projectDir: dir,
+      });
       const entry = states.get('shared/clean-code');
       assert.ok(entry, 'entry must be present');
       assert.equal(entry.state, 'foreign', `expected 'foreign', got '${entry.state}'`);
@@ -254,12 +254,12 @@ describe('P — computeInstallStates', () => {
         );
       }
 
-      const states = await computeInstallStates(
-        ['shared/clean-code'],
+      const states = await computeInstallStates({
+        candidateIds: ['shared/clean-code'],
         target,
-        resolvedCatalog,
-        dir,
-      );
+        catalog: resolvedCatalog,
+        projectDir: dir,
+      });
       const entry = states.get('shared/clean-code');
       assert.ok(entry, 'entry must be present');
       // disk == recorded (not drifted), but fresh catalog != recorded → outdated
@@ -300,12 +300,12 @@ describe('P — computeInstallStates', () => {
       } as ReturnType<typeof loadManifest>);
 
       // shared/code-reviewer is NOT installed → new
-      const states = await computeInstallStates(
-        ['shared/clean-code', 'shared/code-reviewer'],
+      const states = await computeInstallStates({
+        candidateIds: ['shared/clean-code', 'shared/code-reviewer'],
         target,
-        resolvedCatalog,
-        dir,
-      );
+        catalog: resolvedCatalog,
+        projectDir: dir,
+      });
 
       assert.equal(states.size, 2, 'must return an entry for each candidate');
       assert.equal(

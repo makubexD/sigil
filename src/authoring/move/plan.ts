@@ -4,6 +4,7 @@
  */
 import path from 'path';
 import type { Artifact, LoadedCatalog } from '../../types';
+import { SKILL_FILENAME, ID_PART_COUNT } from '../../paths';
 
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 
@@ -29,7 +30,7 @@ export function computeDestinationPath(newId: string, kind: string, catalogDir: 
       : path.join(catalogDir, 'languages', prefix);
 
   if (kind === 'skill') {
-    return path.join(base, 'skills', name, 'SKILL.md');
+    return path.join(base, 'skills', name, SKILL_FILENAME);
   }
   return path.join(base, `${kind}s`, `${name}.${kind}.md`);
 }
@@ -59,6 +60,64 @@ export interface MovePlan {
 
 // ─── Plan function ────────────────────────────────────────────────────────────
 
+/** Validates the move request; returns the source artifact or throws a descriptive error. */
+function resolveMoveSource(oldId: string, newId: string, catalog: LoadedCatalog): Artifact {
+  const artifact = catalog.byId.get(oldId);
+  if (!artifact) {
+    throw new Error(`Artifact '${oldId}' not found. Run \`sigil list\` to see available ids.`);
+  }
+
+  const parts = newId.split('/');
+  if (parts.length !== ID_PART_COUNT || !parts[0] || !parts[1]) {
+    throw new Error(`New id '${newId}' must be in the form '<prefix>/<name>'`);
+  }
+
+  if (catalog.byId.has(newId)) {
+    throw new Error(`Artifact '${newId}' already exists — choose a different id.`);
+  }
+
+  return artifact;
+}
+
+/** Computes the source and destination paths for a move, directory-aware for skills. */
+function resolveMovePaths(
+  artifact: Artifact,
+  newId: string,
+  catalogDir: string,
+): { sourcePath: string; destinationPath: string } {
+  const isSkill = artifact.kind === 'skill';
+  const sourcePath = isSkill ? path.dirname(artifact.filePath) : artifact.filePath;
+  const destinationPath = isSkill
+    ? path.dirname(computeDestinationPath(newId, 'skill', catalogDir))
+    : computeDestinationPath(newId, artifact.kind, catalogDir);
+  return { sourcePath, destinationPath };
+}
+
+/** Returns the `extends`/`uses.rules`/`uses.agents` fields on `a` that reference `oldId`. */
+function referrerFields(a: Artifact, oldId: string): Referrer['fields'] {
+  const fields: Referrer['fields'] = [];
+  const extendsRefs = (a.frontmatter.extends as string[] | undefined) ?? [];
+  if (extendsRefs.includes(oldId)) fields.push('extends');
+
+  const uses = a.frontmatter.uses as { rules?: string[]; agents?: string[] } | undefined;
+  if ((uses?.rules ?? []).includes(oldId)) fields.push('uses.rules');
+  if ((uses?.agents ?? []).includes(oldId)) fields.push('uses.agents');
+  return fields;
+}
+
+/** Scans the catalog for artifacts that reference `oldId` via extends/uses. */
+function scanReferrers(catalog: LoadedCatalog, oldId: string): Referrer[] {
+  const referrers: Referrer[] = [];
+  for (const a of catalog.artifacts) {
+    if (a.id === oldId) continue;
+    const fields = referrerFields(a, oldId);
+    if (fields.length > 0) {
+      referrers.push({ filePath: a.filePath, artifactId: a.id, fields });
+    }
+  }
+  return referrers;
+}
+
 /**
  * Compute a move plan without executing any I/O.
  *
@@ -73,42 +132,9 @@ export function planMove(
   catalog: LoadedCatalog,
   catalogDir: string,
 ): MovePlan {
-  const artifact = catalog.byId.get(oldId);
-  if (!artifact) {
-    throw new Error(`Artifact '${oldId}' not found. Run \`sigil list\` to see available ids.`);
-  }
-
-  const parts = newId.split('/');
-  if (parts.length !== 2 || !parts[0] || !parts[1]) {
-    throw new Error(`New id '${newId}' must be in the form '<prefix>/<name>'`);
-  }
-
-  if (catalog.byId.has(newId)) {
-    throw new Error(`Artifact '${newId}' already exists — choose a different id.`);
-  }
-
-  const isSkill = artifact.kind === 'skill';
-  const sourcePath = isSkill ? path.dirname(artifact.filePath) : artifact.filePath;
-  const destinationPath = isSkill
-    ? path.dirname(computeDestinationPath(newId, 'skill', catalogDir))
-    : computeDestinationPath(newId, artifact.kind, catalogDir);
-
-  const referrers: Referrer[] = [];
-  for (const a of catalog.artifacts) {
-    if (a.id === oldId) continue;
-    const fields: Referrer['fields'] = [];
-
-    const extendsRefs = (a.frontmatter.extends as string[] | undefined) ?? [];
-    if (extendsRefs.includes(oldId)) fields.push('extends');
-
-    const uses = a.frontmatter.uses as { rules?: string[]; agents?: string[] } | undefined;
-    if ((uses?.rules ?? []).includes(oldId)) fields.push('uses.rules');
-    if ((uses?.agents ?? []).includes(oldId)) fields.push('uses.agents');
-
-    if (fields.length > 0) {
-      referrers.push({ filePath: a.filePath, artifactId: a.id, fields });
-    }
-  }
+  const artifact = resolveMoveSource(oldId, newId, catalog);
+  const { sourcePath, destinationPath } = resolveMovePaths(artifact, newId, catalogDir);
+  const referrers = scanReferrers(catalog, oldId);
 
   return { artifact, oldId, newId, sourcePath, destinationPath, referrers };
 }

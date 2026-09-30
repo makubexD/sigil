@@ -36,6 +36,30 @@
             "type": "string"
           }
         },
+        "deprecated": {
+          "type": "object",
+          "properties": {
+            "since": {
+              "type": "string",
+              "minLength": 1
+            },
+            "reason": {
+              "type": "string",
+              "minLength": 1
+            },
+            "supersededBy": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "since",
+            "reason"
+          ],
+          "additionalProperties": false
+        },
+        "template": {
+          "type": "string"
+        },
         "language": {
           "type": "string"
         },
@@ -47,6 +71,10 @@
           "default": [
             "**/*"
           ]
+        },
+        "appliesToRationale": {
+          "type": "string",
+          "minLength": 1
         },
         "severity": {
           "type": "string",

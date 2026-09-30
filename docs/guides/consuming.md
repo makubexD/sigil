@@ -235,14 +235,24 @@ ledger that records each artifact, its files, and the SHA-256 hash of every file
 ```bash
 # See the current health of everything sigil installed
 sigil status
-# ID                          STATUS       FILES
+# ID                          STATUS       FILES                            REASON
 # csharp/cs-generate-tests        up-to-date   SKILL.md, references/assertions.md
 # shared/code-reviewer        drifted      agents/code-reviewer.md   ← you edited it
-# csharp/cs-conventions         outdated     rules/csharp-cs-conventions.md   ← catalog updated
+# csharp/cs-conventions         outdated     rules/csharp-cs-conventions.md   template workflow-skill rev 2→3
 
 # Re-scaffold outdated artifacts (skips files you edited — use --force to overwrite those too)
 sigil update
 sigil update csharp/cs-conventions   # single artifact
+```
+
+`reason` names _why_ an entry is `outdated` rather than leaving you to guess — a template revision
+bump, an `extends`/`uses` ancestor change, or a plain content edit. This is purely diagnostic on the
+consumer side: the propagation itself is still `update` (single artifact or, with no ids, everything).
+Catalog **authors** — not consumers — are the ones who run `sigil sync` to find and mechanically fix
+artifacts that drifted from their _own_ template; see `docs/guides/authoring.md` § Keeping artifacts
+in sync with their template.
+
+```bash
 
 # Remove an artifact and its files (refcount-aware: shared deps are kept if other skills need them)
 sigil uninstall skill:csharp/cs-generate-tests
@@ -257,6 +267,30 @@ sigil uninstall skill:csharp/cs-generate-tests
 | `drifted`    | You edited a file — `update` skips it; `update --force` replaces it |
 | `missing`    | A sigil-owned file was deleted — `update` restores it               |
 | `orphaned`   | Artifact removed from the catalog — safe to `sigil uninstall`       |
+
+**Detection at pick time.** `add` and the interactive wizard consult the manifest **before**
+writing, via `computeInstallStates` (`src/install-state.ts`), reusing the same `computeStatus`
+(`manifest.ts:326`) engine as `sigil status` above. This surfaces a 6-state model per candidate
+artifact — a superset of the 5 status values, adding `foreign` for files sigil didn't write:
+
+| State        | manifest | disk | content                        | Default action                             |
+| ------------ | -------- | ---- | ------------------------------ | ------------------------------------------ |
+| `new`        | no       | no   | —                              | write                                      |
+| `foreign`    | no       | yes  | —                              | conflict (files not owned by sigil)        |
+| `up-to-date` | yes      | yes  | == manifest, catalog unchanged | **skip** (reported `✓ already up to date`) |
+| `drifted`    | yes      | yes  | != manifest                    | conflict (user edited it)                  |
+| `outdated`   | yes      | yes  | == manifest, catalog changed   | conflict (suggest `sigil update`)          |
+| `missing`    | yes      | no   | —                              | write (restore)                            |
+
+- Config kinds (`mcp`/`hook`/`settings`) use `fragmentSha256` for outdated detection instead of file
+  hashes, since `entry.files` is empty for them.
+- **Wizard UX:** items always start unchecked — the "Default action" column describes the
+  non-interactive `add` path, not wizard pre-checking. The picker header shows a count like
+  `"3 already installed, 1 new"`, and each option hint shows a state glyph (`✓ installed`,
+  `✎ you edited this`, `↑ new version available`, `⚠ not installed by sigil`, `＋ new`).
+- **`add` UX (non-interactive):** up-to-date artifacts are skipped silently with
+  `= shared/foo  (✓ already up to date — skipped)`; they don't count toward the conflict summary or
+  change the exit code. `--overwrite` forces reinstall even for up-to-date artifacts.
 
 ---
 

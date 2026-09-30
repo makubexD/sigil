@@ -5,7 +5,7 @@ title: Code Quality (.NET / C#)
 description: Search-first protocol + structural size limits (method/param caps) for .NET / C# — prevents duplication and complexity creep
 language: csharp
 appliesTo:
-  - "**/*"
+  - "**/*.cs"
 severity: recommended
 extends:
   - shared/clean-code

@@ -12,11 +12,11 @@ export type { SelectionFilters, SkippedArtifact, SelectionResult } from './selec
 export {
   KIND_ORDER,
   CONFIG_KINDS,
-  resolveSelection,
   artifactLanguage,
   isAgnostic,
   artifactTargetsPlatform,
 } from './selection';
+export { resolveSelection, type ResolveSelectionOptions } from './selector-resolve';
 
 export { kindNoun, kindPlural, kindHint, artifactLabel, artifactHint } from './vocabulary';
 

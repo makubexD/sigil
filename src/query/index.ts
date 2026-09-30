@@ -6,7 +6,8 @@
  *   search — SearchResult, SearchFilters, searchArtifacts, formatSearchResults
  */
 export type { ArtifactDetail } from './detail';
-export { getArtifactDetail, formatDetailText } from './detail';
+export { getArtifactDetail } from './detail';
+export { formatDetailText } from './detail-format';
 
 export type { SearchResult, SearchFilters } from './search';
 export { searchArtifacts, formatSearchResults } from './search';

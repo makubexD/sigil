@@ -5,8 +5,6 @@ title: "Generate Component (Angular)"
 description: "Scaffold a component, directive, service, pipe, or guard plus its spec, following the project's discovered era and conventions"
 name: ng-generate-component
 language: angular
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Write

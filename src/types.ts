@@ -13,7 +13,8 @@ export type ArtifactKind =
   | 'workflow'
   | 'hook'
   | 'settings'
-  | 'mcp';
+  | 'mcp'
+  | 'template';
 
 /**
  * A reference file bundled alongside a skill (e.g. references/assertions.md).
@@ -57,6 +58,13 @@ export interface LoadedCatalog {
   artifacts: Artifact[];
   byId: Map<string, Artifact>;
   languages: Map<string, LanguageMetadata>; // keyed by language id
+  /**
+   * Human-readable reasons a source file was skipped during load (e.g. missing
+   * `id`/`kind` in frontmatter). Collected rather than printed at load time —
+   * load.ts is platform-neutral domain code and must not own presentation;
+   * the CLI layer decides whether/how to display these.
+   */
+  skipWarnings: string[];
 }
 
 // ─── Resolved catalog ─────────────────────────────────────────────────────────
@@ -66,8 +74,29 @@ export interface LoadedCatalog {
  * Rules have their `extends` chain flattened; skills have their `uses` closure expanded.
  */
 export interface ResolvedArtifact extends Artifact {
-  /** For rules: body with all ancestor extends bodies prepended (oldest ancestor first). */
+  /**
+   * The artifact's effective body after composition: template slot-filling (if `template:` is
+   * set) followed by the `extends` ancestor-prepend (rules only). This is the DEFAULT rendering
+   * every adapter gets for free by reading `resolvedBody ?? body`. Adapters that need a different
+   * arrangement should build from `resolvedSlots` / `resolvedAncestorBodies` instead — see
+   * BodySectionSpec in src/targets/spec-types.ts.
+   */
   resolvedBody?: string;
+  /**
+   * The artifact's slot contents, keyed by slot name, as composed against its `template:` (if
+   * any). Lets a target adapter re-arrange, relabel, or split the body differently from the
+   * default `resolvedBody` concatenation without any catalog-side change. Undefined when the
+   * artifact has no `template:`.
+   */
+  resolvedSlots?: Record<string, string>;
+  /** The `template:` id this artifact was composed against, if any. */
+  templateId?: string;
+  /**
+   * For rules: each ancestor's own resolved body, oldest-first, UNFLATTENED — i.e. the inputs to
+   * the `resolvedBody` join, exposed individually so an adapter can render inherited rules as
+   * separate sections instead of one concatenated blob.
+   */
+  resolvedAncestorBodies?: string[];
   /** For skills: the fully resolved rule artifacts from uses.rules (with THEIR extends flattened). */
   resolvedRules?: ResolvedArtifact[];
   /** For skills: agent IDs from uses.agents (looked up at emit time). */
@@ -390,7 +419,7 @@ export interface Target {
    * Declaring them here lets the `init` command iterate all targets without hardcoding
    * target names or directory structures in shared CLI code.
    *
-   * Example: Claude Code declares ['.claude/skills', '.claude/rules', '.claude/agents', '.claude/commands']
+   * Example: Claude Code declares ['.claude/skills', '.claude/rules', '.claude/agents']
    */
   initDirs?: string[];
 
@@ -417,6 +446,24 @@ export interface Target {
    * its own authoring surface without cli.ts hardcoding per-platform flags.
    */
   authoringFields?: readonly AuthoringField[];
+
+  /**
+   * Frontmatter fields this target adds to a given kind, nested under a `<target.name>:` key
+   * in catalog source (e.g. `claude: { model: opus }`) rather than in the neutral schema.
+   *
+   * This is THE extension point for provider-specific frontmatter. A field that only one
+   * provider understands must go here, never as a bare top-level field in src/schema/index.ts —
+   * see CLAUDE.md's platform-neutral pipeline invariant. src/validate/schema-checks.ts composes
+   * the effective per-artifact schema by merging every registered target's declaration here for
+   * the artifact's kind; it iterates the target registry and never names a provider, so adding a
+   * new target's fields never requires editing the neutral schema or the validator.
+   *
+   * Each value is a zod raw shape (the second argument to `z.object()`), e.g.
+   * `{ skill: { allowedTools: z.array(z.string()).optional() } }`.
+   * Use `unknown` here (not a template param) to avoid coupling this file to zod's types;
+   * consumers cast via `z.object(shape as z.ZodRawShape)`.
+   */
+  frontmatterExtensions?: Partial<Record<ArtifactKind, Record<string, unknown>>>;
 }
 
 /** One platform-namespaced authoring field a target contributes to `sigil patch`/`sigil new`. */

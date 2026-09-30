@@ -9,6 +9,20 @@
 import type { ResolvedArtifact, ArtifactKind } from '../types';
 import { KIND_ORDER, CONFIG_KINDS, artifactLanguage } from './selection';
 
+/** `KIND_ORDER` as a lookup table, built once at module scope (KIND_ORDER is frozen at import time). */
+const KIND_INDEX: Record<string, number> = Object.fromEntries(KIND_ORDER.map((k, i) => [k, i]));
+
+/**
+ * Sorts by KIND_ORDER position, then by id. A kind absent from KIND_ORDER (should not
+ * happen — KIND_REGISTRY's Record<ArtifactKind, …> constraint prevents it) sorts after
+ * every known kind, via KIND_ORDER.length rather than an arbitrary sentinel.
+ */
+function compareByKindThenId(a: ResolvedArtifact, b: ResolvedArtifact): number {
+  const ai = KIND_INDEX[a.kind] ?? KIND_ORDER.length;
+  const bi = KIND_INDEX[b.kind] ?? KIND_ORDER.length;
+  return ai !== bi ? ai - bi : a.id.localeCompare(b.id);
+}
+
 /**
  * Returns the distinct artifact kinds present in the given array, in KIND_ORDER.
  * Used by the wizard to build "By kind" option lists from only the artifact kinds
@@ -46,6 +60,31 @@ export function buildLanguageOptions(
   ];
 }
 
+/** Buckets artifacts by language key ('shared' for language-undefined), each sorted internally. */
+function bucketByLanguage(artifacts: ResolvedArtifact[]): Map<string, ResolvedArtifact[]> {
+  const buckets = new Map<string, ResolvedArtifact[]>();
+  for (const a of artifacts) {
+    const key = artifactLanguage(a) ?? 'shared';
+    const bucket = buckets.get(key);
+    if (bucket) {
+      bucket.push(a);
+    } else {
+      buckets.set(key, [a]);
+    }
+  }
+  for (const group of buckets.values()) {
+    group.sort(compareByKindThenId);
+  }
+  return buckets;
+}
+
+/** Real languages alphabetical, 'shared' always last. */
+function compareLanguageKeys(a: string, b: string): number {
+  if (a === 'shared') return 1;
+  if (b === 'shared') return -1;
+  return a.localeCompare(b);
+}
+
 /**
  * Groups artifacts by language for the grouped-multiselect picker in the wizard.
  *
@@ -70,30 +109,13 @@ export function groupArtifactsByLanguage(
       })
     : artifacts;
 
-  const buckets = new Map<string, ResolvedArtifact[]>();
-  for (const a of filtered) {
-    const key = artifactLanguage(a) ?? 'shared';
-    if (!buckets.has(key)) buckets.set(key, []);
-    buckets.get(key)!.push(a);
-  }
-
-  const kindIndex: Record<string, number> = Object.fromEntries(KIND_ORDER.map((k, i) => [k, i]));
-  for (const group of buckets.values()) {
-    group.sort((a, b) => {
-      const ki = (kindIndex[a.kind] ?? 99) - (kindIndex[b.kind] ?? 99);
-      return ki !== 0 ? ki : a.id.localeCompare(b.id);
-    });
-  }
-
-  const sortedKeys = [...buckets.keys()].sort((a, b) => {
-    if (a === 'shared') return 1;
-    if (b === 'shared') return -1;
-    return a.localeCompare(b);
-  });
+  const buckets = bucketByLanguage(filtered);
+  const sortedKeys = [...buckets.keys()].sort(compareLanguageKeys);
 
   const result: Record<string, ResolvedArtifact[]> = {};
   for (const key of sortedKeys) {
-    result[key] = buckets.get(key)!;
+    const bucket = buckets.get(key);
+    if (bucket) result[key] = bucket;
   }
   return result;
 }
@@ -112,13 +134,7 @@ export function partitionConfigKinds(artifacts: ResolvedArtifact[]): {
   config: ResolvedArtifact[];
   rest: ResolvedArtifact[];
 } {
-  const kindIndex: Record<string, number> = Object.fromEntries(KIND_ORDER.map((k, i) => [k, i]));
-  const config = artifacts
-    .filter(a => CONFIG_KINDS.has(a.kind))
-    .sort((a, b) => {
-      const ki = (kindIndex[a.kind] ?? 99) - (kindIndex[b.kind] ?? 99);
-      return ki !== 0 ? ki : a.id.localeCompare(b.id);
-    });
+  const config = artifacts.filter(a => CONFIG_KINDS.has(a.kind)).sort(compareByKindThenId);
   const rest = artifacts.filter(a => !CONFIG_KINDS.has(a.kind));
   return { config, rest };
 }

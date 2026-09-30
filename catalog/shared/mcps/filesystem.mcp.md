@@ -1,6 +1,7 @@
 ---
 id: shared/filesystem
 kind: mcp
+template: shared/templates/mcp-note
 title: "Filesystem MCP Server"
 description: >-
   Connects Claude Code (and Copilot) to the official MCP filesystem server,
@@ -12,9 +13,7 @@ tags: [mcp, filesystem, tools, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 ---
-
-<!-- Describe what this MCP server provides. The server: above is merged into .mcp.json. -->
-
+<!-- slot: details -->
 Installs the official `@modelcontextprotocol/server-filesystem` MCP server scoped to
 the current directory (`.`).
 

@@ -100,16 +100,15 @@ describe('H — Manifest (manifest.ts)', () => {
         ['shared/clean-code', ['csharp/cs-generate-tests']],
       ]);
 
-      upsertEntries(
-        manifest as any,
-        'claude',
-        ['csharp/cs-generate-tests'],
+      upsertEntries(manifest as any, {
+        target: 'claude',
+        primaryIds: ['csharp/cs-generate-tests'],
         depMap,
         filesByArtifact,
-        dir,
-        '0.1.0',
-        '2026-01-01T00:00:00Z',
-      );
+        projectDir: dir,
+        sigilVersion: '0.1.0',
+        now: '2026-01-01T00:00:00Z',
+      });
 
       assert.equal(manifest.entries.length, 2, 'two entries recorded');
 
@@ -154,6 +153,7 @@ describe('H — Manifest (manifest.ts)', () => {
       assert.equal(statuses[0]!.status, 'up-to-date');
       assert.deepEqual(statuses[0]!.driftedFiles, []);
       assert.deepEqual(statuses[0]!.missingFiles, []);
+      assert.equal(statuses[0]!.reason, undefined, 'no reason for up-to-date');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -180,6 +180,7 @@ describe('H — Manifest (manifest.ts)', () => {
       const statuses = computeStatus(manifest as any, dir, new Set(['test/skill']));
       assert.equal(statuses[0]!.status, 'missing');
       assert.ok(statuses[0]!.missingFiles.length > 0, 'missingFiles non-empty');
+      assert.match(statuses[0]!.reason ?? '', /missing file\(s\): does-not-exist\.md/);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -209,6 +210,7 @@ describe('H — Manifest (manifest.ts)', () => {
       const statuses = computeStatus(manifest as any, dir, new Set(['test/skill']));
       assert.equal(statuses[0]!.status, 'drifted');
       assert.ok(statuses[0]!.driftedFiles.includes(relPath), 'driftedFiles contains the file');
+      assert.match(statuses[0]!.reason ?? '', /local edits differ from installed content/);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -239,6 +241,79 @@ describe('H — Manifest (manifest.ts)', () => {
       // catalogIds does NOT include 'removed/skill'
       const statuses = computeStatus(manifest as any, dir, new Set(['some/other-artifact']));
       assert.equal(statuses[0]!.status, 'orphaned');
+      assert.equal(statuses[0]!.reason, 'no longer present in the bundled catalog');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('computeStatus: outdated with a template-revision reason when the recorded revision is stale', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-test-'));
+    try {
+      const relPath = 'file.md';
+      const content = '# Content';
+      fs.writeFileSync(path.join(dir, relPath), content, 'utf-8');
+
+      const manifest = {
+        manifestVersion: MANIFEST_VERSION,
+        entries: [
+          {
+            id: 'test/skill',
+            kind: 'skill',
+            target: 'claude',
+            sigilVersion: '0.1.0',
+            files: [{ path: relPath, sha256: sha256(content) }],
+            dependentOf: [],
+            installedAt: '2026-01-01T00:00:00Z',
+            template: { id: 'shared/templates/workflow-skill', revision: 2 },
+          },
+        ],
+      };
+
+      const currentTemplateOf = (id: string) =>
+        id === 'test/skill' ? { id: 'shared/templates/workflow-skill', revision: 3 } : undefined;
+
+      const statuses = computeStatus(manifest as any, dir, new Set(['test/skill']), {
+        currentTemplateOf,
+      });
+      assert.equal(statuses[0]!.status, 'outdated');
+      assert.equal(statuses[0]!.reason, 'template shared/templates/workflow-skill rev 2→3');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('computeStatus: up-to-date (not outdated) when the recorded template revision still matches', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-test-'));
+    try {
+      const relPath = 'file.md';
+      const content = '# Content';
+      fs.writeFileSync(path.join(dir, relPath), content, 'utf-8');
+
+      const manifest = {
+        manifestVersion: MANIFEST_VERSION,
+        entries: [
+          {
+            id: 'test/skill',
+            kind: 'skill',
+            target: 'claude',
+            sigilVersion: '0.1.0',
+            files: [{ path: relPath, sha256: sha256(content) }],
+            dependentOf: [],
+            installedAt: '2026-01-01T00:00:00Z',
+            template: { id: 'shared/templates/workflow-skill', revision: 3 },
+          },
+        ],
+      };
+
+      const currentTemplateOf = (id: string) =>
+        id === 'test/skill' ? { id: 'shared/templates/workflow-skill', revision: 3 } : undefined;
+
+      const statuses = computeStatus(manifest as any, dir, new Set(['test/skill']), {
+        currentTemplateOf,
+      });
+      assert.equal(statuses[0]!.status, 'up-to-date');
+      assert.equal(statuses[0]!.reason, undefined);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -362,16 +437,15 @@ describe('L — Manifest config entries (manifest.ts)', () => {
   it('upsertConfigEntry records configFiles with fragmentSha256', () => {
     const manifest = { manifestVersion: 2, entries: [] as any[] };
     const op = makeOp('.claude/settings.json');
-    upsertConfigEntry(
-      manifest as any,
-      'shared/allow-dev-tools',
-      'settings',
-      'claude',
-      [op],
-      [],
-      VERSION,
-      '2026-01-01T00:00:00Z',
-    );
+    upsertConfigEntry(manifest as any, {
+      id: 'shared/allow-dev-tools',
+      kind: 'settings',
+      target: 'claude',
+      ops: [op],
+      dependentOf: [],
+      sigilVersion: VERSION,
+      now: '2026-01-01T00:00:00Z',
+    });
     assert.equal(manifest.entries.length, 1);
     const entry = manifest.entries[0];
     assert.equal(entry.kind, 'settings');
@@ -383,26 +457,24 @@ describe('L — Manifest config entries (manifest.ts)', () => {
   it('upsertConfigEntry merges parentIds on re-install', () => {
     const manifest = { manifestVersion: 2, entries: [] as any[] };
     const op = makeOp('.claude/settings.json');
-    upsertConfigEntry(
-      manifest as any,
-      'shared/allow-dev-tools',
-      'settings',
-      'claude',
-      [op],
-      ['skill-a'],
-      VERSION,
-      '2026-01-01T00:00:00Z',
-    );
-    upsertConfigEntry(
-      manifest as any,
-      'shared/allow-dev-tools',
-      'settings',
-      'claude',
-      [op],
-      ['skill-b'],
-      VERSION,
-      '2026-01-01T00:00:00Z',
-    );
+    upsertConfigEntry(manifest as any, {
+      id: 'shared/allow-dev-tools',
+      kind: 'settings',
+      target: 'claude',
+      ops: [op],
+      dependentOf: ['skill-a'],
+      sigilVersion: VERSION,
+      now: '2026-01-01T00:00:00Z',
+    });
+    upsertConfigEntry(manifest as any, {
+      id: 'shared/allow-dev-tools',
+      kind: 'settings',
+      target: 'claude',
+      ops: [op],
+      dependentOf: ['skill-b'],
+      sigilVersion: VERSION,
+      now: '2026-01-01T00:00:00Z',
+    });
     const entry = manifest.entries[0];
     assert.ok(entry.dependentOf.includes('skill-a'));
     assert.ok(entry.dependentOf.includes('skill-b'));
@@ -417,16 +489,15 @@ describe('L — Manifest config entries (manifest.ts)', () => {
     fs.writeFileSync(settingsPath, canonicalize(installed), 'utf-8');
 
     const manifest = { manifestVersion: 2, entries: [] as any[] };
-    upsertConfigEntry(
-      manifest as any,
-      'shared/allow-dev-tools',
-      'settings',
-      'claude',
-      [op],
-      [],
-      VERSION,
-      '2026-01-01T00:00:00Z',
-    );
+    upsertConfigEntry(manifest as any, {
+      id: 'shared/allow-dev-tools',
+      kind: 'settings',
+      target: 'claude',
+      ops: [op],
+      dependentOf: [],
+      sigilVersion: VERSION,
+      now: '2026-01-01T00:00:00Z',
+    });
 
     const { computeStatus: computeStatus2 } = require('../dist-cli/manifest/index');
     const results = computeStatus2(manifest, tmpDir, new Set(['shared/allow-dev-tools']));
@@ -441,16 +512,15 @@ describe('L — Manifest config entries (manifest.ts)', () => {
 
     const op = makeOp('.claude/settings.json');
     const manifest = { manifestVersion: 2, entries: [] as any[] };
-    upsertConfigEntry(
-      manifest as any,
-      'shared/allow-dev-tools',
-      'settings',
-      'claude',
-      [op],
-      [],
-      VERSION,
-      '2026-01-01T00:00:00Z',
-    );
+    upsertConfigEntry(manifest as any, {
+      id: 'shared/allow-dev-tools',
+      kind: 'settings',
+      target: 'claude',
+      ops: [op],
+      dependentOf: [],
+      sigilVersion: VERSION,
+      now: '2026-01-01T00:00:00Z',
+    });
 
     const { computeStatus: computeStatus2 } = require('../dist-cli/manifest/index');
     const results = computeStatus2(manifest, tmpDir, new Set(['shared/allow-dev-tools']));
@@ -467,16 +537,15 @@ describe('L — Manifest config entries (manifest.ts)', () => {
     fs.writeFileSync(settingsPath, JSON.stringify(withUserKey), 'utf-8');
 
     const manifest = { manifestVersion: 2, entries: [] as any[] };
-    upsertConfigEntry(
-      manifest as any,
-      'shared/allow-dev-tools',
-      'settings',
-      'claude',
-      [op],
-      [],
-      VERSION,
-      '2026-01-01T00:00:00Z',
-    );
+    upsertConfigEntry(manifest as any, {
+      id: 'shared/allow-dev-tools',
+      kind: 'settings',
+      target: 'claude',
+      ops: [op],
+      dependentOf: [],
+      sigilVersion: VERSION,
+      now: '2026-01-01T00:00:00Z',
+    });
 
     const { computeStatus: computeStatus2 } = require('../dist-cli/manifest/index');
     const results = computeStatus2(manifest, tmpDir, new Set(['shared/allow-dev-tools']));

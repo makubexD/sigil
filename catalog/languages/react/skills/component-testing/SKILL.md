@@ -7,11 +7,6 @@ description: >-
   Use when adding or reviewing tests for React components. Covers React Testing Library,
   user-event, async queries, mocking, and accessibility assertions.
 language: react
-appliesTo:
-  - "**/*.tsx"
-  - "**/*.jsx"
-  - "**/*.test.tsx"
-  - "**/*.test.jsx"
 uses:
   rules:
     - react/react-style

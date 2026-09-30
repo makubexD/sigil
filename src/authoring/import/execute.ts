@@ -55,6 +55,70 @@ export interface ExecuteOptions {
   overwrite?: boolean;
 }
 
+/** Renders content and validates it against the catalog; throws-free — returns violations. */
+function renderAndValidate(
+  item: ImportItem,
+  catalog: LoadedCatalog,
+  targets: Target[],
+): { content: string; violations: string[] } {
+  const content = renderArtifactFile(item.frontmatter, item.body);
+  const artifact = makeArtifactFromContent(content, item.destPath);
+  const violations = checkSourceArtifact(artifact, catalog, targets);
+  return { content, violations: violations.map(v => v.problem) };
+}
+
+/** Writes rendered content to disk, creating parent directories as needed. */
+function writeItemToDisk(destPath: string, content: string): void {
+  fs.mkdirSync(path.dirname(destPath), { recursive: true });
+  fs.writeFileSync(destPath, content, 'utf-8');
+}
+
+/** Renders, validates, and (if valid) writes one item; never throws — errors become violations. */
+function tryWriteImportItem(
+  item: ImportItem,
+  catalog: LoadedCatalog,
+  targets: Target[],
+): { status: 'written' | 'error'; violations: string[] } {
+  try {
+    // Render content in memory and validate BEFORE touching disk.
+    // Any schema/convention violation aborts this item without writing.
+    const { content, violations } = renderAndValidate(item, catalog, targets);
+    if (violations.length > 0) return { status: 'error', violations };
+    writeItemToDisk(item.destPath, content);
+    return { status: 'written', violations: [] };
+  } catch (err) {
+    return { status: 'error', violations: [err instanceof Error ? err.message : String(err)] };
+  }
+}
+
+/** Renders + validates one item; writes to disk only when validation passes. */
+function writeOneImportItem(
+  item: ImportItem,
+  catalog: LoadedCatalog,
+  targets: Target[],
+): ImportFileResult {
+  const { status, violations } = tryWriteImportItem(item, catalog, targets);
+  return { relativePath: item.relativePath, destPath: item.destPath, status, violations };
+}
+
+/** Processes one import item: skip on conflict (without --overwrite), else render+write. */
+function processImportItem(
+  item: ImportItem,
+  catalog: LoadedCatalog,
+  targets: Target[],
+  overwrite: boolean | undefined,
+): ImportFileResult {
+  if (item.conflicts && !overwrite) {
+    return {
+      relativePath: item.relativePath,
+      destPath: item.destPath,
+      status: 'skipped-conflict',
+      violations: [],
+    };
+  }
+  return writeOneImportItem(item, catalog, targets);
+}
+
 /**
  * Write all planned import items to the catalog directory.
  *
@@ -69,62 +133,12 @@ export function executeImport(
   targets: Target[],
   opts: ExecuteOptions = {},
 ): ExecuteResult {
-  let written = 0;
-  let skipped = 0;
-  let errors = 0;
-  const fileResults: ImportFileResult[] = [];
+  const fileResults = items.map(item => processImportItem(item, catalog, targets, opts.overwrite));
 
-  for (const item of items) {
-    // Conflict check
-    if (item.conflicts && !opts.overwrite) {
-      skipped++;
-      fileResults.push({
-        relativePath: item.relativePath,
-        destPath: item.destPath,
-        status: 'skipped-conflict',
-        violations: [],
-      });
-      continue;
-    }
-
-    try {
-      // Render content in memory and validate BEFORE touching disk.
-      // Any schema/convention violation aborts this item without writing.
-      const content = renderArtifactFile(item.frontmatter, item.body);
-      const artifact = makeArtifactFromContent(content, item.destPath);
-      const violations = checkSourceArtifact(artifact, catalog, targets);
-
-      if (violations.length > 0) {
-        errors++;
-        fileResults.push({
-          relativePath: item.relativePath,
-          destPath: item.destPath,
-          status: 'error',
-          violations: violations.map(v => v.problem),
-        });
-        continue;
-      }
-
-      // Validation passed — now write to disk.
-      fs.mkdirSync(path.dirname(item.destPath), { recursive: true });
-      fs.writeFileSync(item.destPath, content, 'utf-8');
-      written++;
-      fileResults.push({
-        relativePath: item.relativePath,
-        destPath: item.destPath,
-        status: 'written',
-        violations: [],
-      });
-    } catch (err) {
-      errors++;
-      fileResults.push({
-        relativePath: item.relativePath,
-        destPath: item.destPath,
-        status: 'error',
-        violations: [err instanceof Error ? err.message : String(err)],
-      });
-    }
-  }
-
-  return { written, skipped, errors, fileResults };
+  return {
+    written: fileResults.filter(r => r.status === 'written').length,
+    skipped: fileResults.filter(r => r.status === 'skipped-conflict').length,
+    errors: fileResults.filter(r => r.status === 'error').length,
+    fileResults,
+  };
 }

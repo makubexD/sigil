@@ -5,8 +5,6 @@ title: "Document (Angular)"
 description: "Generate or update TSDoc and module-level documentation following the project's documented documentation style"
 name: ng-document
 language: angular
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Write

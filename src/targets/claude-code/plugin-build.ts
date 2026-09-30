@@ -8,14 +8,18 @@
  *       .claude-plugin/plugin.json
  *       skills/<skill-name>/SKILL.md   ← rule bodies inlined as "## Applied Rules"
  *       agents/<agent-name>.md
- *       commands/<workflow-name>.md
+ *       skills/<workflow-name>/SKILL.md ← disable-model-invocation: true (user-invoked only)
  *
- * Rules are inlined into SKILL.md because Claude Code plugins cannot ship loose rules.
+ * Rules are inlined into SKILL.md here because Claude Code plugins cannot ship loose
+ * rules. `buildPluginSkillMd`'s `inlineRules` parameter is what this file threads
+ * through as `true` — the CLI scaffold path (scaffold.ts) reuses the same builder with
+ * `false`, since it writes .claude/rules/*.md files that load natively instead.
  */
-import type { ResolvedCatalog, ResolvedArtifact, FileMap, Pack } from '../../types';
-import type { AgentFrontmatter } from '../../schema';
-import { yamlScalar } from '../yaml-util';
-import { renderBoundarySection } from '../shared/boundary';
+import type { ResolvedCatalog, ResolvedArtifact, Pack } from '../../types';
+import { renderArtifact } from '../emit';
+import { CLAUDE_PLUGIN_SKILL_SPEC, CLAUDE_SCAFFOLD_SKILL_SPEC } from './spec/skill';
+import { CLAUDE_AGENT_SPEC } from './spec/agent';
+import { CLAUDE_WORKFLOW_SPEC } from './spec/workflow';
 
 /**
  * Select the artifacts that belong to a pack.
@@ -38,50 +42,23 @@ export function getPackArtifacts(pack: Pack, catalog: ResolvedCatalog): Resolved
 }
 
 /**
- * Build a SKILL.md for the Claude plugin layout.
+ * Build a SKILL.md.
  *
- * The resolved rule bodies are appended under "## Applied Rules" so
- * the guidance is present in context when the skill fires.
- * This inlining is plugin-build only — in the scaffold path rules are
- * written to .claude/rules/*.md and loaded natively.
+ * `inlineRules` controls whether resolved rule bodies are appended under "## Applied Rules":
+ * `true` for the plugin-build path (`dist/claude/` — plugins cannot ship loose rules, so this is
+ * the only way the guidance reaches the model), `false` for the CLI scaffold path
+ * (`.claude/skills/` — rules are written to sibling `.claude/rules/*.md` files there and loaded
+ * natively, so inlining would duplicate content already resident in context).
+ *
+ * Delegates to the declarative spec in `spec/skill.ts` — see spec-types.ts for why the format
+ * knowledge lives there rather than here. Skills have no `paths:` equivalent — Claude Code loads
+ * skills by description relevance, not file path (path-scoped loading is a `.claude/rules/*.md`-
+ * only mechanism). `whenToUse` is what actually drives model-invoked dispatch: it feeds
+ * `when_to_use:`, which Claude Code appends to `description` in the skill listing.
  */
-export function buildPluginSkillMd(skill: ResolvedArtifact): string {
-  const fm = skill.frontmatter;
-  const name = fm.name as string;
-  const description = fm.description as string;
-  const appliesTo = (fm.appliesTo as string[] | undefined) ?? ['**/*'];
-
-  // `paths:` is the Claude Code–recognized key for path-scoped loading.
-  const allowedTools = fm.allowedTools as string[] | undefined;
-  const argumentHint = fm.argumentHint as string | undefined;
-  const disableModelInvocation = fm.disableModelInvocation as boolean | undefined;
-
-  const fmLines = [
-    '---',
-    `name: ${name}`,
-    `description: ${yamlScalar(description)}`,
-    ...(appliesTo.length > 0 ? [`paths:\n${appliesTo.map(g => `  - "${g}"`).join('\n')}`] : []),
-    ...(allowedTools && allowedTools.length > 0
-      ? [`allowed-tools: ${allowedTools.join(', ')}`]
-      : []),
-    ...(argumentHint ? [`argument-hint: "${argumentHint.replace(/"/g, '\\"')}"`] : []),
-    ...(disableModelInvocation ? [`disable-model-invocation: true`] : []),
-    '---',
-  ];
-  const frontmatter = fmLines.join('\n');
-
-  const parts = [frontmatter, '', skill.body];
-
-  const rules = skill.resolvedRules ?? [];
-  if (rules.length > 0) {
-    parts.push('', '---', '', '## Applied Rules', '');
-    for (const rule of rules) {
-      const ruleTitle = rule.frontmatter.title as string;
-      parts.push(`### ${ruleTitle}`, '', rule.resolvedBody ?? rule.body, '');
-    }
-  }
-
-  return parts.join('\n').trimEnd() + '\n';
+export function buildPluginSkillMd(skill: ResolvedArtifact, inlineRules: boolean): string {
+  const spec = inlineRules ? CLAUDE_PLUGIN_SKILL_SPEC : CLAUDE_SCAFFOLD_SKILL_SPEC;
+  return renderArtifact(spec, skill, {});
 }
 
 /**
@@ -95,154 +72,19 @@ export function buildPluginSkillMd(skill: ResolvedArtifact): string {
  * When `installSet` is absent (standalone scaffold with no context), the section
  * is omitted entirely. When all related artifacts are absent from `installSet`,
  * the section is also omitted.
+ *
+ * Delegates to the declarative spec in `spec/agent.ts` — see spec-types.ts for why the format
+ * knowledge lives there rather than here.
  */
 export function buildAgentMd(
   agent: ResolvedArtifact,
   catalog?: ResolvedCatalog,
   installSet?: Set<string>,
 ): string {
-  const fm = agent.frontmatter;
-  const claudeHints = (fm.claude as AgentFrontmatter['claude']) ?? {};
-
-  const frontmatterLines = [
-    '---',
-    `name: ${fm.name}`,
-    `description: ${yamlScalar(fm.description as string)}`,
-  ];
-  if (claudeHints?.model) frontmatterLines.push(`model: ${claudeHints.model}`);
-  if (claudeHints?.effort) frontmatterLines.push(`effort: ${claudeHints.effort}`);
-  if (claudeHints?.maxTurns) frontmatterLines.push(`maxTurns: ${claudeHints.maxTurns}`);
-  if (claudeHints?.isolation) frontmatterLines.push(`isolation: ${claudeHints.isolation}`);
-
-  const disallowed = fm.disallowedTools as string[] | undefined;
-  if (disallowed && disallowed.length > 0) {
-    frontmatterLines.push(`disallowedTools: ${JSON.stringify(disallowed)}`);
-  }
-  frontmatterLines.push('---');
-
-  // ── Conditional Boundary section ─────────────────────────────────────────────
-  // Generate a structured escalation section from relatedArtifacts frontmatter,
-  // but only for siblings that are co-present in the install/build set.
-  // No installSet → no section (standalone install, can't know what's co-present).
-  const boundaryLines = renderBoundarySection(agent, installSet, catalog);
-
-  const bodyParts =
-    boundaryLines.length > 0
-      ? [frontmatterLines.join('\n'), '', ...boundaryLines, agent.body]
-      : [frontmatterLines.join('\n'), '', agent.body];
-
-  return bodyParts.join('\n').trimEnd() + '\n';
+  return renderArtifact(CLAUDE_AGENT_SPEC, agent, { catalog, installSet });
 }
 
-/** Build a workflow as a custom command .md file. */
+/** Build a workflow as a user-invoked skill (SKILL.md). Delegates to `spec/workflow.ts`. */
 export function buildWorkflowMd(workflow: ResolvedArtifact): string {
-  const fm = workflow.frontmatter;
-  const title = fm.title as string;
-  const description = fm.description as string;
-  const steps = (fm.steps as Array<{ ref: string; description?: string }> | undefined) ?? [];
-
-  const frontmatter = ['---', `description: ${yamlScalar(description)}`, '---'].join('\n');
-
-  const stepsSection =
-    steps.length > 0
-      ? [
-          '',
-          '## Steps',
-          '',
-          ...steps.map(s => `- [ ] \`${s.ref}\`` + (s.description ? ` — ${s.description}` : '')),
-        ]
-      : [];
-
-  const bodyLines = [workflow.body.trim(), ...stepsSection].filter(l => l !== undefined);
-
-  return [frontmatter, '', `# ${title}`, '', ...bodyLines, ''].join('\n');
-}
-
-/**
- * Build all plugin files for a single pack.
- *
- * @param pack           The pack metadata.
- * @param packArtifacts  The artifacts that belong to this pack.
- * @param catalog        Full resolved catalog (for shared-agent lookup).
- * @param version        npm package version (written to plugin.json).
- * @param homepage       Optional URL override for author.url fields.
- */
-export function buildPlugin(
-  pack: Pack,
-  packArtifacts: ResolvedArtifact[],
-  catalog: ResolvedCatalog,
-  version: string,
-  homepage?: string,
-): FileMap {
-  const files: FileMap = {};
-  const prefix = `plugins/${pack.name}`;
-  const pluginUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
-
-  // plugin.json — metadata; version comes from npm package version
-  files[`${prefix}/.claude-plugin/plugin.json`] =
-    JSON.stringify(
-      {
-        $schema: 'https://json.schemastore.org/claude-code-plugin-manifest.json',
-        name: pack.name,
-        displayName: pack.displayName,
-        version,
-        description: pack.description,
-        author: { name: 'Sigil', url: pluginUrl },
-        license: 'MIT',
-        keywords: pack.languages ?? [],
-      },
-      null,
-      2,
-    ) + '\n';
-
-  const skills = packArtifacts.filter(a => a.kind === 'skill');
-  const agents = packArtifacts.filter(a => a.kind === 'agent');
-  const workflows = packArtifacts.filter(a => a.kind === 'workflow');
-
-  // Build the co-install set for the plugin: pack artifacts + shared agents.
-  // Used by buildAgentMd for conditional Boundary section rendering.
-  const packInstallSet = new Set<string>(packArtifacts.map(a => a.id));
-
-  // Shared agents referenced by skills — also part of the pack's install set
-  const sharedAgentIds = new Set<string>();
-  for (const skill of skills) {
-    for (const agentId of skill.resolvedAgentIds ?? []) {
-      if (!agents.some(a => a.id === agentId)) {
-        sharedAgentIds.add(agentId);
-        packInstallSet.add(agentId);
-      }
-    }
-  }
-
-  // Workflows → custom commands
-  for (const workflow of workflows) {
-    const slug = workflow.id.replace(/\//g, '-');
-    files[`${prefix}/commands/${slug}.md`] = buildWorkflowMd(workflow);
-  }
-
-  // Skills — rule bodies inlined as "## Applied Rules"
-  for (const skill of skills) {
-    const skillName = skill.frontmatter.name as string;
-    files[`${prefix}/skills/${skillName}/SKILL.md`] = buildPluginSkillMd(skill);
-
-    for (const ref of skill.references ?? []) {
-      files[`${prefix}/skills/${skillName}/references/${ref.name}`] = ref.content;
-    }
-  }
-
-  // Agents — claude: frontmatter applied; Boundary section rendered for co-present related artifacts
-  for (const agent of agents) {
-    const agentName = agent.frontmatter.name as string;
-    files[`${prefix}/agents/${agentName}.md`] = buildAgentMd(agent, catalog, packInstallSet);
-  }
-
-  for (const agentId of sharedAgentIds) {
-    const agent = catalog.byId.get(agentId);
-    if (agent) {
-      const agentName = agent.frontmatter.name as string;
-      files[`${prefix}/agents/${agentName}.md`] = buildAgentMd(agent, catalog, packInstallSet);
-    }
-  }
-
-  return files;
+  return renderArtifact(CLAUDE_WORKFLOW_SPEC, workflow, {});
 }

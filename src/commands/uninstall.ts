@@ -11,12 +11,11 @@ import { confirm, isCancel, cancel, note } from '@clack/prompts';
 import { detectProjectTarget } from '../cli-helpers';
 import { saveManifest, removeEntries, sha256 } from '../manifest';
 import { requireManifest } from './shared/manifest';
-import { resolveConfigRoot } from '../config-utils';
-import { reverseMerge, serialize } from '../config-merge';
 import { CONFIG_KINDS } from '../select';
 import { isInteractiveTTY } from '../wizard';
-import type { ConfigRoot, ConfigMergeOp, MergeStrategy } from '../types';
+import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
+import { reverseMergeConfigEntries } from './uninstall-config';
 
 export interface UninstallOptions {
   projectDir: string;
@@ -26,12 +25,12 @@ export interface UninstallOptions {
   dryRun: boolean;
 }
 
-export async function runUninstall(ids: string[], opts: UninstallOptions): Promise<void> {
-  const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
-
-  const manifest = requireManifest(opts.projectDir);
-
-  // Validate all ids exist in the manifest for this target
+/** Throws if any requested id isn't recorded in the manifest for this target. */
+function assertIdsInstalled(
+  ids: string[],
+  manifest: { entries: ManifestEntry[] },
+  targetName: string,
+): void {
   const notFound = ids.filter(
     id => !manifest.entries.some(e => e.id === id && e.target === targetName),
   );
@@ -40,71 +39,96 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
       hint: '  Run `sigil status` to see installed artifacts.',
     });
   }
+}
 
-  const { pathsToDelete, removedEntries } = removeEntries(manifest, ids, targetName);
-
-  // Separate config entries (need reverseMerge) from whole-file entries
-  const configEntriesToRemove = removedEntries.filter(
-    e => CONFIG_KINDS.has(e.kind) && e.configFiles && e.configFiles.length > 0,
-  );
-
-  // Check for drifted files (whole-file entries only)
+/** Finds paths whose on-disk content no longer matches the manifest-recorded hash. */
+function findDriftedPaths(
+  pathsToDelete: string[],
+  removedEntries: ManifestEntry[],
+  projectDir: string,
+): string[] {
   const driftedPaths: string[] = [];
   for (const p of pathsToDelete) {
-    const fullPath = path.join(opts.projectDir, p);
+    const fullPath = path.join(projectDir, p);
     if (!fs.existsSync(fullPath)) continue;
-    // Find the recorded hash for this file
     const recorded = removedEntries.flatMap(e => e.files).find(f => f.path === p);
     if (recorded) {
       const diskHash = sha256(fs.readFileSync(fullPath, 'utf-8'));
       if (diskHash !== recorded.sha256) driftedPaths.push(p);
     }
   }
+  return driftedPaths;
+}
 
-  if (opts.dryRun) {
-    console.log(
-      `\nDry run — would remove ${pathsToDelete.length} file(s) and reverse ${configEntriesToRemove.length} JSON merge(s):`,
-    );
-    for (const p of pathsToDelete) {
-      const drifted = driftedPaths.includes(p);
-      console.log(`  - ${p}${drifted ? '  (drifted)' : ''}`);
-    }
-    for (const e of configEntriesToRemove) {
-      for (const cf of e.configFiles ?? []) {
-        console.log(`  ~ ${cf.file}  (JSON reverse-merge for ${e.id})`);
-      }
-    }
-    console.log('\nNo files were removed (--dry-run).');
-    return;
+/** Prints the `--dry-run` preview: files that would be removed + config merges reversed. */
+function printDryRunPreview(
+  pathsToDelete: string[],
+  driftedPaths: string[],
+  configEntriesToRemove: ManifestEntry[],
+): void {
+  console.log(
+    `\nDry run — would remove ${pathsToDelete.length} file(s) and reverse ${configEntriesToRemove.length} JSON merge(s):`,
+  );
+  for (const p of pathsToDelete) {
+    const drifted = driftedPaths.includes(p);
+    console.log(`  - ${p}${drifted ? '  (drifted)' : ''}`);
   }
-
-  // Prompt if there are drifted files and not --force
-  if (driftedPaths.length > 0 && !opts.force) {
-    note(
-      `${driftedPaths.length} file(s) were modified after install:\n` +
-        driftedPaths.map(p => `  ${p}`).join('\n') +
-        '\n\nThey will NOT be deleted. Use --force to remove them anyway.',
-      '⚠  Drifted files',
-    );
+  for (const e of configEntriesToRemove) {
+    for (const cf of e.configFiles ?? []) {
+      console.log(`  ~ ${cf.file}  (JSON reverse-merge for ${e.id})`);
+    }
   }
+  console.log('\nNo files were removed (--dry-run).');
+}
 
-  // Confirm
-  const isTTY = isInteractiveTTY();
-  if (!opts.yes && !isTTY) {
+/** Prints the "N file(s) were modified after install" note box when there are drifted paths. */
+function printDriftedFilesNote(driftedPaths: string[], opts: UninstallOptions): void {
+  if (driftedPaths.length === 0 || opts.force) return;
+  note(
+    `${driftedPaths.length} file(s) were modified after install:\n` +
+      driftedPaths.map(p => `  ${p}`).join('\n') +
+      '\n\nThey will NOT be deleted. Use --force to remove them anyway.',
+    '⚠  Drifted files',
+  );
+}
+
+/** Prompts to confirm the uninstall (skipped when --yes). Returns false if cancelled. */
+async function promptUninstallConfirmation(ids: string[], targetName: string): Promise<boolean> {
+  const ok = await confirm({
+    message: `Remove ${ids.join(', ')} from '${targetName}'?`,
+    initialValue: false,
+  });
+  if (isCancel(ok) || !ok) {
+    cancel('Uninstall cancelled.');
+    return false;
+  }
+  return true;
+}
+
+/** Warns about drifted files, then confirms the uninstall unless --yes was passed. Returns
+ * true to proceed, false if the user cancelled. Throws if non-interactive without --yes. */
+async function confirmUninstall(
+  ids: string[],
+  targetName: string,
+  driftedPaths: string[],
+  opts: UninstallOptions,
+): Promise<boolean> {
+  printDriftedFilesNote(driftedPaths, opts);
+
+  if (!opts.yes && !isInteractiveTTY()) {
     throw new SigilError('stdin/stdout is not interactive. Re-run with --yes to confirm.');
   }
-  if (!opts.yes) {
-    const ok = await confirm({
-      message: `Remove ${ids.join(', ')} from '${targetName}'?`,
-      initialValue: false,
-    });
-    if (isCancel(ok) || !ok) {
-      cancel('Uninstall cancelled.');
-      return;
-    }
-  }
 
-  // Delete whole-file kind files
+  if (!opts.yes) return promptUninstallConfirmation(ids, targetName);
+  return true;
+}
+
+/** Deletes whole-file kind files (skipping drifted ones unless --force), pruning empty dirs. */
+function deleteWholeFiles(
+  pathsToDelete: string[],
+  driftedPaths: string[],
+  opts: UninstallOptions,
+): void {
   for (const p of pathsToDelete) {
     if (driftedPaths.includes(p) && !opts.force) continue;
     const fullPath = path.join(opts.projectDir, p);
@@ -119,44 +143,22 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
       // If file was already missing, that's fine
     }
   }
+}
 
-  // Reverse-merge config entries
-  let configRemovedCount = 0;
-  for (const entry of configEntriesToRemove) {
-    for (const cf of entry.configFiles ?? []) {
-      const rootDir = resolveConfigRoot(
-        (cf.root as ConfigRoot | undefined) ?? 'project',
-        opts.projectDir,
-      );
-      const fullPath = path.join(rootDir, cf.file);
-      const isHomeWrite = cf.root === 'home' || cf.root === 'vscode-user';
-      const displayPath = isHomeWrite ? fullPath : cf.file;
-      if (!fs.existsSync(fullPath)) continue;
-      try {
-        const live = JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
-        const op: ConfigMergeOp = {
-          file: cf.file,
-          root: cf.root as ConfigRoot | undefined,
-          fragment: cf.fragment,
-          strategy: cf.strategy as Record<string, MergeStrategy>,
-        };
-        const cleaned = reverseMerge(live, op);
-        if (Object.keys(cleaned).length === 0) {
-          fs.unlinkSync(fullPath);
-          console.log(`  - ${displayPath}  (emptied, deleted)`);
-        } else {
-          fs.writeFileSync(fullPath, serialize(cleaned), 'utf-8');
-          console.log(`  ~ ${displayPath}  (JSON reverse-merge applied)`);
-        }
-        configRemovedCount++;
-      } catch (err) {
-        console.warn(`  ⚠  Could not reverse-merge ${displayPath}: ${(err as Error).message}`);
-      }
-    }
-  }
+/** Counts/paths needed by {@link printUninstallSummary} beyond `ids`/`opts`. */
+interface UninstallSummaryStats {
+  pathsToDelete: string[];
+  driftedPaths: string[];
+  configRemovedCount: number;
+}
 
-  saveManifest(opts.projectDir, manifest);
-
+/** Prints the final `✓ Uninstalled: ...` summary line. */
+function printUninstallSummary(
+  ids: string[],
+  stats: UninstallSummaryStats,
+  opts: UninstallOptions,
+): void {
+  const { pathsToDelete, driftedPaths, configRemovedCount } = stats;
   const keptCount = opts.force ? 0 : driftedPaths.length;
   console.log(
     `\n✓ Uninstalled: ${ids.join(', ')}` +
@@ -168,4 +170,32 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
       ')',
   );
   console.log('');
+}
+
+export async function runUninstall(ids: string[], opts: UninstallOptions): Promise<void> {
+  const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
+
+  const manifest = requireManifest(opts.projectDir);
+  assertIdsInstalled(ids, manifest, targetName);
+
+  const { pathsToDelete, removedEntries } = removeEntries(manifest, ids, targetName);
+
+  const configEntriesToRemove = removedEntries.filter(
+    e => CONFIG_KINDS.has(e.kind) && e.configFiles && e.configFiles.length > 0,
+  );
+  const driftedPaths = findDriftedPaths(pathsToDelete, removedEntries, opts.projectDir);
+
+  if (opts.dryRun) {
+    printDryRunPreview(pathsToDelete, driftedPaths, configEntriesToRemove);
+    return;
+  }
+
+  const proceed = await confirmUninstall(ids, targetName, driftedPaths, opts);
+  if (!proceed) return;
+
+  deleteWholeFiles(pathsToDelete, driftedPaths, opts);
+  const configRemovedCount = reverseMergeConfigEntries(configEntriesToRemove, opts.projectDir);
+
+  saveManifest(opts.projectDir, manifest);
+  printUninstallSummary(ids, { pathsToDelete, driftedPaths, configRemovedCount }, opts);
 }

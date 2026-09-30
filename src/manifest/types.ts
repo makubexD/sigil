@@ -48,6 +48,14 @@ export interface ManifestEntry {
   /** IDs of primary picks that pulled this in via `uses:`. Empty for direct picks. */
   dependentOf: string[];
   installedAt: string; // ISO timestamp (stamped by CLI layer)
+  /**
+   * The `template:` this artifact composed against at install/update time, and that template's
+   * `revision:` then. Absent for untemplated artifacts and for entries recorded before this field
+   * existed (additive — no MANIFEST_VERSION bump). Lets `status` name *why* something is outdated
+   * (`template workflow-skill rev 2→3`) instead of a bare `outdated`, by comparing against the
+   * bundled catalog's current revision for the same template id.
+   */
+  template?: { id: string; revision: number } | undefined;
 }
 
 export interface Manifest {
@@ -70,4 +78,6 @@ export interface StatusResult {
   driftedFiles: string[];
   /** Files that no longer exist on disk. */
   missingFiles: string[];
+  /** Short human-readable explanation of `status`. Absent for 'up-to-date'. */
+  reason?: string;
 }

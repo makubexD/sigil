@@ -9,10 +9,26 @@
  */
 
 import type { ConfigMergeOp, MergeStrategy } from '../types';
+import { JSON_INDENT } from '../json-util';
 
 export type { ConfigMergeOp, MergeStrategy };
 
 // ─── Deep equality ────────────────────────────────────────────────────────────
+
+/** deepEqual for the case where both operands are arrays. */
+function arraysEqual(a: unknown[], b: unknown[]): boolean {
+  if (a.length !== b.length) return false;
+  return a.every((item, i) => deepEqual(item, b[i]));
+}
+
+/** deepEqual for the case where both operands are plain objects. */
+function objectsEqual(a: Record<string, unknown>, b: Record<string, unknown>): boolean {
+  const keysA = Object.keys(a).sort();
+  const keysB = Object.keys(b).sort();
+  if (keysA.length !== keysB.length) return false;
+  if (!keysA.every((k, i) => k === keysB[i])) return false;
+  return keysA.every(k => deepEqual(a[k], b[k]));
+}
 
 /**
  * Deep structural equality check.
@@ -24,19 +40,8 @@ export function deepEqual(a: unknown, b: unknown): boolean {
   if (typeof a !== typeof b) return false;
   if (typeof a !== 'object') return false;
   if (Array.isArray(a) !== Array.isArray(b)) return false;
-
-  if (Array.isArray(a) && Array.isArray(b)) {
-    if (a.length !== b.length) return false;
-    return a.every((item, i) => deepEqual(item, (b as unknown[])[i]));
-  }
-
-  const objA = a as Record<string, unknown>;
-  const objB = b as Record<string, unknown>;
-  const keysA = Object.keys(objA).sort();
-  const keysB = Object.keys(objB).sort();
-  if (keysA.length !== keysB.length) return false;
-  if (!keysA.every((k, i) => k === keysB[i])) return false;
-  return keysA.every(k => deepEqual(objA[k], objB[k]));
+  if (Array.isArray(a) && Array.isArray(b)) return arraysEqual(a, b);
+  return objectsEqual(a as Record<string, unknown>, b as Record<string, unknown>);
 }
 
 // ─── Deep merge ───────────────────────────────────────────────────────────────
@@ -46,6 +51,18 @@ export function deepEqual(a: unknown, b: unknown): boolean {
  * of all plain objects in this process. Guard every merge/assign loop against these.
  */
 const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+
+/** True when both `v` and `existing` are mergeable plain objects (not arrays, not null). */
+function bothPlainObjects(v: unknown, existing: unknown): boolean {
+  return (
+    v !== null &&
+    typeof v === 'object' &&
+    !Array.isArray(v) &&
+    typeof existing === 'object' &&
+    existing !== null &&
+    !Array.isArray(existing)
+  );
+}
 
 /**
  * Deep-merge `incoming` into `base`, returning a new object.
@@ -64,18 +81,9 @@ export function deepMerge(
   const result = { ...base };
   for (const [k, v] of Object.entries(incoming)) {
     if (FORBIDDEN_KEYS.has(k)) continue; // prototype-pollution guard
-    if (
-      v !== null &&
-      typeof v === 'object' &&
-      !Array.isArray(v) &&
-      typeof result[k] === 'object' &&
-      result[k] !== null &&
-      !Array.isArray(result[k])
-    ) {
-      result[k] = deepMerge(result[k] as Record<string, unknown>, v as Record<string, unknown>);
-    } else {
-      result[k] = v;
-    }
+    result[k] = bothPlainObjects(v, result[k])
+      ? deepMerge(result[k] as Record<string, unknown>, v as Record<string, unknown>)
+      : v;
   }
   return result;
 }
@@ -110,7 +118,7 @@ export function pruneEmpty(obj: Record<string, unknown>): Record<string, unknown
  * Do NOT use on the disk-write path — use `serialize()` there to preserve key order.
  */
 export function canonicalize(obj: Record<string, unknown>): string {
-  return JSON.stringify(sortKeys(obj), null, 2) + '\n';
+  return JSON.stringify(sortKeys(obj), null, JSON_INDENT) + '\n';
 }
 
 /**
@@ -119,7 +127,7 @@ export function canonicalize(obj: Record<string, unknown>): string {
  * added — existing keys keep their original order and position in the file.
  */
 export function serialize(obj: Record<string, unknown>): string {
-  return JSON.stringify(obj, null, 2) + '\n';
+  return JSON.stringify(obj, null, JSON_INDENT) + '\n';
 }
 
 function sortKeys(val: unknown): unknown {

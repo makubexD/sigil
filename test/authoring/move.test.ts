@@ -271,7 +271,13 @@ describe('executeMove', () => {
         } as unknown as LoadedCatalog;
       };
 
-      const result = executeMove(plan, catalog, getAllTargets(), loadFn, tempDir);
+      const result = executeMove({
+        plan,
+        catalog,
+        targets: getAllTargets(),
+        loadFn,
+        catalogDir: tempDir,
+      });
 
       assert.equal(result.ok, true, `executeMove failed: ${result.errors.join('; ')}`);
       assert.ok(!fs.existsSync(cleanCodePath), 'source file was moved (no longer at old path)');
@@ -303,7 +309,13 @@ describe('executeMove', () => {
         throw new Error('Simulated reload failure');
       };
 
-      const result = executeMove(plan, catalog, getAllTargets(), failLoadFn, tempDir);
+      const result = executeMove({
+        plan,
+        catalog,
+        targets: getAllTargets(),
+        loadFn: failLoadFn,
+        catalogDir: tempDir,
+      });
 
       assert.equal(result.ok, false, 'executeMove should report failure');
       assert.ok(result.errors.length > 0, 'errors array is non-empty');
@@ -330,7 +342,13 @@ describe('executeMove', () => {
       const emptyLoadFn = (_dir: string): LoadedCatalog =>
         ({ artifacts: [], byId: new Map(), languages: new Map() }) as unknown as LoadedCatalog;
 
-      const result = executeMove(plan, catalog, getAllTargets(), emptyLoadFn, tempDir);
+      const result = executeMove({
+        plan,
+        catalog,
+        targets: getAllTargets(),
+        loadFn: emptyLoadFn,
+        catalogDir: tempDir,
+      });
       // If new id is absent from reloaded catalog, executeMove skips validation → ok
       assert.equal(
         result.ok,

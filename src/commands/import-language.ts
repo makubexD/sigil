@@ -1,0 +1,97 @@
+/**
+ * Language display-name resolution and `--create-language` scaffolding for
+ * `sigil import`. Split out of import.ts to keep that file under the
+ * repo's own module-size threshold.
+ *
+ * @module
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import yaml from 'js-yaml';
+
+// Known language display names and glob patterns for built-in languages.
+// Used by --create-language to scaffold a language.yaml when one is absent.
+export const LANGUAGE_DEFAULTS: Record<
+  string,
+  { displayName: string; globs: string[]; icon: string }
+> = {
+  typescript: {
+    displayName: 'TypeScript',
+    globs: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
+    icon: '🔷',
+  },
+  angular: {
+    displayName: 'Angular',
+    globs: ['**/*.ts', '**/*.html', '**/*.component.ts', '**/*.directive.ts'],
+    icon: '🅰️',
+  },
+  csharp: {
+    displayName: '.NET / C#',
+    globs: ['**/*.cs', '**/*.csproj', '**/*.sln', '**/*.razor', '**/*.cshtml'],
+    icon: '⚙️',
+  },
+  python: {
+    displayName: 'Python',
+    globs: ['**/*.py', '**/*.pyi'],
+    icon: '🐍',
+  },
+  react: {
+    displayName: 'React',
+    globs: ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'],
+    icon: '⚛️',
+  },
+};
+
+/** Resolve display name: flag → language.yaml → built-in defaults → capitalised lang. */
+export function resolveDisplayName(
+  lang: string,
+  explicitDisplayName: string | undefined,
+  yamlPath: string,
+): string {
+  if (explicitDisplayName) return explicitDisplayName;
+
+  if (fs.existsSync(yamlPath)) {
+    try {
+      const yamlContent = yaml.load(fs.readFileSync(yamlPath, 'utf-8'), {
+        schema: yaml.JSON_SCHEMA,
+      }) as Record<string, unknown>;
+      return (yamlContent.displayName as string | undefined) ?? lang;
+    } catch {
+      return lang;
+    }
+  }
+
+  const defaults = LANGUAGE_DEFAULTS[lang];
+  if (defaults) return defaults.displayName;
+
+  return lang.charAt(0).toUpperCase() + lang.slice(1);
+}
+
+/** Renders the language.yaml body text for `maybeCreateLanguageYaml`. */
+function renderLanguageYaml(lang: string, displayName: string): string {
+  const defaults = LANGUAGE_DEFAULTS[lang];
+  const globs = defaults?.globs ?? ['**/*'];
+  const icon = defaults?.icon ?? '📁';
+  return [
+    `displayName: ${JSON.stringify(displayName)}`,
+    `globs:`,
+    ...globs.map(g => `  - "${g}"`),
+    `icon: "${icon}"`,
+    '',
+  ].join('\n');
+}
+
+/** Scaffold a language.yaml when `--create-language` was passed and none exists yet. */
+export function maybeCreateLanguageYaml(
+  lang: string,
+  yamlPath: string,
+  explicitDisplayName: string | undefined,
+  resolvedDisplayName: string,
+): void {
+  if (fs.existsSync(yamlPath)) return;
+
+  fs.mkdirSync(path.dirname(yamlPath), { recursive: true });
+  const content = renderLanguageYaml(lang, explicitDisplayName ?? resolvedDisplayName);
+  fs.writeFileSync(yamlPath, content, 'utf-8');
+  console.log(`✓ Created: ${yamlPath}`);
+}

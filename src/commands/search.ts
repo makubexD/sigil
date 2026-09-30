@@ -8,6 +8,7 @@
 import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { searchArtifacts, formatSearchResults } from '../query';
+import { JSON_INDENT } from '../json-util';
 
 export interface SearchOptions {
   catalogDir: string;
@@ -15,6 +16,23 @@ export interface SearchOptions {
   language?: string | undefined;
   tag?: string | undefined;
   json: boolean;
+}
+
+function printJsonResults(results: ReturnType<typeof searchArtifacts>): void {
+  console.log(
+    JSON.stringify(
+      results.map(r => ({
+        id: r.artifact.id,
+        kind: r.artifact.kind,
+        title: r.artifact.frontmatter.title,
+        description: r.artifact.frontmatter.description,
+        score: r.score,
+        matchedFields: r.matchedFields,
+      })),
+      null,
+      JSON_INDENT,
+    ),
+  );
 }
 
 export async function runSearch(query: string, opts: SearchOptions): Promise<void> {
@@ -28,20 +46,7 @@ export async function runSearch(query: string, opts: SearchOptions): Promise<voi
   });
 
   if (opts.json) {
-    console.log(
-      JSON.stringify(
-        results.map(r => ({
-          id: r.artifact.id,
-          kind: r.artifact.kind,
-          title: r.artifact.frontmatter.title,
-          description: r.artifact.frontmatter.description,
-          score: r.score,
-          matchedFields: r.matchedFields,
-        })),
-        null,
-        2,
-      ),
-    );
+    printJsonResults(results);
     return;
   }
 

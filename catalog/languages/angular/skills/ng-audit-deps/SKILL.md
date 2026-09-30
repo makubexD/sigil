@@ -5,8 +5,6 @@ title: "Audit Dependencies (Angular)"
 description: "Audit project dependencies — outdated versions, known CVEs, unused packages, Angular lockstep, and license compliance"
 name: ng-audit-deps
 language: angular
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash

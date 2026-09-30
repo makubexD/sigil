@@ -5,16 +5,34 @@
  * native project-scope layout, where rules are first-class (.claude/rules/*.md).
  *
  *   .claude/
- *     skills/<skill-name>/SKILL.md
+ *     skills/<skill-name>/SKILL.md      ← includes prompt/workflow kinds (disable-model-invocation)
  *     rules/<rule-name>.md
  *     agents/<agent-name>.md
- *     commands/<slug>.md
  */
 import type { ResolvedArtifact, ResolvedCatalog, FileMap, ScaffoldOptions } from '../../types';
-import type { PromptArg } from '../prompt-args';
-import { yamlScalar } from '../yaml-util';
-import { toClaudePlaceholders, buildArgumentHint } from '../prompt-args';
-import { buildPluginSkillMd, buildAgentMd, buildWorkflowMd } from './plugin-build';
+import { buildPluginSkillMd, buildAgentMd } from './plugin-build';
+import { SKILL_FILENAME } from '../../paths';
+import { renderArtifact } from '../emit';
+import { CLAUDE_SCAFFOLD_RULE_SPEC } from './spec/rule';
+import { CLAUDE_PROMPT_SPEC } from './spec/prompt';
+import { CLAUDE_WORKFLOW_SPEC } from './spec/workflow';
+
+/** Scaffolds a skill's rule/agent dependency closure, unless --no-deps was requested. */
+function scaffoldSkillDeps(
+  skill: ResolvedArtifact,
+  catalog: ResolvedCatalog,
+  files: FileMap,
+  options: ScaffoldOptions,
+): void {
+  if (options.includeDeps === false) return;
+  for (const rule of skill.resolvedRules ?? []) {
+    scaffoldRule(rule, files);
+  }
+  for (const agentId of skill.resolvedAgentIds ?? []) {
+    const agent = catalog.byId.get(agentId);
+    if (agent) scaffoldAgent(agent, files, catalog, options.coInstallSet);
+  }
+}
 
 export function scaffoldSkill(
   skill: ResolvedArtifact,
@@ -24,50 +42,30 @@ export function scaffoldSkill(
 ): void {
   const skillName = skill.frontmatter.name as string;
 
-  // The scaffolded SKILL.md reuses the plugin layout (paths + allowed-tools + argument-hint).
-  // Rules are NOT inlined — .claude/rules/*.md are loaded natively by Claude Code.
-  files[`.claude/skills/${skillName}/SKILL.md`] = buildPluginSkillMd(skill);
+  // The scaffolded SKILL.md reuses the plugin layout (name/description/when_to_use/
+  // allowed-tools/argument-hint). Rules are NOT inlined (inlineRules: false) — this is
+  // the CLI scaffold path, and .claude/rules/*.md are loaded natively by Claude Code.
+  files[`.claude/skills/${skillName}/${SKILL_FILENAME}`] = buildPluginSkillMd(skill, false);
 
   for (const ref of skill.references ?? []) {
     files[`.claude/skills/${skillName}/references/${ref.name}`] = ref.content;
   }
 
-  // Write dependency closure unless --no-deps was requested
-  if (options.includeDeps !== false) {
-    for (const rule of skill.resolvedRules ?? []) {
-      scaffoldRule(rule, files);
-    }
-    for (const agentId of skill.resolvedAgentIds ?? []) {
-      const agent = catalog.byId.get(agentId);
-      if (agent) scaffoldAgent(agent, files, catalog, options.coInstallSet);
-    }
-  }
+  scaffoldSkillDeps(skill, catalog, files, options);
 }
 
+/**
+ * Any rule with an authored `appliesTo` gets a `paths:` frontmatter block so Claude Code loads
+ * it only when editing matching files — language and shared rules alike (shared/clean-code
+ * declares `appliesTo: ["**\/*"]` just like a language rule does). Only a rule with no
+ * `appliesTo` at all has no frontmatter and loads unconditionally.
+ * (Plugin-build mode never writes standalone rule files — it inlines resolvedBody into the
+ * skill's "## Applied Rules" section instead, so there is no second `paths:` site to keep in
+ * sync for rules specifically.) Delegates to the declarative spec in `spec/rule.ts`.
+ */
 export function scaffoldRule(rule: ResolvedArtifact, files: FileMap): void {
   const slug = rule.id.replace(/\//g, '-');
-  const title = rule.frontmatter.title as string;
-  const body = rule.resolvedBody ?? rule.body;
-
-  // Language-scoped rules get a `paths:` frontmatter block so Claude Code loads them
-  // only when editing matching files. Shared (no-language) rules have no frontmatter
-  // and are loaded unconditionally at session start.
-  // `paths:` is the Claude Code–recognized key (see code.claude.com/docs/en/memory).
-  const hasLanguage = Boolean(rule.frontmatter.language);
-  const appliesTo = (rule.frontmatter.appliesTo as string[] | undefined) ?? [];
-
-  if (hasLanguage && appliesTo.length > 0) {
-    const pathsFrontmatter = [
-      '---',
-      `paths:\n${appliesTo.map(g => `  - "${g}"`).join('\n')}`,
-      '---',
-      '',
-    ].join('\n');
-    files[`.claude/rules/${slug}.md`] = `${pathsFrontmatter}# ${title}\n\n${body}\n`;
-  } else {
-    // Shared rules: no frontmatter — loaded for every session
-    files[`.claude/rules/${slug}.md`] = `# ${title}\n\n${body}\n`;
-  }
+  files[`.claude/rules/${slug}.md`] = renderArtifact(CLAUDE_SCAFFOLD_RULE_SPEC, rule, {});
 }
 
 export function scaffoldAgent(
@@ -80,36 +78,26 @@ export function scaffoldAgent(
   files[`.claude/agents/${agentName}.md`] = buildAgentMd(agent, catalog, installSet);
 }
 
+/**
+ * `description:` feeds the `/` menu label in Claude Code. `argument-hint:` shows the
+ * autocomplete hint (e.g. "[diff] [audience]"). `arguments:` declares named positional args so
+ * `$name` substitution resolves. `disable-model-invocation: true` keeps it user-invoked only, same
+ * as the retired `.claude/commands/` format. Delegates to the declarative spec in `spec/prompt.ts`.
+ */
 export function scaffoldPrompt(prompt: ResolvedArtifact, files: FileMap): void {
   const slug = prompt.id.replace(/\//g, '-');
-  const title = prompt.frontmatter.title as string;
-  const description = prompt.frontmatter.description as string;
-  const args = (prompt.frontmatter.args as PromptArg[] | undefined) ?? [];
-
-  // `description:` feeds the `/` menu label in Claude Code.
-  // `argument-hint:` shows autocomplete hint (e.g. "[diff] [audience]").
-  // `arguments:` declares named positional args so `$name` substitution resolves.
-  const fmLines: string[] = ['---', `description: ${yamlScalar(description)}`];
-  if (args.length > 0) {
-    // Quote the argument-hint value — bare square brackets like [diff] [audience] are
-    // invalid YAML flow-sequence syntax without quoting.
-    fmLines.push(`argument-hint: "${buildArgumentHint(args)}"`);
-    fmLines.push('arguments:');
-    for (const arg of args) {
-      fmLines.push(`  - ${arg.name}`);
-    }
-  }
-  fmLines.push('---');
-
-  // Translate {{name}} placeholders → $name (Claude's $name substitution syntax).
-  const body = toClaudePlaceholders(prompt.body);
-
-  files[`.claude/commands/${slug}.md`] = [fmLines.join('\n'), '', `# ${title}`, '', body, ''].join(
-    '\n',
+  files[`.claude/skills/${slug}/${SKILL_FILENAME}`] = renderArtifact(
+    CLAUDE_PROMPT_SPEC,
+    prompt,
+    {},
   );
 }
 
 export function scaffoldWorkflow(workflow: ResolvedArtifact, files: FileMap): void {
   const slug = workflow.id.replace(/\//g, '-');
-  files[`.claude/commands/${slug}.md`] = buildWorkflowMd(workflow);
+  files[`.claude/skills/${slug}/${SKILL_FILENAME}`] = renderArtifact(
+    CLAUDE_WORKFLOW_SPEC,
+    workflow,
+    {},
+  );
 }

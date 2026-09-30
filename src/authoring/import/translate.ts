@@ -17,11 +17,14 @@
  *   agent  → id, kind, name (kept incl. prefix), title, description, language,
  *             tools[] (←split comma string), tags
  *   skill  → id, kind, name (= slug), title, description (source description only — single-line),
- *             language, appliesTo: ['**\/*'], allowedTools[] (←allowed-tools),
+ *             language, whenToUse (←when_to_use), allowedTools[] (←allowed-tools),
  *             argumentHint (←argument-hint), disableModelInvocation (←flag),
- *             uses: { rules: [], agents: [] }, tags;
- *             when_to_use prepended to body as '## When to Use' section (bodyPrefix)
+ *             uses: { rules: [], agents: [] }, tags
+ *
+ * Per-kind translators live in translate-kinds.ts; low-level string helpers live in
+ * translate-helpers.ts — both split out to keep this file under the module-size threshold.
  */
+import { translateRule, translateAgent, translateSkill } from './translate-kinds';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -48,6 +51,7 @@ export interface CatalogFrontmatter {
   tools?: string[] | undefined;
   // skill-specific
   uses?: { rules: string[]; agents: string[] } | undefined;
+  whenToUse?: string | undefined;
   allowedTools?: string[] | undefined;
   argumentHint?: string | undefined;
   disableModelInvocation?: boolean | undefined;
@@ -140,171 +144,6 @@ export function slugToTitle(slug: string, displayName: string, language?: string
     .split('-')
     .map(w => ACRONYM_MAP[w.toLowerCase()] ?? w.charAt(0).toUpperCase() + w.slice(1));
   return `${words.join(' ')} (${displayName})`;
-}
-
-// ─── Translation helpers ──────────────────────────────────────────────────────
-
-/**
- * Split a comma-string tools field into a string array.
- * Handles both "Read, Grep, Glob, Bash" and "Read,Grep" formats.
- */
-function splitToolsString(raw: unknown): string[] {
-  if (typeof raw !== 'string') return [];
-  return raw
-    .split(',')
-    .map(s => s.trim())
-    .filter(Boolean);
-}
-
-/**
- * Derive tags from the slug (strip canonical language prefix, split on hyphen, add language tag).
- *
- * cs-generate-tests, language=csharp → ['csharp', 'generate', 'tests']
- */
-function tagsFromSlug(slug: string, language: string): string[] {
-  const withoutPrefix = stripLanguagePrefix(slug, language);
-  const words = withoutPrefix.split('-').filter(Boolean);
-  return [language, ...words];
-}
-
-// ─── Per-kind translators ─────────────────────────────────────────────────────
-
-function translateRule(
-  slug: string,
-  sourceFm: Record<string, unknown>,
-  opts: TranslateOptions,
-): TranslateResult {
-  const { language, displayName } = opts;
-  const id = `${language}/${slug}`;
-  const droppedFields: string[] = [];
-
-  // description is the main content field — required
-  const description = typeof sourceFm.description === 'string' ? sourceFm.description : '';
-
-  // paths → appliesTo
-  const appliesTo = Array.isArray(sourceFm.paths) ? (sourceFm.paths as string[]) : ['**/*'];
-
-  // Track dropped fields
-  const knownFields = new Set(['description', 'paths']);
-  for (const key of Object.keys(sourceFm)) {
-    if (!knownFields.has(key)) droppedFields.push(key);
-  }
-
-  const syntheticDescription = `${displayName} coding conventions and style guidelines.`;
-  const frontmatter: CatalogFrontmatter = {
-    id,
-    kind: 'rule',
-    title: slugToTitle(slug, displayName, language),
-    description: description || syntheticDescription,
-    language,
-    appliesTo,
-    severity: 'recommended',
-    extends: [],
-    tags: tagsFromSlug(slug, language),
-  };
-
-  return { frontmatter, droppedFields, descriptionSynthesized: !description };
-}
-
-function translateAgent(
-  slug: string,
-  sourceFm: Record<string, unknown>,
-  opts: TranslateOptions,
-): TranslateResult {
-  const { language, displayName } = opts;
-  const id = `${language}/${slug}`;
-  const droppedFields: string[] = [];
-
-  // name comes from frontmatter (same as slug in practice)
-  const name = typeof sourceFm.name === 'string' ? sourceFm.name : slug;
-  const description = typeof sourceFm.description === 'string' ? sourceFm.description : '';
-  const tools = splitToolsString(sourceFm.tools);
-
-  // Track dropped fields
-  const knownFields = new Set(['name', 'description', 'tools']);
-  for (const key of Object.keys(sourceFm)) {
-    if (!knownFields.has(key)) droppedFields.push(key);
-  }
-
-  const syntheticDescription = `${displayName} specialist agent.`;
-  const frontmatter: CatalogFrontmatter = {
-    id,
-    kind: 'agent',
-    name,
-    title: slugToTitle(slug, displayName, language),
-    description: description || syntheticDescription,
-    language,
-    tools: tools.length > 0 ? tools : undefined,
-    tags: tagsFromSlug(slug, language),
-  };
-
-  return { frontmatter, droppedFields, descriptionSynthesized: !description };
-}
-
-function translateSkill(
-  slug: string,
-  sourceFm: Record<string, unknown>,
-  opts: TranslateOptions,
-): TranslateResult {
-  const { language, displayName } = opts;
-  const id = `${language}/${slug}`;
-  const droppedFields: string[] = [];
-
-  const sourceDescription = typeof sourceFm.description === 'string' ? sourceFm.description : '';
-  const whenToUse =
-    typeof sourceFm['when_to_use'] === 'string' ? sourceFm['when_to_use'].trim() : '';
-
-  // description stays single-line for the YAML header (multi-line strings break YAML serialization).
-  // when_to_use is prepended to the body as a ## When to Use section instead.
-  const descriptionSynthesized = !sourceDescription;
-  const description = sourceDescription || `${displayName} skill.`;
-  // Body prefix: only set when there is actual when_to_use content.
-  const bodyPrefix = whenToUse ? `## When to Use\n\n${whenToUse}\n\n---\n\n` : undefined;
-
-  // allowed-tools (hyphenated source key)
-  const allowedToolsRaw = sourceFm['allowed-tools'];
-  const allowedTools =
-    typeof allowedToolsRaw === 'string'
-      ? splitToolsString(allowedToolsRaw)
-      : Array.isArray(allowedToolsRaw)
-        ? (allowedToolsRaw as string[])
-        : undefined;
-
-  // argument-hint (hyphenated source key)
-  const argumentHint =
-    typeof sourceFm['argument-hint'] === 'string' ? sourceFm['argument-hint'] : undefined;
-
-  // disable-model-invocation (hyphenated source key)
-  const disableModelInvocation = sourceFm['disable-model-invocation'] === true ? true : undefined;
-
-  // Track dropped fields
-  const knownFields = new Set([
-    'description',
-    'when_to_use',
-    'allowed-tools',
-    'argument-hint',
-    'disable-model-invocation',
-  ]);
-  for (const key of Object.keys(sourceFm)) {
-    if (!knownFields.has(key)) droppedFields.push(key);
-  }
-
-  const frontmatter: CatalogFrontmatter = {
-    id,
-    kind: 'skill',
-    name: slug,
-    title: slugToTitle(slug, displayName, language),
-    description,
-    language,
-    appliesTo: ['**/*'],
-    uses: { rules: [], agents: [] },
-    tags: tagsFromSlug(slug, language),
-    ...(allowedTools && allowedTools.length > 0 ? { allowedTools } : {}),
-    ...(argumentHint ? { argumentHint } : {}),
-    ...(disableModelInvocation ? { disableModelInvocation } : {}),
-  };
-
-  return { frontmatter, droppedFields, bodyPrefix, descriptionSynthesized };
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────

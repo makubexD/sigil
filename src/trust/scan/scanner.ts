@@ -18,6 +18,9 @@ const SECRET_MASK_SUFFIX_LEN = 2;
 /** Maximum length of a raw-match snippet surfaced in a finding. Keeps output scannable. */
 const SNIPPET_MAX_LEN = 80;
 
+/** Characters of surrounding line context shown on each side of a match in a finding's snippet. */
+const SNIPPET_CONTEXT_CHARS = 20;
+
 // ─── Binary extension guard ────────────────────────────────────────────────────
 
 const BINARY_EXTENSIONS = new Set([
@@ -58,6 +61,104 @@ function extractInlineAllowlist(content: string): Set<string> {
 
 // ─── Main scanner ─────────────────────────────────────────────────────────────
 
+/** Finds the 0-based index of the closing `---` for a leading frontmatter block, or -1. */
+function findFrontmatterEnd(lines: string[]): number {
+  if (lines[0] !== '---') return -1;
+  for (let i = 1; i < lines.length; i++) {
+    if (lines[i] === '---') return i;
+  }
+  return -1;
+}
+
+/** Builds the redacted, context-trimmed snippet for one line match. */
+function buildRedactedSnippet(line: string, match: RegExpExecArray): string {
+  const snippet = line.slice(
+    Math.max(0, match.index - SNIPPET_CONTEXT_CHARS),
+    Math.min(line.length, match.index + match[0].length + SNIPPET_CONTEXT_CHARS),
+  );
+  return snippet
+    .replace(
+      match[0],
+      match[0].slice(0, SECRET_MASK_PREFIX_LEN) + '***' + match[0].slice(-SECRET_MASK_SUFFIX_LEN),
+    )
+    .trim();
+}
+
+/** Finds the first line matching `pattern` within the frontmatter-only bound, if applicable. */
+function findFirstLineMatch(
+  pattern: RegExp,
+  lines: string[],
+  frontmatterOnly: boolean | undefined,
+  frontmatterEnd: number,
+): { lineIndex: number; line: string; match: RegExpExecArray } | undefined {
+  for (let i = 0; i < lines.length; i++) {
+    if (frontmatterOnly && frontmatterEnd >= 0 && i > frontmatterEnd) continue;
+    const line = lines[i] ?? '';
+    const match = pattern.exec(line);
+    if (match) return { lineIndex: i, line, match };
+  }
+  return undefined;
+}
+
+/** Shared per-scan context threaded through the per-rule scan helpers. */
+interface ScanCtx {
+  lines: string[];
+  frontmatterEnd: number;
+  rawContent: string;
+  filePath: string;
+}
+
+/** Runs one rule's per-line `pattern` scan, returning the first finding (or none). */
+function scanLinePattern(rule: (typeof RULES)[number], ctx: ScanCtx): ScanFinding | undefined {
+  if (!rule.pattern) return undefined;
+  const found = findFirstLineMatch(
+    rule.pattern,
+    ctx.lines,
+    rule.frontmatterOnly,
+    ctx.frontmatterEnd,
+  );
+  if (!found) return undefined;
+
+  return {
+    rule: rule.id,
+    severity: rule.severity,
+    file: ctx.filePath,
+    line: found.lineIndex + 1,
+    snippet: buildRedactedSnippet(found.line, found.match),
+  };
+}
+
+/** Runs one rule's whole-content `globalPattern` scan, returning the finding (or none). */
+function scanGlobalPattern(rule: (typeof RULES)[number], ctx: ScanCtx): ScanFinding | undefined {
+  if (!rule.globalPattern) return undefined;
+  const source = rule.frontmatterOnly
+    ? ctx.lines.slice(0, ctx.frontmatterEnd).join('\n')
+    : ctx.rawContent;
+  const match = rule.globalPattern.exec(source);
+  if (!match) return undefined;
+  const lineNum = ctx.rawContent.slice(0, match.index).split('\n').length;
+  return {
+    rule: rule.id,
+    severity: rule.severity,
+    file: ctx.filePath,
+    line: lineNum,
+    snippet: match[0].slice(0, SNIPPET_MAX_LEN).trim(),
+  };
+}
+
+/** Runs every non-allowlisted rule against the content, collecting one finding per matching rule. */
+function runRules(ctx: ScanCtx, allAllowed: Set<string>): ScanFinding[] {
+  const findings: ScanFinding[] = [];
+  for (const rule of RULES) {
+    if (allAllowed.has(rule.id)) continue;
+    const lineFinding = scanLinePattern(rule, ctx);
+    if (lineFinding) findings.push(lineFinding);
+    const globalFinding = scanGlobalPattern(rule, ctx);
+    if (globalFinding) findings.push(globalFinding);
+  }
+  return findings;
+}
+
 /**
  * Scan an artifact's raw content for security findings.
  *
@@ -76,70 +177,10 @@ export function scanContent(
 
   const inlineAllowed = extractInlineAllowlist(rawContent);
   const allAllowed = new Set([...allowedRules, ...inlineAllowed]);
-
   const lines = rawContent.split('\n');
+  const frontmatterEnd = findFrontmatterEnd(lines);
 
-  // Extract frontmatter block (between first and second ---)
-  let frontmatterEnd = -1;
-  if (lines[0] === '---') {
-    for (let i = 1; i < lines.length; i++) {
-      if (lines[i] === '---') {
-        frontmatterEnd = i;
-        break;
-      }
-    }
-  }
-
-  const findings: ScanFinding[] = [];
-
-  for (const rule of RULES) {
-    if (allAllowed.has(rule.id)) continue;
-
-    if (rule.pattern) {
-      for (let i = 0; i < lines.length; i++) {
-        if (rule.frontmatterOnly && frontmatterEnd >= 0 && i > frontmatterEnd) continue;
-
-        // lines[i] is in-bounds (loop guard i < lines.length)
-        const line = lines[i] ?? '';
-        const match = rule.pattern.exec(line);
-        if (match) {
-          const snippet = line.slice(
-            Math.max(0, match.index - 20),
-            Math.min(line.length, match.index + match[0].length + 20),
-          );
-          const redacted = snippet.replace(
-            match[0],
-            match[0].slice(0, SECRET_MASK_PREFIX_LEN) +
-              '***' +
-              match[0].slice(-SECRET_MASK_SUFFIX_LEN),
-          );
-          findings.push({
-            rule: rule.id,
-            severity: rule.severity,
-            file: filePath,
-            line: i + 1,
-            snippet: redacted.trim(),
-          });
-          break; // one finding per rule per file is enough
-        }
-      }
-    }
-
-    if (rule.globalPattern) {
-      const source = rule.frontmatterOnly ? lines.slice(0, frontmatterEnd).join('\n') : rawContent;
-      const match = rule.globalPattern.exec(source);
-      if (match) {
-        const lineNum = rawContent.slice(0, match.index).split('\n').length;
-        findings.push({
-          rule: rule.id,
-          severity: rule.severity,
-          file: filePath,
-          line: lineNum,
-          snippet: match[0].slice(0, SNIPPET_MAX_LEN).trim(),
-        });
-      }
-    }
-  }
+  const findings = runRules({ lines, frontmatterEnd, rawContent, filePath }, allAllowed);
 
   const level: ScanSeverity = findings.some(f => f.severity === 'error')
     ? 'error'

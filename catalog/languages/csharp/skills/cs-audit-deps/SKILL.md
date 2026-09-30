@@ -5,8 +5,6 @@ title: "Audit NuGet Dependencies (.NET / C#)"
 description: "Audit NuGet dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance"
 name: cs-audit-deps
 language: csharp
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash

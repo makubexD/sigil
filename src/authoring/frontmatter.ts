@@ -46,6 +46,33 @@ function serializeScalar(val: unknown): string {
   return String(val);
 }
 
+/** Renders one item of a YAML block sequence — a nested mapping or a plain scalar. */
+function serializeSequenceItem(item: unknown): string {
+  if (typeof item === 'object' && item !== null) {
+    // Sequence of mappings — YAML block sequence style:
+    //   - firstKey: firstVal
+    //     restKey:  restVal
+    const entries = Object.entries(item as Record<string, unknown>);
+    if (entries.length === 0) return '  - {}';
+    const lines = entries.map(([ik, iv], i) => {
+      const scalar = serializeScalar(iv);
+      return i === 0 ? `  - ${ik}: ${scalar}` : `    ${ik}: ${scalar}`;
+    });
+    return lines.join('\n');
+  }
+  return `  - ${serializeScalar(item)}`;
+}
+
+/** Renders one key of a YAML block mapping, block-sequencing nested arrays (e.g. uses.rules). */
+function serializeMappingEntry(ik: string, iv: unknown): string {
+  if (Array.isArray(iv)) {
+    if (iv.length === 0) return `  ${ik}: []`;
+    const items = iv.map(item => `    - ${serializeScalar(item)}`).join('\n');
+    return `  ${ik}:\n${items}`;
+  }
+  return `  ${ik}: ${serializeScalar(iv)}`;
+}
+
 /**
  * Serialise a single YAML key-value pair for frontmatter output.
  *
@@ -60,37 +87,11 @@ function serializeScalar(val: unknown): string {
 export function serializeYamlEntry(key: string, val: unknown): string {
   if (Array.isArray(val)) {
     if (val.length === 0) return `${key}: []`;
-    return `${key}:\n${val
-      .map(item => {
-        if (typeof item === 'object' && item !== null) {
-          // Sequence of mappings — YAML block sequence style:
-          //   - firstKey: firstVal
-          //     restKey:  restVal
-          const entries = Object.entries(item as Record<string, unknown>);
-          if (entries.length === 0) return '  - {}';
-          const lines = entries.map(([ik, iv], i) => {
-            const scalar = serializeScalar(iv);
-            return i === 0 ? `  - ${ik}: ${scalar}` : `    ${ik}: ${scalar}`;
-          });
-          return lines.join('\n');
-        }
-        // Plain scalar in a sequence
-        return `  - ${serializeScalar(item)}`;
-      })
-      .join('\n')}`;
+    return `${key}:\n${val.map(serializeSequenceItem).join('\n')}`;
   }
   if (typeof val === 'object' && val !== null) {
     const lines = Object.entries(val as Record<string, unknown>)
-      .map(([ik, iv]) => {
-        // Nested arrays (e.g. uses.rules / uses.agents) must render as block sequences,
-        // not comma-joined scalars — serializeScalar(array) would call String(array).
-        if (Array.isArray(iv)) {
-          if (iv.length === 0) return `  ${ik}: []`;
-          const items = iv.map(item => `    - ${serializeScalar(item)}`).join('\n');
-          return `  ${ik}:\n${items}`;
-        }
-        return `  ${ik}: ${serializeScalar(iv)}`;
-      })
+      .map(([ik, iv]) => serializeMappingEntry(ik, iv))
       .join('\n');
     return `${key}:\n${lines}`;
   }

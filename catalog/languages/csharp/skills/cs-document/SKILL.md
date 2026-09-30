@@ -5,8 +5,6 @@ title: "Document (.NET / C#)"
 description: "Generate or update XML doc comments and module-level documentation following the project's documented docstring style"
 name: cs-document
 language: csharp
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Write

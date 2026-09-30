@@ -14,7 +14,7 @@
  */
 import type { LoadedCatalog } from './types';
 
-export type RefField = 'extends' | 'uses.rules' | 'uses.agents';
+export type RefField = 'extends' | 'uses.rules' | 'uses.agents' | 'template';
 
 export interface RefCheck {
   /** Which frontmatter field this reference came from. */
@@ -31,6 +31,7 @@ const EXPECTED_KIND: Record<RefField, string> = {
   extends: 'rule',
   'uses.rules': 'rule',
   'uses.agents': 'agent',
+  template: 'template',
 };
 
 /** Walk one reference field, checking each id against `catalog` and the expected kind. */
@@ -58,10 +59,12 @@ export function checkReferences(
 ): RefCheck[] {
   const extendsRefs = (frontmatter.extends as string[] | undefined) ?? [];
   const uses = frontmatter.uses as { rules?: string[]; agents?: string[] } | undefined;
+  const templateRef = frontmatter.template as string | undefined;
 
   return [
     ...checkField('extends', extendsRefs, catalog),
     ...checkField('uses.rules', uses?.rules ?? [], catalog),
     ...checkField('uses.agents', uses?.agents ?? [], catalog),
+    ...checkField('template', templateRef ? [templateRef] : [], catalog),
   ];
 }

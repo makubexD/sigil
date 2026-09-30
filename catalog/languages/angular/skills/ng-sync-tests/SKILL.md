@@ -5,8 +5,6 @@ title: "Sync Tests (Angular)"
 description: "Sync the spec suite with source code — add missing specs, update stale ones, and remove orphaned specs (with confirmation before deletion)"
 name: ng-sync-tests
 language: angular
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Write

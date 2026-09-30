@@ -5,8 +5,6 @@ title: "Document (TypeScript)"
 description: "Generate or update TSDoc on exported symbols following the project's documented documentation style"
 name: ts-document
 language: typescript
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Write
@@ -15,6 +13,10 @@ allowedTools:
   - Glob
   - Grep
 argumentHint: "[file-or-module] (optional)"
+whenToUse: >-
+  Use when exported functions, classes, interfaces, or type aliases are missing TSDoc, or after
+  adding new public API surface — "document this", "add TSDoc", "write docs for this module".
+  Pass a target file; omit to scan for undocumented public exports across the source.
 uses:
   rules:
     - typescript/ts-documentation
@@ -24,12 +26,6 @@ tags:
   - typescript
   - document
   - documentation
----
-
-## When to Use
-
-Use when exported functions, classes, interfaces, or type aliases are missing TSDoc, or after adding new public API surface. Pass a target file; omit to scan for undocumented public exports across the source.
-
 ---
 
 # Document
@@ -59,15 +55,11 @@ style is documented.
 
 ## Step 3 — Read the target
 
-Identify:
-- Exported functions, classes, interfaces, type aliases, and constants missing TSDoc (`/** … */`).
-- Exported symbols with incomplete TSDoc (missing `@param`, `@returns`, or `@throws` for the
-  relevant cases).
-- Interface declarations that define behavioral contracts — document the invariants implementers
-  must uphold.
-- The file-level module comment — is one needed?
-
-Do not touch private/internal symbols unless they are genuinely non-obvious.
+Identify exported functions/classes/interfaces/type aliases/constants missing TSDoc (`/** … */`)
+or with incomplete TSDoc (missing `@param`/`@returns`/`@throws` where relevant); interfaces that
+define behavioral contracts (document the invariants implementers must uphold); and whether a
+file-level module comment is needed. Do not touch private/internal symbols unless genuinely
+non-obvious.
 
 ## Step 4 — Write documentation
 
@@ -114,17 +106,8 @@ Rules:
 
 ## Step 5 — Run and report
 
-Check whether a lint rule enforces documentation completeness:
-
-```bash
-# Run ESLint to check for tsdoc/jsdoc violations (if tsdoc plugin configured)
-eslint <target-file> 2>&1 || echo "no tsdoc lint rule configured"
-
-# TypeScript compilation — catches import/type errors in edited files
-tsc --noEmit 2>&1
-```
-
-Emit:
+Run ESLint on the target (if a tsdoc/jsdoc plugin is configured) and `tsc --noEmit` to catch any
+import/type errors introduced by the edits. Emit:
 
 ```
 ## Documentation Report

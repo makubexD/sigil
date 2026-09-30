@@ -3,8 +3,9 @@ id: shared/explain-diff
 kind: prompt
 title: Explain a Code Diff
 description: >-
-  Summarise what changed in a git diff and why it matters, written for a code reviewer
-  or a team member catching up on the change.
+  Summarise what changed in a git diff and why it matters, written for a code reviewer or a team
+  member catching up on the change. Use for "explain this diff", "summarize what changed", or
+  "help a reviewer understand this PR".
 tags:
   - diff
   - documentation

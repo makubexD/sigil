@@ -3,10 +3,11 @@ id: shared/author-artifact
 kind: prompt
 title: Author a New Catalog Artifact
 description: >-
-  Guided authoring workflow for adding a new skill, agent, rule, or prompt to the
-  sigil. Interviews you, suggests the right kind and which AIs it propagates
-  to, scaffolds the frontmatter, and validates on save. DRY: body authored once,
-  emits to every targeted AI automatically.
+  Add a new skill, agent, rule, or prompt to the sigil catalog through a guided interview.
+  Suggests the right kind and which AIs it propagates to, scaffolds the frontmatter, and
+  validates on save. DRY: body authored once, emits to every targeted AI automatically.
+  Use when the user wants to "add a new skill/agent/rule to the catalog", "author a new
+  artifact", or "create a sigil skill for X".
 tags:
   - catalog
   - authoring

@@ -8,6 +8,33 @@ import { log } from '@clack/prompts';
 import type { Target } from '../types';
 import { kindNoun } from '../select';
 
+export interface EquivalentCommandOptions {
+  selectors: string[];
+  target: string;
+  language?: string | undefined;
+  kinds?: string[] | undefined;
+  exclude?: string[] | undefined;
+  includeDeps: boolean;
+  overwrite: boolean;
+  configScope?: string | undefined;
+  /** True when the install includes at least one mcp/hook/settings artifact. When set,
+   *  --scope is always emitted (even for the 'project' default) to pin the destination. */
+  hasConfigKinds?: boolean | undefined;
+}
+
+/** Builds the `--scope <value>` flag, pinning it whenever config kinds are involved. */
+function buildScopeFlag(opts: EquivalentCommandOptions): string | undefined {
+  if (opts.hasConfigKinds) {
+    // Config installs always pin the scope so the command documents the exact destination.
+    return `--scope ${opts.configScope ?? 'project'}`;
+  }
+  if (opts.configScope && opts.configScope !== 'project') {
+    // No config kinds: only surface a non-default scope (e.g. passed via --scope flag alone).
+    return `--scope ${opts.configScope}`;
+  }
+  return undefined;
+}
+
 /**
  * Builds a copy-pasteable `sigil add …` command string from the effective
  * install options. Includes `--yes` so it runs non-interactively.
@@ -20,32 +47,15 @@ import { kindNoun } from '../select';
  * in the pasteable command. Genuine non-config defaults (overwrite, deps, language)
  * may still be omitted.
  */
-export function buildEquivalentCommand(opts: {
-  selectors: string[];
-  target: string;
-  language?: string | undefined;
-  kinds?: string[] | undefined;
-  exclude?: string[] | undefined;
-  includeDeps: boolean;
-  overwrite: boolean;
-  configScope?: string | undefined;
-  /** True when the install includes at least one mcp/hook/settings artifact. When set,
-   *  --scope is always emitted (even for the 'project' default) to pin the destination. */
-  hasConfigKinds?: boolean | undefined;
-}): string {
+export function buildEquivalentCommand(opts: EquivalentCommandOptions): string {
   const parts = ['sigil add', ...opts.selectors, `--target ${opts.target}`];
   if (opts.language) parts.push(`--language ${opts.language}`);
   if (opts.kinds && opts.kinds.length > 0) parts.push(`--kind ${opts.kinds.join(',')}`);
   if (opts.exclude && opts.exclude.length > 0) parts.push(`--exclude ${opts.exclude.join(',')}`);
   if (!opts.includeDeps) parts.push('--no-deps');
   if (opts.overwrite) parts.push('--overwrite');
-  if (opts.hasConfigKinds) {
-    // Config installs always pin the scope so the command documents the exact destination.
-    parts.push(`--scope ${opts.configScope ?? 'project'}`);
-  } else if (opts.configScope && opts.configScope !== 'project') {
-    // No config kinds: only surface a non-default scope (e.g. passed via --scope flag alone).
-    parts.push(`--scope ${opts.configScope}`);
-  }
+  const scopeFlag = buildScopeFlag(opts);
+  if (scopeFlag) parts.push(scopeFlag);
   parts.push('--yes');
   return parts.join(' ');
 }
@@ -67,7 +77,7 @@ export function printSkippedAdvice(
 ): void {
   if (skipped.length === 0) return;
   log.warn(
-    `${skipped.length} artifact(s) skipped (not supported by this target):\n` +
+    `${skipped.length} artifact(s) skipped:\n` +
       skipped.map(s => `  ${s.id} (${kindNoun(target, s.kind)}): ${s.reason}`).join('\n'),
   );
 }

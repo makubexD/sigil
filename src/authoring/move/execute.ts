@@ -12,6 +12,7 @@ import path from 'path';
 import type { LoadedCatalog, Target } from '../../types';
 import { writeArtifactFrontmatter } from '../frontmatter';
 import { checkSourceArtifact } from '../check-source';
+import { SKILL_FILENAME } from '../../paths';
 import type { MovePlan } from './plan';
 
 export interface MoveResult {
@@ -21,105 +22,176 @@ export interface MoveResult {
   changed: string[];
 }
 
+/** Parameters for {@link executeMove}. */
+export interface ExecuteMoveOptions {
+  /** The plan from planMove. */
+  plan: MovePlan;
+  /** Loaded catalog (for referrer rewrites + post-move check). */
+  catalog: LoadedCatalog;
+  /** Registered targets (for post-move checkSourceArtifact). */
+  targets: Target[];
+  /** Injected loadCatalog to decouple from I/O. */
+  loadFn: (dir: string) => LoadedCatalog;
+  /** Catalog root (for post-move re-load). */
+  catalogDir: string;
+}
+
+/** Step 1: moves the artifact's file(s) to the destination path, recording a rollback step. */
+function moveFiles(plan: MovePlan, rollbackSteps: Array<() => void>, changed: string[]): void {
+  fs.mkdirSync(path.dirname(plan.destinationPath), { recursive: true });
+  renameOrCopy(plan.sourcePath, plan.destinationPath, rollbackSteps);
+  changed.push(plan.destinationPath);
+}
+
+/** Step 2: rewrites the `id:` field in the moved artifact's frontmatter, recording a rollback step. */
+function updateMovedId(plan: MovePlan, rollbackSteps: Array<() => void>): void {
+  const movedFilePath =
+    plan.artifact.kind === 'skill'
+      ? path.join(plan.destinationPath, SKILL_FILENAME)
+      : plan.destinationPath;
+
+  const movedOriginal = fs.readFileSync(movedFilePath, 'utf-8');
+  rollbackSteps.push(() => {
+    try {
+      fs.writeFileSync(movedFilePath, movedOriginal, 'utf-8');
+    } catch {
+      // Best-effort rollback — ignore secondary errors
+    }
+  });
+
+  writeArtifactFrontmatter(movedFilePath, { id: plan.newId });
+}
+
+/** Replaces the first occurrence of `oldId` with `newId` in an id array, in place. */
+function replaceIdInPlace(arr: string[], oldId: string, newId: string): string[] {
+  const idx = arr.indexOf(oldId);
+  if (idx !== -1) arr[idx] = newId;
+  return arr;
+}
+
+/** Builds the `extends:` patch fragment for one referrer, if that field is affected. */
+function buildExtendsPatch(
+  referrer: MovePlan['referrers'][number],
+  fm: Record<string, unknown>,
+  oldId: string,
+  newId: string,
+): string[] | undefined {
+  if (!referrer.fields.includes('extends')) return undefined;
+  return replaceIdInPlace([...((fm.extends as string[] | undefined) ?? [])], oldId, newId);
+}
+
+/** Builds the `uses:` patch fragment for one referrer, if either uses field is affected. */
+function buildUsesPatch(
+  referrer: MovePlan['referrers'][number],
+  fm: Record<string, unknown>,
+  oldId: string,
+  newId: string,
+): { rules: string[]; agents: string[] } | undefined {
+  const hasUsesChange =
+    referrer.fields.includes('uses.rules') || referrer.fields.includes('uses.agents');
+  if (!hasUsesChange) return undefined;
+
+  const uses = (fm.uses as { rules?: string[]; agents?: string[] } | undefined) ?? {};
+  const rules = [...(uses.rules ?? [])];
+  const agents = [...(uses.agents ?? [])];
+  if (referrer.fields.includes('uses.rules')) replaceIdInPlace(rules, oldId, newId);
+  if (referrer.fields.includes('uses.agents')) replaceIdInPlace(agents, oldId, newId);
+  return { rules, agents };
+}
+
+/** Builds the frontmatter patch for one referrer, rewriting oldId → newId in its declared fields. */
+function buildReferrerPatch(
+  referrer: MovePlan['referrers'][number],
+  fm: Record<string, unknown>,
+  oldId: string,
+  newId: string,
+): Record<string, unknown> {
+  const patch: Record<string, unknown> = {};
+  const extendsPatch = buildExtendsPatch(referrer, fm, oldId, newId);
+  if (extendsPatch) patch.extends = extendsPatch;
+  const usesPatch = buildUsesPatch(referrer, fm, oldId, newId);
+  if (usesPatch) patch.uses = usesPatch;
+  return patch;
+}
+
+/** Records the rollback step that restores one referrer file to its pre-edit content. */
+function recordReferrerRollback(filePath: string, rollbackSteps: Array<() => void>): string {
+  const origContent = fs.readFileSync(filePath, 'utf-8');
+  rollbackSteps.push(() => {
+    try {
+      fs.writeFileSync(filePath, origContent, 'utf-8');
+    } catch {
+      // Best-effort rollback — ignore secondary errors
+    }
+  });
+  return origContent;
+}
+
+/** Rewrites one referrer file's frontmatter, recording a rollback step for it first. */
+function rewriteOneReferrer(
+  referrer: MovePlan['referrers'][number],
+  plan: MovePlan,
+  catalog: LoadedCatalog,
+  rollbackSteps: Array<() => void>,
+): void {
+  recordReferrerRollback(referrer.filePath, rollbackSteps);
+
+  const refArtifact = catalog.byId.get(referrer.artifactId);
+  if (!refArtifact) {
+    throw new Error(
+      `[move] Referrer '${referrer.artifactId}' (from ${referrer.filePath}) is not in the loaded catalog`,
+    );
+  }
+
+  const patch = buildReferrerPatch(referrer, refArtifact.frontmatter, plan.oldId, plan.newId);
+  writeArtifactFrontmatter(referrer.filePath, patch);
+}
+
+/** Step 3: rewrites every referrer's `extends`/`uses` fields, recording a rollback step per file. */
+function rewriteReferrers(
+  plan: MovePlan,
+  catalog: LoadedCatalog,
+  rollbackSteps: Array<() => void>,
+  changed: string[],
+): void {
+  for (const referrer of plan.referrers) {
+    rewriteOneReferrer(referrer, plan, catalog, rollbackSteps);
+    changed.push(referrer.filePath);
+  }
+}
+
+/** Step 4: re-validates the moved artifact; returns violation messages, or [] when clean. */
+function postMoveValidate(
+  plan: MovePlan,
+  targets: Target[],
+  loadFn: ExecuteMoveOptions['loadFn'],
+  catalogDir: string,
+): string[] {
+  const updatedCatalog = loadFn(catalogDir);
+  const updatedArtifact = updatedCatalog.byId.get(plan.newId);
+  if (!updatedArtifact) return [];
+  return checkSourceArtifact(updatedArtifact, updatedCatalog, targets).map(v => v.problem);
+}
+
 /**
  * Execute a move plan with best-effort LIFO rollback on failure.
  *
  * The caller must reload the catalog and run `validate` after a successful move.
- *
- * @param plan       The plan from planMove.
- * @param catalog    Loaded catalog (for referrer rewrites + post-move check).
- * @param targets    Registered targets (for post-move checkSourceArtifact).
- * @param loadFn     Injected loadCatalog to decouple from I/O.
- * @param catalogDir Catalog root (for post-move re-load).
  */
-export function executeMove(
-  plan: MovePlan,
-  catalog: LoadedCatalog,
-  targets: Target[],
-  loadFn: (dir: string) => LoadedCatalog,
-  catalogDir: string,
-): MoveResult {
+export function executeMove(options: ExecuteMoveOptions): MoveResult {
+  const { plan, catalog, targets, loadFn, catalogDir } = options;
   const changed: string[] = [];
   const rollbackSteps: Array<() => void> = [];
 
   try {
-    // ── Step 1: Move file(s) ────────────────────────────────────────────────
-    const destParent = path.dirname(plan.destinationPath);
-    fs.mkdirSync(destParent, { recursive: true });
+    moveFiles(plan, rollbackSteps, changed);
+    updateMovedId(plan, rollbackSteps);
+    rewriteReferrers(plan, catalog, rollbackSteps, changed);
 
-    renameOrCopy(plan.sourcePath, plan.destinationPath, rollbackSteps);
-    changed.push(plan.destinationPath);
-
-    // ── Step 2: Update id in the moved artifact ─────────────────────────────
-    const movedFilePath =
-      plan.artifact.kind === 'skill'
-        ? path.join(plan.destinationPath, 'SKILL.md')
-        : plan.destinationPath;
-
-    const movedOriginal = fs.readFileSync(movedFilePath, 'utf-8');
-    rollbackSteps.push(() => {
-      try {
-        fs.writeFileSync(movedFilePath, movedOriginal, 'utf-8');
-      } catch {
-        // Best-effort rollback — ignore secondary errors
-      }
-    });
-
-    writeArtifactFrontmatter(movedFilePath, { id: plan.newId });
-
-    // ── Step 3: Rewrite referrers ────────────────────────────────────────────
-    for (const referrer of plan.referrers) {
-      const origContent = fs.readFileSync(referrer.filePath, 'utf-8');
-      rollbackSteps.push(() => {
-        try {
-          fs.writeFileSync(referrer.filePath, origContent, 'utf-8');
-        } catch {
-          // Best-effort rollback — ignore secondary errors
-        }
-      });
-
-      const refArtifact = catalog.byId.get(referrer.artifactId)!;
-      const fm = refArtifact.frontmatter;
-      const patch: Record<string, unknown> = {};
-
-      if (referrer.fields.includes('extends')) {
-        const arr = [...((fm.extends as string[] | undefined) ?? [])];
-        const idx = arr.indexOf(plan.oldId);
-        if (idx !== -1) arr[idx] = plan.newId;
-        patch.extends = arr;
-      }
-
-      const hasUsesChange =
-        referrer.fields.includes('uses.rules') || referrer.fields.includes('uses.agents');
-      if (hasUsesChange) {
-        const uses = (fm.uses as { rules?: string[]; agents?: string[] } | undefined) ?? {};
-        const rules = [...(uses.rules ?? [])];
-        const agents = [...(uses.agents ?? [])];
-
-        if (referrer.fields.includes('uses.rules')) {
-          const idx = rules.indexOf(plan.oldId);
-          if (idx !== -1) rules[idx] = plan.newId;
-        }
-        if (referrer.fields.includes('uses.agents')) {
-          const idx = agents.indexOf(plan.oldId);
-          if (idx !== -1) agents[idx] = plan.newId;
-        }
-        patch.uses = { rules, agents };
-      }
-
-      writeArtifactFrontmatter(referrer.filePath, patch);
-      changed.push(referrer.filePath);
-    }
-
-    // ── Step 4: Post-move validation ─────────────────────────────────────────
-    const updatedCatalog = loadFn(catalogDir);
-    const updatedArtifact = updatedCatalog.byId.get(plan.newId);
-    if (updatedArtifact) {
-      const violations = checkSourceArtifact(updatedArtifact, updatedCatalog, targets);
-      if (violations.length > 0) {
-        rollbackAll(rollbackSteps);
-        return { ok: false, errors: violations.map(v => v.problem), changed: [] };
-      }
+    const violations = postMoveValidate(plan, targets, loadFn, catalogDir);
+    if (violations.length > 0) {
+      rollbackAll(rollbackSteps);
+      return { ok: false, errors: violations, changed: [] };
     }
 
     return { ok: true, errors: [], changed };

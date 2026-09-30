@@ -30,6 +30,48 @@ export interface ClosurePreview {
   dependencies: ClosureEntry[];
 }
 
+/** Records that `depId` was pulled in by `viaId`, in the depId → Set(skill IDs) map. */
+function recordDep(depVia: Map<string, Set<string>>, depId: string, viaId: string): void {
+  const set = depVia.get(depId) ?? new Set<string>();
+  set.add(viaId);
+  depVia.set(depId, set);
+}
+
+/** Builds the depId → Set(skill IDs) map for every `uses:` reference not already primary. */
+function buildDepVia(
+  primary: ResolvedArtifact[],
+  primarySet: Set<string>,
+): Map<string, Set<string>> {
+  const depVia = new Map<string, Set<string>>();
+  for (const artifact of primary) {
+    if (!hasUsesClosure(artifact.kind)) continue;
+    for (const rule of artifact.resolvedRules ?? []) {
+      if (!primarySet.has(rule.id)) recordDep(depVia, rule.id, artifact.id);
+    }
+    for (const agentId of artifact.resolvedAgentIds ?? []) {
+      if (!primarySet.has(agentId)) recordDep(depVia, agentId, artifact.id);
+    }
+  }
+  return depVia;
+}
+
+/** Splits the depId → via map into rule and agent ClosureEntry lists, rules first. */
+function splitDepEntries(
+  depVia: Map<string, Set<string>>,
+  catalog: ResolvedCatalog,
+): ClosureEntry[] {
+  const ruleEntries: ClosureEntry[] = [];
+  const agentEntries: ClosureEntry[] = [];
+  for (const [depId, viaSet] of depVia) {
+    const depArtifact = catalog.byId.get(depId);
+    if (!depArtifact) continue;
+    const entry: ClosureEntry = { artifact: depArtifact, via: [...viaSet] };
+    if (depArtifact.kind === 'rule') ruleEntries.push(entry);
+    else agentEntries.push(entry);
+  }
+  return [...ruleEntries, ...agentEntries];
+}
+
 /**
  * Compute the dependency closure for a given set of primary artifact IDs.
  *
@@ -42,43 +84,10 @@ export interface ClosurePreview {
  */
 export function computeClosure(primaryIds: string[], catalog: ResolvedCatalog): ClosurePreview {
   const primarySet = new Set(primaryIds);
-
   const primary: ResolvedArtifact[] = primaryIds
     .map(id => catalog.byId.get(id))
     .filter((a): a is ResolvedArtifact => a !== undefined);
 
-  // depId → Set of skill IDs that pull it in
-  const depVia = new Map<string, Set<string>>();
-
-  for (const artifact of primary) {
-    if (!hasUsesClosure(artifact.kind)) continue;
-
-    for (const rule of artifact.resolvedRules ?? []) {
-      if (!primarySet.has(rule.id)) {
-        if (!depVia.has(rule.id)) depVia.set(rule.id, new Set());
-        depVia.get(rule.id)!.add(artifact.id);
-      }
-    }
-
-    for (const agentId of artifact.resolvedAgentIds ?? []) {
-      if (!primarySet.has(agentId)) {
-        if (!depVia.has(agentId)) depVia.set(agentId, new Set());
-        depVia.get(agentId)!.add(artifact.id);
-      }
-    }
-  }
-
-  // Stable order: rules before agents, in the order they were first encountered
-  const ruleEntries: ClosureEntry[] = [];
-  const agentEntries: ClosureEntry[] = [];
-
-  for (const [depId, viaSet] of depVia) {
-    const depArtifact = catalog.byId.get(depId);
-    if (!depArtifact) continue;
-    const entry: ClosureEntry = { artifact: depArtifact, via: [...viaSet] };
-    if (depArtifact.kind === 'rule') ruleEntries.push(entry);
-    else agentEntries.push(entry);
-  }
-
-  return { primary, dependencies: [...ruleEntries, ...agentEntries] };
+  const depVia = buildDepVia(primary, primarySet);
+  return { primary, dependencies: splitDepEntries(depVia, catalog) };
 }

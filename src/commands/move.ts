@@ -24,6 +24,26 @@ export interface MoveOptions {
   yes: boolean;
 }
 
+/** Parses one .md file into a minimal Artifact, or undefined when unparseable/missing id+kind. */
+function parseArtifactSync(filePath: string): LoadedCatalog['artifacts'][number] | undefined {
+  try {
+    const raw = fs.readFileSync(filePath, 'utf-8');
+    const parsed = matter(raw);
+    const { id: fmId, kind } = parsed.data as { id?: string; kind?: string };
+    if (!fmId || !kind) return undefined;
+    return {
+      id: fmId,
+      kind: kind as never,
+      filePath,
+      frontmatter: parsed.data,
+      body: parsed.content,
+    };
+  } catch {
+    // Skip unparseable files during post-move validation
+    return undefined;
+  }
+}
+
 /**
  * Synchronous mini-loader used by executeMove's post-move validation callback.
  * Reads all .md files in a directory and constructs a minimal LoadedCatalog so
@@ -32,30 +52,88 @@ export interface MoveOptions {
 function loadCatalogSync(dir: string): LoadedCatalog {
   const absDir = path.resolve(dir);
   const mdFiles = fg.sync('**/*.md', { cwd: absDir, absolute: true });
-  const artifacts: LoadedCatalog['artifacts'] = [];
-  const byId = new Map<string, LoadedCatalog['artifacts'][number]>();
+  const artifacts = mdFiles
+    .map(parseArtifactSync)
+    .filter((a): a is LoadedCatalog['artifacts'][number] => a !== undefined);
+  const byId = new Map(artifacts.map(a => [a.id, a]));
 
-  for (const f of mdFiles) {
-    try {
-      const raw = fs.readFileSync(f, 'utf-8');
-      const parsed = matter(raw);
-      const { id: fmId, kind } = parsed.data as { id?: string; kind?: string };
-      if (!fmId || !kind) continue;
-      const a = {
-        id: fmId,
-        kind: kind as never,
-        filePath: f,
-        frontmatter: parsed.data,
-        body: parsed.content,
-      };
-      artifacts.push(a);
-      byId.set(fmId, a);
-    } catch {
-      // Skip unparseable files during post-move validation
+  return { artifacts, byId, languages: new Map(), skipWarnings: [] };
+}
+
+/** Prints the dry-run move plan (renames + referrer rewrites), no files touched. */
+function printDryRunPlan(summary: ReturnType<typeof summarizePlan>): void {
+  console.log('\nDry run — move plan:');
+  for (const m of summary.moves) {
+    console.log(`  rename: ${m.from}`);
+    console.log(`       → ${m.to}`);
+  }
+  if (summary.referrerRewrites.length > 0) {
+    console.log('\n  Referrers to rewrite:');
+    for (const r of summary.referrerRewrites) {
+      console.log(`  ~ ${r.file}  (${r.fields.join(', ')})`);
     }
   }
+  console.log('\nNo files were changed (--dry-run).');
+}
 
-  return { artifacts, byId, languages: new Map() };
+/** Builds the "Move 'x' → 'y'? (N referrer(s) will be rewritten)" confirm message. */
+function buildMoveConfirmMessage(oldId: string, newId: string, referrerCount: number): string {
+  const suffix = referrerCount > 0 ? ` (${referrerCount} referrer(s) will be rewritten)` : '';
+  return `Move '${oldId}' → '${newId}'?${suffix}`;
+}
+
+/** Confirms the move with the user unless --yes was passed; throws/cancels as appropriate. */
+async function confirmMove(
+  oldId: string,
+  newId: string,
+  referrerCount: number,
+  opts: MoveOptions,
+): Promise<boolean> {
+  if (opts.yes) return true;
+  if (!isInteractiveTTY()) {
+    throw new SigilError('stdin/stdout is not interactive. Re-run with --yes to confirm.');
+  }
+  const ok = await confirm({
+    message: buildMoveConfirmMessage(oldId, newId, referrerCount),
+    initialValue: false,
+  });
+  if (isCancel(ok) || !ok) {
+    cancel('Move cancelled.');
+    return false;
+  }
+  return true;
+}
+
+/** Prints the post-move success summary. */
+function printMoveSuccess(oldId: string, newId: string, changed: string[]): void {
+  console.log(`\n✓ Moved '${oldId}' → '${newId}'`);
+  for (const f of changed) console.log(`  ✓ ${f}`);
+  console.log('\n  Next: npm run validate  (to confirm catalog integrity)');
+}
+
+/** Throws with the rollback error hint when executeMove reports failure. */
+function assertMoveOk(result: ReturnType<typeof executeMove>): void {
+  if (result.ok) return;
+  throw new SigilError('Move failed (rolled back):', {
+    hint: result.errors.map(e => `  ${e}`).join('\n'),
+  });
+}
+
+/** Runs executeMove and reports the outcome; throws on rollback. */
+function applyMove(
+  plan: ReturnType<typeof planMove>,
+  catalog: LoadedCatalog,
+  opts: MoveOptions,
+): void {
+  const result = executeMove({
+    plan,
+    catalog,
+    targets: getAllTargets(),
+    loadFn: loadCatalogSync,
+    catalogDir: opts.catalogDir,
+  });
+  assertMoveOk(result);
+  printMoveSuccess(plan.oldId, plan.newId, result.changed);
 }
 
 export async function runMove(oldId: string, newId: string, opts: MoveOptions): Promise<void> {
@@ -68,53 +146,11 @@ export async function runMove(oldId: string, newId: string, opts: MoveOptions): 
     throw new SigilError((err as Error).message, { cause: err });
   }
 
-  const summary = summarizePlan(plan);
-
   if (opts.dryRun) {
-    console.log('\nDry run — move plan:');
-    for (const m of summary.moves) {
-      console.log(`  rename: ${m.from}`);
-      console.log(`       → ${m.to}`);
-    }
-    if (summary.referrerRewrites.length > 0) {
-      console.log('\n  Referrers to rewrite:');
-      for (const r of summary.referrerRewrites) {
-        console.log(`  ~ ${r.file}  (${r.fields.join(', ')})`);
-      }
-    }
-    console.log('\nNo files were changed (--dry-run).');
+    printDryRunPlan(summarizePlan(plan));
     return;
   }
 
-  // Confirm
-  const isTTY = isInteractiveTTY();
-  if (!opts.yes && !isTTY) {
-    throw new SigilError('stdin/stdout is not interactive. Re-run with --yes to confirm.');
-  }
-  if (!opts.yes) {
-    const ok = await confirm({
-      message:
-        `Move '${oldId}' → '${newId}'?` +
-        (plan.referrers.length > 0
-          ? ` (${plan.referrers.length} referrer(s) will be rewritten)`
-          : ''),
-      initialValue: false,
-    });
-    if (isCancel(ok) || !ok) {
-      cancel('Move cancelled.');
-      return;
-    }
-  }
-
-  const result = executeMove(plan, catalog, getAllTargets(), loadCatalogSync, opts.catalogDir);
-
-  if (!result.ok) {
-    throw new SigilError('Move failed (rolled back):', {
-      hint: result.errors.map(e => `  ${e}`).join('\n'),
-    });
-  }
-
-  console.log(`\n✓ Moved '${oldId}' → '${newId}'`);
-  for (const f of result.changed) console.log(`  ✓ ${f}`);
-  console.log('\n  Next: npm run validate  (to confirm catalog integrity)');
+  if (!(await confirmMove(oldId, newId, plan.referrers.length, opts))) return;
+  applyMove(plan, catalog, opts);
 }

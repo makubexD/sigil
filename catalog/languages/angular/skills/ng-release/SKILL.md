@@ -5,8 +5,6 @@ title: "Release Preparation (Angular)"
 description: "Prepare a release — verify quality gates, generate a changelog from git log, and propose a version bump"
 name: ng-release
 language: angular
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash

@@ -14,6 +14,7 @@ import { checkSourceArtifact } from '../authoring/check-source';
 import { scanContent, formatScanFindings } from '../trust/scan';
 import { normPath } from '../paths';
 import { SigilError } from '../errors';
+import type { LoadedCatalog, Target } from '../types';
 
 export interface CheckOptions {
   catalogDir: string;
@@ -22,19 +23,11 @@ export interface CheckOptions {
   strict: boolean;
 }
 
-export async function runCheck(files: string[], opts: CheckOptions): Promise<void> {
-  // Load the full catalog for reference-integrity and dup-id checks
-  const catalog = await loadCatalog(opts.catalogDir);
-  const targets = getAllTargets();
-
-  // Resolve which files to check
-  if (files.length === 0) {
-    throw new SigilError('No files specified. Pass file path(s) as arguments.', {
-      hint: '  Example: sigil check catalog/languages/csharp/skills/cs-generate-tests/SKILL.md',
-    });
-  }
-
-  // Expand directories to all artifact files within them
+/** Expands directory arguments to every artifact file path within them; leaves files as-is. */
+function expandFilesToCheck(
+  files: string[],
+  catalog: { artifacts: { filePath: string }[] },
+): string[] {
   const expandedFiles: string[] = [];
   for (const f of files) {
     if (fs.existsSync(f) && fs.statSync(f).isDirectory()) {
@@ -47,51 +40,103 @@ export async function runCheck(files: string[], opts: CheckOptions): Promise<voi
       expandedFiles.push(path.resolve(f));
     }
   }
+  return expandedFiles;
+}
+
+/** Runs the opt-in trust scan for one file; returns the violation count to add. */
+function runTrustScan(filePath: string, opts: CheckOptions): number {
+  const rawContent = fs.readFileSync(filePath, 'utf-8');
+  const scanResult = scanContent(filePath, rawContent);
+  if (scanResult.findings.length === 0) return 0;
+
+  const trustLines = formatScanFindings(scanResult);
+  for (const line of trustLines) {
+    if (scanResult.level === 'error') {
+      console.error(line);
+    } else {
+      console.warn(line);
+    }
+  }
+  return opts.strict || scanResult.level === 'error' ? scanResult.findings.length : 0;
+}
+
+interface FileCheckResult {
+  /** True when the file was matched to a catalog artifact and actually checked. */
+  checked: boolean;
+  violationCount: number;
+}
+
+/** Prints the ✓/✗ line for one checked artifact, plus each violation's problem text. */
+function printFileCheckResult(
+  artifact: { id: string },
+  filePath: string,
+  violations: { problem: string }[],
+): void {
+  if (violations.length === 0) {
+    console.log(`  ✓  ${artifact.id}  (${path.relative(process.cwd(), filePath)})`);
+    return;
+  }
+  console.error(`  ✗  ${artifact.id}  (${path.relative(process.cwd(), filePath)})`);
+  for (const viol of violations) {
+    console.error(`       ${viol.problem}`);
+  }
+}
+
+/** Checks one resolved file path: source validation + optional trust scan. */
+function checkOneFile(
+  filePath: string,
+  catalog: LoadedCatalog,
+  targets: Target[],
+  opts: CheckOptions,
+): FileCheckResult {
+  const artifact = catalog.artifacts.find(a => normPath(a.filePath) === normPath(filePath));
+  if (!artifact) {
+    console.warn(`  ⚠  ${filePath}: not found in catalog (not a recognized artifact file?)`);
+    return { checked: false, violationCount: 0 };
+  }
+
+  const violations = checkSourceArtifact(artifact, catalog, targets, {
+    schemaOnly: opts.schemaOnly,
+  });
+  printFileCheckResult(artifact, filePath, violations);
+  const violationCount = violations.length + (opts.trust ? runTrustScan(filePath, opts) : 0);
+  return { checked: true, violationCount };
+}
+
+/** Throws if no file arguments were passed. */
+function assertFilesProvided(files: string[]): void {
+  if (files.length === 0) {
+    throw new SigilError('No files specified. Pass file path(s) as arguments.', {
+      hint: '  Example: sigil check catalog/languages/csharp/skills/cs-generate-tests/SKILL.md',
+    });
+  }
+}
+
+/** Prints the final summary line and throws if any violation was found. */
+function finalizeCheckRun(checkedCount: number, totalViolations: number): void {
+  console.log(
+    `\n${totalViolations === 0 ? '✓' : '✗'} ${checkedCount} artifact(s) checked, ${totalViolations} violation(s) found.`,
+  );
+  if (totalViolations > 0) {
+    throw new SigilError(`${totalViolations} violation(s) found — see above.`);
+  }
+}
+
+export async function runCheck(files: string[], opts: CheckOptions): Promise<void> {
+  assertFilesProvided(files);
+
+  // Load the full catalog for reference-integrity and dup-id checks
+  const catalog = await loadCatalog(opts.catalogDir);
+  const targets = getAllTargets();
+  const expandedFiles = expandFilesToCheck(files, catalog);
 
   let totalViolations = 0;
   let checkedCount = 0;
 
   for (const filePath of expandedFiles) {
-    // Find this artifact in the loaded catalog (normalize separators for Windows compat)
-    const artifact = catalog.artifacts.find(a => normPath(a.filePath) === normPath(filePath));
-    if (!artifact) {
-      console.warn(`  ⚠  ${filePath}: not found in catalog (not a recognized artifact file?)`);
-      continue;
-    }
-
-    const violations = checkSourceArtifact(artifact, catalog, targets, {
-      schemaOnly: opts.schemaOnly,
-    });
-    checkedCount++;
-
-    if (violations.length === 0) {
-      console.log(`  ✓  ${artifact.id}  (${path.relative(process.cwd(), filePath)})`);
-    } else {
-      console.error(`  ✗  ${artifact.id}  (${path.relative(process.cwd(), filePath)})`);
-      for (const viol of violations) {
-        console.error(`       ${viol.problem}`);
-      }
-      totalViolations += violations.length;
-    }
-
-    // Trust scan (opt-in via --trust)
-    if (opts.trust) {
-      const rawContent = fs.readFileSync(filePath, 'utf-8');
-      const scanResult = scanContent(filePath, rawContent);
-      if (scanResult.findings.length > 0) {
-        const trustLines = formatScanFindings(scanResult);
-        for (const line of trustLines) {
-          if (scanResult.level === 'error') {
-            console.error(line);
-          } else {
-            console.warn(line);
-          }
-        }
-        if (opts.strict || scanResult.level === 'error') {
-          totalViolations += scanResult.findings.length;
-        }
-      }
-    }
+    const result = checkOneFile(filePath, catalog, targets, opts);
+    if (result.checked) checkedCount++;
+    totalViolations += result.violationCount;
   }
 
   if (checkedCount === 0) {
@@ -99,10 +144,5 @@ export async function runCheck(files: string[], opts: CheckOptions): Promise<voi
     return;
   }
 
-  console.log(
-    `\n${totalViolations === 0 ? '✓' : '✗'} ${checkedCount} artifact(s) checked, ${totalViolations} violation(s) found.`,
-  );
-  if (totalViolations > 0) {
-    throw new SigilError(`${totalViolations} violation(s) found — see above.`);
-  }
+  finalizeCheckRun(checkedCount, totalViolations);
 }

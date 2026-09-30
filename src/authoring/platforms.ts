@@ -71,6 +71,37 @@ export interface PlatformMutationResult {
   warnings: string[];
 }
 
+/** Validates that every name in `names` is a known target that supports `kind`. */
+function validatePlatformNames(kind: string, names: string[], targets: Target[]): string[] {
+  const errors: string[] = [];
+  const allNames = new Set(targets.map(t => t.name));
+  const supporting = new Set(kindSupportingTargets(kind, targets).map(t => t.name));
+  for (const p of names) {
+    if (!allNames.has(p)) {
+      errors.push(`Unknown platform '${p}'. Known platforms: ${[...allNames].join(', ')}`);
+    } else if (!supporting.has(p)) {
+      errors.push(`Platform '${p}' does not support kind '${kind}'`);
+    }
+  }
+  return errors;
+}
+
+/** Add-specific warning/no-op check: has every `toAdd` entry already been covered? */
+function computeAddWarnings(
+  currentSet: Set<string>,
+  toAdd: string[],
+): { warnings: string[]; allCovered: boolean } {
+  const alreadyCovered = toAdd.filter(p => currentSet.has(p));
+  const warnings =
+    alreadyCovered.length > 0 ? [`Already targeted: ${alreadyCovered.join(', ')}`] : [];
+  return { warnings, allCovered: alreadyCovered.length === toAdd.length };
+}
+
+/** Result for an invalid `toAdd` list: leaves `current` untouched (sorted), reports errors. */
+function invalidAddResult(current: string[] | undefined, errors: string[]): PlatformMutationResult {
+  return { platforms: current ? [...current].sort() : undefined, noOp: true, errors, warnings: [] };
+}
+
 /**
  * Add platforms to the current set and normalize.
  * Validates each name exists in the registry and supports the kind.
@@ -81,40 +112,46 @@ export function addPlatforms(
   toAdd: string[],
   targets: Target[],
 ): PlatformMutationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
+  const errors = validatePlatformNames(kind, toAdd, targets);
+  if (errors.length > 0) return invalidAddResult(current, errors);
 
-  const allNames = new Set(targets.map(t => t.name));
-  const supporting = new Set(kindSupportingTargets(kind, targets).map(t => t.name));
   const currentSet = new Set(effectivePlatforms(kind, current, targets));
-
-  for (const p of toAdd) {
-    if (!allNames.has(p)) {
-      errors.push(`Unknown platform '${p}'. Known platforms: ${[...allNames].join(', ')}`);
-    } else if (!supporting.has(p)) {
-      errors.push(`Platform '${p}' does not support kind '${kind}'`);
-    }
-  }
-  if (errors.length > 0)
-    return { platforms: current ? [...current].sort() : undefined, noOp: true, errors, warnings };
-
-  const alreadyCovered = toAdd.filter(p => currentSet.has(p));
-  if (alreadyCovered.length > 0) {
-    warnings.push(`Already targeted: ${alreadyCovered.join(', ')}`);
-  }
-
-  if (alreadyCovered.length === toAdd.length) {
-    return {
-      platforms: normalizePlatforms(kind, [...currentSet], targets),
-      noOp: true,
-      errors,
-      warnings,
-    };
-  }
+  const { warnings, allCovered } = computeAddWarnings(currentSet, toAdd);
+  if (allCovered) return unchangedResult(kind, currentSet, targets, { errors, warnings });
 
   const newSet = new Set([...currentSet, ...toAdd]);
   const normalized = normalizePlatforms(kind, [...newSet], targets);
   return { platforms: normalized, noOp: false, errors, warnings };
+}
+
+/** A no-op result: current set is unchanged (normalized), with the given messages. */
+function unchangedResult(
+  kind: string,
+  currentSet: Set<string>,
+  targets: Target[],
+  messages: { errors: string[]; warnings: string[] },
+): PlatformMutationResult {
+  return {
+    platforms: normalizePlatforms(kind, [...currentSet], targets),
+    noOp: true,
+    errors: messages.errors,
+    warnings: messages.warnings,
+  };
+}
+
+/** Computes the post-removal set, or an error when it would be empty (targets no platform). */
+function computeRemainingAfterRemove(
+  currentSet: Set<string>,
+  toRemove: string[],
+): { remaining: string[]; errors: string[] } {
+  const remaining = [...currentSet].filter(p => !toRemove.includes(p));
+  if (remaining.length > 0) return { remaining, errors: [] };
+  return {
+    remaining,
+    errors: [
+      'Cannot remove all platforms — artifact would target no platform. Use retarget --to <name> to change targets instead.',
+    ],
+  };
 }
 
 /**
@@ -127,39 +164,22 @@ export function removePlatforms(
   toRemove: string[],
   targets: Target[],
 ): PlatformMutationResult {
-  const errors: string[] = [];
-  const warnings: string[] = [];
-
   const currentSet = new Set(effectivePlatforms(kind, current, targets));
   const notPresent = toRemove.filter(p => !currentSet.has(p));
-  if (notPresent.length > 0) {
-    warnings.push(`Not currently targeted (no-op for these): ${notPresent.join(', ')}`);
-  }
+  const warnings =
+    notPresent.length > 0
+      ? [`Not currently targeted (no-op for these): ${notPresent.join(', ')}`]
+      : [];
 
   if (notPresent.length === toRemove.length) {
-    return {
-      platforms: normalizePlatforms(kind, [...currentSet], targets),
-      noOp: true,
-      errors,
-      warnings,
-    };
+    return unchangedResult(kind, currentSet, targets, { errors: [], warnings });
   }
 
-  const remaining = [...currentSet].filter(p => !toRemove.includes(p));
-  if (remaining.length === 0) {
-    errors.push(
-      'Cannot remove all platforms — artifact would target no platform. Use retarget --to <name> to change targets instead.',
-    );
-    return {
-      platforms: normalizePlatforms(kind, [...currentSet], targets),
-      noOp: true,
-      errors,
-      warnings,
-    };
-  }
+  const { remaining, errors } = computeRemainingAfterRemove(currentSet, toRemove);
+  if (errors.length > 0) return unchangedResult(kind, currentSet, targets, { errors, warnings });
 
   const normalized = normalizePlatforms(kind, remaining, targets);
-  return { platforms: normalized, noOp: false, errors, warnings };
+  return { platforms: normalized, noOp: false, errors: [], warnings };
 }
 
 /**
@@ -179,17 +199,9 @@ export function setPlatforms(
     return { platforms: undefined, noOp: false, errors, warnings };
   }
 
-  const allNames = new Set(targets.map(t => t.name));
-  const supporting = new Set(kindSupportingTargets(kind, targets).map(t => t.name));
-
-  for (const p of toSet) {
-    if (!allNames.has(p)) {
-      errors.push(`Unknown platform '${p}'. Known platforms: ${[...allNames].join(', ')}`);
-    } else if (!supporting.has(p)) {
-      errors.push(`Platform '${p}' does not support kind '${kind}'`);
-    }
-  }
-  if (errors.length > 0) return { platforms: undefined, noOp: true, errors, warnings };
+  const nameErrors = validatePlatformNames(kind, toSet, targets);
+  if (nameErrors.length > 0)
+    return { platforms: undefined, noOp: true, errors: nameErrors, warnings };
 
   const normalized = normalizePlatforms(kind, toSet, targets);
   return { platforms: normalized, noOp: false, errors, warnings };

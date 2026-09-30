@@ -13,6 +13,9 @@
  */
 import fs from 'fs';
 import path from 'path';
+import type { Dirent } from 'fs';
+import { SKILL_FILENAME } from '../../paths';
+import { parseMarkdown, stemOf } from './parse-markdown';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -43,232 +46,114 @@ export interface DiscoverResult {
   unrecognised: UnrecognisedFile[];
 }
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
-/**
- * Parse a markdown file with simple frontmatter.
- *
- * We do NOT use gray-matter here because the source Claude template files contain
- * unquoted description strings with colons (e.g., "description: Fix: the bug"),
- * which strict YAML parsers reject. Instead we parse the frontmatter line-by-line:
- *   - A line with `key: value` → key = value (string; everything after the first `: `)
- *   - Special-case: boolean true/false, simple numeric scalars
- *   - A line that looks like `key:` with YAML indented children (e.g. `paths:`) → collect as array
- *
- * This is intentionally tolerant: accuracy matters more than strict YAML compliance
- * for the source-import path.
- */
-function parseMarkdown(filePath: string): { frontmatter: Record<string, unknown>; body: string } {
-  const raw = fs.readFileSync(filePath, 'utf-8');
-
-  // Must start with ---
-  if (!raw.startsWith('---')) {
-    return { frontmatter: {}, body: raw };
-  }
-
-  // Find closing ---
-  const rest = raw.slice(3);
-  const closeIdx = rest.indexOf('\n---');
-  if (closeIdx === -1) {
-    return { frontmatter: {}, body: raw };
-  }
-
-  const frontmatterText = rest.slice(0, closeIdx);
-  const body = rest.slice(closeIdx + 4); // skip \n---
-
-  // Parse frontmatter line by line
-  const fm: Record<string, unknown> = {};
-  const lines = frontmatterText.split('\n');
-  let i = 0;
-  while (i < lines.length) {
-    // lines[i] is guaranteed to exist since i < lines.length
-    const line: string = lines[i] ?? '';
-    // Skip blank lines
-    if (!line.trim()) {
-      i++;
-      continue;
-    }
-
-    // Indented line (part of a previous list) — handled inline below
-    if (line.startsWith('  ') || line.startsWith('\t')) {
-      i++;
-      continue;
-    }
-
-    // Match "key: value" or "key:" (bare)
-    const colonIdx = line.indexOf(':');
-    if (colonIdx === -1) {
-      i++;
-      continue;
-    }
-
-    const key = line.slice(0, colonIdx).trim();
-    const rawVal = line.slice(colonIdx + 1);
-    const valStr = rawVal.trimStart();
-
-    if (!key) {
-      i++;
-      continue;
-    }
-
-    // Check if next lines are indented list items (e.g. paths:, tools:)
-    const listItems: string[] = [];
-    if (valStr === '' || valStr === '\n') {
-      // Collect indented child lines
-      let j = i + 1;
-      while (
-        j < lines.length &&
-        ((lines[j] ?? '').startsWith('  ') || (lines[j] ?? '').startsWith('\t'))
-      ) {
-        let item = (lines[j] ?? '').trim();
-        // Strip "- " list-item marker
-        if (item.startsWith('- ')) item = item.slice(2);
-        // Strip surrounding YAML quotes so "**/*.cs" stays as **/*.cs
-        if (
-          (item.startsWith('"') && item.endsWith('"')) ||
-          (item.startsWith("'") && item.endsWith("'"))
-        ) {
-          item = item.slice(1, -1);
-        }
-        listItems.push(item);
-        j++;
-      }
-      if (listItems.length > 0) {
-        fm[key] = listItems;
-        i = j;
-        continue;
-      }
-    }
-
-    // Scalar value
-    if (valStr === 'true') {
-      fm[key] = true;
-    } else if (valStr === 'false') {
-      fm[key] = false;
-    } else if (valStr !== '' && !isNaN(Number(valStr))) {
-      fm[key] = Number(valStr);
-    } else {
-      // Strip surrounding quotes if present
-      if (
-        (valStr.startsWith('"') && valStr.endsWith('"')) ||
-        (valStr.startsWith("'") && valStr.endsWith("'"))
-      ) {
-        fm[key] = valStr.slice(1, -1);
-      } else {
-        fm[key] = valStr;
-      }
-    }
-    i++;
-  }
-
-  return { frontmatter: fm, body };
-}
-
-function stemOf(filePath: string): string {
-  return path.basename(filePath).replace(/\.md$/, '');
-}
-
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-/**
- * Walk `sourceDir` and classify every Markdown file as an artifact kind.
- * Files that don't match any known layout are collected in `unrecognised`.
- *
- * @param sourceDir  Absolute path to the source Claude template directory (e.g. _Others/.ClaudeDotNet).
- */
-export function discoverFiles(sourceDir: string): DiscoverResult {
+/** Classifies one directory entry within a flat kind dir (rules/ or agents/). */
+type ClassifyResult = { discovered?: DiscoveredFile; unrecognised?: UnrecognisedFile };
+
+/** Builds a DiscoveredFile record for a flat-kind (rule/agent) source markdown file. */
+function buildFlatKindDiscoveredFile(
+  filePath: string,
+  relativePath: string,
+  kind: 'rule' | 'agent',
+): DiscoveredFile {
+  const slug = stemOf(filePath);
+  const { frontmatter, body } = parseMarkdown(filePath);
+  return { sourcePath: filePath, relativePath, kind, slug, frontmatter, body };
+}
+
+function classifyFlatKindEntry(
+  entry: Dirent,
+  dir: string,
+  dirName: string,
+  kind: 'rule' | 'agent',
+): ClassifyResult {
+  if (!entry.isFile() || !entry.name.endsWith('.md')) {
+    if (entry.name === 'README.md') return {};
+    return {
+      unrecognised: { relativePath: path.join(dirName, entry.name), reason: 'Not a .md file' },
+    };
+  }
+  const filePath = path.join(dir, entry.name);
+  const relativePath = path.join(dirName, entry.name);
+  return { discovered: buildFlatKindDiscoveredFile(filePath, relativePath, kind) };
+}
+
+/** Discovers a flat kind directory (`rules/` or `agents/`) — one `.md` file per artifact. */
+function discoverFlatKindDir(
+  sourceDir: string,
+  dirName: string,
+  kind: 'rule' | 'agent',
+): DiscoverResult {
   const discovered: DiscoveredFile[] = [];
   const unrecognised: UnrecognisedFile[] = [];
+  const dir = path.join(sourceDir, dirName);
+  if (!fs.existsSync(dir)) return { discovered, unrecognised };
 
-  const rulesDir = path.join(sourceDir, 'rules');
-  const agentsDir = path.join(sourceDir, 'agents');
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    const result = classifyFlatKindEntry(entry, dir, dirName, kind);
+    if (result.discovered) discovered.push(result.discovered);
+    if (result.unrecognised) unrecognised.push(result.unrecognised);
+  }
+  return { discovered, unrecognised };
+}
+
+/** Builds a DiscoveredFile record for one `skills/<name>/SKILL.md` source file. */
+function buildSkillDiscoveredFile(skillFile: string, skillName: string): DiscoveredFile {
+  const { frontmatter, body } = parseMarkdown(skillFile);
+  return {
+    sourcePath: skillFile,
+    relativePath: path.join('skills', skillName, SKILL_FILENAME),
+    kind: 'skill',
+    slug: skillName,
+    frontmatter,
+    body,
+  };
+}
+
+/** Classifies one directory entry within `skills/` — a per-skill subdirectory. */
+function classifySkillEntry(entry: Dirent, skillsDir: string): ClassifyResult {
+  if (!entry.isDirectory()) {
+    return {
+      unrecognised: {
+        relativePath: path.join('skills', entry.name),
+        reason: 'Expected a directory per skill (skills/<name>/SKILL.md)',
+      },
+    };
+  }
+  const skillFile = path.join(skillsDir, entry.name, SKILL_FILENAME);
+  if (!fs.existsSync(skillFile)) {
+    return {
+      unrecognised: {
+        relativePath: path.join('skills', entry.name),
+        reason: `Missing ${SKILL_FILENAME} inside skill directory`,
+      },
+    };
+  }
+  return { discovered: buildSkillDiscoveredFile(skillFile, entry.name) };
+}
+
+/** Discovers `skills/<name>/SKILL.md` — one directory per artifact. */
+function discoverSkillsDir(sourceDir: string): DiscoverResult {
+  const discovered: DiscoveredFile[] = [];
+  const unrecognised: UnrecognisedFile[] = [];
   const skillsDir = path.join(sourceDir, 'skills');
+  if (!fs.existsSync(skillsDir)) return { discovered, unrecognised };
 
-  // ── rules/ ────────────────────────────────────────────────────────────────
-  if (fs.existsSync(rulesDir)) {
-    for (const entry of fs.readdirSync(rulesDir, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.endsWith('.md')) {
-        if (entry.name !== 'README.md') {
-          unrecognised.push({
-            relativePath: path.join('rules', entry.name),
-            reason: 'Not a .md file',
-          });
-        }
-        continue;
-      }
-      const filePath = path.join(rulesDir, entry.name);
-      const slug = stemOf(filePath);
-      const { frontmatter, body } = parseMarkdown(filePath);
-      discovered.push({
-        sourcePath: filePath,
-        relativePath: path.join('rules', entry.name),
-        kind: 'rule',
-        slug,
-        frontmatter,
-        body,
-      });
-    }
+  for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+    const result = classifySkillEntry(entry, skillsDir);
+    if (result.discovered) discovered.push(result.discovered);
+    if (result.unrecognised) unrecognised.push(result.unrecognised);
   }
+  return { discovered, unrecognised };
+}
 
-  // ── agents/ ───────────────────────────────────────────────────────────────
-  if (fs.existsSync(agentsDir)) {
-    for (const entry of fs.readdirSync(agentsDir, { withFileTypes: true })) {
-      if (!entry.isFile() || !entry.name.endsWith('.md')) {
-        if (entry.name !== 'README.md') {
-          unrecognised.push({
-            relativePath: path.join('agents', entry.name),
-            reason: 'Not a .md file',
-          });
-        }
-        continue;
-      }
-      const filePath = path.join(agentsDir, entry.name);
-      const slug = stemOf(filePath);
-      const { frontmatter, body } = parseMarkdown(filePath);
-      discovered.push({
-        sourcePath: filePath,
-        relativePath: path.join('agents', entry.name),
-        kind: 'agent',
-        slug,
-        frontmatter,
-        body,
-      });
-    }
-  }
-
-  // ── skills/ ───────────────────────────────────────────────────────────────
-  if (fs.existsSync(skillsDir)) {
-    for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-      if (!entry.isDirectory()) {
-        unrecognised.push({
-          relativePath: path.join('skills', entry.name),
-          reason: 'Expected a directory per skill (skills/<name>/SKILL.md)',
-        });
-        continue;
-      }
-      const skillFile = path.join(skillsDir, entry.name, 'SKILL.md');
-      if (!fs.existsSync(skillFile)) {
-        unrecognised.push({
-          relativePath: path.join('skills', entry.name),
-          reason: 'Missing SKILL.md inside skill directory',
-        });
-        continue;
-      }
-      const { frontmatter, body } = parseMarkdown(skillFile);
-      discovered.push({
-        sourcePath: skillFile,
-        relativePath: path.join('skills', entry.name, 'SKILL.md'),
-        kind: 'skill',
-        slug: entry.name,
-        frontmatter,
-        body,
-      });
-    }
-  }
-
-  // ── Root-level files we intentionally skip ────────────────────────────────
-  // README.md is documentation, not an artifact — silently skipped.
-  // Any other root-level .md is unexpected.
+/**
+ * Root-level files we intentionally skip: README.md is documentation, not an artifact —
+ * silently skipped. Any other root-level .md is unexpected and reported as unrecognised.
+ */
+function discoverRootLevelUnrecognised(sourceDir: string): UnrecognisedFile[] {
+  const unrecognised: UnrecognisedFile[] = [];
   for (const entry of fs.readdirSync(sourceDir, { withFileTypes: true })) {
     if (!entry.isFile() || !entry.name.endsWith('.md')) continue;
     if (entry.name === 'README.md') continue;
@@ -277,6 +162,28 @@ export function discoverFiles(sourceDir: string): DiscoverResult {
       reason: 'Root-level .md file — not a recognised artifact location',
     });
   }
+  return unrecognised;
+}
 
-  return { discovered, unrecognised };
+/**
+ * Walk `sourceDir` and classify every Markdown file as an artifact kind.
+ * Files that don't match any known layout are collected in `unrecognised`.
+ *
+ * @param sourceDir  Absolute path to the source Claude template directory (e.g. _Others/.ClaudeDotNet).
+ */
+export function discoverFiles(sourceDir: string): DiscoverResult {
+  const rules = discoverFlatKindDir(sourceDir, 'rules', 'rule');
+  const agents = discoverFlatKindDir(sourceDir, 'agents', 'agent');
+  const skills = discoverSkillsDir(sourceDir);
+  const rootUnrecognised = discoverRootLevelUnrecognised(sourceDir);
+
+  return {
+    discovered: [...rules.discovered, ...agents.discovered, ...skills.discovered],
+    unrecognised: [
+      ...rules.unrecognised,
+      ...agents.unrecognised,
+      ...skills.unrecognised,
+      ...rootUnrecognised,
+    ],
+  };
 }

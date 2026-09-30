@@ -213,8 +213,8 @@ describe('translateFrontmatter — skill', () => {
     assert.equal(frontmatter.disableModelInvocation, undefined);
   });
 
-  it('when_to_use goes into bodyPrefix, NOT description', () => {
-    const { frontmatter, bodyPrefix } = translateFrontmatter(
+  it('when_to_use maps straight to the whenToUse frontmatter field, NOT description', () => {
+    const { frontmatter } = translateFrontmatter(
       'skill',
       'cs-generate-tests',
       {
@@ -227,13 +227,14 @@ describe('translateFrontmatter — skill', () => {
     assert.equal(frontmatter.description, 'Generate tests.');
     assert.ok(!frontmatter.description.includes('when_to_use'), 'when_to_use not in description');
     assert.ok(!frontmatter.description.includes('\n'), 'description is single-line');
-    // body prefix carries the when_to_use content
-    assert.ok(bodyPrefix?.includes('## When to Use'), 'bodyPrefix has heading');
-    assert.ok(bodyPrefix?.includes('Use when you need tests.'), 'bodyPrefix has content');
+    // whenToUse carries the trigger-phrase content — it is routing metadata, not body
+    // prose, so it must round-trip through frontmatter rather than get buried in the body
+    // where it would stop influencing model dispatch.
+    assert.equal(frontmatter.whenToUse, 'Use when you need tests.');
   });
 
-  it('bodyPrefix is undefined when when_to_use absent', () => {
-    const { bodyPrefix } = translateFrontmatter(
+  it('whenToUse is undefined when when_to_use absent', () => {
+    const { frontmatter } = translateFrontmatter(
       'skill',
       'cs-generate-tests',
       {
@@ -241,7 +242,7 @@ describe('translateFrontmatter — skill', () => {
       },
       opts,
     );
-    assert.equal(bodyPrefix, undefined);
+    assert.equal(frontmatter.whenToUse, undefined);
   });
 
   it('synthesizes uses: { rules: [], agents: [] }', () => {
@@ -256,7 +257,7 @@ describe('translateFrontmatter — skill', () => {
     assert.deepEqual(frontmatter.uses, { rules: [], agents: [] });
   });
 
-  it('appliesTo defaults to ["**/*"]', () => {
+  it('does not set appliesTo — skills have no path-scoped loading', () => {
     const { frontmatter } = translateFrontmatter(
       'skill',
       'cs-generate-tests',
@@ -265,7 +266,7 @@ describe('translateFrontmatter — skill', () => {
       },
       opts,
     );
-    assert.deepEqual(frontmatter.appliesTo, ['**/*']);
+    assert.equal(frontmatter.appliesTo, undefined);
   });
 });
 
@@ -369,8 +370,8 @@ describe('renderArtifactFile', () => {
     assert.equal(parsedFalse.disableModelInvocation, undefined);
   });
 
-  it('when_to_use is in body not in description field', () => {
-    const { frontmatter, bodyPrefix } = translateFrontmatter(
+  it('when_to_use round-trips through the whenToUse frontmatter field, not the body', () => {
+    const { frontmatter } = translateFrontmatter(
       'skill',
       'cs-generate-tests',
       {
@@ -379,13 +380,12 @@ describe('renderArtifactFile', () => {
       },
       { language: 'csharp', displayName: '.NET / C#' },
     );
-    const body = bodyPrefix ? `${bodyPrefix}Original body.\n` : 'Original body.\n';
-    const content = renderArtifactFile(frontmatter, body);
+    const content = renderArtifactFile(frontmatter, 'Original body.\n');
     const parsed = matter(content);
     // description is clean single-line
     assert.equal((parsed.data as Record<string, unknown>).description, 'Generate tests.');
-    // body contains the when_to_use section
-    assert.ok(parsed.content.includes('## When to Use'), 'body has heading');
-    assert.ok(parsed.content.includes('Use after coding.'), 'body has content');
+    // whenToUse is a frontmatter field — it does not leak into the body
+    assert.equal((parsed.data as Record<string, unknown>).whenToUse, 'Use after coding.');
+    assert.equal(parsed.content.trim(), 'Original body.');
   });
 });

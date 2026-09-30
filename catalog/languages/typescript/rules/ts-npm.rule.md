@@ -130,9 +130,10 @@ Before publishing a package:
    npx publint                    # check exports map correctness
    npx @arethetypesright/cli      # verify ESM/CJS type resolution is correct
    ```
-4. **Run `prepublishOnly` gate** — add to `package.json` scripts:
+4. **Run `prepublishOnly` gate** — add to `package.json` scripts, chaining the type checker, the
+   linter, and the project's own `test` script (never hardcode a specific runner):
    ```json
-   { "prepublishOnly": "tsc --noEmit && eslint . && vitest run" }
+   { "prepublishOnly": "tsc --noEmit && eslint . && npm test" }
    ```
 5. **Publish with provenance** (npm 9.5+, GitHub Actions):
    ```bash

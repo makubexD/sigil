@@ -5,8 +5,6 @@ title: "Add Package (Angular)"
 description: "Vet and add a dependency — prefer ng add for Angular-aware packages, npm install otherwise, with peer-range and supply-chain checks"
 name: ng-add-package
 language: angular
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash

@@ -44,6 +44,84 @@ export interface ImportPlan {
 
 // ─── File renderer ────────────────────────────────────────────────────────────
 
+/** Base frontmatter entries common to every kind: id/kind/title/description/name?/language?. */
+function buildBaseEntries(frontmatter: CatalogFrontmatter): Array<[string, unknown]> {
+  const entries: Array<[string, unknown]> = [
+    ['id', frontmatter.id],
+    ['kind', frontmatter.kind],
+    ['title', frontmatter.title],
+    ['description', frontmatter.description],
+  ];
+  if (frontmatter.name !== undefined) entries.push(['name', frontmatter.name]);
+  if (frontmatter.language !== undefined) entries.push(['language', frontmatter.language]);
+  return entries;
+}
+
+/** Rule-only entries: appliesTo/severity/extends. */
+function buildRuleEntries(frontmatter: CatalogFrontmatter): Array<[string, unknown]> {
+  const entries: Array<[string, unknown]> = [];
+  if (frontmatter.appliesTo !== undefined) entries.push(['appliesTo', frontmatter.appliesTo]);
+  if (frontmatter.severity !== undefined) entries.push(['severity', frontmatter.severity]);
+  if (frontmatter.extends !== undefined) entries.push(['extends', frontmatter.extends]);
+  return entries;
+}
+
+/** Skill-only entries: whenToUse/allowedTools/argumentHint/disableModelInvocation. */
+function buildSkillEntries(frontmatter: CatalogFrontmatter): Array<[string, unknown]> {
+  const entries: Array<[string, unknown]> = [];
+  if (frontmatter.whenToUse !== undefined) entries.push(['whenToUse', frontmatter.whenToUse]);
+  if (frontmatter.allowedTools !== undefined)
+    entries.push(['allowedTools', frontmatter.allowedTools]);
+  if (frontmatter.argumentHint !== undefined)
+    entries.push(['argumentHint', frontmatter.argumentHint]);
+  if (frontmatter.disableModelInvocation === true) entries.push(['disableModelInvocation', true]);
+  return entries;
+}
+
+/** Kind-specific frontmatter entries (rule/skill/agent), appended after the base entries. */
+function buildKindSpecificEntries(frontmatter: CatalogFrontmatter): Array<[string, unknown]> {
+  if (frontmatter.kind === 'rule') return buildRuleEntries(frontmatter);
+  if (frontmatter.kind === 'skill') return buildSkillEntries(frontmatter);
+  if (frontmatter.kind === 'agent' && frontmatter.tools && frontmatter.tools.length > 0) {
+    return [['tools', frontmatter.tools]];
+  }
+  return [];
+}
+
+/**
+ * Builds the skill `uses:` YAML block with a dedicated renderer, because
+ * serializeYamlEntry's object branch calls serializeScalar on array values,
+ * which gives empty strings for []. We need `rules: []` and `agents: []`.
+ */
+function buildUsesBlock(uses: NonNullable<CatalogFrontmatter['uses']>): string {
+  const rules = uses.rules ?? [];
+  const agents = uses.agents ?? [];
+  if (rules.length === 0 && agents.length === 0) {
+    return 'uses:\n  rules: []\n  agents: []';
+  }
+  const ruleLines = rules.length > 0 ? `\n${rules.map(r => `    - ${r}`).join('\n')}` : ' []';
+  const agentLines = agents.length > 0 ? `\n${agents.map(a => `    - ${a}`).join('\n')}` : ' []';
+  return `uses:\n  rules:${ruleLines}\n  agents:${agentLines}`;
+}
+
+/** Renders the full YAML frontmatter block (entries + tags + optional skill `uses:` block). */
+function buildFrontmatterYaml(frontmatter: CatalogFrontmatter): string {
+  // Build ordered frontmatter: required base fields first, then kind-specific, then tags
+  const entries = [
+    ...buildBaseEntries(frontmatter),
+    ...buildKindSpecificEntries(frontmatter),
+    ['tags', frontmatter.tags] as [string, unknown],
+  ];
+  const yamlLines = entries.map(([k, v]) => serializeYamlEntry(k, v));
+
+  // Inject uses block for skills before tags — always empty arrays at import time;
+  // dependency wiring is a content-refinement concern handled with `sigil patch` afterward.
+  if (frontmatter.kind === 'skill' && frontmatter.uses !== undefined) {
+    yamlLines.splice(yamlLines.length - 1, 0, buildUsesBlock(frontmatter.uses));
+  }
+  return yamlLines.join('\n');
+}
+
 /**
  * Render a catalog-style artifact file string from translated frontmatter + body.
  *
@@ -51,71 +129,9 @@ export interface ImportPlan {
  * output matches catalog authoring style exactly. The body is preserved verbatim.
  */
 export function renderArtifactFile(frontmatter: CatalogFrontmatter, body: string): string {
-  // Build ordered frontmatter: required base fields first, then kind-specific, then optional
-  const entries: Array<[string, unknown]> = [];
-
-  entries.push(['id', frontmatter.id]);
-  entries.push(['kind', frontmatter.kind]);
-  entries.push(['title', frontmatter.title]);
-  entries.push(['description', frontmatter.description]);
-
-  // Kind-specific required/common fields
-  if (frontmatter.name !== undefined) entries.push(['name', frontmatter.name]);
-  if (frontmatter.language !== undefined) entries.push(['language', frontmatter.language]);
-
-  if (frontmatter.kind === 'rule') {
-    if (frontmatter.appliesTo !== undefined) entries.push(['appliesTo', frontmatter.appliesTo]);
-    if (frontmatter.severity !== undefined) entries.push(['severity', frontmatter.severity]);
-    if (frontmatter.extends !== undefined) entries.push(['extends', frontmatter.extends]);
-  }
-
-  if (frontmatter.kind === 'skill') {
-    if (frontmatter.appliesTo !== undefined) entries.push(['appliesTo', frontmatter.appliesTo]);
-    if (frontmatter.allowedTools !== undefined)
-      entries.push(['allowedTools', frontmatter.allowedTools]);
-    if (frontmatter.argumentHint !== undefined)
-      entries.push(['argumentHint', frontmatter.argumentHint]);
-    if (frontmatter.disableModelInvocation === true) entries.push(['disableModelInvocation', true]);
-  }
-
-  if (frontmatter.kind === 'agent') {
-    if (frontmatter.tools !== undefined && frontmatter.tools.length > 0) {
-      entries.push(['tools', frontmatter.tools]);
-    }
-  }
-
-  // Tags always last before optional fields
-  entries.push(['tags', frontmatter.tags]);
-
-  // Build the YAML block. `uses` is serialized with a dedicated helper because
-  // serializeYamlEntry's object branch calls serializeScalar on array values,
-  // which gives empty strings for []. We need `rules: []` and `agents: []`.
-  const yamlLines: string[] = [];
-  for (const [k, v] of entries) {
-    yamlLines.push(serializeYamlEntry(k, v));
-  }
-  // Inject uses block for skills before tags — always empty arrays at import time;
-  // dependency wiring is a content-refinement concern handled with `sigil patch` afterward.
-  if (frontmatter.kind === 'skill' && frontmatter.uses !== undefined) {
-    const rules = frontmatter.uses.rules ?? [];
-    const agents = frontmatter.uses.agents ?? [];
-    let usesBlock: string;
-    if (rules.length === 0 && agents.length === 0) {
-      usesBlock = 'uses:\n  rules: []\n  agents: []';
-    } else {
-      const ruleLines = rules.length > 0 ? `\n${rules.map(r => `    - ${r}`).join('\n')}` : ' []';
-      const agentLines =
-        agents.length > 0 ? `\n${agents.map(a => `    - ${a}`).join('\n')}` : ' []';
-      usesBlock = `uses:\n  rules:${ruleLines}\n  agents:${agentLines}`;
-    }
-    // Insert uses block before tags (last entry)
-    yamlLines.splice(yamlLines.length - 1, 0, usesBlock);
-  }
-  const yaml = yamlLines.join('\n');
-
+  const yaml = buildFrontmatterYaml(frontmatter);
   // Ensure body starts with a blank line after the closing ---
   const bodyNormalized = body.startsWith('\n') ? body : `\n${body}`;
-
   return `---\n${yaml}\n---${bodyNormalized}`;
 }
 
@@ -130,6 +146,31 @@ export interface PlanOptions {
   catalogDir: string;
 }
 
+/** Prepends the skill body prefix (e.g. "## When to Use" section), if any. */
+function applyBodyPrefix(bodyPrefix: string | undefined, body: string): string {
+  return bodyPrefix ? `${bodyPrefix}${body.trimStart()}` : body;
+}
+
+/** Translates and builds one discovered file's ImportItem. */
+function buildImportItem(file: DiscoveredFile, opts: PlanOptions): ImportItem {
+  const t = translateFrontmatter(file.kind, file.slug, file.frontmatter, {
+    language: opts.language,
+    displayName: opts.displayName,
+  });
+  const destPath = computeDestinationPath(t.frontmatter.id, file.kind, opts.catalogDir);
+
+  return {
+    sourcePath: file.sourcePath,
+    relativePath: file.relativePath,
+    frontmatter: t.frontmatter,
+    body: applyBodyPrefix(t.bodyPrefix, file.body),
+    destPath,
+    droppedFields: t.droppedFields,
+    conflicts: fs.existsSync(destPath),
+    descriptionSynthesized: t.descriptionSynthesized,
+  };
+}
+
 /**
  * Build an ImportPlan from a list of discovered files.
  *
@@ -137,42 +178,10 @@ export interface PlanOptions {
  * @param opts        Language/catalog context
  */
 export function buildImportPlan(discovered: DiscoveredFile[], opts: PlanOptions): ImportPlan {
-  const items: ImportItem[] = [];
-  const droppedFieldsSummary: ImportPlan['droppedFieldsSummary'] = [];
-
-  for (const file of discovered) {
-    const {
-      frontmatter: translated,
-      droppedFields,
-      bodyPrefix,
-      descriptionSynthesized,
-    } = translateFrontmatter(file.kind, file.slug, file.frontmatter, {
-      language: opts.language,
-      displayName: opts.displayName,
-    });
-
-    const destPath = computeDestinationPath(translated.id, file.kind, opts.catalogDir);
-
-    // Prepend body prefix (e.g. ## When to Use section from skill's when_to_use field)
-    const body = bodyPrefix ? `${bodyPrefix}${file.body.trimStart()}` : file.body;
-
-    const item: ImportItem = {
-      sourcePath: file.sourcePath,
-      relativePath: file.relativePath,
-      frontmatter: translated,
-      body,
-      destPath,
-      droppedFields,
-      conflicts: fs.existsSync(destPath),
-      descriptionSynthesized,
-    };
-
-    items.push(item);
-
-    if (droppedFields.length > 0) {
-      droppedFieldsSummary.push({ relativePath: file.relativePath, fields: droppedFields });
-    }
-  }
+  const items = discovered.map(file => buildImportItem(file, opts));
+  const droppedFieldsSummary: ImportPlan['droppedFieldsSummary'] = items
+    .filter(item => item.droppedFields.length > 0)
+    .map(item => ({ relativePath: item.relativePath, fields: item.droppedFields }));
 
   return { items, droppedFieldsSummary };
 }

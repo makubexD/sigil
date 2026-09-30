@@ -5,8 +5,6 @@ title: "Scaffold Project (.NET / C#)"
 description: "Scaffold a new .NET project with the solution's standards pre-wired — NRT, analyzers, CPM, file-scoped namespaces, correct src/tests layout — and add it to the .sln"
 name: cs-scaffold-project
 language: csharp
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Write

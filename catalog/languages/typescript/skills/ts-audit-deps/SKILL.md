@@ -5,14 +5,18 @@ title: "Audit Dependencies (TypeScript)"
 description: "Audit npm dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance"
 name: ts-audit-deps
 language: typescript
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash
   - Glob
   - Grep
 argumentHint: "(no arguments)"
+skillContext: fork
+whenToUse: >-
+  Use before releases, when adding new dependencies, or as a periodic maintenance check — or when
+  the user asks "are my dependencies up to date", "any known CVEs", "audit my deps", or "check for
+  outdated packages". Produces a read-only report; no dependency changes are made. Complements
+  ts-security-auditor, which handles code-level (not dependency-level) vulnerabilities.
 uses:
   rules:
     - typescript/ts-dependencies
@@ -24,12 +28,6 @@ tags:
   - audit
   - dependencies
   - security
----
-
-## When to Use
-
-Use before releases, when adding new dependencies, or periodically as a maintenance check. Produces a read-only report; no dependency changes are made. Complements ts-security-auditor (which handles code-level vulnerabilities).
-
 ---
 
 # Audit Dependencies
@@ -78,19 +76,11 @@ Include all output verbatim in the "Tooling" section.
 
 ## Step 3 — Manual review
 
-For each direct runtime dependency not already flagged by tooling:
-
-1. **Version constraint health:** is it pinned exactly in `package-lock.json`? Is the lock file
-   committed? Are `overrides` used for any transitive pin?
-2. **Maintenance status:** when was the last release? Are critical issues open and unaddressed?
-   Is the package archived or deprecated on npm?
-3. **Transitive footprint:** does it pull in a large transitive graph for a narrow use case?
-   Could a Node.js built-in replace it?
-4. **Types availability:** does the package bundle `.d.ts` declarations, or does a `@types/*`
-   package exist? Missing types require `any` casts or ambient declarations — flag as a risk.
-5. **ESM / CJS compatibility:** does the package's `exports` map support the project's module
-   system? A CJS-only package in an ESM project requires dynamic `import()` or an adapter.
-6. **Security history:** known CVEs in the past 12 months (check npm advisory database or NVD).
+For each direct runtime dependency not already flagged by tooling, check: version pinned in the
+lock file (and is the lock file committed?); maintenance status (last release, open critical
+issues, archived/deprecated on npm); transitive footprint (could a Node built-in replace it?);
+types availability (bundled `.d.ts` or `@types/*` — missing types force `any` casts, flag as a
+risk); ESM/CJS compatibility with the project's module system; and CVEs in the past 12 months.
 
 ## Step 4 — Output report
 

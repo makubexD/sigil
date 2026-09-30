@@ -52,23 +52,18 @@ export interface ConfigDestination {
  * | project | .claude/settings.json         | .mcp.json                          |
  * | user    | ~/.claude/settings.json       | ~/.claude.json                     |
  */
-export function resolveClaudeConfigDestination(
-  kind: 'hook' | 'settings' | 'mcp',
-  scope: ConfigScope,
-  projectDir: string,
-): ConfigDestination {
-  if (kind === 'hook' || kind === 'settings') {
-    switch (scope) {
-      case 'local':
-        return { file: LOCAL_SETTINGS_FILE, root: 'project' };
-      case 'user':
-        return { file: PROJECT_SETTINGS_FILE, root: 'home' };
-      default: // 'project'
-        return { file: PROJECT_SETTINGS_FILE, root: 'project' };
-    }
+function resolveSettingsDestination(scope: ConfigScope): ConfigDestination {
+  switch (scope) {
+    case 'local':
+      return { file: LOCAL_SETTINGS_FILE, root: 'project' };
+    case 'user':
+      return { file: PROJECT_SETTINGS_FILE, root: 'home' };
+    default: // 'project'
+      return { file: PROJECT_SETTINGS_FILE, root: 'project' };
   }
+}
 
-  // kind === 'mcp'
+function resolveMcpDestination(scope: ConfigScope, projectDir: string): ConfigDestination {
   switch (scope) {
     case 'local':
       return { file: CLAUDE_JSON_FILE, root: 'home', wrapPath: ['projects', projectDir] };
@@ -77,4 +72,13 @@ export function resolveClaudeConfigDestination(
     default: // 'project'
       return { file: PROJECT_MCP_FILE, root: 'project' };
   }
+}
+
+export function resolveClaudeConfigDestination(
+  kind: 'hook' | 'settings' | 'mcp',
+  scope: ConfigScope,
+  projectDir: string,
+): ConfigDestination {
+  if (kind === 'hook' || kind === 'settings') return resolveSettingsDestination(scope);
+  return resolveMcpDestination(scope, projectDir);
 }

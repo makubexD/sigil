@@ -34,6 +34,27 @@ Cycle detection: if rule A `extends` B and B `extends` A, validate reports a cyc
 
 ---
 
+## Template-drift gate (`sigil sync --check`)
+
+`sigil sync --check` catches a template edited without its dependent artifacts being propagated —
+add it as a second gate alongside `validate`, scoped to the current PR's diff:
+
+```yaml
+# .github/workflows/ci.yml (example)
+- name: Check template propagation
+  run: |
+    npm ci
+    npm run build
+    node dist-cli/cli.js sync --check --changed-since origin/main
+```
+
+Exits non-zero and names every artifact still built against a stale template revision. Run
+`sigil sync` (no flags) locally to see the same report without failing the build, and
+`sigil sync --apply` to write the mechanical fixes before pushing — see
+`docs/guides/authoring.md` § Keeping artifacts in sync with their template.
+
+---
+
 ## Build both targets and inspect output
 
 ```bash

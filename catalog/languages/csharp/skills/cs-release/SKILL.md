@@ -5,8 +5,6 @@ title: "Release Preparation (.NET / C#)"
 description: "Prepare a .NET release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification"
 name: cs-release
 language: csharp
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash

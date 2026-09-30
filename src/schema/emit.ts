@@ -9,45 +9,30 @@
 import fs from 'fs';
 import path from 'path';
 import { zodToJsonSchema } from 'zod-to-json-schema';
-import {
-  SkillSchema,
-  AgentSchema,
-  RuleSchema,
-  PromptSchema,
-  WorkflowSchema,
-  HookSchema,
-  SettingsSchema,
-  McpSchema,
-} from './index';
+import { JSON_INDENT } from '../json-util';
+import { SCHEMAS } from './index';
 
 const OUTPUT_DIR = path.resolve(__dirname, '../../schema');
-
-// Use `any` here — Zod's recursive generics exceed TS's instantiation depth limit.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const SCHEMAS: Array<{ name: string; schema: any }> = [
-  { name: 'skill', schema: SkillSchema },
-  { name: 'agent', schema: AgentSchema },
-  { name: 'rule', schema: RuleSchema },
-  { name: 'prompt', schema: PromptSchema },
-  { name: 'workflow', schema: WorkflowSchema },
-  { name: 'hook', schema: HookSchema },
-  { name: 'settings', schema: SettingsSchema },
-  { name: 'mcp', schema: McpSchema },
-];
 
 function run(): void {
   if (!fs.existsSync(OUTPUT_DIR)) {
     fs.mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
-  for (const { name, schema } of SCHEMAS) {
+  // Derived from SCHEMAS (src/schema/index.ts) rather than hand-listed a second time here — a
+  // kind added to SCHEMAS now automatically gets a schema/<kind>.schema.json with no further
+  // edit to this file. See the SCHEMAS export's own comment for the full reasoning.
+  // `any` here for the same reason the old hand-list needed it: Zod's recursive generics exceed
+  // TS's instantiation depth limit once the schemas are treated as a heterogeneous collection.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const [name, schema] of Object.entries(SCHEMAS) as Array<[string, any]>) {
     const jsonSchema = zodToJsonSchema(schema, {
       name: `${name}-frontmatter`,
       $refStrategy: 'none',
     });
 
     const outPath = path.join(OUTPUT_DIR, `${name}.schema.json`);
-    fs.writeFileSync(outPath, JSON.stringify(jsonSchema, null, 2) + '\n', 'utf-8');
+    fs.writeFileSync(outPath, JSON.stringify(jsonSchema, null, JSON_INDENT) + '\n', 'utf-8');
     console.log(`  ✓ schema/${name}.schema.json`);
   }
 

@@ -5,7 +5,8 @@ title: Code Quality (TypeScript)
 description: Search-first protocol + structural size limits (method/param caps) for TypeScript — prevents duplication and complexity creep
 language: typescript
 appliesTo:
-  - "**/*"
+  - "**/*.ts"
+  - "**/*.tsx"
 severity: recommended
 extends:
   - shared/clean-code

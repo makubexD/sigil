@@ -1,0 +1,23 @@
+/**
+ * Every Copilot KindEmitSpec, assembled for deriveContracts() and `sigil sync --stale`.
+ * Individual specs are imported directly by the emitters that use them (build-helpers.ts) — this
+ * array exists only for code that needs the full set. Copilot has no `hook`/`settings` spec —
+ * that absence is the unsupported-kind statement for those two config kinds. `workflow` DOES have
+ * a spec (COPILOT_WORKFLOW_SPEC) even though it renders through the exact same shape as `prompt`
+ * (see prompt.ts's buildPromptLikeSpec) — without its own entry here, `workflow` would be a
+ * declared-supported kind (COPILOT_SUPPORTED_KINDS) with no contract and no doc citation, which
+ * is exactly the gap the 2026-08-07 audit closed (see provider-kind-coverage conformance rule).
+ */
+import type { KindEmitSpec } from '../../spec-types';
+import { COPILOT_SKILL_SPEC } from './skill';
+import { COPILOT_RULE_SPEC } from './rule';
+import { COPILOT_AGENT_SPEC } from './agent';
+import { COPILOT_PROMPT_SPEC, COPILOT_WORKFLOW_SPEC } from './prompt';
+
+export const COPILOT_EMIT_SPECS: readonly KindEmitSpec[] = [
+  COPILOT_SKILL_SPEC,
+  COPILOT_RULE_SPEC,
+  COPILOT_AGENT_SPEC,
+  COPILOT_PROMPT_SPEC,
+  COPILOT_WORKFLOW_SPEC,
+];

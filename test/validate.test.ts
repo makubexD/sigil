@@ -96,4 +96,169 @@ describe('Validate phase', () => {
       'error mentions cycle',
     );
   });
+
+  /** Builds a fake unscoped rule, optionally with an appliesToRationale override. */
+  function makeUnscopedRule(id: string, rationale?: string) {
+    return {
+      id,
+      kind: 'rule' as const,
+      filePath: `/fake/${id}.rule.md`,
+      frontmatter: {
+        id,
+        kind: 'rule',
+        title: 'Unscoped',
+        description: 'A rule with a no-op appliesTo, for testing the validate warning.',
+        appliesTo: ['**/*'],
+        severity: 'recommended',
+        ...(rationale !== undefined ? { appliesToRationale: rationale } : {}),
+      },
+      body: '- Fake body.',
+    };
+  }
+
+  it('warns on no-op appliesTo without appliesToRationale', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const fakeRule = makeUnscopedRule('test/unscoped-no-rationale');
+    catalog.artifacts.push(fakeRule);
+    catalog.byId.set(fakeRule.id, fakeRule);
+
+    const result = validateCatalog(catalog);
+    assert.ok(
+      result.warnings.some(w => w.includes('test/unscoped-no-rationale')),
+      'warns for the unscoped rule without a rationale',
+    );
+  });
+
+  it('suppresses the no-op appliesTo warning when appliesToRationale is set', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const fakeRule = makeUnscopedRule('test/unscoped-with-rationale', 'Deliberately universal.');
+    catalog.artifacts.push(fakeRule);
+    catalog.byId.set(fakeRule.id, fakeRule);
+
+    const result = validateCatalog(catalog);
+    assert.ok(
+      !result.warnings.some(w => w.includes('test/unscoped-with-rationale')),
+      'no warning when appliesToRationale justifies the unscoped appliesTo',
+    );
+  });
+
+  it('still warns when appliesToRationale is whitespace-only', async () => {
+    // A bare '' would fail the zod schema's `min(1)` before reaching this check at all —
+    // whitespace-only passes the schema's length check but is still not a real rationale.
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const fakeRule = makeUnscopedRule('test/unscoped-blank-rationale', '   ');
+    catalog.artifacts.push(fakeRule);
+    catalog.byId.set(fakeRule.id, fakeRule);
+
+    const result = validateCatalog(catalog);
+    assert.ok(
+      result.warnings.some(w => w.includes('test/unscoped-blank-rationale')),
+      'a whitespace-only rationale does not suppress the warning',
+    );
+  });
+
+  /** Builds a fake rule extending the given ancestor with the given appliesTo scope. */
+  function makeExtendingRule(id: string, ancestorId: string, appliesTo: string[]) {
+    return {
+      id,
+      kind: 'rule' as const,
+      filePath: `/fake/${id}.rule.md`,
+      frontmatter: {
+        id,
+        kind: 'rule',
+        title: 'Extending rule',
+        description: 'A rule that extends a shared ancestor, for testing the duplicate warning.',
+        extends: [ancestorId],
+        appliesTo,
+        severity: 'recommended',
+      },
+      body: '- Fake body.',
+    };
+  }
+
+  it('warns when two rules extend the same ancestor with identical appliesTo', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const ruleA = makeExtendingRule('test/dup-scope-a', 'shared/clean-code', ['**/*.ts']);
+    const ruleB = makeExtendingRule('test/dup-scope-b', 'shared/clean-code', ['**/*.ts']);
+    catalog.artifacts.push(ruleA, ruleB);
+    catalog.byId.set(ruleA.id, ruleA);
+    catalog.byId.set(ruleB.id, ruleB);
+
+    const result = validateCatalog(catalog);
+    assert.ok(
+      result.warnings.some(w => w.includes('test/dup-scope-a') && w.includes('test/dup-scope-b')),
+      'warns naming both rules and the shared ancestor',
+    );
+  });
+
+  it('does not warn when two rules extend the same ancestor with different appliesTo', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const ruleA = makeExtendingRule('test/diff-scope-a', 'shared/clean-code', ['**/*.ts']);
+    const ruleB = makeExtendingRule('test/diff-scope-b', 'shared/clean-code', ['**/*.py']);
+    catalog.artifacts.push(ruleA, ruleB);
+    catalog.byId.set(ruleA.id, ruleA);
+    catalog.byId.set(ruleB.id, ruleB);
+
+    const result = validateCatalog(catalog);
+    assert.ok(
+      !result.warnings.some(
+        w => w.includes('test/diff-scope-a') && w.includes('test/diff-scope-b'),
+      ),
+      'no warning when the two rules scope to different files',
+    );
+  });
+
+  it('warns on a skill body with an un-framed hardcoded runner import', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const fakeSkill = {
+      id: 'test/fake-skill-hardcoded-runner',
+      kind: 'skill' as const,
+      filePath: '/fake/fake-skill.SKILL.md',
+      frontmatter: {
+        id: 'test/fake-skill-hardcoded-runner',
+        kind: 'skill',
+        title: 'Fake Skill',
+        description: 'A fake skill for testing the hardcoded-runner warning.',
+        name: 'fake-skill-hardcoded-runner',
+        language: 'typescript',
+      },
+      body: 'Write a test:\n\n```typescript\nimport { describe, it } from "vitest";\n```\n',
+    };
+    catalog.artifacts.push(fakeSkill);
+    catalog.byId.set(fakeSkill.id, fakeSkill);
+
+    const result = validateCatalog(catalog);
+    assert.ok(
+      result.warnings.some(w => w.includes('test/fake-skill-hardcoded-runner')),
+      'warns for the un-framed vitest import',
+    );
+  });
+
+  it('does not warn when the runner import is framed as an example', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const fakeSkill = {
+      id: 'test/fake-skill-framed-runner',
+      kind: 'skill' as const,
+      filePath: '/fake/fake-skill-framed.SKILL.md',
+      frontmatter: {
+        id: 'test/fake-skill-framed-runner',
+        kind: 'skill',
+        title: 'Fake Skill',
+        description: 'A fake skill for testing the framed-runner exemption.',
+        name: 'fake-skill-framed-runner',
+        language: 'typescript',
+      },
+      body:
+        'Example shown with Vitest — mirror whatever the repo actually uses:\n\n' +
+        '```typescript\nimport { describe, it } from "vitest";\n```\n',
+    };
+    catalog.artifacts.push(fakeSkill);
+    catalog.byId.set(fakeSkill.id, fakeSkill);
+
+    const result = validateCatalog(catalog);
+    assert.ok(
+      !result.warnings.some(w => w.includes('test/fake-skill-framed-runner')),
+      'no warning when the hardcoded import is explicitly framed as an example',
+    );
+  });
 });

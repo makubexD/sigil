@@ -10,6 +10,7 @@ import { resolveCatalog } from '../resolve';
 import { getAllTargets } from '../targets';
 import { getArtifactDetail, formatDetailText } from '../query';
 import { requireArtifact } from './shared/artifact';
+import { JSON_INDENT } from '../json-util';
 
 export interface GetOptions {
   catalogDir: string;
@@ -30,7 +31,7 @@ export async function runGet(id: string, opts: GetOptions): Promise<void> {
   const detail = getArtifactDetail(artifact, rawCatalog, targets);
 
   if (opts.json) {
-    console.log(JSON.stringify(detail, null, 2));
+    console.log(JSON.stringify(detail, null, JSON_INDENT));
     return;
   }
 

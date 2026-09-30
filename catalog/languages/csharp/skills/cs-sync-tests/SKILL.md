@@ -5,8 +5,6 @@ title: "Sync Tests (.NET / C#)"
 description: "Sync the xUnit test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)"
 name: cs-sync-tests
 language: csharp
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Write

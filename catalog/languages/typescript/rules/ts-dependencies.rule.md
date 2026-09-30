@@ -91,6 +91,8 @@ install time, audit surface, and signal-to-noise ratio problems in reviews.
 ## Dependency Updates
 
 Keep dependencies current. Automated update PRs (Dependabot, Renovate) that run the full test suite
-are the lowest-friction path. Never merge a dependency update without running the full quality gate
-(`tsc --noEmit && eslint . && vitest run`). A major-version bump is a code-change opportunity, not
-just a version bump — read the migration guide before merging.
+are the lowest-friction path. Never merge a dependency update without running the project's full
+quality gate — discover it from `package.json` scripts (`check`/`validate`/`ci`), or fall back to
+type-check + lint + `scripts.test` (whatever runner that resolves to; never assume Vitest
+specifically). A major-version bump is a code-change opportunity, not just a version bump — read
+the migration guide before merging.

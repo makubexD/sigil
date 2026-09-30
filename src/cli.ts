@@ -1,4 +1,7 @@
 #!/usr/bin/env node
+/* eslint-disable max-lines -- one flat sequence of .command() registrations by design
+   (see docs/decisions — "slim cli.ts to pure Commander wiring"); splitting it into
+   per-command files would reintroduce the indirection that refactor deliberately removed. */
 /** sigil CLI — Commander wiring only. Business logic lives in src/commands/<name>.ts. @module */
 import { Command } from 'commander';
 import { getAllTargets } from './targets';
@@ -14,10 +17,12 @@ import { runAdd } from './commands/add';
 import { runInit } from './commands/init';
 import { runNew } from './commands/new';
 import { runCheck } from './commands/check';
+import { runSync } from './commands/sync';
 import { runImport } from './commands/import';
 import { runStatus } from './commands/status';
 import { runUpdate } from './commands/update';
 import { runUninstall } from './commands/uninstall';
+import { runPrune } from './commands/prune';
 import { runPatch } from './commands/patch';
 import { runMove } from './commands/move';
 import { runRetarget } from './commands/retarget';
@@ -150,6 +155,51 @@ program
   )
   .option('--strict', 'Exit non-zero on trust warnings (requires --trust)', false)
   .action(runCheck);
+// ─── sync ─────────────────────────────────────────────────────────────────────
+program
+  .command('sync [template-id]')
+  .description(
+    'Report (default) / --check (CI gate) / --apply (write) drift between catalog artifacts ' +
+      'and the template they declare via template:, PLUS conformance against the current ' +
+      'provider standard (src/targets/doc-refs.ts + KindEmitSpecs). Scope template drift to one ' +
+      'template id, or omit for all; scope conformance with --rule/--kind/--language/--provider.',
+  )
+  .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
+  .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
+  .option('--check', 'Exit non-zero if any drift or conformance error is found (CI gate)', false)
+  .option('--apply', 'Write the mechanical fixes; refuses on a dirty working tree', false)
+  .option(
+    '--editorial',
+    'With --apply, also run the model-backed conformance pass (requires ANTHROPIC_API_KEY)',
+    false,
+  )
+  .option('--changed-since <ref>', 'Scope to templates touched since this git ref')
+  .option(
+    '--stale <months>',
+    'Flag template + provider-spec docs[] not verified within N months',
+    '6',
+  )
+  .option('--rule <id>', 'Scope conformance to one rule id')
+  .option('--kind <kind>', 'Scope conformance to one artifact kind')
+  .option('--language <lang>', 'Scope conformance to one language')
+  .option('--provider <name>', 'Scope conformance to one target/provider name')
+  .option('--json', 'Output as JSON', false)
+  .action((templateId: string | undefined, options) =>
+    runSync(templateId, {
+      catalogDir: options.catalogDir,
+      packsFile: options.packs,
+      changedSince: options.changedSince,
+      staleMonths: Number(options.stale),
+      json: options.json,
+      check: options.check,
+      apply: options.apply,
+      editorial: options.editorial,
+      ruleId: options.rule,
+      kind: options.kind,
+      language: options.language,
+      provider: options.provider,
+    }),
+  );
 // ─── import ───────────────────────────────────────────────────────────────────
 program
   .command('import <source-dir>')
@@ -187,6 +237,22 @@ program
   .option('--force', 'Overwrite drifted (user-modified) files', false)
   .option('--dry-run', 'Preview what would change without writing', false)
   .action(runUpdate);
+// ─── prune ────────────────────────────────────────────────────────────────────
+program
+  .command('prune')
+  .description(
+    "Report (default) / --apply (write) cleanup of a project's manifest: removes orphaned " +
+      'artifacts (no longer in the bundled catalog) and reports deprecated-but-installed ones.',
+  )
+  .option('--project-dir <dir>', 'Consumer project root', process.cwd())
+  .option('--target <name>', 'Target platform (auto-detected if omitted)')
+  .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
+  .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
+  .option('--apply', 'Remove orphaned artifacts (preview-only without this flag)', false)
+  .option('--yes', 'Skip confirmation prompt', false)
+  .option('--force', 'Remove even drifted (user-modified) orphaned files', false)
+  .option('--json', 'Output as JSON', false)
+  .action(runPrune);
 // ─── uninstall ────────────────────────────────────────────────────────────────
 program
   .command('uninstall <ids...>')
@@ -216,6 +282,10 @@ const patchCmd = program
   .option('--add-applies-to <glob>', 'Add a file glob to appliesTo')
   .option('--remove-applies-to <glob>', 'Remove a file glob from appliesTo')
   .option('--set-applies-to <list>', 'Replace appliesTo (comma-separated globs)')
+  .option(
+    '--set-applies-to-rationale <text>',
+    'Justify a deliberately unscoped appliesTo: ["**/*"] (rule only; empty string clears it)',
+  )
   .option('--severity <level>', 'Set severity: required | recommended | optional (rule only)')
   .option('--add-extends <id>', 'Add a rule id to extends: (rule only)')
   .option('--remove-extends <id>', 'Remove a rule id from extends: (rule only)')

@@ -114,7 +114,8 @@ If the project uses path aliases (e.g. `@/core` → `src/core`), configure them 
 three places:
 1. `tsconfig.json` `paths`
 2. ESLint `import/resolver` settings
-3. Vitest `resolve.alias` in `vitest.config.ts`
+3. The test runner's own alias resolution (e.g. Vitest's `resolve.alias`, Jest's
+   `moduleNameMapper` — whichever runner the project actually uses)
 
 Inconsistency between these three causes build-passes-but-tests-fail or tests-pass-but-build-fails
 scenarios.

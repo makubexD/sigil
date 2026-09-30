@@ -51,7 +51,13 @@ describe('R — resolveSelection / language helpers', () => {
   });
 
   it('resolveSelection pack:essentials returns exactly the 5 agnostic artifact IDs', () => {
-    const { ids } = resolveSelection(['pack:essentials'], {}, resolvedCatalog, PACKS_CURATED, []);
+    const { ids } = resolveSelection({
+      selectors: ['pack:essentials'],
+      filters: {},
+      catalog: resolvedCatalog,
+      packs: PACKS_CURATED,
+      supportedKinds: [],
+    });
     const expected = [
       'shared/filesystem',
       'shared/protect-config',
@@ -67,13 +73,13 @@ describe('R — resolveSelection / language helpers', () => {
   });
 
   it('resolveSelection pack:react-starter returns the 4 primary artifact IDs', () => {
-    const { ids } = resolveSelection(
-      ['pack:react-starter'],
-      {},
-      resolvedCatalog,
-      PACKS_CURATED,
-      [],
-    );
+    const { ids } = resolveSelection({
+      selectors: ['pack:react-starter'],
+      filters: {},
+      catalog: resolvedCatalog,
+      packs: PACKS_CURATED,
+      supportedKinds: [],
+    });
     const expected = [
       'react/component-testing',
       'shared/filesystem',
@@ -88,13 +94,13 @@ describe('R — resolveSelection / language helpers', () => {
   });
 
   it('computeClosure for react-starter primary IDs adds rule + code-reviewer as deps', () => {
-    const { ids } = resolveSelection(
-      ['pack:react-starter'],
-      {},
-      resolvedCatalog,
-      PACKS_CURATED,
-      [],
-    );
+    const { ids } = resolveSelection({
+      selectors: ['pack:react-starter'],
+      filters: {},
+      catalog: resolvedCatalog,
+      packs: PACKS_CURATED,
+      supportedKinds: [],
+    });
     const cp = computeClosure(ids, resolvedCatalog);
     const depIds = cp.dependencies.map(d => d.artifact.id);
     assert.ok(
@@ -108,13 +114,13 @@ describe('R — resolveSelection / language helpers', () => {
   });
 
   it('language filter on "all" keeps every config/agnostic artifact', () => {
-    const { ids } = resolveSelection(
-      ['all'],
-      { language: 'react' },
-      resolvedCatalog,
-      PACKS_CURATED,
-      [],
-    );
+    const { ids } = resolveSelection({
+      selectors: ['all'],
+      filters: { language: 'react' },
+      catalog: resolvedCatalog,
+      packs: PACKS_CURATED,
+      supportedKinds: [],
+    });
     // All config kinds must survive the react language filter
     const configIds = resolvedCatalog.artifacts
       .filter(a => CONFIG_KINDS.has(a.kind))
@@ -122,11 +128,21 @@ describe('R — resolveSelection / language helpers', () => {
     for (const id of configIds) {
       assert.ok(ids.includes(id), `${id} must survive the react language filter (agnostic)`);
     }
-    // Shared agnostic artifacts (no language tag) must also survive
-    const agnosticIds = resolvedCatalog.artifacts.filter(a => isAgnostic(a)).map(a => a.id);
+    // Shared agnostic artifacts (no language tag) must also survive, EXCEPT
+    // shared/clean-code and shared/git — react/react-style extends shared/clean-code and
+    // survives this same filter, so its body is already inlined via resolvedBody; installing
+    // both would write the base rule's content twice (see dropInlinedBaseRules).
+    const inlinedElsewhere = new Set(['shared/clean-code']);
+    const agnosticIds = resolvedCatalog.artifacts
+      .filter(a => isAgnostic(a) && !inlinedElsewhere.has(a.id))
+      .map(a => a.id);
     for (const id of agnosticIds) {
       assert.ok(ids.includes(id), `${id} must survive the react language filter (no language tag)`);
     }
+    assert.ok(
+      !ids.includes('shared/clean-code'),
+      'shared/clean-code must be dropped — its body is inlined into react/react-style, which also survives this filter',
+    );
   });
 
   it('artifactLanguage returns language tag for language-bound artifact', () => {

@@ -1,7 +1,8 @@
-import { select, isCancel, cancel } from '@clack/prompts';
+import { select } from '@clack/prompts';
 import type { WizardStep, StepOutcome } from '../../engine';
-import { BACK, chosenTarget, type AddWizardState } from './state';
+import { chosenTarget, type AddWizardState } from './state';
 import { packContentHint } from './options';
+import { BACK_OPTION, resolveOutcome } from './prompt-helpers';
 
 /** "Which pack?" picker — shown only for the 'pack' (Recommended) scope. */
 export const packStep: WizardStep<AddWizardState> = {
@@ -10,7 +11,7 @@ export const packStep: WizardStep<AddWizardState> = {
   async run(s): Promise<StepOutcome> {
     const ct = chosenTarget(s);
     const opts = [
-      { value: BACK, label: '← Back', hint: '' },
+      BACK_OPTION,
       ...s.ctx.packs.map(p => ({
         value: `pack:${p.name}`,
         label: p.displayName,
@@ -22,11 +23,8 @@ export const packStep: WizardStep<AddWizardState> = {
       options: opts,
       initialValue: s.selectors?.[0],
     });
-    if (isCancel(answer)) {
-      cancel('Install cancelled.');
-      return 'cancel';
-    }
-    if (answer === BACK) return 'back';
+    const outcome = resolveOutcome(answer);
+    if (outcome) return outcome;
 
     s.selectors = [answer as string];
     return 'next';

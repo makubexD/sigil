@@ -28,6 +28,12 @@ export interface KindDescriptor {
    * Config kinds appear first (lower values), then code kinds.
    */
   readonly displayOrder: number;
+  /**
+   * Position in selector-parsing and grouping-sort order (KIND_ORDER).
+   * Code kinds appear first (author-friendly), config kinds last — the
+   * opposite of displayOrder, which puts config first for the wizard UI.
+   */
+  readonly selectorOrder: number;
   /** Body placeholder comment emitted by `sigil new` for this kind. */
   readonly bodyComment: string;
   /** True when this kind can declare `uses:` and therefore has a dependency closure. */
@@ -36,6 +42,19 @@ export interface KindDescriptor {
   readonly isDirectoryBacked: boolean;
   /** True when the artifact must belong to a specific language (no shared/ variant exists). */
   readonly requiresLanguage: boolean;
+  /**
+   * Registered target names whose published vocabulary DEFINES this kind's frontmatter shape
+   * (e.g. hook's `event`/`matcher` fields are Claude Code's lifecycle-hook vocabulary verbatim).
+   * Empty = genuinely provider-neutral; the shape belongs to no single provider's format.
+   *
+   * A kind with exactly one owner may model that owner's vocabulary directly in its neutral
+   * schema (src/schema/index.ts) rather than through Target.frontmatterExtensions — there is
+   * nothing to keep neutral yet. The moment a SECOND target declares support for an
+   * `ownedBy`-nonempty kind, that assumption is wrong: validate warns (see
+   * src/validate/platform-checks.ts) so the owner-specific fields can be migrated into a
+   * namespace before the second provider's shape has to coexist with them.
+   */
+  readonly ownedBy: readonly string[];
 }
 
 // ─── Registry (one entry per ArtifactKind — compiler-enforced) ───────────────
@@ -53,76 +72,109 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     kind: 'mcp',
     isConfig: true,
     displayOrder: 0,
+    selectorOrder: 7,
     bodyComment:
       'Describe what this MCP server provides. The server: above is merged into .mcp.json.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
     requiresLanguage: false,
+    ownedBy: [],
   },
   hook: {
     kind: 'hook',
     isConfig: true,
     displayOrder: 1,
+    selectorOrder: 5,
     bodyComment: 'Describe what this hook does and when it fires. The command: above is executed.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
     requiresLanguage: false,
+    // event/matcher are Claude Code's lifecycle-hook vocabulary verbatim — see kinds.ts header.
+    ownedBy: ['claude'],
   },
   settings: {
     kind: 'settings',
     isConfig: true,
     displayOrder: 2,
+    selectorOrder: 6,
     bodyComment:
       'Describe what this settings fragment configures. Fields above are merged into settings.json.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
     requiresLanguage: false,
+    // permissions/statusLine/model mirror Claude Code's settings.json shape verbatim.
+    ownedBy: ['claude'],
   },
   // Code kinds — write whole files, may be language-scoped
   prompt: {
     kind: 'prompt',
     isConfig: false,
     displayOrder: 3,
+    selectorOrder: 3,
     bodyComment: 'Write the prompt body. Use {{placeholder}} for args.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
     requiresLanguage: false,
+    ownedBy: [],
   },
   skill: {
     kind: 'skill',
     isConfig: false,
     displayOrder: 4,
+    selectorOrder: 0,
     bodyComment: 'Describe what the AI should do when this skill is invoked.',
     hasUsesClosure: true,
     isDirectoryBacked: true,
     requiresLanguage: true,
+    ownedBy: [],
   },
   agent: {
     kind: 'agent',
     isConfig: false,
     displayOrder: 5,
+    selectorOrder: 1,
     bodyComment: 'Define the agent persona and instructions below.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
     requiresLanguage: false,
+    ownedBy: [],
   },
   rule: {
     kind: 'rule',
     isConfig: false,
     displayOrder: 6,
+    selectorOrder: 2,
     bodyComment: 'Add rule bullets below. Extend with extends: for DRY inheritance.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
     requiresLanguage: false,
+    ownedBy: [],
   },
   workflow: {
     kind: 'workflow',
     isConfig: false,
     displayOrder: 7,
+    selectorOrder: 4,
     bodyComment: 'Describe what this workflow does. The steps: list above drives execution order.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
     requiresLanguage: false,
+    ownedBy: [],
+  },
+  template: {
+    kind: 'template',
+    isConfig: false,
+    // Templates are authoring-time structure, never emitted — sort them after every emittable
+    // kind in both orderings so pickers and selectors that iterate ALL_KINDS/KIND_ORDER don't
+    // surface them ahead of real artifacts.
+    displayOrder: 8,
+    selectorOrder: 8,
+    bodyComment:
+      'Define slot markers (<!-- slot: key --> ) for each entry in slots: above, plus any shared prose around them.',
+    hasUsesClosure: false,
+    isDirectoryBacked: false,
+    requiresLanguage: false,
+    ownedBy: [],
   },
 };
 
@@ -134,20 +186,18 @@ export const ALL_KINDS: ArtifactKind[] = (Object.values(KIND_REGISTRY) as KindDe
   .map(d => d.kind);
 
 /**
- * Canonical kind ordering for selector parsing and grouping sort.
+ * Canonical kind ordering for selector parsing and grouping sort, derived from
+ * KIND_REGISTRY.selectorOrder the same way ALL_KINDS derives from displayOrder.
  * Code kinds appear first (author-friendly), config kinds last.
  * This ordering is distinct from displayOrder (which puts config first for the wizard UI).
+ *
+ * Deriving it (rather than hand-listing the 8 kind literals) means a new kind that
+ * forgets to set `selectorOrder` fails to compile — the Record<ArtifactKind, …>
+ * constraint on KIND_REGISTRY catches the omission before it can silently sort last.
  */
-export const KIND_ORDER: ArtifactKind[] = [
-  'skill',
-  'agent',
-  'rule',
-  'prompt',
-  'workflow',
-  'hook',
-  'settings',
-  'mcp',
-];
+export const KIND_ORDER: ArtifactKind[] = (Object.values(KIND_REGISTRY) as KindDescriptor[])
+  .sort((a, b) => a.selectorOrder - b.selectorOrder)
+  .map(d => d.kind);
 
 /**
  * The set of config-kind identifiers.

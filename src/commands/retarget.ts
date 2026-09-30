@@ -13,6 +13,7 @@ import { checkSourceArtifact } from '../authoring/check-source';
 import { SigilError } from '../errors';
 import { requireArtifact } from './shared/artifact';
 import { requireValidCatalog } from '../cli-helpers';
+import type { Target } from '../types';
 
 export interface RetargetOptions {
   add?: string | undefined;
@@ -23,81 +24,55 @@ export interface RetargetOptions {
   withDeps: boolean;
 }
 
-export async function runRetarget(id: string, opts: RetargetOptions): Promise<void> {
+interface PlatformMutationResult {
+  platforms: string[] | undefined;
+  noOp: boolean;
+  errors: string[];
+  warnings: string[];
+}
+
+/** Throws unless exactly one of --add/--remove/--to was specified. */
+function validateRetargetFlags(opts: RetargetOptions): void {
   if (!opts.add && !opts.remove && !opts.to) {
     throw new SigilError('Specify at least one of: --add, --remove, --to');
   }
   if ((opts.add ? 1 : 0) + (opts.remove ? 1 : 0) + (opts.to ? 1 : 0) > 1) {
     throw new SigilError('Use only one of --add, --remove, or --to per invocation.');
   }
+}
 
-  const catalog = await requireValidCatalog(opts.catalogDir);
-  const targets = getAllTargets();
+/** Splits a comma-separated platform list flag value into trimmed, non-empty names. */
+function splitPlatformList(s: string): string[] {
+  return s
+    .split(',')
+    .map(p => p.trim())
+    .filter(Boolean);
+}
 
-  const artifact = requireArtifact(
-    catalog.byId,
-    catalog.artifacts.map(a => a.id),
-    id,
-  );
-
-  const kind = artifact.kind;
-  const currentPlatforms = artifact.frontmatter.platforms as string[] | undefined;
-  let mutResult: {
-    platforms: string[] | undefined;
-    noOp: boolean;
-    errors: string[];
-    warnings: string[];
-  };
-
+/** Dispatches to setPlatforms/addPlatforms/removePlatforms per which flag was passed. */
+function computePlatformMutation(
+  kind: string,
+  currentPlatforms: string[] | undefined,
+  opts: RetargetOptions,
+  targets: Target[],
+): PlatformMutationResult {
   if (opts.to) {
-    const toVal =
-      opts.to === 'all'
-        ? undefined
-        : opts.to
-            .split(',')
-            .map(p => p.trim())
-            .filter(Boolean);
-    mutResult = setPlatforms(kind, toVal, targets);
-  } else if (opts.add) {
-    const toAdd = opts.add
-      .split(',')
-      .map(p => p.trim())
-      .filter(Boolean);
-    mutResult = addPlatforms(kind, currentPlatforms, toAdd, targets);
-  } else {
-    const toRemove = opts
-      .remove!.split(',')
-      .map(p => p.trim())
-      .filter(Boolean);
-    mutResult = removePlatforms(kind, currentPlatforms, toRemove, targets);
+    const toVal = opts.to === 'all' ? undefined : splitPlatformList(opts.to);
+    return setPlatforms(kind, toVal, targets);
   }
-
-  // Print warnings
-  for (const w of mutResult.warnings) console.warn(`  ⚠  ${w}`);
-
-  // Fail on errors
-  if (mutResult.errors.length > 0) {
-    const rest = mutResult.errors.slice(1).join('\n');
-    throw new SigilError(mutResult.errors[0]!, rest ? { hint: rest } : {});
+  if (opts.add) {
+    return addPlatforms(kind, currentPlatforms, splitPlatformList(opts.add), targets);
   }
+  return removePlatforms(kind, currentPlatforms, splitPlatformList(opts.remove!), targets);
+}
 
-  if (mutResult.noOp) {
-    console.log(`  → No change to ${id} (already at the requested state).`);
-    return;
-  }
-
-  // Write updated platforms field back to the source file (body preserved verbatim)
-  writeArtifactFrontmatter(artifact.filePath, { platforms: mutResult.platforms });
-
-  const newLabel =
-    mutResult.platforms === undefined
-      ? 'all supporting AIs (DRY default — platforms: field removed)'
-      : `[${mutResult.platforms.join(', ')}]`;
-  console.log(`✓ ${id}: platforms updated → ${newLabel}`);
-  console.log(`  File: ${artifact.filePath}`);
-
-  // Validate the changed artifact
-  const updatedCatalog = await loadCatalog(opts.catalogDir);
+/** Reloads the catalog and prints any post-retarget validation warnings. */
+async function validateAfterRetarget(
+  catalogDir: string,
+  id: string,
+  targets: Target[],
+): Promise<void> {
+  const updatedCatalog = await loadCatalog(catalogDir);
   const updatedArtifact = updatedCatalog.byId.get(id);
   if (updatedArtifact) {
     const violations = checkSourceArtifact(updatedArtifact, updatedCatalog, targets);
@@ -106,7 +81,24 @@ export async function runRetarget(id: string, opts: RetargetOptions): Promise<vo
       for (const viol of violations) console.warn(`     ${viol.problem}`);
     }
   }
+}
 
+/** Prints the `✓ ... platforms updated` success line + file path. */
+function printRetargetSuccess(
+  id: string,
+  artifact: { filePath: string },
+  mutResult: PlatformMutationResult,
+): void {
+  const newLabel =
+    mutResult.platforms === undefined
+      ? 'all supporting AIs (DRY default — platforms: field removed)'
+      : `[${mutResult.platforms.join(', ')}]`;
+  console.log(`✓ ${id}: platforms updated → ${newLabel}`);
+  console.log(`  File: ${artifact.filePath}`);
+}
+
+/** Prints the "Next:" hint + consumer re-run reminder. */
+function printRetargetNextSteps(id: string, mutResult: PlatformMutationResult): void {
   if (mutResult.platforms === undefined) {
     console.log(`\n  → Next: sigil build  (will now emit to all supporting platforms)`);
   } else {
@@ -116,4 +108,38 @@ export async function runRetarget(id: string, opts: RetargetOptions): Promise<vo
   console.log(
     "  ℹ  Consumers who already ran 'add' must re-run it to pick up the changed targeting.",
   );
+}
+
+/** Prints warnings, then throws if the mutation produced any errors. */
+function reportMutationWarningsAndErrors(mutResult: PlatformMutationResult): void {
+  for (const w of mutResult.warnings) console.warn(`  ⚠  ${w}`);
+  if (mutResult.errors.length > 0) {
+    const rest = mutResult.errors.slice(1).join('\n');
+    throw new SigilError(mutResult.errors[0]!, rest ? { hint: rest } : {});
+  }
+}
+
+export async function runRetarget(id: string, opts: RetargetOptions): Promise<void> {
+  validateRetargetFlags(opts);
+
+  const catalog = await requireValidCatalog(opts.catalogDir);
+  const targets = getAllTargets();
+
+  const allIds = catalog.artifacts.map(a => a.id);
+  const artifact = requireArtifact(catalog.byId, allIds, id);
+
+  const currentPlatforms = artifact.frontmatter.platforms as string[] | undefined;
+  const mutResult = computePlatformMutation(artifact.kind, currentPlatforms, opts, targets);
+  reportMutationWarningsAndErrors(mutResult);
+  if (mutResult.noOp) {
+    console.log(`  → No change to ${id} (already at the requested state).`);
+    return;
+  }
+
+  // Write updated platforms field back to the source file (body preserved verbatim)
+  writeArtifactFrontmatter(artifact.filePath, { platforms: mutResult.platforms });
+
+  printRetargetSuccess(id, artifact, mutResult);
+  await validateAfterRetarget(opts.catalogDir, id, targets);
+  printRetargetNextSteps(id, mutResult);
 }

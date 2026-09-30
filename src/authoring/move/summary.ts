@@ -3,6 +3,7 @@
  */
 import path from 'path';
 import type { MovePlan } from './plan';
+import { SKILL_FILENAME } from '../../paths';
 
 export interface MovePlanSummary {
   /** The file or directory to be renamed. */
@@ -21,7 +22,7 @@ export function summarizePlan(plan: MovePlan): MovePlanSummary {
 
   // Also note the frontmatter update in the moved file itself
   const movedFilePath = isSkill
-    ? path.join(plan.destinationPath, 'SKILL.md')
+    ? path.join(plan.destinationPath, SKILL_FILENAME)
     : plan.destinationPath;
   referrerRewrites.unshift({ file: movedFilePath, fields: ['id'] });
 

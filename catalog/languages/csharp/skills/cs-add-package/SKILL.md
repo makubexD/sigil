@@ -5,8 +5,6 @@ title: "Add Package (.NET / C#)"
 description: "Vet and wire a NuGet package through Central Package Management — checks CVEs, maintenance, transitive footprint, and license before adding"
 name: cs-add-package
 language: csharp
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash

@@ -18,15 +18,13 @@ import { runSteps } from './engine';
 import { ADD_STEPS } from './steps/add';
 import type { AddWizardState } from './steps/add';
 
-export async function runWizard(
+function buildInitialState(
   catalog: ResolvedCatalog,
   packs: Pack[],
   detectedTarget: string,
   projectDir: string,
-): Promise<WizardResult | null> {
-  intro('📦  sigil  —  interactive installer');
-
-  const state: AddWizardState = {
+): AddWizardState {
+  return {
     ctx: {
       catalog,
       packs,
@@ -38,10 +36,9 @@ export async function runWizard(
     // (which skip the deps prompt entirely) behave as if "Yes" was answered.
     includeDeps: true,
   };
+}
 
-  const done = await runSteps(ADD_STEPS, state);
-  if (!done) return null;
-
+function toWizardResult(done: AddWizardState): WizardResult {
   return {
     target: done.target!,
     selectors: done.selectors!,
@@ -50,4 +47,17 @@ export async function runWizard(
     language: done.language,
     configScope: done.configScope,
   };
+}
+
+export async function runWizard(
+  catalog: ResolvedCatalog,
+  packs: Pack[],
+  detectedTarget: string,
+  projectDir: string,
+): Promise<WizardResult | null> {
+  intro('📦  sigil  —  interactive installer');
+
+  const state = buildInitialState(catalog, packs, detectedTarget, projectDir);
+  const done = await runSteps(ADD_STEPS, state);
+  return done ? toWizardResult(done) : null;
 }

@@ -1,0 +1,52 @@
+/**
+ * Copilot `agent` emission spec — the per-file `.github/agents/<name>.agent.md` scaffold layout.
+ * Frontmatter is `name` + `description` only. The aggregate `.github/AGENTS.md` (open standard,
+ * all agents in one file) stays hand-written in build-helpers.ts's buildAgentsMd — it renders
+ * multiple artifacts into one document, which is not a per-artifact KindEmitSpec's shape.
+ */
+import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
+import { yamlScalar } from '../../yaml-util';
+import { renderBoundarySection } from '../../shared/boundary';
+import {
+  COPILOT_AGENTS_DOC,
+  COPILOT_CREATE_AGENTS_DOC,
+  VSCODE_CUSTOM_AGENTS_DOC,
+} from '../../doc-refs';
+
+const nameMapping: FieldMapping = {
+  from: 'name',
+  to: 'name',
+  required: true,
+  serialize: v => `name: ${v as string}`,
+};
+
+const descriptionMapping: FieldMapping = {
+  from: 'description',
+  to: 'description',
+  required: true,
+  serialize: v => `description: ${yamlScalar(v as string)}`,
+};
+
+const titleAndBoundarySection: BodySectionSpec = {
+  id: 'titleAndBoundary',
+  position: 'before',
+  render: (artifact, ctx) => [
+    `# ${artifact.frontmatter.title as string}`,
+    '',
+    ...renderBoundarySection(artifact, ctx.installSet, ctx.catalog),
+  ],
+};
+
+export const COPILOT_AGENT_SPEC: KindEmitSpec = {
+  kind: 'agent',
+  outputPath: artifact => `.github/agents/${artifact.frontmatter.name as string}.agent.md`,
+  pathPattern: /\.github\/agents\/.*\.agent\.md$/,
+  frontmatter: [nameMapping, descriptionMapping],
+  emitEmptyFrontmatter: true,
+  body: [titleAndBoundarySection],
+  forbiddenKeys: ['applyTo'],
+  bodyForbids: [],
+  // COPILOT_AGENTS_DOC covers the frontmatter table but never states the .github/agents/ path;
+  // the other two do (GitHub's cloud-agent side and VS Code's local-agent side respectively).
+  docs: [COPILOT_AGENTS_DOC, COPILOT_CREATE_AGENTS_DOC, VSCODE_CUSTOM_AGENTS_DOC],
+};

@@ -27,7 +27,9 @@ export const COMMON_FIELDS: FieldDescriptor[] = [
 /** Kind-specific editable fields (added to COMMON_FIELDS). */
 export const KIND_FIELDS: Record<ArtifactKind, FieldDescriptor[]> = {
   skill: [
-    { field: 'appliesTo', kind: 'list' },
+    // whenToUse/userInvocable/skillContext are authored directly in SKILL.md frontmatter
+    // (no `sigil patch` support yet — appliesTo was removed here, not replaced, since
+    // patching those three would need dedicated handlers in patch-fields-basic.ts).
     { field: 'uses.rules', kind: 'list' },
     { field: 'uses.agents', kind: 'list' },
   ],
@@ -41,6 +43,7 @@ export const KIND_FIELDS: Record<ArtifactKind, FieldDescriptor[]> = {
   ],
   rule: [
     { field: 'appliesTo', kind: 'list' },
+    { field: 'appliesToRationale', kind: 'scalar' },
     {
       field: 'severity',
       kind: 'scalar',
@@ -82,6 +85,10 @@ export const KIND_FIELDS: Record<ArtifactKind, FieldDescriptor[]> = {
     { field: 'server.url', kind: 'scalar' },
     { field: 'server.type', kind: 'scalar', allowedValues: ['http', 'sse'] as const },
     { field: 'defaultScope', kind: 'scalar', allowedValues: CONFIG_SCOPES },
+  ],
+  template: [
+    { field: 'appliesToKind', kind: 'list' },
+    { field: 'revision', kind: 'scalar', required: true },
   ],
 };
 

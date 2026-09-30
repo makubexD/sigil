@@ -11,58 +11,56 @@
 import type { ConfigMergeOp, MergeStrategy } from '../types';
 import { deepEqual } from './primitives';
 
+/** True when `value` is a plain (non-array, non-null) object. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === 'object' && !Array.isArray(value);
+}
+
+/** True when any item of `contributed` is missing from `current` (per deepEqual membership). */
+function arrayMissingItems(current: unknown[], contributed: unknown[]): boolean {
+  return contributed.some(item => !current.some(x => deepEqual(x, item)));
+}
+
+/** Drift check for `array-union`/`array-append`: flat array, or object-of-arrays. */
+function arrayStrategyDrifted(current: unknown, contributed: unknown): boolean {
+  if (Array.isArray(contributed)) {
+    // All contributed items must still be present in the live flat array
+    if (!Array.isArray(current)) return true;
+    return arrayMissingItems(current, contributed);
+  }
+  if (isPlainObject(contributed)) {
+    // Object-of-arrays (hooks event-map or permissions sub-arrays):
+    // each contributed sub-array's items must still be in the live sub-array
+    if (!isPlainObject(current)) return true;
+    for (const [subKey, subContrib] of Object.entries(contributed)) {
+      if (!Array.isArray(subContrib)) continue;
+      const liveArr = current[subKey];
+      if (!Array.isArray(liveArr)) return true;
+      if (arrayMissingItems(liveArr, subContrib)) return true;
+    }
+  }
+  return false;
+}
+
+/** Drift check for `object-spread`: nested-leaf comparison, or scalar equality. */
+function objectSpreadDrifted(current: unknown, contributed: unknown): boolean {
+  if (isPlainObject(contributed)) {
+    if (!isPlainObject(current)) return true;
+    return leafDrift(current, contributed);
+  }
+  return !deepEqual(current, contributed);
+}
+
 export function detectConfigDrift(live: Record<string, unknown>, op: ConfigMergeOp): boolean {
   for (const [topKey, contributed] of Object.entries(op.fragment)) {
     const strat: MergeStrategy = op.strategy[topKey] ?? 'object-spread';
     const current = live[topKey];
 
-    switch (strat) {
-      case 'array-union':
-      case 'array-append': {
-        if (Array.isArray(contributed)) {
-          // All contributed items must still be present in the live flat array
-          if (!Array.isArray(current)) return true;
-          for (const item of contributed as unknown[]) {
-            if (!(current as unknown[]).some(x => deepEqual(x, item))) return true;
-          }
-        } else if (contributed !== null && typeof contributed === 'object') {
-          // Object-of-arrays (hooks event-map or permissions sub-arrays):
-          // each contributed sub-array's items must still be in the live sub-array
-          if (current === null || typeof current !== 'object' || Array.isArray(current))
-            return true;
-          const liveObj = current as Record<string, unknown>;
-          for (const [subKey, subContrib] of Object.entries(
-            contributed as Record<string, unknown>,
-          )) {
-            if (Array.isArray(subContrib)) {
-              const liveArr = liveObj[subKey];
-              if (!Array.isArray(liveArr)) return true;
-              for (const item of subContrib as unknown[]) {
-                if (!(liveArr as unknown[]).some(x => deepEqual(x, item))) return true;
-              }
-            }
-          }
-        }
-        break;
-      }
-
-      default: {
-        // object-spread: check all leaves sigil contributed are still equal
-        if (
-          contributed !== null &&
-          typeof contributed === 'object' &&
-          !Array.isArray(contributed)
-        ) {
-          if (current === null || typeof current !== 'object' || Array.isArray(current))
-            return true;
-          if (leafDrift(current as Record<string, unknown>, contributed as Record<string, unknown>))
-            return true;
-        } else {
-          if (!deepEqual(current, contributed)) return true;
-        }
-        break;
-      }
-    }
+    const drifted =
+      strat === 'array-union' || strat === 'array-append'
+        ? arrayStrategyDrifted(current, contributed)
+        : objectSpreadDrifted(current, contributed);
+    if (drifted) return true;
   }
   return false;
 }
@@ -70,9 +68,9 @@ export function detectConfigDrift(live: Record<string, unknown>, op: ConfigMerge
 function leafDrift(live: Record<string, unknown>, contributed: Record<string, unknown>): boolean {
   for (const [k, v] of Object.entries(contributed)) {
     if (!(k in live)) return true;
-    if (v !== null && typeof v === 'object' && !Array.isArray(v)) {
-      if (live[k] === null || typeof live[k] !== 'object' || Array.isArray(live[k])) return true;
-      if (leafDrift(live[k] as Record<string, unknown>, v as Record<string, unknown>)) return true;
+    if (isPlainObject(v)) {
+      if (!isPlainObject(live[k])) return true;
+      if (leafDrift(live[k], v)) return true;
     } else if (!deepEqual(live[k], v)) {
       return true;
     }

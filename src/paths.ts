@@ -16,3 +16,13 @@ export function normPath(p: string): string {
 export function basenameOfId(id: string): string {
   return id.split('/').pop() ?? id;
 }
+
+/** A catalog id is exactly `<prefix>/<name>` — two `/`-separated parts, no more, no fewer. */
+export const ID_PART_COUNT = 2;
+
+/**
+ * Filename for a skill's directory-backed source/output (`skills/<name>/SKILL.md`).
+ * Single source of truth — was previously the bare string `'SKILL.md'` at 8+ call sites
+ * across load/authoring/commands.
+ */
+export const SKILL_FILENAME = 'SKILL.md';

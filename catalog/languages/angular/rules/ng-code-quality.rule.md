@@ -5,7 +5,8 @@ title: Code Quality (Angular)
 description: Search-first protocol + structural size limits (method/param caps) for Angular — prevents duplication and complexity creep
 language: angular
 appliesTo:
-  - "**/*"
+  - "**/*.ts"
+  - "**/*.html"
 severity: recommended
 extends:
   - shared/clean-code

@@ -15,60 +15,99 @@
  *   - `sigil new`           — auto-run after scaffolding
  *   - `sigil retarget`      — validate the mutated artifact before saving
  */
-import path from 'path';
 import type { Artifact, LoadedCatalog, SourceViolation } from '../types';
 import { getSchema } from '../schema/index';
 import type { Target, ArtifactKind } from '../types';
-import { checkReferences, type RefCheck } from '../refs';
-import { normPath } from '../paths';
+import type { CheckCtx } from './check-source-ctx';
+import {
+  checkIdConsistency,
+  checkKindMatchesPath,
+  checkDuplicateId,
+  checkReferenceIntegrity,
+} from './check-source-conventions';
 
-/** Renders one RefCheck in check-source.ts's established per-field wording. */
-function formatRefViolation(check: RefCheck): string {
-  if (check.problem === 'dangling') {
-    return `${check.field}: '${check.ref}' does not exist in the catalog`;
+/**
+ * §4b: argumentHint must not carry embedded quote characters. gray-matter parses
+ * YAML, so a value like `argumentHint: "\"foo\""` is not a typo caught elsewhere —
+ * it round-trips to the string `"foo"` (quotes included) and gets double-quoted
+ * again by every adapter's yamlScalar()/serializeScalar(), producing visibly
+ * broken frontmatter in the emitted SKILL.md/prompt file.
+ */
+function checkArgumentHint(ctx: CheckCtx): void {
+  const { artifact, v } = ctx;
+  const argumentHint = artifact.frontmatter.argumentHint as string | undefined;
+  if (argumentHint && (argumentHint.startsWith('"') || argumentHint.endsWith('"'))) {
+    v.push({
+      file: artifact.filePath,
+      problem: `argumentHint '${argumentHint}' contains embedded quote characters — author it as a plain string (e.g. '<package> [version]'), not a quoted string within the YAML value`,
+    });
   }
-  const validityNote =
-    check.field === 'extends'
-      ? 'only rules can be extended'
-      : check.field === 'uses.rules'
-        ? 'only rules valid here'
-        : 'only agents valid here';
-  return `${check.field}: '${check.ref}' has kind '${check.actualKind}' — ${validityNote}`;
 }
 
-// ─── Convention checkers ──────────────────────────────────────────────────────
-
-/** Returns true when `s` is kebab-case (lowercase letters, digits, hyphens). */
-function isKebabCase(s: string): boolean {
-  return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(s);
+/** One dependency-coverage-drift check for a single `uses.rules`/`uses.agents` ref list. */
+/** One dep's coverage-drift check; pushes a violation to `v` when the dep is under-covered. */
+function checkOneDepDrift(
+  ctx: CheckCtx,
+  ref: string,
+  refKind: 'rule' | 'agent',
+  platforms: string[],
+): void {
+  const dep = ctx.catalog.byId.get(ref);
+  if (!dep) return; // already reported by checkReferenceIntegrity
+  const depPlatforms = dep.frontmatter.platforms as string[] | undefined;
+  if (!depPlatforms || depPlatforms.length === 0) return; // dep is universal — fine
+  const missingForDep = platforms.filter(p => !depPlatforms.includes(p));
+  if (missingForDep.length === 0) return;
+  ctx.v.push({
+    file: ctx.artifact.filePath,
+    problem: `Dependency coverage drift: ${refKind} '${ref}' is restricted to [${depPlatforms.join(', ')}] but this skill targets [${platforms.join(', ')}] — '${ref}' won't be available on: ${missingForDep.join(', ')}`,
+  });
 }
 
-/**
- * Infer the expected id prefix from the artifact's file path.
- * Looks for the pattern: catalog/languages/<lang>/... → prefix = <lang>
- *                         catalog/shared/...           → prefix = "shared"
- * Returns undefined when the path doesn't match either convention.
- */
-function inferIdPrefixFromPath(filePath: string): string | undefined {
-  const normalized = normPath(filePath);
-  const langMatch = normalized.match(/\/languages\/([^/]+)\//);
-  if (langMatch) return langMatch[1];
-  if (normalized.includes('/shared/')) return 'shared';
-  return undefined;
+function checkDependencyDrift(
+  ctx: CheckCtx,
+  refs: string[],
+  refKind: 'rule' | 'agent',
+  platforms: string[],
+): void {
+  for (const ref of refs) {
+    checkOneDepDrift(ctx, ref, refKind, platforms);
+  }
 }
 
-/**
- * Infer the expected kind from the file name pattern.
- * SKILL.md → 'skill'; *.rule.md → 'rule'; *.agent.md → 'agent'; etc.
- */
-function inferKindFromPath(filePath: string): ArtifactKind | undefined {
-  const base = path.basename(filePath);
-  if (base === 'SKILL.md') return 'skill';
-  if (base.endsWith('.rule.md')) return 'rule';
-  if (base.endsWith('.agent.md')) return 'agent';
-  if (base.endsWith('.prompt.md')) return 'prompt';
-  if (base.endsWith('.workflow.md')) return 'workflow';
-  return undefined;
+/** §5: each `platforms:` entry must be a registered target that supports this artifact's kind. */
+function checkPlatformNames(ctx: CheckCtx, platforms: string[]): void {
+  const { artifact, targets, v } = ctx;
+  const file = artifact.filePath;
+  const allTargetNames = new Set(targets.map(t => t.name));
+  const kindSupporting = new Set(
+    targets
+      .filter(t => !t.supportedKinds || t.supportedKinds.includes(artifact.kind as ArtifactKind))
+      .map(t => t.name),
+  );
+
+  for (const p of platforms) {
+    if (!allTargetNames.has(p)) {
+      v.push({
+        file,
+        problem: `platforms: '${p}' is not a registered target. Known targets: ${[...allTargetNames].join(', ')}`,
+      });
+    } else if (!kindSupporting.has(p)) {
+      v.push({ file, problem: `platforms: '${p}' does not support kind '${artifact.kind}'` });
+    }
+  }
+}
+
+/** §5+6: `platforms:` validation and dependency-coverage-drift warnings. */
+function checkPlatforms(ctx: CheckCtx): void {
+  const platforms = ctx.artifact.frontmatter.platforms as string[] | undefined;
+  if (!platforms || platforms.length === 0) return;
+
+  checkPlatformNames(ctx, platforms);
+
+  const uses = ctx.artifact.frontmatter.uses as { rules?: string[]; agents?: string[] } | undefined;
+  checkDependencyDrift(ctx, uses?.rules ?? [], 'rule', platforms);
+  checkDependencyDrift(ctx, uses?.agents ?? [], 'agent', platforms);
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
@@ -76,6 +115,26 @@ function inferKindFromPath(filePath: string): ArtifactKind | undefined {
 export interface CheckSourceOptions {
   /** When true, only run schema validation (skip path/id/language/reference checks). */
   schemaOnly?: boolean;
+}
+
+/** Runs the zod schema check for the artifact's kind, pushing any issues to `v`. */
+function checkSchema(artifact: Artifact, v: SourceViolation[]): { unknownKind: boolean } {
+  let schema;
+  try {
+    schema = getSchema(artifact.kind);
+  } catch {
+    v.push({ file: artifact.filePath, problem: `Unknown kind '${artifact.kind}'` });
+    return { unknownKind: true };
+  }
+
+  const parseResult = schema.safeParse(artifact.frontmatter);
+  if (!parseResult.success) {
+    for (const issue of parseResult.error.issues) {
+      const fieldPath = issue.path.length > 0 ? issue.path.join('.') : '(root)';
+      v.push({ file: artifact.filePath, problem: `Schema: ${fieldPath} — ${issue.message}` });
+    }
+  }
+  return { unknownKind: false };
 }
 
 /**
@@ -94,201 +153,18 @@ export function checkSourceArtifact(
   opts: CheckSourceOptions = {},
 ): SourceViolation[] {
   const v: SourceViolation[] = [];
-  const file = artifact.filePath;
 
-  // ── 1. Schema validation ───────────────────────────────────────────────────
-  let schema;
-  try {
-    schema = getSchema(artifact.kind);
-  } catch {
-    v.push({ file, problem: `Unknown kind '${artifact.kind}'` });
-    return v; // can't do any further checks
-  }
-
-  const parseResult = schema.safeParse(artifact.frontmatter);
-  if (!parseResult.success) {
-    for (const issue of parseResult.error.issues) {
-      const fieldPath = issue.path.length > 0 ? issue.path.join('.') : '(root)';
-      v.push({ file, problem: `Schema: ${fieldPath} — ${issue.message}` });
-    }
-  }
-
+  const { unknownKind } = checkSchema(artifact, v);
+  if (unknownKind) return v; // can't do any further checks
   if (opts.schemaOnly) return v;
 
-  // ── 2. id/path/language consistency ───────────────────────────────────────
-  const id = artifact.id;
-  const parts = id.split('/');
-
-  // id must be exactly "<prefix>/<name>" (two parts)
-  if (parts.length !== 2 || !parts[0] || !parts[1]) {
-    v.push({
-      file,
-      problem: `id '${id}' must follow the convention '<language>/<name>' or 'shared/<name>'`,
-    });
-  } else {
-    const [idPrefix, idName] = parts;
-
-    // Check path consistency (when the path is interpretable)
-    const pathPrefix = inferIdPrefixFromPath(file);
-    if (pathPrefix && pathPrefix !== idPrefix) {
-      v.push({
-        file,
-        problem: `id prefix '${idPrefix}' doesn't match path inferred prefix '${pathPrefix}' — keep id and file path in sync`,
-      });
-    }
-
-    // name kebab-case (skill and agent only)
-    const kindName = artifact.frontmatter.name as string | undefined;
-    if ((artifact.kind === 'skill' || artifact.kind === 'agent') && kindName) {
-      if (!isKebabCase(kindName)) {
-        v.push({
-          file,
-          problem: `name '${kindName}' must be kebab-case (lowercase letters, digits, hyphens)`,
-        });
-      }
-      // name must match the last path segment of the id
-      if (kindName !== idName) {
-        v.push({ file, problem: `name '${kindName}' must match the id name segment '${idName}'` });
-      }
-    }
-
-    // language must match the id prefix (for language-scoped artifacts)
-    const frontmatterLang = artifact.frontmatter.language as string | undefined;
-    if (frontmatterLang) {
-      if (frontmatterLang !== idPrefix && idPrefix !== 'shared') {
-        v.push({
-          file,
-          problem: `frontmatter language '${frontmatterLang}' must match id prefix '${idPrefix}'`,
-        });
-      }
-      // path inferred prefix must also match
-      if (pathPrefix && pathPrefix !== 'shared' && pathPrefix !== frontmatterLang) {
-        v.push({
-          file,
-          problem: `frontmatter language '${frontmatterLang}' doesn't match path-inferred language '${pathPrefix}'`,
-        });
-      }
-    }
-  }
-
-  // kind consistency with file name
-  const pathKind = inferKindFromPath(file);
-  if (pathKind && pathKind !== artifact.kind) {
-    v.push({
-      file,
-      problem: `file name implies kind '${pathKind}' but frontmatter declares kind '${artifact.kind}'`,
-    });
-  }
-
-  // ── 3. Duplicate id ────────────────────────────────────────────────────────
-  // If the catalog already has this id AND it refers to a different file, it's a duplicate.
-  // Normalise path separators before comparing — on Windows the catalog may use forward slashes
-  // while destPath uses backslashes, causing false-positive duplicates on --overwrite.
-  const existing = catalog.byId.get(id);
-  if (existing) {
-    const normExisting = normPath(existing.filePath);
-    const normArtifact = normPath(artifact.filePath);
-    if (normExisting !== normArtifact) {
-      v.push({
-        file,
-        problem: `Duplicate id '${id}' — already used by ${existing.filePath}`,
-      });
-    }
-  }
-
-  // ── 4. Reference integrity ─────────────────────────────────────────────────
-  // extends / uses.rules / uses.agents
-  for (const check of checkReferences(artifact.frontmatter, catalog)) {
-    v.push({ file, problem: formatRefViolation(check) });
-  }
-  // uses.rules/uses.agents lists are also needed below for dependency-coverage-drift.
-  const uses = artifact.frontmatter.uses as { rules?: string[]; agents?: string[] } | undefined;
-
-  // workflow steps
-  const steps = artifact.frontmatter.steps as Array<{ ref: string }> | undefined;
-  for (const step of steps ?? []) {
-    if (!catalog.byId.has(step.ref)) {
-      v.push({ file, problem: `workflow step ref '${step.ref}' does not exist in the catalog` });
-    }
-  }
-
-  // relatedArtifacts — referenced IDs must exist in the catalog
-  const related = artifact.frontmatter.relatedArtifacts as
-    | Array<{ id: string; relation: string; reason: string }>
-    | undefined;
-  for (const entry of related ?? []) {
-    if (!catalog.byId.has(entry.id)) {
-      v.push({
-        file,
-        problem: `relatedArtifacts: '${entry.id}' does not exist in the catalog`,
-      });
-    }
-  }
-
-  // ── 4b. argumentHint: must not carry embedded quote characters ────────────
-  // gray-matter parses YAML, so a value like `argumentHint: "\"foo\""` is not a
-  // typo caught elsewhere — it round-trips to the string `"foo"` (quotes included)
-  // and gets double-quoted again by every adapter's yamlScalar()/serializeScalar(),
-  // producing visibly broken frontmatter in the emitted SKILL.md/prompt file.
-  const argumentHint = artifact.frontmatter.argumentHint as string | undefined;
-  if (argumentHint && (argumentHint.startsWith('"') || argumentHint.endsWith('"'))) {
-    v.push({
-      file,
-      problem: `argumentHint '${argumentHint}' contains embedded quote characters — author it as a plain string (e.g. '<package> [version]'), not a quoted string within the YAML value`,
-    });
-  }
-
-  // ── 5. platforms: field validation ────────────────────────────────────────
-  const platforms = artifact.frontmatter.platforms as string[] | undefined;
-  if (platforms && platforms.length > 0) {
-    const allTargetNames = new Set(targets.map(t => t.name));
-    const kindSupporting = new Set(
-      targets
-        .filter(t => !t.supportedKinds || t.supportedKinds.includes(artifact.kind as ArtifactKind))
-        .map(t => t.name),
-    );
-
-    for (const p of platforms) {
-      if (!allTargetNames.has(p)) {
-        v.push({
-          file,
-          problem: `platforms: '${p}' is not a registered target. Known targets: ${[...allTargetNames].join(', ')}`,
-        });
-      } else if (!kindSupporting.has(p)) {
-        v.push({ file, problem: `platforms: '${p}' does not support kind '${artifact.kind}'` });
-      }
-    }
-
-    // ── 6. Dependency coverage drift ────────────────────────────────────────
-    // Warn (as a violation) when a dep is restricted to fewer platforms than the skill itself.
-    // This is a warning-class violation; we emit it so the user is aware.
-    for (const ref of uses?.rules ?? []) {
-      const dep = catalog.byId.get(ref);
-      if (!dep) continue; // already reported above
-      const depPlatforms = dep.frontmatter.platforms as string[] | undefined;
-      if (!depPlatforms || depPlatforms.length === 0) continue; // dep is universal — fine
-      const missingForDep = platforms.filter(p => !depPlatforms.includes(p));
-      if (missingForDep.length > 0) {
-        v.push({
-          file,
-          problem: `Dependency coverage drift: rule '${ref}' is restricted to [${depPlatforms.join(', ')}] but this skill targets [${platforms.join(', ')}] — '${ref}' won't be available on: ${missingForDep.join(', ')}`,
-        });
-      }
-    }
-    for (const ref of uses?.agents ?? []) {
-      const dep = catalog.byId.get(ref);
-      if (!dep) continue;
-      const depPlatforms = dep.frontmatter.platforms as string[] | undefined;
-      if (!depPlatforms || depPlatforms.length === 0) continue;
-      const missingForDep = platforms.filter(p => !depPlatforms.includes(p));
-      if (missingForDep.length > 0) {
-        v.push({
-          file,
-          problem: `Dependency coverage drift: agent '${ref}' is restricted to [${depPlatforms.join(', ')}] but this skill targets [${platforms.join(', ')}] — '${ref}' won't be available on: ${missingForDep.join(', ')}`,
-        });
-      }
-    }
-  }
+  const ctx: CheckCtx = { artifact, catalog, targets, v };
+  checkIdConsistency(ctx);
+  checkKindMatchesPath(ctx);
+  checkDuplicateId(ctx);
+  checkReferenceIntegrity(ctx);
+  checkArgumentHint(ctx);
+  checkPlatforms(ctx);
 
   return v;
 }

@@ -7,7 +7,8 @@ function isKebabCase(v: string): boolean {
   return /^[a-z0-9]+(-[a-z0-9]+)*$/.test(v);
 }
 
-async function promptFields(s: NewWizardState): Promise<'ok' | 'cancel'> {
+/** Prompts for the artifact name; sets `s.name` on success. */
+async function promptName(s: NewWizardState): Promise<'ok' | 'cancel'> {
   const nameAnswer = await text({
     message: 'Artifact name  (kebab-case, e.g. ef-core-migrations)',
     placeholder: `new-${s.kind}`,
@@ -22,8 +23,12 @@ async function promptFields(s: NewWizardState): Promise<'ok' | 'cancel'> {
   });
   if (isCancel(nameAnswer)) return 'cancel';
   s.name = (nameAnswer as string).trim();
+  return 'ok';
+}
 
-  const titleDefault = s.name.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+/** Prompts for the title (defaulting to a Title-Cased form of the name); sets `s.title`. */
+async function promptTitle(s: NewWizardState): Promise<'ok' | 'cancel'> {
+  const titleDefault = s.name!.replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
   const titleAnswer = await text({
     message: 'Title  (human-readable, e.g. "EF Core Migrations")',
     placeholder: titleDefault,
@@ -31,7 +36,11 @@ async function promptFields(s: NewWizardState): Promise<'ok' | 'cancel'> {
   });
   if (isCancel(titleAnswer)) return 'cancel';
   s.title = ((titleAnswer as string) || '').trim() || titleDefault;
+  return 'ok';
+}
 
+/** Prompts for the description; sets `s.description`. */
+async function promptDescription(s: NewWizardState): Promise<'ok' | 'cancel'> {
   const descAnswer = await text({
     message: 'Description  (one-liner for catalog listings)',
     placeholder: `${s.title} — TODO`,
@@ -39,8 +48,66 @@ async function promptFields(s: NewWizardState): Promise<'ok' | 'cancel'> {
   });
   if (isCancel(descAnswer)) return 'cancel';
   s.description = ((descAnswer as string) || '').trim() || `TODO — ${s.name} description.`;
-
   return 'ok';
+}
+
+async function promptFields(s: NewWizardState): Promise<'ok' | 'cancel'> {
+  if ((await promptName(s)) === 'cancel') return 'cancel';
+  if ((await promptTitle(s)) === 'cancel') return 'cancel';
+  return promptDescription(s);
+}
+
+/** Shows the "New artifact summary" note above the "Ready to create?" prompt. */
+function showFieldsSummary(s: NewWizardState): void {
+  const id = `${s.language ?? 'shared'}/${s.name}`;
+  const platformSummary = s.platforms ? s.platforms.join(', ') : 'all supporting AIs (DRY default)';
+  note(
+    [
+      `Kind:         ${s.kind}`,
+      `ID:           ${id}`,
+      `Title:        ${s.title}`,
+      `Description:  ${s.description}`,
+      `Platforms:    ${platformSummary}`,
+    ].join('\n'),
+    'New artifact summary',
+  );
+}
+
+/** Prompts "Ready to create?" and returns the raw answer value, or 'cancel' on Esc/Ctrl+C. */
+async function promptReadyToCreate(): Promise<string> {
+  const answer = await select({
+    message: 'Ready to create?',
+    options: [
+      { value: 'create', label: 'Create this artifact', hint: '' },
+      {
+        value: 'editFields',
+        label: '← Edit name / title / description',
+        hint: 're-enter the text fields (previous answers pre-filled)',
+      },
+      {
+        value: 'backMore',
+        label: '← Back to language / platform',
+        hint: 'return to an earlier selection step',
+      },
+      { value: 'cancel', label: 'Cancel', hint: '' },
+    ],
+  });
+  return isCancel(answer) ? 'cancel' : (answer as string);
+}
+
+/** Maps the confirm-menu answer to a StepOutcome, or 'editFields' to loop and re-prompt. */
+function resolveConfirmAnswer(answer: string): StepOutcome | 'editFields' {
+  if (answer === 'cancel') {
+    cancel('Scaffold cancelled.');
+    return 'cancel';
+  }
+  if (answer === 'create') {
+    outro('Creating artifact…');
+    return 'next';
+  }
+  if (answer === 'editFields') return 'editFields';
+  // 'backMore' — skip past this step entirely, back to whatever ran before it.
+  return 'back';
 }
 
 /**
@@ -65,52 +132,10 @@ export const fieldsConfirmStep: WizardStep<NewWizardState> = {
         return 'cancel';
       }
 
-      const idPrefix = s.language ?? 'shared';
-      const id = `${idPrefix}/${s.name}`;
-      const platformSummary = s.platforms
-        ? s.platforms.join(', ')
-        : 'all supporting AIs (DRY default)';
-      note(
-        [
-          `Kind:         ${s.kind}`,
-          `ID:           ${id}`,
-          `Title:        ${s.title}`,
-          `Description:  ${s.description}`,
-          `Platforms:    ${platformSummary}`,
-        ].join('\n'),
-        'New artifact summary',
-      );
-
-      const answer = await select({
-        message: 'Ready to create?',
-        options: [
-          { value: 'create', label: 'Create this artifact', hint: '' },
-          {
-            value: 'editFields',
-            label: '← Edit name / title / description',
-            hint: 're-enter the text fields (previous answers pre-filled)',
-          },
-          {
-            value: 'backMore',
-            label: '← Back to language / platform',
-            hint: 'return to an earlier selection step',
-          },
-          { value: 'cancel', label: 'Cancel', hint: '' },
-        ],
-      });
-      if (isCancel(answer) || answer === 'cancel') {
-        cancel('Scaffold cancelled.');
-        return 'cancel';
-      }
-      if (answer === 'create') {
-        outro('Creating artifact…');
-        return 'next';
-      }
-      if (answer === 'editFields') {
-        continue; // re-prompt fields, prefilled from s.name/s.title/s.description
-      }
-      // 'backMore' — skip past this step entirely, back to whatever ran before it.
-      return 'back';
+      showFieldsSummary(s);
+      const outcome = resolveConfirmAnswer(await promptReadyToCreate());
+      if (outcome === 'editFields') continue; // re-prompt fields, prefilled from s.name/s.title/s.description
+      return outcome;
     }
   },
 };

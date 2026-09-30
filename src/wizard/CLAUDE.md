@@ -1,0 +1,152 @@
+# Wizard internals (`src/wizard/`)
+
+This file loads automatically whenever you work under `src/wizard/`. It holds the design
+invariants and shipped-bug history for the `add`/`new` interactive wizards — the root `CLAUDE.md`
+keeps only the user-facing `add` command contract.
+
+**Wizard (`src/wizard/add.ts`):** triggered when run with no selector in an interactive TTY. Uses
+`@clack/prompts` for a step-machine guided flow; every prompt maps 1:1 to a CLI flag so guided and
+scripted paths are equivalent. After install, `printEquivalentCommand()` prints the copy-pasteable
+`sigil add … --yes` line (boxed in a TTY, plain text in CI). The plan box shows summary + artifact
+preview only — never the command — so it is never printed twice.
+
+**Cancel/back handling (`src/wizard/steps/add/prompt-helpers.ts`):** every step under
+`src/wizard/steps/add/` shares one `isCancel → cancel(...) → return 'cancel'` triad and one
+`{ value: BACK, label: '← Back', hint: '' }` back-option object — never re-declare either inline.
+Use `BACK_OPTION`, `CANCEL_MESSAGE`, and `resolveOutcome(answer)` (returns `'cancel' | 'back' |
+undefined`, performing the `isCancel` check and the `cancel()` side effect) so each step reduces to
+`const o = resolveOutcome(a); if (o) return o;`.
+
+**Equivalent-command invariant:** the "Repeat non-interactively" command printed after install must be
+the _complete, faithful equivalent_ of the wizard session — every consequential choice reflected,
+nothing silently dropped. `buildEquivalentCommand` (`src/wizard/command-strings.ts`) builds the string; its `cli.ts`
+call site must pass `hasConfigKinds: configIds.length > 0` alongside `configScope: effectiveScope` so
+that when config kinds (mcp/hook/settings) are involved, `--scope` is **always** emitted — even for
+the `project` default — pinning the destination file + JSON section. Non-config defaults (overwrite,
+deps, language) may still be omitted. Any new wizard step must extend `buildEquivalentCommand` +
+the call site + a `test/pipeline.test.ts` case in the same change.
+
+**Top menu (scope step):** the top-level "What would you like to install?" menu has three entries:
+
+| Entry               | Value    | Next                                        | When             |
+| ------------------- | -------- | ------------------------------------------- | ---------------- |
+| Everything          | `all`    | optional language filter → deps             | always           |
+| Recommended         | `pack`   | which bundle? → deps                        | when packs exist |
+| Pick specific items | `browse` | kind sub-menu (led by "All types") → picker | always           |
+
+**Three-level information architecture** — type is the spine; language is never a top-level choice:
+
+```
+Level 1 — WHAT (type/intent only):
+  Everything · Recommended · Pick specific items
+
+Level 2 — TYPE sub-menu (only under "Pick specific items"):
+  All types (mix anything) · Skills · Agents · Commands · Rules
+  MCP servers · Hooks · Settings
+
+Level 3 — LANGUAGE (injected only where relevant):
+  · Language-bound kinds (skills / style rules / architects) → "Narrow to a language? (optional)"
+  · Config kinds (MCP / Hooks / Settings) → straight to picker, NEVER asked about language
+  · "Everything" → same optional skippable filter with note that MCPs/hooks/settings always included
+```
+
+**History invariant:** pass-through / auto-forward steps must **never** push a history frame — only
+steps that actually rendered a prompt do. Violating this causes back-navigation to return the wrong
+step and produces "← Back" loops (the bug that was originally found in the hand-rolled `narrow` step's
+`all` branch). As of the step-registry rewrite (`src/wizard/engine.ts`), this is enforced structurally
+rather than by convention: `history.push` exists in exactly one place — inside `runSteps`, on the
+`'next'` outcome, for a step whose `run()` actually executed. A step skipped via `shouldShow` never
+runs, so it can never push a stale frame. See `src/wizard/steps/add/` for the step list and
+`src/wizard/steps/new/fields-confirm.ts` for the one case (text-entry + confirm) modeled as a single
+step with its own internal loop because the original never gave that transition its own history frame.
+
+**`Browse & pick` → kind sub-menu:** shows "All types (mix anything)" first, then each present kind
+with its artifact count (Skills, Agents, Rules, Commands, Workflows, Hooks, Settings, MCPs).
+
+- **"All types" (`crossKindPicker` step):** cross-kind grouped picker. `Config — agnostic` group
+  always appears first (mcp/hook/settings, language-agnostic). Code artifacts follow in language
+  groups. Language is an optional, skippable refinement shown only when ≥2 languages are present.
+  Config kinds are never touched by the language filter. Goes through deps → overwrite → scope.
+- **Specific kind (`kindPicker` step):**
+  - **Config kinds (mcp/hook/settings):** flat `pickArtifacts` (single group); **skips language and
+    deps steps**; proceeds directly to overwrite → scope (where the blast-radius warning fires if
+    needed).
+  - **Code kinds (skill/agent/rule/prompt/workflow):** optional "Narrow by language?" (`initialValue:''`
+    — Enter = all), then a flat or language-grouped `pickArtifacts`. Proceeds to deps → overwrite → proceed.
+
+**The picker (`src/wizard/picker/`) — constant frame height is the invariant, never break it.**
+`crossKindPicker` and `kindPicker` render through `pickArtifacts()`, not `@clack/prompts`'
+`groupMultiselect`/`multiselect` — those have no viewport (draw every option every frame) and no
+bound on the active row's inline hint text, so at catalog scale (~95 artifacts) the frame outgrows
+the terminal and `@clack/core`'s cursor-relative repaint desyncs: phantom "pre-selected" checkboxes
+and duplicated blocks. `pickArtifacts` is built directly on `@clack/core`'s `GroupMultiSelectPrompt`
+with a custom `render()` (`render.ts`, backed by the pure `layout.ts`) whose **output row count is a
+function of `viewportRows` alone** — never of cursor position, selection state, or description
+length. `layout.ts`'s `buildListRows` is the function that must hold this property;
+`test/wizard/picker-layout.test.ts` asserts it directly (identical array length across every cursor
+position, including the catalog's longest description). Any change to the renderer that makes row
+count depend on content, not just `viewportRows`, reintroduces the bug — verify against that test.
+
+Structural shape: a fixed-height scrolling list (with `↑ N more` / `↓ N more` sentinel rows and a
+pinned group header when scrolled mid-group) + a **fixed 3-line detail pane** below it showing the
+active row's full id/kind/state/description (this is why descriptions no longer need to be crammed
+into the row itself — see `toArtifactOption` in `options.ts`, which now returns structured fields
+(`id`, `kindNoun`, `stateGlyph`, `stateLabel`, `description`) instead of a pre-joined label string).
+A flat (single-group) picker is just `pickArtifacts` called with one descriptive group key — there
+is no separate flat-vs-grouped implementation.
+
+**Testing the wizard through `pickArtifacts`:** `test/wizard/add.test.ts` mocks
+`src/wizard/picker/index.ts`'s `pickArtifacts` export the same way it mocks `@clack/prompts` — by
+mutating the already-loaded module's `require.cache` exports object — since `pickArtifacts` no
+longer goes through `@clack/prompts` at all. Only the `pickArtifacts` key is saved/restored (not the
+whole exports object): the module also re-exports `@clack/core`'s `isCancel` as a getter-only
+property, which throws on reassignment; call sites import `isCancel`/`cancel` from `@clack/prompts`
+directly (mocked separately), so the picker module's `isCancel` re-export is never touched by tests.
+
+**Install-state legend + colored markers.** The picker's detail pane names the active row's state in
+words (see above), so there is no separate `note('Legend')` box. State markers are colored via
+`picocolors`: `＋ new` (green), `✓ installed` (dim), `↑ update available` (cyan), `✎ you edited this`
+(yellow), `⚠ not sigil's` (yellow), `! missing from disk` (cyan) — see `stateLabelParts` in
+`state-display.ts` for the raw glyph/label pairs the picker colors at render time. Nothing is
+pre-checked — glyphs are informational only; the user checks every item they want to install.
+
+**Install-plan box labels.** The plan box (before "Proceed?") uses `Install:` (not `Scope:`) for
+the selection, and always shows `Config scope: <value>` + `Destination: <fullPath  › section>` when
+config kinds are in the selection — even when scope equals the `project` default.
+
+**`ScopeChoice`** (`src/wizard/steps/add/state.ts`): `'all' | 'pack' | 'browse'`. State
+`kindPick?: ArtifactKind` is set when `browse` is chosen and a specific kind is selected; `browseAll?:
+boolean` records which of the two "Pick specific items" sub-pickers (all-types vs. single-kind) ran.
+
+**Curated packs (`packs.yaml`):** packs are mix-anything bundles expressed with explicit bare-id
+`artifacts:` lists (e.g. `csharp/cs-generate-tests`, no `kind:` prefix). When a pack contains skills
+their rule/agent dependency closure is resolved by the wizard's `deps` step — you do not need to
+list deps manually. The shipped set is:
+
+- `essentials` — 5 agnostic tools (Filesystem MCP, hook, settings, 2 prompts). No language.
+- `dotnet-starter` / `python-starter` / `react-starter` — language skill + 3 config essentials.
+  The skill's deps (style rule + code-reviewer) are added automatically via the `deps` step.
+  Config kinds in packs are silently skipped during `catalog:build` (plugins contain only
+  skills/agents/workflows); they are installed only via `sigil add` / `sigil update`.
+
+**Dependency closure UX (plan box):** the `uses:` dependency is purely authored YAML frontmatter
+in each SKILL.md (e.g. `uses: { rules: [csharp/cs-conventions], agents: [shared/code-reviewer] }`) —
+not a hard technical requirement. The wizard surfaces this concretely:
+
+- `computeClosure(primaryIds, catalog)` (`src/select/closure.ts`) walks `resolvedRules` and
+  `resolvedAgentIds` on each skill to compute the exact rules/agents that would be added.
+- **Deps note** names each dependency with its kind, ID, and title, plus the `via` skill that
+  declares it. The lead sentence frames it as "the skill author recommends" (not a hard requirement).
+- **Install-plan box** (before "Proceed?") shows the full resolved artifact set: each primary pick
+  tagged `(your pick)` and each dependency tagged `(dependency of <skill>)`. When deps are excluded
+  (answered No), the box shows only primary picks + a `(N deps excluded)` line.
+- The **post-install file listing** in `cli.ts` still tags each written file `(dependency)` for
+  completeness, consistent with the pre-confirm preview.
+
+**`WizardResult.language`** is only set via the `all` scope path (the global language filter step).
+Browse/pick-specific paths use explicit `${kind}:${id}` selectors, so `language` stays undefined.
+`WizardResult.language` flows into `effectiveLanguage` in `cli.ts`, which feeds `filters.language`
+to `resolveSelection()`.
+
+> **Search deferred:** add a `Search by keyword` top-level entry (wired to the existing
+> `sigil search` ranking → multiselect of matches) when a kind exceeds ~30 items.

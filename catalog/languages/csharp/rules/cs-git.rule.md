@@ -2,10 +2,11 @@
 id: csharp/cs-git
 kind: rule
 title: Git (.NET / C#)
-description: .NET/C#-specific git additions — secrets hygiene, Obsolete-based deprecation, dotnet pre-push gate
+description: .NET/C#-specific git additions — secrets hygiene, Obsolete-based deprecation, dotnet pre-push gate.
 language: csharp
 appliesTo:
   - "**/*"
+appliesToRationale: Matches shared/git — it governs commit/PR workflow, not any specific file.
 severity: recommended
 extends: [shared/git]
 tags:

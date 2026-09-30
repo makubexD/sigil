@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { loadCatalog } from '../../dist-cli/load';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
+import { CLAUDE_PROMPT_SPEC } from '../../dist-cli/targets/claude-code/spec/prompt';
 import { CATALOG_DIR } from '../helpers/catalog';
 
 const VERSION = '0.1.0';
@@ -69,9 +70,10 @@ describe('Claude Code target', () => {
     assert.ok(skillMd.includes('Generate Tests'), 'skill body present');
     assert.ok(skillMd.includes('Applied Rules'), 'rules section present');
     assert.ok(skillMd.includes('xUnit'), 'cs-testing rule content inlined');
-    // `paths:` is the Claude Code–recognized key; `appliesTo` is our vendor-neutral source name
+    // Skills have no `paths:` equivalent — Claude Code dispatches skills by description
+    // relevance, not file path; `paths:` is a `.claude/rules/*.md`-only mechanism.
     // See: code.claude.com/docs/en/skills
-    assert.ok(skillMd.includes('paths:'), 'paths: field emitted (not appliesTo:)');
+    assert.ok(!skillMd.includes('paths:'), 'no paths: emitted for a skill');
     assert.ok(!skillMd.includes('appliesTo:'), 'appliesTo not emitted in Claude output');
     // description must be safely quoted (not a bare plain scalar)
     assert.ok(skillMd.match(/description:\s*"/), 'description is a quoted YAML scalar');
@@ -102,7 +104,7 @@ describe('Claude Code target', () => {
     assert.ok('.claude/agents/cs-code-reviewer.md' in files, 'agent scaffolded');
   });
 
-  it('scaffold: language-scoped rule has paths: frontmatter; shared rule does not', async () => {
+  it('scaffold: rule with appliesTo has paths: frontmatter regardless of language', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
@@ -115,16 +117,19 @@ describe('Claude Code target', () => {
     assert.ok(languageRule.includes('paths:'), 'language rule has paths: frontmatter');
     assert.ok(languageRule.includes('*.cs'), 'csharp glob present');
 
-    // Scaffold shared rule directly and verify no frontmatter
+    // shared/clean-code has no `language` but declares appliesTo: ["**/*"] — it must still
+    // get a `paths:` block derived from that appliesTo (A1 fix: dropping `hasLanguage` from
+    // the gate). Only a rule with no appliesTo at all gets no frontmatter.
     const sharedFiles = await target.scaffold!('shared/clean-code', resolved, {
       projectDir: '/fake',
     });
     const sharedRule = sharedFiles['.claude/rules/shared-clean-code.md'];
     assert.ok(sharedRule, 'shared rule scaffolded');
     assert.ok(
-      !sharedRule.startsWith('---'),
-      'shared rule has no frontmatter (loaded unconditionally)',
+      sharedRule.startsWith('---') && sharedRule.includes('paths:'),
+      'shared rule with appliesTo still gets paths: frontmatter, not dropped for lacking a language',
     );
+    assert.ok(sharedRule.includes('**/*'), 'appliesTo glob present verbatim');
   });
 });
 
@@ -135,9 +140,10 @@ describe('Claude scaffold: prompt with args', () => {
     const target = new ClaudeCodeTarget();
     const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
 
-    const f = files['.claude/commands/shared-explain-diff.md'];
-    assert.ok(f, 'command file emitted at .claude/commands/shared-explain-diff.md');
-    assert.ok(f.startsWith('---'), 'command file starts with YAML frontmatter');
+    const f = files['.claude/skills/shared-explain-diff/SKILL.md'];
+    assert.ok(f, 'prompt emitted as a skill at .claude/skills/shared-explain-diff/SKILL.md');
+    assert.ok(f.startsWith('---'), 'skill file starts with YAML frontmatter');
+    assert.ok(f.includes('name: shared-explain-diff'), 'name field present');
     assert.ok(f.includes('description:'), 'description field present');
     assert.ok(f.includes('argument-hint:'), 'argument-hint field present');
     assert.ok(f.includes('[diff]'), 'diff arg in argument-hint');
@@ -145,7 +151,26 @@ describe('Claude scaffold: prompt with args', () => {
     assert.ok(f.includes('arguments:'), 'arguments list present');
     assert.ok(f.includes('  - diff'), 'diff in arguments list');
     assert.ok(f.includes('  - audience'), 'audience in arguments list');
+    assert.ok(
+      f.includes('disable-model-invocation: true'),
+      'user-invoked only, like the retired command format',
+    );
     assert.ok(!f.includes('{{diff}}'), '{{diff}} placeholder translated');
     assert.ok(f.includes('$diff'), '$diff substitution present');
+  });
+});
+
+// Regression coverage for the unresolved-{{…}} check that checkOutputContract() can no longer
+// enforce for CLAUDE_PROMPT_SPEC's path (see the "CONTRACT ROUTING NOTE" in spec/prompt.ts: it
+// shares .claude/skills/<name>/SKILL.md with `skill`, whose contract can't forbid {{ }} since real
+// skills — Angular — legitimately contain it). Asserted directly against the spec instead.
+// CLAUDE_WORKFLOW_SPEC has no such check by design — its bodies never carry {{name}} placeholders
+// in the first place (no bodyTransform, unlike prompt's toClaudePlaceholders).
+describe('CLAUDE_PROMPT_SPEC — unresolved {{…}} still forbidden at the spec level', () => {
+  it('should list an unresolved-{{…}} bodyForbid', () => {
+    assert.ok(
+      CLAUDE_PROMPT_SPEC.bodyForbids.some(f => f.pattern.test('{{diff}}')),
+      'CLAUDE_PROMPT_SPEC must still forbid an unresolved {{…}} placeholder',
+    );
   });
 });

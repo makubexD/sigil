@@ -6,7 +6,9 @@ import assert from 'node:assert/strict';
 import { loadCatalog } from '../../dist-cli/load';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
+import { buildInstructionsFile } from '../../dist-cli/targets/copilot/build-helpers';
 import { CATALOG_DIR } from '../helpers/catalog';
+import { makeRule } from '../helpers/fixtures';
 
 const VERSION = '0.1.0';
 const PACKS = [
@@ -28,6 +30,12 @@ const PACKS = [
     description: 'React skills and agents',
     languages: ['react'],
   },
+  {
+    name: 'typescript-pack',
+    displayName: 'TypeScript Pack',
+    description: 'TypeScript skills and agents',
+    languages: ['typescript'],
+  },
 ];
 
 describe('Copilot target', () => {
@@ -41,6 +49,42 @@ describe('Copilot target', () => {
     const content = files['.github/copilot-instructions.md'];
     assert.ok(content.includes('Clean Code Baseline'), 'shared rule heading present');
     assert.ok(content.includes('Clear names'), 'rule body content present');
+  });
+
+  it('buildInstructionsFile: language-less rule with narrow appliesTo keeps its own glob (A1)', () => {
+    // shared/clean-code-style has no `language` but authors a narrow appliesTo — the Claude
+    // adapter's A1 fix (scaffold.ts) already honors this; the Copilot adapter must too.
+    const rule = makeRule({
+      id: 'shared/markdown-style',
+      title: 'Markdown Style',
+      language: undefined,
+      appliesTo: ['**/*.md'],
+    });
+
+    const content = buildInstructionsFile(
+      rule as unknown as Parameters<typeof buildInstructionsFile>[0],
+    );
+
+    assert.ok(content.includes('applyTo: "**/*.md"'), 'authored glob is used verbatim');
+    assert.ok(
+      !content.includes('applyTo: "**"'),
+      'must not fall back to ** when appliesTo is authored',
+    );
+  });
+
+  it('buildInstructionsFile: rule with no appliesTo at all falls back to **', () => {
+    const rule = makeRule({
+      id: 'shared/universal',
+      title: 'Universal',
+      language: undefined,
+      appliesTo: undefined,
+    });
+
+    const content = buildInstructionsFile(
+      rule as unknown as Parameters<typeof buildInstructionsFile>[0],
+    );
+
+    assert.ok(content.includes('applyTo: "**"'), 'no appliesTo at all falls back to **');
   });
 
   it('emits language-specific instructions with applyTo globs', async () => {
@@ -102,6 +146,32 @@ describe('Copilot target', () => {
     assert.ok('.github/AGENTS.md' in files, 'AGENTS.md emitted');
     const content = files['.github/AGENTS.md'];
     assert.ok(content.includes('code-reviewer'), 'code-reviewer agent listed');
+  });
+
+  it('renders whenToUse as a "## When to Use" body section (Copilot has no frontmatter field for it)', async () => {
+    // Regression test: whenToUse used to be silently dropped for Copilot — present in neither
+    // frontmatter (Copilot's SKILL.md carries only name/description) nor body. See
+    // copilot/spec/skill.ts's whenToUseSection.
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+
+    const skillMd = files['.github/skills/ts-audit-deps/SKILL.md'];
+    assert.ok(skillMd, '.github/skills/ts-audit-deps/SKILL.md emitted');
+    assert.ok(skillMd.includes('## When to Use'), 'When to Use heading present');
+    assert.ok(
+      skillMd.includes('Complements ts-security-auditor'),
+      'authored whenToUse prose present verbatim',
+    );
+
+    // A skill authoring no whenToUse frontmatter and no body heading must not gain one.
+    const reactSkillMd = files['.github/skills/component-testing/SKILL.md'];
+    assert.ok(reactSkillMd, 'component-testing SKILL.md emitted');
+    assert.ok(
+      !reactSkillMd.includes('## When to Use'),
+      'no When to Use section when whenToUse was never authored',
+    );
   });
 
   it('scaffold: agent emits .agent.md with required description frontmatter', async () => {

@@ -1,7 +1,8 @@
-import { select, isCancel, cancel } from '@clack/prompts';
+import { select } from '@clack/prompts';
 import { partitionConfigKinds, buildLanguageOptions } from '../../../select';
 import type { WizardStep, StepOutcome } from '../../engine';
-import { BACK, visibleArtifacts, type AddWizardState } from './state';
+import { visibleArtifacts, type AddWizardState } from './state';
+import { BACK_OPTION, resolveOutcome } from './prompt-helpers';
 
 /**
  * Optional language narrowing — only the 'all' scope reaches it; pack and browse
@@ -18,17 +19,14 @@ export const languageStep: WizardStep<AddWizardState> = {
   async run(s): Promise<StepOutcome> {
     const { rest: codeArtifacts } = partitionConfigKinds(visibleArtifacts(s));
     const langOpts = buildLanguageOptions(codeArtifacts);
-    const opts = [{ value: BACK, label: '← Back', hint: '' }, ...langOpts];
+    const opts = [BACK_OPTION, ...langOpts];
     const langAnswer = await select({
       message: 'Narrow to a language?  (MCPs, hooks & settings are always included)',
       options: opts,
       initialValue: s.language ?? '',
     });
-    if (isCancel(langAnswer)) {
-      cancel('Install cancelled.');
-      return 'cancel';
-    }
-    if (langAnswer === BACK) return 'back';
+    const outcome = resolveOutcome(langAnswer);
+    if (outcome) return outcome;
 
     s.language = (langAnswer as string) || undefined;
     return 'next';

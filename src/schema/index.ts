@@ -8,6 +8,13 @@
 import { z } from 'zod';
 import type { ArtifactKind } from '../types';
 import { CONFIG_SCOPES } from '../types';
+import { BaseFields } from './shared';
+import { TemplateSchema } from './template';
+
+export { TemplateSchema } from './template';
+export type { TemplateFrontmatter } from './template';
+export { DocRefSchema, DeprecatedSchema } from './shared';
+export type { DocRef, Deprecated } from './shared';
 
 // ─── Related artifact reference ───────────────────────────────────────────────
 
@@ -33,42 +40,17 @@ const RelatedArtifactSchema = z.object({
 
 export type RelatedArtifact = z.infer<typeof RelatedArtifactSchema>;
 
-// ─── Shared fields ────────────────────────────────────────────────────────────
-
-const BaseFields = {
-  /** Unique artifact identifier. Convention: "shared/<name>" or "<language>/<name>". */
-  id: z.string().min(1, 'id is required'),
-  /** Discriminator for the artifact kind. */
-  kind: z.string(),
-  /** Short human-readable title. */
-  title: z.string().min(1, 'title is required'),
-  /** One-line description used in catalog listings and platform descriptions. */
-  description: z.string().min(1, 'description is required'),
-  /** Discovery tags. */
-  tags: z.array(z.string()).optional().default([]),
-  /**
-   * Optional per-artifact semver. Unused in v1 (the npm package version is
-   * the single version); supported for future per-artifact versioning.
-   */
-  version: z.string().optional(),
-  /**
-   * Optional: restrict this artifact to a subset of platforms.
-   * Absent (the default) = emits to every registered target whose supportedKinds
-   * includes this kind — the DRY auto-propagation default.
-   * Present = emits only to the listed target names, intersected with targets
-   * that actually support the kind.
-   * Normalization rule: if the set equals all kind-supporting targets, remove
-   * this field rather than listing them all.
-   * Valid names are registered target names (e.g. "claude", "copilot").
-   */
-  platforms: z.array(z.string()).optional(),
-};
-
 // ─── Skill ───────────────────────────────────────────────────────────────────
 
 export const SkillSchema = z.object({
   ...BaseFields,
   kind: z.literal('skill'),
+  /**
+   * Optional: id of a `template` artifact whose slots compose this artifact's body at resolve
+   * time. See catalog/shared/templates/ and src/templates.ts. Absent = hand-authored body, no
+   * composition — always valid, and the only option for genuinely one-off artifacts.
+   */
+  template: z.string().optional(),
   /**
    * Invocation name — becomes the Claude Code /name command and Copilot
    * /prompt-name trigger. Must be kebab-case.
@@ -76,8 +58,6 @@ export const SkillSchema = z.object({
   name: z.string().min(1),
   /** Language this skill belongs to. Must match a catalog/languages/<lang>/ directory. */
   language: z.string().min(1),
-  /** Canonical file globs that trigger this skill's context. */
-  appliesTo: z.array(z.string()).optional().default(['**/*']),
   /**
    * Reuse references: which shared/language rules and agents this skill depends on.
    * The resolver expands these at build time — nothing is copied in the source.
@@ -107,6 +87,31 @@ export const SkillSchema = z.object({
    */
   disableModelInvocation: z.boolean().optional(),
   /**
+   * Trigger phrases / example requests that tell the model when to invoke this skill —
+   * distinct from `description`, which says what the skill does. Claude Code appends this
+   * to `description` in the skill listing (combined text capped at 1,536 chars) and uses it
+   * to decide whether to dispatch. Skills without one are frequently invisible to routing —
+   * see docs/decisions/ for the audit that established this. Claude emits it natively as
+   * `when_to_use:` frontmatter; Copilot's SKILL.md frontmatter carries only `name` +
+   * `description`, so this renders instead as a leading `## When to Use` body section — see
+   * copilot/spec/skill.ts's whenToUseSection.
+   */
+  whenToUse: z.string().optional(),
+  /**
+   * When true, only the user can invoke this skill (`/name`) — the model never dispatches it
+   * automatically, but its description is still resident so the model can *recommend* it.
+   * Emitted as `user-invocable: false` in Claude Code SKILL.md. Claude-only.
+   * Not the same as `disableModelInvocation`, which is the inverse: model-only, no `/name`.
+   */
+  userInvocable: z.boolean().optional(),
+  /**
+   * When "fork", the skill runs in its own subagent context instead of the main thread —
+   * appropriate for skills whose intermediate work (audits, scaffolding) is long but whose
+   * caller only needs the final report. Emitted as `context: fork` in Claude Code SKILL.md.
+   * Claude-only.
+   */
+  skillContext: z.enum(['fork']).optional(),
+  /**
    * Structured cross-references to sibling artifacts.
    * Adapters render these conditionally when co-present siblings are installed.
    */
@@ -118,6 +123,8 @@ export const SkillSchema = z.object({
 export const AgentSchema = z.object({
   ...BaseFields,
   kind: z.literal('agent'),
+  /** Optional: id of a `template` artifact whose slots compose this artifact's body. */
+  template: z.string().optional(),
   /** Invocation name — kebab-case. */
   name: z.string().min(1),
   /**
@@ -162,10 +169,22 @@ export const AgentSchema = z.object({
 export const RuleSchema = z.object({
   ...BaseFields,
   kind: z.literal('rule'),
+  /**
+   * Optional: id of a `template` artifact whose slots compose this artifact's body. Composition
+   * order when both `template` and `extends` are set: template composes this artifact's own
+   * body first, THEN the extends ancestor-prepend wraps around that — see src/resolve.ts.
+   */
+  template: z.string().optional(),
   /** Optional: language this rule targets. Omit for cross-language rules. */
   language: z.string().optional(),
   /** Canonical file globs this rule applies to. Adapters map these to platform syntax. */
   appliesTo: z.array(z.string()).optional().default(['**/*']),
+  /**
+   * Why this rule's `appliesTo` is deliberately unscoped (`["**\/*"]`). Present only on
+   * rules that intentionally match every file; suppresses validate's no-op-appliesTo
+   * warning. Absent (or empty) on any rule that should be narrowed instead.
+   */
+  appliesToRationale: z.string().min(1).optional(),
   /** How strongly this rule is enforced. */
   severity: z.enum(['required', 'recommended', 'optional']).optional().default('recommended'),
   /**
@@ -185,6 +204,8 @@ export const RuleSchema = z.object({
 export const PromptSchema = z.object({
   ...BaseFields,
   kind: z.literal('prompt'),
+  /** Optional: id of a `template` artifact whose slots compose this artifact's body. */
+  template: z.string().optional(),
   /** Optional file globs to scope when this prompt is auto-suggested. */
   appliesTo: z.array(z.string()).optional(),
   /** Named input arguments for parameterised prompts. */
@@ -204,6 +225,8 @@ export const PromptSchema = z.object({
 export const WorkflowSchema = z.object({
   ...BaseFields,
   kind: z.literal('workflow'),
+  /** Optional: id of a `template` artifact whose slots compose this artifact's body. */
+  template: z.string().optional(),
   /**
    * Ordered steps that reference other artifact IDs.
    * Emitted as a multi-step skill/command on each platform.
@@ -330,9 +353,21 @@ export const McpSchema = z.object({
   server: z.union([StdioServerSchema, RemoteServerSchema]),
 });
 
+// TemplateSchema now lives in ./template.ts (imported above) — kept out of this file to stay
+// under the max-lines cap; BaseFields/DocRefSchema live in ./shared.ts for the same reason and
+// because template.ts needs them too (importing them from this file would cycle back through
+// the SCHEMAS map below).
+
 // ─── Registry ─────────────────────────────────────────────────────────────────
 
-const SCHEMAS = {
+/**
+ * Exported (not just module-local) so src/schema/emit.ts can derive its JSON-Schema-file list
+ * from this map instead of hand-listing kinds a second time — a kind added here without being
+ * added to ArtifactKind/KIND_REGISTRY still fails to compile elsewhere, and a kind added to both
+ * of those but forgotten here now fails schema/emit.ts's own coverage check (see emit.ts) rather
+ * than silently shipping without a schema/<kind>.schema.json.
+ */
+export const SCHEMAS = {
   skill: SkillSchema,
   agent: AgentSchema,
   rule: RuleSchema,
@@ -341,6 +376,7 @@ const SCHEMAS = {
   hook: HookSchema,
   settings: SettingsSchema,
   mcp: McpSchema,
+  template: TemplateSchema,
 } as const;
 
 export type AnySchema = (typeof SCHEMAS)[keyof typeof SCHEMAS];

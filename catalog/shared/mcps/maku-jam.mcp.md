@@ -1,6 +1,7 @@
 ---
 id: shared/maku-jam
 kind: mcp
+template: shared/templates/mcp-note
 title: "MakuJam MCP Server"
 description: >-
   Connects Claude Code (and Copilot) to the MakuJam remote MCP server
@@ -13,9 +14,7 @@ tags: [mcp, remote, http, jam, shared]
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 # defaultScope: project  # recommended install scope: project | local | user
 ---
-
-<!-- Describe what this MCP server provides. The server: above is merged into .mcp.json. -->
-
+<!-- slot: details -->
 Installs the MakuJam remote MCP server, connecting via HTTP to `https://mcp.jam.dev/mcp`.
 
 **Install target:**

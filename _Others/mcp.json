@@ -1,0 +1,30 @@
+{
+  "servers": {
+    "ado": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp@next",
+        "cr360dev",
+        "--authentication",
+        "pat",
+        "-d",
+        "core",
+        "work",
+        "work-items"
+      ],
+      "env": {
+        "ADO_MCP_PERSONAL_TOKEN": "${env:ADO_MCP_PERSONAL_TOKEN}"
+      }
+    },
+    "context-mode": {
+      "command": "context-mode"
+    },
+    "MakuJamMcp": {
+      "url": "https://mcp.jam.dev/mcp",
+      "type": "http"
+    }
+  },
+  "inputs": []
+}

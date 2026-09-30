@@ -9,6 +9,18 @@ import os from 'os';
 import path from 'path';
 import type { ConfigRoot } from './types';
 
+/** Resolves the default VS Code user-profile directory for the current platform. */
+function resolveVsCodeUserDir(): string {
+  switch (process.platform) {
+    case 'win32':
+      return path.join(process.env.APPDATA ?? os.homedir(), 'Code', 'User');
+    case 'darwin':
+      return path.join(os.homedir(), 'Library', 'Application Support', 'Code', 'User');
+    default:
+      return path.join(os.homedir(), '.config', 'Code', 'User');
+  }
+}
+
 /**
  * Resolves a symbolic ConfigRoot to an absolute base directory.
  *
@@ -27,17 +39,7 @@ export function resolveConfigRoot(root: ConfigRoot | undefined, projectDir: stri
     case 'home':
       return os.homedir();
     case 'vscode-user': {
-      let vsDir: string;
-      switch (process.platform) {
-        case 'win32':
-          vsDir = path.join(process.env.APPDATA ?? os.homedir(), 'Code', 'User');
-          break;
-        case 'darwin':
-          vsDir = path.join(os.homedir(), 'Library', 'Application Support', 'Code', 'User');
-          break;
-        default:
-          vsDir = path.join(os.homedir(), '.config', 'Code', 'User');
-      }
+      const vsDir = resolveVsCodeUserDir();
       if (!fs.existsSync(vsDir)) {
         console.warn(
           `  ⚠  VS Code user-profile directory not found at ${vsDir} — writing anyway (directory will be created).`,

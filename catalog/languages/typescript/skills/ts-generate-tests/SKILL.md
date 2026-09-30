@@ -2,11 +2,14 @@
 id: typescript/ts-generate-tests
 kind: skill
 title: "Generate Tests (TypeScript)"
-description: "Generate a Vitest suite for a source file or module following the project's documented test conventions"
+description: "Generate a test suite for a source file or module, in whatever runner the project already uses"
 name: ts-generate-tests
 language: typescript
-appliesTo:
-  - "**/*"
+whenToUse: >-
+  Use when a source file has no tests, when new exported functions were added without coverage,
+  or the user says "write tests for", "add test coverage", "generate tests", or "this file isn't
+  tested". Not for fixing an existing failing test (that's debugging, not generation) or for
+  reconciling tests with source that already has partial coverage (see ts-sync-tests for that).
 allowedTools:
   - Read
   - Write
@@ -26,12 +29,6 @@ tags:
   - tests
 ---
 
-## When to Use
-
-Use when a source file lacks tests or when new exported functions have been added without corresponding test coverage. Pass the target file path as the argument; omit to scan for untested files and choose interactively.
-
----
-
 # Generate Tests
 
 **Target:** $ARGUMENTS
@@ -43,79 +40,45 @@ source root from `package.json` (`"main"`, `"exports"`, or the `src/` convention
 files that have no corresponding test file; present the top candidates and ask the user to choose
 before proceeding.
 
-## Step 2 — Discover layout
+## Step 2 — Discover the runner and layout
 
-Do not assume a fixed layout. Read:
-- `package.json` scripts for the test runner command and any test path pattern.
-- `vitest.config.*` for `include`, `exclude`, and `root`.
-- 2–3 existing test files to learn the mirroring pattern.
+Never assume Vitest, Jest, or any other runner — read what the project actually uses:
+- `package.json` `scripts.test` and the `devDependencies` — the runner is whichever of
+  `vitest`/`jest`/`node:test`/`ava`/`tap` actually appears there.
+- The matching config file if one exists (`vitest.config.*`, `jest.config.*`) for `include`,
+  `exclude`, and `root`.
+- 2–3 existing test files — they show the real import style and assertion syntax more reliably
+  than any config file.
 
-Common patterns (determine from existing tests, not from convention):
+Layout, likewise determined from existing tests, not assumed:
 - Co-located: `src/calendar/parser.ts` → `src/calendar/parser.test.ts`
 - Separate test dir: `src/calendar/parser.ts` → `test/calendar/parser.test.ts`
 - Flat test dir: `src/calendar/parser.ts` → `test/parser.test.ts`
 
-If no tests exist yet, default to co-located (`<source-path>.test.ts`) and document the choice.
+If no tests exist yet, default to co-located (`<source-path>.test.ts`) and document the choice in
+the report.
 
 ## Step 3 — Read the target
 
-Identify:
-- Every exported function, class, and method (test subjects).
-- External dependencies (HTTP clients, filesystem, clock, env vars, external services) — these are
-  the mock boundaries.
-- Branching conditions, invariants, edge cases, and error paths to cover.
+Identify every exported function/class/method (test subjects), external dependencies (HTTP,
+filesystem, clock, env vars — the mock boundaries), and the branching/edge cases/error paths that
+need coverage. `ts-testing` (loaded natively for `**/*.test.ts`) covers AAA structure, naming,
+mocking discipline, and `it.each` — write to that convention rather than repeating it here.
 
 ## Step 4 — Write tests
 
-Follow the project's documented conventions from `CLAUDE.md`, `.claude/` rules, and existing tests.
-
-Core principles:
-- One behavior per test (`it`).
-- AAA with labeled `// Arrange` / `// Act` / `// Assert` comments.
-- Descriptive name: `it("should <behavior> when <condition>", …)`.
-- `it.each` for the same behavior over multiple inputs (never single-case).
-- Mock only at I/O boundaries — `vi.mock("./httpClient.js", …)`, `vi.fn()` for injected deps;
-  test pure logic without any mocking.
-- Extract test data to named module-level builders / constants.
-- Cover: happy path, empty/zero/boundary inputs, error paths, and any documented side effects.
-
-Example structure:
+Match whatever the discovered runner's import and assertion style actually is — do not default to
+one runner's syntax if the repo uses another:
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from "vitest";
+// Example shown with Vitest — mirror whatever the repo actually uses (Step 2 determines this).
+import { describe, it, expect, vi } from "vitest";
 import { parseIcs } from "./parser.js";
-
-const EMPTY_ICS = "BEGIN:VCALENDAR\nVERSION:2.0\nEND:VCALENDAR";
-const SINGLE_EVENT_ICS = `BEGIN:VCALENDAR\nBEGIN:VEVENT\nSUMMARY:Standup\n…\nEND:VEVENT\nEND:VCALENDAR`;
 
 describe("parseIcs", () => {
   it("should return an empty array when the calendar has no events", () => {
-    // Arrange
-    // (no setup needed)
-
-    // Act
-    const result = parseIcs(EMPTY_ICS);
-
-    // Assert
-    expect(result).toHaveLength(0);
-  });
-
-  it("should parse a single event with summary and dates", () => {
-    // Arrange — (SINGLE_EVENT_ICS defined at module scope)
-
-    // Act
-    const [event] = parseIcs(SINGLE_EVENT_ICS);
-
-    // Assert
-    expect(event.summary).toBe("Standup");
-    expect(event.start).toBeInstanceOf(Date);
-  });
-
-  it.each([
-    ["malformed VCALENDAR", "BEGIN:VCALENDAR\n---garbage---\nEND:VCALENDAR"],
-    ["empty string", ""],
-  ])("should throw ParseError when given %s", (_label, input) => {
-    expect(() => parseIcs(input)).toThrow(ParseError);
+    // Arrange / Act / Assert — see ts-testing for the full convention
+    expect(parseIcs(EMPTY_ICS)).toHaveLength(0);
   });
 });
 ```
@@ -124,18 +87,16 @@ Create the containing directory if it does not exist.
 
 ## Step 5 — Run and report
 
-Discover the test command from `package.json` scripts. Fallback:
-```bash
-npx vitest run <test-file-path> --reporter=verbose
-```
-
-Fix any failures before finishing. Then emit:
+Run the test command discovered in Step 2 (never hardcode `vitest run` — use the project's actual
+`package.json` script or the runner's own CLI for the specific file). Fix any failures before
+finishing. Then emit:
 
 ```
 ## Test Generation Report
 
 Target: <source file>
 Tests written to: <test file>
+Runner: <discovered in Step 2>
 Tests written: <N>
 Result: ✅ <N> passed  /  ❌ <detail>
 Coverage delta: <if available>

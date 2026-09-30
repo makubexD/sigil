@@ -10,6 +10,7 @@ tsc-out.txt
 tsc-err.txt
 test-compiled/
 .claude/
+.sigil/
 
 # Logs
 *.log

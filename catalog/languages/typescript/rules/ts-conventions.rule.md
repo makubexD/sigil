@@ -10,8 +10,9 @@ appliesTo:
   - "**/*.mts"
   - "**/*.cts"
 severity: recommended
-extends:
-  - shared/clean-code
+# extends: shared/clean-code intentionally omitted — ts-code-quality already extends it and
+# is scoped to the same **/*.ts glob, so both loading it would duplicate the same bullets
+# on every TS file edit (see docs/decisions/ for the skill-dispatch audit that caught this).
 tags:
   - typescript
   - conventions

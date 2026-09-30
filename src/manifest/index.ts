@@ -23,5 +23,8 @@ export type {
 export { MANIFEST_VERSION, MANIFEST_RELATIVE_PATH } from './types';
 export { manifestPath, loadManifest, saveManifest } from './io';
 export { sha256, hashFiles } from './hash';
-export { upsertEntries, upsertConfigEntry, removeEntries } from './mutate';
+export { upsertEntries } from './mutate';
+export { upsertConfigEntry } from './mutate-config';
+export { removeEntries } from './mutate-remove';
 export { computeStatus, recordedHashes } from './status';
+export type { CurrentTemplateOf } from './status';

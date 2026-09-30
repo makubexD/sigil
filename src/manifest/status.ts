@@ -11,76 +11,67 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { detectConfigDrift } from '../config-merge';
-import type { ConfigMergeOp, MergeStrategy } from '../types';
 import { isConfigKind } from '../kinds';
 import { sha256 } from './hash';
+import { checkConfigFiles } from './status-config-check';
 import type { Manifest, ManifestEntry, StatusResult } from './types';
+
+/** Looks up an artifact's CURRENT `{id, revision}` template reference in the bundled catalog. */
+export type CurrentTemplateOf = (id: string) => { id: string; revision: number } | undefined;
+
+/** The two least-often-varied `computeStatus` params, bundled to stay under max-params. */
+export interface ComputeStatusExtras {
+  /** Called to re-compute what the scaffold output would produce today ('outdated' detection). */
+  scaffoldHashFn?: ((id: string, target: string) => Map<string, string> | null) | undefined;
+  /** Looks up an artifact's live template revision, letting `reason` name *why* it's outdated. */
+  currentTemplateOf?: CurrentTemplateOf | undefined;
+}
 
 /**
  * Compute the status of all manifest entries.
  *
- * `catalogIds` is the set of artifact IDs present in the current bundled catalog.
- * `scaffoldHashFn` is called to re-compute what the scaffold output would produce
- * today (used for 'outdated' detection). Pass `undefined` to skip outdated checks.
+ * `catalogIds` is the set of artifact IDs present in the current bundled catalog. See
+ * {@link ComputeStatusExtras} for the optional outdated-detection hooks.
  */
 export function computeStatus(
   manifest: Manifest,
   projectDir: string,
   catalogIds: Set<string>,
-  scaffoldHashFn?: (id: string, target: string) => Map<string, string> | null,
+  extras: ComputeStatusExtras = {},
 ): StatusResult[] {
-  return manifest.entries.map(entry =>
-    statusForEntry(entry, projectDir, catalogIds, scaffoldHashFn),
-  );
+  return manifest.entries.map(entry => statusForEntry(entry, projectDir, catalogIds, extras));
+}
+
+/** Runs the config-file or whole-file drift check, whichever applies to `entry`'s kind. */
+function checkEntryFiles(
+  entry: ManifestEntry,
+  projectDir: string,
+): { driftedFiles: string[]; missingFiles: string[] } {
+  const driftedFiles: string[] = [];
+  const missingFiles: string[] = [];
+  if (isConfigKind(entry.kind) && entry.configFiles && entry.configFiles.length > 0) {
+    checkConfigFiles(entry, projectDir, driftedFiles, missingFiles);
+  } else {
+    checkWholeFiles(entry, projectDir, driftedFiles, missingFiles);
+  }
+  return { driftedFiles, missingFiles };
 }
 
 function statusForEntry(
   entry: ManifestEntry,
   projectDir: string,
   catalogIds: Set<string>,
-  scaffoldHashFn?: (id: string, target: string) => Map<string, string> | null,
+  extras: ComputeStatusExtras,
 ): StatusResult {
-  const driftedFiles: string[] = [];
-  const missingFiles: string[] = [];
-
-  if (isConfigKind(entry.kind) && entry.configFiles && entry.configFiles.length > 0) {
-    checkConfigFiles(entry, projectDir, driftedFiles, missingFiles);
-  } else {
-    checkWholeFiles(entry, projectDir, driftedFiles, missingFiles);
-  }
-
-  return deriveStatus(entry, catalogIds, driftedFiles, missingFiles, scaffoldHashFn);
-}
-
-function checkConfigFiles(
-  entry: ManifestEntry,
-  projectDir: string,
-  driftedFiles: string[],
-  missingFiles: string[],
-): void {
-  for (const cf of entry.configFiles!) {
-    const fullPath = path.join(projectDir, cf.file);
-    if (!fs.existsSync(fullPath)) {
-      missingFiles.push(cf.file);
-      continue;
-    }
-    let live: Record<string, unknown>;
-    try {
-      live = JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
-    } catch {
-      driftedFiles.push(cf.file); // unreadable JSON counts as drift
-      continue;
-    }
-    const op: ConfigMergeOp = {
-      file: cf.file,
-      fragment: cf.fragment,
-      strategy: cf.strategy as Record<string, MergeStrategy>,
-    };
-    if (detectConfigDrift(live, op)) {
-      driftedFiles.push(cf.file);
-    }
-  }
+  const { driftedFiles, missingFiles } = checkEntryFiles(entry, projectDir);
+  return deriveStatus({
+    entry,
+    catalogIds,
+    driftedFiles,
+    missingFiles,
+    scaffoldHashFn: extras.scaffoldHashFn,
+    currentTemplateOf: extras.currentTemplateOf,
+  });
 }
 
 function checkWholeFiles(
@@ -102,35 +93,101 @@ function checkWholeFiles(
   }
 }
 
-function deriveStatus(
+interface DeriveStatusOptions {
+  entry: ManifestEntry;
+  catalogIds: Set<string>;
+  driftedFiles: string[];
+  missingFiles: string[];
+  scaffoldHashFn?: ((id: string, target: string) => Map<string, string> | null) | undefined;
+  currentTemplateOf?: CurrentTemplateOf | undefined;
+}
+
+/** The live template revision for `entry`, when it differs from what was recorded at install. */
+function templateRevisionMismatch(
   entry: ManifestEntry,
-  catalogIds: Set<string>,
-  driftedFiles: string[],
-  missingFiles: string[],
-  scaffoldHashFn?: (id: string, target: string) => Map<string, string> | null,
-): StatusResult {
-  if (missingFiles.length > 0) {
-    return { entry, status: 'missing', driftedFiles, missingFiles };
+  currentTemplateOf: CurrentTemplateOf | undefined,
+): { id: string; from: number; to: number } | undefined {
+  if (!entry.template || !currentTemplateOf) return undefined;
+  const live = currentTemplateOf(entry.id);
+  if (!live || live.id !== entry.template.id || live.revision === entry.template.revision) {
+    return undefined;
   }
-  if (!catalogIds.has(entry.id)) {
-    return { entry, status: 'orphaned', driftedFiles, missingFiles };
+  return { id: live.id, from: entry.template.revision, to: live.revision };
+}
+
+/** Checks whether a fresh scaffold run would produce different file hashes than recorded. */
+function scaffoldHashesDiffer(
+  entry: ManifestEntry,
+  scaffoldHashFn: DeriveStatusOptions['scaffoldHashFn'],
+): boolean {
+  if (!scaffoldHashFn) return false;
+  const fresh = scaffoldHashFn(entry.id, entry.target);
+  if (!fresh) return false;
+  return entry.files.some(mf => {
+    const freshHash = fresh.get(mf.path);
+    return freshHash !== undefined && freshHash !== mf.sha256;
+  });
+}
+
+/** True when the entry's recorded output no longer matches what would be scaffolded today. */
+function isOutdated(
+  entry: ManifestEntry,
+  scaffoldHashFn: DeriveStatusOptions['scaffoldHashFn'],
+  currentTemplateOf: CurrentTemplateOf | undefined,
+): boolean {
+  return (
+    templateRevisionMismatch(entry, currentTemplateOf) !== undefined ||
+    scaffoldHashesDiffer(entry, scaffoldHashFn)
+  );
+}
+
+/** The 'outdated' reason: names the template revision delta when known, else a generic note. */
+function outdatedReason(
+  entry: ManifestEntry,
+  currentTemplateOf: CurrentTemplateOf | undefined,
+): string {
+  const mismatch = templateRevisionMismatch(entry, currentTemplateOf);
+  return mismatch
+    ? `template ${mismatch.id} rev ${mismatch.from}→${mismatch.to}`
+    : 'newer scaffold output available';
+}
+
+/** Short human-readable explanation for a non-up-to-date status. */
+function deriveReason(
+  status: StatusResult['status'],
+  options: DeriveStatusOptions,
+): string | undefined {
+  const { entry, driftedFiles, missingFiles, currentTemplateOf } = options;
+  switch (status) {
+    case 'missing':
+      return `missing file(s): ${missingFiles.join(', ')}`;
+    case 'orphaned':
+      return 'no longer present in the bundled catalog';
+    case 'drifted':
+      return `local edits differ from installed content: ${driftedFiles.join(', ')}`;
+    case 'outdated':
+      return outdatedReason(entry, currentTemplateOf);
+    case 'up-to-date':
+      return undefined;
   }
-  if (driftedFiles.length > 0) {
-    return { entry, status: 'drifted', driftedFiles, missingFiles };
-  }
-  if (scaffoldHashFn) {
-    const fresh = scaffoldHashFn(entry.id, entry.target);
-    if (fresh) {
-      const isOutdated = entry.files.some(mf => {
-        const freshHash = fresh.get(mf.path);
-        return freshHash !== undefined && freshHash !== mf.sha256;
-      });
-      if (isOutdated) {
-        return { entry, status: 'outdated', driftedFiles, missingFiles };
-      }
-    }
-  }
-  return { entry, status: 'up-to-date', driftedFiles, missingFiles };
+}
+
+function deriveStatus(options: DeriveStatusOptions): StatusResult {
+  const { entry, catalogIds, driftedFiles, missingFiles, scaffoldHashFn, currentTemplateOf } =
+    options;
+  const status: StatusResult['status'] =
+    missingFiles.length > 0
+      ? 'missing'
+      : !catalogIds.has(entry.id)
+        ? 'orphaned'
+        : driftedFiles.length > 0
+          ? 'drifted'
+          : isOutdated(entry, scaffoldHashFn, currentTemplateOf)
+            ? 'outdated'
+            : 'up-to-date';
+
+  const reason = deriveReason(status, options);
+  return { entry, status, driftedFiles, missingFiles, ...(reason !== undefined ? { reason } : {}) };
 }
 
 /**

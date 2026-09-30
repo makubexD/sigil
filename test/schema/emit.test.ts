@@ -87,7 +87,7 @@ describe('schema/emit — committed schema files', () => {
     }
   });
 
-  it('skill schema includes name, language, uses, and appliesTo fields', () => {
+  it('skill schema includes name, language, uses, and whenToUse fields', () => {
     const p = path.join(SCHEMA_DIR, 'skill.schema.json');
     const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
     const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
@@ -95,7 +95,18 @@ describe('schema/emit — committed schema files', () => {
     assert.ok('name' in props, 'skill must have name field');
     assert.ok('language' in props, 'skill must have language field');
     assert.ok('uses' in props, 'skill must have uses field');
-    assert.ok('appliesTo' in props, 'skill must have appliesTo field');
+    assert.ok('whenToUse' in props, 'skill must have whenToUse field');
+  });
+
+  it('skill schema has no appliesTo field — skills dispatch by description, not path', () => {
+    const p = path.join(SCHEMA_DIR, 'skill.schema.json');
+    const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
+    const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
+    const props = defs['skill-frontmatter']!.properties as Record<string, unknown>;
+    assert.ok(
+      !('appliesTo' in props),
+      'skill must not have appliesTo — no paths: equivalent exists',
+    );
   });
 
   it('rule schema includes severity and extends fields', () => {

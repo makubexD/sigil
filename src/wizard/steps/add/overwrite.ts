@@ -1,6 +1,7 @@
-import { select, note, isCancel, cancel } from '@clack/prompts';
+import { select, note } from '@clack/prompts';
 import type { WizardStep, StepOutcome } from '../../engine';
-import { BACK, type AddWizardState } from './state';
+import type { AddWizardState } from './state';
+import { BACK_OPTION, resolveOutcome } from './prompt-helpers';
 
 /** "Overwrite existing files if conflicts are found?" — always shown. */
 export const overwriteStep: WizardStep<AddWizardState> = {
@@ -16,15 +17,12 @@ export const overwriteStep: WizardStep<AddWizardState> = {
       options: [
         { value: 'no', label: 'No', hint: 'warn and list conflicts (safe default)' },
         { value: 'yes', label: 'Yes', hint: 'replace existing files (--overwrite)' },
-        { value: BACK, label: '← Back', hint: '' },
+        BACK_OPTION,
       ],
       initialValue: s.overwrite ? 'yes' : 'no',
     });
-    if (isCancel(answer)) {
-      cancel('Install cancelled.');
-      return 'cancel';
-    }
-    if (answer === BACK) return 'back';
+    const outcome = resolveOutcome(answer);
+    if (outcome) return outcome;
 
     s.overwrite = answer === 'yes';
     return 'next';

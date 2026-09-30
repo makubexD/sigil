@@ -2,11 +2,9 @@
 id: typescript/ts-add-package
 kind: skill
 title: "Add Package (TypeScript)"
-description: "Vet and wire a new npm package — checks CVEs, types availability, license, and ESM/CJS compatibility before adding"
+description: "Vet and wire a new npm package — CVEs, types, license, ESM/CJS compatibility"
 name: ts-add-package
 language: typescript
-appliesTo:
-  - "**/*"
 allowedTools:
   - Read
   - Bash
@@ -14,6 +12,10 @@ allowedTools:
   - Grep
   - Edit
 argumentHint: "<package-id> [version] [--dev]"
+whenToUse: >-
+  Use any time a new npm dependency needs adding — "add <package>", "install <package>", "I need
+  a library for X". Confirms before adding if vetting flags risk. Not for updating an
+  already-installed package's version — this skill's value is the pre-install vetting.
 uses:
   rules:
     - typescript/ts-dependencies
@@ -24,12 +26,6 @@ tags:
   - add
   - package
   - npm
----
-
-## When to Use
-
-Use any time you need to add a new npm dependency. Pass the package ID; optionally pin a version and add --dev for devDependencies. Confirms before adding if vetting flags risk.
-
 ---
 
 # Add Package
@@ -43,88 +39,51 @@ Parse `$ARGUMENTS`:
 
 ## Step 1 — Discover repo layout
 
-- Locate the project root: `package.json` (or root `package.json` for a workspaces monorepo).
-- Determine the target `package.json` — if multiple workspace members exist, ask the user which
-  package should receive the dependency.
-- Check whether the package is already referenced:
-  ```bash
-  grep -r "\"<package-id>\"" . --include="package.json"
-  ```
-  If found, report the current version and ask whether to **update** instead of add.
+Locate the project root and target `package.json` (ask which workspace member, if more than one).
+Check whether the package is already referenced (`grep -r "\"<package-id>\"" . --include="package.json"`);
+if found, report the current version and ask whether to **update** instead of add.
 
 ## Step 2 — Vet the package
 
-**CVE check:**
 ```bash
-# Temporarily add to a scratch manifest and audit, or use the advisory API
 npm info <package-id> version 2>&1
 npm audit fix --dry-run 2>&1 || true
+npm install <package-id>@<version> --dry-run 2>&1   # previews transitive footprint
 ```
 
 Check https://www.npmjs.com/package/<package-id> for:
 
-1. **Maintenance status** — last publish date, download trend, open issues. Flag if last release
-   > 12 months ago.
-2. **License** — MIT/Apache/BSD/ISC are typically acceptable; GPL/AGPL require legal review for
-   commercial projects; unlicensed packages are a risk. Flag non-permissive licenses.
-3. **Types availability** — three tiers:
-   - ✅ Bundled: `package.json` has `"types"` / `"typings"` field.
-   - ✅ Separate: `@types/<package-id>` exists on npm.
-   - ⚠ None: consumer must write ambient declarations or use `any` casts — flag as a risk.
-4. **ESM / CJS compatibility** — does the package's `exports` map include the conditions required
-   by the project's module system (`"import"` for ESM, `"require"` for CJS)?
-5. **Transitive footprint** — preview with:
-   ```bash
-   npm install <package-id>@<version> --dry-run 2>&1
-   ```
-6. **Node built-in alternative** — can `node:fs`, `node:crypto`, `fetch`, `structuredClone`, etc.
-   cover this need? If yes, recommend the built-in and stop.
-7. **Source** — is it published by a recognized author or organization? Check the npm page for
-   download counts and provenance.
+1. **Maintenance** — last publish date, download trend, open issues; flag if last release > 12mo ago.
+2. **License** — MIT/Apache/BSD/ISC typically fine; GPL/AGPL needs legal review; unlicensed is a risk.
+3. **Types** — ✅ bundled (`"types"`/`"typings"` field) / ✅ `@types/<package-id>` exists / ⚠ none
+   (forces `any` casts or ambient declarations — flag as a risk).
+4. **ESM/CJS compatibility** — does `exports` include the condition the project's module system needs?
+5. **Node built-in alternative** — could `node:fs`/`node:crypto`/`fetch`/`structuredClone`/etc. cover
+   this need instead? If yes, recommend the built-in and stop.
+6. **Source** — recognized author/organization, download counts, provenance.
 
 **If vetting flags a risk:** present the finding and ask for explicit confirmation before proceeding.
 
 ## Step 3 — Determine version
 
-**If `<version>` was provided:** use it exactly.
-
-**If not provided:**
-```bash
-npm info <package-id> dist-tags.latest
-```
-Use the latest stable version; avoid pre-release unless explicitly requested.
+Use `<version>` if provided; otherwise `npm info <package-id> dist-tags.latest` and use the latest
+stable release (avoid pre-release unless explicitly requested).
 
 ## Step 4 — Add the package
 
-```bash
-npm install <package-id>@<version>            # runtime dep
-npm install <package-id>@<version> --save-dev # dev dep (--dev flag)
-```
-
-If types are not bundled and `@types/<package-id>` exists, add it automatically:
-```bash
-npm install @types/<package-id> --save-dev
-```
+`npm install <package-id>@<version>` (add `--save-dev` for `--dev`). If types aren't bundled and
+`@types/<package-id>` exists, add it too: `npm install @types/<package-id> --save-dev`.
 
 ## Step 5 — Verify lockfile updated
 
-```bash
-git diff package-lock.json | head -40
-```
-
-Confirm that `package-lock.json` was updated — an unchanged lockfile indicates something went wrong
-with the install.
+`git diff package-lock.json | head -40` — an unchanged lockfile means the install didn't take.
 
 ## Step 6 — Run the quality gate
 
-```bash
-tsc --noEmit
-eslint .
-vitest run
-```
-
-Discover the gate from `package.json` scripts first (look for `check`, `validate`, `ci`). If
-the gate fails, **undo the addition** (`npm uninstall <package-id>`) and report the failure.
+Discover the gate from `package.json` scripts (`check`/`validate`/`ci`/`prepublishOnly`) and run
+that. Only if none exists, fall back to the type checker, linter, and `scripts.test` separately —
+never hardcode a specific runner. If the gate fails, **undo** (`npm uninstall <package-id>`) and
+report the failure.
 
 ## Step 7 — Report
 
@@ -145,8 +104,8 @@ Category: <dependencies / devDependencies>
 - Built-in alternative: <none / ⚠ node:X can replace — recommendation>
 
 ### Gate
-✅ tsc passed, eslint passed, vitest passed  /  ❌ <failure detail>
+✅ <gate command> passed  /  ❌ <failure detail>
 
 ### Next steps
-<Any recommended follow-up: add to types, configure ESM interop, etc.>
+<recommended follow-up, if any>
 ```

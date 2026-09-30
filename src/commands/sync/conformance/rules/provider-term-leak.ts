@@ -29,11 +29,13 @@
  *
  * @module
  */
+import fs from 'fs';
 import type { ArtifactKind } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding, ArtifactEdit } from '../types';
 import { CLAUDE_LEXICON } from '../../../../targets/claude-code/lexicon';
 import { COPILOT_LEXICON } from '../../../../targets/copilot/lexicon';
 import type { LexiconTerm, ProviderLexicon } from '../../../../targets/lexicon';
+import { splitFrontmatterBlock, extractOriginalBody } from '../frontmatter-patch';
 
 const WHOLE_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'skill',
@@ -97,9 +99,15 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
 /**
  * Replaces every occurrence of the leaked literal with its neutral token. Reads the term back out
  * of `finding.detail` rather than recomputing "which literal leaked" from `ctx` — mirrors
- * redundant-default's fix() for the identical reason: all findings are computed once, up front, so
- * a per-artifact recompute would resolve to the same (e.g. first) leaked term for every finding on
- * that artifact instead of each one.
+ * redundant-default's fix() for the identical reason: all findings are computed once, up front.
+ *
+ * Reads the CURRENT body off disk (not `ctx.catalog`'s in-memory snapshot) — unlike
+ * redundant-default's frontmatterPatch, which merges per-key and so is safe when an artifact has
+ * more than one finding, `newBody` is a full-body replacement: two findings on the same artifact
+ * (e.g. both `conventions-file` and `arguments` leak in one file) each call `fix()` against the
+ * same stale in-memory `ctx.catalog` snapshot, so computing `newBody` from it would make the
+ * second write clobber the first fix, silently reverting it (caught by re-running `sigil sync
+ * --check` after `--apply` on a file with two leaks — it still failed).
  */
 function fix(
   finding: ConformanceFinding,
@@ -113,7 +121,11 @@ function fix(
   const entry = ALL_LEXICON_TERMS.find(([t]) => t === term);
   if (!entry) return undefined;
   const [, value] = entry;
-  const newBody = artifact.body.replace(new RegExp(escapeRegExp(value), 'g'), `{sigil:${term}}`);
+
+  const raw = fs.readFileSync(finding.filePath, 'utf-8');
+  const { bodyStart } = splitFrontmatterBlock(raw);
+  const currentBody = extractOriginalBody(raw, bodyStart);
+  const newBody = currentBody.replace(new RegExp(escapeRegExp(value), 'g'), `{sigil:${term}}`);
   return { artifactId: artifact.id, filePath: artifact.filePath, newBody };
 }
 

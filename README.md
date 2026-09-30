@@ -43,7 +43,7 @@ git clone <repo-url>
 cd sigil
 npm install
 npm run build       # sets heap flag automatically via cross-env
-npm run validate    # should report: ✓ All 149 artifact(s) are valid.
+npm run validate    # should report: ✓ All 150 artifact(s) are valid.
 npm link            # one-time: registers global `sigil` symlink
 ```
 
@@ -129,7 +129,7 @@ No dedicated target yet (Codex and Cursor adapters are planned). Skills follow t
 
 ## Available artifacts
 
-The catalog ships **149 artifacts** across 5 languages plus shared, stack-agnostic ones. Use `sigil list` to browse; use
+The catalog ships **150 artifacts** across 5 languages plus shared, stack-agnostic ones. Use `sigil list` to browse; use
 `sigil search <query>` to find by keyword.
 
 **Languages:** `csharp` (.NET / C#) · `typescript` · `angular` · `python` · `react` · `shared` (all languages) —

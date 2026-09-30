@@ -4,9 +4,10 @@ kind: skill
 name: feature
 title: Feature Conductor (Gated Spec-Driven Development)
 description: >-
-  Drive one feature end to end with approval gates - clarify (interview / ideas / quality bar),
+  Drive one feature end to end with approval gates — clarify (interview / ideas / quality bar),
   spec, plan, TDD build with docs updated in every task, review, close-out. Conducts the
-  agent-skills collection (addyosmani/agent-skills); does not replace it.
+  agent-skills collection (addyosmani/agent-skills); does not replace it. Use only when the user
+  explicitly runs /feature or asks for the gated feature flow.
 whenToUse: >-
   Run manually as `/feature <what to build>`, `/feature resume` or `/feature status` when the user
   wants a whole feature taken from idea to committed code under explicit approval gates — e.g.
@@ -23,7 +24,7 @@ tags:
 
 # /feature: gated conductor for agent-skills
 
-**Request:** {sigil:arguments}
+**Request:** {sigil:arguments} (if empty, ask what to build)
 
 ## Rules for every phase
 
@@ -33,23 +34,26 @@ tags:
   named here by their bare name (`spec-driven-development`, `code-reviewer`). In Claude Code they
   are namespaced `agent-skills:<name>`; elsewhere they use the bare name. If they aren't available
   in this session, say so, suggest the install for the current tool, and stop:
-  - Claude Code: `claude plugin install agent-skills@addy-agent-skills --scope user`
-  - Copilot CLI: `copilot plugin install agent-skills@addy-agent-skills`
+  - Claude Code: `claude plugin marketplace add addyosmani/agent-skills`, then
+    `claude plugin install agent-skills@addy-agent-skills --scope user`
+  - Copilot CLI: `copilot plugin install addyosmani/agent-skills`
   - VS Code and other agents: `npx skills add addyosmani/agent-skills` (skills only — copy the
     agent personas from its `agents/` folder separately, see its Copilot setup guide)
 - **Never push. Never force anything.** Commits are local and one per task.
 - **Project rules win.** Read {sigil:conventions-file} (and docs/DECISIONS.md or ADRs, if
   present) before Phase 2. Where a skill's generic advice conflicts with a recorded project
   decision, follow the project and say so.
-- **Live state** lives in `tasks/todo.md`: after each phase or task, update its checkbox and
-  a one-line `Status:` header, so `/feature resume` works in a new session.
-- **Mode hints:** Phases 0-3 are read-only (plan mode, where the tool has one). Phases 4-6
-  need edit permission. If the current mode doesn't match, say which mode to switch to and
-  continue. `references/examples.md` has the per-tool mode map.
+- **Mode hints:** Phases 0-3 are drafted in conversation and write nothing (plan mode, where
+  the tool has one). SPEC, `tasks/todo.md` and the "Plan:" commit are written only after GATE 3
+  is approved and edit permission is granted. Phases 4-6 need edit permission. If the current
+  mode doesn't match, say which mode to switch to and continue. `references/examples.md` has
+  the mode map for Claude Code and VS Code.
+- **Live state** lives in `tasks/todo.md` from GATE 3 on: after each task or phase, update its
+  checkbox and a one-line `Status:` header, so `/feature resume` works in a new session.
 
 ## Arguments
 
-- `resume`: read `tasks/todo.md` and SPEC*.md, report where things stand, continue from the
+- `resume` (once `tasks/todo.md` exists): read `tasks/todo.md` and SPEC*.md, report where things stand, continue from the
   next unchecked item (still honouring gates).
 - `status`: report phase, tasks done/remaining and open questions. Change nothing.
 - Anything else: a new feature. If `tasks/todo.md` has unchecked tasks for different
@@ -77,7 +81,8 @@ it and follow it for the rest of the run.
 
 ## Phase 2: Spec
 
-Invoke `spec-driven-development`, feeding it the Phase 1 output.
+Invoke `spec-driven-development`, feeding it the Phase 1 output; keep the spec in the
+conversation (or the plan file) until GATE 3.
 **GATE 2:** a 5-line summary (objective · out of scope · success criteria · riskiest
 assumption · open questions) + spec path(s).
 
@@ -88,7 +93,8 @@ Invoke `planning-and-task-breakdown`. Every task must also list its
 text / CHANGELOG the task changes, or `none` with a reason. Mark ⚠ any task touching
 credentials, auth, git config or hooks, secrets, deletions, or anything `git revert` can't undo.
 **GATE 3:** one line per task: `[⚠] title - Docs: ...`.
-After approval, commit the planning artifacts alone ("Plan: <feature>").
+After approval (and with edit permission), write SPEC and `tasks/todo.md`, then commit them
+alone ("Plan: <feature>").
 
 ## Phase 4: Build (TDD, docs in the same commit)
 

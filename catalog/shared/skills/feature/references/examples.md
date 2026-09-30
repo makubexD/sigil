@@ -1,5 +1,8 @@
 # /feature: real prompts and which mode to use
 
+The mode map covers Claude Code and VS Code Copilot; in other tools use the closest
+read-only and edit-allowed modes.
+
 ## Mode map
 
 | Phase | Claude Code | VS Code Copilot | Why |

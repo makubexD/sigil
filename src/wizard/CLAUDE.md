@@ -130,6 +130,10 @@ list deps manually. The shipped set is:
   added automatically via the `deps` step. Kinds the Claude plugin channel doesn't package
   (config kinds and prompts — see `docs/reference/capabilities.md`) are skipped during
   `catalog:build`; they are installed only via `sigil add` / `sigil update`.
+- `dotnet-tooling` / `typescript-tooling` / `angular-tooling` — every artifact of one language
+  (`languages:` instead of `artifacts:`).
+- `typescript-starter` / `angular-starter` — two or three language skills + the 3 config essentials.
+- `spec-driven` — the `shared/feature` conductor alone (needs agent-skills installed separately).
 
 **Dependency closure UX (plan box):** the `uses:` dependency is purely authored YAML frontmatter
 in each SKILL.md (e.g. `uses: { rules: [csharp/cs-conventions], agents: [shared/code-reviewer] }`) —

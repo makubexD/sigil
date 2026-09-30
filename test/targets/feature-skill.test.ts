@@ -27,7 +27,6 @@ describe('shared/feature skill', () => {
     assert.match(skill, /^disable-model-invocation: true$/m);
     assert.match(skill, /^argument-hint: "/m);
     assert.ok(skill.includes('$ARGUMENTS'), 'request placeholder translated for Claude');
-    assert.ok(skill.includes('agent-skills:'), 'names the Claude plugin namespace');
     assert.ok('.claude/skills/feature/references/examples.md' in files, 'examples scaffolded');
   });
 
@@ -42,21 +41,23 @@ describe('shared/feature skill', () => {
     assert.ok(skill, 'skill scaffolded');
     assert.match(skill, /^\*\*Arguments:\*\* /m);
     assert.ok(skill.includes('the request you were given'), 'neutral request text');
+    assert.ok(skill.includes('Read AGENTS.md'), 'conventions file translated for Copilot');
     for (const literal of ['$ARGUMENTS', 'CLAUDE.md', 'disable-model-invocation', '{sigil:']) {
       assert.ok(!skill.includes(literal), `no ${literal} in Copilot output`);
     }
     assert.ok('.github/skills/feature/references/examples.md' in files, 'examples scaffolded');
   });
 
-  it('examples reference carries no project-specific prompts', async () => {
+  it('body: install lines add the marketplace first; plan phases stay write-free', async () => {
     const files = await new CopilotTarget().scaffold!(
       'shared/feature',
       await loadResolvedCatalog(),
       OPTS,
     );
-    const examples = files['.github/skills/feature/references/examples.md'] ?? '';
-    assert.ok(examples.length > 0, 'examples present');
-    assert.ok(!/\bgid\b/.test(examples), 'no gid-specific prompts');
+    const skill = files['.github/skills/feature/SKILL.md'] ?? '';
+    assert.ok(skill.includes('claude plugin marketplace add addyosmani/agent-skills'));
+    assert.ok(skill.includes('copilot plugin install addyosmani/agent-skills'));
+    assert.match(skill, /written only after GATE 3/, 'planning files wait for edit permission');
   });
 
   it('the spec-driven pack installs it on both targets', async () => {

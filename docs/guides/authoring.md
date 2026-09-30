@@ -66,7 +66,9 @@ reference only when read. Only flat `references/*.md` files ship with a skill: `
 when `SKILL.md` or a reference names a `references/<file>` that doesn't exist, or any `assets/` or
 `scripts/` path. Write paths relative to the skill root (the folder holding `SKILL.md`), including
 inside reference files. Shared skills belong to no language pack; install them by id
-(`sigil add skill:shared/<name>`). `shared/cli` and `shared/wizard` are the worked examples.
+(`sigil add skill:shared/<name>`) or through a non-language pack (`shared/feature` ships in
+`pack:spec-driven`). `shared/cli` and `shared/wizard` are the worked examples of per-stack
+references; `shared/feature` shows a stack-less skill with a single `references/examples.md`.
 
 ### Provider-neutral bodies: `{sigil:<term>}`
 

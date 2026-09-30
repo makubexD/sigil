@@ -11,7 +11,7 @@ import {
   buildFieldPatch,
   getEditableFields,
   applyPatchTransactionally,
-} from '../../dist-cli/authoring/update';
+} from '../../dist-cli/authoring/update/index';
 import { getAllTargets } from '../../dist-cli/targets';
 import type { Artifact } from '../../dist-cli/types';
 

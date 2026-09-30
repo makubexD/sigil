@@ -53,7 +53,7 @@ describe('Claude Code target', () => {
     const target = new ClaudeCodeTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
 
-    const pluginJson = JSON.parse(files['plugins/dotnet-pack/.claude-plugin/plugin.json']);
+    const pluginJson = JSON.parse(files['plugins/dotnet-pack/.claude-plugin/plugin.json']!);
     assert.equal(pluginJson.version, VERSION, 'plugin version matches npm version');
     assert.equal(pluginJson.name, 'dotnet-pack');
   });

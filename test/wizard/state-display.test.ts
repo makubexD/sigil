@@ -3,7 +3,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { stateHintSuffix, renderStateLegend } from '../../dist-cli/wizard';
+import { stateHintSuffix, renderStateLegend } from '../../dist-cli/wizard/index';
 import type { ArtifactInstallState } from '../../dist-cli/install-state';
 import { stripAnsi } from '../helpers/ansi';
 

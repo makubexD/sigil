@@ -12,7 +12,7 @@ import {
   summarizePlan,
   computeDestinationPath,
   executeMove,
-} from '../../dist-cli/authoring/move';
+} from '../../dist-cli/authoring/move/index';
 import { getAllTargets } from '../../dist-cli/targets';
 import type { LoadedCatalog } from '../../dist-cli/types';
 import { buildFakeCatalog } from '../helpers/fixtures';
@@ -119,11 +119,11 @@ describe('J — Move planner (authoring/move.ts)', () => {
 
     assert.equal(summary.moves.length, 1, 'one file move');
     assert.ok(
-      summary.moves[0].from.replace(/\\/g, '/').includes('clean-code'),
+      summary.moves[0]!.from.replace(/\\/g, '/').includes('clean-code'),
       'from path includes old name',
     );
     assert.ok(
-      summary.moves[0].to.replace(/\\/g, '/').includes('better-code'),
+      summary.moves[0]!.to.replace(/\\/g, '/').includes('better-code'),
       'to path includes new name',
     );
 

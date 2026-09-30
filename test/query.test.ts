@@ -5,7 +5,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadCatalog } from '../dist-cli/load';
 import { resolveCatalog } from '../dist-cli/resolve';
-import { searchArtifacts, getArtifactDetail, formatDetailText } from '../dist-cli/query';
+import { searchArtifacts, getArtifactDetail, formatDetailText } from '../dist-cli/query/index';
 import { getAllTargets } from '../dist-cli/targets';
 import { CATALOG_DIR } from './helpers/catalog';
 
@@ -32,8 +32,8 @@ describe('F1 — searchArtifacts', () => {
     const resolved = resolveCatalog(catalog);
     const results = searchArtifacts(resolved, 'shared/code-reviewer');
     assert.ok(results.length > 0, 'got results');
-    assert.equal(results[0].artifact.id, 'shared/code-reviewer', 'exact match is first');
-    assert.equal(results[0].score, 8, 'exact match score is 8');
+    assert.equal(results[0]!.artifact.id, 'shared/code-reviewer', 'exact match is first');
+    assert.equal(results[0]!.score, 8, 'exact match score is 8');
   });
 
   it('filters by kind', async () => {
@@ -65,8 +65,8 @@ describe('F1 — searchArtifacts', () => {
     const resolved = resolveCatalog(catalog);
     const results = searchArtifacts(resolved, 'testing');
     for (let i = 1; i < results.length; i++) {
-      const prev = results[i - 1];
-      const curr = results[i];
+      const prev = results[i - 1]!;
+      const curr = results[i]!;
       if (prev.score === curr.score) {
         assert.ok(
           prev.artifact.id.localeCompare(curr.artifact.id) <= 0,

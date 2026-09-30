@@ -16,8 +16,8 @@ import {
   sha256,
   MANIFEST_VERSION,
   upsertConfigEntry,
-} from '../dist-cli/manifest';
-import { applyMerge, canonicalize } from '../dist-cli/config-merge';
+} from '../dist-cli/manifest/index';
+import { applyMerge, canonicalize } from '../dist-cli/config-merge/index';
 import type { ConfigMergeOp } from '../dist-cli/types';
 
 const VERSION = '0.1.0';
@@ -151,9 +151,9 @@ describe('H — Manifest (manifest.ts)', () => {
 
       const statuses = computeStatus(manifest as any, dir, new Set(['test/skill']));
       assert.equal(statuses.length, 1);
-      assert.equal(statuses[0].status, 'up-to-date');
-      assert.deepEqual(statuses[0].driftedFiles, []);
-      assert.deepEqual(statuses[0].missingFiles, []);
+      assert.equal(statuses[0]!.status, 'up-to-date');
+      assert.deepEqual(statuses[0]!.driftedFiles, []);
+      assert.deepEqual(statuses[0]!.missingFiles, []);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -178,8 +178,8 @@ describe('H — Manifest (manifest.ts)', () => {
       };
 
       const statuses = computeStatus(manifest as any, dir, new Set(['test/skill']));
-      assert.equal(statuses[0].status, 'missing');
-      assert.ok(statuses[0].missingFiles.length > 0, 'missingFiles non-empty');
+      assert.equal(statuses[0]!.status, 'missing');
+      assert.ok(statuses[0]!.missingFiles.length > 0, 'missingFiles non-empty');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -207,8 +207,8 @@ describe('H — Manifest (manifest.ts)', () => {
       };
 
       const statuses = computeStatus(manifest as any, dir, new Set(['test/skill']));
-      assert.equal(statuses[0].status, 'drifted');
-      assert.ok(statuses[0].driftedFiles.includes(relPath), 'driftedFiles contains the file');
+      assert.equal(statuses[0]!.status, 'drifted');
+      assert.ok(statuses[0]!.driftedFiles.includes(relPath), 'driftedFiles contains the file');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -238,7 +238,7 @@ describe('H — Manifest (manifest.ts)', () => {
 
       // catalogIds does NOT include 'removed/skill'
       const statuses = computeStatus(manifest as any, dir, new Set(['some/other-artifact']));
-      assert.equal(statuses[0].status, 'orphaned');
+      assert.equal(statuses[0]!.status, 'orphaned');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -409,7 +409,6 @@ describe('L — Manifest config entries (manifest.ts)', () => {
   });
 
   it('computeStatus: config entry is up-to-date when fragment intact', () => {
-    const { createRequire } = require('module');
     // Write a settings.json with sigil's fragment already applied
     const settingsPath = path.join(tmpDir, '.claude', 'settings.json');
     fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
@@ -429,7 +428,7 @@ describe('L — Manifest config entries (manifest.ts)', () => {
       '2026-01-01T00:00:00Z',
     );
 
-    const { computeStatus: computeStatus2 } = require('../dist-cli/manifest');
+    const { computeStatus: computeStatus2 } = require('../dist-cli/manifest/index');
     const results = computeStatus2(manifest, tmpDir, new Set(['shared/allow-dev-tools']));
     assert.equal(results[0].status, 'up-to-date');
   });
@@ -453,7 +452,7 @@ describe('L — Manifest config entries (manifest.ts)', () => {
       '2026-01-01T00:00:00Z',
     );
 
-    const { computeStatus: computeStatus2 } = require('../dist-cli/manifest');
+    const { computeStatus: computeStatus2 } = require('../dist-cli/manifest/index');
     const results = computeStatus2(manifest, tmpDir, new Set(['shared/allow-dev-tools']));
     assert.equal(results[0].status, 'drifted');
   });
@@ -479,7 +478,7 @@ describe('L — Manifest config entries (manifest.ts)', () => {
       '2026-01-01T00:00:00Z',
     );
 
-    const { computeStatus: computeStatus2 } = require('../dist-cli/manifest');
+    const { computeStatus: computeStatus2 } = require('../dist-cli/manifest/index');
     const results = computeStatus2(manifest, tmpDir, new Set(['shared/allow-dev-tools']));
     assert.equal(results[0].status, 'up-to-date', 'user key edit is not drift');
   });

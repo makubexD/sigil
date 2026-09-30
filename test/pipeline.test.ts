@@ -1,97 +1,12 @@
 /**
- * End-to-end pipeline tests.
- * Tests the full Load → Validate → Resolve → Emit cycle for both targets.
+ * Pipeline test index — no test bodies live here anymore.
+ *
+ * This file used to hold the full Load → Validate → Resolve → Emit suite; it has since
+ * been split into one focused test file per module (see pointers below). Keeping this
+ * file only as an index avoids a stale monolith re-accumulating over time.
  *
  * Run: npm test   (after npm run build)
  */
-import { describe, it, beforeEach, afterEach } from 'node:test';
-import assert from 'node:assert/strict';
-import path from 'path';
-import { loadCatalog } from '../dist-cli/load';
-import { validateCatalog } from '../dist-cli/validate';
-import { resolveCatalog } from '../dist-cli/resolve';
-import {
-  computeClosure,
-  groupArtifactsByLanguage,
-  partitionConfigKinds,
-  availableKinds,
-  buildLanguageOptions,
-  kindNoun,
-  kindPlural,
-  kindHint,
-  CONFIG_KINDS,
-  resolveSelection,
-  artifactLanguage,
-  isAgnostic,
-} from '../dist-cli/select';
-import { ClaudeCodeTarget } from '../dist-cli/targets/claude-code';
-import { CopilotTarget } from '../dist-cli/targets/copilot';
-import {
-  toClaudePlaceholders,
-  toCopilotPlaceholders,
-  buildArgumentHint,
-} from '../dist-cli/targets/prompt-args';
-import { checkOutputContract } from '../dist-cli/targets/output-contract';
-import type { PromptArg } from '../dist-cli/targets/prompt-args';
-import { artifactTargetsPlatform } from '../dist-cli/select';
-import {
-  effectivePlatforms,
-  isFullCoverage,
-  normalizePlatforms,
-  addPlatforms,
-  removePlatforms,
-} from '../dist-cli/authoring/platforms';
-import { checkSourceArtifact } from '../dist-cli/authoring/check-source';
-import { headerFor } from '../dist-cli/authoring/header';
-import { buildEquivalentNewCommand, stateHintSuffix, renderStateLegend } from '../dist-cli/wizard';
-import type { ArtifactInstallState } from '../dist-cli/install-state';
-import { getAllTargets } from '../dist-cli/targets';
-import { bumpVersion, promoteChangelog } from '../dist-cli/release';
-import os from 'os';
-import fs from 'fs';
-import { searchArtifacts, getArtifactDetail, formatDetailText } from '../dist-cli/query';
-import { buildFieldPatch, getEditableFields } from '../dist-cli/authoring/update';
-import { planMove, summarizePlan, computeDestinationPath } from '../dist-cli/authoring/move';
-import {
-  loadManifest,
-  saveManifest,
-  upsertEntries,
-  computeStatus,
-  removeEntries,
-  sha256,
-  MANIFEST_VERSION,
-} from '../dist-cli/manifest';
-import { scanContent, formatScanFindings, RULE_DESCRIPTIONS } from '../dist-cli/trust/scan';
-import { applyMerge, reverseMerge, canonicalize } from '../dist-cli/config-merge';
-import { upsertConfigEntry } from '../dist-cli/manifest';
-import type { ConfigMergeOp } from '../dist-cli/types';
-import { resolveClaudeConfigDestination } from '../dist-cli/targets/claude-code';
-import { resolveCopilotConfigDestination } from '../dist-cli/targets/copilot';
-import { resolveConfigRoot } from '../dist-cli/config-utils';
-import { computeInstallStates } from '../dist-cli/install-state';
-
-const CATALOG_DIR = path.resolve(__dirname, '../catalog');
-const VERSION = '0.1.0';
-const PACKS = [
-  {
-    name: 'dotnet-pack',
-    displayName: '.NET / C# Pack',
-    description: 'C# skills and agents',
-    languages: ['csharp'],
-  },
-  {
-    name: 'python-pack',
-    displayName: 'Python Pack',
-    description: 'Python skills and agents',
-    languages: ['python'],
-  },
-  {
-    name: 'react-pack',
-    displayName: 'React Pack',
-    description: 'React skills and agents',
-    languages: ['react'],
-  },
-];
 
 // Load, Validate, Resolve → see test/load.test.ts, test/validate.test.ts, test/resolve.test.ts
 

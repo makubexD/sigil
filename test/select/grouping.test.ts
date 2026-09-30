@@ -12,7 +12,7 @@ import {
   availableKinds,
   buildLanguageOptions,
   CONFIG_KINDS,
-} from '../../dist-cli/select';
+} from '../../dist-cli/select/index';
 import type { ResolvedArtifact } from '../../dist-cli/types';
 import { CATALOG_DIR } from '../helpers/catalog';
 
@@ -40,7 +40,7 @@ describe('groupArtifactsByLanguage', () => {
 
     // Every artifact in a real language group matches that group key
     for (const lang of realLanguages) {
-      for (const a of groups[lang]) {
+      for (const a of groups[lang]!) {
         assert.equal(
           a.frontmatter.language as string | undefined,
           lang,
@@ -69,8 +69,8 @@ describe('groupArtifactsByLanguage', () => {
 
     for (const [groupKey, arts] of Object.entries(groups)) {
       for (let i = 1; i < arts.length; i++) {
-        const prev = arts[i - 1];
-        const curr = arts[i];
+        const prev = arts[i - 1]!;
+        const curr = arts[i]!;
         const prevKi = kindOrder.indexOf(prev.kind);
         const currKi = kindOrder.indexOf(curr.kind);
         const ok = currKi > prevKi || (currKi === prevKi && curr.id >= prev.id);
@@ -165,14 +165,14 @@ describe('partitionConfigKinds', () => {
     const { config } = partitionConfigKinds(mockArtifacts);
     // hook before mcp (kind order), then within mcp: a-mcp before b-mcp (alpha)
     assert.equal(config.length, 3);
-    assert.equal(config[0].kind, 'hook');
-    assert.equal(config[1].id, 'shared/a-mcp');
-    assert.equal(config[2].id, 'shared/b-mcp');
+    assert.equal(config[0]!.kind, 'hook');
+    assert.equal(config[1]!.id, 'shared/a-mcp');
+    assert.equal(config[2]!.id, 'shared/b-mcp');
 
     // Verify stable sort
     for (let i = 1; i < config.length; i++) {
-      const prev = config[i - 1];
-      const curr = config[i];
+      const prev = config[i - 1]!;
+      const curr = config[i]!;
       const pi = kindOrder.indexOf(prev.kind);
       const ci = kindOrder.indexOf(curr.kind);
       const ok = ci > pi || (ci === pi && curr.id >= prev.id);
@@ -192,7 +192,7 @@ describe('availableKinds', () => {
     const kindOrder = ['skill', 'agent', 'rule', 'prompt', 'workflow', 'hook', 'settings', 'mcp'];
     for (let i = 0; i < kinds.length - 1; i++) {
       assert.ok(
-        kindOrder.indexOf(kinds[i]) < kindOrder.indexOf(kinds[i + 1]),
+        kindOrder.indexOf(kinds[i]!) < kindOrder.indexOf(kinds[i + 1]!),
         `kind order: ${kinds[i]} should precede ${kinds[i + 1]}`,
       );
     }
@@ -227,7 +227,7 @@ describe('buildLanguageOptions (array-based)', () => {
     const resolved = resolveCatalog(catalog);
     const opts = buildLanguageOptions(resolved.artifacts);
     assert.ok(opts.length >= 2, 'at least All + 1 language');
-    assert.equal(opts[0].value, '', 'first option is All languages');
+    assert.equal(opts[0]!.value, '', 'first option is All languages');
     assert.ok(
       opts.slice(1).every(o => o.hint.match(/\d+ artifact/)),
       'each language has count hint',

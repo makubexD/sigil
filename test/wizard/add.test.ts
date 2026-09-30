@@ -14,11 +14,11 @@ import path from 'path';
 import os from 'os';
 import { loadCatalog } from '../../dist-cli/load';
 import { resolveCatalog } from '../../dist-cli/resolve';
-import { CONFIG_KINDS } from '../../dist-cli/select';
+import { CONFIG_KINDS } from '../../dist-cli/select/index';
 import type { ResolvedCatalog } from '../../dist-cli/types';
 import { CATALOG_DIR } from '../helpers/catalog';
 // Ensure @clack/prompts is loaded into require.cache before beforeEach accesses it.
-import '../../dist-cli/wizard';
+import '../../dist-cli/wizard/index';
 
 const PACKS_MINIMAL = [
   {
@@ -109,7 +109,7 @@ describe('O — Wizard: config-scope for mcp', () => {
 
   it('runWizard — mcp selection yields configScope:user for claude target', async () => {
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     // Wizard steps (in order for this path):
     //   target → scope:browse → kind sub-menu:__all__ (All types) → language:'' (all) →
     //   groupMultiselect picks → deps:no → overwrite:no → configScope:user → proceed:proceed
@@ -139,7 +139,7 @@ describe('O — Wizard: config-scope for mcp', () => {
 
   it('runWizard — copilot target shows copilot scope hints and captures project scope', async () => {
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const restore = mockClack([
       'copilot', // step: target
       'browse', // step: scope → Browse & pick
@@ -164,7 +164,7 @@ describe('O — Wizard: config-scope for mcp', () => {
 
   it('runWizard — non-config selection auto-skips configScope step (returns undefined)', async () => {
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     // Pick a skill (non-config kind) → configScope step should be skipped entirely
     const restore = mockClack([
       'claude', // target
@@ -193,7 +193,7 @@ describe('O — Wizard: config-scope for mcp', () => {
 
   it('buildEquivalentCommand — appends --scope when configScope is non-project', () => {
     const { buildEquivalentCommand } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const cmd = buildEquivalentCommand({
       selectors: ['mcp:shared/ado', 'mcp:shared/maku-jam'],
       target: 'claude',
@@ -207,7 +207,7 @@ describe('O — Wizard: config-scope for mcp', () => {
 
   it('buildEquivalentCommand — omits --scope when configScope is project and no config kinds (non-config install)', () => {
     const { buildEquivalentCommand } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const cmd = buildEquivalentCommand({
       selectors: ['mcp:shared/ado'],
       target: 'claude',
@@ -221,7 +221,7 @@ describe('O — Wizard: config-scope for mcp', () => {
 
   it('buildEquivalentCommand — omits --scope when configScope is undefined and no config kinds', () => {
     const { buildEquivalentCommand } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const cmd = buildEquivalentCommand({
       selectors: ['skill:csharp/cs-generate-tests'],
       target: 'claude',
@@ -235,7 +235,7 @@ describe('O — Wizard: config-scope for mcp', () => {
   it('buildEquivalentCommand — always emits --scope when hasConfigKinds is true, even for project default', () => {
     // Core invariant: config-kind installs always pin the scope so the destination is documented.
     const { buildEquivalentCommand } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const cmd = buildEquivalentCommand({
       selectors: ['mcp:shared/ado'],
       target: 'claude',
@@ -250,7 +250,7 @@ describe('O — Wizard: config-scope for mcp', () => {
 
   it('buildEquivalentCommand — defaults scope to project when hasConfigKinds is true and configScope is undefined', () => {
     const { buildEquivalentCommand } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const cmd = buildEquivalentCommand({
       selectors: ['mcp:shared/ado'],
       target: 'claude',
@@ -265,7 +265,7 @@ describe('O — Wizard: config-scope for mcp', () => {
   it('individual picker — "Config — agnostic" group contains mcp artifacts, shared group excludes them', async () => {
     // This test captures the options object passed to groupMultiselect and inspects the group layout.
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
 
     let capturedOptions: Record<string, unknown[]> | undefined;
     const ex = clackMod.exports;
@@ -316,7 +316,7 @@ describe('O — Wizard: config-scope for mcp', () => {
         for (const item of items as Array<{ value: string }>) {
           const kind = item.value.split(':')[0];
           assert.ok(
-            !CONFIG_KINDS.has(kind),
+            !CONFIG_KINDS.has(kind!),
             `Group "${groupKey}" must not contain config artifact "${item.value}"`,
           );
         }
@@ -327,7 +327,7 @@ describe('O — Wizard: config-scope for mcp', () => {
         for (const item of capturedOptions['shared'] as Array<{ value: string }>) {
           const kind = item.value.split(':')[0];
           assert.ok(
-            !CONFIG_KINDS.has(kind),
+            !CONFIG_KINDS.has(kind!),
             `"shared" language group must not contain config artifact "${item.value}"`,
           );
         }
@@ -349,7 +349,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     // Language is no longer a top-level concept; packs are curated bundles.
     // Cross-kind picking is reachable via Pick specific items → All types (mix anything).
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
 
     let capturedScopeOpts: Array<{ value: string; label: string }> | undefined;
     const ex = clackMod.exports;
@@ -402,7 +402,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     // After the vocabulary entries were added, kindPlural(claudeTarget, 'mcp') must
     // return 'MCPs' (not the generic fallback 'Mcps').
     const { kindPlural } =
-      require('../../dist-cli/select') as typeof import('../../dist-cli/select');
+      require('../../dist-cli/select/index') as typeof import('../../dist-cli/select/index');
     const { getAllTargets } =
       require('../../dist-cli/targets') as typeof import('../../dist-cli/targets');
     const claudeTarget = getAllTargets().find(t => t.name === 'claude');
@@ -420,7 +420,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     // browse scope → kind:mcp → multiselect two MCPs → overwrite:no → configScope:project → proceed
     // This flow must NOT consume a language answer or a deps answer (both are skipped for config kinds).
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const restore = mockClack([
       'claude', // target
       'browse', // scope → Browse by type
@@ -452,7 +452,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     // browse scope → kind:skill → language '' (all) → groupMultiselect a skill → deps:yes → overwrite:no → proceed
     // Manually mock clack so we can intercept groupMultiselect AFTER setting up the base mock.
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
 
     let capturedOptions: Record<string, unknown[]> | undefined;
     const ex = clackMod.exports;
@@ -509,7 +509,7 @@ describe('O — Wizard: config-scope for mcp', () => {
         for (const item of items as Array<{ value: string }>) {
           const kind = item.value.split(':')[0];
           assert.ok(
-            !CONFIG_KINDS.has(kind),
+            !CONFIG_KINDS.has(kind!),
             `Skill picker group "${groupKey}" must not contain config artifact "${item.value}"`,
           );
         }
@@ -530,16 +530,16 @@ describe('O — Wizard: config-scope for mcp', () => {
 
     assert.ok(scopes.length === 3, 'Claude should offer 3 scopes');
     // Ordered highest-precedence first
-    assert.equal(scopes[0].value, 'local');
-    assert.equal(scopes[1].value, 'project');
-    assert.equal(scopes[2].value, 'user');
+    assert.equal(scopes[0]!.value, 'local');
+    assert.equal(scopes[1]!.value, 'project');
+    assert.equal(scopes[2]!.value, 'user');
 
     // Precedence numbers are strictly ascending (1 = highest)
-    assert.ok(scopes[0].precedence < scopes[1].precedence);
-    assert.ok(scopes[1].precedence < scopes[2].precedence);
+    assert.ok(scopes[0]!.precedence < scopes[1]!.precedence);
+    assert.ok(scopes[1]!.precedence < scopes[2]!.precedence);
 
     // project scope settings → .claude/settings.json inside projectDir
-    const projectSettingsDest = scopes[1].destinations.find(d => d.kind === 'settings');
+    const projectSettingsDest = scopes[1]!.destinations.find(d => d.kind === 'settings');
     assert.ok(projectSettingsDest, 'project scope must include settings destination');
     assert.ok(
       projectSettingsDest.fullPath.includes('settings.json') &&
@@ -549,7 +549,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     assert.ok(path.isAbsolute(projectSettingsDest.fullPath), 'fullPath must be absolute');
 
     // local scope settings → .claude/settings.local.json inside projectDir
-    const localSettingsDest = scopes[0].destinations.find(d => d.kind === 'settings');
+    const localSettingsDest = scopes[0]!.destinations.find(d => d.kind === 'settings');
     assert.ok(localSettingsDest, 'local scope must include settings destination');
     assert.ok(
       localSettingsDest.fullPath.includes('settings.local.json'),
@@ -557,7 +557,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     );
 
     // local scope mcp → ~/.claude.json (home dir, NOT inside projectDir)
-    const localMcpDest = scopes[0].destinations.find(d => d.kind === 'mcp');
+    const localMcpDest = scopes[0]!.destinations.find(d => d.kind === 'mcp');
     assert.ok(localMcpDest, 'local scope must include mcp destination');
     assert.ok(
       localMcpDest.fullPath.includes('.claude.json') &&
@@ -573,7 +573,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     );
 
     // project scope mcp → .mcp.json inside projectDir
-    const projectMcpDest = scopes[1].destinations.find(d => d.kind === 'mcp');
+    const projectMcpDest = scopes[1]!.destinations.find(d => d.kind === 'mcp');
     assert.ok(projectMcpDest, 'project scope must include mcp destination');
     assert.ok(
       projectMcpDest.fullPath.endsWith('.mcp.json'),
@@ -587,7 +587,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     );
 
     // user scope mcp section is also top-level 'mcpServers'
-    const userMcpDest = scopes[2].destinations.find(d => d.kind === 'mcp');
+    const userMcpDest = scopes[2]!.destinations.find(d => d.kind === 'mcp');
     assert.ok(userMcpDest, 'user scope must include mcp destination');
     assert.equal(
       userMcpDest.section,
@@ -603,10 +603,10 @@ describe('O — Wizard: config-scope for mcp', () => {
     );
 
     // user scope has blastRadius 'all-projects'
-    assert.equal(scopes[2].blastRadius, 'all-projects');
+    assert.equal(scopes[2]!.blastRadius, 'all-projects');
     // local and project scopes have blastRadius 'project'
-    assert.equal(scopes[0].blastRadius, 'project');
-    assert.equal(scopes[1].blastRadius, 'project');
+    assert.equal(scopes[0]!.blastRadius, 'project');
+    assert.equal(scopes[1]!.blastRadius, 'project');
   });
 
   it('configScopes — Copilot returns 2 scopes (project + user) mcp-only', () => {
@@ -617,11 +617,11 @@ describe('O — Wizard: config-scope for mcp', () => {
     const scopes = copilot.configScopes(['mcp'], proj);
 
     assert.ok(scopes.length === 2, 'Copilot should offer 2 scopes (no local MCP scope in VS Code)');
-    assert.equal(scopes[0].value, 'project');
-    assert.equal(scopes[1].value, 'user');
+    assert.equal(scopes[0]!.value, 'project');
+    assert.equal(scopes[1]!.value, 'user');
 
     // project scope mcp → .vscode/mcp.json inside projectDir
-    const projectMcpDest = scopes[0].destinations.find(d => d.kind === 'mcp');
+    const projectMcpDest = scopes[0]!.destinations.find(d => d.kind === 'mcp');
     assert.ok(projectMcpDest, 'project scope must have mcp destination');
     assert.ok(
       projectMcpDest.fullPath.includes('mcp.json'),
@@ -630,8 +630,8 @@ describe('O — Wizard: config-scope for mcp', () => {
     assert.ok(path.isAbsolute(projectMcpDest.fullPath), 'fullPath must be absolute');
 
     // user scope → vscode-user root (not homedir), blastRadius all-projects
-    assert.equal(scopes[1].blastRadius, 'all-projects');
-    const userMcpDest = scopes[1].destinations.find(d => d.kind === 'mcp');
+    assert.equal(scopes[1]!.blastRadius, 'all-projects');
+    const userMcpDest = scopes[1]!.destinations.find(d => d.kind === 'mcp');
     assert.ok(userMcpDest, 'user scope must have mcp destination');
     assert.equal(userMcpDest.root, 'vscode-user');
     // Copilot mcp section is 'servers' (VS Code uses servers key, not mcpServers)
@@ -641,7 +641,7 @@ describe('O — Wizard: config-scope for mcp', () => {
       `Copilot mcp section must be 'servers', got: ${userMcpDest.section}`,
     );
     assert.equal(
-      scopes[0].destinations.find(d => d.kind === 'mcp')?.section,
+      scopes[0]!.destinations.find(d => d.kind === 'mcp')?.section,
       'servers',
       'Copilot project mcp section must also be servers',
     );
@@ -651,7 +651,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     // Drive the wizard to the configScope select and capture its options.
     // Verifies that hints show full absolute paths (path.isAbsolute) and a description.
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const ex = clackMod.exports;
     const orig = { ...ex };
 
@@ -701,8 +701,8 @@ describe('O — Wizard: config-scope for mcp', () => {
       // Extract the path segment (before the ' — ' description separator).
       // Each path segment may now include a JSON section suffix: 'fullPath  › section'.
       // Split on '  › ' (two spaces) to isolate the file path before checking isAbsolute.
-      const pathSegment = opt.hint.split(' — ')[0].trim();
-      const pathsInHint = pathSegment.split('  ·  ').map(p => p.split('  › ')[0].trim()); // strip '  › section' suffix
+      const pathSegment = opt.hint.split(' — ')[0]!.trim();
+      const pathsInHint = pathSegment.split('  ·  ').map(p => p.split('  › ')[0]!.trim()); // strip '  › section' suffix
       for (const p of pathsInHint) {
         assert.ok(
           path.isAbsolute(p),
@@ -790,7 +790,7 @@ describe('R — back-navigation fix', () => {
     //   → scope shown again → scope:'all' → language:'' (all) → deps:'yes'
     //   → overwrite:'no' → configScope:'project' (all includes MCPs) → proceed:'proceed'
     const { runWizard } =
-      require('../../dist-cli/wizard') as typeof import('../../dist-cli/wizard');
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
     const restore = mockClack([
       'claude', // target
       'all', // scope → Everything (narrow is a silent pass-through)

@@ -131,7 +131,7 @@ describe('checkOutputContract — red paths (violations detected)', () => {
     assert.ok(violations.length > 0, 'violation expected for forbidden name: key');
     assert.ok(
       violations.some(v => v.problem.includes("'name'")),
-      `violation message should mention 'name' — got: ${violations[0].problem}`,
+      `violation message should mention 'name' — got: ${violations[0]!.problem}`,
     );
   });
 

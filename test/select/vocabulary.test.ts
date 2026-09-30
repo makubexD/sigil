@@ -3,7 +3,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { kindNoun, kindPlural, kindHint } from '../../dist-cli/select';
+import { kindNoun, kindPlural, kindHint } from '../../dist-cli/select/index';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
 

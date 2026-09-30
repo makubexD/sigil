@@ -5,8 +5,6 @@
  * All returned objects are plain JSON-serializable shapes matching the runtime
  * Artifact / ResolvedCatalog types — no disk I/O, no async.
  */
-import type { ArtifactKind } from '../../dist-cli/types';
-
 // ── Individual artifact factories ─────────────────────────────────────────────
 
 export interface FakeRule {

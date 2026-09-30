@@ -66,7 +66,7 @@ describe('schema/emit — committed schema files', () => {
       const p = path.join(SCHEMA_DIR, `${kind}.schema.json`);
       const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
       const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
-      const def = defs[`${kind}-frontmatter`];
+      const def = defs[`${kind}-frontmatter`]!;
       assert.equal(def.type, 'object', `${kind} definition must be type:object`);
       assert.ok(
         def.properties && typeof def.properties === 'object',
@@ -80,7 +80,7 @@ describe('schema/emit — committed schema files', () => {
       const p = path.join(SCHEMA_DIR, `${kind}.schema.json`);
       const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
       const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
-      const props = defs[`${kind}-frontmatter`].properties as Record<string, unknown>;
+      const props = defs[`${kind}-frontmatter`]!.properties as Record<string, unknown>;
       for (const field of ['id', 'kind', 'title', 'description']) {
         assert.ok(field in props, `${kind}.schema.json must define field "${field}" in properties`);
       }
@@ -91,7 +91,7 @@ describe('schema/emit — committed schema files', () => {
     const p = path.join(SCHEMA_DIR, 'skill.schema.json');
     const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
     const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
-    const props = defs['skill-frontmatter'].properties as Record<string, unknown>;
+    const props = defs['skill-frontmatter']!.properties as Record<string, unknown>;
     assert.ok('name' in props, 'skill must have name field');
     assert.ok('language' in props, 'skill must have language field');
     assert.ok('uses' in props, 'skill must have uses field');
@@ -102,7 +102,7 @@ describe('schema/emit — committed schema files', () => {
     const p = path.join(SCHEMA_DIR, 'rule.schema.json');
     const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
     const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
-    const props = defs['rule-frontmatter'].properties as Record<string, unknown>;
+    const props = defs['rule-frontmatter']!.properties as Record<string, unknown>;
     assert.ok('severity' in props, 'rule must have severity field');
     assert.ok('extends' in props, 'rule must have extends field');
   });
@@ -111,7 +111,7 @@ describe('schema/emit — committed schema files', () => {
     const p = path.join(SCHEMA_DIR, 'hook.schema.json');
     const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
     const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
-    const props = defs['hook-frontmatter'].properties as Record<string, unknown>;
+    const props = defs['hook-frontmatter']!.properties as Record<string, unknown>;
     assert.ok('event' in props, 'hook must have event field');
     assert.ok('matcher' in props, 'hook must have matcher field');
     assert.ok('command' in props, 'hook must have command field');
@@ -121,7 +121,7 @@ describe('schema/emit — committed schema files', () => {
     const p = path.join(SCHEMA_DIR, 'agent.schema.json');
     const parsed = JSON.parse(fs.readFileSync(p, 'utf-8')) as Record<string, unknown>;
     const defs = parsed['definitions'] as Record<string, Record<string, unknown>>;
-    const props = defs['agent-frontmatter'].properties as Record<string, unknown>;
+    const props = defs['agent-frontmatter']!.properties as Record<string, unknown>;
     assert.ok('claude' in props, 'agent must have claude field for model/effort/maxTurns config');
   });
 });

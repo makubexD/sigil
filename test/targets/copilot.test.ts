@@ -178,7 +178,7 @@ describe('Copilot scaffold: prompt with args', () => {
     skillKeys
       .filter(k => k.endsWith('/SKILL.md'))
       .forEach(k => {
-        assert.ok(!unresolvedPlaceholder.test(files[k]), `no unresolved {{placeholder}} in ${k}`);
+        assert.ok(!unresolvedPlaceholder.test(files[k]!), `no unresolved {{placeholder}} in ${k}`);
       });
   });
 });

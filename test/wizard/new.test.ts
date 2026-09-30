@@ -3,7 +3,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildEquivalentNewCommand } from '../../dist-cli/wizard';
+import { buildEquivalentNewCommand } from '../../dist-cli/wizard/index';
 
 describe('E5 — buildEquivalentNewCommand', () => {
   it('includes kind and --name always', () => {

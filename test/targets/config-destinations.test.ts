@@ -4,7 +4,6 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import path from 'path';
 import os from 'os';
 import {
   resolveClaudeConfigDestination,
@@ -12,7 +11,7 @@ import {
 } from '../../dist-cli/targets/claude-code';
 import { resolveCopilotConfigDestination } from '../../dist-cli/targets/copilot';
 import { resolveConfigRoot } from '../../dist-cli/config-utils';
-import { applyMerge, reverseMerge } from '../../dist-cli/config-merge';
+import { applyMerge, reverseMerge } from '../../dist-cli/config-merge/index';
 import type { ConfigMergeOp } from '../../dist-cli/types';
 
 const PROJECT_DIR = '/abs/myproject';
@@ -128,8 +127,8 @@ describe('N — Scope-aware config destinations', () => {
     const op: ConfigMergeOp = {
       file: dest.file,
       root: dest.root,
-      fragment: { [topKey]: inner },
-      strategy: { [topKey]: 'object-spread' },
+      fragment: { [topKey!]: inner },
+      strategy: { [topKey!]: 'object-spread' },
     };
 
     const merged = applyMerge(existingClaudeJson, op) as Record<string, unknown>;
@@ -191,10 +190,10 @@ describe('N — Scope-aware config destinations', () => {
 
     assert.equal(ops.length, 1);
     assert.equal(
-      ops[0].file,
+      ops[0]!.file,
       '.claude/settings.local.json',
       'defaultScope:local → settings.local.json',
     );
-    assert.equal(ops[0].root, 'project');
+    assert.equal(ops[0]!.root, 'project');
   });
 });

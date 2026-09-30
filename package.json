@@ -40,17 +40,18 @@
     "access": "public"
   },
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js",
+    "clean": "node -e \"const fs=require('fs');fs.rmSync('dist-cli',{recursive:true,force:true});fs.rmSync('test-compiled',{recursive:true,force:true})\"",
+    "build": "npm run clean && cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js",
     "build:watch": "tsc -p tsconfig.build.json --watch",
     "build:test": "tsc -p tsconfig.test.json",
     "pretest": "npm run build && npm run build:test",
-    "test": "node --test \"test-compiled/**/*.test.js\"",
+    "test": "node --test --experimental-test-coverage \"test-compiled/**/*.test.js\"",
     "validate": "node dist-cli/cli.js validate",
     "catalog:build": "node dist-cli/cli.js build",
     "sigil": "node dist-cli/cli.js",
     "prepack": "npm run build",
-    "lint": "eslint src",
-    "lint:fix": "eslint src --fix",
+    "lint": "eslint src test",
+    "lint:fix": "eslint src test --fix",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check": "tsc --noEmit && npm run lint && npm run format:check && npm test"

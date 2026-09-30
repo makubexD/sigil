@@ -31,6 +31,7 @@ export async function runEditWizard(artifact: Artifact): Promise<EditWizardResul
     initialValue: currentTitle,
     validate(v) {
       if (!(v ?? '').trim()) return 'Title is required.';
+      return undefined;
     },
   });
   if (isCancel(titleAnswer)) {
@@ -44,6 +45,7 @@ export async function runEditWizard(artifact: Artifact): Promise<EditWizardResul
     initialValue: currentDesc,
     validate(v) {
       if (!(v ?? '').trim()) return 'Description is required.';
+      return undefined;
     },
   });
   if (isCancel(descAnswer)) {

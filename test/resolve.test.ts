@@ -31,7 +31,7 @@ describe('Resolve phase', () => {
     const skill = resolved.byId.get('csharp/cs-generate-tests');
     assert.ok(skill, 'csharp/cs-generate-tests resolved');
     assert.ok(skill.resolvedRules && skill.resolvedRules.length > 0, 'resolvedRules populated');
-    assert.equal(skill.resolvedRules![0].id, 'csharp/cs-testing');
+    assert.equal(skill.resolvedRules![0]!.id, 'csharp/cs-testing');
   });
 
   it('expands uses.agents for skills', async () => {

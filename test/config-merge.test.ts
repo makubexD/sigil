@@ -13,7 +13,7 @@ import {
   applyMerge,
   reverseMerge,
   detectConfigDrift,
-} from '../dist-cli/config-merge';
+} from '../dist-cli/config-merge/index';
 import type { ConfigMergeOp } from '../dist-cli/types';
 
 describe('K — Config merge (config-merge.ts)', () => {

@@ -195,6 +195,7 @@ export async function runNewWizard(
           if (!trimmed) return 'Name is required.';
           if (!isKebabCase(trimmed))
             return 'Name must be kebab-case: lowercase letters, digits, hyphens only.';
+          return undefined;
         },
       });
       if (isCancel(nameAnswer)) {

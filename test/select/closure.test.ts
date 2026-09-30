@@ -5,7 +5,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { loadCatalog } from '../../dist-cli/load';
 import { resolveCatalog } from '../../dist-cli/resolve';
-import { computeClosure } from '../../dist-cli/select';
+import { computeClosure } from '../../dist-cli/select/index';
 import { CATALOG_DIR } from '../helpers/catalog';
 
 describe('computeClosure', () => {
@@ -17,7 +17,7 @@ describe('computeClosure', () => {
 
     // Primary
     assert.equal(primary.length, 1, 'one primary artifact');
-    assert.equal(primary[0].id, 'csharp/cs-generate-tests');
+    assert.equal(primary[0]!.id, 'csharp/cs-generate-tests');
 
     // Dependencies
     const depIds = dependencies.map(d => d.artifact.id);

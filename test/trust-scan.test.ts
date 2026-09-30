@@ -12,7 +12,7 @@ import {
   formatScanFindings,
   RULE_DESCRIPTIONS,
   loadAllowlist,
-} from '../dist-cli/trust/scan';
+} from '../dist-cli/trust/scan/index';
 import { CATALOG_DIR } from './helpers/catalog';
 
 describe('I — Trust scanner (trust/scan.ts)', () => {

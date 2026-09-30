@@ -16,27 +16,50 @@ module.exports = tseslint.config(
     files: ['src/**/*.ts', 'test/**/*.ts'],
     languageOptions: {
       parserOptions: {
-        // Automatic tsconfig discovery (typescript-eslint v8+). Discovers tsconfig.json
-        // and tsconfig.test.json via projectService so type-aware rules work on all files.
-        projectService: true,
+        // Explicit project list: tsconfig.json's `exclude` omits test/, so projectService's
+        // single-nearest-tsconfig discovery can't resolve type info there. Listing both
+        // projects lets typescript-eslint match each file against whichever tsconfig's
+        // `include` covers it.
+        project: ['./tsconfig.json', './tsconfig.test.json'],
         tsconfigRootDir: __dirname,
       },
     },
     rules: {
-      // All `any` uses must be explicitly suppressed with @ts-expect-error — one site in
-      // schema/emit.ts already has a suppression comment; all others are errors.
-      '@typescript-eslint/no-explicit-any': 'error',
-      // Every Promise must be awaited, returned, or handled — no silent fire-and-forget.
-      // Commander .action(async cb) is handled internally by Commander; those are safe.
-      '@typescript-eslint/no-floating-promises': 'error',
       // Ignore underscore-prefixed params, vars, and caught errors (_overwrite, _e, etc.)
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'error',
         { argsIgnorePattern: '^_', varsIgnorePattern: '^_', caughtErrorsIgnorePattern: '^_' },
       ],
       // Allow `require()` in the schema emitter, other build-time CJS files, and tests.
       // Note: verbatimModuleSyntax is deferred (ESM migration) so CJS require() stays.
       '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+
+  // src only: every Promise must be awaited, returned, or handled — no silent fire-and-forget.
+  // Commander .action(async cb) is handled internally by Commander; those are safe.
+  // src only: `any` must be explicitly suppressed with @ts-expect-error — one site in
+  // schema/emit.ts already has a suppression comment; all others are errors.
+  {
+    files: ['src/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'error',
+      '@typescript-eslint/no-explicit-any': 'error',
+    },
+  },
+
+  // test only: node:test's describe()/it() intentionally return an unawaited Promise —
+  // the test runner schedules and awaits them internally, so this is the framework's
+  // idiom, not a fire-and-forget bug. no-floating-promises has no way to recognize that,
+  // so it is scoped off for the test tree only (all other type-aware rules above still apply).
+  // `any` is also scoped off here: tests routinely construct deliberately malformed or
+  // partial fixtures (e.g. `entries: [] as any[]`) to exercise runtime validation paths —
+  // `unknown` would just force a repetitive cast back at each call site with no added safety.
+  {
+    files: ['test/**/*.ts'],
+    rules: {
+      '@typescript-eslint/no-floating-promises': 'off',
+      '@typescript-eslint/no-explicit-any': 'off',
     },
   },
 

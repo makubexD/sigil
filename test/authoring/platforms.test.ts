@@ -3,7 +3,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { artifactTargetsPlatform } from '../../dist-cli/select';
+import { artifactTargetsPlatform } from '../../dist-cli/select/index';
 import {
   effectivePlatforms,
   isFullCoverage,
@@ -72,7 +72,7 @@ describe('E2 — platforms math', () => {
     const result = removePlatforms('skill', ['claude'], ['claude'], targets);
     assert.ok(result.errors.length > 0, 'removing the last platform should produce an error');
     assert.ok(
-      result.errors[0].includes('Cannot remove all') || result.errors[0].includes('no platform'),
+      result.errors[0]!.includes('Cannot remove all') || result.errors[0]!.includes('no platform'),
       `error message should mention platform removal constraint — got: ${result.errors[0]}`,
     );
   });

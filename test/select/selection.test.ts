@@ -12,7 +12,7 @@ import {
   CONFIG_KINDS,
   artifactLanguage,
   isAgnostic,
-} from '../../dist-cli/select';
+} from '../../dist-cli/select/index';
 import { CATALOG_DIR } from '../helpers/catalog';
 import type { ResolvedCatalog } from '../../dist-cli/types';
 

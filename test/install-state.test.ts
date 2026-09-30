@@ -9,7 +9,7 @@ import os from 'os';
 import { loadCatalog } from '../dist-cli/load';
 import { resolveCatalog } from '../dist-cli/resolve';
 import { computeInstallStates } from '../dist-cli/install-state';
-import { loadManifest, saveManifest, sha256, MANIFEST_VERSION } from '../dist-cli/manifest';
+import { loadManifest, saveManifest, sha256, MANIFEST_VERSION } from '../dist-cli/manifest/index';
 import { ClaudeCodeTarget } from '../dist-cli/targets/claude-code';
 import { CATALOG_DIR } from './helpers/catalog';
 
@@ -120,7 +120,7 @@ describe('P — computeInstallStates', () => {
       } as ReturnType<typeof loadManifest>);
 
       // Simulate user editing one of the installed files
-      const firstRelPath = Object.keys(freshFiles)[0];
+      const firstRelPath = Object.keys(freshFiles)[0]!;
       fs.writeFileSync(path.join(dir, firstRelPath), '# User-modified content\n', 'utf-8');
 
       const states = await computeInstallStates(

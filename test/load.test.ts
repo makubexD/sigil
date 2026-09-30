@@ -45,6 +45,6 @@ describe('Load phase', () => {
     const skill = catalog.byId.get('react/component-testing');
     assert.ok(skill, 'skill exists');
     assert.ok(skill.references && skill.references.length > 0, 'skill has references');
-    assert.equal(skill.references![0].name, 'testing-library.md');
+    assert.equal(skill.references![0]!.name, 'testing-library.md');
   });
 });

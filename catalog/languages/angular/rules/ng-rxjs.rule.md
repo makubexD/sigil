@@ -9,6 +9,7 @@ appliesTo:
 tags:
   - angular
   - rxjs
+appliesToRationale: Scoped to TypeScript source because RxJS streams are composed exclusively there; templates only consume them via the async pipe, which ng-templates covers.
 ---
 
 > **Discovery rule:** this rule applies where the project uses RxJS — `Observable`, `pipe(`, the

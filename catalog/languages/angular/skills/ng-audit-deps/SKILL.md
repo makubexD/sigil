@@ -22,7 +22,7 @@ tags:
   - audit
   - dependencies
   - security
-whenToUse: Use before releases, when adding new dependencies, or periodically as a maintenance check. Produces a read-only report; no dependency changes are made.
+whenToUse: "Run via `/ng-audit-deps` before a release or as a periodic maintenance check — e.g. \"audit my dependencies\", \"are any packages out of date or vulnerable\". Produces a read-only report covering CVEs, outdated versions, Angular lockstep, and license compliance; makes no changes."
 ---
 
 # Audit Dependencies

@@ -9,6 +9,7 @@ appliesTo:
 tags:
   - angular
   - signals
+appliesToRationale: Scoped to TypeScript source because signal/computed/effect are TypeScript APIs; templates only read a signal's value, which ng-templates covers.
 ---
 
 > **Discovery rule:** this rule applies where the project uses signals — `signal(`, `computed(`,

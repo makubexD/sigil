@@ -9,6 +9,7 @@ appliesTo:
 tags:
   - angular
   - testing
+appliesToRationale: Scoped to spec files because that is the only location Angular tests live in — source and template files have no test-specific conventions of their own.
 ---
 
 ## AAA Pattern

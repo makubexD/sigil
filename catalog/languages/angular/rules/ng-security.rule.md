@@ -11,6 +11,7 @@ severity: required
 tags:
   - angular
   - security
+appliesToRationale: Scoped to TypeScript and HTML because the two threat surfaces this rule covers are split across them — secret handling and HTTP construction live in TypeScript, while XSS-relevant bindings live in templates.
 ---
 
 ## Secrets and Credentials

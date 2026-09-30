@@ -9,6 +9,7 @@ appliesTo:
 tags:
   - angular
   - documentation
+appliesToRationale: Scoped to TypeScript source because TSDoc comments and exported symbols live there; templates and config files have no doc-comment surface.
 ---
 
 ## TSDoc Style

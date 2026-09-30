@@ -9,6 +9,7 @@ appliesTo:
 tags:
   - angular
   - logging
+appliesToRationale: Scoped to TypeScript source because logging calls only occur in component/service code; templates and config files never log.
 ---
 
 ## Use a Logger Abstraction

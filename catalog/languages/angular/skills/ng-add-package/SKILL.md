@@ -21,7 +21,7 @@ tags:
   - add
   - package
   - npm
-whenToUse: Use to add a new dependency to an Angular project. Pass the package name, optional version, and --dev for a devDependency. Vets the package (CVEs, types, ESM, Angular peer compatibility, license) before installing and undoes the change on failure.
+whenToUse: "Run via `/ng-add-package <package>` when a new dependency is needed — e.g. \"add ngx-toastr\", \"install this package as a dev dependency\". Vets for CVEs, types, ESM compatibility, Angular peer compatibility, and license before installing; undoes the change if the gate fails afterward."
 ---
 
 # Add Package

@@ -22,7 +22,7 @@ tags:
   - angular
   - document
   - documentation
-whenToUse: Use when public symbols, components, or services are missing TSDoc, or after adding new public API surface. Pass a target file; omit to scan for undocumented public symbols across the source.
+whenToUse: "Run via `/ng-document [file]` when public symbols, components, or services are missing TSDoc — e.g. \"document this service\", \"find undocumented public API\". Omit the argument to scan the whole source for undocumented symbols."
 ---
 
 # Document
@@ -44,7 +44,7 @@ whenToUse: Use when public symbols, components, or services are missing TSDoc, o
 ## Step 2 — Discover documentation style
 
 Do **not** assume a style. Discover it:
-- Read `CLAUDE.md` and `.claude/` rules if present.
+- Read `CLAUDE.md` and any rules files present.
 - Check for Compodoc config (`.compodocrc*`, a `compodoc` script in `package.json`) and any TSDoc/eslint-jsdoc config.
 - Read 2–3 existing doc comments to match the in-use tag conventions.
 - If no style is in use, default to **TSDoc** (`@param` / `@returns` / `@throws` / `@remarks` / `@deprecated`).

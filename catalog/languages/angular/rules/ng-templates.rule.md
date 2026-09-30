@@ -10,6 +10,7 @@ appliesTo:
 tags:
   - angular
   - templates
+appliesToRationale: Scoped to HTML templates and component files because Angular templates can live externally (.html) or inline in the component decorator, and this rule's control-flow and binding-cost guidance applies to both.
 ---
 
 ## Control Flow

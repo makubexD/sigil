@@ -11,6 +11,7 @@ extends:
 tags:
   - angular
   - conventions
+appliesToRationale: Scoped to TypeScript source because these are language-level conventions (typing, naming, DI, control flow) with no template or config equivalent.
 ---
 
 ## Types, Not `any`

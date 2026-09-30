@@ -19,7 +19,7 @@ tags:
   - angular
   - release
   - publish
-whenToUse: Run manually before cutting a release tag. Pass the target version number as the argument. Does not tag, push, or publish — it produces a checklist and changelog draft for human review.
+whenToUse: "Run manually via `/ng-release <version>` before cutting a release tag — e.g. \"prepare a release\", \"cut version 1.2.0\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review."
 ---
 
 # Release Preparation

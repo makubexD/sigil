@@ -10,6 +10,7 @@ appliesTo:
 tags:
   - angular
   - dependencies
+appliesToRationale: Scoped to package.json, where dependencies are declared, and TypeScript source, where they are imported and consumed — the two places a dependency decision is visible.
 ---
 
 ## Pin and Lock

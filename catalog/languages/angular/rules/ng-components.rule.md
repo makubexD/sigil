@@ -10,6 +10,7 @@ appliesTo:
 tags:
   - angular
   - components
+appliesToRationale: Scoped to component and directive files specifically because change-detection, lifecycle, and OnPush concerns are unique to those two building blocks and do not apply to services, pipes, or other TypeScript files.
 ---
 
 ## Change Detection: OnPush by Default

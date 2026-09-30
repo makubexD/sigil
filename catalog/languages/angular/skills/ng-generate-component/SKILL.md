@@ -23,7 +23,7 @@ tags:
   - angular
   - generate
   - component
-whenToUse: Use to add a new building block to an Angular project. Pass the name and optionally a --type (defaults to component). Discovers the project's selector prefix, era, and test layout, prefers the Angular CLI when present, and never overwrites existing files.
+whenToUse: "Run via `/ng-generate-component <name>` when scaffolding a new component, directive, service, pipe, or guard — e.g. \"generate a UserProfile component\", \"scaffold a new auth guard\". Discovers the project's selector prefix, era (standalone vs NgModule), and test layout; prefers the Angular CLI when present and never overwrites existing files."
 ---
 
 # Generate Component

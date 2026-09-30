@@ -13,6 +13,7 @@ tags:
   - angular
   - code
   - quality
+appliesToRationale: Scoped to TypeScript and template files because these structural and SOLID principles govern Angular's two source formats — component/service logic and templates — and don't apply to config or non-Angular files.
 ---
 
 ## SEARCH FIRST Principle

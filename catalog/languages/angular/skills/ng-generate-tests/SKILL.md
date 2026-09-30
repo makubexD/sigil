@@ -22,7 +22,7 @@ tags:
   - angular
   - generate
   - tests
-whenToUse: Use when a source file lacks a spec or when new public members have been added without corresponding test coverage. Pass the target file path as the argument; omit to scan for untested files and choose interactively.
+whenToUse: "Run via `/ng-generate-tests [file]` when a source file lacks a spec or a new public member has no test coverage — e.g. \"generate tests for user.service.ts\", \"write a spec for this component\". Omit the argument to scan for untested files and choose interactively. Complements ng-sync-tests, which syncs the whole spec suite rather than one target."
 ---
 
 # Generate Tests
@@ -54,7 +54,7 @@ Read the target file fully. Identify:
 
 ## Step 4 — Write tests
 
-Follow the project's documented test conventions. Discover them from `CLAUDE.md`, `.claude/` rules (if present), `vitest.config.*`, or by reading existing specs. Apply these principles consistently:
+Follow the project's documented test conventions. Discover them from `CLAUDE.md`, any rules files present, `vitest.config.*`, or by reading existing specs. Apply these principles consistently:
 
 - **One behaviour per test.** Each `it` has a single, named reason to fail.
 - **AAA pattern.** Arrange (`TestBed.configureTestingModule`, build data), Act (call the method or `fixture.detectChanges()`), Assert. Mark each section with an inline `// Arrange` / `// Act` / `// Assert` comment even if one line.

@@ -22,7 +22,7 @@ tags:
   - angular
   - sync
   - tests
-whenToUse: Use after multiple source files have changed and the spec suite has drifted — missing specs for new components, stale specs for renamed symbols, orphaned specs for deleted files. Run with --scope=all for a full audit; default --scope=changed targets only files modified in the current working tree.
+whenToUse: "Run via `/ng-sync-tests` after multiple source files have changed and the spec suite has drifted — e.g. \"sync my tests\", \"find missing and orphaned specs\". Default scope targets only files changed in the working tree; pass `--scope=all` for a full-project audit. Complements ng-generate-tests, which targets one file at a time."
 ---
 
 # Sync Tests
@@ -58,7 +58,7 @@ Inspect the repo — do **not** assume a fixed structure:
 For each in-scope source file:
 
 1. Derive the expected spec path using the co-location/mirroring convention.
-2. **Spec does not exist:** create it. Follow the project's documented conventions — discover from `CLAUDE.md`, `.claude/` rules (if present), config, or existing specs. Apply the same principles as single-file generation:
+2. **Spec does not exist:** create it. Follow the project's documented conventions — discover from `CLAUDE.md`, any rules files present, config, or existing specs. Apply the same principles as single-file generation:
    - AAA pattern, one behaviour per test, descriptive `describe`/`it` names.
    - TestBed + ComponentFixture; mock only I/O boundaries (`provideHttpClientTesting`, service stubs).
    - `it.each` over multiple inputs; fake timers / `fakeAsync` for time; signal/observable assertions.

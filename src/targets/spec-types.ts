@@ -11,6 +11,7 @@
  * verifier), so there is exactly one place per (provider, kind) that states the format.
  */
 import type { ArtifactKind, ResolvedArtifact, ResolvedCatalog } from '../types';
+import type { ProviderLexicon } from './lexicon';
 
 /** A dated citation to the official provider documentation a spec's shape is following. */
 export interface DocRef {
@@ -89,6 +90,14 @@ export interface KindEmitSpec {
   /** When false and no `frontmatter` mapping produced output, omit the `---…---` block entirely. */
   readonly emitEmptyFrontmatter: boolean;
   readonly body: readonly BodySectionSpec[];
+  /**
+   * This provider's body-lexicon table (see ./lexicon.ts) — applied unconditionally by
+   * renderArtifact() to every rendered line (the artifact's own body, and any body section that
+   * inlines another artifact's body, e.g. a skill's "## Applied Rules"). Required, not optional:
+   * an author-facing `{sigil:<term>}` token left untranslated is exactly the class of bug this
+   * closes, so every spec must supply one rather than silently passing bodies through unchanged.
+   */
+  readonly lexicon: ProviderLexicon;
   /** Frontmatter keys that must never appear in this spec's output (cross-contamination guard). */
   readonly forbiddenKeys: readonly string[];
   /** Body patterns that must never appear (e.g. unresolved `{{…}}` or a foreign placeholder). */

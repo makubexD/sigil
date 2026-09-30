@@ -12,6 +12,8 @@ import {
   COPILOT_CREATE_AGENTS_DOC,
   VSCODE_CUSTOM_AGENTS_DOC,
 } from '../../doc-refs';
+import { COPILOT_LEXICON } from '../lexicon';
+import { UNTRANSLATED_TOKEN_FORBID, CLAUDE_LITERAL_FORBIDS_ON_COPILOT } from '../../lexicon-forbid';
 
 const nameMapping: FieldMapping = {
   from: 'name',
@@ -58,7 +60,8 @@ export const COPILOT_AGENT_SPEC: KindEmitSpec = {
   emitEmptyFrontmatter: true,
   body: [titleAndBoundarySection],
   forbiddenKeys: ['applyTo'],
-  bodyForbids: [],
+  lexicon: COPILOT_LEXICON,
+  bodyForbids: [UNTRANSLATED_TOKEN_FORBID, ...CLAUDE_LITERAL_FORBIDS_ON_COPILOT],
   // COPILOT_AGENTS_DOC covers the frontmatter table but never states the .github/agents/ path;
   // the other two do (GitHub's cloud-agent side and VS Code's local-agent side respectively).
   docs: [COPILOT_AGENTS_DOC, COPILOT_CREATE_AGENTS_DOC, VSCODE_CUSTOM_AGENTS_DOC],

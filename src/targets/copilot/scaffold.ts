@@ -39,8 +39,13 @@ export function scaffoldSkill(
   options: ScaffoldOptions,
 ): void {
   const name = skill.frontmatter.name as string;
-  // Emit as a native Agent Skill (open standard) — not a prompt file.
-  files[`.github/skills/${name}/${SKILL_FILENAME}`] = buildSkillMd(skill);
+  // Emit as a native Agent Skill (open standard) — not a prompt file. catalog/coInstallSet drive
+  // the skill's own conditional Boundary section, same as scaffoldAgent below.
+  files[`.github/skills/${name}/${SKILL_FILENAME}`] = buildSkillMd(
+    skill,
+    catalog,
+    options.coInstallSet,
+  );
   for (const ref of skill.references ?? []) {
     files[`.github/skills/${name}/references/${ref.name}`] = ref.content;
   }

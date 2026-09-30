@@ -64,6 +64,24 @@ export const VSCODE_AGENT_SKILLS_DOC: DocRef = {
     "SKILL.md for VS Code's local agent — same shared Agent Skills open standard, VS Code side",
 };
 
+/**
+ * The Agent Skills open-standard spec itself — the canonical source for which SKILL.md
+ * frontmatter fields are valid OUTSIDE Claude Code (Copilot, VS Code, and any other client at
+ * https://agentskills.io/clients). code.claude.com/docs/en/skills's own "Using skill frontmatter
+ * outside Claude Code" table cites this as the authority restricting non-Claude paths to exactly
+ * six fields: name, description, license, compatibility, metadata, allowed-tools — which is why
+ * `allowed-tools` (but not `argument-hint`, a Claude Code-only extension) is safe to emit for
+ * Copilot (see copilot/spec/skill.ts).
+ */
+export const AGENT_SKILLS_SPEC_DOC: DocRef = {
+  url: 'https://agentskills.io',
+  title: 'Agent Skills — the open standard',
+  verifiedOn: '2026-08-10',
+  covers:
+    'The six-field frontmatter spec for SKILL.md outside Claude Code: name, description, ' +
+    'license, compatibility, metadata, allowed-tools.',
+};
+
 export const CLAUDE_RULES_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/memory#organize-rules-with-claude/rules/',
   title: 'Claude Code — Memory: Organize rules with .claude/rules/',

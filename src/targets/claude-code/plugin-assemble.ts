@@ -62,13 +62,27 @@ function writeWorkflowFiles(workflows: ResolvedArtifact[], prefix: string, files
   }
 }
 
+/** Shared build context for {@link writeSkillFiles} — same shape as {@link AgentFilesCtx}. */
+interface SkillFilesCtx {
+  catalog: ResolvedCatalog;
+  packInstallSet: Set<string>;
+  prefix: string;
+}
+
 /** Write skill SKILL.md + reference files into `files`. */
-function writeSkillFiles(skills: ResolvedArtifact[], prefix: string, files: FileMap): void {
+function writeSkillFiles(skills: ResolvedArtifact[], ctx: SkillFilesCtx, files: FileMap): void {
+  const { catalog, packInstallSet, prefix } = ctx;
   for (const skill of skills) {
     const skillName = skill.frontmatter.name as string;
     // Plugin build (dist/claude/) — rules are inlined (inlineRules: true) because plugins
-    // cannot ship loose rule files; see buildPluginSkillMd's doc comment.
-    files[`${prefix}/skills/${skillName}/${SKILL_FILENAME}`] = buildPluginSkillMd(skill, true);
+    // cannot ship loose rule files; see buildPluginSkillMd's doc comment. catalog/packInstallSet
+    // drive the skill's own conditional Boundary section, same as writeAgentFiles below.
+    files[`${prefix}/skills/${skillName}/${SKILL_FILENAME}`] = buildPluginSkillMd(
+      skill,
+      true,
+      catalog,
+      packInstallSet,
+    );
 
     for (const ref of skill.references ?? []) {
       files[`${prefix}/skills/${skillName}/references/${ref.name}`] = ref.content;
@@ -137,7 +151,7 @@ export function buildPlugin(options: BuildPluginOptions): FileMap {
   const sharedAgentIds = computeSharedAgentIds(skills, agents, packInstallSet);
 
   writeWorkflowFiles(workflows, prefix, files);
-  writeSkillFiles(skills, prefix, files);
+  writeSkillFiles(skills, { catalog, packInstallSet, prefix }, files);
   writeAgentFiles(agents, sharedAgentIds, { catalog, packInstallSet, prefix }, files);
 
   return files;

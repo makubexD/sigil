@@ -25,6 +25,8 @@ import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-typ
 import { yamlScalar } from '../../yaml-util';
 import { toClaudePlaceholders, buildArgumentHint, type PromptArg } from '../../prompt-args';
 import { CLAUDE_SKILLS_DOC } from '../../doc-refs';
+import { CLAUDE_LEXICON } from '../lexicon';
+import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 
 /** Same id -> slug rule the old `.claude/commands/<slug>.md` path used (full id, `/` -> `-`) —
  * kept identical to preserve cross-language uniqueness. `basenameOfId` alone is NOT safe here:
@@ -101,12 +103,14 @@ export const CLAUDE_PROMPT_SPEC: KindEmitSpec = {
   emitEmptyFrontmatter: true,
   body: [titleHeading],
   forbiddenKeys: ['paths', 'applyTo', 'agent', 'tools'],
+  lexicon: CLAUDE_LEXICON,
   bodyForbids: [
     { pattern: /\{\{/, reason: 'unresolved {{…}} placeholder (should be translated to $name)' },
     {
       pattern: /\$\{input:/,
       reason: 'Copilot ${input:…} placeholder found in Claude command body',
     },
+    UNTRANSLATED_TOKEN_FORBID,
   ],
   docs: [CLAUDE_SKILLS_DOC],
 };

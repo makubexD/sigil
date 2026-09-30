@@ -8,6 +8,8 @@ import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-typ
 import { yamlScalar } from '../../yaml-util';
 import { renderBoundarySection } from '../../shared/boundary';
 import { CLAUDE_AGENTS_DOC } from '../../doc-refs';
+import { CLAUDE_LEXICON } from '../lexicon';
+import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 
 const nameMapping: FieldMapping = {
   from: 'name',
@@ -84,6 +86,7 @@ export const CLAUDE_AGENT_SPEC: KindEmitSpec = {
   emitEmptyFrontmatter: true,
   body: [boundarySection],
   forbiddenKeys: ['applyTo', 'paths'],
-  bodyForbids: [],
+  lexicon: CLAUDE_LEXICON,
+  bodyForbids: [UNTRANSLATED_TOKEN_FORBID],
   docs: [CLAUDE_AGENTS_DOC],
 };

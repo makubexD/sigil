@@ -5,6 +5,7 @@
  */
 import type { ResolvedArtifact } from '../types';
 import type { KindEmitSpec, EmitContext, FieldMapping } from './spec-types';
+import { applyLexicon } from './lexicon';
 
 /**
  * Renders one FieldMapping's `key: value` line(s), or `''` to omit it entirely.
@@ -40,7 +41,12 @@ function renderFrontmatterBlock(spec: KindEmitSpec, frontmatter: Record<string, 
   return ['---', ...lines, '---'].join('\n');
 }
 
-/** Renders every body section at the given position, concatenated with blank-line separation. */
+/**
+ * Renders every body section at the given position, concatenated with blank-line separation.
+ * Each line is passed through the provider's lexicon (see ./lexicon.ts) — sections can inline
+ * another artifact's catalog-authored body (e.g. a skill's "## Applied Rules" pulling in a rule's
+ * resolvedBody), so this is not redundant with the lexicon pass on the artifact's own body below.
+ */
 function renderSections(
   spec: KindEmitSpec,
   artifact: ResolvedArtifact,
@@ -50,7 +56,8 @@ function renderSections(
   return spec.body
     .filter(section => section.position === position)
     .flatMap(section => section.render(artifact, ctx))
-    .filter((line): line is string => line !== undefined);
+    .filter((line): line is string => line !== undefined)
+    .map(line => applyLexicon(line, spec.lexicon));
 }
 
 /**
@@ -68,7 +75,8 @@ export function renderArtifact(
   const frontmatterBlock = renderFrontmatterBlock(spec, artifact.frontmatter);
   const beforeLines = renderSections(spec, artifact, ctx, 'before');
   const rawBody = artifact.resolvedBody ?? artifact.body;
-  const ownBody = spec.bodyTransform ? spec.bodyTransform(rawBody) : rawBody;
+  const transformedBody = spec.bodyTransform ? spec.bodyTransform(rawBody) : rawBody;
+  const ownBody = applyLexicon(transformedBody, spec.lexicon);
   const afterLines = renderSections(spec, artifact, ctx, 'after');
 
   const segments: string[] = [];

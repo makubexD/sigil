@@ -19,6 +19,8 @@
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { yamlScalar } from '../../yaml-util';
 import { CLAUDE_SKILLS_DOC } from '../../doc-refs';
+import { CLAUDE_LEXICON } from '../lexicon';
+import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 
 interface WorkflowStep {
   ref: string;
@@ -87,6 +89,7 @@ export const CLAUDE_WORKFLOW_SPEC: KindEmitSpec = {
   emitEmptyFrontmatter: true,
   body: [titleHeading, stepsSection],
   forbiddenKeys: ['paths', 'applyTo', 'agent', 'tools'],
-  bodyForbids: [],
+  lexicon: CLAUDE_LEXICON,
+  bodyForbids: [UNTRANSLATED_TOKEN_FORBID],
   docs: [CLAUDE_SKILLS_DOC],
 };

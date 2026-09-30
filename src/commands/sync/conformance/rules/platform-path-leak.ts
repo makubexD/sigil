@@ -5,6 +5,15 @@
  * `ownedBy: ['claude']` (src/kinds.ts), so `.claude/` in their bodies is accurate, not a leak.
  * Rewriting to provider-neutral phrasing needs judgment (what to say instead) — `editorial`.
  *
+ * Covers free-form `.claude/` prose that needs real rewriting (varied phrasing, no fixed
+ * replacement). The two specific, exact-substitution leaks found in the same 2026-08-10 audit —
+ * `CLAUDE.md` and `$ARGUMENTS` — are covered instead by `provider-term-leak`, which is mechanical
+ * with a `fix()` because those have one correct neutral token each (`{sigil:conventions-file}`,
+ * `{sigil:arguments}`), no judgment needed. This rule's REWRITE_INSTRUCTION previously told the
+ * model "CLAUDE.md itself is fine to keep since Claude Code, not sigil, defines that convention" —
+ * backwards: who defines a convention says nothing about whether it is true on every other
+ * provider's output. Corrected below; `CLAUDE.md` is now caught by `provider-term-leak`.
+ *
  * @module
  */
 import type { ArtifactKind } from '../../../../types';
@@ -35,10 +44,11 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
 const REWRITE_INSTRUCTION =
   'Rewrite every mention of ".claude/" in the body to provider-neutral phrasing — e.g. ' +
   '"the project\'s documented conventions and any rules files present" instead of ' +
-  '"CLAUDE.md and .claude/ rules if present". Preserve the surrounding sentence\'s meaning ' +
-  'and any other file paths that are genuinely provider-neutral (CLAUDE.md itself is fine ' +
-  'to keep since Claude Code, not sigil, defines that convention; only .claude/ paths are ' +
-  'the leak). Do not change anything else in the body.';
+  '"CLAUDE.md and .claude/ rules if present". Use the {sigil:conventions-file} and ' +
+  '{sigil:rules-dir} lexicon tokens (see src/targets/lexicon.ts) in place of literal ' +
+  '"CLAUDE.md" or ".claude/rules/" when the sentence is naming those specific paths — do not ' +
+  "hardcode either provider's literal filename or directory anywhere in the rewrite. Preserve " +
+  "the surrounding sentence's meaning. Do not change anything else in the body.";
 
 function editorialTask(
   finding: ConformanceFinding,

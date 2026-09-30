@@ -55,10 +55,19 @@ export function getPackArtifacts(pack: Pack, catalog: ResolvedCatalog): Resolved
  * skills by description relevance, not file path (path-scoped loading is a `.claude/rules/*.md`-
  * only mechanism). `whenToUse` is what actually drives model-invoked dispatch: it feeds
  * `when_to_use:`, which Claude Code appends to `description` in the skill listing.
+ *
+ * `catalog`/`installSet`, when provided, drive the same conditional `## Boundary` rendering
+ * `buildAgentMd` below already does for a skill's own `relatedArtifacts` (SkillSchema declares
+ * the field; previously no skill spec rendered it at all — see boundarySection, spec/skill.ts).
  */
-export function buildPluginSkillMd(skill: ResolvedArtifact, inlineRules: boolean): string {
+export function buildPluginSkillMd(
+  skill: ResolvedArtifact,
+  inlineRules: boolean,
+  catalog?: ResolvedCatalog,
+  installSet?: Set<string>,
+): string {
   const spec = inlineRules ? CLAUDE_PLUGIN_SKILL_SPEC : CLAUDE_SCAFFOLD_SKILL_SPEC;
-  return renderArtifact(spec, skill, {});
+  return renderArtifact(spec, skill, { catalog, installSet });
 }
 
 /**

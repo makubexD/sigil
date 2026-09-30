@@ -45,7 +45,12 @@ export function scaffoldSkill(
   // The scaffolded SKILL.md reuses the plugin layout (name/description/when_to_use/
   // allowed-tools/argument-hint). Rules are NOT inlined (inlineRules: false) — this is
   // the CLI scaffold path, and .claude/rules/*.md are loaded natively by Claude Code.
-  files[`.claude/skills/${skillName}/${SKILL_FILENAME}`] = buildPluginSkillMd(skill, false);
+  files[`.claude/skills/${skillName}/${SKILL_FILENAME}`] = buildPluginSkillMd(
+    skill,
+    false,
+    catalog,
+    options.coInstallSet,
+  );
 
   for (const ref of skill.references ?? []) {
     files[`.claude/skills/${skillName}/references/${ref.name}`] = ref.content;

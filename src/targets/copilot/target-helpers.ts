@@ -90,11 +90,20 @@ export function buildRuleFiles(rules: ResolvedCatalog['artifacts'], files: FileM
   }
 }
 
-/** Builds each skill's SKILL.md + reference files from catalog skills. */
-export function buildSkillFiles(skills: ResolvedCatalog['artifacts'], files: FileMap): void {
+/**
+ * Builds each skill's SKILL.md + reference files from catalog skills. `catalog`/`installSet`,
+ * when provided, drive each skill's own conditional `## Boundary` section (its `relatedArtifacts`)
+ * — same mechanism `buildAgentsMd` already uses for agents in the same full build.
+ */
+export function buildSkillFiles(
+  skills: ResolvedCatalog['artifacts'],
+  files: FileMap,
+  catalog?: ResolvedCatalog,
+  installSet?: Set<string>,
+): void {
   for (const skill of skills) {
     const name = skill.frontmatter.name as string;
-    files[`.github/skills/${name}/${SKILL_FILENAME}`] = buildSkillMd(skill);
+    files[`.github/skills/${name}/${SKILL_FILENAME}`] = buildSkillMd(skill, catalog, installSet);
     for (const ref of skill.references ?? []) {
       files[`.github/skills/${name}/references/${ref.name}`] = ref.content;
     }

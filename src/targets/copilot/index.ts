@@ -93,8 +93,13 @@ export class CopilotTarget implements Target {
     const files: FileMap = {};
     const byKind = (kind: ArtifactKind) => catalog.artifacts.filter(a => a.kind === kind);
 
+    // Full build: every artifact in the catalog is co-present — same "all co-present" install
+    // set buildAgentsMd already uses, so a skill's relatedArtifacts resolve the same way an
+    // agent's do.
+    const installSet = new Set(catalog.artifacts.map(a => a.id));
+
     buildRuleFiles(byKind('rule'), files);
-    buildSkillFiles(byKind('skill'), files);
+    buildSkillFiles(byKind('skill'), files, catalog, installSet);
     buildPromptFiles(byKind('prompt'), byKind('workflow'), files);
 
     // AGENTS.md — pass catalog so Boundary sections can be rendered for co-present agents

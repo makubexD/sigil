@@ -13,6 +13,9 @@ import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-typ
 import type { ResolvedArtifact } from '../../../types';
 import { yamlScalar } from '../../yaml-util';
 import { CLAUDE_SKILLS_DOC } from '../../doc-refs';
+import { CLAUDE_LEXICON } from '../lexicon';
+import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
+import { renderBoundarySection } from '../../shared/boundary';
 
 const nameMapping: FieldMapping = {
   from: 'name',
@@ -100,6 +103,18 @@ const appliedRulesSection: BodySectionSpec = {
   },
 };
 
+/**
+ * `## Boundary` — a skill's own `relatedArtifacts` (SkillSchema, schema/index.ts), same rendering
+ * agents already get (see spec/agent.ts's boundarySection). Renders `[]` when `catalog`/
+ * `installSet` are absent from the render context (see renderBoundarySection's own contract) —
+ * safe by construction for call sites that don't yet thread co-install info through.
+ */
+const boundarySection: BodySectionSpec = {
+  id: 'boundary',
+  position: 'before',
+  render: (artifact, ctx) => renderBoundarySection(artifact, ctx.installSet, ctx.catalog),
+};
+
 function outputPath(
   artifact: ResolvedArtifact,
   packName: string | undefined,
@@ -118,8 +133,9 @@ export const CLAUDE_PLUGIN_SKILL_SPEC: KindEmitSpec = {
   pathPattern: /plugins\/[^/]+\/skills\/.*\/SKILL\.md$/,
   frontmatter: SKILL_FRONTMATTER,
   emitEmptyFrontmatter: true, // name/description are always present
-  body: [appliedRulesSection],
+  body: [boundarySection, appliedRulesSection],
   forbiddenKeys: ['applyTo', 'paths', 'agent'],
+  lexicon: CLAUDE_LEXICON,
   // NOT adding an unresolved-{{…}} bodyForbid here, unlike spec/prompt.ts and spec/workflow.ts:
   // real skills (Angular, in particular) legitimately contain literal {{ }} template-binding
   // syntax in prose/examples — see COPILOT_SKILL_SPEC's identical note in copilot/spec/skill.ts.
@@ -132,6 +148,7 @@ export const CLAUDE_PLUGIN_SKILL_SPEC: KindEmitSpec = {
       pattern: /\$\{input:/,
       reason: 'Copilot ${input:…} placeholder found in Claude SKILL.md body',
     },
+    UNTRANSLATED_TOKEN_FORBID,
   ],
   docs: [CLAUDE_SKILLS_DOC],
 };
@@ -141,5 +158,7 @@ export const CLAUDE_SCAFFOLD_SKILL_SPEC: KindEmitSpec = {
   variant: 'scaffold',
   outputPath: (artifact, ctx) => outputPath(artifact, ctx.packName, '.claude'),
   pathPattern: /\.claude\/skills\/.*\/SKILL\.md$/,
-  body: [], // rules are NOT inlined in the scaffold layout — .claude/rules/*.md loads natively
+  // Rule bodies are NOT inlined in the scaffold layout — .claude/rules/*.md loads natively.
+  // Boundary IS kept — it's the skill's own relatedArtifacts, unrelated to rule inlining.
+  body: [boundarySection],
 };

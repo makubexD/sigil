@@ -8,6 +8,8 @@
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { CLAUDE_RULES_DOC } from '../../doc-refs';
+import { CLAUDE_LEXICON } from '../lexicon';
+import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 
 const appliesToMapping: FieldMapping = {
   from: 'appliesTo',
@@ -33,6 +35,7 @@ export const CLAUDE_SCAFFOLD_RULE_SPEC: KindEmitSpec = {
   emitEmptyFrontmatter: false, // a rule with no appliesTo gets NO frontmatter block at all
   body: [titleHeading],
   forbiddenKeys: ['name', 'applyTo', 'agent', 'description'],
-  bodyForbids: [],
+  lexicon: CLAUDE_LEXICON,
+  bodyForbids: [UNTRANSLATED_TOKEN_FORBID],
   docs: [CLAUDE_RULES_DOC],
 };

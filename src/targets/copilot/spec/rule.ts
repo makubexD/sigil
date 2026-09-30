@@ -7,6 +7,8 @@
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { COPILOT_INSTRUCTIONS_DOC, VSCODE_INSTRUCTIONS_DOC } from '../../doc-refs';
+import { COPILOT_LEXICON } from '../lexicon';
+import { UNTRANSLATED_TOKEN_FORBID, CLAUDE_LITERAL_FORBIDS_ON_COPILOT } from '../../lexicon-forbid';
 
 const applyToMapping: FieldMapping = {
   from: 'appliesTo',
@@ -40,7 +42,8 @@ export const COPILOT_RULE_SPEC: KindEmitSpec = {
   emitEmptyFrontmatter: false,
   body: [titleAndSourceSection],
   forbiddenKeys: ['name', 'agent'],
-  bodyForbids: [],
+  lexicon: COPILOT_LEXICON,
+  bodyForbids: [UNTRANSLATED_TOKEN_FORBID, ...CLAUDE_LITERAL_FORBIDS_ON_COPILOT],
   // GitHub's own docs restrict path-specific instructions to cloud agent + code review on
   // github.com; VS Code applies .instructions.md generally — a real divergence, cite both.
   docs: [COPILOT_INSTRUCTIONS_DOC, VSCODE_INSTRUCTIONS_DOC],

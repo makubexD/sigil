@@ -8,6 +8,8 @@
 import type { ResolvedArtifact, ResolvedCatalog } from '../../types';
 import { renderBoundarySection } from '../shared/boundary';
 import { renderArtifact } from '../emit';
+import { applyLexicon } from '../lexicon';
+import { COPILOT_LEXICON } from './lexicon';
 import { COPILOT_SKILL_SPEC } from './spec/skill';
 import { COPILOT_RULE_SPEC } from './spec/rule';
 import { COPILOT_PROMPT_SPEC } from './spec/prompt';
@@ -17,12 +19,15 @@ import { COPILOT_PROMPT_SPEC } from './spec/prompt';
  *
  * No KindEmitSpec backs this aggregate (it has no per-artifact frontmatter to map), so its
  * citation is declared directly: see COPILOT_INSTRUCTIONS_DOC (../doc-refs.ts), tracked for
- * staleness via src/targets/all-emit-specs.ts's AGGREGATE_DOC_REFS.
+ * staleness via src/targets/all-emit-specs.ts's AGGREGATE_DOC_REFS. Same reasoning as
+ * renderAgentSection above for the explicit `applyLexicon` call — this bypasses renderArtifact
+ * entirely, so it needs its own lexicon pass.
  */
 export function buildCopilotInstructions(sharedRules: ResolvedArtifact[]): string {
   const sections = sharedRules.map(rule => {
     const title = rule.frontmatter.title as string;
-    return `## ${title}\n\n${rule.resolvedBody ?? rule.body}`;
+    const body = applyLexicon(rule.resolvedBody ?? rule.body, COPILOT_LEXICON);
+    return `## ${title}\n\n${body}`;
   });
 
   return [
@@ -57,9 +62,16 @@ export function buildInstructionsFile(rule: ResolvedArtifact): string {
  *
  * Delegates to the declarative spec in `spec/skill.ts` — see spec-types.ts for why the format
  * knowledge lives there rather than here.
+ *
+ * `catalog`/`installSet`, when provided, drive the same conditional `## Boundary` rendering
+ * `renderAgentSection` below already does for a skill's own `relatedArtifacts`.
  */
-export function buildSkillMd(skill: ResolvedArtifact): string {
-  return renderArtifact(COPILOT_SKILL_SPEC, skill, {});
+export function buildSkillMd(
+  skill: ResolvedArtifact,
+  catalog?: ResolvedCatalog,
+  installSet?: Set<string>,
+): string {
+  return renderArtifact(COPILOT_SKILL_SPEC, skill, { catalog, installSet });
 }
 
 /**
@@ -80,7 +92,15 @@ export function buildPromptFile(prompt: ResolvedArtifact): string {
   return renderArtifact(COPILOT_PROMPT_SPEC, prompt, {});
 }
 
-/** Renders one agent's AGENTS.md section, including its Boundary block when co-present artifacts exist. */
+/**
+ * Renders one agent's AGENTS.md section, including its Boundary block when co-present artifacts
+ * exist. This is a hand-rolled aggregate (no KindEmitSpec — see buildAgentsMd's own doc comment),
+ * so unlike `.github/agents/<name>.agent.md` (COPILOT_AGENT_SPEC, routed through renderArtifact)
+ * it does NOT get the lexicon pass for free; `applyLexicon` is called directly here so a body
+ * written once for both providers ({sigil:conventions-file}, …) still translates correctly in
+ * this aggregate too — see docs/decisions/provider-neutral-body-lexicon-2026-08.md for the audit
+ * that found this second, independent bypass of the same translation step.
+ */
 function renderAgentSection(
   agent: ResolvedArtifact,
   installSet: Set<string> | undefined,
@@ -92,7 +112,7 @@ function renderAgentSection(
 
   // Conditional Boundary section — only for co-present related artifacts
   const boundaryLines = renderBoundarySection(agent, installSet, catalog);
-  const agentBody = agent.resolvedBody ?? agent.body;
+  const agentBody = applyLexicon(agent.resolvedBody ?? agent.body, COPILOT_LEXICON);
   const bodySection =
     boundaryLines.length > 0 ? [...boundaryLines, agentBody].join('\n') : agentBody;
 

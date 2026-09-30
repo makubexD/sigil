@@ -90,6 +90,54 @@ describe('conformance rule: when-to-use-lift — fix', () => {
     assert.doesNotMatch(written, /## When to Use/);
     assert.match(written, /## Steps/);
   });
+
+  it('preserves untouched frontmatter lines byte-for-byte (no reformatting of quoted values)', () => {
+    // Regression test: the writer used to fully reserialize the frontmatter block, silently
+    // stripping intentional double-quoting from title/argumentHint on every touched file.
+    const body = '## When to Use\n\nUse this when probing.\n\n## Steps\n\n1. Probe.';
+    const artifact = makeSkillArtifact({ filePath, body });
+    fs.writeFileSync(
+      filePath,
+      '---\nid: csharp/cs-probe\nkind: skill\ntitle: "Probe (parens)"\n' +
+        'argumentHint: "<package> [--dev]"\nname: cs-probe\nlanguage: csharp\n---\n\n' +
+        body,
+      'utf-8',
+    );
+    const catalog = makeCatalog([artifact]);
+    const findings = runConformance(catalog, [], { ruleId: 'when-to-use-lift' });
+
+    applyMechanicalFindings(findings, { catalog, targets: [] });
+
+    const written = fs.readFileSync(filePath, 'utf-8');
+    assert.match(written, /title: "Probe \(parens\)"/);
+    assert.match(written, /argumentHint: "<package> \[--dev\]"/);
+    assert.match(written, /whenToUse: Use this when probing\./);
+  });
+
+  it('does not leave an orphaned "---" divider when the removed section was followed by one', () => {
+    // Regression test: "## When to Use\n\n...\n\n---\n\n# Title" left a bare "---" right after
+    // frontmatter once the When to Use section was removed — that divider was the section's own
+    // trailing separator, not a divider between two remaining sections.
+    const body = '## When to Use\n\nUse this when probing.\n\n---\n\n# Title\n\nRest of body.';
+    const artifact = makeSkillArtifact({ filePath, body });
+    fs.writeFileSync(
+      filePath,
+      '---\nid: csharp/cs-probe\nkind: skill\nname: cs-probe\nlanguage: csharp\n---\n\n' + body,
+      'utf-8',
+    );
+    const catalog = makeCatalog([artifact]);
+    const findings = runConformance(catalog, [], { ruleId: 'when-to-use-lift' });
+
+    applyMechanicalFindings(findings, { catalog, targets: [] });
+
+    const written = fs.readFileSync(filePath, 'utf-8');
+    const afterFrontmatter = written.split(/^---$/m).slice(2).join('---').trim();
+    assert.ok(
+      !afterFrontmatter.startsWith('---'),
+      `body must not start with an orphaned divider, got: ${afterFrontmatter.slice(0, 40)}`,
+    );
+    assert.match(written, /# Title/);
+  });
 });
 
 describe('conformance rule: body-density', () => {

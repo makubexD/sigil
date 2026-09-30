@@ -26,18 +26,32 @@ function findSectionEnd(lines: readonly string[], startIdx: number): number {
   return lines.length;
 }
 
+/**
+ * A `---` divider at `endIdx` was the section's own trailing separator (prose authors commonly
+ * follow "## When to Use" with a `---` before the next heading) — removing the section without
+ * also consuming that divider would orphan a bare `---` right after frontmatter. A `##` heading
+ * at `endIdx` is real content and must stay untouched.
+ */
+function skipTrailingDivider(lines: readonly string[], endIdx: number): number {
+  if (!/^---\s*$/.test(lines[endIdx] ?? '')) return endIdx;
+  let i = endIdx + 1;
+  while (i < lines.length && (lines[i] ?? '').trim() === '') i++;
+  return i;
+}
+
 /** Pulls the `## When to Use` section out of a skill body, returning its text and the body minus that section. */
 export function extractWhenToUseSection(body: string): ExtractedSection | undefined {
   const lines = body.split(/\r?\n/);
   const startIdx = lines.findIndex(line => HEADING_RE.test(line.trim()));
   if (startIdx === -1) return undefined;
 
-  const endIdx = findSectionEnd(lines, startIdx);
+  const sectionEnd = findSectionEnd(lines, startIdx);
   const text = lines
-    .slice(startIdx + 1, endIdx)
+    .slice(startIdx + 1, sectionEnd)
     .join('\n')
     .trim();
-  const remainder = [...lines.slice(0, startIdx), ...lines.slice(endIdx)]
+  const remainderStart = skipTrailingDivider(lines, sectionEnd);
+  const remainder = [...lines.slice(0, startIdx), ...lines.slice(remainderStart)]
     .join('\n')
     .replace(/\n{3,}/g, '\n\n')
     .trim();

@@ -10,7 +10,7 @@ Claude-only unless a Copilot equivalent is found.
 
 ## Evidence
 
-- `src/targets/copilot/capabilities.ts:9-10,21-22` sets `hook` and `settings` to `mode: 'none'`
+- `src/targets/copilot/capabilities.ts:10,22-23` sets `hook` and `settings` to `mode: 'none'`
   with reason "Claude Code's own vocabulary"; `docs/reference/capabilities.md` shows `hook` and
   `settings` as `— (1)` for copilot scaffold.
 - Hook frontmatter is Claude's vocabulary: `KIND_REGISTRY` has `ownedBy: ['claude']` at

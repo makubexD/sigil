@@ -7,6 +7,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { ALL_KINDS } from '../dist-cli/kinds';
 import { stripAnsi } from './helpers/ansi';
@@ -16,8 +17,13 @@ const DOC = path.resolve(__dirname, '../docs/reference/cli-flags.md');
 const PKG_ROOT = path.resolve(__dirname, '..');
 
 function help(...args: string[]): string {
+  return helpFrom(PKG_ROOT, ...args);
+}
+
+function helpFrom(cwd: string, ...args: string[]): string {
   return stripAnsi(
     execFileSync(process.execPath, [CLI, ...args, '--help'], {
+      cwd,
       encoding: 'utf8',
       env: { ...process.env, COLUMNS: '400', FORCE_COLOR: '0' },
       windowsHide: true,
@@ -43,8 +49,26 @@ describe('sigil --help accuracy', () => {
     }
   });
 
+  it('should not leak the package root from any command, run outside the package', () => {
+    const commands = [...help().matchAll(/^ {2}([a-z][a-z0-9-]*)(?:\|[a-z0-9|-]+)?(?=\s)/gm)]
+      .map(match => match[1])
+      .filter((name): name is string => name !== undefined && name !== 'help');
+    assert.ok(commands.length >= 20, `expected the full command list, got ${commands.length}`);
+    const escaped = JSON.stringify(PKG_ROOT).slice(1, -1);
+    const leaks = commands.filter(name => {
+      const text = helpFrom(os.tmpdir(), name);
+      return text.includes(PKG_ROOT) || text.includes(escaped);
+    });
+    assert.deepEqual(leaks, [], `--help leaks the absolute package root for: ${leaks.join(', ')}`);
+  });
+
   it('should describe the --project-dir default as the current directory', () => {
     assert.match(help('add'), /--project-dir <dir>[^\n]*\(default: <cwd>\)/);
+  });
+
+  it('should keep package defaults labelled <package> when run from inside the package', () => {
+    const text = helpFrom(path.join(PKG_ROOT, 'catalog'), 'list');
+    assert.match(text, /--catalog-dir <dir>[^\n]*\(default: <package>\/catalog\)/);
   });
 
   it('should only claim that move rewrites extends/uses referrers', () => {

@@ -10,9 +10,9 @@ What does not work yet is listed under [Known limits today](#known-limits-today)
 
 ## 1. Use your own catalog
 
-Every command that reads the catalog takes `--catalog-dir <dir>` and `--packs <file>`
-(`build`, `validate`, `add`, `status`, `update`, `prune`, `list`, `sync`, … — see
-`src/cli.ts`). Without them they default to the catalog **bundled with the installed sigil
+Most commands that read the catalog take `--catalog-dir <dir>` and `--packs <file>`
+(`build`, `validate`, `add`, `status`, `update`, `prune`, `sync`, … — see
+`src/cli.ts`; `list`, `search`, `get` and `check` take only `--catalog-dir`). Without them they default to the catalog **bundled with the installed sigil
 package** (`resolveDefault` in `src/cli-helpers.ts`), so a team catalog must always pass them:
 
 ```bash

@@ -391,8 +391,8 @@ SKILL (7)
   csharp/cs-audit-deps [csharp] — Audit NuGet dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance
   csharp/cs-document [csharp] — Generate or update XML doc comments and module-level documentation following the project's documented docstring style
   csharp/cs-release [csharp] — Prepare a .NET release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification
-  csharp/cs-generate-tests [csharp] — Generate an xUnit + Moq test suite for a C# file or class following the project's documented test conventions
   csharp/cs-scaffold-project [csharp] — Scaffold a new .NET project with the solution's standards pre-wired — NRT, analyzers, CPM, file-scoped namespaces, correct src/tests layout — and add it to the .sln
+  csharp/cs-generate-tests [csharp] — Generate an xUnit + Moq test suite for a C# file or class following the project's documented test conventions
   csharp/cs-sync-tests [csharp] — Sync the xUnit test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)
 ```
 
@@ -472,7 +472,9 @@ Existing files are **never overwritten** unless you pass `--overwrite`:
   `--dry-run`.
 - `--overwrite` also reinstalls an up-to-date artifact, which makes it the way to reset a file you
   edited.
-- A file sigil installed that you then **deleted** is simply written again by a plain `sigil add`.
+- A file sigil installed that you then **deleted** is written again by `sigil add <that file's own id>` (or
+  `add --overwrite`). Adding a skill that depends on it does not restore it: the dependency is already recorded as
+  installed, so `add` skips it.
 
 ```bash
 sigil add skill:csharp/cs-generate-tests --target claude --overwrite --yes
@@ -500,13 +502,13 @@ All four accept `--project-dir` and `--target`. Step-by-step output for each is 
 
 **Status values:**
 
-| Status       | Meaning                                                                                                        |
-| ------------ | -------------------------------------------------------------------------------------------------------------- |
-| `up-to-date` | Files match what sigil installed                                                                               |
-| `outdated`   | The artifact's shared template was revised since you installed. Run `sigil update`                             |
-| `drifted`    | You edited a file. `update` keeps your version unless the catalog changed it too, and then needs `--force`     |
-| `missing`    | A file sigil installed was deleted. `sigil add <id>` writes it again (config entries are restored by `update`) |
-| `orphaned`   | The artifact is no longer in the catalog. `sigil prune` reports it and `--apply` removes it                    |
+| Status       | Meaning                                                                                                                                            |
+| ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `up-to-date` | Files match what sigil installed                                                                                                                   |
+| `outdated`   | The artifact's shared template was revised since you installed. Run `sigil update`                                                                 |
+| `drifted`    | You edited a file. `update` keeps your version unless the catalog changed it too, and then needs `--force`                                         |
+| `missing`    | A file sigil installed was deleted. `sigil add <that entry's own id>` writes it again; `update` restores only config entries (MCP, hook, settings) |
+| `orphaned`   | The artifact is no longer in the catalog. `sigil prune` reports it and `--apply` removes it                                                        |
 
 A non-`up-to-date` row prints its reason on the next line. `status` is diagnostic only: a catalog
 change that is not a template revision still shows `up-to-date` here, and `sigil update` applies it

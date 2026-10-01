@@ -54,7 +54,7 @@ Every kind's schema spreads `BaseFields` (`src/schema/shared.ts`):
 
 | Field         | Required | Meaning                                                                                                                                                                                             |
 | ------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `id`          | yes      | Namespaced kebab-case, one to three segments (`shared/foo`, `typescript/ts-foo`). Enforced by `KEBAB_ID_RE`, because adapters interpolate it into output paths.                                     |
+| `id`          | yes      | Namespaced kebab-case, two or three segments (`shared/foo`, `typescript/ts-foo`). Enforced by `KEBAB_ID_RE`, because adapters interpolate it into output paths.                                     |
 | `kind`        | yes      | Discriminator; each schema pins it to its own literal.                                                                                                                                              |
 | `title`       | yes      | Short human-readable title.                                                                                                                                                                         |
 | `description` | yes      | One-line description used in listings and emitted as the provider `description`.                                                                                                                    |

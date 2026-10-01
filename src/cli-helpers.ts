@@ -58,7 +58,7 @@ export function describePathDefaults(root: Command): void {
   for (const option of root.options) {
     const value: unknown = option.defaultValue;
     if (typeof value !== 'string' || option.defaultValueDescription !== undefined) continue;
-    if (value === process.cwd()) {
+    if (option.long === '--project-dir' && value === process.cwd()) {
       option.defaultValueDescription = '<cwd>';
     } else if (value === PKG_ROOT || value.startsWith(PKG_ROOT + path.sep)) {
       const relative = path.relative(PKG_ROOT, value).split(path.sep).join('/');

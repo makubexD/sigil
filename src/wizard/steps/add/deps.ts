@@ -1,8 +1,9 @@
 import { select, note } from '@clack/prompts';
-import { resolveSelection, computeClosure, kindNoun, type ClosurePreview } from '../../../select';
+import { computeClosure, kindNoun, type ClosurePreview } from '../../../select';
 import { hasUsesClosure } from '../../../kinds';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { chosenTarget, type AddWizardState } from './state';
+import { previewSelection } from './plan-preview';
 import { BACK_OPTION, resolveOutcome } from './prompt-helpers';
 import { CLI_LABEL_COL_WIDTH } from '../../../cli-helpers';
 
@@ -11,12 +12,7 @@ const VIA_INLINE_LIMIT = 2;
 
 /** True when at least one resolved id belongs to a kind with a `uses:` dependency closure. */
 function selectionHasClosure(s: AddWizardState): boolean {
-  const { ids } = resolveSelection({
-    selectors: s.selectors ?? [],
-    filters: { language: s.language },
-    catalog: s.ctx.catalog,
-    packs: s.ctx.packs,
-  });
+  const { ids } = previewSelection(s);
   return ids.some(id => hasUsesClosure(s.ctx.catalog.byId.get(id)?.kind ?? ''));
 }
 
@@ -35,27 +31,21 @@ function renderDepLine(
 /** Builds the "About dependencies" note body for the given closure preview. */
 function buildDepsNoteBody(ct: ReturnType<typeof chosenTarget>, cp: ClosurePreview): string {
   if (cp.dependencies.length === 0) {
-    return 'Your current selection has no uses: dependencies — only your selected artifacts will be written.';
+    return 'Nothing else is needed: only the items you picked will be written.';
   }
   const lines = cp.dependencies.map(dep => renderDepLine(ct, dep));
   return (
-    'The skill author recommends installing these alongside it\n' +
-    "(declared in the skill's `uses:` frontmatter — not a hard requirement):\n" +
+    'These skills work best together with these helpers (rules and agents they refer to):\n' +
     lines.join('\n') +
-    '\n\nYes installs these too. No installs only your selection (--no-deps).'
+    '\n\nYes installs the helpers too (recommended). No installs only what you picked;\n' +
+    'the skill still works, but may mention helpers that are not there. (--no-deps)'
   );
 }
 
 /** Computes the closure preview and shows the "About dependencies" note for it. */
 function showDepsNote(s: AddWizardState): void {
   const ct = chosenTarget(s);
-  const { ids: primaryIds } = resolveSelection({
-    selectors: s.selectors!,
-    filters: { language: s.language },
-    catalog: s.ctx.catalog,
-    packs: s.ctx.packs,
-  });
-  const cp: ClosurePreview = computeClosure(primaryIds, s.ctx.catalog);
+  const cp: ClosurePreview = computeClosure(previewSelection(s).ids, s.ctx.catalog);
   note(buildDepsNoteBody(ct, cp), 'About dependencies');
 }
 
@@ -73,10 +63,10 @@ export const depsStep: WizardStep<AddWizardState> = {
     showDepsNote(s);
 
     const answer = await select({
-      message: 'Include dependencies?',
+      message: 'Install these helpers too?',
       options: [
-        { value: 'yes', label: 'Yes', hint: 'install skills + their dependency closure' },
-        { value: 'no', label: 'No', hint: 'install selected only (--no-deps)' },
+        { value: 'yes', label: 'Yes (recommended)', hint: 'what the skill author suggests' },
+        { value: 'no', label: 'No', hint: 'only the items I picked' },
         BACK_OPTION,
       ],
       initialValue: s.includeDeps === false ? 'no' : 'yes',

@@ -82,13 +82,15 @@ JSON section. Non-config defaults (overwrite, deps, language) may still be omitt
 step must extend `buildEquivalentCommand` + that call site + a case in `test/wizard/add.test.ts`
 in the same change. The step list itself is `ADD_STEPS` in `src/wizard/steps/add/index.ts`.
 
-**Top menu (scope step):** the top-level "What would you like to install?" menu has three entries:
+**Top menu (scope step):** the top-level "What would you like to install?" menu has three entries. "Pick
+specific items" is the preselected one, and `all` asks for a confirmation (default No) because it
+includes hooks and MCP servers:
 
 | Entry               | Value    | Next                                        | When             |
 | ------------------- | -------- | ------------------------------------------- | ---------------- |
-| Everything          | `all`    | optional language filter → deps             | always           |
-| Recommended         | `pack`   | which bundle? → deps                        | when packs exist |
 | Pick specific items | `browse` | kind sub-menu (led by "All types") → picker | always           |
+| Recommended         | `pack`   | which bundle? → deps                        | when packs exist |
+| Everything          | `all`    | confirm → optional language filter → deps   | always           |
 
 **Three-level information architecture** — type is the spine; language is never a top-level choice:
 
@@ -106,6 +108,16 @@ Level 3 — LANGUAGE (injected only where relevant):
   · Config kinds (MCP / Hooks / Settings) → straight to picker, NEVER asked about language
   · "Everything" → same optional skippable filter with note that MCPs/hooks/settings always included
 ```
+
+**Wizard answers must stay consistent.** `applyScope` (`scope.ts`) clears `language`, `selectors`,
+`kindPick` and `browseAll` when the scope changes, and `resetAfterTarget` clears `configScope`; a stale
+filter would otherwise install 0 items. Every count or list a step shows comes from `previewSelection`
+(`plan-preview.ts`), which applies the target's supported kinds and platform, so the plan never promises
+what the install will skip. The overwrite step has a `shouldShow` (`conflictsFor`): it is asked only for
+`foreign`/`drifted`/`outdated` picks, and `s.overwrite` defaults to `false` in `buildInitialState`.
+Pickers go through `pickUntilUsable` (`pick.ts`), which re-asks on an empty answer or a ticked
+"← Back" next to picks, and starts with the earlier picks ticked. `Target.afterInstallHint` feeds the
+`Next:` line after an install; never hardcode a tool name in `render.ts`.
 
 **History invariant:** pass-through / auto-forward steps must **never** push a history frame — only
 steps that actually rendered a prompt do. Violating this causes back-navigation to return the wrong

@@ -1,17 +1,14 @@
 import { select, note } from '@clack/prompts';
-import { resolveSelection, CONFIG_KINDS } from '../../../select';
+import { CONFIG_KINDS } from '../../../select';
+import { isHomeScopedRoot } from '../../../config-utils';
 import type { ConfigKind, ConfigScopeInfo, ConfigScopeDestination } from '../../../types';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { chosenTarget, type AddWizardState } from './state';
+import { previewSelection } from './plan-preview';
 import { BACK_OPTION, resolveOutcome } from './prompt-helpers';
 
 function resolvedIds(s: AddWizardState): string[] {
-  return resolveSelection({
-    selectors: s.selectors ?? [],
-    filters: { language: s.language },
-    catalog: s.ctx.catalog,
-    packs: s.ctx.packs,
-  }).ids;
+  return previewSelection(s).ids;
 }
 
 function hasConfigKind(s: AddWizardState): boolean {
@@ -36,12 +33,29 @@ function destinationTargets(destinations: ConfigScopeDestination[]): string[] {
   ];
 }
 
+/** Plain-language names for the scopes; the technical value stays in the equivalent command. */
+const PLAIN_LABELS: Record<string, string> = {
+  project: 'This project, shared with your team (recommended)',
+  local: 'This project, just me (not shared)',
+  user: 'All my projects (your home folder)',
+};
+
+/** True when this scope writes a file in the home folder, even if only this project's part of it. */
+const touchesHome = (si: ConfigScopeInfo): boolean =>
+  si.destinations.some(d => isHomeScopedRoot(d.root));
+
+/** The recommended scope first, then the rest in the target's own order. */
+const projectFirst = (infos: ConfigScopeInfo[]): ConfigScopeInfo[] => [
+  ...infos.filter(si => si.value === 'project'),
+  ...infos.filter(si => si.value !== 'project'),
+];
+
 function buildScopeOptions(scopeInfos: ConfigScopeInfo[]) {
   return [
     BACK_OPTION,
-    ...scopeInfos.map(si => ({
+    ...projectFirst(scopeInfos).map(si => ({
       value: si.value,
-      label: `${si.label}   (precedence ${si.precedence})`,
+      label: PLAIN_LABELS[si.value] ?? si.label,
       hint: `${destinationTargets(si.destinations).join('  ·  ')}  — ${si.description}`,
     })),
   ];
@@ -60,18 +74,29 @@ function buildAllProjectsWarning(uniqueTargets: string[], hasSettings: boolean):
   );
 }
 
-/** Shows the "writes to every project" warning note when the chosen scope has all-projects blast radius. */
-function warnIfAllProjectsScope(
+/** The note for a scope that stays inside this project but is stored in a home-folder file. */
+function buildHomeFileNote(uniqueTargets: string[]): string {
+  return (
+    'This scope is only for this project, but it is stored in a file in your home folder:\n' +
+    uniqueTargets.map(p => `     ${p}`).join('\n') +
+    "\nsigil only adds this project's part. A backup is saved to <file>.sigil.bak before the first write."
+  );
+}
+
+/** Warns when the chosen scope writes outside the project: loudly for every project, quietly for a home file. */
+function warnIfOutsideProject(
   s: AddWizardState,
   allIds: string[],
   chosenScopeInfo: ConfigScopeInfo | undefined,
 ): void {
-  if (chosenScopeInfo?.blastRadius !== 'all-projects') return;
-  const hasSettings = allIds.some(id => s.ctx.catalog.byId.get(id)?.kind === 'settings');
-  note(
-    buildAllProjectsWarning(destinationTargets(chosenScopeInfo.destinations), hasSettings),
-    'Blast-radius warning',
-  );
+  if (!chosenScopeInfo) return;
+  const targets = destinationTargets(chosenScopeInfo.destinations);
+  if (chosenScopeInfo.blastRadius === 'all-projects') {
+    const hasSettings = allIds.some(id => s.ctx.catalog.byId.get(id)?.kind === 'settings');
+    note(buildAllProjectsWarning(targets, hasSettings), 'Blast-radius warning');
+  } else if (touchesHome(chosenScopeInfo)) {
+    note(buildHomeFileNote(targets), 'Heads up');
+  }
 }
 
 /** Config-kind install scope picker (project/local/user) — shown only when a config-kind artifact is selected. */
@@ -84,7 +109,7 @@ export const configScopeStep: WizardStep<AddWizardState> = {
     const scopeInfos = ct?.configScopes?.(selectedConfigKinds(s, allIds), s.ctx.projectDir) ?? [];
 
     const scopeAnswer = await select({
-      message: 'Where should config artifacts (hook/settings/mcp) be installed?',
+      message: 'Where should the MCP servers, hooks and settings be saved?',
       options: buildScopeOptions(scopeInfos),
       initialValue: s.configScope ?? 'project',
     });
@@ -93,7 +118,7 @@ export const configScopeStep: WizardStep<AddWizardState> = {
 
     s.configScope = scopeAnswer as string;
     const chosenScopeInfo = scopeInfos.find(si => si.value === s.configScope);
-    warnIfAllProjectsScope(s, allIds, chosenScopeInfo);
+    warnIfOutsideProject(s, allIds, chosenScopeInfo);
 
     return 'next';
   },

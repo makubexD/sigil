@@ -120,11 +120,18 @@ function printOutcomeEquivalentCommand(plan: AddPlan): void {
   );
 }
 
+/** Tells the user what to do so the tool picks up what was just written. */
+function printNextSteps(plan: AddPlan, outcome: AddOutcome, written: number): void {
+  const hint = plan.target.afterInstallHint;
+  if (hint && written + outcome.configWrittenCount > 0) console.log(`\nNext: ${hint}`);
+}
+
 /** Prints the final summary after a real install: counts, per-file listing, equivalent command. */
 export function renderOutcome(plan: AddPlan, outcome: AddOutcome): void {
   const written = Object.keys(plan.toWrite).length + outcome.overwrittenCount;
   console.log(buildOutcomeSummaryLine(plan, outcome, written));
 
   if (written > 0) printWrittenFileListing(plan, outcome);
+  printNextSteps(plan, outcome, written);
   printOutcomeEquivalentCommand(plan);
 }

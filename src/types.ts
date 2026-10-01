@@ -443,6 +443,9 @@ export interface Target {
   /** One-line install-destination hint shown in wizard pickers (e.g. 'writes to .claude/'). */
   installHint?: string;
 
+  /** What to do after files are written so the tool picks them up (restart, reload, how to invoke). */
+  afterInstallHint?: string;
+
   /**
    * Platform-namespaced authoring fields this target contributes to `sigil patch`.
    * Each becomes a `--<target.name>-<key>` CLI option and writes to

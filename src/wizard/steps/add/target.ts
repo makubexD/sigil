@@ -11,6 +11,7 @@ function resetAfterTarget(s: AddWizardState): void {
   s.language = undefined;
   s.kindPick = undefined;
   s.browseAll = undefined;
+  s.configScope = undefined; // scopes differ per tool, so a stale one could be invalid
 }
 
 /** Recomputes install states for the chosen target's visible artifacts, if not already cached. */
@@ -43,7 +44,7 @@ function targetQuestion(s: AddWizardState): string {
     found.length > 0
       ? `found: ${found.map(label).join(', ')}`
       : `nothing set up in this folder yet, so ${label(s.ctx.detectedTarget)} is preselected`;
-  return `Which AI tool is this project for?  (${note})`;
+  return `Which AI tool is this project for?  (${note}; for both tools, run the installer once for each)`;
 }
 
 /** Applies the chosen target to state, resetting downstream answers if it changed. */

@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Install wizard, for first-timers: a "How this works" note, "Pick specific items" preselected, and
+  "Everything" asks for confirmation. Enter with nothing ticked asks again, and ticking "← Back"
+  together with items warns instead of dropping them. Going back keeps your picks. The plan box counts
+  only what the chosen tool can take, says what is already up to date, and offers only Back or Cancel
+  when there is nothing new. "Replace existing files?" is asked only when something would be replaced,
+  names each file and why, and says your edits are lost. Config scopes have plain names, and a scope
+  stored in a home-folder file gets a note. After an install sigil prints a **Next:** line for the tool.
 - Home menu: "Repair the install record" appears when `.sigil/manifest.json` cannot be read. It moves
   the damaged file aside (`manifest.damaged-<time>.json`), and the menu hides Install until then.
 - Home menu: Install (and install from a search result) asks first in your home folder, the top of a
@@ -77,6 +84,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The guided Update says "Everything is already up to date" instead of asking to apply nothing, and an
   edited config value now gets the same overwrite option as an edited file. `sigil update` points
   orphaned artifacts at `sigil prune`, as `status` does.
+- Install wizard: the dependency step is worded as "Install these helpers too?", and the language
+  question appears only when there are two or more languages. A stale language filter or config scope
+  no longer survives a change of scope or tool.
 - Copilot is detected from its own files (`.github/copilot-instructions.md`, `instructions/`,
   `prompts/`, `agents/`, `skills/`), not from any `.github/` folder, so a repo that only uses GitHub
   Actions is no longer treated as a Copilot project. Any one marker is enough (it used to need all).

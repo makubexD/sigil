@@ -39,6 +39,12 @@ export function availableKinds(artifacts: ResolvedArtifact[]): ArtifactKind[] {
  * Returns `[]` when the array has no language-tagged artifacts (caller skips the prompt).
  * Each option carries a count hint reflecting the passed subset.
  */
+/** True when there are at least two languages to choose between: one language is no choice. */
+export function hasLanguageChoice(artifacts: ResolvedArtifact[]): boolean {
+  const options = buildLanguageOptions(artifacts); // "All languages" plus one row per language
+  return options.length - 1 > 1;
+}
+
 export function buildLanguageOptions(
   artifacts: ResolvedArtifact[],
 ): Array<{ value: string; label: string; hint: string }> {

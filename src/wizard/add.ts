@@ -10,13 +10,19 @@
  *
  * Guard: caller must check isInteractiveTTY() before invoking runWizard().
  */
-import { intro } from '@clack/prompts';
+import { intro, note } from '@clack/prompts';
 import type { ResolvedCatalog, Pack } from '../types';
 import { getAllTargets } from '../targets';
 import type { WizardResult } from './types';
 import { runSteps } from './engine';
 import { ADD_STEPS } from './steps/add';
 import type { AddWizardState } from './steps/add';
+
+const HOW_IT_WORKS = [
+  'An artifact is one installable item: a skill, agent, rule, command, MCP server, hook or',
+  'settings entry. Choose what you want; nothing is written until you confirm at the end.',
+  'Every step has a "← Back" row, and Ctrl+C cancels without changing anything.',
+].join('\n');
 
 function buildInitialState(
   catalog: ResolvedCatalog,
@@ -35,6 +41,8 @@ function buildInitialState(
     // Matches the pre-registry wizard's default: config-kind-only selections
     // (which skip the deps prompt entirely) behave as if "Yes" was answered.
     includeDeps: true,
+    // The overwrite step is asked only when something conflicts; otherwise nothing is replaced.
+    overwrite: false,
   };
 }
 
@@ -56,6 +64,7 @@ export async function runWizard(
   projectDir: string,
 ): Promise<WizardResult | null> {
   intro('📦  sigil  —  interactive installer');
+  note(HOW_IT_WORKS, 'How this works');
 
   const state = buildInitialState(catalog, packs, detectedTarget, projectDir);
   const done = await runSteps(ADD_STEPS, state);

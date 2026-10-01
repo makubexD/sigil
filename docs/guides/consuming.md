@@ -124,27 +124,40 @@ is about the install wizard, `sigil add`.
 sigil add
 ```
 
-Use the arrow keys and Enter. Every step has a **← Back** option, and Ctrl+C cancels without writing
-anything. The steps run in this order; a step that does not apply to your choices is skipped:
+Use the arrow keys and Enter. A short "How this works" note comes first. Every step has a **← Back**
+row, and Ctrl+C cancels without writing anything. In the picker, Space ticks an item and Enter
+confirms; Enter with nothing ticked asks again instead of going back. The steps run in this order; a
+step that does not apply to your choices is skipped:
 
 1. **Which AI tool** — Claude Code or GitHub Copilot. The question says what sigil found in the
    folder; with nothing found, Claude Code is preselected and the question says so.
-2. **Scope** — Everything, Recommended (a curated pack), or Pick specific items.
+2. **Scope** — Pick specific items (preselected), Recommended (a curated pack), or Everything.
+   Everything asks "Install all N artifacts?" (default No) because it includes hooks and MCP servers,
+   which run commands and connect to services.
 3. **Pack** — only under Recommended: which bundle.
 4. **Browse and pick** — only under Pick specific items: choose a type (skills, agents, rules,
    commands, MCP servers, hooks, settings) or "All types", then tick the items you want.
 5. **Language** — for code artifacts, an optional "Narrow by language?" step. Press Enter to keep all.
-6. **Dependencies** — shows the rules and agents your picks reference through `uses:`. These are the
-   author's recommendation ("you will probably want these too"). Yes installs them; No skips them,
+   It appears only when there are at least two languages to choose between.
+6. **Helpers** (dependencies) — shows the rules and agents your picks refer to through `uses:`. These
+   are the author's recommendation. Yes installs them (recommended); No installs only what you picked,
    like `--no-deps`.
-7. **Overwrite** — whether to replace files that already exist.
-8. **Config scope** — only when you picked an MCP server, hook, or settings artifact. Choose
-   `project`, `local`, or `user`; each choice shows the file it will write to, with a warning when
-   the scope affects every project on your machine.
-9. **Proceed** — an Install plan box lists your picks (`your pick`) and the extra artifacts pulled in
-   (`dependency of <skill>`). Confirm to write.
+7. **Replace existing files?** — asked only when a pick would meet a file that is already there and is
+   not an untouched sigil install: one you edited, one sigil did not write, or one the catalog has
+   updated. The step names each one and why. No keeps your files and installs the rest (default);
+   Yes replaces them, and your edits to them are lost (`--overwrite`). With nothing to replace there
+   is no question.
+8. **Where to save config** — only when you picked an MCP server, hook, or settings artifact:
+   "This project, shared with your team" (`project`, recommended), "This project, just me" (`local`),
+   or "All my projects" (`user`). Each choice shows the file it writes. A note appears when that file
+   is in your home folder, and a stronger warning when it affects every project.
+9. **Proceed** — an Install plan box lists your picks (`your pick`), the extra artifacts pulled in
+   (`dependency of <skill>`), which are already up to date and will be skipped, and which the chosen
+   tool cannot take (for example hooks on Copilot). If there is nothing new to install it says so and
+   offers only Back or Cancel. Confirm to write.
 
-When it finishes, sigil prints a ready-to-paste `sigil add ... --yes` line so you can repeat the same
+When it finishes, sigil prints a **Next:** line (open a new Claude Code session, or reload the VS
+Code window for Copilot) and a ready-to-paste `sigil add ... --yes` line so you can repeat the same
 install in a script or CI.
 
 **What the markers in the picker mean.** Nothing is pre-ticked; the markers only tell you where each

@@ -185,6 +185,15 @@ describe('detectProjectContext', () => {
     });
   });
 
+  it('should call an artifact the catalog dropped orphaned even when its files are gone', () => {
+    withTempDir(dir => {
+      install(dir, [entry(dir, 'old/thing', '.claude/rules/o.md', null, 'was here')]);
+      const ctx = detectProjectContext(dir, { catalogIds: new Set(['some/other']) });
+      assert.equal(ctx.health.orphaned, 1);
+      assert.equal(ctx.health.missing, 0);
+    });
+  });
+
   it('should keep going and say so when the manifest cannot be read', () => {
     withTempDir(dir => {
       touch(dir, '.sigil/manifest.json', '{ not json');
@@ -243,10 +252,15 @@ describe('recommendNext', () => {
     assert.equal(first(context({ manifestPresent: false, installed: 0 }))?.action, 'install');
   });
 
-  it('should order problems: restore missing, review drift, update outdated, prune orphans', () => {
+  it('should order problems: restore missing, update outdated, prune orphans', () => {
     const health = { 'up-to-date': 0, outdated: 1, drifted: 1, orphaned: 1, missing: 1 };
     const actions = recommendNext(context({ installed: 4, health })).map(r => r.action);
-    assert.deepEqual(actions, ['restore', 'status', 'update', 'prune']);
+    assert.deepEqual(actions, ['restore', 'update', 'prune']);
+  });
+
+  it('should not nag about files the user edited on purpose', () => {
+    const health = { 'up-to-date': 2, outdated: 0, drifted: 1, orphaned: 0, missing: 0 };
+    assert.deepEqual(recommendNext(context({ health })), []);
   });
 
   it('should suggest nothing when everything is installed and healthy', () => {

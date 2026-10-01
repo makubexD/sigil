@@ -43,10 +43,13 @@ function setupAdvice(ctx: ProjectContext): Recommendation[] {
   return [{ action: 'install', reason: 'Nothing is installed here yet.' }];
 }
 
-/** One row per problem status, in the order the menu suggests fixing them. */
+/**
+ * One row per problem status, in the order the menu suggests fixing them. Edited files (drifted)
+ * are deliberately absent: an edit is the user's own choice, the header already counts it, and no
+ * action "fixes" it, so recommending one would repeat forever.
+ */
 const HEALTH_ADVICE: ReadonlyArray<readonly [ArtifactStatus, NextAction, string]> = [
   ['missing', 'restore', 'have deleted files'],
-  ['drifted', 'status', 'were edited after install'],
   ['outdated', 'update', 'have a newer catalog version'],
   ['orphaned', 'prune', 'are gone from the catalog'],
 ];

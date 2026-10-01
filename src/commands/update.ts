@@ -17,7 +17,7 @@ import { requireManifest } from './shared/manifest';
 import type { ManifestEntry, Manifest } from '../manifest/types';
 import type { ResolvedCatalog, Target } from '../types';
 import { SigilError } from '../errors';
-import { isConfigEntry, updateConfigEntry } from './update-config';
+import { applyConfigEntry, isConfigEntry } from './update-config';
 import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
@@ -63,7 +63,7 @@ function printUpdateSummary(
     console.log(
       `\n✓ ${updatedCount} artifact(s) updated` +
         (skippedDrift > 0 ? `, ${skippedDrift} file(s) skipped (drifted)` : '') +
-        (orphanedCount > 0 ? `, ${orphanedCount} orphaned (run sigil uninstall)` : '') +
+        (orphanedCount > 0 ? `, ${orphanedCount} no longer in the catalog (run sigil prune)` : '') +
         '.',
     );
   } else {
@@ -83,6 +83,7 @@ function printNoEntriesMessage(idFilter: Set<string>, targetName: string): void 
 
 interface EntryUpdateOutcome {
   updated: boolean;
+  pending?: boolean;
   skippedDriftCount: number;
   orphaned: boolean;
 }
@@ -95,6 +96,18 @@ interface UpdateRunCtx {
   opts: UpdateOptions;
 }
 
+/** Brings a config-kind entry (hook/settings/mcp) up to date. */
+async function updateConfigOutcome(
+  entry: ManifestEntry,
+  ctx: UpdateRunCtx,
+): Promise<EntryUpdateOutcome> {
+  const { opts } = ctx;
+  const freshOps = await catalogConfigOps(entry.id, ctx, opts.projectDir);
+  const { wrote, skipped } = applyConfigEntry(entry, opts, freshOps);
+  const pending = wrote && !!opts.dryRun;
+  return { updated: wrote, pending, skippedDriftCount: skipped, orphaned: false };
+}
+
 /** Updates one manifest entry: orphan check, then config-kind or whole-file update. */
 async function updateOneEntry(
   entry: ManifestEntry,
@@ -102,22 +115,19 @@ async function updateOneEntry(
 ): Promise<EntryUpdateOutcome> {
   const { catalogIds, resolved, target, opts } = ctx;
   if (!catalogIds.has(entry.id)) {
-    console.log(`  ✗  ${entry.id}  (orphaned — no longer in catalog, run sigil uninstall)`);
+    console.log(`  ✗  ${entry.id}  (no longer in the catalog — run sigil prune to clean up)`);
     return { updated: false, skippedDriftCount: 0, orphaned: true };
   }
 
-  if (isConfigEntry(entry)) {
-    const freshOps = await catalogConfigOps(entry.id, ctx, opts.projectDir);
-    const updated = updateConfigEntry(entry, opts, freshOps);
-    return { updated, skippedDriftCount: 0, orphaned: false };
-  }
-
+  if (isConfigEntry(entry)) return updateConfigOutcome(entry, ctx);
   const result = await updateWholeFileEntry(entry, resolved, target, opts);
   return { ...result, orphaned: false };
 }
 
 export interface UpdateRunTotals {
   updatedCount: number;
+  /** In a preview (`--dry-run`): how many artifacts would change. */
+  pendingCount: number;
   skippedDrift: number;
   orphanedCount: number;
 }
@@ -128,6 +138,7 @@ async function updateAllEntries(
   ctx: UpdateRunCtx,
 ): Promise<UpdateRunTotals> {
   let updatedCount = 0;
+  let pendingCount = 0;
   let skippedDrift = 0;
   let orphanedCount = 0;
 
@@ -135,10 +146,11 @@ async function updateAllEntries(
     const outcome = await updateOneEntry(entry, ctx);
     if (outcome.orphaned) orphanedCount++;
     if (outcome.updated) updatedCount++;
+    if (outcome.pending) pendingCount++;
     skippedDrift += outcome.skippedDriftCount;
   }
 
-  return { updatedCount, skippedDrift, orphanedCount };
+  return { updatedCount, pendingCount, skippedDrift, orphanedCount };
 }
 
 interface UpdateRunSetup {

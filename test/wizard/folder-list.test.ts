@@ -160,6 +160,31 @@ describe('classifyFolderInput', () => {
   });
 });
 
+describe('classifyFolderInput for a drive that is not there', () => {
+  it(
+    'should not throw, and should say the drive is not available',
+    { skip: process.platform !== 'win32' },
+    () => {
+      const letter = 'ZYXWVUTSRQP'.split('').find(l => !fs.existsSync(`${l}:/`));
+      assert.ok(letter, 'a free drive letter');
+      for (const input of [`${letter}:/proj`, `${letter}:`]) {
+        const found = classifyFolderInput(input, 'C:/', 'C:/home');
+        assert.equal(found.status, 'unavailable', input);
+        assert.match(folderInputError(found) ?? '', /not available/);
+      }
+    },
+  );
+
+  it(
+    'should not throw for a network share that does not exist',
+    { skip: process.platform !== 'win32' },
+    () => {
+      const found = classifyFolderInput('//nohost-sigil/share/x', 'C:/', 'C:/home');
+      assert.equal(found.status, 'unavailable');
+    },
+  );
+});
+
 describe('folderInputError', () => {
   it('should let an existing or creatable folder through', () => {
     withTempDir(dir => {

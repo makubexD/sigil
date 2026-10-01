@@ -114,7 +114,7 @@ export function showPlanBox(s: AddWizardState, view: PlanView): void {
       ...head,
       '',
       body,
-      ...artifactLines(view, ct, s.includeDeps ?? true),
+      ...artifactLines(view, ct, Boolean(s.includeDeps)),
       ...skippedLine(view, ct),
     ].join('\n'),
     'Install plan',

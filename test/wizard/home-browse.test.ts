@@ -38,6 +38,15 @@ describe('search from the home menu', () => {
     });
   });
 
+  it('should not offer what the tool in this folder cannot take, and say so', async () => {
+    await withTempDirAsync(async dir => {
+      fs.mkdirSync(path.join(dir, '.github', 'prompts'), { recursive: true }); // a Copilot project
+      // Copilot has no hooks, so the only match is hidden and no list is shown (a prompt would throw).
+      const { infos } = await runSearch(dir, ['protect-config']);
+      assert.match(infos.join(' '), /GitHub Copilot/);
+    });
+  });
+
   it('should do nothing when the query is left empty or cancelled', async () => {
     await withTempDirAsync(async dir => {
       await runSearch(dir, ['']);

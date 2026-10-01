@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { confirm, isCancel, cancel, note, select } from '@clack/prompts';
+import { confirm, isCancel, cancel, log, note, select } from '@clack/prompts';
 import { isInteractiveTTY } from '../wizard';
 import { SigilError } from '../errors';
 
@@ -90,4 +90,21 @@ export async function confirmUninstall(
     throw new SigilError('stdin/stdout is not interactive. Re-run with --yes to confirm.');
   }
   return (await promptUninstallConfirmation(ids, targetName)) ? { force } : null;
+}
+
+/** The command that repeats a guided removal in a script: it carries what was confirmed and chosen. */
+function equivalentUninstall(ids: string[], force: boolean, target?: string): string {
+  const parts = [
+    'sigil uninstall',
+    ...ids,
+    '--yes',
+    force ? '--force' : '',
+    target ? `--target ${target}` : '',
+  ];
+  return parts.filter(Boolean).join(' ');
+}
+
+/** Logs the command that repeats a guided removal; call it only after the user confirmed. */
+export function logEquivalentUninstall(ids: string[], force: boolean, target?: string): void {
+  log.info(`Equivalent command: ${equivalentUninstall(ids, force, target)}`);
 }

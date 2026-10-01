@@ -7,7 +7,9 @@
  */
 import path from 'node:path';
 import { cancel, confirm, isCancel, log, select, text } from '@clack/prompts';
-import { resolveDefault } from '../cli-helpers';
+import { detectProjectTarget, resolveDefault } from '../cli-helpers';
+import { getTarget } from '../targets';
+import { supportsKind } from '../targets/capabilities';
 import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { searchArtifacts } from '../query';
@@ -71,11 +73,27 @@ async function pickResult(results: ReturnType<typeof searchArtifacts>): Promise<
   return isCancel(choice) || choice === BACK ? null : String(choice);
 }
 
+/** Keeps the matches the folder's tool can install; says how many were left out and why. */
+function usableResults(
+  results: ReturnType<typeof searchArtifacts>,
+  dir: string,
+): ReturnType<typeof searchArtifacts> {
+  const target = getTarget(detectProjectTarget(dir));
+  const usable = results.filter(r => supportsKind(target, r.artifact.kind));
+  const hidden = results.length - usable.length;
+  if (hidden > 0) {
+    log.info(
+      `${hidden} match(es) hidden: ${target.displayName ?? target.name} cannot take those kinds.`,
+    );
+  }
+  return usable;
+}
+
 export const search: HomeHandler = async dir => {
   const query = await ask('Search for (a word or two):');
   if (!query) return;
   const resolved = resolveCatalog(await loadCatalog(CATALOG()));
-  const results = searchArtifacts(resolved, query);
+  const results = usableResults(searchArtifacts(resolved, query), dir);
   if (results.length === 0) {
     log.info(`No matches for '${query}'. Try another word, or choose "Browse the catalog".`);
     return;

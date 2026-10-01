@@ -135,9 +135,15 @@ describe('runUninstall without ids', () => {
 
     it('should log an equivalent command that can be pasted into a script, after confirming', async () => {
       const keep = await removeEdited([['a/one'], 'keep', true]);
-      assert.ok(keep.messages.includes('Equivalent command: sigil uninstall a/one --yes'));
+      assert.ok(
+        keep.messages.includes('Equivalent command: sigil uninstall a/one --yes --target claude'),
+      );
       const del = await removeEdited([['a/one'], 'delete', true]);
-      assert.ok(del.messages.includes('Equivalent command: sigil uninstall a/one --yes --force'));
+      assert.ok(
+        del.messages.includes(
+          'Equivalent command: sigil uninstall a/one --yes --force --target claude',
+        ),
+      );
       const declined = await removeEdited([['a/one'], 'keep', false]);
       assert.deepEqual(
         declined.messages.filter(m => m.startsWith('Equivalent')),

@@ -7,12 +7,11 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { log } from '@clack/prompts';
 import { detectProjectTarget } from '../cli-helpers';
 import { saveManifest, removeEntries, sha256 } from '../manifest';
 import { requireManifest } from './shared/manifest';
 import { chooseIdsToUninstall } from './uninstall-guided';
-import { confirmUninstall } from './uninstall-confirm';
+import { confirmUninstall, logEquivalentUninstall } from './uninstall-confirm';
 import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
 import { configEntriesOf, reverseMergeConfigEntries } from './uninstall-config';
@@ -155,11 +154,6 @@ export async function runUninstall(ids: string[], opts: UninstallOptions): Promi
   if (chosen) await uninstallIds(chosen, manifest, targetName, { opts, guided });
 }
 
-/** The command that repeats a guided removal in a script: it must carry what was confirmed. */
-function equivalentUninstall(ids: string[], force: boolean): string {
-  return ['sigil uninstall', ...ids, '--yes', force ? '--force' : ''].filter(Boolean).join(' ');
-}
-
 async function uninstallIds(
   ids: string[],
   manifest: ReturnType<typeof requireManifest>,
@@ -177,7 +171,7 @@ async function uninstallIds(
   const decision = await confirmUninstall(ids, targetName, driftedPaths, opts);
   if (!decision) return;
   const effective = { ...opts, force: decision.force };
-  if (guided) log.info(`Equivalent command: ${equivalentUninstall(ids, decision.force)}`);
+  if (guided) logEquivalentUninstall(ids, decision.force, opts.target);
   finishUninstall(ids, manifest, { pathsToDelete, driftedPaths, configEntries }, effective);
 }
 

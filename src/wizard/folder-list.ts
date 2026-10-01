@@ -128,7 +128,7 @@ export function resolveFolderInput(input: string, base: string, homeDir: string)
   return path.resolve(base, drive ? expanded + path.sep : expanded);
 }
 
-export type FolderInputStatus = 'empty' | 'file' | 'blocked' | 'missing' | 'ok';
+export type FolderInputStatus = 'empty' | 'file' | 'blocked' | 'unavailable' | 'missing' | 'ok';
 
 export interface FolderInput {
   status: FolderInputStatus;
@@ -136,27 +136,38 @@ export interface FolderInput {
   target: string;
 }
 
-/** Walks up from `target` to the first path that exists. */
-function nearestExisting(target: string): string {
+/** Walks up from `target` to the first path that exists; undefined when even the root is missing. */
+function nearestExisting(target: string): string | undefined {
   let current = target;
-  while (!fs.existsSync(current) && path.dirname(current) !== current) {
-    current = path.dirname(current);
+  for (;;) {
+    if (fs.existsSync(current)) return current;
+    const parent = path.dirname(current);
+    if (parent === current) return undefined; // a drive or share that is not there
+    current = parent;
   }
-  return current;
+}
+
+/** True for a folder; false for a file or anything that cannot be read (permissions, a gone drive). */
+function isDirectory(p: string): boolean {
+  try {
+    return fs.statSync(p).isDirectory();
+  } catch {
+    return false;
+  }
 }
 
 /**
  * What a typed path points at: a folder (`ok`), a folder that can be created (`missing`), a file
- * (`file`), a place that can never be created because a file is in the way (`blocked`), or nothing.
+ * (`file`), a place that can never be created because a file is in the way (`blocked`) or its
+ * drive or share is not there (`unavailable`), or nothing (`empty`).
  */
 export function classifyFolderInput(input: string, base: string, homeDir: string): FolderInput {
   if (input.trim() === '') return { status: 'empty', target: base };
   const target = resolveFolderInput(input, base, homeDir);
-  if (fs.existsSync(target)) {
-    return { status: fs.statSync(target).isDirectory() ? 'ok' : 'file', target };
-  }
-  const blocked = !fs.statSync(nearestExisting(target)).isDirectory();
-  return { status: blocked ? 'blocked' : 'missing', target };
+  if (fs.existsSync(target)) return { status: isDirectory(target) ? 'ok' : 'file', target };
+  const anchor = nearestExisting(target);
+  if (anchor === undefined) return { status: 'unavailable', target };
+  return { status: isDirectory(anchor) ? 'missing' : 'blocked', target };
 }
 
 /** The error to show for a typed path, or `undefined` when it is usable (or can be created). */
@@ -164,6 +175,7 @@ export function folderInputError({ status, target }: FolderInput): string | unde
   if (status === 'empty') return 'Enter a folder path, or press Ctrl+C to go back.';
   if (status === 'file') return `${target} is a file, not a folder.`;
   if (status === 'blocked') return `Cannot create ${target}: part of that path is a file.`;
+  if (status === 'unavailable') return `${target}: that drive or network share is not available.`;
   return undefined;
 }
 

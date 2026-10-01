@@ -99,6 +99,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Install wizard: the dependency step is worded as "Install these helpers too?", and the language
   question appears only when there are two or more languages. A stale language filter or config scope
   no longer survives a change of scope or tool.
+- **For scripts:** the human-readable output of `status` (the bracketed words), `uninstall` (the note
+  and summary about edited files), `update` (orphaned line), `init`, and the manifest-error message
+  changed wording. `--json` output is unchanged. A repo with only a bare `.github/` folder (workflows)
+  now resolves to Claude Code, not Copilot, when `--target` is omitted; pass `--target copilot`.
 - Copilot is detected from its own files (`.github/copilot-instructions.md`, `instructions/`,
   `prompts/`, `agents/`, `skills/`), not from any `.github/` folder, so a repo that only uses GitHub
   Actions is no longer treated as a Copilot project. Any one marker is enough (it used to need all).

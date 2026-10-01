@@ -158,10 +158,11 @@ Options:
 ```text
 Usage: sigil init [options]
 
-Prepare a consumer project for a target platform.
+Prepare a consumer project for a target platform. Asks which one in a terminal.
 
 Options:
-  --target <name>      Target platform: claude or copilot
+  --target <name>      Target platform: claude or copilot (asked in a terminal
+                       if omitted)
   --project-dir <dir>  Consumer project root (default: <cwd>)
   -h, --help           display help for command
 ```

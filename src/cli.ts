@@ -126,8 +126,8 @@ program
 // ─── init ─────────────────────────────────────────────────────────────────────
 program
   .command('init')
-  .description('Prepare a consumer project for a target platform.')
-  .requiredOption('--target <name>', 'Target platform: claude or copilot')
+  .description('Prepare a consumer project for a target platform. Asks which one in a terminal.')
+  .option('--target <name>', 'Target platform: claude or copilot (asked in a terminal if omitted)')
   .option('--project-dir <dir>', 'Consumer project root', process.cwd())
   .action(runInit);
 // ─── new ──────────────────────────────────────────────────────────────────────

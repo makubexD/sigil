@@ -19,6 +19,7 @@ import type { ManifestEntry } from '../manifest';
 import type { Deprecated } from '../schema/index';
 import { JSON_INDENT } from '../json-util';
 import { applyPrune } from './prune-apply';
+import { offerApply, shouldOfferApply } from './prune-guided';
 
 export interface PruneOptions {
   projectDir: string;
@@ -134,11 +135,13 @@ export async function runPrune(opts: PruneOptions): Promise<void> {
 
   const candidates = findCandidates(manifest, targetName, catalogIds, deprecatedById);
 
+  const ctx = { targetName, opts, printJsonReport };
   if (!opts.apply) {
     if (opts.json) printJsonReport(candidates, false);
     else printPreview(candidates);
+    if (shouldOfferApply(opts, candidates)) await offerApply(manifest, candidates, ctx);
     return;
   }
 
-  await applyPrune(manifest, candidates, { targetName, opts, printJsonReport });
+  await applyPrune(manifest, candidates, ctx);
 }

@@ -102,17 +102,21 @@ function readHealth(
   }
 }
 
+/** Every target whose marker folder (`.claude/`, `.github/`, …) exists. Empty means none: no default. */
+export function detectedTargetsIn(projectDir: string): string[] {
+  return getAllTargets()
+    .filter(t => (t.projectMarkers ?? []).length > 0)
+    .filter(t => (t.projectMarkers ?? []).every(m => fs.existsSync(path.join(projectDir, m))))
+    .map(t => t.name);
+}
+
 export function detectProjectContext(
   projectDir: string,
   options: DetectOptions = {},
 ): ProjectContext {
-  const detectedTargets = getAllTargets()
-    .filter(t => (t.projectMarkers ?? []).length > 0)
-    .filter(t => (t.projectMarkers ?? []).every(m => fs.existsSync(path.join(projectDir, m))))
-    .map(t => t.name);
   return {
     projectDir,
-    detectedTargets,
+    detectedTargets: detectedTargetsIn(projectDir),
     ...readHealth(projectDir, options.catalogIds),
     isCatalogCheckout:
       fs.existsSync(path.join(projectDir, 'catalog')) &&

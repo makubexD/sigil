@@ -9,23 +9,31 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getAllTargets, getTarget } from '../targets';
 import { SigilError } from '../errors';
+import { chooseInitTarget } from './init-guided';
 
 export interface InitOptions {
-  target: string;
+  /** Omit to be asked, in a terminal. Elsewhere a missing target is an error. */
+  target?: string | undefined;
   projectDir: string;
 }
 
-export function runInit(opts: InitOptions): void {
-  // Directory list and display name come from the target adapter — no hardcoded names here.
-  let target;
+/** Looks the target up by name; an unknown name lists the valid ones. */
+function targetNamed(name: string): ReturnType<typeof getTarget> {
   try {
-    target = getTarget(opts.target);
+    return getTarget(name);
   } catch {
     const names = getAllTargets()
       .map(t => t.name)
       .join(', ');
-    throw new SigilError(`Unknown target '${opts.target}'. Valid options: ${names}`);
+    throw new SigilError(`Unknown target '${name}'. Valid options: ${names}`);
   }
+}
+
+export async function runInit(opts: InitOptions): Promise<void> {
+  const name = opts.target ?? (await chooseInitTarget(opts.projectDir));
+  if (name === null) return;
+  // Directory list and display name come from the target adapter — no hardcoded names here.
+  const target = targetNamed(name);
   for (const dir of target.initDirs ?? []) {
     const full = path.join(opts.projectDir, dir);
     fs.mkdirSync(full, { recursive: true });

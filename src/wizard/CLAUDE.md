@@ -5,6 +5,36 @@ invariants and shipped-bug history for the `add`/`new` interactive wizards. The 
 (selectors, flags, TTY/CI guard) lives in `docs/reference/spec.md` (CLI reference), `docs/reference/cli-flags.md`, and
 `docs/guides/consuming.md`.
 
+**Home menu (`home.ts`, `home-menu.ts`, `home-actions.ts`, `home-browse.ts`):** what bare `sigil` opens in a
+TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on stdout, exit 0); a root
+`.action()` would swallow mistyped commands, because Commander runs it before its unknown-command check.
+
+- The content is pure: `buildMenu(ctx)` and `describeContext(ctx)` depend only on a `ProjectContext`
+  (`src/project-context.ts`: `detectProjectContext`, `recommendNext`), so each folder state is a test fixture.
+  The menu is the `ENTRIES` table in `home-menu.ts`; each row has a `shown(ctx)` predicate. The top
+  recommendation is moved first and marked.
+- **Every entry needs a handler** in `defaultHomeDeps` (`home-actions.ts`); `test/wizard/home.test.ts` fails
+  on a gap. `quit` and `change-folder` are the loop's own. A handler calls the same `run*` function as the
+  CLI verb, with the folder the menu is looking at. Never copy command logic into the menu.
+- `runHome` never exits on an action's failure: a `SigilError` is shown (message plus hint) and the menu
+  returns. Ctrl+C at the menu leaves quietly. Handlers are injected so the loop is tested without installing.
+- Author entries (`new`, `edit`, `validate`) show only inside a catalog checkout and use that checkout's
+  `catalog/` and `packs.yaml`; consumer entries use the bundled catalog (`resolveDefault`).
+- "Restore deleted files" is menu-only (`src/commands/restore-missing.ts`): `sigil update` does not recreate a
+  deleted whole-file artifact, so whole files come back through `add`, config fragments through `update`.
+
+**Guided verbs.** `uninstall`, `update`, `prune` and `init` each have a `<verb>-guided.ts` beside the command.
+The rule: ask only when `isInteractiveTTY()` is true and the user did not already decide (`--yes`, `--dry-run`,
+`--apply`, `--json`, explicit ids or `--target`); every non-TTY path is byte-for-byte what it was. Outside a
+terminal a missing argument is a `SigilError` whose hint shows the command to run. Each guided flow logs an
+`Equivalent command:` line. `update-guided.ts` receives `applyUpdate` as a parameter so it and `update.ts` do not
+import each other. The shared picker is `installed-picker.ts` (`installedOptions` is pure; `pickInstalled`
+returns `null` on cancel).
+
+**Testing guided flows.** `fakeTTY()` (`test/helpers/tty.ts`) makes `isInteractiveTTY()` true; `mockClack`
+answers prompts from a queue, and a queued `symbol` simulates Ctrl+C (`isCancel` is true only for symbols).
+An empty queue throws, which is how a test proves "this path asks nothing".
+
 **Wizard (`src/wizard/add.ts`):** triggered when run with no selector in an interactive TTY. Uses
 `@clack/prompts` for a step-machine guided flow; every prompt maps 1:1 to a CLI flag so guided and
 scripted paths are equivalent. After install, `printEquivalentCommand()` prints the copy-pasteable

@@ -9,6 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Guided home menu: `sigil` with no command, in a terminal, inspects the folder (targets, install
+  health, catalog checkout, home folder), recommends the next step, and routes to set up, install,
+  restore deleted files, update, remove, status, clean up, browse and search (then details, then
+  install), author actions inside a catalog checkout, change folder, and help. Outside a terminal it
+  prints the command list on stdout and exits 0.
+- Guided commands in a terminal: `sigil uninstall` with no ids offers an installed-artifact picker;
+  `sigil update` previews and asks (apply / overwrite my edits / choose / cancel) and gains `--yes`;
+  `sigil prune` offers to apply after the preview; `sigil init` asks for the target when `--target`
+  is omitted. Without a terminal all four behave as before.
+- Root help is grouped by task (Start here, Browse, Author, Build and release) with one-line
+  summaries and a getting-started footer.
+- `sigil status` ends with a `Next:` list naming the command that fixes each problem.
 - Shared (stack-agnostic) skills: a skill may omit `language:` and live under
   `catalog/shared/skills/`.
 - `shared/cli` and `shared/wizard` skills (one reference per stack), with their path-scoped rules
@@ -49,6 +61,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `commander` upgraded to ^14.0.3 (adds help groups; 15 requires Node 22.12, sigil supports 20.19+).
+- Bare `sigil` without a terminal now prints help on stdout and exits 0 (it was stderr, exit 1).
+- `sigil uninstall [ids...]` and `sigil init [--target]` accept missing arguments (guided in a
+  terminal; a clear error elsewhere).
 - `Target.supportedKinds` replaced by `Target.capabilities`; kind support is read through
   `src/targets/capabilities.ts`. The Claude plugin assembler now derives plugin members from the
   plugin channel instead of a hard-coded kind filter. No change to emitted output.
@@ -74,6 +90,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sigil help`, `--help` and `--version` could print nothing on a Windows console (`npm run sigil
+  help`): the process exited right after writing. Commander's exits now return normally so Node
+  flushes stdout first.
+- `sigil status` said "Run `sigil update`" for every problem, but `update` does not recreate a
+  deleted whole-file artifact. It now prints the command that works for each problem.
+- The hook `timeout` schema comment said milliseconds; Claude Code reads seconds.
 - `sigil build --target copilot` folded every language-less rule into `copilot-instructions.md`,
   widening a narrowly scoped shared rule (e.g. `shared/cli-rules`) to the whole repository. Only
   repo-wide rules (no `appliesTo`, or every-file globs) go there now; scoped rules get their own

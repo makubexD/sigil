@@ -23,6 +23,56 @@ More on building: [operations.md](../guides/operations.md#build-and-link).
 
 ---
 
+## `npm run sigil --help` shows npm's help, not sigil's
+
+Without `--`, npm keeps flags such as `--help` for itself. Put `--` before sigil's own arguments:
+
+```bash
+npm run sigil -- --help
+npm run sigil -- add --help
+```
+
+Arguments that are not flags, such as `npm run sigil help` or `npm run sigil list`, pass through
+either way. `npm link` removes the issue: then it is simply `sigil --help`.
+
+---
+
+## `sigil help` or `npm run sigil help` printed nothing (Windows)
+
+Earlier builds exited the process straight after writing the help, and a Windows console could lose
+the output. Rebuild (`npm run build`). Help, version, and usage errors now return normally, so Node
+flushes the output before it exits. If it still prints nothing, run
+`node dist-cli/cli.js --help` and report the console you used.
+
+---
+
+## The menu says my folder is the home folder or a sigil catalog checkout
+
+That is the menu protecting you: installs go into the folder you run sigil from, so installing from
+your home folder affects every project, and installing from a sigil checkout writes into sigil
+itself. Choose **Work in a different folder** and type the path to your project, or `cd` there and run
+`sigil` again.
+
+---
+
+## `sigil update` says "already up-to-date" but a file is gone
+
+`update` refreshes files that still exist. It does not recreate a whole-file artifact you deleted.
+`sigil status` prints the command that does, for example
+`sigil add rule:shared/git --target claude --yes`, and the guided menu has a **Restore deleted
+files** entry that does it for every missing artifact. Config artifacts (hook, settings, MCP) are
+different: `sigil update <id>` re-merges a missing fragment.
+
+---
+
+## `sigil uninstall` or `sigil init` stops with a message outside a terminal
+
+With no terminal there is nobody to ask, so these need their arguments: `sigil uninstall <id>...`
+(`sigil status` lists the ids) and `sigil init --target claude` (or `copilot`). In a terminal the
+same commands ask instead. See [consuming.md](../guides/consuming.md#guided-commands).
+
+---
+
 ## `sigil add` with no selector outside a TTY
 
 `add` does not hang. With no selector and stdin/stdout not a TTY, it throws and exits non-zero

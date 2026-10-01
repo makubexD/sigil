@@ -40,6 +40,8 @@ npm run build
 - **`npm run sigil -- <args>`** runs with the sigil package directory as the working directory, and
   nothing in `src/` reads `INIT_CWD`. So `--project-dir` defaults to the sigil repo itself, not the
   directory you typed the command in. Pass `--project-dir <abs-path>` when you target another project.
+- **Flags need a `--` first.** `npm run sigil -- --help` prints sigil's help; `npm run sigil --help`
+  prints npm's. Commands without flags (`npm run sigil help`, `npm run sigil list`) work either way.
 
 The catalog always resolves from the package (`PKG_ROOT`), never from the current directory, so every
 invocation above sees the same catalog.

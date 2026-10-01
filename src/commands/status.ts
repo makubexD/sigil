@@ -10,6 +10,8 @@ import { getTarget } from '../targets';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { requireManifest } from './shared/manifest';
 import { JSON_INDENT } from '../json-util';
+import { isConfigKind } from '../kinds';
+import type { StatusResult } from '../manifest/types';
 import type { LoadedCatalog } from '../types';
 
 export interface StatusOptions {
@@ -63,7 +65,34 @@ function printStatusTable(statuses: ReturnType<typeof computeStatus>): void {
   }
 }
 
-/** Prints the trailing summary line + the `sigil update` hint when relevant. */
+/**
+ * The command that fixes each problem `status` found. They differ on purpose: `sigil update`
+ * re-renders files that exist and re-merges config fragments, but it does not recreate a deleted
+ * whole-file artifact (it reports "already up-to-date"); `sigil add` does.
+ */
+export function statusNextSteps(statuses: readonly StatusResult[]): string[] {
+  const has = (status: StatusResult['status']): boolean => statuses.some(s => s.status === status);
+  const steps = statuses.filter(s => s.status === 'missing').map(restoreStep);
+  if (has('outdated')) steps.push('Refresh outdated artifacts: sigil update');
+  if (has('drifted')) {
+    steps.push(
+      'Drifted files keep your edits. To replace them with the catalog: sigil update --force',
+    );
+  }
+  if (has('orphaned')) {
+    steps.push('Orphaned artifacts are gone from the catalog. Preview the cleanup: sigil prune');
+  }
+  return steps;
+}
+
+/** How to bring one missing artifact back: config fragments via `update`, whole files via `add`. */
+function restoreStep({ entry }: StatusResult): string {
+  return isConfigKind(entry.kind)
+    ? `Restore ${entry.id}: sigil update ${entry.id}`
+    : `Restore ${entry.id}: sigil add ${entry.kind}:${entry.id} --target ${entry.target} --yes`;
+}
+
+/** Prints the trailing summary line and what to run next. */
 function printStatusSummary(statuses: ReturnType<typeof computeStatus>): void {
   const counts: Record<string, number> = {};
   for (const s of statuses) counts[s.status] = (counts[s.status] ?? 0) + 1;
@@ -72,8 +101,10 @@ function printStatusSummary(statuses: ReturnType<typeof computeStatus>): void {
     .join(', ');
   console.log(`\n  ${statuses.length} artifact(s): ${summary}`);
 
-  if (counts['outdated'] || counts['drifted'] || counts['missing']) {
-    console.log('\n  Run `sigil update` to refresh outdated artifacts.');
+  const steps = statusNextSteps(statuses);
+  if (steps.length > 0) {
+    console.log('\n  Next:');
+    for (const step of steps) console.log(`    ${step}`);
   }
   console.log('');
 }

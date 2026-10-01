@@ -39,7 +39,9 @@ program
   .description(
     'Vendor-neutral AI skills, agents, and rules — compile to Claude Code, Copilot, and more.',
   )
-  .version(pkg.version);
+  .version(pkg.version)
+  // Must precede every .command(): subcommands copy this setting when they are created.
+  .exitOverride();
 
 // ─── build ────────────────────────────────────────────────────────────────────
 program
@@ -389,4 +391,10 @@ program
   .action(runRelease);
 
 describePathDefaults(program);
-program.parseAsync(process.argv).catch(handleFatal);
+if (process.argv.length <= 2) {
+  // Bare `sigil`. Handled before parsing: a root .action() would swallow mistyped commands.
+  // Help goes to stdout with exit 0 (Commander's default is stderr + exit 1, which reads as a failure).
+  program.outputHelp();
+} else {
+  program.parseAsync(process.argv).catch(handleFatal);
+}

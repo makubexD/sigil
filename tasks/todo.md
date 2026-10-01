@@ -1,7 +1,7 @@
 # Guided sigil — tasks (see SPEC-guided-sigil.md)
 
 ## cli-surface
-- [ ] T1 Root bare/help behaviour: exitOverride, handleFatal CommanderError, root action (non-TTY stdout exit 0, typo → error). Verify: test/cli-root.test.ts
+- [x] T1 Root bare/help behaviour: exitOverride, handleFatal CommanderError, bare argv handled before parse (non-TTY stdout exit 0, typo → error). Verify: test/cli-root.test.ts
 - [ ] T2 Summaries + commander ^14 + groups + footer. Verify: cli-root + cli-flags + help-accuracy tests, full suite
 ## project-context
 - [ ] T3 Verify restore-of-missing command; fix status footer. Verify: test

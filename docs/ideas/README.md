@@ -30,19 +30,18 @@ user wants it kept).
 
 ## Briefs
 
-| File                                                               | Summary                                                                   | Status   |
-| ------------------------------------------------------------------ | ------------------------------------------------------------------------- | -------- |
-| [home-menu-wizard.md](home-menu-wizard.md)                         | Bare `sigil` in a TTY opens an install/update/uninstall/status/prune menu | proposed |
-| [wizard-update-uninstall.md](wizard-update-uninstall.md)           | Wizards for update, uninstall, status, prune, init                        | proposed |
-| [own-marketplace-metadata.md](own-marketplace-metadata.md)         | Configurable marketplace name, owner, author, license                     | proposed |
-| [manifest-catalog-source.md](manifest-catalog-source.md)           | Manifest records which catalog installed an artifact                      | proposed |
-| [publish-claude-marketplace.md](publish-claude-marketplace.md)     | Publish the Claude marketplace from CI with a drift gate                  | proposed |
-| [copilot-plugin-channel.md](copilot-plugin-channel.md)             | Copilot plugin channel; consistent agent layout for build and add         | proposed |
-| [copilot-hooks.md](copilot-hooks.md)                               | Hooks for GitHub Copilot                                                  | proposed |
-| [npm-first-publish.md](npm-first-publish.md)                       | First npm publish and package name                                        | proposed |
-| [artifact-proposal-issue-form.md](artifact-proposal-issue-form.md) | GitHub issue form to propose an artifact                                  | proposed |
-| [import-copilot-layout.md](import-copilot-layout.md)               | `sigil import` from a Copilot `.github/` layout                           | proposed |
-| [codex-target.md](codex-target.md)                                 | Codex target (ADR Phase 5)                                                | proposed |
-| [cursor-target.md](cursor-target.md)                               | Cursor target (ADR Phase 6)                                               | proposed |
-| [gemini-cli-target.md](gemini-cli-target.md)                       | Evaluate a Gemini CLI target                                              | proposed |
-| [ui-beyond-terminal.md](ui-beyond-terminal.md)                     | Decide on a catalog browser or other GUI                                  | proposed |
+| File                                                               | Summary                                                            | Status   |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------ | -------- |
+| [friendlier-errors.md](friendlier-errors.md)                       | Short "did you mean" for mistyped ids instead of the whole catalog | proposed |
+| [own-marketplace-metadata.md](own-marketplace-metadata.md)         | Configurable marketplace name, owner, author, license              | proposed |
+| [manifest-catalog-source.md](manifest-catalog-source.md)           | Manifest records which catalog installed an artifact               | proposed |
+| [publish-claude-marketplace.md](publish-claude-marketplace.md)     | Publish the Claude marketplace from CI with a drift gate           | proposed |
+| [copilot-plugin-channel.md](copilot-plugin-channel.md)             | Copilot plugin channel; consistent agent layout for build and add  | proposed |
+| [copilot-hooks.md](copilot-hooks.md)                               | Hooks for GitHub Copilot                                           | proposed |
+| [npm-first-publish.md](npm-first-publish.md)                       | First npm publish and package name                                 | proposed |
+| [artifact-proposal-issue-form.md](artifact-proposal-issue-form.md) | GitHub issue form to propose an artifact                           | proposed |
+| [import-copilot-layout.md](import-copilot-layout.md)               | `sigil import` from a Copilot `.github/` layout                    | proposed |
+| [codex-target.md](codex-target.md)                                 | Codex target (ADR Phase 5)                                         | proposed |
+| [cursor-target.md](cursor-target.md)                               | Cursor target (ADR Phase 6)                                        | proposed |
+| [gemini-cli-target.md](gemini-cli-target.md)                       | Evaluate a Gemini CLI target                                       | proposed |
+| [ui-beyond-terminal.md](ui-beyond-terminal.md)                     | Decide on a catalog browser or other GUI                           | proposed |

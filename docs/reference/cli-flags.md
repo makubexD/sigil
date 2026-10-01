@@ -55,8 +55,8 @@ Options:
 ```text
 Usage: sigil validate [options]
 
-Validate all catalog artifacts (schema + reference integrity). Exits non-zero
-on errors.
+Validate all catalog artifacts (schema + reference integrity). Exits non-zero on
+errors.
 
 Options:
   --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
@@ -136,10 +136,8 @@ Options:
   --project-dir <dir>  Consumer project root (default: <cwd>)
   --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
-  --kind <list>        Comma-separated kinds to include after selector
-                       expansion
-  --exclude <list>     Comma-separated kinds to exclude after selector
-                       expansion
+  --kind <list>        Comma-separated kinds to include after selector expansion
+  --exclude <list>     Comma-separated kinds to exclude after selector expansion
   --language <lang>    Restrict to a specific language
   --no-deps            Skip the uses closure (skill only, no rule/agent deps)
   --dry-run            Preview what would be written without writing any files
@@ -147,8 +145,8 @@ Options:
   -i, --interactive    Force the interactive guided installer (default: false)
   --yes                Non-interactive mode; skip the wizard. Safe for CI.
                        (default: false)
-  --overwrite          Replace existing files (default: warn and skip
-                       conflicts) (default: false)
+  --overwrite          Replace existing files (default: warn and skip conflicts)
+                       (default: false)
   --scope <scope>      Install scope for config-kind artifacts: project | local
                        | user
   --settings-local     (deprecated) Alias for --scope local (default: false)
@@ -160,10 +158,11 @@ Options:
 ```text
 Usage: sigil init [options]
 
-Prepare a consumer project for a target platform.
+Prepare a consumer project for a target platform. Asks which one in a terminal.
 
 Options:
-  --target <name>      Target platform: claude or copilot
+  --target <name>      Target platform: claude or copilot (asked in a terminal
+                       if omitted)
   --project-dir <dir>  Consumer project root (default: <cwd>)
   -h, --help           display help for command
 ```
@@ -280,7 +279,7 @@ Usage: sigil update [options] [ids...]
 
 Refresh installed artifacts to the current bundled catalog version, including
 hook/settings/mcp fragments the catalog changed. Skips drifted files and edited
-config values unless --force.
+config values unless --force. In a terminal it previews and asks before writing.
 
 Options:
   --project-dir <dir>  Consumer project root (default: <cwd>)
@@ -290,6 +289,8 @@ Options:
   --force              Overwrite drifted (user-modified) files (default: false)
   --dry-run            Preview what would change without writing (default:
                        false)
+  --yes                Apply without previewing and asking first (a terminal
+                       asks by default) (default: false)
   -h, --help           display help for command
 ```
 
@@ -319,7 +320,7 @@ Options:
 ## `sigil uninstall`
 
 ```text
-Usage: sigil uninstall [options] <ids...>
+Usage: sigil uninstall [options] [ids...]
 
 Remove installed artifacts from a consumer project. Refcount-aware: shared deps
 only removed when no dependents remain.
@@ -362,23 +363,21 @@ Options:
                                      optional (rule only)
   --add-extends <id>                 Add a rule id to extends: (rule only)
   --remove-extends <id>              Remove a rule id from extends: (rule only)
-  --set-extends <list>               Replace extends: (comma-separated rule
-                                     ids, rule only)
+  --set-extends <list>               Replace extends: (comma-separated rule ids,
+                                     rule only)
   --add-uses-rule <id>               Add a rule id to uses.rules (skill only)
   --remove-uses-rule <id>            Remove a rule id from uses.rules (skill
                                      only)
   --set-uses-rules <list>            Replace uses.rules (comma-separated ids,
                                      skill only)
-  --add-uses-agent <id>              Add an agent id to uses.agents (skill
-                                     only)
+  --add-uses-agent <id>              Add an agent id to uses.agents (skill only)
   --remove-uses-agent <id>           Remove an agent id from uses.agents (skill
                                      only)
   --set-uses-agents <list>           Replace uses.agents (comma-separated ids,
                                      skill only)
   --add-tool <tool>                  Add a tool to tools (agent only)
   --remove-tool <tool>               Remove a tool from tools (agent only)
-  --set-tools <list>                 Replace tools (comma-separated, agent
-                                     only)
+  --set-tools <list>                 Replace tools (comma-separated, agent only)
   --add-disallowed-tool <tool>       Add to disallowedTools (agent only)
   --remove-disallowed-tool <tool>    Remove from disallowedTools (agent only)
   --set-disallowed-tools <list>      Replace disallowedTools (comma-separated,
@@ -388,8 +387,7 @@ Options:
   --claude-effort <value>            Set claude.effort: low | medium | high
                                      (agent only)
   --claude-max-turns <value>         Set claude.maxTurns (agent only)
-  --claude-isolation <value>         Set claude.isolation: worktree (agent
-                                     only)
+  --claude-isolation <value>         Set claude.isolation: worktree (agent only)
   --add-platform <name>              Add a platform to platforms:
   --remove-platform <name>           Remove a platform from platforms:
   --to-platforms <list>              Set platforms: to exactly these
@@ -478,8 +476,8 @@ Options:
 ```text
 Usage: sigil release [options] [level]
 
-Bump version (patch|minor|major|x.y.z), rebuild, update CHANGELOG, commit +
-tag. Does NOT push.
+Bump version (patch|minor|major|x.y.z), rebuild, update CHANGELOG, commit + tag.
+Does NOT push.
 
 Options:
   --dry-run    Print every step and computed version; write nothing

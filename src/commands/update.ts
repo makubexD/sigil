@@ -20,6 +20,7 @@ import { SigilError } from '../errors';
 import { isConfigEntry, updateConfigEntry } from './update-config';
 import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
+import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
 
 export { isFileDrifted } from './update-wholefile';
 
@@ -30,6 +31,8 @@ export interface UpdateOptions {
   packs: string;
   force: boolean;
   dryRun: boolean;
+  /** Skip the terminal preview-and-confirm. Has no effect outside a terminal, which never asks. */
+  yes?: boolean | undefined;
   /**
    * Every artifact id installed for this target — set by runUpdate from the manifest, not a CLI
    * flag. Re-rendering needs it for the same reason `add` passes its install set: a Boundary
@@ -113,7 +116,7 @@ async function updateOneEntry(
   return { ...result, orphaned: false };
 }
 
-interface UpdateRunTotals {
+export interface UpdateRunTotals {
   updatedCount: number;
   skippedDrift: number;
   orphanedCount: number;
@@ -185,12 +188,21 @@ async function prepareUpdateRun(
 }
 
 export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<void> {
+  if (shouldGuideUpdate(opts)) await runGuidedUpdate(ids, opts, applyUpdate);
+  else await applyUpdate(ids, opts);
+}
+
+/** Runs the update. Returns the run totals, or undefined when no installed artifact matched. */
+async function applyUpdate(
+  ids: string[],
+  opts: UpdateOptions,
+): Promise<UpdateRunTotals | undefined> {
   const setup = await prepareUpdateRun(ids, opts);
-  if (!setup) return;
+  if (!setup) return undefined;
   const { resolved, target, manifest, entries, catalogIds, installedIds } = setup;
 
   console.log('');
-  const { updatedCount, skippedDrift, orphanedCount } = await updateAllEntries(entries, {
+  const totals = await updateAllEntries(entries, {
     catalogIds,
     resolved,
     target,
@@ -200,5 +212,6 @@ export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<voi
   if (!opts.dryRun) {
     saveManifest(opts.projectDir, manifest);
   }
-  printUpdateSummary(opts, updatedCount, skippedDrift, orphanedCount);
+  printUpdateSummary(opts, totals.updatedCount, totals.skippedDrift, totals.orphanedCount);
+  return totals;
 }

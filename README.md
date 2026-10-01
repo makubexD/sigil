@@ -50,15 +50,40 @@ These commands assume `sigil` is on your PATH (the `npm link` step above). Run t
 the project you want to equip, not from the sigil clone:
 
 ```bash
-sigil add                                      # guided wizard: pick target, kinds, artifacts
+sigil                                          # guided menu: looks at the folder, suggests the next step
+```
+
+That is all you need to start. In a terminal, `sigil` with no command checks the folder you are in
+(is it set up? what is installed? is anything missing or edited?), shows what it found, and offers
+the next step: set up, install, update, remove, check status, browse and search the catalog. Every
+choice runs the same command you could type yourself, and the guided flows print that command so you
+can repeat it in a script. Details: [consuming.md](docs/guides/consuming.md#using-the-guided-menu).
+
+Prefer typing? The same things as commands:
+
+```bash
 sigil list --kind skill                        # browse first (also: sigil search <query>)
-sigil add skill:typescript/ts-generate-tests   # or install one artifact plus what it depends on
+sigil add skill:typescript/ts-generate-tests   # install one artifact plus what it depends on
 sigil add pack:typescript-starter              # or a curated bundle
+sigil status                                   # what is installed, and is it healthy?
 ```
 
 Files land in your project (`.claude/` or `.github/`) and are tracked in `.sigil/manifest.json`, so
 `sigil status`, `update`, and `uninstall` know what Sigil wrote. Packs are defined in
 [`packs.yaml`](packs.yaml); `sigil list` shows what is available.
+
+### Getting help
+
+| You want                                 | Run                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------- |
+| Every command, grouped by task           | `sigil --help` (or `sigil help`)                                     |
+| One command's options and their defaults | `sigil <command> --help`, for example `sigil add --help`             |
+| The same, written down                   | [CLI flags reference](docs/reference/cli-flags.md)                   |
+| Help while running from the clone        | `npm run sigil -- --help` (the `--` is required, see the note below) |
+
+> **`npm run sigil --help` shows npm's help, not sigil's.** Without the `--`, npm keeps the flag for
+> itself. Write `npm run sigil -- --help` or `npm run sigil -- add --help`. Installing with
+> `npm link` avoids the problem: then it is just `sigil --help`.
 
 > **Only pay for what you load.** A skill or agent costs only its short description until it is
 > used; a rule loads its full text whenever a matching file is read. Pick individual artifacts

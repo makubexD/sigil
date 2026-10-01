@@ -46,8 +46,9 @@ function helpText(args: readonly string[]): string {
 /** Primary command plus aliases from one `Commands:` line (`get|show`). */
 function parseRegisteredCommands(help: string): RegisteredCommand[] {
   const lines = help.split(/\r?\n/);
-  const start = lines.findIndex(line => line === 'Commands:');
-  assert.ok(start >= 0, 'sigil --help did not list a Commands: section. Regenerate cli-flags.md.');
+  // Commands sit under task headings ("Start here:", …), so scan every line after the options.
+  const start = lines.findIndex(line => line === 'Options:');
+  assert.ok(start >= 0, 'sigil --help did not list an Options: section. Regenerate cli-flags.md.');
   const commands: RegisteredCommand[] = [];
   for (const line of lines.slice(start + 1)) {
     const match = /^ {2}([a-z][a-z0-9-]*(?:\|[a-z][a-z0-9-]*)*)(?=\s|$)/.exec(line);

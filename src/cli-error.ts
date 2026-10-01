@@ -5,10 +5,22 @@
  *
  * @module
  */
+import { CommanderError } from 'commander';
 import { SigilError, EXIT } from './errors';
 
-/** Formats and reports a fatal error, then exits. Never returns. */
-export function handleFatal(err: unknown): never {
+/**
+ * Formats and reports a fatal error, then exits.
+ *
+ * Commander's own exits (help, version, usage errors) arrive here as `CommanderError` because
+ * `cli.ts` calls `exitOverride()`. Commander has already printed its message, so only the exit code
+ * is kept, set via `process.exitCode` so Node drains stdout before exiting. A `process.exit()` right
+ * after a console write can drop the output on Windows (`npm run sigil help` printed nothing).
+ */
+export function handleFatal(err: unknown): void {
+  if (err instanceof CommanderError) {
+    process.exitCode = err.exitCode;
+    return;
+  }
   const isSigilError = err instanceof SigilError;
   const message = err instanceof Error ? err.message : String(err);
 

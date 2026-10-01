@@ -12,6 +12,7 @@ import { detectProjectTarget } from '../cli-helpers';
 import { saveManifest, removeEntries, sha256 } from '../manifest';
 import { requireManifest } from './shared/manifest';
 import { isInteractiveTTY } from '../wizard';
+import { chooseIdsToUninstall } from './uninstall-guided';
 import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
 import { configEntriesOf, reverseMergeConfigEntries } from './uninstall-config';
@@ -188,27 +189,47 @@ function printUninstallSummary(
 
 export async function runUninstall(ids: string[], opts: UninstallOptions): Promise<void> {
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
-
   const manifest = requireManifest(opts.projectDir);
+  const chosen =
+    ids.length > 0
+      ? ids
+      : await chooseIdsToUninstall(manifest.entries, targetName, opts.projectDir);
+  if (chosen) await uninstallIds(chosen, manifest, targetName, opts);
+}
+
+async function uninstallIds(
+  ids: string[],
+  manifest: ReturnType<typeof requireManifest>,
+  targetName: string,
+  opts: UninstallOptions,
+): Promise<void> {
   assertIdsInstalled(ids, manifest, targetName);
-
   const { pathsToDelete, removedEntries } = removeEntries(manifest, ids, targetName);
-
   const configEntries = configEntriesOf(removedEntries);
   const driftedPaths = findDriftedPaths(pathsToDelete, removedEntries, opts.projectDir);
-
   if (opts.dryRun) {
     printDryRunPreview(pathsToDelete, driftedPaths, configEntries);
     return;
   }
-
-  const proceed = await confirmUninstall(ids, targetName, driftedPaths, opts);
-  if (!proceed) return;
-
+  if (!(await confirmUninstall(ids, targetName, driftedPaths, opts))) return;
   deleteWholeFiles(pathsToDelete, driftedPaths, opts);
-  const kept = manifest.entries; // removeEntries left only what stays installed
-  const configRemovedCount = reverseMergeConfigEntries(configEntries, opts.projectDir, kept);
+  finishUninstall(ids, manifest, { pathsToDelete, driftedPaths, configEntries }, opts);
+}
 
+/** Reverses config merges, saves the manifest and prints the summary, after files are deleted. */
+function finishUninstall(
+  ids: string[],
+  manifest: ReturnType<typeof requireManifest>,
+  plan: Omit<UninstallSummaryStats, 'configRemovedCount'> & { configEntries: ManifestEntry[] },
+  opts: UninstallOptions,
+): void {
+  const { pathsToDelete, driftedPaths, configEntries } = plan;
+  // removeEntries left only what stays installed in manifest.entries
+  const configRemovedCount = reverseMergeConfigEntries(
+    configEntries,
+    opts.projectDir,
+    manifest.entries,
+  );
   saveManifest(opts.projectDir, manifest);
   printUninstallSummary(ids, { pathsToDelete, driftedPaths, configRemovedCount }, opts);
 }

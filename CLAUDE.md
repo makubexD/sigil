@@ -224,7 +224,7 @@ Top-level modules: `cli.ts`, `cli-helpers.ts`, `cli-error.ts`, `config-utils.ts`
 | Which kinds each target delivers per channel (generated from `capabilities.ts`) | `docs/reference/capabilities.md`                        |
 | `mcp` / `hook` / `settings` config-kind merge model + scope tables              | `docs/reference/config-kinds.md`                        |
 | Adding a skill, rule, or language; `sigil get/search/patch/move/import`         | `docs/guides/authoring.md`                              |
-| Wizard step registry, history invariant, install-state legend                   | `src/wizard/CLAUDE.md` (auto-loads under `src/wizard/`) |
+| Wizard step registry, home menu, guided verbs, install-state legend             | `src/wizard/CLAUDE.md` (auto-loads under `src/wizard/`) |
 | Installing artifacts into a consumer project; manifest/status/update/uninstall  | `docs/guides/consuming.md`                              |
 | Build targets, CI gate, `sigil release`                                         | `docs/guides/operations.md`                             |
 | Common errors, FAQ                                                              | `docs/reference/troubleshooting.md`                     |

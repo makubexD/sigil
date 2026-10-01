@@ -29,7 +29,7 @@
  * - `multiselect` returns the next value as an array (or the value itself if
  *   already an array).
  * - `text` and `confirm` return the next value off the queue.
- * - `isCancel` always returns false (no simulated cancellation).
+ * - `isCancel` is true only for a queued `symbol` (simulated Ctrl+C).
  * - All others (intro, outro, note, log, cancel) are silent no-ops.
  *
  * Returns a `restore()` function that puts the originals back — always call it
@@ -37,7 +37,10 @@
  *
  * @throws {Error} if the queue is exhausted before all prompts are answered.
  */
-export function mockClack(queue: Array<string | string[]>): () => void {
+/** A queued answer. A `symbol` simulates Ctrl+C: the mocked `isCancel` returns true for it. */
+export type MockAnswer = string | boolean | string[] | symbol;
+
+export function mockClack(queue: MockAnswer[]): () => void {
   const clackKey = require.resolve('@clack/prompts');
   const clackMod = require.cache[clackKey] as { exports: Record<string, unknown> };
   const ex = clackMod.exports;
@@ -52,15 +55,24 @@ export function mockClack(queue: Array<string | string[]>): () => void {
   ex['outro'] = () => {};
   ex['note'] = () => {};
   ex['cancel'] = () => {};
-  ex['log'] = { info: () => {}, warn: () => {}, error: () => {} };
-  ex['isCancel'] = () => false;
+  ex['log'] = {
+    info: () => {},
+    warn: () => {},
+    error: () => {},
+    success: () => {},
+    message: () => {},
+    step: () => {},
+  };
+  ex['isCancel'] = (value: unknown) => typeof value === 'symbol';
   ex['select'] = async (_opts: unknown) => pop();
   ex['multiselect'] = async (_opts: unknown) => {
     const v = pop();
+    if (typeof v === 'symbol') return v;
     return Array.isArray(v) ? v : [v];
   };
   ex['groupMultiselect'] = async (_opts: unknown) => {
     const v = pop();
+    if (typeof v === 'symbol') return v;
     return Array.isArray(v) ? v : [v];
   };
   ex['text'] = async (_opts: unknown) => pop();

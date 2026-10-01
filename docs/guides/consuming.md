@@ -27,19 +27,74 @@ if you did not link, replace it with `node <abs-path>/dist-cli/cli.js`.
 
 ---
 
-## Using the interactive wizard
+## Using the guided menu
 
-You do not have to memorise selectors. In an interactive terminal, three commands can guide you with
-menus:
+You do not have to know any command. In a terminal, run `sigil` with nothing after it:
 
-| Command           | Opens a wizard when                                          | What it does                                     |
-| ----------------- | ------------------------------------------------------------ | ------------------------------------------------ |
-| `sigil add`       | You give no selector and you are in a terminal (`-i` forces) | Installs artifacts into your project             |
-| `sigil new`       | You give no kind and you are in a terminal (`-i` forces)     | Scaffolds a new catalog artifact                 |
-| `sigil edit <id>` | You are in a terminal and did not pass `--yes`               | Edits an artifact's title, description, and tags |
+```bash
+sigil
+```
+
+sigil looks at the folder you are in and shows what it found:
+
+```
+Folder:     C:\work\acme-api
+Set up for:  Claude Code
+Installed:  12 installed · 1 missing, 2 edited
+```
+
+It then lists what you can do, with the most useful step first and marked **(recommended)**. The
+recommendation follows the state of the folder:
+
+| What sigil finds in the folder                 | What it recommends                                    |
+| ---------------------------------------------- | ----------------------------------------------------- |
+| Your home folder, or a sigil catalog checkout  | Work in a different folder (installs would land here) |
+| No `.claude/` or `.github/` folder             | Set up this project                                   |
+| Set up, nothing installed                      | Install artifacts                                     |
+| Files sigil installed were deleted             | Restore deleted files                                 |
+| Installed files you edited                     | Check what's installed (shows which files differ)     |
+| A newer catalog version of something installed | Update installed artifacts                            |
+| Installed artifacts that have left the catalog | Clean up leftovers                                    |
+| Everything installed and healthy               | No recommendation; the list is there when you need it |
+
+The entries are Set up, Install, Restore, Update, Remove, Check status, Clean up, Browse the
+catalog, Search the catalog, Work in a different folder, Show all commands, and Quit. Entries that
+cannot apply are hidden (there is no "Remove" in an empty project). Inside a sigil catalog checkout
+the menu also shows the author actions: Create a new artifact, Edit an artifact, Validate the catalog.
+After each action you return to the menu, so one session can set up, install, and check. An error in
+one action is shown and the menu stays open. Ctrl+C leaves quietly.
+
+If the folder has both `.claude/` and `.github/`, the menu header and the update, remove, status, and
+clean-up entries work on the first one found (Claude Code). For the other target, use the command with
+`--target copilot`, for example `sigil update --target copilot`.
+
+Each entry runs the same code as the matching command. The guided flows print an
+`Equivalent command:` line, so you learn the command as you go and can repeat it in a script.
+
+**Outside a terminal** (a pipe, CI, a script) `sigil` with no command prints the command list on
+standard output and exits 0, so nothing changes for automation.
+
+### Guided commands
+
+You can also reach the guided flows directly. These ask questions only in a terminal; in a script or CI
+each behaves exactly as before.
+
+| Command           | Guided when                                                  | What it asks                                                                                |
+| ----------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
+| `sigil add`       | No selector (`-i` forces)                                    | The install wizard below                                                                    |
+| `sigil init`      | No `--target`                                                | Which AI tool the project is for (the one already in the folder is first)                   |
+| `sigil uninstall` | No ids                                                       | Tick what to remove, then confirm                                                           |
+| `sigil update`    | No `--yes` and no `--dry-run`                                | Shows what would change, then: apply / apply and overwrite my edits / choose which / cancel |
+| `sigil prune`     | No `--apply` and no `--json`, and something would be removed | After the preview: remove them now?                                                         |
+| `sigil new`       | No kind (`-i` forces)                                        | Scaffolds a new catalog artifact (authors)                                                  |
+| `sigil edit <id>` | No `--yes`                                                   | Edits title, description, and tags (authors)                                                |
+
+In a script, pass what the command needs: `sigil uninstall <ids...>`, `sigil init --target claude`,
+`sigil update --yes`, `sigil prune --apply --yes`, `sigil add <selectors> --yes`. Without a terminal and
+without those, `uninstall` and `init` stop with a message that shows the command to run.
 
 `new` and `edit` are for catalog authors; see [authoring.md](authoring.md). The rest of this section
-is about `sigil add`.
+is about the install wizard, `sigil add`.
 
 ```bash
 sigil add
@@ -83,22 +138,25 @@ item stands in your project:
 Developers who change the wizard can read the full state model in
 [`src/wizard/CLAUDE.md`](../../src/wizard/CLAUDE.md).
 
-### What has no wizard (yet)
+In a script or CI there is no wizard: `sigil add` without a selector exits with an error, so always
+pass a selector and `--yes` (for example `sigil add all --yes`).
 
-These are command-line only today:
+### Getting help and defaults
 
-- `sigil update` — pass ids or nothing for everything.
-- `sigil uninstall <ids...>` — you must name the artifact ids.
-- `sigil status` and `sigil prune`.
-- `sigil init` — needs `--target claude` or `--target copilot`.
-- Running bare `sigil` only prints the help text.
+```bash
+sigil --help                 # every command, grouped by task (same as: sigil help)
+sigil add --help             # one command: its options, and the default of each
+sigil help add               # the same thing
+```
 
-In a script or CI there is no wizard at all: `sigil add` without a selector exits with an error, so
-always pass a selector and `--yes` (for example `sigil add all --yes`).
+`sigil <command> --help` prints every option with its default in parentheses. Two defaults are written
+as placeholders because they depend on where you run it: `<cwd>` is the folder you ran sigil from (the
+default of `--project-dir`), and `<package>/catalog` is the catalog that ships with sigil (the default of
+`--catalog-dir`). The same text, for every command, is in the
+[CLI flags reference](../reference/cli-flags.md).
 
-Ideas for closing these gaps are tracked in [ideas/home-menu-wizard.md](../ideas/home-menu-wizard.md)
-and [ideas/wizard-update-uninstall.md](../ideas/wizard-update-uninstall.md). They are proposals, not
-features.
+If you run sigil from a clone with `npm run sigil`, put `--` before sigil's own arguments:
+`npm run sigil -- --help`. Without it, npm treats `--help` as its own flag and prints npm's help.
 
 ---
 

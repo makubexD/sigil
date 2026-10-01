@@ -8,7 +8,7 @@
 ## project-context
 
 - [x] T3 Verify restore-of-missing command; fix status footer. Verify: test
-- [ ] T4 detectProjectContext + recommendNext. Verify: test/project-context.test.ts
+- [x] T4 detectProjectContext + recommendNext. Verify: test/project-context.test.ts
 
 ## guided-verbs
 

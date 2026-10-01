@@ -126,6 +126,22 @@ describe('detectProjectContext', () => {
     });
   });
 
+  it('should count only the first detected target, the one the commands act on', () => {
+    withTempDir(dir => {
+      fs.mkdirSync(path.join(dir, '.claude'));
+      fs.mkdirSync(path.join(dir, '.github'));
+      const claude = entry(dir, 'a/claude', '.claude/rules/a.md', null, 'x');
+      const copilot = {
+        ...entry(dir, 'b/copilot', '.github/instructions/b.md', null, 'y'),
+        target: 'copilot',
+      } as ManifestEntry;
+      install(dir, [claude, copilot]);
+      const ctx = detectProjectContext(dir);
+      assert.equal(ctx.installed, 1);
+      assert.equal(ctx.health.missing, 1);
+    });
+  });
+
   it('should count orphans only when the catalog ids are supplied', () => {
     withTempDir(dir => {
       install(dir, [entry(dir, 'old/thing', '.claude/rules/o.md', 'x')]);

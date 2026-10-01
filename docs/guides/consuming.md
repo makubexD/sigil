@@ -64,6 +64,10 @@ the menu also shows the author actions: Create a new artifact, Edit an artifact,
 After each action you return to the menu, so one session can set up, install, and check. An error in
 one action is shown and the menu stays open. Ctrl+C leaves quietly.
 
+If the folder has both `.claude/` and `.github/`, the menu header and the update, remove, status, and
+clean-up entries work on the first one found (Claude Code). For the other target, use the command with
+`--target copilot`, for example `sigil update --target copilot`.
+
 Each entry runs the same code as the matching command. The guided flows print an
 `Equivalent command:` line, so you learn the command as you go and can repeat it in a script.
 

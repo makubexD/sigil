@@ -87,11 +87,16 @@ function looksLikeProject(dir: string): boolean {
 function readHealth(
   dir: string,
   catalogIds: Set<string> | undefined,
+  target: string | undefined,
 ): Pick<ProjectContext, 'manifestPresent' | 'installed' | 'health' | 'manifestError'> {
   const health = emptyHealth();
   const manifestPresent = fs.existsSync(path.join(dir, '.sigil', 'manifest.json'));
   try {
-    const manifest = loadManifest(dir);
+    // The commands act on the first detected target, so count that one: header and actions agree.
+    const all = loadManifest(dir);
+    const manifest = target
+      ? { ...all, entries: all.entries.filter(e => e.target === target) }
+      : all;
     // Without catalog ids, treat every installed id as known so nothing is called orphaned.
     const known = catalogIds ?? new Set(manifest.entries.map(e => e.id));
     for (const result of computeStatus(manifest, dir, known)) health[result.status] += 1;
@@ -114,10 +119,11 @@ export function detectProjectContext(
   projectDir: string,
   options: DetectOptions = {},
 ): ProjectContext {
+  const detectedTargets = detectedTargetsIn(projectDir);
   return {
     projectDir,
-    detectedTargets: detectedTargetsIn(projectDir),
-    ...readHealth(projectDir, options.catalogIds),
+    detectedTargets,
+    ...readHealth(projectDir, options.catalogIds, detectedTargets[0]),
     isCatalogCheckout:
       fs.existsSync(path.join(projectDir, 'catalog')) &&
       fs.existsSync(path.join(projectDir, 'packs.yaml')),

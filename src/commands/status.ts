@@ -88,7 +88,7 @@ export function statusNextSteps(statuses: readonly StatusResult[]): string[] {
 /** How to bring one missing artifact back: config fragments via `update`, whole files via `add`. */
 function restoreStep({ entry }: StatusResult): string {
   return isConfigKind(entry.kind)
-    ? `Restore ${entry.id}: sigil update ${entry.id}`
+    ? `Restore ${entry.id}: sigil update ${entry.id} --target ${entry.target}`
     : `Restore ${entry.id}: sigil add ${entry.kind}:${entry.id} --target ${entry.target} --yes`;
 }
 

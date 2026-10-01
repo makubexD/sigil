@@ -30,7 +30,7 @@ describe('statusNextSteps', () => {
 
   it('should restore a missing config fragment with `sigil update <id>`', () => {
     const steps = statusNextSteps([result('shared/ado', 'mcp', 'missing')]).join('\n');
-    assert.match(steps, /sigil update shared\/ado/);
+    assert.match(steps, /sigil update shared\/ado --target claude/);
     assert.doesNotMatch(steps, /sigil add/);
   });
 

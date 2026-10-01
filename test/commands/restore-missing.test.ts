@@ -9,7 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
 import { restoreMissing } from '../../dist-cli/commands/restore-missing';
-import { loadManifest } from '../../dist-cli/manifest';
+import { loadManifest, saveManifest } from '../../dist-cli/manifest';
+import type { ManifestEntry } from '../../dist-cli/manifest/types';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 const CATALOG = path.resolve(__dirname, '../../catalog');
@@ -58,6 +59,33 @@ describe('restoreMissing', () => {
           .sort(),
         ['shared/clean-code', 'shared/git'],
       );
+    });
+  });
+
+  it('should not claim an artifact that is still missing afterwards', async () => {
+    await withTempDirAsync(async dir => {
+      await install(dir);
+      // A config entry whose id left the catalog: `update` skips it without failing.
+      const manifest = loadManifest(dir);
+      manifest.entries.push({
+        id: 'gone/old-mcp',
+        kind: 'mcp',
+        target: 'claude',
+        sigilVersion: '0.0.0',
+        files: [],
+        configFiles: [
+          {
+            file: '.mcp.json',
+            fragment: { mcpServers: { old: {} } },
+            strategy: { mcpServers: 'object-spread' },
+            fragmentSha256: 'x',
+          },
+        ],
+        dependentOf: [],
+        installedAt: '2026-01-01T00:00:00.000Z',
+      } as ManifestEntry);
+      saveManifest(dir, manifest);
+      assert.deepEqual(await restoreMissing(options(dir)), []);
     });
   });
 

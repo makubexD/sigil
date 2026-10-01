@@ -36,7 +36,11 @@ const install: HomeHandler = async dir => {
 
 const restore: HomeHandler = async dir => {
   const restored = await restoreMissing({ projectDir: dir, ...bundled() });
-  console.log(`\n✓ Restored ${restored.length} artifact(s): ${restored.join(', ')}\n`);
+  console.log(
+    restored.length > 0
+      ? `\n✓ Restored ${restored.length} artifact(s): ${restored.join(', ')}\n`
+      : '\n  Nothing could be restored. Run `sigil status` to see why.\n',
+  );
 };
 
 /** Ids in the bundled catalog, so the header can count artifacts that have left it. */

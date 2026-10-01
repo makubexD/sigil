@@ -20,20 +20,28 @@ export interface RestoreOptions {
   packs: string;
 }
 
-/** Restores every missing artifact. Returns the ids it restored (none when nothing was missing). */
-export async function restoreMissing(opts: RestoreOptions): Promise<string[]> {
+/** Ids of the manifest entries whose files are currently missing. */
+function missingResults(opts: RestoreOptions): StatusResult[] {
   const manifest = loadManifest(opts.projectDir);
   const known = new Set(manifest.entries.map(e => e.id));
-  const missing = computeStatus(manifest, opts.projectDir, known).filter(
-    s => s.status === 'missing',
-  );
+  return computeStatus(manifest, opts.projectDir, known).filter(s => s.status === 'missing');
+}
+
+/**
+ * Restores every missing artifact. Returns the ids that are present again, measured afterwards:
+ * `add` and `update` skip some things without failing (an artifact the catalog dropped, a kind the
+ * target does not support), and those must not be reported as restored.
+ */
+export async function restoreMissing(opts: RestoreOptions): Promise<string[]> {
+  const missing = missingResults(opts);
   for (const [target, results] of groupByTarget(missing)) {
     const files = results.filter(r => !isConfigKind(r.entry.kind));
     const config = results.filter(r => isConfigKind(r.entry.kind));
     if (files.length > 0) await restoreFiles(target, files, opts);
     if (config.length > 0) await restoreConfig(target, config, opts);
   }
-  return missing.map(s => s.entry.id);
+  const stillMissing = new Set(missingResults(opts).map(s => s.entry.id));
+  return missing.map(s => s.entry.id).filter(id => !stillMissing.has(id));
 }
 
 function groupByTarget(results: StatusResult[]): Map<string, StatusResult[]> {

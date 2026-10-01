@@ -47,10 +47,16 @@ const ENTRIES: readonly Entry[] = [
     shown: ctx => ctx.detectedTargets.length === 0,
   },
   {
+    value: 'repair',
+    label: 'Repair the install record',
+    hint: 'Set the damaged file aside and start a fresh record',
+    shown: ctx => ctx.manifestError !== undefined,
+  },
+  {
     value: 'install',
     label: 'Install artifacts',
     hint: 'Add skills, agents, rules and more',
-    shown: always,
+    shown: ctx => ctx.manifestError === undefined,
   },
   {
     value: 'restore',
@@ -120,7 +126,7 @@ const HEALTH_PHRASES: ReadonlyArray<readonly [keyof ProjectContext['health'], st
   ['missing', 'missing'],
   ['drifted', 'edited'],
   ['outdated', 'outdated'],
-  ['orphaned', 'orphaned'],
+  ['orphaned', 'no longer in the catalog'],
 ];
 
 function healthSummary(ctx: ProjectContext): string {
@@ -130,25 +136,39 @@ function healthSummary(ctx: ProjectContext): string {
   return problems.length > 0 ? problems.join(', ') : 'all healthy';
 }
 
+const displayName = (name: string): string =>
+  getAllTargets().find(t => t.name === name)?.displayName ?? name;
+
 function targetNames(ctx: ProjectContext): string {
-  const named = getAllTargets().filter(t => ctx.detectedTargets.includes(t.name));
-  return named.map(t => t.displayName ?? t.name).join(', ');
+  return ctx.detectedTargets.map(displayName).join(', ');
+}
+
+/** "3 installed", or "3 Claude Code, 2 GitHub Copilot" when more than one tool has installs. */
+function installedSummary(ctx: ProjectContext): string {
+  const perTarget = Object.entries(ctx.installedByTarget);
+  if (perTarget.length <= 1) return `${ctx.installed} installed`;
+  return perTarget.map(([name, count]) => `${count} ${displayName(name)}`).join(', ');
+}
+
+const LABEL_WIDTH = 13;
+const row = (label: string, value: string): string => `${label.padEnd(LABEL_WIDTH)}${value}`;
+
+function installedLine(ctx: ProjectContext): string {
+  if (ctx.manifestError) {
+    return row(
+      'Installed:',
+      "the install record is damaged — choose 'Repair the install record' below",
+    );
+  }
+  if (ctx.installed === 0) return row('Installed:', 'nothing yet');
+  return row('Installed:', `${installedSummary(ctx)} · ${healthSummary(ctx)}`);
 }
 
 /** The few lines shown above the menu: where we are, what it is set up for, what is installed. */
 export function describeContext(ctx: ProjectContext): string[] {
-  const lines = [`Folder:     ${ctx.projectDir}`];
-  lines.push(
+  const setUp =
     ctx.detectedTargets.length > 0
-      ? `Set up for:  ${targetNames(ctx)}`
-      : 'Set up for:  not set up yet (no .claude/ or .github/ folder)',
-  );
-  if (ctx.manifestError) {
-    lines.push('Installed:  the install record could not be read — run `sigil status` for details');
-  } else if (ctx.installed > 0) {
-    lines.push(`Installed:  ${ctx.installed} installed · ${healthSummary(ctx)}`);
-  } else {
-    lines.push('Installed:  nothing yet');
-  }
-  return lines;
+      ? targetNames(ctx)
+      : 'not set up yet (no Claude Code or Copilot setup found)';
+  return [row('Folder:', ctx.projectDir), row('Set up for:', setUp), installedLine(ctx)];
 }

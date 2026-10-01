@@ -11,7 +11,9 @@
 import os from 'node:os';
 import { intro, isCancel, log, note, outro, select } from '@clack/prompts';
 import { detectProjectContext } from '../project-context';
+import type { ProjectContext } from '../project-context';
 import { SigilError } from '../errors';
+import { confirmInstallFolder } from './folder-guard';
 import { pickFolder } from './folder-picker';
 import { buildMenu, describeContext } from './home-menu';
 import type { HomeActionId } from './home-menu';
@@ -37,21 +39,32 @@ function showError(error: unknown): void {
   }
 }
 
-/** Runs one menu choice. Returns the folder to use next. */
-async function runChoice(choice: HomeActionId, dir: string, deps: HomeDeps): Promise<string> {
-  if (choice === 'change-folder') {
-    return (await pickFolder(dir, deps.homeDir ?? os.homedir())) ?? dir;
-  }
+/** Runs an action's handler, showing its failure instead of leaving the menu. */
+async function runHandler(choice: HomeActionId, dir: string, deps: HomeDeps): Promise<void> {
   const handler = deps.handlers[choice];
   if (!handler) {
     log.warn(`'${choice}' is not available here.`);
-    return dir;
+    return;
   }
   try {
     await handler(dir);
   } catch (error) {
     showError(error);
   }
+}
+
+/** Runs one menu choice. Returns the folder to use next. */
+async function runChoice(
+  choice: HomeActionId,
+  ctx: ProjectContext,
+  deps: HomeDeps,
+): Promise<string> {
+  const dir = ctx.projectDir;
+  if (choice === 'change-folder') {
+    return (await pickFolder(dir, deps.homeDir ?? os.homedir())) ?? dir;
+  }
+  if (choice === 'install' && !(await confirmInstallFolder(ctx))) return dir;
+  await runHandler(choice, dir, deps);
   return dir;
 }
 
@@ -70,7 +83,7 @@ export async function runHome(projectDir: string, deps: HomeDeps): Promise<void>
       options: buildMenu(ctx).map(({ value, label, hint }) => ({ value, label, hint })),
     });
     if (isCancel(choice) || choice === 'quit') break;
-    dir = await runChoice(choice as HomeActionId, dir, deps);
+    dir = await runChoice(choice as HomeActionId, ctx, deps);
   }
   outro('Bye. Run `sigil` any time to come back.');
 }

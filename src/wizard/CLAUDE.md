@@ -21,6 +21,18 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   existing folder, a folder it just created after the user confirmed (`New folder here`, or a typed path
   that did not exist), or `null`, never an unchecked string. Do not swap it for `text`. Live path typeahead needs
   `@clack/prompts` 1.x, which is ESM-only and breaks `mockClack`'s `require.cache` approach.
+- **Targets are never silently narrowed to one.** `ProjectContext` counts installs for every target
+  (`installedByTarget`), so the header and the "hide Update/Remove when nothing is installed" rule never
+  lose a second tool's installs. The commands still act on one target, so Update, Remove, Check, and
+  Clean up go through `chooseInstalledTarget` (`home-target.ts`): the only tool with installs is used,
+  and two tools get a "Which tool?" question. Copilot is detected by its own files, matched with
+  "any marker" (`detectedTargetsIn`, shared with `detectProjectTarget`); never a bare `.github/`.
+- **A damaged manifest is its own state, not "nothing installed".** `recommendNext` returns only
+  `repair` then (`project-advice.ts`), and the menu hides Install until `runRepair`
+  (`commands/repair-manifest.ts`) moves the file aside. Never delete the damaged file.
+- **Install into a risky folder asks first** (`folder-guard.ts`): the home folder, a drive root, or a
+  catalog checkout, from the Install entry and from search→install. The reasons come from
+  `riskyFolderReason`, the same text the recommendation shows.
 - `runHome` never exits on an action's failure: a `SigilError` is shown (message plus hint) and the menu
   returns. Ctrl+C at the menu leaves quietly. Handlers are injected so the loop is tested without installing.
 - Author entries (`new`, `edit`, `validate`) show only inside a catalog checkout and use that checkout's

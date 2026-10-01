@@ -1,5 +1,6 @@
 import { select, cancel } from '@clack/prompts';
 import { computeInstallStates } from '../../../install-state';
+import { detectedTargetsIn } from '../../../project-context';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { visibleArtifacts, chosenTarget, type AddWizardState } from './state';
 import { resolveOutcome } from './prompt-helpers';
@@ -33,6 +34,18 @@ async function refreshInstallStates(s: AddWizardState): Promise<void> {
   s.installStatesForTarget = targetName;
 }
 
+/** "Which AI tool?" plus what was found in the folder, so the default is never a mystery. */
+function targetQuestion(s: AddWizardState): string {
+  const found = detectedTargetsIn(s.ctx.projectDir);
+  const label = (name: string): string =>
+    s.ctx.scaffoldableTargets.find(t => t.name === name)?.displayName ?? name;
+  const note =
+    found.length > 0
+      ? `found: ${found.map(label).join(', ')}`
+      : `nothing set up in this folder yet, so ${label(s.ctx.detectedTarget)} is preselected`;
+  return `Which AI tool is this project for?  (${note})`;
+}
+
 /** Applies the chosen target to state, resetting downstream answers if it changed. */
 function applyChosenTarget(s: AddWizardState, answer: string): void {
   const changed = s.target !== undefined && s.target !== answer;
@@ -50,7 +63,7 @@ export const targetStep: WizardStep<AddWizardState> = {
   id: 'target',
   async run(s): Promise<StepOutcome> {
     const answer = await select({
-      message: `Install target  (detected: ${s.ctx.detectedTarget})`,
+      message: targetQuestion(s),
       options: s.ctx.scaffoldableTargets.map(t => ({
         value: t.name,
         label: t.displayName ?? t.name,

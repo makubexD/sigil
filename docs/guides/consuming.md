@@ -38,26 +38,27 @@ sigil
 sigil looks at the folder you are in and shows what it found:
 
 ```
-Folder:     C:\work\acme-api
+Folder:      C:\work\acme-api
 Set up for:  Claude Code
-Installed:  12 installed · 1 missing, 2 edited
+Installed:   12 installed · 1 missing, 2 edited
 ```
 
 It then lists what you can do, with the most useful step first and marked **(recommended)**. The
 recommendation follows the state of the folder:
 
-| What sigil finds in the folder                 | What it recommends                                    |
-| ---------------------------------------------- | ----------------------------------------------------- |
-| Your home folder, or a sigil catalog checkout  | Work in a different folder (installs would land here) |
-| No `.claude/` or `.github/` folder             | Set up this project                                   |
-| Set up, nothing installed                      | Install artifacts                                     |
-| Files sigil installed were deleted             | Restore deleted files                                 |
-| Installed files you edited                     | Check what's installed (shows which files differ)     |
-| A newer catalog version of something installed | Update installed artifacts                            |
-| Installed artifacts that have left the catalog | Clean up leftovers                                    |
-| Everything installed and healthy               | No recommendation; the list is there when you need it |
+| What sigil finds in the folder                                    | What it recommends                                    |
+| ----------------------------------------------------------------- | ----------------------------------------------------- |
+| Your home folder, the top of a drive, or a sigil catalog checkout | Work in a different folder (installs would land here) |
+| The install record is damaged                                     | Repair the install record                             |
+| No Claude Code or Copilot setup in the folder                     | Set up this project                                   |
+| Set up, nothing installed                                         | Install artifacts                                     |
+| Files sigil installed were deleted                                | Restore deleted files                                 |
+| Installed files you edited                                        | Check what's installed (shows which files differ)     |
+| A newer catalog version of something installed                    | Update installed artifacts                            |
+| Installed artifacts that have left the catalog                    | Clean up leftovers                                    |
+| Everything installed and healthy                                  | No recommendation; the list is there when you need it |
 
-The entries are Set up, Install, Restore, Update, Remove, Check status, Clean up, Browse the
+The entries are Set up, Install, Repair, Restore, Update, Remove, Check status, Clean up, Browse the
 catalog, Search the catalog, Work in a different folder, Show all commands, and Quit. Entries that
 cannot apply are hidden (there is no "Remove" in an empty project). Inside a sigil catalog checkout
 the menu also shows the author actions: Create a new artifact, Edit an artifact, Validate the catalog.
@@ -72,9 +73,24 @@ here" and type a name, and sigil creates it for you. "Type a path" is there for 
 pasted path; if the folder does not exist yet, sigil asks whether to create it. A path that is a
 file, or sits under a file, is rejected with a message.
 
-If the folder has both `.claude/` and `.github/`, the menu header and the update, remove, status, and
-clean-up entries work on the first one found (Claude Code). For the other target, use the command with
-`--target copilot`, for example `sigil update --target copilot`.
+**Claude Code and Copilot in one folder.** The header counts what is installed for each tool
+(`3 Claude Code, 2 GitHub Copilot`). Update, Remove, Check, and Clean up act on one tool at a time, so
+when both have installs the menu asks "Which tool?" first. When only one has installs, it is used
+without asking.
+
+**What counts as "set up".** Claude Code is set up when the folder has `.claude/`. Copilot is set up
+when it has one of `.github/copilot-instructions.md`, `.github/instructions/`, `.github/prompts/`,
+`.github/agents/`, or `.github/skills/`. A `.github/` folder that only holds workflows or issue
+templates does not count, so a normal GitHub repo is not mistaken for a Copilot project.
+
+**Installing in the wrong place.** Choosing Install (or installing from a search result) in your home
+folder, the top of a drive, or a sigil catalog checkout first asks "Install here anyway?" (default No).
+
+**A damaged install record.** If `.sigil/manifest.json` cannot be read, the header says so and the
+menu offers "Repair the install record". It moves the damaged file aside as
+`.sigil/manifest.damaged-<time>.json` (nothing is deleted) and starts a fresh record. Files that were
+already installed stay where they are, but sigil stops tracking them, so installing them again asks
+before replacing anything.
 
 Each entry runs the same code as the matching command. The guided flows print an
 `Equivalent command:` line, so you learn the command as you go and can repeat it in a script.
@@ -111,8 +127,8 @@ sigil add
 Use the arrow keys and Enter. Every step has a **← Back** option, and Ctrl+C cancels without writing
 anything. The steps run in this order; a step that does not apply to your choices is skipped:
 
-1. **Target** — Claude Code or GitHub Copilot. sigil guesses from `.claude/` or `.github/` in your
-   project and tells you why.
+1. **Which AI tool** — Claude Code or GitHub Copilot. The question says what sigil found in the
+   folder; with nothing found, Claude Code is preselected and the question says so.
 2. **Scope** — Everything, Recommended (a curated pack), or Pick specific items.
 3. **Pack** — only under Recommended: which bundle.
 4. **Browse and pick** — only under Pick specific items: choose a type (skills, agents, rules,
@@ -614,8 +630,9 @@ After sourcing, `sigil add <Tab>` suggests `all`, `pack:dotnet-tooling`, `kind:s
 sigil add skill:csharp/cs-generate-tests --project-dir packages/my-api --yes
 ```
 
-Claude Code writes to `.claude/` and Copilot writes to `.github/`. Auto-detection looks for those
-folders at the project root; when both exist it picks `claude`. Override with `--target`.
+Claude Code writes to `.claude/` and Copilot writes to `.github/`. Auto-detection looks for `.claude/`
+and for Copilot's own files (see "What counts as set up" above) at the project root; when both are
+there it picks `claude`, and when neither is it defaults to `claude`. Override with `--target`.
 
 ---
 

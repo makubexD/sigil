@@ -16,6 +16,8 @@ import { runList } from '../commands/list';
 import { runNew } from '../commands/new';
 import { runSearch } from '../commands/search';
 import { runValidate } from '../commands/validate';
+import { detectProjectContext } from '../project-context';
+import { confirmInstallFolder } from './folder-guard';
 import type { HomeHandler } from './home';
 
 const CATALOG = (): string => resolveDefault('catalog');
@@ -56,6 +58,7 @@ export const search: HomeHandler = async dir => {
 /** Shows one artifact, then offers to install it into the folder the menu is looking at. */
 async function detailsThenInstall(id: string, dir: string): Promise<void> {
   await runGet(id, { catalogDir: CATALOG(), json: false });
+  if (!(await confirmInstallFolder(detectProjectContext(dir)))) return;
   const install = await confirm({ message: `Install ${id} into ${dir}?`, initialValue: false });
   if (isCancel(install) || !install) return;
   await runAdd([id], {

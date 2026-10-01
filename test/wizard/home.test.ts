@@ -25,10 +25,12 @@ function context(overrides: Partial<ProjectContext> = {}): ProjectContext {
     detectedTargets: ['claude'],
     manifestPresent: true,
     installed: 3,
+    installedByTarget: { claude: 3 },
     health: { 'up-to-date': 3, outdated: 0, drifted: 0, orphaned: 0, missing: 0 },
     isCatalogCheckout: false,
     looksLikeProject: true,
     isHomeDir: false,
+    isFilesystemRoot: false,
     ...overrides,
   };
 }
@@ -79,6 +81,13 @@ describe('buildMenu', () => {
     assert.equal(values(context({ isCatalogCheckout: true }))[0], 'change-folder');
   });
 
+  it('should offer to repair a damaged install record and not offer to install', () => {
+    const damaged = context({ manifestError: 'bad json', installed: 0, installedByTarget: {} });
+    const items = values(damaged);
+    assert.equal(items[0], 'repair');
+    assert.ok(!items.includes('install'), 'install stays hidden until the record is repaired');
+  });
+
   it('should always end with help and quit, and always offer browse and search', () => {
     const items = values(context());
     assert.deepEqual(items.slice(-2), ['help', 'quit']);
@@ -111,9 +120,22 @@ describe('describeContext', () => {
     assert.match(describeContext(context()).join('\n'), /all healthy/i);
   });
 
-  it('should surface an unreadable install record', () => {
+  it('should surface a damaged install record and say how to fix it', () => {
     const lines = describeContext(context({ manifestError: 'bad json', installed: 0 })).join('\n');
-    assert.match(lines, /could not be read/i);
+    assert.match(lines, /damaged/i);
+    assert.match(lines, /Repair/);
+  });
+
+  it('should show what is installed for each tool when more than one has installs', () => {
+    const lines = describeContext(
+      context({
+        installed: 5,
+        installedByTarget: { claude: 3, copilot: 2 },
+        detectedTargets: ['claude', 'copilot'],
+      }),
+    ).join('\n');
+    assert.match(lines, /3 Claude Code/);
+    assert.match(lines, /2 GitHub Copilot/);
   });
 });
 
@@ -190,6 +212,45 @@ describe('runHome', () => {
     });
   });
 
+  it('should ask before installing into the home folder, and not install on "no"', async () => {
+    await withTempDirAsync(async dir => {
+      const calls: Calls = [];
+      const restore = mockClack(['install', false, 'quit']);
+      try {
+        await runHome(dir, { handlers: handlers(calls), homeDir: dir });
+      } finally {
+        restore();
+      }
+      assert.deepEqual(calls, []);
+    });
+  });
+
+  it('should install into the home folder when the user confirms', async () => {
+    await withTempDirAsync(async dir => {
+      const calls: Calls = [];
+      const restore = mockClack(['install', true, 'quit']);
+      try {
+        await runHome(dir, { handlers: handlers(calls), homeDir: dir });
+      } finally {
+        restore();
+      }
+      assert.deepEqual(calls, [['install', dir]]);
+    });
+  });
+
+  it('should not ask about other actions in the home folder', async () => {
+    await withTempDirAsync(async dir => {
+      const calls: Calls = [];
+      const restore = mockClack(['status', 'quit']);
+      try {
+        await runHome(dir, { handlers: handlers(calls), homeDir: dir });
+      } finally {
+        restore();
+      }
+      assert.deepEqual(calls, [['status', dir]]);
+    });
+  });
+
   it('should keep the current folder when the user backs out of the folder picker', async () => {
     await withTempDirAsync(async dir => {
       const calls: Calls = [];
@@ -210,8 +271,9 @@ describe('default home handlers', () => {
     const noInit = buildMenu(
       context({ detectedTargets: [], manifestPresent: false, installed: 0 }),
     );
+    const damaged = buildMenu(context({ manifestError: 'bad json', installed: 0 }));
     const { handlers } = defaultHomeDeps(() => {});
-    for (const { value } of [...everything, ...noInit]) {
+    for (const { value } of [...everything, ...noInit, ...damaged]) {
       if (value === 'quit' || value === 'change-folder') continue;
       assert.equal(typeof handlers[value], 'function', `no handler for '${value}'`);
     }

@@ -9,7 +9,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { loadManifest, computeStatus } from './manifest';
-import type { ArtifactStatus } from './manifest/types';
+import type { ArtifactStatus, ManifestEntry } from './manifest/types';
 import { getAllTargets } from './targets';
 
 /** Files and folders that mark a directory as a project someone works in. */
@@ -32,13 +32,17 @@ export interface ProjectContext {
   /** Every target whose marker folder exists. Empty means "none detected" — there is no default. */
   detectedTargets: string[];
   manifestPresent: boolean;
-  /** Number of artifacts recorded in `.sigil/manifest.json`. */
+  /** Number of artifacts recorded in `.sigil/manifest.json`, across every target. */
   installed: number;
+  /** The same count per target name, so a second target's installs are never hidden. */
+  installedByTarget: Record<string, number>;
   health: Record<ArtifactStatus, number>;
   /** `catalog/` plus `packs.yaml`: installs here would land inside a sigil catalog. */
   isCatalogCheckout: boolean;
   looksLikeProject: boolean;
   isHomeDir: boolean;
+  /** The top of a drive (`C:\`, `/`): never a project. */
+  isFilesystemRoot: boolean;
   /** Set when the manifest exists but cannot be read; `installed` is then 0. */
   manifestError?: string;
 }
@@ -57,7 +61,8 @@ export type NextAction =
   | 'restore'
   | 'status'
   | 'update'
-  | 'prune';
+  | 'prune'
+  | 'repair';
 
 export interface Recommendation {
   action: NextAction;
@@ -83,35 +88,38 @@ export function looksLikeProject(dir: string): boolean {
   }
 }
 
+function countByTarget(entries: ManifestEntry[]): Record<string, number> {
+  const counts: Record<string, number> = {};
+  for (const e of entries) counts[e.target] = (counts[e.target] ?? 0) + 1;
+  return counts;
+}
+
+type Health = Pick<
+  ProjectContext,
+  'manifestPresent' | 'installed' | 'installedByTarget' | 'health' | 'manifestError'
+>;
+
 /** Reads the manifest and classifies every entry. Never throws: an unreadable manifest is reported. */
-function readHealth(
-  dir: string,
-  catalogIds: Set<string> | undefined,
-  target: string | undefined,
-): Pick<ProjectContext, 'manifestPresent' | 'installed' | 'health' | 'manifestError'> {
+function readHealth(dir: string, catalogIds: Set<string> | undefined): Health {
   const health = emptyHealth();
   const manifestPresent = fs.existsSync(path.join(dir, '.sigil', 'manifest.json'));
   try {
-    // The commands act on the first detected target, so count that one: header and actions agree.
-    const all = loadManifest(dir);
-    const manifest = target
-      ? { ...all, entries: all.entries.filter(e => e.target === target) }
-      : all;
+    const manifest = loadManifest(dir);
     // Without catalog ids, treat every installed id as known so nothing is called orphaned.
     const known = catalogIds ?? new Set(manifest.entries.map(e => e.id));
     for (const result of computeStatus(manifest, dir, known)) health[result.status] += 1;
-    return { manifestPresent, installed: manifest.entries.length, health };
+    const installedByTarget = countByTarget(manifest.entries);
+    return { manifestPresent, installed: manifest.entries.length, installedByTarget, health };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    return { manifestPresent, installed: 0, health, manifestError: message };
+    return { manifestPresent, installed: 0, installedByTarget: {}, health, manifestError: message };
   }
 }
 
-/** Every target whose marker folder (`.claude/`, `.github/`, …) exists. Empty means none: no default. */
+/** Every target with at least one marker (`.claude/`, `.github/prompts/`, …) present. Empty means none: no default. */
 export function detectedTargetsIn(projectDir: string): string[] {
   return getAllTargets()
-    .filter(t => (t.projectMarkers ?? []).length > 0)
-    .filter(t => (t.projectMarkers ?? []).every(m => fs.existsSync(path.join(projectDir, m))))
+    .filter(t => (t.projectMarkers ?? []).some(m => fs.existsSync(path.join(projectDir, m))))
     .map(t => t.name);
 }
 
@@ -123,57 +131,14 @@ export function detectProjectContext(
   return {
     projectDir,
     detectedTargets,
-    ...readHealth(projectDir, options.catalogIds, detectedTargets[0]),
+    ...readHealth(projectDir, options.catalogIds),
     isCatalogCheckout:
       fs.existsSync(path.join(projectDir, 'catalog')) &&
       fs.existsSync(path.join(projectDir, 'packs.yaml')),
     looksLikeProject: looksLikeProject(projectDir),
     isHomeDir: samePath(projectDir, options.homeDir ?? os.homedir()),
+    isFilesystemRoot: path.dirname(path.resolve(projectDir)) === path.resolve(projectDir),
   };
 }
 
-const HOME_REASON =
-  'This is your home folder. Installing here affects every project; pick a project folder.';
-const CATALOG_REASON =
-  'This is a sigil catalog checkout, so installs would land inside it. Pick the project to set up.';
-
-function folderAdvice(ctx: ProjectContext): Recommendation[] {
-  let reason: string | undefined;
-  if (ctx.isHomeDir) reason = HOME_REASON;
-  else if (ctx.isCatalogCheckout) reason = CATALOG_REASON;
-  return reason === undefined ? [] : [{ action: 'change-folder', reason }];
-}
-
-function setupAdvice(ctx: ProjectContext): Recommendation[] {
-  if (ctx.installed > 0) return [];
-  if (ctx.detectedTargets.length === 0) {
-    const note = ctx.looksLikeProject ? '' : ' (this folder has no project files yet)';
-    return [
-      {
-        action: 'init',
-        reason: `No .claude/ or .github/ folder found. Set the project up for Claude Code or Copilot${note}.`,
-      },
-    ];
-  }
-  return [{ action: 'install', reason: 'Nothing is installed here yet.' }];
-}
-
-/** One row per problem status, in the order the menu suggests fixing them. */
-const HEALTH_ADVICE: ReadonlyArray<readonly [ArtifactStatus, NextAction, string]> = [
-  ['missing', 'restore', 'have deleted files'],
-  ['drifted', 'status', 'were edited after install'],
-  ['outdated', 'update', 'have a newer catalog version'],
-  ['orphaned', 'prune', 'are gone from the catalog'],
-];
-
-function healthAdvice({ health }: ProjectContext): Recommendation[] {
-  return HEALTH_ADVICE.filter(([status]) => health[status] > 0).map(([status, action, what]) => ({
-    action,
-    reason: `${health[status]} artifact(s) ${what}.`,
-  }));
-}
-
-/** Ordered suggestions for this folder; empty when it is set up and healthy. */
-export function recommendNext(ctx: ProjectContext): Recommendation[] {
-  return [...folderAdvice(ctx), ...setupAdvice(ctx), ...healthAdvice(ctx)];
-}
+export { recommendNext, riskyFolderReason } from './project-advice';

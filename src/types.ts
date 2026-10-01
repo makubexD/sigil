@@ -427,11 +427,13 @@ export interface Target {
 
   /**
    * File-system markers that indicate this target is already installed in a project.
-   * `detectProjectTarget` scans getAllTargets() in registration order and returns the
-   * first target whose marker directories (relative to projectDir) are present on disk.
-   * Declaring them here removes the need for a hardcoded dir→name switch in the CLI.
+   * `detectedTargetsIn` scans getAllTargets() in registration order; a target is present when
+   * ANY of its markers (relative to projectDir) exists on disk, and `detectProjectTarget`
+   * returns the first such target. Declaring them here removes the need for a hardcoded
+   * dir→name switch in the CLI. Pick markers only that target creates: a folder other tools
+   * also use (a bare `.github/`) would misdetect.
    *
-   * Example: Claude Code declares ['.claude'], Copilot declares ['.github']
+   * Example: Claude Code declares ['.claude'], Copilot declares ['.github/copilot-instructions.md', ...]
    */
   projectMarkers?: string[];
 

@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Home menu: "Repair the install record" appears when `.sigil/manifest.json` cannot be read. It moves
+  the damaged file aside (`manifest.damaged-<time>.json`), and the menu hides Install until then.
+- Home menu: Install (and install from a search result) asks first in your home folder, the top of a
+  drive, or a sigil catalog checkout. When both Claude Code and Copilot have installs, Update, Remove,
+  Check, and Clean up ask which tool, and the header counts each.
 - Folder browser in the home menu: "Work in a different folder" now lists folders to pick with the
   arrow keys (project folders first, step in, go up, use this one) instead of asking for a typed path.
   "New folder here" creates a project folder, and "Type a path" offers to create a folder that does
@@ -66,6 +71,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Copilot is detected from its own files (`.github/copilot-instructions.md`, `instructions/`,
+  `prompts/`, `agents/`, `skills/`), not from any `.github/` folder, so a repo that only uses GitHub
+  Actions is no longer treated as a Copilot project. Any one marker is enough (it used to need all).
 - `commander` upgraded to ^14.0.3 (adds help groups; 15 requires Node 22.12, sigil supports 20.19+).
 - Bare `sigil` without a terminal now prints help on stdout and exits 0 (it was stderr, exit 1).
 - `sigil uninstall [ids...]` and `sigil init [--target]` accept missing arguments (guided in a

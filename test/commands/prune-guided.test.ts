@@ -119,3 +119,29 @@ describe('runPrune outside a terminal', () => {
     });
   });
 });
+
+describe('runPrune preview wording', () => {
+  async function previewText(answers: MockAnswer[], inTty: boolean): Promise<string> {
+    const lines: string[] = [];
+    const original = console.log;
+    console.log = (...args: unknown[]) => void lines.push(args.join(' '));
+    try {
+      await withTempDirAsync(async dir => {
+        projectWithOrphan(dir);
+        if (inTty) await inTerminal(dir, answers);
+        else await runPrune(options(dir));
+      });
+    } finally {
+      console.log = original;
+    }
+    return lines.join(' | ');
+  }
+
+  it('should not tell a terminal user to run --apply when it is about to ask', async () => {
+    assert.doesNotMatch(await previewText([false], true), /sigil prune --apply/);
+  });
+
+  it('should still tell a script how to apply it', async () => {
+    assert.match(await previewText([], false), /sigil prune --apply/);
+  });
+});

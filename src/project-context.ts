@@ -73,9 +73,19 @@ function emptyHealth(): Record<ArtifactStatus, number> {
   return { 'up-to-date': 0, outdated: 0, drifted: 0, orphaned: 0, missing: 0 };
 }
 
+/** The real location of `p`: follows links and expands Windows 8.3 short names (`KIEFER~1`). */
+function canonical(p: string): string {
+  const resolved = path.resolve(p);
+  try {
+    return fs.realpathSync.native(resolved);
+  } catch {
+    return resolved; // a folder that does not exist yet still compares by its path
+  }
+}
+
 export function samePath(a: string, b: string): boolean {
   const normalize = (p: string): string =>
-    process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p);
+    process.platform === 'win32' ? canonical(p).toLowerCase() : canonical(p);
   return normalize(a) === normalize(b);
 }
 

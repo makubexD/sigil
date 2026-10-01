@@ -36,11 +36,12 @@ export async function runInit(opts: InitOptions): Promise<void> {
   const target = targetNamed(name);
   for (const dir of target.initDirs ?? []) {
     const full = path.join(opts.projectDir, dir);
+    const existed = fs.existsSync(full);
     fs.mkdirSync(full, { recursive: true });
-    console.log(`  created ${dir}/`);
+    console.log(existed ? `  ${dir}/ already exists` : `  created ${dir}/`);
   }
-  console.log(`\n✓ ${target.name} project structure initialised.`);
+  console.log(`\n✓ ${target.name} project structure is ready.`);
   console.log(
-    `  Next: sigil add --target ${target.name}  (interactive) or  sigil add skill:<language>/<name> --target ${target.name}`,
+    `  Next: install something. In the sigil menu choose "Install artifacts", or run  sigil add --target ${target.name}`,
   );
 }

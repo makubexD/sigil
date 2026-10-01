@@ -88,6 +88,17 @@ describe('buildMenu', () => {
     assert.ok(!items.includes('install'), 'install stays hidden until the record is repaired');
   });
 
+  it('should keep "Set up this project" available until every tool is set up', () => {
+    assert.ok(values(context({ detectedTargets: ['claude'] })).includes('init'));
+    assert.ok(!values(context({ detectedTargets: ['claude', 'copilot'] })).includes('init'));
+  });
+
+  it('should say what the recommended entry does as well as why it is first', () => {
+    const [first] = buildMenu(context({ manifestPresent: false, installed: 0 }));
+    assert.match(first?.hint ?? '', /Add skills, agents, rules/);
+    assert.match(first?.hint ?? '', /Nothing is installed here yet/);
+  });
+
   it('should always end with help and quit, and always offer browse and search', () => {
     const items = values(context());
     assert.deepEqual(items.slice(-2), ['help', 'quit']);
@@ -191,6 +202,29 @@ describe('runHome', () => {
         calls.map(([id]) => id),
         ['install', 'init'],
       );
+    });
+  });
+
+  it('should explain what to try when a folder cannot be written to', async () => {
+    await withTempDirAsync(async dir => {
+      const infos: string[] = [];
+      const restore = mockClack(['install', 'quit']);
+      const clack = require('@clack/prompts') as { log: { info: (m: string) => void } };
+      clack.log.info = (message: string) => void infos.push(message);
+      const denied = Object.assign(new Error('EPERM: operation not permitted'), { code: 'EPERM' });
+      try {
+        await runHome(dir, {
+          handlers: {
+            install: async () => {
+              throw denied;
+            },
+          },
+          homeDir: '/nowhere/home',
+        });
+      } finally {
+        restore();
+      }
+      assert.match(infos.join(' '), /Pick a different folder/);
     });
   });
 

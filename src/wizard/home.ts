@@ -29,14 +29,22 @@ export interface HomeDeps {
   homeDir?: string;
 }
 
-/** Shows an action's failure as a message and keeps the menu alive. */
+const PERMISSION_CODES = new Set(['EACCES', 'EPERM', 'EROFS']);
+const PERMISSION_HINT =
+  "sigil can't write here. Pick a different folder, or check that this one is not read-only or locked by another program (an editor, a sync tool, antivirus).";
+
+const isPermissionError = (error: unknown): boolean =>
+  error instanceof Error && PERMISSION_CODES.has((error as NodeJS.ErrnoException).code ?? '');
+
+/** Shows an action's failure as a message, with what to try next, and keeps the menu alive. */
 function showError(error: unknown): void {
   if (error instanceof SigilError) {
     log.error(error.message);
     if (error.hint) log.info(error.hint.trim());
-  } else {
-    log.error(error instanceof Error ? error.message : String(error));
+    return;
   }
+  log.error(error instanceof Error ? error.message : String(error));
+  if (isPermissionError(error)) log.info(PERMISSION_HINT);
 }
 
 /** Runs an action's handler, showing its failure instead of leaving the menu. */

@@ -6,7 +6,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { detectProjectContext, recommendNext } from '../dist-cli/project-context';
+import { detectProjectContext, recommendNext, samePath } from '../dist-cli/project-context';
 import { detectProjectTarget } from '../dist-cli/cli-helpers';
 import type { ProjectContext } from '../dist-cli/project-context';
 import { saveManifest, sha256 } from '../dist-cli/manifest';
@@ -200,6 +200,21 @@ describe('detectProjectContext', () => {
       const ctx = detectProjectContext(dir);
       assert.equal(ctx.installed, 0);
       assert.match(ctx.manifestError ?? '', /manifest/i);
+    });
+  });
+});
+
+describe('samePath', () => {
+  it('should treat a short Windows name and the real path as the same folder', () => {
+    withTempDir(dir => {
+      assert.equal(samePath(dir, fs.realpathSync.native(dir)), true);
+    });
+  });
+
+  it('should tell different folders apart, and accept one that does not exist yet', () => {
+    withTempDir(dir => {
+      assert.equal(samePath(dir, path.join(dir, 'other')), false);
+      assert.equal(samePath(path.join(dir, 'new'), path.join(dir, 'new')), true);
     });
   });
 });

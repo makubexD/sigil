@@ -13,6 +13,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   plainly when nothing matches, and names the helpers an install brings. Remove asks whether to keep or
   delete files you edited; the `Equivalent command:` is printed after you confirm and includes
   `--yes` (and `--force` when chosen). Pickers say Ctrl+C goes back.
+- Plainer wording: `sigil status` prints `[edited by you]`, `[no longer in the catalog]`, `[file deleted]`
+  and `[newer version available]` (`--json` keeps the machine names); `sigil init` says "already exists"
+  and points to the menu; the guided prune does not tell you to run `--apply` right before asking;
+  a folder that cannot be written to says what to try; the menu header columns line up, and the
+  recommended entry keeps its description. "Set up this project" stays until both tools are set up.
+- Folder browser: a folder with over 200 subfolders checks only the first 200 for project markers
+  (the rest are still listed), and a short Windows path (`KIEFER~1`) is recognised as the same folder
+  as its long form, so the home-folder check cannot be fooled.
 - Install wizard, for first-timers: a "How this works" note, "Pick specific items" preselected, and
   "Everything" asks for confirmation. Enter with nothing ticked asks again, and ticking "← Back"
   together with items warns instead of dropping them. Going back keeps your picks. The plan box counts

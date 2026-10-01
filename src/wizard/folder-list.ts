@@ -34,6 +34,9 @@ export interface FolderEntry {
 }
 
 const SKIPPED_FOLDERS = new Set(['node_modules']);
+/** Folders past this many (by name) are listed without checking for project markers: each check is
+ * a few file reads, which is slow in a huge or networked folder. "Type a path" still reaches them. */
+const MAX_PROBED = 200;
 
 const isRoot = (dir: string): boolean => path.dirname(dir) === dir;
 
@@ -53,20 +56,25 @@ function isFolder(dir: string, entry: fs.Dirent): boolean {
   }
 }
 
+/** One listed folder; `probe` is false past the cap, so it is listed without a project check. */
+function describeFolder(dir: string, name: string, probe: boolean): FolderEntry {
+  const full = path.join(dir, name);
+  return {
+    name,
+    path: full,
+    isProject: probe && looksLikeProject(full),
+    targets: probe ? detectedTargetsIn(full) : [],
+  };
+}
+
 /** The folders directly inside `dir`: projects first, then alphabetical. Throws if unreadable. */
 export function listSubfolders(dir: string): FolderEntry[] {
   return fs
     .readdirSync(dir, { withFileTypes: true })
     .filter(e => isFolder(dir, e) && !e.name.startsWith('.') && !SKIPPED_FOLDERS.has(e.name))
-    .map(e => {
-      const full = path.join(dir, e.name);
-      return {
-        name: e.name,
-        path: full,
-        isProject: looksLikeProject(full),
-        targets: detectedTargetsIn(full),
-      };
-    })
+    .map(e => e.name)
+    .sort((a, b) => a.localeCompare(b))
+    .map((name, index) => describeFolder(dir, name, index < MAX_PROBED))
     .sort((a, b) => Number(b.isProject) - Number(a.isProject) || a.name.localeCompare(b.name));
 }
 

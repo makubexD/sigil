@@ -81,3 +81,32 @@ describe('runInit with --target', () => {
     });
   });
 });
+
+describe('runInit output', () => {
+  async function init(dir: string): Promise<string> {
+    const lines: string[] = [];
+    const original = console.log;
+    console.log = (...args: unknown[]) => void lines.push(args.join(' '));
+    try {
+      await runInit({ projectDir: dir, target: 'claude' });
+    } finally {
+      console.log = original;
+    }
+    return lines.join(' | ');
+  }
+
+  it('should say a folder already exists instead of claiming it created it', async () => {
+    await withTempDirAsync(async dir => {
+      assert.match(await init(dir), /created \.claude\/skills\//);
+      const again = await init(dir);
+      assert.match(again, /\.claude\/skills\/ already exists/);
+      assert.doesNotMatch(again, /created \.claude/);
+    });
+  });
+
+  it('should point at the menu entry to use next, not only at a command', async () => {
+    await withTempDirAsync(async dir => {
+      assert.match(await init(dir), /choose "Install artifacts"/);
+    });
+  });
+});

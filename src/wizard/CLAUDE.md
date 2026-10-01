@@ -36,6 +36,10 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
 - **A damaged manifest is its own state, not "nothing installed".** `recommendNext` returns only
   `repair` then (`project-advice.ts`), and the menu hides Install until `runRepair`
   (`commands/repair-manifest.ts`) moves the file aside. Never delete the damaged file.
+- **The folder list is capped, and comparisons use real paths.** `listSubfolders` checks only the
+  first `MAX_PROBED` (200) folders by name for project markers; the rest are listed without a check, because
+  each check is file reads and a huge or networked folder would hang. `samePath` compares
+  `realpathSync.native` results, so 8.3 short names and links cannot defeat the home-folder check.
 - **Install into a risky folder asks first** (`folder-guard.ts`): the home folder, a drive root, or a
   catalog checkout, from the Install entry and from search→install. The reasons come from
   `riskyFolderReason`, the same text the recommendation shows.

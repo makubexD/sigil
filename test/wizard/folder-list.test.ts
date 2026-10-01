@@ -202,6 +202,20 @@ describe('checkNewFolderName', () => {
   });
 });
 
+describe('listSubfolders in a huge folder', () => {
+  it('should check the first 200 folders for project markers and list the rest unchecked', () => {
+    withTempDir(dir => {
+      for (let i = 0; i < 205; i++) mk(dir, `d${String(i).padStart(3, '0')}`);
+      fs.writeFileSync(path.join(dir, 'd000', 'package.json'), '{}');
+      fs.writeFileSync(path.join(dir, 'd204', 'package.json'), '{}');
+      const found = listSubfolders(dir);
+      assert.equal(found.length, 205);
+      assert.equal(found[0]?.name, 'd000'); // a project, sorted first
+      assert.equal(found.find(f => f.name === 'd204')?.isProject, false); // past the cap
+    });
+  });
+});
+
 describe('listSubfolders and links', () => {
   it('should list a link that points at a folder', () => {
     withTempDir(dir => {

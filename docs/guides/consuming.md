@@ -92,6 +92,14 @@ menu offers "Repair the install record". It moves the damaged file aside as
 already installed stay where they are, but sigil stops tracking them, so installing them again asks
 before replacing anything.
 
+**Setting up a second tool.** "Set up this project" stays in the menu until both Claude Code and
+Copilot have their folders, so you can add the other one later. `sigil init` says when a folder
+already exists and points to "Install artifacts" next. The recommended entry's hint says what the
+entry does as well as why it is first.
+
+**When something cannot be written.** A read-only or locked folder shows the system's message plus a
+line telling you to pick another folder or check what is holding it.
+
 **Search.** "Search the catalog" asks for a word, then shows the matches as a list. Pick one to see its
 details; sigil then offers to install it, and says which helper rules or agents come with it. No
 match is said plainly. "Browse the catalog" lists by kind and points you to Install or Search.

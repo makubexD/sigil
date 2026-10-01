@@ -258,7 +258,7 @@ program
   .action(runPrune);
 // ─── uninstall ────────────────────────────────────────────────────────────────
 program
-  .command('uninstall <ids...>')
+  .command('uninstall [ids...]')
   .description(
     'Remove installed artifacts from a consumer project. Refcount-aware: shared deps only removed when no dependents remain.',
   )

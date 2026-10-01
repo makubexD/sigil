@@ -8,6 +8,9 @@ import { getAllTargets } from './targets';
 import { resolveDefault, describePathDefaults, pkg } from './cli-helpers';
 import { ALL_KINDS } from './kinds';
 import { handleFatal } from './cli-error';
+import { isInteractiveTTY } from './wizard';
+import { runHome } from './wizard/home';
+import { defaultHomeDeps } from './wizard/home-actions';
 import { runBuild } from './commands/build';
 import { runValidate } from './commands/validate';
 import { runIndex } from './commands/index';
@@ -462,8 +465,16 @@ describePathDefaults(program);
 const NODE_AND_SCRIPT_ARGS = 2; // argv[0] = node, argv[1] = this script
 if (process.argv.length <= NODE_AND_SCRIPT_ARGS) {
   // Bare `sigil`. Handled before parsing: a root .action() would swallow mistyped commands.
-  // Help goes to stdout with exit 0 (Commander's default is stderr + exit 1, which reads as a failure).
-  program.outputHelp();
+  // In a terminal that is the guided menu; elsewhere help goes to stdout with exit 0 (Commander's
+  // default is stderr + exit 1, which reads as a failure).
+  if (isInteractiveTTY()) {
+    runHome(
+      process.cwd(),
+      defaultHomeDeps(() => program.outputHelp()),
+    ).catch(handleFatal);
+  } else {
+    program.outputHelp();
+  }
 } else {
   program.parseAsync(process.argv).catch(handleFatal);
 }

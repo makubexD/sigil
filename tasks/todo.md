@@ -20,8 +20,8 @@
 
 ## home-menu
 
-- [ ] T10 runHome + root wiring (TTY)
-- [ ] T11 Browse/search/author routes
+- [x] T10 runHome + root wiring (TTY)
+- [x] T11 Browse/search/author routes
 
 ## docs
 

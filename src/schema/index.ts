@@ -298,7 +298,7 @@ export const HookSchema = z.object({
    * which reports a native command's exit code 2 as 1, so a blocking hook stops blocking.
    */
   args: z.array(z.string()).optional(),
-  /** Optional timeout in milliseconds for the hook command. */
+  /** Optional timeout in seconds for the hook command (copied verbatim into Claude settings, where the unit is seconds). */
   timeout: z.number().int().positive().optional(),
 });
 

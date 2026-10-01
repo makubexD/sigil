@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `shared/wizard-auditor`).
 - Decision record `docs/decisions/distribution-channels-2026-09.md` (scaffold vs. plugin
   marketplaces, token cost, capability model, roadmap).
+- `shared/feature`: a user-invoked `/feature` conductor over the
+  [agent-skills](https://github.com/addyosmani/agent-skills) collection, which is installed
+  separately.
+- Pack `spec-driven`: installs `shared/feature` alone.
+- `package.json` `exports` map. Only `"."` and `"./package.json"` are exported; a deep import of
+  `dist-cli/` fails with Node's `ERR_PACKAGE_PATH_NOT_EXPORTED`.
+- `sigil prune`: preview by default. `--apply` removes orphaned manifest entries (ids no longer in
+  the bundled catalog) and the command also reports deprecated-but-installed artifacts.
+- `docs/audits/2026-09-27/tools/live-probe.js`: installs catalog combinations into a target folder
+  and sends real prompts through `claude -p` / `copilot -p` to check that each artifact takes effect.
+  Manual and paid, so not part of `npm test`. The target directory is the `PROBE_TARGET`
+  environment variable.
 
 - Per-target capability tables (`src/targets/<provider>/capabilities.ts`): the single declaration of
   which kinds each target delivers on each channel (scaffold / plugin), and the generated
@@ -28,6 +40,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `validate` warns when a skill names a `references/<file>` it doesn't ship, or an `assets/` or
   `scripts/` path (not emitted by any target).
 - Body-lexicon term `{sigil:skills-dir}` (`.claude/skills/` / `.github/skills/`).
+
+- `docs/reference/architecture.md`: contributor internals (extension model, emit specs, templates,
+  conformance engine) moved out of `spec.md`.
+- `docs/reference/cli-flags.md`: per-command flags captured from `--help`. `test/cli-flags.test.ts`
+  fails when it lacks a command section, omits a flag from `--help`, or documents an unregistered
+  command.
 
 ### Changed
 
@@ -48,6 +66,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and references, a crash in the wizard engine sketch, and about 25 smaller accuracy fixes.
 - The shared auditor agents preload their skill and find `references/auditor.md` by a fixed
   search order instead of an open-ended search.
+
+- Reference docs, guides and `CLAUDE.md` corrected against the code (flags, paths, examples, error
+  messages, build and test steps) and condensed; no invariant was removed. `spec.md` is shorter and
+  has a table of contents. `docs/reference/capabilities.md` now opens with a breadcrumb, emitted by
+  `renderCapabilityMatrix()` so the generated file and its staleness test agree.
 
 ### Fixed
 
@@ -108,12 +131,6 @@ through Claude Code and Copilot CLI against seven install combinations:
   on), and Copilot chose its built-in reviewer over `ts-security-auditor`. Each now names it.
 - `shared/allow-dev-tools` dropped `git status`/`diff`/`log`: Claude Code already runs read-only
   commands without a prompt, so those entries did nothing.
-
-### Added (live-prompt campaign)
-
-- `docs/audits/2026-09-27/tools/live-probe.js`: installs catalog combinations into a target folder
-  and sends real prompts through `claude -p` / `copilot -p` to check that each artifact takes effect.
-  Manual and paid, so not part of `npm test`.
 
 ### Removed
 

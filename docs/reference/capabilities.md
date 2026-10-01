@@ -2,6 +2,8 @@
 
 # Kind support per target and channel
 
+> **Back to:** [README](../../README.md) · [Documentation index](../index.md)
+
 Which artifact kinds each target delivers on each channel. `scaffold` = files written into a
 project by `sigil add` (and the target's `sigil build` layout); `plugin` = marketplace plugins
 built by `sigil build`. `native` = emitted as its own file or config fragment; `via inline` =

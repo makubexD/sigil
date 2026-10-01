@@ -142,7 +142,7 @@ Req.md also asked what metadata is lost during generation. Two real, live losses
 
 ## 8. How this scales to a future third provider
 
-Per `docs/reference/spec.md` § Extension model (step 7, added by this pass): a new provider adds one
+Per `docs/reference/architecture.md` § Extension model (step 7, added by this pass): a new provider adds one
 `ProviderLexicon` table with a `{value, doc}` entry per existing term, wires `lexicon:` onto its
 `KindEmitSpec`s, and adds `UNTRANSLATED_TOKEN_FORBID` plus its own cross-provider-literal forbids.
 `provider-term-leak` needs no changes — it derives its detection from every registered lexicon's

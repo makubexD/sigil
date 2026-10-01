@@ -29,13 +29,14 @@ Run `sigil add` with no arguments in an interactive terminal:
 sigil add
 ```
 
-The wizard walks you through five steps:
+The wizard walks you through these steps. A step that does not apply is skipped:
 
 1. **Target** — Claude Code or GitHub Copilot (auto-detected from `.claude/` / `.github/` at your project root, shown with reason)
-2. **Scope** — Everything / By pack / By kind / Pick individually
-3. **Artifacts** — when picking individually, an optional "Narrow by language?" step scopes the picker first, then a grouped checkbox list shows artifacts under language headers. For `all` and `kind` scopes, a language filter step appears instead.
+2. **Scope** — Everything / Recommended / Pick specific items
+3. **Artifacts** — under Pick specific items, a type sub-menu (the labels are that target's vocabulary) then the picker. Code kinds get an optional "Narrow by language?" step. For Everything, a language filter step appears instead.
 4. **Dependencies** — before you decide, the wizard shows the exact rules and agents your selection references via `uses:` frontmatter. These are **author recommendations** — the skill bodies work without them, but the author bundled them as "you'll probably want these too." Yes installs them; No skips them (`--no-deps`).
 5. **Conflicts** — whether to overwrite files that already exist.
+6. **Config scope** — only when the selection includes `mcp`, `hook`, or `settings`. Choices are `project`, `local`, and `user`, each showing the destination file. A scope that writes into every project also shows the blast-radius warning.
 
 The **Install plan** box (shown before "Proceed?") previews the full resolved artifact set: your picks tagged `(your pick)` and dependency-closure artifacts tagged `(dependency of <skill-name>)`. After install, a copy-pasteable `sigil add … --yes` command is printed so you can repeat it in CI.
 
@@ -135,34 +136,34 @@ dist/claude/
 ```bash
 sigil list                      # all artifacts
 sigil list --language python    # filter by language
-sigil list --kind skill         # filter by kind: skill | agent | rule | prompt
+sigil list --kind skill         # skill | agent | rule | prompt | workflow | mcp | hook | settings | template
 ```
 
-**Expected output (all):**
+**Expected output (`sigil list --kind skill --language csharp`):**
 
 ```
-SKILL (…)
-  csharp/cs-generate-tests [csharp] — Use when adding or reviewing unit tests in a C#/.NET project.
-  python/py-generate-tests [python] — Use when adding or reviewing pytest tests in a Python project.
-  react/react-generate-tests [react] — Use when writing or reviewing React component tests.
-
-AGENT (4)
-  shared/code-reviewer — Thorough code review agent for any language.
-  csharp/cs-architecture-reviewer [csharp] — …
-
-RULE (4)  PROMPT (2)
+SKILL (7)
+  csharp/cs-add-package [csharp] — Vet and wire a NuGet package through Central Package Management — checks CVEs, maintenance, transitive footprint, and license before adding
+  csharp/cs-audit-deps [csharp] — Audit NuGet dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance
+  csharp/cs-document [csharp] — Generate or update XML doc comments and module-level documentation following the project's documented docstring style
+  csharp/cs-release [csharp] — Prepare a .NET release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification
+  csharp/cs-generate-tests [csharp] — Generate an xUnit + Moq test suite for a C# file or class following the project's documented test conventions
+  csharp/cs-scaffold-project [csharp] — Scaffold a new .NET project with the solution's standards pre-wired — NRT, analyzers, CPM, file-scoped namespaces, correct src/tests layout — and add it to the .sln
+  csharp/cs-sync-tests [csharp] — Sync the xUnit test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)
 ```
+
+An unfiltered `sigil list` uses the same shape: a `KIND (N)` header, then `  <id> [<language>] — <description>` for each artifact. `template` is a catalog kind `list` can filter; neither target installs it.
 
 ---
 
 ## Bulk install
 
 ```bash
-# All 13 artifacts — Claude Code
+# Full catalog — Claude Code
 sigil add all --target claude --yes
 
 # All artifacts from one pack
-sigil add pack:dotnet-pack --target claude --yes
+sigil add pack:dotnet-tooling --target claude --yes
 
 # Full catalog except prompts — GitHub Copilot
 sigil add all --target copilot --exclude prompt --yes
@@ -170,6 +171,9 @@ sigil add all --target copilot --exclude prompt --yes
 # Only agents and rules, no skills or prompts
 sigil add all --kind agent,rule --target claude --yes
 sigil add kind:agent kind:rule --target claude --yes
+
+# --kind also accepts workflow, mcp, hook, and settings (comma-separated)
+sigil add all --kind mcp,hook,settings --target claude --scope project --yes
 ```
 
 ---
@@ -189,17 +193,19 @@ sigil add skill:csharp/cs-generate-tests --no-deps --target claude --yes
 ## Preview before writing (dry run)
 
 ```bash
-sigil add all --target claude --dry-run --yes
+sigil add skill:csharp/cs-generate-tests --target claude --dry-run --yes
 ```
 
-Output shows `+` for new files and `~` for conflicts — nothing is written:
+Output shows `+` for new files and `~` for conflicts — nothing is written. With
+`.claude/skills/cs-generate-tests/SKILL.md` already on disk and no sigil manifest entry for it:
 
 ```
 Dry run — files that would be written:
-  + .claude/agents/code-reviewer.md
-  ~ .claude/rules/shared-clean-code.md  (exists — would be overwritten with --overwrite)
-  ...
-15 new, 1 conflict(s). No files were written.
+  + .claude/rules/csharp-cs-testing.md
+  + .claude/agents/cs-code-reviewer.md
+  ~ .claude/skills/cs-generate-tests/SKILL.md  (exists — would be overwritten with --overwrite)
+
+2 new, 1 conflict(s). No files were written.
 ```
 
 ---
@@ -209,15 +215,21 @@ Dry run — files that would be written:
 Existing files are **never overwritten** by default:
 
 ```bash
-# First install — 4 files written
-sigil add skill:csharp/cs-generate-tests --yes
+# First install writes the skill plus its uses: closure.
+sigil add skill:csharp/cs-generate-tests --target claude --yes
 
-# Second install — conflict advisory
-sigil add skill:csharp/cs-generate-tests --yes
-# ⚠  4 file(s) already exist and were NOT overwritten.
-# Re-run with --overwrite to replace them.
+# Second install of the same up-to-date artifact is a skip, not a conflict:
+#   =  csharp/cs-generate-tests  (✓ already up to date — skipped)
+# No artifacts to install (all were filtered out or unsupported).
 
-sigil add skill:csharp/cs-generate-tests --overwrite --yes
+# A file sigil does not already own is a conflict. The new files are still
+# written; the existing one is left in place unless --overwrite is set:
+# ▲  1 file(s) already exist and were NOT overwritten:
+#      .claude/skills/cs-generate-tests/SKILL.md
+#    Re-run with --overwrite to replace them, or use --dry-run to preview first.
+# ✓ 2 operation(s) applied to <project>, 1 skipped (conflicts)
+
+sigil add skill:csharp/cs-generate-tests --target claude --overwrite --yes
 ```
 
 ---
@@ -233,64 +245,65 @@ ledger that records each artifact, its files, and the SHA-256 hash of every file
 
 ```bash
 # See the current health of everything sigil installed
-sigil status
-# ID                          STATUS       FILES                            REASON
-# csharp/cs-generate-tests        up-to-date   SKILL.md, references/assertions.md
-# shared/code-reviewer        drifted      agents/code-reviewer.md   ← you edited it
-# csharp/cs-conventions         outdated     rules/csharp-cs-conventions.md   template workflow-skill rev 2→3
-
-# Re-scaffold outdated artifacts (skips files you edited — use --force to overwrite those too)
-sigil update
-sigil update csharp/cs-conventions   # single artifact
+sigil status --target claude
 ```
 
-`reason` names _why_ an entry is `outdated` when sigil can tell — today, a template revision bump.
-Other catalog changes are not detected by `status` yet (and config kinds never show as outdated);
-`sigil update` applies them regardless. This is purely diagnostic on the
-consumer side: the propagation itself is still `update` (single artifact or, with no ids, everything).
-Catalog **authors** — not consumers — are the ones who run `sigil sync` to find and mechanically fix
-artifacts that drifted from their _own_ template; see `docs/guides/authoring.md` § Keeping artifacts
-in sync with their template.
+```
+  ✓  csharp/cs-generate-tests  [up-to-date]
+  ✓  csharp/cs-testing  [up-to-date]  (dep of csharp/cs-generate-tests)
+  ✓  csharp/cs-code-reviewer  [up-to-date]  (dep of csharp/cs-generate-tests)
+
+  3 artifact(s): 3 up-to-date
+```
 
 ```bash
+# Re-scaffold outdated artifacts (skips files you edited — use --force to overwrite those too)
+sigil update
+sigil update csharp/cs-testing   # single artifact, bare catalog id
+```
 
-# Remove an artifact and its files (refcount-aware: shared deps are kept if other skills need them)
-sigil uninstall skill:csharp/cs-generate-tests
+A non-`up-to-date` row prints its reason on the next indented line. For `outdated` that line is
+`template <id> rev <from>→<to>`. `sigil status` does not re-scaffold, so a body change that is not
+a template revision stays `up-to-date` here; `sigil update` applies it anyway. Config kinds never
+show as `outdated` on this command — a changed JSON fragment is `drifted` or `missing`. This is
+purely diagnostic on the consumer side: the propagation itself is still `update` (single artifact
+or, with no ids, everything). Catalog **authors** — not consumers — are the ones who run
+`sigil sync` to find and mechanically fix artifacts that drifted from their _own_ template; see
+`docs/guides/authoring.md` § Keeping artifacts in sync with their template.
+
+```bash
+# Remove an artifact and its files (refcount-aware: a file still recorded by
+# another installed entry is kept). Pass the bare catalog id — a kind: prefix
+# does not match and exits with "Not installed".
+sigil uninstall csharp/cs-generate-tests
+
+# Report manifest entries whose ids are gone from the catalog. Preview only
+# until --apply, which removes the orphaned entries.
+sigil prune
+sigil prune --apply
 ```
 
 **Status values at a glance:**
 
-| Status       | Meaning                                                              |
-| ------------ | -------------------------------------------------------------------- |
-| `up-to-date` | Files match what the current catalog would produce                   |
-| `outdated`   | The artifact's template changed since you installed — `sigil update` |
-| `drifted`    | You edited a file — `update` skips it; `update --force` replaces it  |
-| `missing`    | A sigil-owned file was deleted — `update` restores it                |
-| `orphaned`   | Artifact removed from the catalog — safe to `sigil uninstall`        |
+| Status       | Meaning                                                                            |
+| ------------ | ---------------------------------------------------------------------------------- |
+| `up-to-date` | Files match what the current catalog would produce                                 |
+| `outdated`   | The artifact's template changed since you installed — `sigil update`               |
+| `drifted`    | You edited a file — `update` skips it; `update --force` replaces it                |
+| `missing`    | A sigil-owned file was deleted — `update` restores it                              |
+| `orphaned`   | Artifact removed from the catalog — `sigil prune` reports it; `--apply` removes it |
 
-**Detection at pick time.** `add` and the interactive wizard consult the manifest **before**
-writing, via `computeInstallStates` (`src/install-state.ts`), reusing the same `computeStatus`
-(`src/manifest/status.ts`) engine as `sigil status` above. This surfaces a 6-state model per candidate
-artifact — a superset of the 5 status values, adding `foreign` for files sigil didn't write:
+**Picker glyphs.** Before writing, the wizard labels each candidate and starts every item unchecked:
+`＋ new`, `✓ installed`, `↑ new version available`, `✎ you edited this`, `⚠ not installed by sigil`,
+`! missing from disk`. The header counts what is already installed versus new (for example
+`3 already installed, 1 new`). The six states behind those glyphs are in
+[`src/wizard/CLAUDE.md`](../../src/wizard/CLAUDE.md).
 
-| State        | manifest | disk | content                        | Default action                             |
-| ------------ | -------- | ---- | ------------------------------ | ------------------------------------------ |
-| `new`        | no       | no   | —                              | write                                      |
-| `foreign`    | no       | yes  | —                              | conflict (files not owned by sigil)        |
-| `up-to-date` | yes      | yes  | == manifest, catalog unchanged | **skip** (reported `✓ already up to date`) |
-| `drifted`    | yes      | yes  | != manifest                    | conflict (user edited it)                  |
-| `outdated`   | yes      | yes  | == manifest, catalog changed   | conflict (suggest `sigil update`)          |
-| `missing`    | yes      | no   | —                              | write (restore)                            |
-
-- Config kinds (`mcp`/`hook`/`settings`) use `fragmentSha256` for outdated detection instead of file
-  hashes, since `entry.files` is empty for them.
-- **Wizard UX:** items always start unchecked — the "Default action" column describes the
-  non-interactive `add` path, not wizard pre-checking. The picker header shows a count like
-  `"3 already installed, 1 new"`, and each option hint shows a state glyph (`✓ installed`,
-  `✎ you edited this`, `↑ new version available`, `⚠ not installed by sigil`, `＋ new`).
-- **`add` UX (non-interactive):** up-to-date artifacts are skipped silently with
-  `= shared/foo  (✓ already up to date — skipped)`; they don't count toward the conflict summary or
-  change the exit code. `--overwrite` forces reinstall even for up-to-date artifacts.
+**`add` without the wizard.** An up-to-date artifact prints
+`=  csharp/cs-generate-tests  (✓ already up to date — skipped)`. When every requested id is up to
+date the command then prints `No artifacts to install (all were filtered out or unsupported).` and
+does not print a conflict summary. Those skips do not change the exit code. `--overwrite` reinstalls
+even an up-to-date artifact.
 
 ---
 
@@ -307,7 +320,7 @@ eval "$(sigil completion zsh)"
 sigil completion fish | source
 ```
 
-After sourcing: `sigil add <Tab>` suggests `all`, `pack:dotnet-pack`, `kind:skill`,
+After sourcing: `sigil add <Tab>` suggests `all`, `pack:dotnet-tooling`, `kind:skill`,
 `skill:csharp/cs-generate-tests`, etc. Flag values also complete: `--target <Tab>` → `claude copilot`.
 
 ---

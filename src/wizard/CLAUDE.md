@@ -19,12 +19,14 @@ undefined`, performing the `isCancel` check and the `cancel()` side effect) so e
 
 **Equivalent-command invariant:** the "Repeat non-interactively" command printed after install must be
 the _complete, faithful equivalent_ of the wizard session — every consequential choice reflected,
-nothing silently dropped. `buildEquivalentCommand` (`src/wizard/command-strings.ts`) builds the string; its `cli.ts`
-call site must pass `hasConfigKinds: configIds.length > 0` alongside `configScope: effectiveScope` so
-that when config kinds (mcp/hook/settings) are involved, `--scope` is **always** emitted — even for
-the `project` default — pinning the destination file + JSON section. Non-config defaults (overwrite,
-deps, language) may still be omitted. Any new wizard step must extend `buildEquivalentCommand` +
-the call site + a `test/pipeline.test.ts` case in the same change.
+nothing silently dropped. `buildEquivalentCommand` (`src/wizard/command-strings.ts`) builds the string; its call
+site in `src/commands/add/render.ts` (`printOutcomeEquivalentCommand`) must pass
+`hasConfigKinds: plan.configIds.length > 0`, `configScope: plan.effectiveScope`, and
+`language: plan.effectiveLanguage` so that when config kinds (mcp/hook/settings) are involved,
+`--scope` is **always** emitted — even for the `project` default — pinning the destination file +
+JSON section. Non-config defaults (overwrite, deps, language) may still be omitted. Any new wizard
+step must extend `buildEquivalentCommand` + that call site + a case in `test/wizard/add.test.ts`
+in the same change. The step list itself is `ADD_STEPS` in `src/wizard/steps/add/index.ts`.
 
 **Top menu (scope step):** the top-level "What would you like to install?" menu has three entries:
 
@@ -78,7 +80,7 @@ with its artifact count (Skills, Agents, Rules, Commands, Workflows, Hooks, Sett
 **The picker (`src/wizard/picker/`) — constant frame height is the invariant, never break it.**
 `crossKindPicker` and `kindPicker` render through `pickArtifacts()`, not `@clack/prompts`'
 `groupMultiselect`/`multiselect` — those have no viewport (draw every option every frame) and no
-bound on the active row's inline hint text, so at catalog scale (~95 artifacts) the frame outgrows
+bound on the active row's inline hint text, so at catalog scale (~150 artifacts) the frame outgrows
 the terminal and `@clack/core`'s cursor-relative repaint desyncs: phantom "pre-selected" checkboxes
 and duplicated blocks. `pickArtifacts` is built directly on `@clack/core`'s `GroupMultiSelectPrompt`
 with a custom `render()` (`render.ts`, backed by the pure `layout.ts`) whose **output row count is a
@@ -108,8 +110,28 @@ directly (mocked separately), so the picker module's `isCancel` re-export is nev
 words (see above), so there is no separate `note('Legend')` box. State markers are colored via
 `picocolors`: `＋ new` (green), `✓ installed` (dim), `↑ update available` (cyan), `✎ you edited this`
 (yellow), `⚠ not sigil's` (yellow), `! missing from disk` (cyan) — see `stateLabelParts` in
-`state-display.ts` for the raw glyph/label pairs the picker colors at render time. Nothing is
-pre-checked — glyphs are informational only; the user checks every item they want to install.
+`state-display.ts` for the raw glyph/label pairs the picker colors at render time. Option hints use
+`stateHintSuffix` in the same file, whose wording differs slightly (`↑ new version available`,
+`⚠ not installed by sigil`). Nothing is pre-checked — glyphs are informational only; the user checks
+every item they want to install.
+
+**Six install states** (`InstallState` in `src/install-state.ts`). `computeInstallStates` builds one
+state per candidate from the manifest plus `computeStatus` (`src/manifest/status.ts`). Config kinds
+(`mcp` / `hook` / `settings`) store `files: []`; `resolveConfigOutdatedState` compares each recorded
+`fragmentSha256` with the freshly scaffolded fragment and can flip an otherwise `up-to-date` config
+entry to `outdated`. An untracked config kind is `new` even when the shared JSON file already exists
+— only whole-file kinds can be `foreign` (`resolveUntrackedState`).
+
+| State        | manifest | disk                        | content                         | Default `add` action                 |
+| ------------ | -------- | --------------------------- | ------------------------------- | ------------------------------------ |
+| `new`        | no       | no                          | —                               | write                                |
+| `foreign`    | no       | yes (whole-file paths only) | —                               | conflict (files sigil did not write) |
+| `up-to-date` | yes      | yes                         | matches manifest and catalog    | skip (`✓ already up to date`)        |
+| `drifted`    | yes      | yes                         | differs from the manifest hash  | conflict (user edited it)            |
+| `outdated`   | yes      | yes                         | matches manifest, catalog moved | conflict (suggest `sigil update`)    |
+| `missing`    | yes      | no                          | —                               | write (restore)                      |
+
+The default-action column is the non-interactive `add` path. The wizard does not pre-check from it.
 
 **Install-plan box labels.** The plan box (before "Proceed?") uses `Install:` (not `Scope:`) for
 the selection, and always shows `Config scope: <value>` + `Destination: <fullPath  › section>` when
@@ -120,20 +142,12 @@ config kinds are in the selection — even when scope equals the `project` defau
 boolean` records which of the two "Pick specific items" sub-pickers (all-types vs. single-kind) ran.
 
 **Curated packs (`packs.yaml`):** packs are mix-anything bundles expressed with explicit bare-id
-`artifacts:` lists (e.g. `csharp/cs-generate-tests`, no `kind:` prefix). When a pack contains skills
-their rule/agent dependency closure is resolved by the wizard's `deps` step — you do not need to
-list deps manually. The shipped set is:
-
-- `essentials` — 5 agnostic tools (Filesystem MCP, hook, settings, 2 prompts). No language.
-- `dotnet-starter` / `python-starter` / `react-starter` — language skill + 3 config essentials.
-  The skill's deps (its `uses:` rules and agents, e.g. `cs-testing` + `cs-code-reviewer`) are
-  added automatically via the `deps` step. Kinds the Claude plugin channel doesn't package
-  (config kinds and prompts — see `docs/reference/capabilities.md`) are skipped during
-  `catalog:build`; they are installed only via `sigil add` / `sigil update`.
-- `dotnet-tooling` / `typescript-tooling` / `angular-tooling` — every artifact of one language
-  (`languages:` instead of `artifacts:`).
-- `typescript-starter` / `angular-starter` — two or three language skills + the 3 config essentials.
-- `spec-driven` — the `shared/feature` conductor alone (needs agent-skills installed separately).
+`artifacts:` lists (e.g. `csharp/cs-generate-tests`, no `kind:` prefix) or a `languages:` set. When
+a pack contains skills their rule/agent dependency closure is resolved by the wizard's `deps` step —
+you do not need to list deps manually. The shipped names and membership live in
+[`packs.yaml`](../../packs.yaml) at the repo root; do not keep a second inventory here. Kinds the
+Claude plugin channel doesn't package (see [`docs/reference/capabilities.md`](../../docs/reference/capabilities.md))
+are skipped during `catalog:build`; they are installed only via `sigil add` / `sigil update`.
 
 **Dependency closure UX (plan box):** the `uses:` dependency is purely authored YAML frontmatter
 in each SKILL.md (e.g. `uses: { rules: [csharp/cs-conventions], agents: [shared/code-reviewer] }`) —
@@ -146,13 +160,15 @@ not a hard technical requirement. The wizard surfaces this concretely:
 - **Install-plan box** (before "Proceed?") shows the full resolved artifact set: each primary pick
   tagged `(your pick)` and each dependency tagged `(dependency of <skill>)`. When deps are excluded
   (answered No), the box shows only primary picks + a `(N deps excluded)` line.
-- The **post-install file listing** in `cli.ts` still tags each written file `(dependency)` for
-  completeness, consistent with the pre-confirm preview.
+- The **post-install file listing** is `printWrittenFileListing` in `src/commands/add/render.ts`. It
+  tags each written file `(dependency)` when the path is outside the primary selection, consistent
+  with the pre-confirm preview.
 
 **`WizardResult.language`** is only set via the `all` scope path (the global language filter step).
 Browse/pick-specific paths use explicit `${kind}:${id}` selectors, so `language` stays undefined.
-`WizardResult.language` flows into `effectiveLanguage` in `cli.ts`, which feeds `filters.language`
-to `resolveSelection()`.
+`fromWizardResult` in `src/commands/add/resolve-inputs.ts` copies that value onto the add inputs.
+`buildEffectiveFields` in `src/commands/add/plan.ts` stores it as `effectiveLanguage`, and
+`buildAddPlan` passes `filters.language` from the same input into `resolveSelection()`.
 
 > **Search deferred:** add a `Search by keyword` top-level entry (wired to the existing
 > `sigil search` ranking → multiselect of matches) when a kind exceeds ~30 items.

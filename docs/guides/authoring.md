@@ -50,10 +50,10 @@ When asked to write integration tests:
 
 ```bash
 sigil validate
-# ✓ All 14 artifact(s) are valid.
+# ✓ All N artifact(s) are valid.
 
 sigil build
-# 17 file(s) written to dist/claude/
+# ✓ N file(s) written to dist/claude/
 ```
 
 ### Shared (stack-agnostic) skills
@@ -137,7 +137,7 @@ sigil import path/to/.ClaudeFoo --language foo --create-language --dry-run
 sigil import path/to/.ClaudeFoo --language foo --create-language --yes
 
 # Wire deps, polish titles (content-refinement stage, separate from mechanical import)
-sigil patch foo/foo-generate-tests --set-uses.agents='["shared/code-reviewer"]'
+sigil patch foo/foo-generate-tests --set-uses-agents shared/code-reviewer
 ```
 
 Source→catalog field mapping: rule `paths` → `appliesTo`; agent `tools` (comma string) →
@@ -148,7 +148,8 @@ the field Claude Code actually reads for dispatch, not the body).
 
 See [docs/decisions/catalog-import-migration.md](../decisions/catalog-import-migration.md) for
 the full field map, known YAML pitfalls (glob patterns, `[` chars in argument hints), and the
-content-refinement follow-up checklist.
+content-refinement follow-up checklist. `--display-name` overrides the generated titles;
+`--overwrite` replaces an existing catalog file (the default is to skip the conflict).
 
 ---
 
@@ -221,7 +222,7 @@ tags: [go, testing]
 
 ```bash
 sigil validate
-# ✓ All 15 artifact(s) are valid.
+# ✓ All N artifact(s) are valid.
 
 sigil build
 # → dist/claude/plugins/go-pack/  and  dist/copilot/.github/
@@ -233,42 +234,36 @@ No changes to `src/` required.
 
 ## Authoring against a template
 
-Most kinds have some shared body structure, but templating only pays for itself where duplication is
-_measured_, not assumed — extract a template because three or more sibling artifacts share verbatim
-prose, never because they merely resemble each other (a cross-language audit found most sibling
-skills/agents/rules diverge substantially once you look past matching headings — see
-[docs/decisions/template-extraction-evidence-2026-08.md](../decisions/template-extraction-evidence-2026-08.md)
-for that finding). Three templates ship today in `catalog/shared/templates/`:
-`mcp-note` (the four `shared/*.mcp.md` artifacts' shared authoring-hint comment), `code-quality`,
-and `release-skill`. Where a `kind: template` artifact exists for your kind
-(`catalog/shared/templates/*.template.md`), author against it instead of copying a sibling file —
-the `workflow-skill` example below illustrates the mechanism generically for when a genuine
-duplication case appears:
+Templatize a same-kind family only after measured body overlap, and fill that template's slots
+instead of copying a sibling
+([template-extraction evidence](../decisions/template-extraction-evidence-2026-08.md)).
+`typescript/ts-release` opts into the shipped `shared/templates/release-skill` template and supplies
+only slot content (`catalog/languages/typescript/skills/ts-release/SKILL.md`):
 
 ```markdown
 ---
-id: typescript/ts-generate-tests
+id: typescript/ts-release
 kind: skill
-template: shared/templates/workflow-skill # opts into the template
-name: generate-tests
-title: Generate Unit Tests
+name: ts-release
+template: shared/templates/release-skill
 ---
 
-<!-- slot: whenToUse -->
+<!-- slot: quality-gates -->
 
-Use when adding or reviewing unit tests in a TypeScript project.
+Discover the combined gate from `package.json` scripts (`check`/`validate`/`ci`/`prepublishOnly`)
+and run it; fall back to the type checker, linter, and `scripts.test` separately only if none exists.
 
-<!-- slot: steps -->
-
-### Step 1 — Locate the test file
-
-...
+**If any gate fails: stop and report.** A release with failing gates is blocked.
 ```
+
+The other slots on that template are `version-determination`, `changelog-format`, `api-compat-step`,
+and `checklist-and-next-steps`. The same template backs `cs-release`, `ng-release`, `py-release`,
+and `react-release`. Also shipped in `catalog/shared/templates/`: `mcp-note` and `code-quality`.
 
 Only slot content goes in the artifact body — the shared prose (headings, procedural framing) lives
 once in the template and is composed in automatically at build time. `sigil validate` checks:
 unknown slot keys, missing required slots, content outside a slot marker, and duplicate markers. See
-`docs/reference/spec.md` § Templates for the full slot syntax and composition order.
+`docs/reference/architecture.md` § Templates for the full slot syntax and composition order.
 
 **Keeping artifacts in sync with their template.** When you edit a template — add/rename/reorder a
 slot, or hoist a paragraph of prose that used to be duplicated across artifacts into the shared
@@ -289,75 +284,33 @@ flag set, including the CI-gate usage in `docs/guides/operations.md`.
 
 ## Command reference: the authoring CRUD surface
 
-Beyond `new` and `delete`, the catalog exposes a full authoring surface:
+One example per command. The command list and flags are in the
+[CLI reference](../reference/spec.md#cli-reference). Import's field mapping is in
+[Import an existing portable-template directory](#import-an-existing-portable-template-directory)
+above.
 
 ```bash
-sigil get <id>            # show full detail (description, closure, reverse-deps, emit targets)
-sigil get <id> --json     # machine-readable
-sigil search <query>      # ranked free-text search (--kind, --language, --tag, --json)
-sigil patch <id>          # update any schema field (--title, --add-tag, --set-severity, ...)
-sigil move <id> <new-id>  # atomic rename — rewrites all referrers + re-validates
-sigil import <source-dir> # import a portable Claude template directory into the catalog
+sigil get csharp/cs-generate-tests
+sigil search "generate tests" --kind skill
+sigil patch typescript/ts-release --add-tag release
+sigil move typescript/ts-old typescript/ts-release --dry-run
+sigil import path/to/.ClaudeFoo --language foo --dry-run
 ```
 
-**`import` command** (`src/authoring/import/`):
-
-Deterministic translator for portable Claude template directories (layout: `rules/*.md`,
-`agents/*.md`, `skills/*/SKILL.md`). Translates source frontmatter to catalog frontmatter, assigns
-IDs, renders files, and runs per-file `checkSourceArtifact` validation. No AI — reproducible,
-CI-safe.
-
-Key flags:
-
-- `--language <lang>` — required; target catalog language key (e.g. `csharp`, `typescript`)
-- `--display-name <name>` — overrides the language's `displayName` in generated titles
-- `--create-language` — scaffold `language.yaml` if the language dir doesn't exist yet
-- `--dry-run` — print the coverage report (source→dest mapping, translated frontmatter, per-file
-  validation status, dropped fields) without writing anything
-- `--overwrite` — replace existing files (default: skip conflicts)
-- `--yes` — non-interactive; required in CI
-
-**Source→catalog field mapping:**
-
-| Kind  | Source field                   | Catalog field                                                        |
-| ----- | ------------------------------ | -------------------------------------------------------------------- |
-| rule  | `paths`                        | `appliesTo` (default `['**/*']`)                                     |
-| rule  | _(none)_                       | `severity: recommended`; `extends: []` synthesized                   |
-| agent | `tools` (comma string)         | `tools` (array)                                                      |
-| skill | `allowed-tools` (comma string) | `allowedTools` (array) — new optional schema field                   |
-| skill | `argument-hint`                | `argumentHint` — new optional schema field                           |
-| skill | `disable-model-invocation`     | `disableModelInvocation` — new optional schema field                 |
-| skill | `when_to_use`                  | Prepended to body as `## When to Use` section (NOT in description)   |
-| all   | _(slug)_                       | `id: <lang>/<slug>`; `title` via slugToTitle; `tags` from slug words |
-
-**Content quality is a separate concern.** The import command produces a mechanical baseline:
-`uses: { rules: [], agents: [] }` (empty), `extends: []`, and fallback titles. Wiring deps, setting
-`extends: [shared/clean-code]`, and polishing titles are done afterward with `sigil patch`.
-See `docs/decisions/catalog-import-migration.md` for the full rationale and a list of open
-content-refinement follow-ups.
-
-**`patch` command** (alias `update` — distinct from consumer `update`):
-
-- Kind-aware field registry in `src/authoring/update/descriptors.ts`: common fields (`title`, `description`, `tags`, `version`) + kind-specific (`appliesTo`, `appliesToRationale`, `severity`, `extends`, `uses.*`, `tools`, `claude.*`). Build logic in `src/authoring/update/patch-build.ts`; transactional write in `src/authoring/update/apply.ts`.
-- List fields support `--add-<field>` / `--remove-<field>` / `--set-<field>`.
-- `appliesToRationale` (rule only) is a scalar set via `--set-applies-to-rationale <text>`; an empty
-  string clears it. When `appliesTo` is exactly `['**/*']`, `sigil validate` warns unless this field
-  is set — it's the escape hatch for a genuinely file-agnostic rule (e.g. `shared/clean-code`), not
-  a place to hide narrowing you meant to do.
-- Transactional: after write, re-loads catalog + validates; rolls back the file if blocking violations are found.
-
-**`move` command** (alias `rename`):
-
-- Pure plan phase (`planMove`) then execute phase (`executeMove`) with LIFO rollback steps.
-- Rewrites every `extends:` / `uses.rules:` / `uses.agents:` reference to the old id.
-- Skills move the whole directory; other kinds move the single file.
-- `--dry-run` prints the plan without writing.
+`patch` has no alias — consumer `sigil update` is a different command. `version` is not patchable.
+There is no generic `--set-<field>`: list fields have their own `--add` / `--remove` / `--set`
+flags, rule severity is `--severity` (not `--set-severity`), and each target's `authoringFields`
+are `--<target>-<key>` (Claude: `--claude-model`, `--claude-effort`, `--claude-max-turns`,
+`--claude-isolation`). `whenToUse`, `userInvocable`, and `skillContext` have no `patch` flags; edit
+the file. `move` (alias `rename`) rewrites `extends` / `uses.rules` / `uses.agents` referrers; a
+skill moves its directory and every other kind moves the single file.
 
 ## Adding a platform target that skips catalog work entirely
 
 A new **language** never touches `src/`, per the recipe above. A new **platform target** (a third
-AI besides Claude Code / Copilot) is `src/`-only and touches no catalog content — see the root
-`CLAUDE.md`'s "Adding a platform target" section.
+AI besides Claude Code / Copilot) is `src/`-only and touches no catalog content — see
+[Adding a platform target](../reference/architecture.md#adding-a-platform-target). The root
+`CLAUDE.md` has no section by that name.
 
 ---
 

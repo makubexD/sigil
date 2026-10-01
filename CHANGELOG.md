@@ -71,6 +71,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Home menu: files you edited on purpose no longer become the top recommendation forever (the header
+  still counts them, and Update offers to keep or replace them). An artifact that left the catalog is
+  classed as orphaned even when its files are gone, so Clean up handles it instead of Restore looping.
+  The guided Update says "Everything is already up to date" instead of asking to apply nothing, and an
+  edited config value now gets the same overwrite option as an edited file. `sigil update` points
+  orphaned artifacts at `sigil prune`, as `status` does.
 - Copilot is detected from its own files (`.github/copilot-instructions.md`, `instructions/`,
   `prompts/`, `agents/`, `skills/`), not from any `.github/` folder, so a repo that only uses GitHub
   Actions is no longer treated as a Copilot project. Any one marker is enough (it used to need all).

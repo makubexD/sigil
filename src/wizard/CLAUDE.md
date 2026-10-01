@@ -27,6 +27,12 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   Clean up go through `chooseInstalledTarget` (`home-target.ts`): the only tool with installs is used,
   and two tools get a "Which tool?" question. Copilot is detected by its own files, matched with
   "any marker" (`detectedTargetsIn`, shared with `detectProjectTarget`); never a bare `.github/`.
+- **Recommendations must not loop.** Every entry in `HEALTH_ADVICE` (`project-advice.ts`) must be
+  something the action can actually resolve. Edited files (`drifted`) are therefore not recommended: no
+  action "fixes" an edit. `deriveStatus` (`manifest/status.ts`) checks orphaned before missing, so an
+  artifact the catalog dropped goes to Clean up and never to Restore, which cannot bring it back.
+  A preview (`--dry-run`) reports `pending`/`pendingCount`, never `updated`, so the guided update can
+  say "nothing to apply".
 - **A damaged manifest is its own state, not "nothing installed".** `recommendNext` returns only
   `repair` then (`project-advice.ts`), and the menu hides Install until `runRepair`
   (`commands/repair-manifest.ts`) moves the file aside. Never delete the damaged file.

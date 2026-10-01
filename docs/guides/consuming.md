@@ -46,17 +46,17 @@ Installed:   12 installed · 1 missing, 2 edited
 It then lists what you can do, with the most useful step first and marked **(recommended)**. The
 recommendation follows the state of the folder:
 
-| What sigil finds in the folder                                    | What it recommends                                    |
-| ----------------------------------------------------------------- | ----------------------------------------------------- |
-| Your home folder, the top of a drive, or a sigil catalog checkout | Work in a different folder (installs would land here) |
-| The install record is damaged                                     | Repair the install record                             |
-| No Claude Code or Copilot setup in the folder                     | Set up this project                                   |
-| Set up, nothing installed                                         | Install artifacts                                     |
-| Files sigil installed were deleted                                | Restore deleted files                                 |
-| Installed files you edited                                        | Check what's installed (shows which files differ)     |
-| A newer catalog version of something installed                    | Update installed artifacts                            |
-| Installed artifacts that have left the catalog                    | Clean up leftovers                                    |
-| Everything installed and healthy                                  | No recommendation; the list is there when you need it |
+| What sigil finds in the folder                                    | What it recommends                                     |
+| ----------------------------------------------------------------- | ------------------------------------------------------ |
+| Your home folder, the top of a drive, or a sigil catalog checkout | Work in a different folder (installs would land here)  |
+| The install record is damaged                                     | Repair the install record                              |
+| No Claude Code or Copilot setup in the folder                     | Set up this project                                    |
+| Set up, nothing installed                                         | Install artifacts                                      |
+| Files sigil installed were deleted                                | Restore deleted files                                  |
+| Installed files you edited                                        | Nothing (an edit is your choice; the header counts it) |
+| A newer catalog version of something installed                    | Update installed artifacts                             |
+| Installed artifacts that have left the catalog                    | Clean up leftovers (even if their files were deleted)  |
+| Everything installed and healthy                                  | No recommendation; the list is there when you need it  |
 
 The entries are Set up, Install, Repair, Restore, Update, Remove, Check status, Clean up, Browse the
 catalog, Search the catalog, Work in a different folder, Show all commands, and Quit. Entries that

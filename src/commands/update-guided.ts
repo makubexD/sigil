@@ -34,7 +34,7 @@ function choicesFor(
   if (editedFiles > 0) {
     choices.push({
       value: 'force',
-      label: `Apply, and also overwrite the ${editedFiles} file(s) I edited`,
+      label: `Apply, and also replace the ${editedFiles} file(s) I edited (my changes are lost)`,
     });
   }
   if (canPick) choices.push({ value: 'pick', label: 'Let me choose which artifacts to update' });
@@ -58,6 +58,20 @@ async function pickIds(opts: UpdateOptions): Promise<string[] | null> {
   return pickInstalled({ entries, projectDir: opts.projectDir, message });
 }
 
+/** True (after saying why and where to go next) when the preview shows nothing to apply. */
+function nothingToApply({ pendingCount, skippedDrift, orphanedCount }: UpdateRunTotals): boolean {
+  if (pendingCount !== 0 || skippedDrift !== 0) return false;
+  if (orphanedCount > 0) {
+    log.info(
+      `Nothing to update. ${orphanedCount} artifact(s) are no longer in the catalog: ` +
+        'choose "Clean up leftovers" in the menu.',
+    );
+  } else {
+    log.success('Everything is already up to date. Nothing to do.');
+  }
+  return true;
+}
+
 function equivalentCommand(ids: string[], force: boolean): string {
   return ['sigil update', ...ids, force ? '--force' : '', '--yes'].filter(Boolean).join(' ');
 }
@@ -69,7 +83,7 @@ export async function runGuidedUpdate(
 ): Promise<void> {
   log.info('Here is what would change. Nothing is written until you confirm.');
   const preview = await apply(ids, { ...opts, dryRun: true });
-  if (!preview) return;
+  if (!preview || nothingToApply(preview)) return;
   const choice = await askChoice(ids.length === 0, preview.skippedDrift);
   if (choice === 'cancel') {
     cancel('Nothing was changed.');

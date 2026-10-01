@@ -16,8 +16,17 @@ export const COPILOT_INIT_DIRS: string[] = [
   '.github/agents',
 ];
 
-/** Presence of .github/ signals this target is installed in the project. */
-export const COPILOT_PROJECT_MARKERS: string[] = ['.github'];
+/**
+ * Any of these signals Copilot is set up in the project. A bare `.github/` does not: most GitHub
+ * repositories have one for workflows and issue templates and never used Copilot customisation.
+ */
+export const COPILOT_PROJECT_MARKERS: string[] = [
+  '.github/copilot-instructions.md',
+  '.github/instructions',
+  '.github/prompts',
+  '.github/agents',
+  '.github/skills',
+];
 
 /**
  * GitHub Copilot's native artifact vocabulary (verified 2026-08-07).

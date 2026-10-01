@@ -25,7 +25,8 @@ import type { PickerGroups, PickerRow } from './types';
 export { isCancel };
 export type { PickerGroups, PickerRow, BackRow, ItemRow } from './types';
 
-const DEFAULT_FOOTER = 'space  pick/toggle group   ·   enter  confirm   ·   esc  back';
+const DEFAULT_FOOTER =
+  'space  tick   ·   enter  confirm   ·   ← Back row  go back   ·   ctrl+c  quit';
 const FALLBACK_TERMINAL_ROWS = 24;
 const FALLBACK_TERMINAL_COLUMNS = 80;
 
@@ -72,7 +73,7 @@ function renderPrompt(
 
 /**
  * Prompts with a grouped, fixed-height, column-aligned multiselect. Returns the picked `value`s,
- * or the clack cancel symbol (`isCancel(result)`) on Ctrl+C/Esc — callers use the exact same
+ * or the clack cancel symbol (`isCancel(result)`) on Ctrl+C — callers use the exact same
  * `resolveOutcome` pattern as every other wizard step (see `../steps/add/prompt-helpers.ts`).
  */
 export async function pickArtifacts(opts: PickArtifactsOptions): Promise<string[] | symbol> {

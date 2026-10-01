@@ -14,6 +14,7 @@ import type { Command } from 'commander';
 import { loadCatalog } from './load';
 import { validateCatalog } from './validate';
 import { getAllTargets, defaultTargetName } from './targets';
+import { detectedTargetsIn } from './project-context';
 import type { FileMap, PacksConfig, Target } from './types';
 import { SigilError } from './errors';
 
@@ -158,25 +159,25 @@ export function partitionFiles(
 // ─── Target detection ─────────────────────────────────────────────────────────
 
 /** Prints the verbose "target detected via markers" line + the --target override hint. */
-function logDetectedTarget(target: Target, targets: Target[]): void {
-  const markerList = (target.projectMarkers ?? []).join(', ');
-  console.log(`  target: ${target.name}  (${markerList} found)`);
+function logDetectedTarget(target: Target, projectDir: string, targets: Target[]): void {
+  const marker = (target.projectMarkers ?? []).find(m => fs.existsSync(path.join(projectDir, m)));
+  console.log(`  target: ${target.name}  (found ${marker})`);
   const names = targets.map(t => t.name).join('|');
   console.log(`  Override with --target ${names} if needed.`);
 }
 
-/** Prints the verbose "no markers matched, defaulting" line. */
+/** Prints the verbose "nothing found, defaulting" line. */
 function logDefaultTarget(defaultTarget: string, targets: Target[]): void {
-  const markerPaths = targets.flatMap(t => t.projectMarkers ?? []).join(', ');
+  const names = targets.map(t => t.name).join('|');
   console.log(
-    `  target: ${defaultTarget}  (no markers found: ${markerPaths}; defaulting to ${defaultTarget})`,
+    `  target: ${defaultTarget}  (nothing set up here yet, so using ${defaultTarget}; choose with --target ${names})`,
   );
 }
 
 /**
- * Auto-detect the installed target by scanning each registered target's `projectMarkers`.
- * Targets are scanned in registration order (claude first, then copilot).
- * Falls back to the first registered target when no markers match.
+ * Auto-detect the installed target from each registered target's `projectMarkers`: the first
+ * target (registration order, claude then copilot) with any marker present. Falls back to the
+ * first registered target when none match.
  * Adding a new target requires no changes here — declare `projectMarkers` on the adapter.
  */
 export function detectProjectTarget(
@@ -184,18 +185,13 @@ export function detectProjectTarget(
   opts: { verbose: boolean } = { verbose: false },
 ): string {
   const targets = getAllTargets();
-  const defaultTarget = defaultTargetName();
-
-  for (const target of targets) {
-    const markers = target.projectMarkers ?? [];
-    if (markers.length === 0) continue;
-    const allPresent = markers.every(m => fs.existsSync(path.join(projectDir, m)));
-    if (allPresent) {
-      if (opts.verbose) logDetectedTarget(target, targets);
-      return target.name;
-    }
+  const [found] = detectedTargetsIn(projectDir);
+  const target = targets.find(t => t.name === found);
+  if (target) {
+    if (opts.verbose) logDetectedTarget(target, projectDir, targets);
+    return target.name;
   }
-
+  const defaultTarget = defaultTargetName();
   if (opts.verbose) logDefaultTarget(defaultTarget, targets);
   return defaultTarget;
 }

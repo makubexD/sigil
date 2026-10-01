@@ -37,6 +37,9 @@ interface Entry {
 const always = (): boolean => true;
 const hasInstalled = (ctx: ProjectContext): boolean => ctx.installed > 0;
 const inCheckout = (ctx: ProjectContext): boolean => ctx.isCatalogCheckout;
+/** True while some tool (Claude Code, Copilot) has no folders here yet, so a second one can be added. */
+const hasToolToSetUp = (ctx: ProjectContext): boolean =>
+  getAllTargets().some(t => (t.initDirs?.length ?? 0) > 0 && !ctx.detectedTargets.includes(t.name));
 
 /** Every entry in menu order. The recommended one is moved to the top at build time. */
 const ENTRIES: readonly Entry[] = [
@@ -44,13 +47,19 @@ const ENTRIES: readonly Entry[] = [
     value: 'init',
     label: 'Set up this project',
     hint: 'Create the folders for Claude Code or Copilot',
-    shown: ctx => ctx.detectedTargets.length === 0,
+    shown: hasToolToSetUp,
+  },
+  {
+    value: 'repair',
+    label: 'Repair the install record',
+    hint: 'Set the damaged file aside and start a fresh record',
+    shown: ctx => ctx.manifestError !== undefined,
   },
   {
     value: 'install',
     label: 'Install artifacts',
     hint: 'Add skills, agents, rules and more',
-    shown: always,
+    shown: ctx => ctx.manifestError === undefined,
   },
   {
     value: 'restore',
@@ -97,6 +106,16 @@ const ENTRIES: readonly Entry[] = [
   { value: 'quit', label: 'Quit', hint: '', shown: always },
 ];
 
+/** The top recommendation: marked, and its hint says what the entry does and why it is first. */
+function markRecommended(item: MenuItem, reason: string): MenuItem {
+  return {
+    ...item,
+    label: `${item.label} (recommended)`,
+    hint: item.hint ? `${item.hint}. ${reason}` : reason,
+    recommended: true,
+  };
+}
+
 /** The entries that apply to this folder, the top recommendation first and marked. */
 export function buildMenu(ctx: ProjectContext): MenuItem[] {
   const top = recommendNext(ctx)[0];
@@ -109,18 +128,14 @@ export function buildMenu(ctx: ProjectContext): MenuItem[] {
   const index = items.findIndex(item => item.value === top?.action);
   if (!top || index === -1) return items;
   const [item] = items.splice(index, 1);
-  if (!item) return items;
-  return [
-    { ...item, label: `${item.label} (recommended)`, hint: top.reason, recommended: true },
-    ...items,
-  ];
+  return item ? [markRecommended(item, top.reason), ...items] : items;
 }
 
 const HEALTH_PHRASES: ReadonlyArray<readonly [keyof ProjectContext['health'], string]> = [
   ['missing', 'missing'],
   ['drifted', 'edited'],
   ['outdated', 'outdated'],
-  ['orphaned', 'orphaned'],
+  ['orphaned', 'no longer in the catalog'],
 ];
 
 function healthSummary(ctx: ProjectContext): string {
@@ -130,25 +145,39 @@ function healthSummary(ctx: ProjectContext): string {
   return problems.length > 0 ? problems.join(', ') : 'all healthy';
 }
 
+const displayName = (name: string): string =>
+  getAllTargets().find(t => t.name === name)?.displayName ?? name;
+
 function targetNames(ctx: ProjectContext): string {
-  const named = getAllTargets().filter(t => ctx.detectedTargets.includes(t.name));
-  return named.map(t => t.displayName ?? t.name).join(', ');
+  return ctx.detectedTargets.map(displayName).join(', ');
+}
+
+/** "3 installed", or "3 Claude Code, 2 GitHub Copilot" when more than one tool has installs. */
+function installedSummary(ctx: ProjectContext): string {
+  const perTarget = Object.entries(ctx.installedByTarget);
+  if (perTarget.length <= 1) return `${ctx.installed} installed`;
+  return perTarget.map(([name, count]) => `${count} ${displayName(name)}`).join(', ');
+}
+
+const LABEL_WIDTH = 13;
+const row = (label: string, value: string): string => `${label.padEnd(LABEL_WIDTH)}${value}`;
+
+function installedLine(ctx: ProjectContext): string {
+  if (ctx.manifestError) {
+    return row(
+      'Installed:',
+      "the install record is damaged — choose 'Repair the install record' below",
+    );
+  }
+  if (ctx.installed === 0) return row('Installed:', 'nothing yet');
+  return row('Installed:', `${installedSummary(ctx)} · ${healthSummary(ctx)}`);
 }
 
 /** The few lines shown above the menu: where we are, what it is set up for, what is installed. */
 export function describeContext(ctx: ProjectContext): string[] {
-  const lines = [`Folder:     ${ctx.projectDir}`];
-  lines.push(
+  const setUp =
     ctx.detectedTargets.length > 0
-      ? `Set up for:  ${targetNames(ctx)}`
-      : 'Set up for:  not set up yet (no .claude/ or .github/ folder)',
-  );
-  if (ctx.manifestError) {
-    lines.push('Installed:  the install record could not be read — run `sigil status` for details');
-  } else if (ctx.installed > 0) {
-    lines.push(`Installed:  ${ctx.installed} installed · ${healthSummary(ctx)}`);
-  } else {
-    lines.push('Installed:  nothing yet');
-  }
-  return lines;
+      ? targetNames(ctx)
+      : 'not set up yet (no Claude Code or Copilot setup found)';
+  return [row('Folder:', ctx.projectDir), row('Set up for:', setUp), installedLine(ctx)];
 }

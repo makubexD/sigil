@@ -93,6 +93,16 @@ sigil add skill:csharp/cs-generate-tests --yes
 
 ---
 
+## The install record is damaged
+
+`Manifest at <path> is not valid JSON` means `.sigil/manifest.json` was edited by hand or cut off while
+being written. Run `sigil`, choose **Repair the install record**, and confirm. The damaged file is kept
+as `.sigil/manifest.damaged-<time>.json`; a fresh record starts empty. Files sigil installed earlier stay
+on disk but are no longer tracked, so a later install asks before replacing them (or use `--overwrite`).
+Until it is repaired, the menu hides Install and shows this entry first.
+
+---
+
 ## `sigil add` skips files or refuses to overwrite
 
 Two different cases:

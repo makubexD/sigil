@@ -18,6 +18,8 @@ export { isFileDrifted } from './update-stale';
 
 export interface WholeFileUpdateResult {
   updated: boolean;
+  /** Set by a preview (`--dry-run`): this entry would change. A preview never sets `updated`. */
+  pending?: boolean;
   skippedDriftCount: number;
 }
 
@@ -194,7 +196,8 @@ export async function updateWholeFileEntry(
   if (opts.dryRun) {
     printDryRunEntryPreview(entry, plan.toWrite, plan.skipped);
     for (const p of plan.staleToDelete) console.log(`     - ${p}  (would be removed — superseded)`);
-    return { updated: false, skippedDriftCount: plan.skippedDriftCount };
+    const pending = Object.keys(plan.toWrite).length > 0 || plan.staleToDelete.length > 0;
+    return { updated: false, pending, skippedDriftCount: plan.skippedDriftCount };
   }
 
   return applyPlannedUpdate({ entry, freshFiles, resolved, opts }, plan);

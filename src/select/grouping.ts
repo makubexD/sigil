@@ -33,6 +33,12 @@ export function availableKinds(artifacts: ResolvedArtifact[]): ArtifactKind[] {
   return KIND_ORDER.filter(k => present.has(k));
 }
 
+/** True when there are at least two languages to choose between: one language is no choice. */
+export function hasLanguageChoice(artifacts: ResolvedArtifact[]): boolean {
+  const options = buildLanguageOptions(artifacts); // "All languages" plus one row per language
+  return options.length - 1 > 1;
+}
+
 /**
  * Builds a language-filter option list from an artifact array.
  *

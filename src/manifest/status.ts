@@ -175,16 +175,16 @@ function deriveReason(
 function deriveStatus(options: DeriveStatusOptions): StatusResult {
   const { entry, catalogIds, driftedFiles, missingFiles, scaffoldHashFn, currentTemplateOf } =
     options;
-  const status: StatusResult['status'] =
-    missingFiles.length > 0
+  // Orphaned wins over missing: an artifact the catalog dropped cannot be restored, only cleaned up.
+  const status: StatusResult['status'] = !catalogIds.has(entry.id)
+    ? 'orphaned'
+    : missingFiles.length > 0
       ? 'missing'
-      : !catalogIds.has(entry.id)
-        ? 'orphaned'
-        : driftedFiles.length > 0
-          ? 'drifted'
-          : isOutdated(entry, scaffoldHashFn, currentTemplateOf)
-            ? 'outdated'
-            : 'up-to-date';
+      : driftedFiles.length > 0
+        ? 'drifted'
+        : isOutdated(entry, scaffoldHashFn, currentTemplateOf)
+          ? 'outdated'
+          : 'up-to-date';
 
   const reason = deriveReason(status, options);
   return { entry, status, driftedFiles, missingFiles, ...(reason !== undefined ? { reason } : {}) };

@@ -26,6 +26,7 @@ export { computeClosure } from './closure';
 export {
   availableKinds,
   buildLanguageOptions,
+  hasLanguageChoice,
   groupArtifactsByLanguage,
   partitionConfigKinds,
 } from './grouping';

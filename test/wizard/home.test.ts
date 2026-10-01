@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildMenu, describeContext } from '../../dist-cli/wizard/home-menu';
 import { runHome } from '../../dist-cli/wizard/home';
+import { FOLDER_CHOICE } from '../../dist-cli/wizard/folder-list';
 import { defaultHomeDeps } from '../../dist-cli/wizard/home-actions';
 import type { HomeActionId } from '../../dist-cli/wizard/home-menu';
 import type { ProjectContext } from '../../dist-cli/project-context';
@@ -24,10 +25,12 @@ function context(overrides: Partial<ProjectContext> = {}): ProjectContext {
     detectedTargets: ['claude'],
     manifestPresent: true,
     installed: 3,
+    installedByTarget: { claude: 3 },
     health: { 'up-to-date': 3, outdated: 0, drifted: 0, orphaned: 0, missing: 0 },
     isCatalogCheckout: false,
     looksLikeProject: true,
     isHomeDir: false,
+    isFilesystemRoot: false,
     ...overrides,
   };
 }
@@ -78,6 +81,24 @@ describe('buildMenu', () => {
     assert.equal(values(context({ isCatalogCheckout: true }))[0], 'change-folder');
   });
 
+  it('should offer to repair a damaged install record and not offer to install', () => {
+    const damaged = context({ manifestError: 'bad json', installed: 0, installedByTarget: {} });
+    const items = values(damaged);
+    assert.equal(items[0], 'repair');
+    assert.ok(!items.includes('install'), 'install stays hidden until the record is repaired');
+  });
+
+  it('should keep "Set up this project" available until every tool is set up', () => {
+    assert.ok(values(context({ detectedTargets: ['claude'] })).includes('init'));
+    assert.ok(!values(context({ detectedTargets: ['claude', 'copilot'] })).includes('init'));
+  });
+
+  it('should say what the recommended entry does as well as why it is first', () => {
+    const [first] = buildMenu(context({ manifestPresent: false, installed: 0 }));
+    assert.match(first?.hint ?? '', /Add skills, agents, rules/);
+    assert.match(first?.hint ?? '', /Nothing is installed here yet/);
+  });
+
   it('should always end with help and quit, and always offer browse and search', () => {
     const items = values(context());
     assert.deepEqual(items.slice(-2), ['help', 'quit']);
@@ -110,9 +131,22 @@ describe('describeContext', () => {
     assert.match(describeContext(context()).join('\n'), /all healthy/i);
   });
 
-  it('should surface an unreadable install record', () => {
+  it('should surface a damaged install record and say how to fix it', () => {
     const lines = describeContext(context({ manifestError: 'bad json', installed: 0 })).join('\n');
-    assert.match(lines, /could not be read/i);
+    assert.match(lines, /damaged/i);
+    assert.match(lines, /Repair/);
+  });
+
+  it('should show what is installed for each tool when more than one has installs', () => {
+    const lines = describeContext(
+      context({
+        installed: 5,
+        installedByTarget: { claude: 3, copilot: 2 },
+        detectedTargets: ['claude', 'copilot'],
+      }),
+    ).join('\n');
+    assert.match(lines, /3 Claude Code/);
+    assert.match(lines, /2 GitHub Copilot/);
   });
 });
 
@@ -171,6 +205,29 @@ describe('runHome', () => {
     });
   });
 
+  it('should explain what to try when a folder cannot be written to', async () => {
+    await withTempDirAsync(async dir => {
+      const infos: string[] = [];
+      const restore = mockClack(['install', 'quit']);
+      const clack = require('@clack/prompts') as { log: { info: (m: string) => void } };
+      clack.log.info = (message: string) => void infos.push(message);
+      const denied = Object.assign(new Error('EPERM: operation not permitted'), { code: 'EPERM' });
+      try {
+        await runHome(dir, {
+          handlers: {
+            install: async () => {
+              throw denied;
+            },
+          },
+          homeDir: '/nowhere/home',
+        });
+      } finally {
+        restore();
+      }
+      assert.match(infos.join(' '), /Pick a different folder/);
+    });
+  });
+
   it('should exit quietly when the user cancels at the menu', async () => {
     await withTempDirAsync(async dir => {
       const calls: Calls = [];
@@ -184,15 +241,54 @@ describe('runHome', () => {
       const other = path.join(dir, 'other');
       fs.mkdirSync(other);
       const calls: Calls = [];
-      await run(dir, ['change-folder', other, 'install', 'quit'], calls);
+      await run(dir, ['change-folder', other, FOLDER_CHOICE.use, 'install', 'quit'], calls);
       assert.deepEqual(calls, [['install', other]]);
     });
   });
 
-  it('should refuse a folder that does not exist and stay where it was', async () => {
+  it('should ask before installing into the home folder, and not install on "no"', async () => {
     await withTempDirAsync(async dir => {
       const calls: Calls = [];
-      await run(dir, ['change-folder', path.join(dir, 'missing'), 'install', 'quit'], calls);
+      const restore = mockClack(['install', false, 'quit']);
+      try {
+        await runHome(dir, { handlers: handlers(calls), homeDir: dir });
+      } finally {
+        restore();
+      }
+      assert.deepEqual(calls, []);
+    });
+  });
+
+  it('should install into the home folder when the user confirms', async () => {
+    await withTempDirAsync(async dir => {
+      const calls: Calls = [];
+      const restore = mockClack(['install', true, 'quit']);
+      try {
+        await runHome(dir, { handlers: handlers(calls), homeDir: dir });
+      } finally {
+        restore();
+      }
+      assert.deepEqual(calls, [['install', dir]]);
+    });
+  });
+
+  it('should not ask about other actions in the home folder', async () => {
+    await withTempDirAsync(async dir => {
+      const calls: Calls = [];
+      const restore = mockClack(['status', 'quit']);
+      try {
+        await runHome(dir, { handlers: handlers(calls), homeDir: dir });
+      } finally {
+        restore();
+      }
+      assert.deepEqual(calls, [['status', dir]]);
+    });
+  });
+
+  it('should keep the current folder when the user backs out of the folder picker', async () => {
+    await withTempDirAsync(async dir => {
+      const calls: Calls = [];
+      await run(dir, ['change-folder', FOLDER_CHOICE.back, 'install', 'quit'], calls);
       assert.deepEqual(calls, [['install', dir]]);
     });
   });
@@ -209,8 +305,9 @@ describe('default home handlers', () => {
     const noInit = buildMenu(
       context({ detectedTargets: [], manifestPresent: false, installed: 0 }),
     );
+    const damaged = buildMenu(context({ manifestError: 'bad json', installed: 0 }));
     const { handlers } = defaultHomeDeps(() => {});
-    for (const { value } of [...everything, ...noInit]) {
+    for (const { value } of [...everything, ...noInit, ...damaged]) {
       if (value === 'quit' || value === 'change-folder') continue;
       assert.equal(typeof handlers[value], 'function', `no handler for '${value}'`);
     }

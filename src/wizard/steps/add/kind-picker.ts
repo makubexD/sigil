@@ -1,6 +1,7 @@
 import { select, isCancel, cancel } from '@clack/prompts';
 import {
   buildLanguageOptions,
+  hasLanguageChoice,
   groupArtifactsByLanguage,
   kindPlural,
   CONFIG_KINDS,
@@ -9,7 +10,8 @@ import type { WizardStep, StepOutcome } from '../../engine';
 import { BACK, chosenTarget, visibleArtifacts, type AddWizardState } from './state';
 import { buildPickerSummary, toArtifactOption } from './options';
 import { BACK_OPTION, resolveOutcome } from './prompt-helpers';
-import { pickArtifacts, type ItemRow, type PickerGroups } from '../../picker';
+import type { ItemRow, PickerGroups } from '../../picker';
+import { pickUntilUsable } from './pick';
 
 const BACK_ROW = { kind: 'back' as const, value: BACK };
 
@@ -19,7 +21,7 @@ function resolvePickedIds(picked: string[] | symbol): StepOutcome | string[] {
     cancel('Install cancelled.');
     return 'cancel';
   }
-  if (picked.includes(BACK) || picked.length === 0) return 'back';
+  if (picked.includes(BACK)) return 'back';
   return picked;
 }
 
@@ -30,7 +32,7 @@ function buildPickerMessage(
   installStates: AddWizardState['installStates'],
 ): string {
   const pickerSummary = buildPickerSummary(items, installStates);
-  return `Select ${kindLabel} to install${pickerSummary}  (include "← Back" to return)`;
+  return `Select ${kindLabel} to install${pickerSummary}  (Space ticks, Enter confirms)`;
 }
 
 /** Shared context for the per-kind picker helpers below. */
@@ -45,11 +47,11 @@ interface PickerCtx {
 async function runConfigKindPicker(ctx: PickerCtx): Promise<StepOutcome> {
   const { s, ct, items, kindLabel } = ctx;
   const rows: ItemRow[] = items.map(a => toArtifactOption(a, ct, s.installStates));
-  const picked = await pickArtifacts({
+  const picked = await pickUntilUsable({
     message: buildPickerMessage(kindLabel, items, s.installStates),
     options: { [kindLabel]: [BACK_ROW, ...rows] },
     required: false,
-    initialValues: [],
+    initialValues: s.selectors ?? [],
   });
   const result = resolvePickedIds(picked);
   if (typeof result === 'string') return result;
@@ -63,8 +65,8 @@ async function runConfigKindPicker(ctx: PickerCtx): Promise<StepOutcome> {
 async function promptPickerLanguage(
   items: ReturnType<typeof visibleArtifacts>,
 ): Promise<{ language: string | undefined } | StepOutcome> {
+  if (!hasLanguageChoice(items)) return { language: undefined };
   const langOpts = buildLanguageOptions(items);
-  if (langOpts.length <= 1) return { language: undefined };
 
   const langSel = await select({
     message: 'Narrow by language?  (optional — Enter to see all)',
@@ -92,11 +94,11 @@ async function runFlatCodePicker(
 ): Promise<StepOutcome> {
   const { s, ct, items, kindLabel } = ctx;
   const rows: PickerGroups[string] = [BACK_ROW, ...buildFlatOptions(flatItems, ct, s)];
-  const picked = await pickArtifacts({
+  const picked = await pickUntilUsable({
     message: buildPickerMessage(kindLabel, items, s.installStates),
     options: { [kindLabel]: rows },
     required: false,
-    initialValues: [],
+    initialValues: s.selectors ?? [],
   });
   const result = resolvePickedIds(picked);
   if (typeof result === 'string') return result;
@@ -129,11 +131,11 @@ async function runGroupedCodePicker(
 ): Promise<StepOutcome> {
   const { s, ct, items, kindLabel } = ctx;
   const { groupedOpts, firstValue } = buildGroupedOptions(byLang, ct, s);
-  const picked = await pickArtifacts({
+  const picked = await pickUntilUsable({
     message: buildPickerMessage(kindLabel, items, s.installStates),
     options: groupedOpts,
     required: false,
-    initialValues: [],
+    initialValues: s.selectors ?? [],
     ...(firstValue ? { cursorAt: firstValue } : {}),
   });
   return finishPick(s, picked);

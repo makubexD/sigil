@@ -16,6 +16,33 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
 - **Every entry needs a handler** in `defaultHomeDeps` (`home-actions.ts`); `test/wizard/home.test.ts` fails
   on a gap. `quit` and `change-folder` are the loop's own. A handler calls the same `run*` function as the
   CLI verb, with the folder the menu is looking at. Never copy command logic into the menu.
+- **The folder picker** (`folder-list.ts`, `folder-picker.ts`) is arrow-key navigation, not a typed path. Folder
+  entries carry absolute paths as values and navigation entries carry `FOLDER_CHOICE` sentinels; it returns an
+  existing folder, a folder it just created after the user confirmed (`New folder here`, or a typed path
+  that did not exist), or `null`, never an unchecked string. Do not swap it for `text`. Live path typeahead needs
+  `@clack/prompts` 1.x, which is ESM-only and breaks `mockClack`'s `require.cache` approach.
+- **Targets are never silently narrowed to one.** `ProjectContext` counts installs for every target
+  (`installedByTarget`), so the header and the "hide Update/Remove when nothing is installed" rule never
+  lose a second tool's installs. The commands still act on one target, so Update, Remove, Check, and
+  Clean up go through `chooseInstalledTarget` (`home-target.ts`): the only tool with installs is used,
+  and two tools get a "Which tool?" question. Copilot is detected by its own files, matched with
+  "any marker" (`detectedTargetsIn`, shared with `detectProjectTarget`); never a bare `.github/`.
+- **Recommendations must not loop.** Every entry in `HEALTH_ADVICE` (`project-advice.ts`) must be
+  something the action can actually resolve. Edited files (`drifted`) are therefore not recommended: no
+  action "fixes" an edit. `deriveStatus` (`manifest/status.ts`) checks orphaned before missing, so an
+  artifact the catalog dropped goes to Clean up and never to Restore, which cannot bring it back.
+  A preview (`--dry-run`) reports `pending`/`pendingCount`, never `updated`, so the guided update can
+  say "nothing to apply".
+- **A damaged manifest is its own state, not "nothing installed".** `recommendNext` returns only
+  `repair` then (`project-advice.ts`), and the menu hides Install until `runRepair`
+  (`commands/repair-manifest.ts`) moves the file aside. Never delete the damaged file.
+- **The folder list is capped, and comparisons use real paths.** `listSubfolders` checks only the
+  first `MAX_PROBED` (200) folders by name for project markers; the rest are listed without a check, because
+  each check is file reads and a huge or networked folder would hang. `samePath` compares
+  `realpathSync.native` results, so 8.3 short names and links cannot defeat the home-folder check.
+- **Install into a risky folder asks first** (`folder-guard.ts`): the home folder, a drive root, or a
+  catalog checkout, from the Install entry and from search→install. The reasons come from
+  `riskyFolderReason`, the same text the recommendation shows.
 - `runHome` never exits on an action's failure: a `SigilError` is shown (message plus hint) and the menu
   returns. Ctrl+C at the menu leaves quietly. Handlers are injected so the loop is tested without installing.
 - Author entries (`new`, `edit`, `validate`) show only inside a catalog checkout and use that checkout's
@@ -27,7 +54,9 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
 The rule: ask only when `isInteractiveTTY()` is true and the user did not already decide (`--yes`, `--dry-run`,
 `--apply`, `--json`, explicit ids or `--target`); every non-TTY path is byte-for-byte what it was. Outside a
 terminal a missing argument is a `SigilError` whose hint shows the command to run. Each guided flow logs an
-`Equivalent command:` line. `update-guided.ts` receives `applyUpdate` as a parameter so it and `update.ts` do not
+`Equivalent command:` line, logged AFTER the user confirms and complete enough to paste into a script
+(`uninstall` includes `--yes`, plus `--force` when edited files are deleted). Removing an artifact with
+edited files asks keep-or-delete in a terminal (`uninstall-confirm.ts`); a script keeps them unless `--force`. `update-guided.ts` receives `applyUpdate` as a parameter so it and `update.ts` do not
 import each other. The shared picker is `installed-picker.ts` (`installedOptions` is pure; `pickInstalled`
 returns `null` on cancel).
 
@@ -59,13 +88,15 @@ JSON section. Non-config defaults (overwrite, deps, language) may still be omitt
 step must extend `buildEquivalentCommand` + that call site + a case in `test/wizard/add.test.ts`
 in the same change. The step list itself is `ADD_STEPS` in `src/wizard/steps/add/index.ts`.
 
-**Top menu (scope step):** the top-level "What would you like to install?" menu has three entries:
+**Top menu (scope step):** the top-level "What would you like to install?" menu has three entries. "Pick
+specific items" is the preselected one, and `all` asks for a confirmation (default No) because it
+includes hooks and MCP servers:
 
 | Entry               | Value    | Next                                        | When             |
 | ------------------- | -------- | ------------------------------------------- | ---------------- |
-| Everything          | `all`    | optional language filter → deps             | always           |
-| Recommended         | `pack`   | which bundle? → deps                        | when packs exist |
 | Pick specific items | `browse` | kind sub-menu (led by "All types") → picker | always           |
+| Recommended         | `pack`   | which bundle? → deps                        | when packs exist |
+| Everything          | `all`    | confirm → optional language filter → deps   | always           |
 
 **Three-level information architecture** — type is the spine; language is never a top-level choice:
 
@@ -83,6 +114,16 @@ Level 3 — LANGUAGE (injected only where relevant):
   · Config kinds (MCP / Hooks / Settings) → straight to picker, NEVER asked about language
   · "Everything" → same optional skippable filter with note that MCPs/hooks/settings always included
 ```
+
+**Wizard answers must stay consistent.** `applyScope` (`scope.ts`) clears `language`, `selectors`,
+`kindPick` and `browseAll` when the scope changes, and `resetAfterTarget` clears `configScope`; a stale
+filter would otherwise install 0 items. Every count or list a step shows comes from `previewSelection`
+(`plan-preview.ts`), which applies the target's supported kinds and platform, so the plan never promises
+what the install will skip. The overwrite step has a `shouldShow` (`conflictsFor`): it is asked only for
+`foreign`/`drifted`/`outdated` picks, and `s.overwrite` defaults to `false` in `buildInitialState`.
+Pickers go through `pickUntilUsable` (`pick.ts`), which re-asks on an empty answer or a ticked
+"← Back" next to picks, and starts with the earlier picks ticked. `Target.afterInstallHint` feeds the
+`Next:` line after an install; never hardcode a tool name in `render.ts`.
 
 **History invariant:** pass-through / auto-forward steps must **never** push a history frame — only
 steps that actually rendered a prompt do. Violating this causes back-navigation to return the wrong

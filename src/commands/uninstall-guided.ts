@@ -3,7 +3,6 @@
  *
  * @module
  */
-import { log } from '@clack/prompts';
 import { SigilError } from '../errors';
 import { isInteractiveTTY } from '../wizard';
 import { pickInstalled } from '../wizard/installed-picker';
@@ -33,7 +32,5 @@ export async function chooseIdsToUninstall(
     return null;
   }
   const message = 'Which artifacts do you want to remove?';
-  const picked = await pickInstalled({ entries: installed, projectDir, message });
-  if (picked) log.info(`Equivalent command: sigil uninstall ${picked.join(' ')}`);
-  return picked;
+  return pickInstalled({ entries: installed, projectDir, message });
 }

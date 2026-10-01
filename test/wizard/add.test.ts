@@ -140,7 +140,6 @@ describe('O — Wizard: config-scope for mcp', () => {
       '__all__', // step: kind sub-menu → All types (mix anything)
       '', // step: crossKindPicker language pre-filter ('' = all languages)
       ['mcp:shared/ado', 'mcp:shared/maku-jam'], // step: groupMultiselect artifact picker
-      'no', // step: overwrite → No
       'user', // step: configScope → user
       'proceed', // step: proceed → Proceed with install
     ]);
@@ -167,7 +166,6 @@ describe('O — Wizard: config-scope for mcp', () => {
       '', // step: language pre-filter
       ['mcp:shared/context-mode'], // step: picker
       // [deps auto-skipped: selection is config-kind only]
-      'no', // step: overwrite
       'project', // step: configScope → project
       'proceed', // step: proceed
     ]);
@@ -193,7 +191,7 @@ describe('O — Wizard: config-scope for mcp', () => {
       'csharp', // language pre-filter
       ['skill:csharp/cs-generate-tests'], // picker: a skill artifact
       'yes', // deps: yes
-      'no', // overwrite: no
+      // overwrite is not asked: nothing on disk conflicts
       // no configScope answer — step auto-skipped
       'proceed', // proceed
     ]);
@@ -305,8 +303,8 @@ describe('O — Wizard: config-scope for mcp', () => {
     ex['log'] = { info: () => {}, warn: () => {}, error: () => {} };
     ex['isCancel'] = () => false;
     // select answers: target, scope, kind-sub-menu (__all__), language-filter (empty = all),
-    //                 deps, overwrite, configScope, proceed
-    const queue = ['claude', 'browse', '__all__', '', 'no', 'no', 'project', 'proceed'];
+    //                 configScope, proceed (deps and overwrite are skipped for this pick)
+    const queue = ['claude', 'browse', '__all__', '', 'project', 'proceed'];
     const pop = () => queue.shift()!;
     ex['select'] = async () => pop();
     ex['multiselect'] = async () => [pop()];
@@ -448,7 +446,6 @@ describe('O — Wizard: config-scope for mcp', () => {
       'mcp', // kind sub-menu → MCPs
       ['mcp:shared/ado', 'mcp:shared/maku-jam'], // per-kind config multiselect
       // NOTE: no language answer, no deps answer — both skipped for config kinds
-      'no', // overwrite
       'project', // configScope
       'proceed', // proceed
     ]);
@@ -489,7 +486,7 @@ describe('O — Wizard: config-scope for mcp', () => {
       'skill', // kind sub-menu → Skills
       '', // language pre-filter ('' = all)
       'yes', // deps → yes
-      'no', // overwrite → no
+      // overwrite is not asked: nothing on disk conflicts
       // configScope auto-skipped (skill is not a config kind)
       'proceed', // proceed
     ];
@@ -684,16 +681,15 @@ describe('O — Wizard: config-scope for mcp', () => {
 
     let capturedScopeOptions: Array<{ value: string; label: string; hint: string }> | undefined;
     let selectCallIdx = 0;
-    // Steps: target(1) → scope(2) → kind=mcp(3) → kindPicker-pickArtifacts → overwrite(4) → configScope(5) → proceed(6)
-    // We capture on call 5 (configScope select).
+    // Steps: target(1) → scope(2) → kind=mcp(3) → kindPicker-pickArtifacts → configScope(4) → proceed(5)
+    // We capture on call 4 (configScope select).
     const answers = [
       'claude', // 1: target
       'browse', // 2: scope
       'mcp', // 3: kind sub-menu
       // pickArtifacts for config kinds — handled separately
-      'no', // 4: overwrite
-      // 5: configScope — captured here, then we return 'project'
-      'proceed', // 6: proceed
+      // 4: configScope — captured here, then we return 'project' (overwrite is not asked)
+      'proceed', // 5: proceed
     ];
     ex['intro'] = () => {};
     ex['outro'] = () => {};
@@ -706,7 +702,7 @@ describe('O — Wizard: config-scope for mcp', () => {
       options: Array<{ value: string; label: string; hint: string }>;
     }) => {
       selectCallIdx++;
-      if (selectCallIdx === 5) {
+      if (selectCallIdx === 4) {
         // This is the configScope step
         capturedScopeOptions = opts.options.filter(o => o.value !== '__back__');
         return 'project'; // pick project to continue
@@ -742,12 +738,15 @@ describe('O — Wizard: config-scope for mcp', () => {
         opt.hint.includes(' — '),
         `Scope "${opt.value}" hint must contain description after ' — ': ${opt.hint}`,
       );
-      // Every label must contain 'precedence'
+      // Labels are plain words a first-timer understands: no jargon like 'precedence'
       assert.ok(
-        opt.label.includes('precedence'),
-        `Scope "${opt.value}" label must include 'precedence': ${opt.label}`,
+        opt.label.length > 0 && !opt.label.includes('precedence'),
+        `Scope "${opt.value}" label must be plain words: ${opt.label}`,
       );
     }
+
+    // the recommended scope (project) is listed first
+    assert.equal(capturedScopeOptions![0]?.value, 'project');
 
     // local and user scope hints must be visibly distinct even though they share ~/.claude.json —
     // they differ in their JSON section suffix (local → projects › <dir> › mcpServers vs user → mcpServers).
@@ -780,7 +779,7 @@ describe('R — back-navigation fix', () => {
   });
 
   // See the "O" describe block above for why pickArtifacts is mocked alongside @clack/prompts.
-  function mockClack(queue: Array<string | string[]>): () => void {
+  function mockClack(queue: Array<string | string[] | boolean>): () => void {
     const ex = clackMod.exports;
     const pickerEx = pickerMod.exports;
     const orig = { ...ex };
@@ -834,11 +833,12 @@ describe('R — back-navigation fix', () => {
     const restore = mockClack([
       'claude', // target
       'all', // scope → Everything (narrow is a silent pass-through)
+      true, // confirm: install the whole catalog
       '__back__', // language → Back (must return to scope, not loop)
       'all', // scope → Everything again
+      true, // confirm again
       '', // language → all languages
       'yes', // deps
-      'no', // overwrite
       'project', // configScope (all scope includes MCPs / hooks / settings)
       'proceed', // proceed
     ]);

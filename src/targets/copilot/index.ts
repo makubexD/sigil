@@ -62,6 +62,8 @@ export class CopilotTarget implements Target {
   readonly name = 'copilot';
   readonly displayName = 'GitHub Copilot';
   readonly installHint = 'writes to .github/';
+  readonly afterInstallHint =
+    'in VS Code run "Developer: Reload Window" so Copilot Chat loads the new files. Prompts run as /name, agents as @name.';
 
   readonly capabilities: TargetCapabilities = COPILOT_CAPABILITIES;
   readonly initDirs: string[] = COPILOT_INIT_DIRS;

@@ -9,6 +9,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Home menu: "Search the catalog" shows the matches as a list to pick from (no copying an id), says
+  plainly when nothing matches, and names the helpers an install brings. Remove asks whether to keep or
+  delete files you edited; the `Equivalent command:` is printed after you confirm and includes
+  `--yes` (and `--force` when chosen). Pickers say Ctrl+C goes back.
+- Plainer wording: `sigil status` prints `[edited by you]`, `[no longer in the catalog]`, `[file deleted]`
+  and `[newer version available]` (`--json` keeps the machine names); `sigil init` says "already exists"
+  and points to the menu; the guided prune does not tell you to run `--apply` right before asking;
+  a folder that cannot be written to says what to try; the menu header columns line up, and the
+  recommended entry keeps its description. "Set up this project" stays until both tools are set up.
+- Folder browser: a folder with over 200 subfolders checks only the first 200 for project markers
+  (the rest are still listed), and a short Windows path (`KIEFER~1`) is recognised as the same folder
+  as its long form, so the home-folder check cannot be fooled.
+- Install wizard, for first-timers: a "How this works" note, "Pick specific items" preselected, and
+  "Everything" asks for confirmation. Enter with nothing ticked asks again, and ticking "← Back"
+  together with items warns instead of dropping them. Going back keeps your picks. The plan box counts
+  only what the chosen tool can take, says what is already up to date, and offers only Back or Cancel
+  when there is nothing new. "Replace existing files?" is asked only when something would be replaced,
+  names each file and why, and says your edits are lost. Config scopes have plain names, and a scope
+  stored in a home-folder file gets a note. After an install sigil prints a **Next:** line for the tool.
+- Home menu: "Repair the install record" appears when `.sigil/manifest.json` cannot be read. It moves
+  the damaged file aside (`manifest.damaged-<time>.json`), and the menu hides Install until then.
+- Home menu: Install (and install from a search result) asks first in your home folder, the top of a
+  drive, or a sigil catalog checkout. When both Claude Code and Copilot have installs, Update, Remove,
+  Check, and Clean up ask which tool, and the header counts each.
+- Folder browser in the home menu: "Work in a different folder" now lists folders to pick with the
+  arrow keys (project folders first, step in, go up, use this one) instead of asking for a typed path.
+  "New folder here" creates a project folder, and "Type a path" offers to create a folder that does
+  not exist yet (it still rejects a file, or a path under one). Links to folders are listed, and a
+  bare `D:` means the root of that drive.
 - Guided home menu: `sigil` with no command, in a terminal, inspects the folder (targets, install
   health, catalog checkout, home folder), recommends the next step, and routes to set up, install,
   restore deleted files, update, remove, status, clean up, browse and search (then details, then
@@ -61,6 +90,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Home menu: files you edited on purpose no longer become the top recommendation forever (the header
+  still counts them, and Update offers to keep or replace them). An artifact that left the catalog is
+  classed as orphaned even when its files are gone, so Clean up handles it instead of Restore looping.
+  The guided Update says "Everything is already up to date" instead of asking to apply nothing, and an
+  edited config value now gets the same overwrite option as an edited file. `sigil update` points
+  orphaned artifacts at `sigil prune`, as `status` does.
+- Install wizard: the dependency step is worded as "Install these helpers too?", and the language
+  question appears only when there are two or more languages. A stale language filter or config scope
+  no longer survives a change of scope or tool.
+- **For scripts:** the human-readable output of `status` (the bracketed words), `uninstall` (the note
+  and summary about edited files), `update` (orphaned line), `init`, and the manifest-error message
+  changed wording. `--json` output is unchanged. A repo with only a bare `.github/` folder (workflows)
+  now resolves to Claude Code, not Copilot, when `--target` is omitted; pass `--target copilot`.
+- Copilot is detected from its own files (`.github/copilot-instructions.md`, `instructions/`,
+  `prompts/`, `agents/`, `skills/`), not from any `.github/` folder, so a repo that only uses GitHub
+  Actions is no longer treated as a Copilot project. Any one marker is enough (it used to need all).
 - `commander` upgraded to ^14.0.3 (adds help groups; 15 requires Node 22.12, sigil supports 20.19+).
 - Bare `sigil` without a terminal now prints help on stdout and exits 0 (it was stderr, exit 1).
 - `sigil uninstall [ids...]` and `sigil init [--target]` accept missing arguments (guided in a

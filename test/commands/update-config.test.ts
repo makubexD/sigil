@@ -8,7 +8,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { updateConfigEntry } from '../../dist-cli/commands/update-config';
+import { applyConfigEntry, updateConfigEntry } from '../../dist-cli/commands/update-config';
 import type { ManifestEntry } from '../../dist-cli/manifest/types';
 import type { ConfigMergeOp } from '../../dist-cli/types';
 import type { UpdateOptions } from '../../dist-cli/commands/update';
@@ -118,6 +118,32 @@ describe('updateConfigEntry — F14 missing-vs-modified repair', () => {
       assert.equal(wrote, false, 'modified fragment must not be overwritten without --force');
       const after = JSON.parse(fs.readFileSync(settingsPath, 'utf-8'));
       assert.equal(after.model, 'claude-sonnet-4-6', "user's edit preserved");
+    });
+  });
+
+  it('counts a modified fragment as skipped, so the guided update can offer to overwrite it', () => {
+    withTempDir(dir => {
+      const settingsPath = path.join(dir, '.claude', 'settings.json');
+      fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+      fs.writeFileSync(settingsPath, JSON.stringify({ model: 'claude-sonnet-4-6' }, null, 2));
+      const entry = makeSettingsEntry();
+
+      const kept = applyConfigEntry(entry, makeOpts(dir, { force: false }), opsOf(entry));
+      assert.deepEqual(kept, { wrote: false, skipped: 1 });
+
+      const forced = applyConfigEntry(entry, makeOpts(dir, { force: true }), opsOf(entry));
+      assert.deepEqual(forced, { wrote: true, skipped: 0 });
+    });
+  });
+
+  it('does not count a restored (missing) fragment as skipped', () => {
+    withTempDir(dir => {
+      const settingsPath = path.join(dir, '.claude', 'settings.json');
+      fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
+      fs.writeFileSync(settingsPath, JSON.stringify({ permissions: {} }, null, 2));
+      const entry = makeHookEntry();
+      const result = applyConfigEntry(entry, makeOpts(dir), opsOf(entry));
+      assert.deepEqual(result, { wrote: true, skipped: 0 });
     });
   });
 

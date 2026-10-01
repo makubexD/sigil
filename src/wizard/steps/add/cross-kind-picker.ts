@@ -2,6 +2,7 @@ import { select, isCancel, cancel } from '@clack/prompts';
 import {
   partitionConfigKinds,
   buildLanguageOptions,
+  hasLanguageChoice,
   groupArtifactsByLanguage,
 } from '../../../select';
 import type { WizardStep, StepOutcome } from '../../engine';
@@ -9,7 +10,8 @@ import type { ResolvedArtifact } from '../../../types';
 import { BACK, chosenTarget, visibleArtifacts, type AddWizardState } from './state';
 import { toArtifactOption } from './options';
 import { BACK_OPTION, resolveOutcome } from './prompt-helpers';
-import { pickArtifacts, type ItemRow, type PickerGroups } from '../../picker';
+import type { ItemRow, PickerGroups } from '../../picker';
+import { pickUntilUsable } from './pick';
 
 const BACK_ROW = { kind: 'back' as const, value: BACK };
 
@@ -17,8 +19,9 @@ const BACK_ROW = { kind: 'back' as const, value: BACK };
 async function promptCrossKindLanguage(
   codeArtifacts: ReturnType<typeof visibleArtifacts>,
 ): Promise<{ language: string | undefined } | StepOutcome> {
+  if (codeArtifacts.length === 0 || !hasLanguageChoice(codeArtifacts))
+    return { language: undefined };
   const indivLangOpts = buildLanguageOptions(codeArtifacts);
-  if (codeArtifacts.length === 0 || indivLangOpts.length <= 1) return { language: undefined };
 
   const langAnswer = await select({
     message: 'Narrow by language?  (optional — Enter to see all)',
@@ -67,19 +70,20 @@ function buildCrossKindOptions(
 async function promptCrossKindPick(
   groupedOpts: PickerGroups,
   firstValue: string | undefined,
+  previous: string[] | undefined,
 ): Promise<StepOutcome | string[]> {
-  const picked = await pickArtifacts({
-    message: 'Select artifacts to install  (include "← Back" to return)',
+  const picked = await pickUntilUsable({
+    message: 'Select artifacts to install  (Space ticks, Enter confirms)',
     options: groupedOpts,
     required: false,
-    initialValues: [],
+    initialValues: previous ?? [],
     ...(firstValue ? { cursorAt: firstValue } : {}),
   });
   if (isCancel(picked)) {
     cancel('Install cancelled.');
     return 'cancel';
   }
-  if (picked.includes(BACK) || picked.length === 0) return 'back';
+  if (picked.includes(BACK)) return 'back';
   return picked;
 }
 
@@ -120,7 +124,7 @@ export const crossKindPickerStep: WizardStep<AddWizardState> = {
 
     const { groupedOpts, firstValue } = buildCrossKindOptions(configArtifacts, byLang, ct, s);
 
-    const result = await promptCrossKindPick(groupedOpts, firstValue);
+    const result = await promptCrossKindPick(groupedOpts, firstValue, s.selectors);
     if (typeof result === 'string') return result;
 
     s.selectors = result;

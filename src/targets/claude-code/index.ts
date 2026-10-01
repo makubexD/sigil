@@ -70,6 +70,8 @@ export class ClaudeCodeTarget implements Target {
   readonly name = 'claude';
   readonly displayName = 'Claude Code';
   readonly installHint = 'writes to .claude/';
+  readonly afterInstallHint =
+    'open a new Claude Code session in this project (or restart the open one) so it loads the new files. Type / to see skills and commands.';
 
   readonly authoringFields: AuthoringField[] = CLAUDE_AUTHORING_FIELDS;
   readonly capabilities: TargetCapabilities = CLAUDE_CAPABILITIES;

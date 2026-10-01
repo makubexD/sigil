@@ -1,5 +1,5 @@
 import { select } from '@clack/prompts';
-import { partitionConfigKinds, buildLanguageOptions } from '../../../select';
+import { partitionConfigKinds, buildLanguageOptions, hasLanguageChoice } from '../../../select';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { visibleArtifacts, type AddWizardState } from './state';
 import { BACK_OPTION, resolveOutcome } from './prompt-helpers';
@@ -14,7 +14,7 @@ export const languageStep: WizardStep<AddWizardState> = {
   shouldShow: s => {
     if (s.scope !== 'all') return false;
     const { rest: codeArtifacts } = partitionConfigKinds(visibleArtifacts(s));
-    return buildLanguageOptions(codeArtifacts).length > 1;
+    return hasLanguageChoice(codeArtifacts);
   },
   async run(s): Promise<StepOutcome> {
     const { rest: codeArtifacts } = partitionConfigKinds(visibleArtifacts(s));

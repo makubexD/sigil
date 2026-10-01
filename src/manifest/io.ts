@@ -23,7 +23,7 @@ function parseManifestJson(raw: string, p: string): unknown {
     return JSON.parse(raw);
   } catch {
     throw new Error(
-      `Manifest at ${p} is not valid JSON. Delete it or run \`sigil status\` to rebuild.`,
+      `Manifest at ${p} is not valid JSON. Run \`sigil\` and choose "Repair the install record", or delete the file.`,
     );
   }
 }

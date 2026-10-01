@@ -52,13 +52,24 @@ const STATUS_ICONS: Record<string, string> = {
   missing: '!',
 };
 
+/** Plain words for each status in the human-readable output; `--json` keeps the machine names. */
+const STATUS_WORDS: Record<string, string> = {
+  'up-to-date': 'up to date',
+  outdated: 'newer version available',
+  drifted: 'edited by you',
+  orphaned: 'no longer in the catalog',
+  missing: 'file deleted',
+};
+
+const statusWord = (status: string): string => STATUS_WORDS[status] ?? status;
+
 /** Prints the human-readable per-artifact status table. */
 function printStatusTable(statuses: ReturnType<typeof computeStatus>): void {
   console.log('');
   for (const s of statuses) {
     const icon = STATUS_ICONS[s.status] ?? '?';
     const depTag = s.entry.dependentOf.length ? `  (dep of ${s.entry.dependentOf.join(', ')})` : '';
-    console.log(`  ${icon}  ${s.entry.id}  [${s.status}]${depTag}`);
+    console.log(`  ${icon}  ${s.entry.id}  [${statusWord(s.status)}]${depTag}`);
     if (s.reason) console.log(`     ${s.reason}`);
     for (const f of s.driftedFiles) console.log(`     ~ ${f}`);
     for (const f of s.missingFiles) console.log(`     ! ${f} (missing)`);
@@ -76,11 +87,13 @@ export function statusNextSteps(statuses: readonly StatusResult[]): string[] {
   if (has('outdated')) steps.push('Refresh outdated artifacts: sigil update');
   if (has('drifted')) {
     steps.push(
-      'Drifted files keep your edits. To replace them with the catalog: sigil update --force',
+      'Files you edited are kept. To replace them with the catalog version: sigil update --force',
     );
   }
   if (has('orphaned')) {
-    steps.push('Orphaned artifacts are gone from the catalog. Preview the cleanup: sigil prune');
+    steps.push(
+      'Artifacts no longer in the catalog can be removed. Preview the cleanup: sigil prune',
+    );
   }
   return steps;
 }
@@ -97,7 +110,7 @@ function printStatusSummary(statuses: ReturnType<typeof computeStatus>): void {
   const counts: Record<string, number> = {};
   for (const s of statuses) counts[s.status] = (counts[s.status] ?? 0) + 1;
   const summary = Object.entries(counts)
-    .map(([k, n]) => `${n} ${k}`)
+    .map(([k, n]) => `${n} ${statusWord(k)}`)
     .join(', ');
   console.log(`\n  ${statuses.length} artifact(s): ${summary}`);
 

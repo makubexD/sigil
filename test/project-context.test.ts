@@ -6,7 +6,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { detectProjectContext, recommendNext } from '../dist-cli/project-context';
+import { detectProjectContext, recommendNext, samePath } from '../dist-cli/project-context';
+import { detectProjectTarget } from '../dist-cli/cli-helpers';
 import type { ProjectContext } from '../dist-cli/project-context';
 import { saveManifest, sha256 } from '../dist-cli/manifest';
 import type { ManifestEntry } from '../dist-cli/manifest/types';
@@ -48,10 +49,12 @@ function context(overrides: Partial<ProjectContext> = {}): ProjectContext {
     detectedTargets: ['claude'],
     manifestPresent: true,
     installed: 3,
+    installedByTarget: { claude: 3 },
     health: { 'up-to-date': 3, outdated: 0, drifted: 0, orphaned: 0, missing: 0 },
     isCatalogCheckout: false,
     looksLikeProject: true,
     isHomeDir: false,
+    isFilesystemRoot: false,
     ...overrides,
   };
 }
@@ -73,9 +76,39 @@ describe('detectProjectContext', () => {
     withTempDir(dir => {
       fs.mkdirSync(path.join(dir, '.claude'));
       assert.deepEqual(detectProjectContext(dir).detectedTargets, ['claude']);
-      fs.mkdirSync(path.join(dir, '.github'));
+      fs.mkdirSync(path.join(dir, '.github', 'prompts'), { recursive: true });
       assert.deepEqual(detectProjectContext(dir).detectedTargets, ['claude', 'copilot']);
     });
+  });
+
+  it('should not mistake a repo that only uses .github for workflows for a Copilot project', () => {
+    withTempDir(dir => {
+      fs.mkdirSync(path.join(dir, '.github', 'workflows'), { recursive: true });
+      assert.deepEqual(detectProjectContext(dir).detectedTargets, []);
+      assert.equal(detectProjectTarget(dir), 'claude'); // the default, not a detection
+    });
+  });
+
+  it('should detect Copilot from any of its own files', () => {
+    for (const marker of [
+      '.github/copilot-instructions.md',
+      '.github/instructions/a.instructions.md',
+      '.github/prompts/a.prompt.md',
+      '.github/agents/a.agent.md',
+      '.github/skills/a/SKILL.md',
+    ]) {
+      withTempDir(dir => {
+        touch(dir, marker);
+        assert.deepEqual(detectProjectContext(dir).detectedTargets, ['copilot'], marker);
+        assert.equal(detectProjectTarget(dir), 'copilot', marker);
+      });
+    }
+  });
+
+  it('should recognise a drive root, where nothing should be installed', () => {
+    const root = path.parse(process.cwd()).root;
+    assert.equal(detectProjectContext(root).isFilesystemRoot, true);
+    withTempDir(dir => assert.equal(detectProjectContext(dir).isFilesystemRoot, false));
   });
 
   it('should recognise a project by common marker files', () => {
@@ -126,10 +159,10 @@ describe('detectProjectContext', () => {
     });
   });
 
-  it('should count only the first detected target, the one the commands act on', () => {
+  it('should count what is installed for every target, so none disappears from the menu', () => {
     withTempDir(dir => {
       fs.mkdirSync(path.join(dir, '.claude'));
-      fs.mkdirSync(path.join(dir, '.github'));
+      fs.mkdirSync(path.join(dir, '.github', 'instructions'), { recursive: true });
       const claude = entry(dir, 'a/claude', '.claude/rules/a.md', null, 'x');
       const copilot = {
         ...entry(dir, 'b/copilot', '.github/instructions/b.md', null, 'y'),
@@ -137,8 +170,9 @@ describe('detectProjectContext', () => {
       } as ManifestEntry;
       install(dir, [claude, copilot]);
       const ctx = detectProjectContext(dir);
-      assert.equal(ctx.installed, 1);
-      assert.equal(ctx.health.missing, 1);
+      assert.equal(ctx.installed, 2);
+      assert.deepEqual(ctx.installedByTarget, { claude: 1, copilot: 1 });
+      assert.equal(ctx.health.missing, 2);
     });
   });
 
@@ -151,12 +185,36 @@ describe('detectProjectContext', () => {
     });
   });
 
+  it('should call an artifact the catalog dropped orphaned even when its files are gone', () => {
+    withTempDir(dir => {
+      install(dir, [entry(dir, 'old/thing', '.claude/rules/o.md', null, 'was here')]);
+      const ctx = detectProjectContext(dir, { catalogIds: new Set(['some/other']) });
+      assert.equal(ctx.health.orphaned, 1);
+      assert.equal(ctx.health.missing, 0);
+    });
+  });
+
   it('should keep going and say so when the manifest cannot be read', () => {
     withTempDir(dir => {
       touch(dir, '.sigil/manifest.json', '{ not json');
       const ctx = detectProjectContext(dir);
       assert.equal(ctx.installed, 0);
       assert.match(ctx.manifestError ?? '', /manifest/i);
+    });
+  });
+});
+
+describe('samePath', () => {
+  it('should treat a short Windows name and the real path as the same folder', () => {
+    withTempDir(dir => {
+      assert.equal(samePath(dir, fs.realpathSync.native(dir)), true);
+    });
+  });
+
+  it('should tell different folders apart, and accept one that does not exist yet', () => {
+    withTempDir(dir => {
+      assert.equal(samePath(dir, path.join(dir, 'other')), false);
+      assert.equal(samePath(path.join(dir, 'new'), path.join(dir, 'new')), true);
     });
   });
 });
@@ -174,6 +232,18 @@ describe('recommendNext', () => {
     const top = first(context({ isCatalogCheckout: true }));
     assert.equal(top?.action, 'change-folder');
     assert.match(top?.reason ?? '', /catalog/i);
+  });
+
+  it('should suggest a different folder first at the top of a drive', () => {
+    const top = first(context({ isFilesystemRoot: true }));
+    assert.equal(top?.action, 'change-folder');
+    assert.match(top?.reason ?? '', /drive|root/i);
+  });
+
+  it('should suggest repairing a damaged install record, not installing', () => {
+    const damaged = context({ manifestError: 'bad json', installed: 0, installedByTarget: {} });
+    const actions = recommendNext(damaged).map(r => r.action);
+    assert.deepEqual(actions, ['repair']);
   });
 
   it('should suggest setting up the project when no target folder exists', () => {
@@ -197,10 +267,15 @@ describe('recommendNext', () => {
     assert.equal(first(context({ manifestPresent: false, installed: 0 }))?.action, 'install');
   });
 
-  it('should order problems: restore missing, review drift, update outdated, prune orphans', () => {
+  it('should order problems: restore missing, update outdated, prune orphans', () => {
     const health = { 'up-to-date': 0, outdated: 1, drifted: 1, orphaned: 1, missing: 1 };
     const actions = recommendNext(context({ installed: 4, health })).map(r => r.action);
-    assert.deepEqual(actions, ['restore', 'status', 'update', 'prune']);
+    assert.deepEqual(actions, ['restore', 'update', 'prune']);
+  });
+
+  it('should not nag about files the user edited on purpose', () => {
+    const health = { 'up-to-date': 2, outdated: 0, drifted: 1, orphaned: 0, missing: 0 };
+    assert.deepEqual(recommendNext(context({ health })), []);
   });
 
   it('should suggest nothing when everything is installed and healthy', () => {

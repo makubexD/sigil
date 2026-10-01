@@ -19,6 +19,7 @@ import type { ManifestEntry } from '../manifest';
 import type { Deprecated } from '../schema/index';
 import { JSON_INDENT } from '../json-util';
 import { applyPrune } from './prune-apply';
+import type { ApplyPruneCtx } from './prune-apply';
 import { offerApply, shouldOfferApply } from './prune-guided';
 
 export interface PruneOptions {
@@ -98,17 +99,19 @@ function printDeprecatedSection(deprecated: PruneCandidates['deprecated']): void
 }
 
 /** The trailing "what to do next" line — differs slightly when there's nothing to --apply. */
-function nextStepsLine(hasOrphaned: boolean): string {
+function nextStepsLine(hasOrphaned: boolean, askingNow: boolean): string {
   const deprecatedNote =
     'Deprecated-but-still-in-catalog artifacts are reported only — remove them yourself ' +
     'with `sigil uninstall` if you want to.';
+  // A terminal is asked right after the preview, so "run --apply" would repeat the question.
+  if (hasOrphaned && askingNow) return `(${deprecatedNote})`;
   return hasOrphaned
     ? `Run \`sigil prune --apply\` to remove the orphaned artifact(s).\n(${deprecatedNote})`
     : deprecatedNote;
 }
 
 /** Prints the preview report (bare `sigil prune`, no `--apply`). */
-function printPreview(candidates: PruneCandidates): void {
+function printPreview(candidates: PruneCandidates, askingNow: boolean): void {
   const { orphaned, deprecated } = candidates;
   if (orphaned.length === 0 && deprecated.length === 0) {
     console.log('\n✓ Nothing to prune — no orphaned or deprecated artifacts installed.\n');
@@ -117,8 +120,20 @@ function printPreview(candidates: PruneCandidates): void {
   console.log('');
   printOrphanedSection(orphaned);
   printDeprecatedSection(deprecated);
-  console.log(nextStepsLine(orphaned.length > 0));
+  console.log(nextStepsLine(orphaned.length > 0, askingNow));
   console.log('');
+}
+
+/** The preview (or its JSON), then, in a terminal with something to remove, the offer to apply it. */
+async function previewAndOffer(
+  manifest: ReturnType<typeof requireManifest>,
+  candidates: PruneCandidates,
+  ctx: ApplyPruneCtx,
+): Promise<void> {
+  const offering = shouldOfferApply(ctx.opts, candidates);
+  if (ctx.opts.json) printJsonReport(candidates, false);
+  else printPreview(candidates, offering);
+  if (offering) await offerApply(manifest, candidates, ctx);
 }
 
 export async function runPrune(opts: PruneOptions): Promise<void> {
@@ -136,12 +151,6 @@ export async function runPrune(opts: PruneOptions): Promise<void> {
   const candidates = findCandidates(manifest, targetName, catalogIds, deprecatedById);
 
   const ctx = { targetName, opts, printJsonReport };
-  if (!opts.apply) {
-    if (opts.json) printJsonReport(candidates, false);
-    else printPreview(candidates);
-    if (shouldOfferApply(opts, candidates)) await offerApply(manifest, candidates, ctx);
-    return;
-  }
-
-  await applyPrune(manifest, candidates, ctx);
+  if (opts.apply) await applyPrune(manifest, candidates, ctx);
+  else await previewAndOffer(manifest, candidates, ctx);
 }

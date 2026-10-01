@@ -9,11 +9,13 @@ import { resolveDefault, loadAndValidate } from '../cli-helpers';
 import { runAdd } from '../commands/add';
 import { runInit } from '../commands/init';
 import { runPrune } from '../commands/prune';
+import { runRepair } from '../commands/repair-manifest';
 import { restoreMissing } from '../commands/restore-missing';
 import { runStatus } from '../commands/status';
 import { runUninstall } from '../commands/uninstall';
 import { runUpdate } from '../commands/update';
 import { browse, editArtifact, newArtifact, search, validateCatalog } from './home-browse';
+import { chooseInstalledTarget } from './home-target';
 import type { HomeDeps, HomeHandler } from './home';
 
 const bundled = (): { catalogDir: string; packs: string } => ({
@@ -53,16 +55,42 @@ async function bundledCatalogIds(): Promise<Set<string> | undefined> {
   }
 }
 
+/** Runs `run` for the tool the user means: asks only when more than one tool has installs. */
+async function forInstalledTool(
+  dir: string,
+  run: (tool: { target?: string }) => Promise<void>,
+): Promise<void> {
+  const target = await chooseInstalledTarget(dir);
+  if (target !== null) await run(target ? { target } : {});
+}
+
 const update: HomeHandler = dir =>
-  runUpdate([], { projectDir: dir, ...bundled(), force: false, dryRun: false });
+  forInstalledTool(dir, tool =>
+    runUpdate([], { projectDir: dir, ...bundled(), force: false, dryRun: false, ...tool }),
+  );
 
 const uninstall: HomeHandler = dir =>
-  runUninstall([], { projectDir: dir, yes: false, force: false, dryRun: false });
+  forInstalledTool(dir, tool =>
+    runUninstall([], { projectDir: dir, yes: false, force: false, dryRun: false, ...tool }),
+  );
 
-const status: HomeHandler = dir => runStatus({ projectDir: dir, ...bundled(), json: false });
+const status: HomeHandler = dir =>
+  forInstalledTool(dir, tool => runStatus({ projectDir: dir, ...bundled(), json: false, ...tool }));
 
 const prune: HomeHandler = dir =>
-  runPrune({ projectDir: dir, ...bundled(), apply: false, yes: false, force: false, json: false });
+  forInstalledTool(dir, tool =>
+    runPrune({
+      projectDir: dir,
+      ...bundled(),
+      apply: false,
+      yes: false,
+      force: false,
+      json: false,
+      ...tool,
+    }),
+  );
+
+const repair: HomeHandler = dir => runRepair(dir);
 
 const init: HomeHandler = dir => runInit({ projectDir: dir });
 
@@ -70,7 +98,7 @@ const init: HomeHandler = dir => runInit({ projectDir: dir });
 export function defaultHomeDeps(showHelp: () => void): HomeDeps {
   const help: HomeHandler = async () => showHelp();
   const author = { new: newArtifact, edit: editArtifact, validate: validateCatalog };
-  const handlers = { init, install, restore, update, uninstall, status, prune };
+  const handlers = { init, install, repair, restore, update, uninstall, status, prune };
   return {
     catalogIds: bundledCatalogIds,
     handlers: { ...handlers, browse, search, ...author, help },

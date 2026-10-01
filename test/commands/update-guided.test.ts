@@ -132,6 +132,26 @@ describe('runUpdate in a terminal', () => {
     });
   });
 
+  it('should say everything is up to date and ask nothing when there is nothing to update', async () => {
+    await withTempDirAsync(async dir => {
+      await outdatedProject(dir);
+      await guided(dir, ['apply']); // brings both rules current
+      const before = read(dir, GIT);
+      await guided(dir, []); // an empty queue throws if the "Apply?" question appears
+      assert.equal(read(dir, GIT), before);
+    });
+  });
+
+  it('should still offer to overwrite when the only thing left is a file the user edited', async () => {
+    await withTempDirAsync(async dir => {
+      await outdatedProject(dir);
+      await guided(dir, ['apply']);
+      fs.writeFileSync(path.join(dir, GIT), 'my own edit\n');
+      await guided(dir, ['cancel']); // the question appears, so cancel consumes the answer
+      assert.equal(read(dir, GIT), 'my own edit\n');
+    });
+  });
+
   it('should not ask anything with --yes', async () => {
     await withTempDirAsync(async dir => {
       await outdatedProject(dir);

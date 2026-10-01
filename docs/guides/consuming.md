@@ -38,35 +38,75 @@ sigil
 sigil looks at the folder you are in and shows what it found:
 
 ```
-Folder:     C:\work\acme-api
+Folder:      C:\work\acme-api
 Set up for:  Claude Code
-Installed:  12 installed · 1 missing, 2 edited
+Installed:   12 installed · 1 missing, 2 edited
 ```
 
 It then lists what you can do, with the most useful step first and marked **(recommended)**. The
 recommendation follows the state of the folder:
 
-| What sigil finds in the folder                 | What it recommends                                    |
-| ---------------------------------------------- | ----------------------------------------------------- |
-| Your home folder, or a sigil catalog checkout  | Work in a different folder (installs would land here) |
-| No `.claude/` or `.github/` folder             | Set up this project                                   |
-| Set up, nothing installed                      | Install artifacts                                     |
-| Files sigil installed were deleted             | Restore deleted files                                 |
-| Installed files you edited                     | Check what's installed (shows which files differ)     |
-| A newer catalog version of something installed | Update installed artifacts                            |
-| Installed artifacts that have left the catalog | Clean up leftovers                                    |
-| Everything installed and healthy               | No recommendation; the list is there when you need it |
+| What sigil finds in the folder                                    | What it recommends                                     |
+| ----------------------------------------------------------------- | ------------------------------------------------------ |
+| Your home folder, the top of a drive, or a sigil catalog checkout | Work in a different folder (installs would land here)  |
+| The install record is damaged                                     | Repair the install record                              |
+| No Claude Code or Copilot setup in the folder                     | Set up this project                                    |
+| Set up, nothing installed                                         | Install artifacts                                      |
+| Files sigil installed were deleted                                | Restore deleted files                                  |
+| Installed files you edited                                        | Nothing (an edit is your choice; the header counts it) |
+| A newer catalog version of something installed                    | Update installed artifacts                             |
+| Installed artifacts that have left the catalog                    | Clean up leftovers (even if their files were deleted)  |
+| Everything installed and healthy                                  | No recommendation; the list is there when you need it  |
 
-The entries are Set up, Install, Restore, Update, Remove, Check status, Clean up, Browse the
+The entries are Set up, Install, Repair, Restore, Update, Remove, Check status, Clean up, Browse the
 catalog, Search the catalog, Work in a different folder, Show all commands, and Quit. Entries that
 cannot apply are hidden (there is no "Remove" in an empty project). Inside a sigil catalog checkout
 the menu also shows the author actions: Create a new artifact, Edit an artifact, Validate the catalog.
 After each action you return to the menu, so one session can set up, install, and check. An error in
 one action is shown and the menu stays open. Ctrl+C leaves quietly.
 
-If the folder has both `.claude/` and `.github/`, the menu header and the update, remove, status, and
-clean-up entries work on the first one found (Claude Code). For the other target, use the command with
-`--target copilot`, for example `sigil update --target copilot`.
+**Choosing a folder.** "Work in a different folder" opens a folder browser, so you never have to type
+a path from memory. It starts one level up, where your other projects usually are, and lists folders
+that look like projects first. Move with the arrow keys: pick a folder to step into it, "Up one level"
+to go back, and "Use <folder>" to choose the one on screen. Starting a new project? Pick "New folder
+here" and type a name, and sigil creates it for you. "Type a path" is there for another drive or a
+pasted path; if the folder does not exist yet, sigil asks whether to create it. A path that is a
+file, or sits under a file, is rejected with a message.
+
+**Claude Code and Copilot in one folder.** The header counts what is installed for each tool
+(`3 Claude Code, 2 GitHub Copilot`). Update, Remove, Check, and Clean up act on one tool at a time, so
+when both have installs the menu asks "Which tool?" first. When only one has installs, it is used
+without asking.
+
+**What counts as "set up".** Claude Code is set up when the folder has `.claude/`. Copilot is set up
+when it has one of `.github/copilot-instructions.md`, `.github/instructions/`, `.github/prompts/`,
+`.github/agents/`, or `.github/skills/`. A `.github/` folder that only holds workflows or issue
+templates does not count, so a normal GitHub repo is not mistaken for a Copilot project.
+
+**Installing in the wrong place.** Choosing Install (or installing from a search result) in your home
+folder, the top of a drive, or a sigil catalog checkout first asks "Install here anyway?" (default No).
+
+**A damaged install record.** If `.sigil/manifest.json` cannot be read, the header says so and the
+menu offers "Repair the install record". It moves the damaged file aside as
+`.sigil/manifest.damaged-<time>.json` (nothing is deleted) and starts a fresh record. Files that were
+already installed stay where they are, but sigil stops tracking them, so installing them again asks
+before replacing anything.
+
+**Setting up a second tool.** "Set up this project" stays in the menu until both Claude Code and
+Copilot have their folders, so you can add the other one later. `sigil init` says when a folder
+already exists and points to "Install artifacts" next. The recommended entry's hint says what the
+entry does as well as why it is first.
+
+**When something cannot be written.** A read-only or locked folder shows the system's message plus a
+line telling you to pick another folder or check what is holding it.
+
+**Search.** "Search the catalog" asks for a word, then shows the matches as a list. Pick one to see its
+details; sigil then offers to install it, and says which helper rules or agents come with it. No
+match is said plainly. "Browse the catalog" lists by kind and points you to Install or Search.
+
+**Removing something you edited.** Remove asks what to do with files you changed after installing:
+keep them (they stay active, and sigil stops tracking them) or delete them too. The `Equivalent
+command:` it prints, such as `sigil uninstall <id> --yes --force`, matches what you chose.
 
 Each entry runs the same code as the matching command. The guided flows print an
 `Equivalent command:` line, so you learn the command as you go and can repeat it in a script.
@@ -79,15 +119,15 @@ standard output and exits 0, so nothing changes for automation.
 You can also reach the guided flows directly. These ask questions only in a terminal; in a script or CI
 each behaves exactly as before.
 
-| Command           | Guided when                                                  | What it asks                                                                                |
-| ----------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `sigil add`       | No selector (`-i` forces)                                    | The install wizard below                                                                    |
-| `sigil init`      | No `--target`                                                | Which AI tool the project is for (the one already in the folder is first)                   |
-| `sigil uninstall` | No ids                                                       | Tick what to remove, then confirm                                                           |
-| `sigil update`    | No `--yes` and no `--dry-run`                                | Shows what would change, then: apply / apply and overwrite my edits / choose which / cancel |
-| `sigil prune`     | No `--apply` and no `--json`, and something would be removed | After the preview: remove them now?                                                         |
-| `sigil new`       | No kind (`-i` forces)                                        | Scaffolds a new catalog artifact (authors)                                                  |
-| `sigil edit <id>` | No `--yes`                                                   | Edits title, description, and tags (authors)                                                |
+| Command           | Guided when                                                  | What it asks                                                                                    |
+| ----------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `sigil add`       | No selector (`-i` forces)                                    | The install wizard below                                                                        |
+| `sigil init`      | No `--target`                                                | Which AI tool the project is for (the one already in the folder is first)                       |
+| `sigil uninstall` | No ids                                                       | Tick what to remove; if you edited any of its files, keep them or delete them too; then confirm |
+| `sigil update`    | No `--yes` and no `--dry-run`                                | Shows what would change, then: apply / apply and overwrite my edits / choose which / cancel     |
+| `sigil prune`     | No `--apply` and no `--json`, and something would be removed | After the preview: remove them now?                                                             |
+| `sigil new`       | No kind (`-i` forces)                                        | Scaffolds a new catalog artifact (authors)                                                      |
+| `sigil edit <id>` | No `--yes`                                                   | Edits title, description, and tags (authors)                                                    |
 
 In a script, pass what the command needs: `sigil uninstall <ids...>`, `sigil init --target claude`,
 `sigil update --yes`, `sigil prune --apply --yes`, `sigil add <selectors> --yes`. Without a terminal and
@@ -100,27 +140,40 @@ is about the install wizard, `sigil add`.
 sigil add
 ```
 
-Use the arrow keys and Enter. Every step has a **← Back** option, and Ctrl+C cancels without writing
-anything. The steps run in this order; a step that does not apply to your choices is skipped:
+Use the arrow keys and Enter. A short "How this works" note comes first. Every step has a **← Back**
+row, and Ctrl+C cancels without writing anything. In the picker, Space ticks an item and Enter
+confirms; Enter with nothing ticked asks again instead of going back. The steps run in this order; a
+step that does not apply to your choices is skipped:
 
-1. **Target** — Claude Code or GitHub Copilot. sigil guesses from `.claude/` or `.github/` in your
-   project and tells you why.
-2. **Scope** — Everything, Recommended (a curated pack), or Pick specific items.
+1. **Which AI tool** — Claude Code or GitHub Copilot. The question says what sigil found in the
+   folder; with nothing found, Claude Code is preselected and the question says so.
+2. **Scope** — Pick specific items (preselected), Recommended (a curated pack), or Everything.
+   Everything asks "Install all N artifacts?" (default No) because it includes hooks and MCP servers,
+   which run commands and connect to services.
 3. **Pack** — only under Recommended: which bundle.
 4. **Browse and pick** — only under Pick specific items: choose a type (skills, agents, rules,
    commands, MCP servers, hooks, settings) or "All types", then tick the items you want.
 5. **Language** — for code artifacts, an optional "Narrow by language?" step. Press Enter to keep all.
-6. **Dependencies** — shows the rules and agents your picks reference through `uses:`. These are the
-   author's recommendation ("you will probably want these too"). Yes installs them; No skips them,
+   It appears only when there are at least two languages to choose between.
+6. **Helpers** (dependencies) — shows the rules and agents your picks refer to through `uses:`. These
+   are the author's recommendation. Yes installs them (recommended); No installs only what you picked,
    like `--no-deps`.
-7. **Overwrite** — whether to replace files that already exist.
-8. **Config scope** — only when you picked an MCP server, hook, or settings artifact. Choose
-   `project`, `local`, or `user`; each choice shows the file it will write to, with a warning when
-   the scope affects every project on your machine.
-9. **Proceed** — an Install plan box lists your picks (`your pick`) and the extra artifacts pulled in
-   (`dependency of <skill>`). Confirm to write.
+7. **Replace existing files?** — asked only when a pick would meet a file that is already there and is
+   not an untouched sigil install: one you edited, one sigil did not write, or one the catalog has
+   updated. The step names each one and why. No keeps your files and installs the rest (default);
+   Yes replaces them, and your edits to them are lost (`--overwrite`). With nothing to replace there
+   is no question.
+8. **Where to save config** — only when you picked an MCP server, hook, or settings artifact:
+   "This project, shared with your team" (`project`, recommended), "This project, just me" (`local`),
+   or "All my projects" (`user`). Each choice shows the file it writes. A note appears when that file
+   is in your home folder, and a stronger warning when it affects every project.
+9. **Proceed** — an Install plan box lists your picks (`your pick`), the extra artifacts pulled in
+   (`dependency of <skill>`), which are already up to date and will be skipped, and which the chosen
+   tool cannot take (for example hooks on Copilot). If there is nothing new to install it says so and
+   offers only Back or Cancel. Confirm to write.
 
-When it finishes, sigil prints a ready-to-paste `sigil add ... --yes` line so you can repeat the same
+When it finishes, sigil prints a **Next:** line (open a new Claude Code session, or reload the VS
+Code window for Copilot) and a ready-to-paste `sigil add ... --yes` line so you can repeat the same
 install in a script or CI.
 
 **What the markers in the picker mean.** Nothing is pre-ticked; the markers only tell you where each
@@ -606,8 +659,9 @@ After sourcing, `sigil add <Tab>` suggests `all`, `pack:dotnet-tooling`, `kind:s
 sigil add skill:csharp/cs-generate-tests --project-dir packages/my-api --yes
 ```
 
-Claude Code writes to `.claude/` and Copilot writes to `.github/`. Auto-detection looks for those
-folders at the project root; when both exist it picks `claude`. Override with `--target`.
+Claude Code writes to `.claude/` and Copilot writes to `.github/`. Auto-detection looks for `.claude/`
+and for Copilot's own files (see "What counts as set up" above) at the project root; when both are
+there it picks `claude`, and when neither is it defaults to `claude`. Override with `--target`.
 
 ---
 

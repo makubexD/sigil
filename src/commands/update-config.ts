@@ -31,8 +31,8 @@ interface ConfigFileSpec {
 }
 
 /**
- * Decides whether `cf` needs restoring. Returns the restore/re-merge action label, or
- * false when nothing was written (prints a skip note for the `modified`-without-`--force` case).
+ * Decides whether `cf` needs restoring. Returns the restore/re-merge action label, `'skipped'`
+ * for the `modified`-without-`--force` case (prints a note), or false when it is intact.
  *
  * `missing` (sigil's fragment is wholly absent from an existing file) is restored **without**
  * `--force` — re-merging is purely additive, there is nothing of the user's to clobber. Only
@@ -44,7 +44,7 @@ function configFileNeedsRestore(
   existing: Record<string, unknown>,
   spec: ConfigFileSpec,
   opts: UpdateOptions,
-): 'restored' | 're-merged' | false {
+): 'restored' | 're-merged' | 'skipped' | false {
   const { op, cfFile, existedOnDisk } = spec;
   if (!existedOnDisk) return 'restored'; // the file itself doesn't exist yet — nothing to clobber
 
@@ -53,37 +53,40 @@ function configFileNeedsRestore(
   if (drift === 'missing') return 'restored'; // sigil's fragment is gone entirely — safe to re-add
   if (!opts.force) {
     console.log(`     ⊘ ${cfFile}  (sigil's values were changed — would skip without --force)`);
-    return false;
+    return 'skipped';
   }
   return 're-merged';
 }
 
+/** What happened to one config file: written (or would be), kept because it was edited, or nothing to do. */
+type FileOutcome = 'wrote' | 'skipped' | 'none';
+
 /**
- * Restore or re-merge one recorded config fragment file onto disk. Returns true when the
- * file was written (or would be, under --dry-run); false when skipped or already intact.
+ * Restore or re-merge one recorded config fragment file onto disk. `wrote` when the file was
+ * written (or would be, under --dry-run); `skipped` when the user's edit was kept; else `none`.
  */
 function updateOneConfigFile(
   cf: ManifestConfigMerge,
   op: ConfigMergeOp,
   entry: ManifestEntry,
   opts: UpdateOptions,
-): boolean {
+): FileOutcome {
   const { fullPath } = resolveConfigFileTarget(cf, opts.projectDir);
   const existing = readExistingOrWarn(fullPath, entry.id, cf.file);
-  if (existing === undefined) return false;
+  if (existing === undefined) return 'none';
 
   const spec = { op, cfFile: cf.file, existedOnDisk: fs.existsSync(fullPath) };
   const action = configFileNeedsRestore(existing, spec, opts);
-  if (!action) return false;
+  if (!action || action === 'skipped') return action || 'none';
 
   if (opts.dryRun) {
     console.log(`  ↑  ${entry.id}\n     ~ ${cf.file}  (would be ${action})`);
-    return true;
+    return 'wrote';
   }
 
   writeMergedConfigFile(fullPath, existing, { next: op });
   console.log(`  ✓  ${entry.id}  (${cf.file} ${action})`);
-  return true;
+  return 'wrote';
 }
 
 /**
@@ -97,34 +100,52 @@ function updateFromCatalog(
   entry: ManifestEntry,
   opts: UpdateOptions,
   freshOps: readonly ConfigMergeOp[],
-): boolean {
+): FileOutcome {
   const current = freshOps.find(op => sameDestination(cf, op));
   if (!current) {
     console.log(`  ⊘  ${entry.id}
      ${cf.file}  (${NOT_IN_CATALOG})`);
-    return false;
+    return 'none';
   }
   const changed = changedCatalogOp(cf, freshOps);
-  if (changed) return applyCatalogChange(cf, changed, entry, opts);
+  if (changed) return applyCatalogChange(cf, changed, entry, opts) ? 'wrote' : 'none';
   return updateOneConfigFile(cf, current, entry, opts);
 }
 
 const NOT_IN_CATALOG =
   'not in the current catalog for this destination — not restored; re-run sigil add';
 
+/** The result of bringing an entry's config fragments up to date. */
+export interface ConfigEntryResult {
+  /** At least one file was written (or would be, under --dry-run). */
+  wrote: boolean;
+  /** Files left alone because sigil's values in them were edited (they need --force). */
+  skipped: number;
+}
+
 /**
  * Brings each recorded config fragment (hook/settings/mcp) up to date. `freshOps` are the
- * catalog's current ops for this artifact (see updateFromCatalog). Returns true when at least
- * one file was written (or would be, under --dry-run).
+ * catalog's current ops for this artifact (see updateFromCatalog).
  */
+export function applyConfigEntry(
+  entry: ManifestEntry,
+  opts: UpdateOptions,
+  freshOps: readonly ConfigMergeOp[],
+): ConfigEntryResult {
+  const result: ConfigEntryResult = { wrote: false, skipped: 0 };
+  for (const cf of entry.configFiles ?? []) {
+    const outcome = updateFromCatalog(cf, entry, opts, freshOps);
+    if (outcome === 'wrote') result.wrote = true;
+    if (outcome === 'skipped') result.skipped++;
+  }
+  return result;
+}
+
+/** Like {@link applyConfigEntry}, for callers that only need to know whether anything was written. */
 export function updateConfigEntry(
   entry: ManifestEntry,
   opts: UpdateOptions,
   freshOps: readonly ConfigMergeOp[],
 ): boolean {
-  let wrote = false;
-  for (const cf of entry.configFiles ?? []) {
-    if (updateFromCatalog(cf, entry, opts, freshOps)) wrote = true;
-  }
-  return wrote;
+  return applyConfigEntry(entry, opts, freshOps).wrote;
 }

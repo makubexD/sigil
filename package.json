@@ -56,7 +56,7 @@
     "build:watch": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --watch",
     "build:test": "tsc -p tsconfig.test.json",
     "pretest": "npm run build && npm run build:test",
-    "test": "node --test --experimental-test-coverage --test-coverage-exclude=\"test-compiled/**\" \"test-compiled/**/*.test.js\"",
+    "test": "node scripts/run-tests.cjs",
     "validate": "node dist-cli/cli.js validate",
     "catalog:build": "node dist-cli/cli.js build",
     "sigil": "node dist-cli/cli.js",

@@ -95,6 +95,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   flushes stdout first.
 - `sigil status` said "Run `sigil update`" for every problem, but `update` does not recreate a
   deleted whole-file artifact. It now prints the command that works for each problem.
+- `npm test` failed on Node 20 (the `engines` floor), so the Windows CI job never ran a test: it
+  passed `--test-coverage-exclude` (Node 22.5+) and a glob that Node 20 and cmd.exe do not expand.
+  `scripts/run-tests.cjs` lists the files itself and adds the flag only where it is supported.
 - The hook `timeout` schema comment said milliseconds; Claude Code reads seconds.
 - `sigil build --target copilot` folded every language-less rule into `copilot-instructions.md`,
   widening a narrowly scoped shared rule (e.g. `shared/cli-rules`) to the whole repository. Only

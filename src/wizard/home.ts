@@ -8,11 +8,11 @@
  *
  * @module
  */
-import fs from 'node:fs';
-import path from 'node:path';
-import { intro, isCancel, log, note, outro, select, text } from '@clack/prompts';
+import os from 'node:os';
+import { intro, isCancel, log, note, outro, select } from '@clack/prompts';
 import { detectProjectContext } from '../project-context';
 import { SigilError } from '../errors';
+import { pickFolder } from './folder-picker';
 import { buildMenu, describeContext } from './home-menu';
 import type { HomeActionId } from './home-menu';
 
@@ -37,21 +37,11 @@ function showError(error: unknown): void {
   }
 }
 
-/** Asks for a folder. Returns the resolved path, or the current one when it is empty or invalid. */
-async function askFolder(current: string): Promise<string> {
-  const answer = await text({ message: 'Which folder? (a path to your project)' });
-  if (isCancel(answer) || String(answer).trim() === '') return current;
-  const target = path.resolve(current, String(answer).trim());
-  if (!fs.existsSync(target) || !fs.statSync(target).isDirectory()) {
-    log.error(`${target} is not a folder.`);
-    return current;
-  }
-  return target;
-}
-
 /** Runs one menu choice. Returns the folder to use next. */
 async function runChoice(choice: HomeActionId, dir: string, deps: HomeDeps): Promise<string> {
-  if (choice === 'change-folder') return askFolder(dir);
+  if (choice === 'change-folder') {
+    return (await pickFolder(dir, deps.homeDir ?? os.homedir())) ?? dir;
+  }
   const handler = deps.handlers[choice];
   if (!handler) {
     log.warn(`'${choice}' is not available here.`);

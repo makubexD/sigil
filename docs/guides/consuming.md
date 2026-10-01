@@ -64,6 +64,12 @@ the menu also shows the author actions: Create a new artifact, Edit an artifact,
 After each action you return to the menu, so one session can set up, install, and check. An error in
 one action is shown and the menu stays open. Ctrl+C leaves quietly.
 
+**Choosing a folder.** "Work in a different folder" opens a folder browser, so you never have to type
+a path from memory. It starts one level up, where your other projects usually are, and lists folders
+that look like projects first. Move with the arrow keys: pick a folder to step into it, "Up one level"
+to go back, and "Use this folder" to choose the one on screen. "Type a path" is there for another
+drive or a pasted path. It checks the path as you type and tells you when no such folder exists.
+
 If the folder has both `.claude/` and `.github/`, the menu header and the update, remove, status, and
 clean-up entries work on the first one found (Claude Code). For the other target, use the command with
 `--target copilot`, for example `sigil update --target copilot`.

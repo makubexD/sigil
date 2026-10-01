@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { buildMenu, describeContext } from '../../dist-cli/wizard/home-menu';
 import { runHome } from '../../dist-cli/wizard/home';
+import { FOLDER_CHOICE } from '../../dist-cli/wizard/folder-list';
 import { defaultHomeDeps } from '../../dist-cli/wizard/home-actions';
 import type { HomeActionId } from '../../dist-cli/wizard/home-menu';
 import type { ProjectContext } from '../../dist-cli/project-context';
@@ -184,15 +185,15 @@ describe('runHome', () => {
       const other = path.join(dir, 'other');
       fs.mkdirSync(other);
       const calls: Calls = [];
-      await run(dir, ['change-folder', other, 'install', 'quit'], calls);
+      await run(dir, ['change-folder', other, FOLDER_CHOICE.use, 'install', 'quit'], calls);
       assert.deepEqual(calls, [['install', other]]);
     });
   });
 
-  it('should refuse a folder that does not exist and stay where it was', async () => {
+  it('should keep the current folder when the user backs out of the folder picker', async () => {
     await withTempDirAsync(async dir => {
       const calls: Calls = [];
-      await run(dir, ['change-folder', path.join(dir, 'missing'), 'install', 'quit'], calls);
+      await run(dir, ['change-folder', FOLDER_CHOICE.back, 'install', 'quit'], calls);
       assert.deepEqual(calls, [['install', dir]]);
     });
   });

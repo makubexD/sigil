@@ -68,13 +68,13 @@ function emptyHealth(): Record<ArtifactStatus, number> {
   return { 'up-to-date': 0, outdated: 0, drifted: 0, orphaned: 0, missing: 0 };
 }
 
-function samePath(a: string, b: string): boolean {
+export function samePath(a: string, b: string): boolean {
   const normalize = (p: string): string =>
     process.platform === 'win32' ? path.resolve(p).toLowerCase() : path.resolve(p);
   return normalize(a) === normalize(b);
 }
 
-function looksLikeProject(dir: string): boolean {
+export function looksLikeProject(dir: string): boolean {
   if (PROJECT_MARKERS.some(marker => fs.existsSync(path.join(dir, marker)))) return true;
   try {
     return fs.readdirSync(dir).some(name => PROJECT_FILE_PATTERN.test(name));

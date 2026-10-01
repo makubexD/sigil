@@ -16,6 +16,10 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
 - **Every entry needs a handler** in `defaultHomeDeps` (`home-actions.ts`); `test/wizard/home.test.ts` fails
   on a gap. `quit` and `change-folder` are the loop's own. A handler calls the same `run*` function as the
   CLI verb, with the folder the menu is looking at. Never copy command logic into the menu.
+- **The folder picker** (`folder-list.ts`, `folder-picker.ts`) is arrow-key navigation, not a typed path. Folder
+  entries carry absolute paths as values and navigation entries carry `FOLDER_CHOICE` sentinels; it returns an
+  existing folder or `null`, never an unchecked string. Do not swap it for `text`. Live path typeahead needs
+  `@clack/prompts` 1.x, which is ESM-only and breaks `mockClack`'s `require.cache` approach.
 - `runHome` never exits on an action's failure: a `SigilError` is shown (message plus hint) and the menu
   returns. Ctrl+C at the menu leaves quietly. Handlers are injected so the loop is tested without installing.
 - Author entries (`new`, `edit`, `validate`) show only inside a catalog checkout and use that checkout's

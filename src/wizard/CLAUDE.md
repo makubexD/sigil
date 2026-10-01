@@ -1,8 +1,9 @@
 # Wizard internals (`src/wizard/`)
 
 This file loads automatically whenever you work under `src/wizard/`. It holds the design
-invariants and shipped-bug history for the `add`/`new` interactive wizards — the root `CLAUDE.md`
-keeps only the user-facing `add` command contract.
+invariants and shipped-bug history for the `add`/`new` interactive wizards. The user-facing `add` command contract
+(selectors, flags, TTY/CI guard) lives in `docs/reference/spec.md` (CLI reference), `docs/reference/cli-flags.md`, and
+`docs/guides/consuming.md`.
 
 **Wizard (`src/wizard/add.ts`):** triggered when run with no selector in an interactive TTY. Uses
 `@clack/prompts` for a step-machine guided flow; every prompt maps 1:1 to a CLI flag so guided and

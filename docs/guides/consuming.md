@@ -1,65 +1,282 @@
 # Consuming the Catalog — Install Skills into Your Project
 
-Run `sigil` from **your project directory**. The catalog source is embedded in the installed
-package — you never need to be inside the catalog repo.
+This guide covers everything you do as a **user** of sigil: getting the command, installing
+artifacts into your project, keeping them healthy, and using the Claude plugin build. If you want to
+write or change catalog artifacts instead, see [authoring.md](authoring.md).
 
-## How to invoke `sigil`
+Run `sigil` from **your project directory**. The catalog source ships inside the sigil package, so
+you never need to be inside the sigil repo to use it.
 
-| Context                      | Command form                                |
-| ---------------------------- | ------------------------------------------- |
-| After `npm install -g sigil` | `sigil <cmd>`                               |
-| Without installing           | `npx sigil <cmd>`                           |
-| Built from source            | `node /path/to/sigil/dist-cli/cli.js <cmd>` |
+## Get the `sigil` command
 
-**Building from source (first time only):**
+sigil is **not published to npm yet**, so `npm install -g sigil` and `npx sigil` do not work today.
 
-```bash
-cd /path/to/sigil
-npm install && npm run build
-# → dist-cli/ ready. Now cd to any project and use sigil.
-```
+| Form                                    | Status      | Use when                                                       |
+| --------------------------------------- | ----------- | -------------------------------------------------------------- |
+| Clone, build, `npm link`, then `sigil`  | Works today | You want a normal `sigil <cmd>` command from any folder        |
+| `node <abs-path>/dist-cli/cli.js <cmd>` | Works today | You want no global command, or a script pinned to one checkout |
+| `npm install -g sigil` / `npx sigil`    | Planned     | Not available until the package is published                   |
+
+The clone, build, and link steps live in one place:
+[operations.md § Build and link](operations.md#build-and-link). Every example below writes `sigil`;
+if you did not link, replace it with `node <abs-path>/dist-cli/cli.js`.
+
+> **Gotcha: `npm run sigil -- add ...`** runs from the sigil package folder, so `--project-dir`
+> (which defaults to the current directory) points at the **sigil repo itself**, not your project. If
+> you use that form, always pass `--project-dir <absolute path to your project>`.
 
 ---
 
-## Guided wizard (recommended starting point)
+## Using the interactive wizard
 
-Run `sigil add` with no arguments in an interactive terminal:
+You do not have to memorise selectors. In an interactive terminal, three commands can guide you with
+menus:
+
+| Command           | Opens a wizard when                                          | What it does                                     |
+| ----------------- | ------------------------------------------------------------ | ------------------------------------------------ |
+| `sigil add`       | You give no selector and you are in a terminal (`-i` forces) | Installs artifacts into your project             |
+| `sigil new`       | You give no kind and you are in a terminal (`-i` forces)     | Scaffolds a new catalog artifact                 |
+| `sigil edit <id>` | You are in a terminal and did not pass `--yes`               | Edits an artifact's title, description, and tags |
+
+`new` and `edit` are for catalog authors; see [authoring.md](authoring.md). The rest of this section
+is about `sigil add`.
 
 ```bash
 sigil add
 ```
 
-The wizard walks you through these steps. A step that does not apply is skipped:
+Use the arrow keys and Enter. Every step has a **← Back** option, and Ctrl+C cancels without writing
+anything. The steps run in this order; a step that does not apply to your choices is skipped:
 
-1. **Target** — Claude Code or GitHub Copilot (auto-detected from `.claude/` / `.github/` at your project root, shown with reason)
-2. **Scope** — Everything / Recommended / Pick specific items
-3. **Artifacts** — under Pick specific items, a type sub-menu (the labels are that target's vocabulary) then the picker. Code kinds get an optional "Narrow by language?" step. For Everything, a language filter step appears instead.
-4. **Dependencies** — before you decide, the wizard shows the exact rules and agents your selection references via `uses:` frontmatter. These are **author recommendations** — the skill bodies work without them, but the author bundled them as "you'll probably want these too." Yes installs them; No skips them (`--no-deps`).
-5. **Conflicts** — whether to overwrite files that already exist.
-6. **Config scope** — only when the selection includes `mcp`, `hook`, or `settings`. Choices are `project`, `local`, and `user`, each showing the destination file. A scope that writes into every project also shows the blast-radius warning.
+1. **Target** — Claude Code or GitHub Copilot. sigil guesses from `.claude/` or `.github/` in your
+   project and tells you why.
+2. **Scope** — Everything, Recommended (a curated pack), or Pick specific items.
+3. **Pack** — only under Recommended: which bundle.
+4. **Browse and pick** — only under Pick specific items: choose a type (skills, agents, rules,
+   commands, MCP servers, hooks, settings) or "All types", then tick the items you want.
+5. **Language** — for code artifacts, an optional "Narrow by language?" step. Press Enter to keep all.
+6. **Dependencies** — shows the rules and agents your picks reference through `uses:`. These are the
+   author's recommendation ("you will probably want these too"). Yes installs them; No skips them,
+   like `--no-deps`.
+7. **Overwrite** — whether to replace files that already exist.
+8. **Config scope** — only when you picked an MCP server, hook, or settings artifact. Choose
+   `project`, `local`, or `user`; each choice shows the file it will write to, with a warning when
+   the scope affects every project on your machine.
+9. **Proceed** — an Install plan box lists your picks (`your pick`) and the extra artifacts pulled in
+   (`dependency of <skill>`). Confirm to write.
 
-The **Install plan** box (shown before "Proceed?") previews the full resolved artifact set: your picks tagged `(your pick)` and dependency-closure artifacts tagged `(dependency of <skill-name>)`. After install, a copy-pasteable `sigil add … --yes` command is printed so you can repeat it in CI.
+When it finishes, sigil prints a ready-to-paste `sigil add ... --yes` line so you can repeat the same
+install in a script or CI.
 
-**CI / non-interactive:** the wizard never runs in a piped context. Always pass a selector and `--yes`:
+**What the markers in the picker mean.** Nothing is pre-ticked; the markers only tell you where each
+item stands in your project:
+
+| Marker                | Meaning                                            |
+| --------------------- | -------------------------------------------------- |
+| `＋ new`              | Not installed yet                                  |
+| `✓ installed`         | Installed and unchanged                            |
+| `↑ update available`  | The catalog has a newer version than you installed |
+| `✎ you edited this`   | You changed an installed file                      |
+| `⚠ not sigil's`       | A file is already there that sigil did not write   |
+| `! missing from disk` | sigil installed it, but the file was deleted       |
+
+Developers who change the wizard can read the full state model in
+[`src/wizard/CLAUDE.md`](../../src/wizard/CLAUDE.md).
+
+### What has no wizard (yet)
+
+These are command-line only today:
+
+- `sigil update` — pass ids or nothing for everything.
+- `sigil uninstall <ids...>` — you must name the artifact ids.
+- `sigil status` and `sigil prune`.
+- `sigil init` — needs `--target claude` or `--target copilot`.
+- Running bare `sigil` only prints the help text.
+
+In a script or CI there is no wizard at all: `sigil add` without a selector exits with an error, so
+always pass a selector and `--yes` (for example `sigil add all --yes`).
+
+Ideas for closing these gaps are tracked in [ideas/home-menu-wizard.md](../ideas/home-menu-wizard.md)
+and [ideas/wizard-update-uninstall.md](../ideas/wizard-update-uninstall.md). They are proposals, not
+features.
+
+---
+
+## Try it in a scratch project
+
+The safest way to learn sigil is to install into a throwaway folder, break something on purpose, and
+watch each lifecycle command respond. Nothing here touches your real projects. Every command below
+runs from the scratch folder, so `--project-dir` defaults to it. Replace `sigil` with
+`node <abs-path>/dist-cli/cli.js` if you did not link.
+
+**1. Make a scratch folder and prepare it for Claude Code.**
 
 ```bash
-sigil add all --yes
+mkdir sigil-scratch
+cd sigil-scratch
+sigil init --target claude
+```
+
+```
+  created .claude/skills/
+  created .claude/rules/
+  created .claude/agents/
+
+✓ claude project structure initialised.
+```
+
+**2. Install a skill.** It brings along its rule and agent.
+
+```bash
 sigil add skill:csharp/cs-generate-tests --yes
+```
+
+```
+✓ 3 operation(s) applied to .
+  .claude/skills/cs-generate-tests/SKILL.md
+  .claude/rules/csharp-cs-testing.md  (dependency)
+  .claude/agents/cs-code-reviewer.md  (dependency)
+```
+
+sigil also wrote `.sigil/manifest.json`, its record of what it installed.
+
+**3. Check health.**
+
+```bash
+sigil status
+```
+
+```
+  ✓  csharp/cs-generate-tests  [up-to-date]
+  ✓  csharp/cs-testing  [up-to-date]  (dep of csharp/cs-generate-tests)
+  ✓  csharp/cs-code-reviewer  [up-to-date]  (dep of csharp/cs-generate-tests)
+
+  3 artifact(s): 3 up-to-date
+```
+
+**4. Edit an installed file, then check again.**
+
+```bash
+# bash
+echo "<!-- my edit -->" >> .claude/rules/csharp-cs-testing.md
+```
+
+```powershell
+# PowerShell
+Add-Content .claude/rules/csharp-cs-testing.md "<!-- my edit -->"
+```
+
+```bash
+sigil status
+```
+
+```
+  ~  csharp/cs-testing  [drifted]  (dep of csharp/cs-generate-tests)
+     local edits differ from installed content: .claude/rules/csharp-cs-testing.md
+
+  3 artifact(s): 2 up-to-date, 1 drifted
+```
+
+sigil compares each file's SHA-256 with the hash it recorded at install. `drifted` means "you changed
+this", not "something is wrong".
+
+**5. Run `update`.**
+
+```bash
+sigil update --dry-run   # preview only, writes nothing
+sigil update
+```
+
+```
+  =  csharp/cs-generate-tests  (already up-to-date)
+  =  csharp/cs-testing  (already up-to-date)
+  =  csharp/cs-code-reviewer  (already up-to-date)
+
+✓ 0 artifact(s) updated.
+```
+
+Nothing changed, and **your edit is still there**. That is by design: `update` re-renders each
+artifact from the catalog bundled with your sigil version and only writes files whose catalog output
+changed since you installed. This catalog has not changed, so there is nothing to write, and your edit
+is neither overwritten nor reported by `update`.
+
+When a newer sigil does change a file you also edited, `update` skips that file and says
+`drifted — run with --force to overwrite`. `--force` then replaces your version with the catalog's.
+`--dry-run` shows what would be written or skipped (`⊘ ... drifted — would skip without --force`).
+`update` also takes ids (`sigil update csharp/cs-testing`) to limit it to one artifact.
+
+To throw away your edits and reset a file right now, reinstall it with `--overwrite`:
+
+```bash
+sigil add skill:csharp/cs-generate-tests --overwrite --yes
+```
+
+That rewrote all three files, and `sigil status` went back to `3 up-to-date`.
+
+**6. Remove what you installed.**
+
+```bash
+sigil uninstall csharp/cs-generate-tests --dry-run   # preview
+sigil uninstall csharp/cs-generate-tests --yes
+```
+
+```
+Dry run — would remove 1 file(s) and reverse 0 JSON merge(s):
+  - .claude/skills/cs-generate-tests/SKILL.md
+
+✓ Uninstalled: csharp/cs-generate-tests  (1 file(s) removed)
+```
+
+Three things to know. `uninstall` needs the **bare id** (`csharp/cs-generate-tests`, no `skill:`
+prefix). Outside a terminal it refuses to run without `--yes` and prints
+`stdin/stdout is not interactive. Re-run with --yes to confirm.` And it removed only the skill: the
+rule and agent it had pulled in stay installed as their own entries, so uninstall them by id too
+(`sigil uninstall csharp/cs-testing csharp/cs-code-reviewer --yes`) if you want them gone. It will not
+remove a file you edited unless you add `--force`.
+
+**7. Tidy up with `prune`.**
+
+```bash
+sigil prune
+```
+
+```
+✓ Nothing to prune — no orphaned or deprecated artifacts installed.
+```
+
+`prune` handles artifacts that no longer exist in the catalog (for example after you upgrade sigil
+and the catalog dropped one). It only previews until you add `--apply`. When something is orphaned,
+the preview looks like this:
+
+```
+1 orphaned artifact(s) — no longer in the bundled catalog:
+  ✗  csharp/gone-rule
+
+Run `sigil prune --apply` to remove the orphaned artifact(s).
+```
+
+`sigil prune --apply --yes` then removes the entry and its files (still protecting files you edited
+unless `--force`). Artifacts that are deprecated but still in the catalog are only reported.
+
+**8. Clean up.** Delete the folder.
+
+```bash
+cd ..
+rm -r sigil-scratch
 ```
 
 ---
 
 ## Add a skill to a Claude Code project
 
-Scaffold the xUnit testing skill (+ its rule + agent dependency) into a C# repo:
+The walkthrough above is exactly this. In your real project root:
 
 ```bash
-# In your C# project root
-sigil init --target claude
+sigil init --target claude        # optional if .claude/ already exists
 sigil add skill:csharp/cs-generate-tests
 ```
 
-**What gets written:**
+Files written:
 
 ```
 .claude/skills/cs-generate-tests/SKILL.md
@@ -67,27 +284,19 @@ sigil add skill:csharp/cs-generate-tests
 .claude/agents/cs-code-reviewer.md          ← C# code-reviewer agent
 ```
 
-Claude Code loads `.claude/rules/*.md` natively on every session. The rule and agent are
-scaffolded from the `uses:` dependency closure automatically.
-
-```bash
-# If .claude/ already exists, init is optional.
-# Use --overwrite only if you want to replace existing files:
-sigil add skill:csharp/cs-generate-tests --overwrite
-```
+Claude Code loads `.claude/rules/*.md` natively on every session. The rule and agent come from the
+skill's `uses:` dependency closure automatically.
 
 ---
 
 ## Add a skill to a GitHub Copilot project
-
-Add the Python pytest skill to a repo using GitHub Copilot Chat:
 
 ```bash
 sigil init --target copilot
 sigil add skill:python/py-generate-tests --target copilot
 ```
 
-**What gets written:**
+Files written:
 
 ```
 .github/skills/py-generate-tests/SKILL.md
@@ -96,38 +305,71 @@ sigil add skill:python/py-generate-tests --target copilot
 .github/agents/code-reviewer.agent.md
 ```
 
-Copilot Chat picks up `.github/instructions/*.instructions.md` for files matching `applyTo` and
-loads `.github/skills/*/SKILL.md` as native Agent Skills (invocable as `/name`).
+What Copilot targets receive, by kind:
+
+| Catalog kind   | Written to                                                             |
+| -------------- | ---------------------------------------------------------------------- |
+| skill          | `.github/skills/<name>/SKILL.md` (plus any `references/` files)        |
+| rule           | `.github/instructions/<id>.instructions.md`                            |
+| agent          | `.github/agents/<name>.agent.md`                                       |
+| prompt         | `.github/prompts/<id>.prompt.md`                                       |
+| mcp            | merged into `.vscode/mcp.json` (VS Code) and `.mcp.json` (Copilot CLI) |
+| hook, settings | **Not supported** for Copilot. `add` skips them with a warning         |
+
+Copilot Chat applies `.github/instructions/*.instructions.md` to files matching `applyTo`, and loads
+`.github/skills/*/SKILL.md` as native Agent Skills. There is no Copilot plugin or marketplace channel
+yet. See the full per-kind table in [capabilities.md](../reference/capabilities.md) and the proposal in
+[ideas/copilot-plugin-channel.md](../ideas/copilot-plugin-channel.md).
 
 ---
 
-## Install the .NET tooling pack as a Claude plugin
+## Install a pack as a Claude plugin
 
-Compile and install the plugin so any Claude Code user can `/plugin install dotnet-tooling@sigil` without
-needing this repo locally:
+Besides copying files into your project with `sigil add`, sigil can compile the catalog into **Claude
+Code plugins** that you install from a local marketplace. This is the only plugin flow today, and it
+needs a local clone of sigil, because the marketplace is built on your machine. A published
+marketplace you could add without a clone is planned
+([ideas/publish-claude-marketplace.md](../ideas/publish-claude-marketplace.md)).
 
 ```bash
-# 1. Compile from the catalog repo
-cd /path/to/sigil
+# 1. In your sigil clone (see operations.md#build-and-link): build the Claude plugins.
 sigil build --target claude
-# → writes dist/claude/
+# → writes dist/claude/ (marketplace + one plugin per pack)
 
-# 2. In Claude Code, point at the generated marketplace:
-# /plugin marketplace add /path/to/sigil/dist/claude
-# /plugin install dotnet-tooling@sigil
+# 2. In Claude Code, add that folder as a marketplace (use the absolute path), then install a pack:
+#    /plugin marketplace add <abs-path-to-sigil>/dist/claude
+#    /plugin install dotnet-tooling@sigil
 ```
 
-**Plugin layout:**
+The marketplace is named `sigil`, and each pack in `packs.yaml` becomes a plugin of the same name,
+for example `essentials`, `dotnet-starter`, `dotnet-tooling`, `python-starter`, `react-starter`,
+`typescript-starter`, `typescript-tooling`, `angular-starter`, `angular-tooling`, and `spec-driven`.
+`dist/claude/.claude-plugin/marketplace.json` lists them all. Without `--target`, `sigil build` builds
+**both** targets (`dist/claude/` and `dist/copilot/`).
+
+**What a plugin carries.** Skills, agents, and workflows. Rules cannot ride in a plugin as loose
+files, so each rule a skill uses is **inlined** into that skill's `SKILL.md` under `## Applied Rules`.
+MCP servers, hooks, settings, and prompts are not packaged into plugins yet; install those with
+`sigil add`. The per-kind table is in [capabilities.md](../reference/capabilities.md).
 
 ```
 dist/claude/
   .claude-plugin/marketplace.json
   plugins/dotnet-tooling/
-    .claude-plugin/plugin.json     ← version = npm package version
-    skills/cs-generate-tests/SKILL.md  ← rule bodies inlined under ## Applied Rules
+    .claude-plugin/plugin.json          ← version = sigil package version
+    skills/cs-generate-tests/SKILL.md   ← rule bodies inlined under ## Applied Rules
     agents/cs-code-reviewer.md
     agents/cs-architecture-reviewer.md
+    …
 ```
+
+Every plugin's `version` is written from the sigil package version at build time
+(`src/targets/claude-code/plugin-assemble.ts`), so after pulling a newer sigil, rebuild and run
+`/plugin update` in Claude Code.
+
+**Plugin or `add`?** Use `sigil add` when you want files you can see, edit, and commit in your
+project, and for hooks, settings, MCP servers, and prompts. Use the plugin when you want Claude Code to
+manage skills and agents as an installable unit.
 
 ---
 
@@ -137,6 +379,8 @@ dist/claude/
 sigil list                      # all artifacts
 sigil list --language python    # filter by language
 sigil list --kind skill         # skill | agent | rule | prompt | workflow | mcp | hook | settings | template
+sigil search "generate tests"   # free-text search
+sigil get csharp/cs-generate-tests   # one artifact: dependencies, targets, destination paths
 ```
 
 **Expected output (`sigil list --kind skill --language csharp`):**
@@ -152,7 +396,9 @@ SKILL (7)
   csharp/cs-sync-tests [csharp] — Sync the xUnit test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)
 ```
 
-An unfiltered `sigil list` uses the same shape: a `KIND (N)` header, then `  <id> [<language>] — <description>` for each artifact. `template` is a catalog kind `list` can filter; neither target installs it.
+An unfiltered `sigil list` has the same shape: a `KIND (N)` header, then
+`  <id> [<language>] — <description>` per artifact. `template` is a catalog kind that `list` can filter,
+but neither target installs it.
 
 ---
 
@@ -178,15 +424,18 @@ sigil add all --kind mcp,hook,settings --target claude --scope project --yes
 
 ---
 
-## Install a skill without its dependency closure
+## Install a skill without its dependencies
 
 By default `add skill:...` writes the skill **plus** the rules and agents it references. Use
 `--no-deps` if you manage those separately:
 
 ```bash
 sigil add skill:csharp/cs-generate-tests --no-deps --target claude --yes
-# Only writes: .claude/skills/cs-generate-tests/SKILL.md + references/
+# Writes only the skill folder: .claude/skills/cs-generate-tests/SKILL.md
 ```
+
+"Skill folder" means `SKILL.md` plus any `references/*.md` files that skill ships. Some skills have
+reference files and `cs-generate-tests` happens to have none, so only `SKILL.md` appears here.
 
 ---
 
@@ -196,8 +445,8 @@ sigil add skill:csharp/cs-generate-tests --no-deps --target claude --yes
 sigil add skill:csharp/cs-generate-tests --target claude --dry-run --yes
 ```
 
-Output shows `+` for new files and `~` for conflicts — nothing is written. With
-`.claude/skills/cs-generate-tests/SKILL.md` already on disk and no sigil manifest entry for it:
+`+` marks new files and `~` marks conflicts. Nothing is written. With
+`.claude/skills/cs-generate-tests/SKILL.md` already on disk and no sigil record of it:
 
 ```
 Dry run — files that would be written:
@@ -212,23 +461,20 @@ Dry run — files that would be written:
 
 ## Handle conflicts
 
-Existing files are **never overwritten** by default:
+Existing files are **never overwritten** unless you pass `--overwrite`:
+
+- An artifact that is already installed and unchanged is a skip, not a conflict:
+  `=  csharp/cs-generate-tests  (✓ already up to date — skipped)`. When every requested id is
+  up to date the command prints `No artifacts to install (all were filtered out or unsupported).`
+  Those skips do not change the exit code.
+- A file that exists but that sigil does not own is a conflict. The other new files are still
+  written, and sigil lists the ones it left alone and tells you to re-run with `--overwrite` or
+  `--dry-run`.
+- `--overwrite` also reinstalls an up-to-date artifact, which makes it the way to reset a file you
+  edited.
+- A file sigil installed that you then **deleted** is simply written again by a plain `sigil add`.
 
 ```bash
-# First install writes the skill plus its uses: closure.
-sigil add skill:csharp/cs-generate-tests --target claude --yes
-
-# Second install of the same up-to-date artifact is a skip, not a conflict:
-#   =  csharp/cs-generate-tests  (✓ already up to date — skipped)
-# No artifacts to install (all were filtered out or unsupported).
-
-# A file sigil does not already own is a conflict. The new files are still
-# written; the existing one is left in place unless --overwrite is set:
-# ▲  1 file(s) already exist and were NOT overwritten:
-#      .claude/skills/cs-generate-tests/SKILL.md
-#    Re-run with --overwrite to replace them, or use --dry-run to preview first.
-# ✓ 2 operation(s) applied to <project>, 1 skipped (conflicts)
-
 sigil add skill:csharp/cs-generate-tests --target claude --overwrite --yes
 ```
 
@@ -236,74 +482,38 @@ sigil add skill:csharp/cs-generate-tests --target claude --overwrite --yes
 
 ## Keep installs healthy over time
 
-After the initial install, sigil tracks what it wrote in `.sigil/manifest.json` — a small JSON
-ledger that records each artifact, its files, and the SHA-256 hash of every file at install time.
+sigil records what it wrote in `.sigil/manifest.json`: each artifact, its files, and the SHA-256 hash
+of every file at install time.
 
-> **Commit this file.** `.sigil/manifest.json` is project state, not a build artifact. Committing
-> it means every team member and every CI run can use the lifecycle commands below without losing
-> install history.
+> **Commit this file.** `.sigil/manifest.json` is project state, not a build artifact. Committing it
+> lets every teammate and CI run use the commands below with the full install history.
 
-```bash
-# See the current health of everything sigil installed
-sigil status --target claude
-```
+| Command                    | What it does                                                                                     |
+| -------------------------- | ------------------------------------------------------------------------------------------------ |
+| `sigil status`             | Reports each installed artifact's health. Writes nothing                                         |
+| `sigil update [ids...]`    | Re-renders installed artifacts from the current catalog; skips files you edited unless `--force` |
+| `sigil uninstall <ids...>` | Removes artifacts and their files; a file another entry still uses is kept                       |
+| `sigil prune`              | Previews removal of entries whose ids left the catalog; `--apply` removes them                   |
 
-```
-  ✓  csharp/cs-generate-tests  [up-to-date]
-  ✓  csharp/cs-testing  [up-to-date]  (dep of csharp/cs-generate-tests)
-  ✓  csharp/cs-code-reviewer  [up-to-date]  (dep of csharp/cs-generate-tests)
+All four accept `--project-dir` and `--target`. Step-by-step output for each is in
+[Try it in a scratch project](#try-it-in-a-scratch-project).
 
-  3 artifact(s): 3 up-to-date
-```
+**Status values:**
 
-```bash
-# Re-scaffold outdated artifacts (skips files you edited — use --force to overwrite those too)
-sigil update
-sigil update csharp/cs-testing   # single artifact, bare catalog id
-```
+| Status       | Meaning                                                                                                        |
+| ------------ | -------------------------------------------------------------------------------------------------------------- |
+| `up-to-date` | Files match what sigil installed                                                                               |
+| `outdated`   | The artifact's shared template was revised since you installed. Run `sigil update`                             |
+| `drifted`    | You edited a file. `update` keeps your version unless the catalog changed it too, and then needs `--force`     |
+| `missing`    | A file sigil installed was deleted. `sigil add <id>` writes it again (config entries are restored by `update`) |
+| `orphaned`   | The artifact is no longer in the catalog. `sigil prune` reports it and `--apply` removes it                    |
 
-A non-`up-to-date` row prints its reason on the next indented line. For `outdated` that line is
-`template <id> rev <from>→<to>`. `sigil status` does not re-scaffold, so a body change that is not
-a template revision stays `up-to-date` here; `sigil update` applies it anyway. Config kinds never
-show as `outdated` on this command — a changed JSON fragment is `drifted` or `missing`. This is
-purely diagnostic on the consumer side: the propagation itself is still `update` (single artifact
-or, with no ids, everything). Catalog **authors** — not consumers — are the ones who run
-`sigil sync` to find and mechanically fix artifacts that drifted from their _own_ template; see
-`docs/guides/authoring.md` § Keeping artifacts in sync with their template.
-
-```bash
-# Remove an artifact and its files (refcount-aware: a file still recorded by
-# another installed entry is kept). Pass the bare catalog id — a kind: prefix
-# does not match and exits with "Not installed".
-sigil uninstall csharp/cs-generate-tests
-
-# Report manifest entries whose ids are gone from the catalog. Preview only
-# until --apply, which removes the orphaned entries.
-sigil prune
-sigil prune --apply
-```
-
-**Status values at a glance:**
-
-| Status       | Meaning                                                                            |
-| ------------ | ---------------------------------------------------------------------------------- |
-| `up-to-date` | Files match what the current catalog would produce                                 |
-| `outdated`   | The artifact's template changed since you installed — `sigil update`               |
-| `drifted`    | You edited a file — `update` skips it; `update --force` replaces it                |
-| `missing`    | A sigil-owned file was deleted — `update` restores it                              |
-| `orphaned`   | Artifact removed from the catalog — `sigil prune` reports it; `--apply` removes it |
-
-**Picker glyphs.** Before writing, the wizard labels each candidate and starts every item unchecked:
-`＋ new`, `✓ installed`, `↑ new version available`, `✎ you edited this`, `⚠ not installed by sigil`,
-`! missing from disk`. The header counts what is already installed versus new (for example
-`3 already installed, 1 new`). The six states behind those glyphs are in
-[`src/wizard/CLAUDE.md`](../../src/wizard/CLAUDE.md).
-
-**`add` without the wizard.** An up-to-date artifact prints
-`=  csharp/cs-generate-tests  (✓ already up to date — skipped)`. When every requested id is up to
-date the command then prints `No artifacts to install (all were filtered out or unsupported).` and
-does not print a conflict summary. Those skips do not change the exit code. `--overwrite` reinstalls
-even an up-to-date artifact.
+A non-`up-to-date` row prints its reason on the next line. `status` is diagnostic only: a catalog
+change that is not a template revision still shows `up-to-date` here, and `sigil update` applies it
+anyway. Config entries (MCP servers, hooks, settings) never show as `outdated`; a changed JSON
+fragment shows as `drifted` or `missing`. Catalog **authors**, not consumers, run `sigil sync` to fix
+artifacts that drifted from their own template; see
+[authoring.md § Keeping artifacts in sync with their template](authoring.md#keeping-artifacts-in-sync-with-their-template).
 
 ---
 
@@ -320,25 +530,26 @@ eval "$(sigil completion zsh)"
 sigil completion fish | source
 ```
 
-After sourcing: `sigil add <Tab>` suggests `all`, `pack:dotnet-tooling`, `kind:skill`,
-`skill:csharp/cs-generate-tests`, etc. Flag values also complete: `--target <Tab>` → `claude copilot`.
+After sourcing, `sigil add <Tab>` suggests `all`, `pack:dotnet-tooling`, `kind:skill`,
+`skill:csharp/cs-generate-tests`, and so on. Flag values complete too: `--target <Tab>` gives
+`claude copilot`.
 
 ---
 
-## Path strategy
+## Where files go
 
-- **Catalog source** is embedded in the package — run `sigil` from any directory.
-- **Output root** defaults to the current working directory; override with `--project-dir`.
+- **Catalog source** is embedded in the package, so you can run `sigil` from any directory.
+- **Output root** defaults to the current directory. Override it with `--project-dir`.
 
 ```bash
-# Monorepo: install into a specific package
+# Monorepo: install into one package
 sigil add skill:csharp/cs-generate-tests --project-dir packages/my-api --yes
 ```
 
-Claude Code writes to `.claude/`; Copilot writes to `.github/`. Target auto-detection checks for
-these directories at the project root. When both exist it defaults to `claude` — override with `--target`.
+Claude Code writes to `.claude/` and Copilot writes to `.github/`. Auto-detection looks for those
+folders at the project root; when both exist it picks `claude`. Override with `--target`.
 
 ---
 
-> **Troubleshooting** — wizard hangs, conflicts, schema errors → [reference/troubleshooting.md](../reference/troubleshooting.md)
-> **Full flag reference** → [reference/spec.md § CLI reference](../reference/spec.md#cli-reference)
+> **Troubleshooting** (wizard hangs, conflicts, schema errors): [reference/troubleshooting.md](../reference/troubleshooting.md)
+> **Full flag reference**: [reference/spec.md § CLI reference](../reference/spec.md#cli-reference)

@@ -1,28 +1,39 @@
 # Authoring Catalog Artifacts — Recipes
 
 Copy-pasteable walkthroughs for adding a new skill, rule, or language to the catalog.
-For the _rules_ of authoring (kinds, DRY, PR process) see [CONTRIBUTING.md](../../CONTRIBUTING.md).
+For the _rules_ of authoring (PR process, quality bar) see [CONTRIBUTING.md](../../CONTRIBUTING.md).
+For what each kind is and every frontmatter field, see the [spec](../reference/spec.md#artifact-kinds);
+this guide does not repeat it.
+
+You author inside a clone of the sigil repo (see [operations.md § Build and link](operations.md#build-and-link)).
+Commands that take `--catalog-dir` default to that clone's `catalog/`, wherever you run them from.
+If you are installing artifacts rather than writing them, see [consuming.md](consuming.md).
 
 ---
 
 ## Add a new skill that reuses an existing rule and agent
 
-**Goal:** add a `csharp/integration-testing` skill that inherits the existing C# style rules
+**Goal:** add a `csharp/cs-integration-testing` skill that inherits the existing C# style rules
 and delegates review to the shared code-reviewer agent.
 
+Naming convention: artifacts in a language namespace carry that language's short prefix in their
+name (`cs-` for C#, `py-`, `ts-`, `ng-`, `react-`), so `csharp/cs-generate-tests`, not
+`csharp/generate-tests`. `sigil new` uses the `--name` exactly as you type it and `validate` does not
+enforce the prefix, so include it yourself. Shared artifacts (`shared/...`) have no prefix.
+
 ```bash
-# Scaffold the template (run from inside the catalog repo)
-sigil new skill --language csharp --name integration-testing
-# → creates catalog/languages/csharp/skills/integration-testing/SKILL.md
+# Scaffold the template (or run `sigil new` with no arguments in a terminal for a guided wizard)
+sigil new skill --language csharp --name cs-integration-testing
+# → creates catalog/languages/csharp/skills/cs-integration-testing/SKILL.md
 ```
 
 **Edit the generated file:**
 
 ```yaml
 ---
-id: csharp/integration-testing
+id: csharp/cs-integration-testing
 kind: skill
-name: integration-testing
+name: cs-integration-testing
 title: Write Integration Tests for .NET
 description: Generate integration tests with WebApplicationFactory or TestContainers.
 whenToUse: >-
@@ -53,7 +64,8 @@ sigil validate
 # ✓ All N artifact(s) are valid.
 
 sigil build
-# ✓ N file(s) written to dist/claude/
+# Builds every target: writes dist/claude/ and dist/copilot/ in the sigil clone.
+# Use `sigil build --target claude` (or `copilot`) to build just one.
 ```
 
 ### Shared (stack-agnostic) skills
@@ -82,7 +94,25 @@ neutral token; each target replaces it at render time (`src/targets/<provider>/l
 | `{sigil:skills-dir}`       | `.claude/skills/` | `.github/skills/`            |
 | `{sigil:arguments}`        | `$ARGUMENTS`      | "the request you were given" |
 
-`sigil sync --check` fails on a provider literal in a body (`provider-term-leak`).
+`sigil sync --check` fails on a provider literal in a body (`provider-term-leak`). The mechanism is
+explained in [architecture.md](../reference/architecture.md).
+
+### Two argument placeholders, two jobs
+
+Both stand for "what the user typed", but they work differently:
+
+|                    | `{{name}}`                                        | `{sigil:arguments}`                                       |
+| ------------------ | ------------------------------------------------- | --------------------------------------------------------- |
+| Used in            | **Prompt** artifacts only                         | Any artifact body (skills, agents, rules, …)              |
+| Declared by        | A named entry in the prompt's `args:` frontmatter | Nothing; it is one fixed token                            |
+| Meaning            | One specific named input, for example `{{diff}}`  | The whole argument text as one blob                       |
+| Claude Code output | `$name`                                           | `$ARGUMENTS`                                              |
+| Copilot output     | `${input:name}` (VS Code asks the user for it)    | the phrase "the request you were given"                   |
+| Source             | `src/targets/prompt-args.ts`                      | `src/targets/lexicon.ts` and each provider's `lexicon.ts` |
+
+Rule of thumb: a prompt with named inputs uses `{{name}}`; a skill that acts on whatever the user
+asked uses `{sigil:arguments}`. `catalog/shared/prompts/explain-diff.prompt.md` shows `{{diff}}`, and
+`catalog/languages/csharp/skills/cs-document/SKILL.md` shows `{sigil:arguments}`.
 
 An agent can preload skills on Claude Code with `claude: { skills: [<skill id>] }`. `validate`
 rejects an id that isn't a skill, or a skill whose `name` isn't its id's last segment, and
@@ -120,7 +150,8 @@ extends:
 ```
 
 The resolver emits the clean-code body + ts-style body oldest-first. You never copy the baseline
-bullets into the TypeScript file.
+bullets into the TypeScript file. How `extends` and `uses` work is in the
+[spec](../reference/spec.md#reuse-mechanisms).
 
 ---
 
@@ -188,13 +219,13 @@ extends:
 - Use table-driven tests with `t.Run` subtests.
 ```
 
-**Step 3 — a skill** (`catalog/languages/go/skills/table-tests/SKILL.md`):
+**Step 3 — a skill** (`catalog/languages/go/skills/go-table-tests/SKILL.md`):
 
 ```yaml
 ---
-id: go/table-tests
+id: go/go-table-tests
 kind: skill
-name: table-tests
+name: go-table-tests
 title: Write Table-Driven Tests in Go
 description: Generate table-driven tests for a Go file or package.
 whenToUse: Use when adding or reviewing Go tests, or table-driven test coverage is missing.
@@ -215,8 +246,16 @@ tags: [go, testing]
 ```yaml
 - name: go-pack
   displayName: Go Pack
-  languages: [go]
+  description: Go testing skill with its style rule and reviewer agent.
+  artifacts:
+    - go/go-table-tests
 ```
+
+List artifact ids explicitly under `artifacts:`, with bare ids and no `kind:` prefix. A skill's rules
+and agents (`uses:`) are resolved for you, so you do not list them. The older `languages: [go]` form
+(every artifact in a language) still works, but `packs.yaml` recommends explicit lists. The pack's
+`name` becomes a Claude plugin of the same name; see
+[consuming.md](consuming.md#install-a-pack-as-a-claude-plugin).
 
 **Step 5 — validate and build:**
 
@@ -225,7 +264,7 @@ sigil validate
 # ✓ All N artifact(s) are valid.
 
 sigil build
-# → dist/claude/plugins/go-pack/  and  dist/copilot/.github/
+# → dist/claude/plugins/go-pack/  and  dist/copilot/.github/  (both targets; add --target to pick one)
 ```
 
 No changes to `src/` required.
@@ -258,16 +297,21 @@ and run it; fall back to the type checker, linter, and `scripts.test` separately
 
 The other slots on that template are `version-determination`, `changelog-format`, `api-compat-step`,
 and `checklist-and-next-steps`. The same template backs `cs-release`, `ng-release`, `py-release`,
-and `react-release`. Also shipped in `catalog/shared/templates/`: `mcp-note` and `code-quality`.
+and `react-release`.
+
+The three shipped templates (all in `catalog/shared/templates/`) are `code-quality`, `mcp-note`, and
+`release-skill`.
 
 Only slot content goes in the artifact body — the shared prose (headings, procedural framing) lives
 once in the template and is composed in automatically at build time. `sigil validate` checks:
-unknown slot keys, missing required slots, content outside a slot marker, and duplicate markers. See
-`docs/reference/architecture.md` § Templates for the full slot syntax and composition order.
+unknown slot keys, missing required slots, content outside a slot marker, and duplicate markers. The
+full slot syntax and composition order are in
+[architecture.md § Templates](../reference/architecture.md#templates-one-body-structure-many-artifacts).
 
-**Keeping artifacts in sync with their template.** When you edit a template — add/rename/reorder a
-slot, or hoist a paragraph of prose that used to be duplicated across artifacts into the shared
-body — bump the template's `revision:` and run:
+### Keeping artifacts in sync with their template
+
+When you edit a template — add/rename/reorder a slot, or hoist a paragraph of prose that used to be
+duplicated across artifacts into the shared body — bump the template's `revision:` and run:
 
 ```bash
 sigil sync                # report: which artifacts drifted, mechanical vs needs-review
@@ -276,9 +320,10 @@ npm run validate          # any TODO: stub from a new required slot fails here u
 ```
 
 `sigil sync --apply` never touches an artifact that has no `template:`, and prose you rewrote to
-mean something different (not just moved) is reported under `review`, not applied automatically —
-see `docs/reference/spec.md` § CLI reference for the full `--check` / `--changed-since` / `--stale`
-flag set, including the CI-gate usage in `docs/guides/operations.md`.
+mean something different (not just moved) is reported under `review`, not applied automatically.
+The full `--check` / `--changed-since` / `--stale` flag set is in the
+[CLI reference](../reference/spec.md#cli-reference); running `sigil sync --check` as a CI gate is
+covered in [operations.md § CI](operations.md#ci).
 
 ---
 
@@ -302,15 +347,17 @@ There is no generic `--set-<field>`: list fields have their own `--add` / `--rem
 flags, rule severity is `--severity` (not `--set-severity`), and each target's `authoringFields`
 are `--<target>-<key>` (Claude: `--claude-model`, `--claude-effort`, `--claude-max-turns`,
 `--claude-isolation`). `whenToUse`, `userInvocable`, and `skillContext` have no `patch` flags; edit
-the file. `move` (alias `rename`) rewrites `extends` / `uses.rules` / `uses.agents` referrers; a
-skill moves its directory and every other kind moves the single file.
+the file. `move` (alias `rename`) rewrites only `extends`, `uses.rules`, and `uses.agents` in other
+artifacts that point at the old id; a skill moves its directory and every other kind moves the single
+file. It does **not** touch `packs.yaml` entries, `claude: { skills: [...] }` lists, or the moved
+artifact's own `name:` and `language:` fields. After a move, update those by hand (or with `patch`) and
+run `sigil validate`. Use `--dry-run` first to see the plan.
 
 ## Adding a platform target that skips catalog work entirely
 
 A new **language** never touches `src/`, per the recipe above. A new **platform target** (a third
 AI besides Claude Code / Copilot) is `src/`-only and touches no catalog content — see
-[Adding a platform target](../reference/architecture.md#adding-a-platform-target). The root
-`CLAUDE.md` has no section by that name.
+[Adding a platform target](../reference/architecture.md#adding-a-platform-target).
 
 ---
 

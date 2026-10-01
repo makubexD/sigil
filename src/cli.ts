@@ -231,7 +231,7 @@ program
 program
   .command('update [ids...]')
   .description(
-    'Refresh installed artifacts to the current bundled catalog version, including hook/settings/mcp fragments the catalog changed. Skips drifted files and edited config values unless --force.',
+    'Refresh installed artifacts to the current bundled catalog version, including hook/settings/mcp fragments the catalog changed. Skips drifted files and edited config values unless --force. In a terminal it previews and asks before writing.',
   )
   .option('--project-dir <dir>', 'Consumer project root', process.cwd())
   .option('--target <name>', 'Target platform (auto-detected if omitted)')
@@ -239,6 +239,7 @@ program
   .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
   .option('--force', 'Overwrite drifted (user-modified) files', false)
   .option('--dry-run', 'Preview what would change without writing', false)
+  .option('--yes', 'Apply without previewing and asking first (a terminal asks by default)', false)
   .action(runUpdate);
 // ─── prune ────────────────────────────────────────────────────────────────────
 program

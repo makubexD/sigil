@@ -14,7 +14,7 @@
 
 - [x] T5 Installed picker step
 - [x] T6 uninstall guided
-- [ ] T7 update guided (+ --yes)
+- [x] T7 update guided (+ --yes)
 - [ ] T8 prune guided
 - [ ] T9 init guided
 

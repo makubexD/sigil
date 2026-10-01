@@ -8,21 +8,30 @@ This guide covers the full lifecycle: scaffold → fill → validate → submit 
 
 Pick the kind that matches the intent:
 
-| Kind       | When to use                                  | Keyword signal          |
-| ---------- | -------------------------------------------- | ----------------------- |
-| **skill**  | Step-by-step AI guidance invoked on demand   | "When I want to…"       |
-| **agent**  | Persistent AI persona with an ongoing role   | "An AI that always…"    |
-| **rule**   | Always-on coding conventions (style, naming) | "Always follow…"        |
-| **prompt** | Parameterised one-shot command               | "A command to quickly…" |
+| Kind         | When to use                                                                                   | Keyword signal           |
+| ------------ | --------------------------------------------------------------------------------------------- | ------------------------ |
+| **skill**    | Step-by-step AI guidance invoked on demand                                                    | "When I want to…"        |
+| **agent**    | Persistent AI persona with an ongoing role                                                    | "An AI that always…"     |
+| **rule**     | Always-on coding conventions (style, naming)                                                  | "Always follow…"         |
+| **prompt**   | Parameterised one-shot command                                                                | "A command to quickly…"  |
+| **workflow** | Multi-step procedure the user invokes; emitted as a skill or prompt, not its own command type | "A sequence of steps…"   |
+| **mcp**      | MCP server definition merged into the target's MCP config                                     | "Connect a tool server…" |
+| **hook**     | Lifecycle command merged into the target's settings                                           | "When a tool runs…"      |
+| **settings** | Permissions, env, or model fragment merged into settings                                      | "Always allow…"          |
+| **template** | Authoring-time structure other artifacts compose against; neither target installs it          | "Reuse this shape…"      |
 
-If unsure, use a **skill** — it is the most flexible kind.
+If unsure, use a **skill** — it is the most flexible kind. `template` is catalog structure, not
+something `sigil add` installs.
 
 ---
 
 ## 2. Understand platform targeting (the DRY rule)
 
 By default, every artifact propagates to **all AIs that support its kind** — that is the DRY default.
-Right now that means Claude Code and GitHub Copilot (both support all four kinds).
+Right now the registered targets are Claude Code and GitHub Copilot. Which kinds each target
+actually delivers, and on which channel (scaffold or plugin), is the generated matrix in
+[docs/reference/capabilities.md](docs/reference/capabilities.md) — do not assume every kind is
+supported on both.
 
 You can restrict an artifact to a specific AI at creation time:
 
@@ -146,7 +155,7 @@ npm run validate
 ```
 
 Fix all violations before proceeding. Common violation categories and fixes →
-[docs/reference/troubleshooting.md](docs/reference/troubleshooting.md#sigil-validate-reports-schema-violations).
+[docs/reference/troubleshooting.md](docs/reference/troubleshooting.md#sigil-validate--sigil-check-report-violations).
 
 ---
 

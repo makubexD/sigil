@@ -27,16 +27,7 @@ own syntax. When guidance changes, it drifts.
 
 ## Install
 
-```bash
-# Zero-install (after publish)
-npx sigil <command>
-
-# Global install (recommended for repeated use)
-npm install -g sigil
-sigil <command>
-```
-
-### Build from source (contributors / pre-publish)
+The package is not on npm yet. Build from source:
 
 ```bash
 git clone <repo-url>
@@ -45,6 +36,18 @@ npm install
 npm run build       # sets heap flag automatically via cross-env
 npm run validate    # should report: ✓ All 150 artifact(s) are valid.
 npm link            # one-time: registers global `sigil` symlink
+```
+
+Heap size, what `npm test` compiles first, and `npm link` versus `npm run sigil` are in
+[Build and link](docs/guides/operations.md#build-and-link).
+
+After the package is published, the same CLI is available without a clone:
+
+```bash
+npx sigil <command>
+
+npm install -g sigil
+sigil <command>
 ```
 
 ## Quick start
@@ -159,9 +162,10 @@ generate-component).
 refactor-specialist · security-auditor · performance-profiler · architecture-reviewer ·
 api-compat-reviewer.
 
-**Rules per language (11 each; Angular adds components · rxjs · signals · templates):** async ·
-conventions · code-quality · dependencies · documentation · git · logging · security · testing ·
-project-layout · one ecosystem rule (nuget/npm/packaging, language-specific).
+**Rules per language:** csharp, python, react, and typescript have 11 each — async · conventions ·
+code-quality · dependencies · documentation · git · logging · security · testing · project-layout ·
+one ecosystem rule (nuget, npm, or packaging). Angular has 14: those topics without the ecosystem
+rule, plus components · rxjs · signals · templates.
 
 ### Core pre-import skills
 

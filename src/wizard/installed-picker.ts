@@ -49,7 +49,7 @@ export async function pickInstalled(options: PickInstalledOptions): Promise<stri
   const known = new Set(entries.map(e => e.id));
   const statuses = computeStatus({ manifestVersion: 2, entries }, projectDir, known);
   const answer = await multiselect({
-    message,
+    message: `${message}  (Space ticks, Enter confirms, Ctrl+C goes back)`,
     options: installedOptions(entries, statuses),
     required: true,
   });

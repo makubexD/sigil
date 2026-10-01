@@ -91,6 +91,61 @@ describe('runUninstall without ids', () => {
     });
   });
 
+  describe('when a file was edited after install', () => {
+    const EDITED = '.claude/rules/one.md';
+
+    async function removeEdited(answers: Array<string | boolean | string[] | symbol>) {
+      const messages: string[] = [];
+      let result: string[] = [];
+      await withTempDirAsync(async dir => {
+        project(dir);
+        fs.writeFileSync(path.join(dir, EDITED), 'my own edit\n');
+        const restoreTTY = fakeTTY();
+        const restore = mockClack(answers);
+        const clack = require('@clack/prompts') as { log: { info: (m: string) => void } };
+        clack.log.info = (message: string) => void messages.push(message);
+        try {
+          await runUninstall([], { ...OPTS, projectDir: dir });
+        } finally {
+          restore();
+          restoreTTY();
+        }
+        result = [
+          fs.existsSync(path.join(dir, EDITED)) ? 'file-kept' : 'file-gone',
+          ...installedIds(dir),
+        ];
+      });
+      return { messages, result };
+    }
+
+    it('should keep the edited file when the user chooses to keep it', async () => {
+      const { result } = await removeEdited([['a/one'], 'keep', true]);
+      assert.deepEqual(result, ['file-kept', 'b/two']);
+    });
+
+    it('should delete the edited file when the user chooses to delete it too', async () => {
+      const { result } = await removeEdited([['a/one'], 'delete', true]);
+      assert.deepEqual(result, ['file-gone', 'b/two']);
+    });
+
+    it('should change nothing when the user cancels the keep-or-delete question', async () => {
+      const { result } = await removeEdited([['a/one'], Symbol('cancel')]);
+      assert.deepEqual(result, ['file-kept', 'a/one', 'b/two']);
+    });
+
+    it('should log an equivalent command that can be pasted into a script, after confirming', async () => {
+      const keep = await removeEdited([['a/one'], 'keep', true]);
+      assert.ok(keep.messages.includes('Equivalent command: sigil uninstall a/one --yes'));
+      const del = await removeEdited([['a/one'], 'delete', true]);
+      assert.ok(del.messages.includes('Equivalent command: sigil uninstall a/one --yes --force'));
+      const declined = await removeEdited([['a/one'], 'keep', false]);
+      assert.deepEqual(
+        declined.messages.filter(m => m.startsWith('Equivalent')),
+        [],
+      );
+    });
+  });
+
   it('should say there is nothing to remove, without prompting, when nothing is installed', async () => {
     await withTempDirAsync(async dir => {
       const restoreTTY = fakeTTY();

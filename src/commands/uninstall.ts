@@ -7,12 +7,12 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { confirm, isCancel, cancel, note } from '@clack/prompts';
+import { log } from '@clack/prompts';
 import { detectProjectTarget } from '../cli-helpers';
 import { saveManifest, removeEntries, sha256 } from '../manifest';
 import { requireManifest } from './shared/manifest';
-import { isInteractiveTTY } from '../wizard';
 import { chooseIdsToUninstall } from './uninstall-guided';
+import { confirmUninstall } from './uninstall-confirm';
 import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
 import { configEntriesOf, reverseMergeConfigEntries } from './uninstall-config';
@@ -86,49 +86,6 @@ function printDryRunPreview(
   console.log('\nNo files were removed (--dry-run).');
 }
 
-/** Prints the "N file(s) were modified after install" note box when there are drifted paths. */
-function printDriftedFilesNote(driftedPaths: string[], opts: UninstallOptions): void {
-  if (driftedPaths.length === 0 || opts.force) return;
-  note(
-    `${driftedPaths.length} file(s) were modified after install:\n` +
-      driftedPaths.map(p => `  ${p}`).join('\n') +
-      '\n\nThey will NOT be deleted. Use --force to remove them anyway.',
-    '⚠  Drifted files',
-  );
-}
-
-/** Prompts to confirm the uninstall (skipped when --yes). Returns false if cancelled. */
-async function promptUninstallConfirmation(ids: string[], targetName: string): Promise<boolean> {
-  const ok = await confirm({
-    message: `Remove ${ids.join(', ')} from '${targetName}'?`,
-    initialValue: false,
-  });
-  if (isCancel(ok) || !ok) {
-    cancel('Uninstall cancelled.');
-    return false;
-  }
-  return true;
-}
-
-/** Warns about drifted files, then confirms the uninstall unless --yes was passed. Returns
- * true to proceed, false if the user cancelled. Throws if non-interactive without --yes. */
-async function confirmUninstall(
-  ids: string[],
-  targetName: string,
-  driftedPaths: string[],
-  opts: UninstallOptions,
-): Promise<boolean> {
-  printDriftedFilesNote(driftedPaths, opts);
-
-  if (!opts.yes && !isInteractiveTTY()) {
-    throw new SigilError('stdin/stdout is not interactive. Re-run with --yes to confirm.');
-  }
-
-  if (!opts.yes) return promptUninstallConfirmation(ids, targetName);
-  return true;
-}
-
-/** Deletes whole-file kind files (skipping drifted ones unless --force), pruning empty dirs. */
 /** Best-effort removal of `dir` if it's now empty — ENOENT/ENOTEMPTY are expected, not errors. */
 function removeIfEmptyDir(dir: string): void {
   try {
@@ -141,6 +98,7 @@ function removeIfEmptyDir(dir: string): void {
   }
 }
 
+/** Deletes whole-file kind files (skipping edited ones unless --force), pruning empty dirs. */
 function deleteWholeFiles(
   pathsToDelete: string[],
   driftedPaths: string[],
@@ -180,7 +138,7 @@ function printUninstallSummary(
       `  (${pathsToDelete.length - keptCount} file(s) removed` +
       (configRemovedCount > 0 ? `, ${configRemovedCount} JSON merge(s) reversed` : '') +
       (driftedPaths.length > 0 && !opts.force
-        ? `, ${driftedPaths.length} drifted file(s) kept`
+        ? `, ${driftedPaths.length} edited file(s) kept (still active; sigil no longer tracks them)`
         : '') +
       ')',
   );
@@ -190,18 +148,23 @@ function printUninstallSummary(
 export async function runUninstall(ids: string[], opts: UninstallOptions): Promise<void> {
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
   const manifest = requireManifest(opts.projectDir);
-  const chosen =
-    ids.length > 0
-      ? ids
-      : await chooseIdsToUninstall(manifest.entries, targetName, opts.projectDir);
-  if (chosen) await uninstallIds(chosen, manifest, targetName, opts);
+  const guided = ids.length === 0;
+  const chosen = guided
+    ? await chooseIdsToUninstall(manifest.entries, targetName, opts.projectDir)
+    : ids;
+  if (chosen) await uninstallIds(chosen, manifest, targetName, { opts, guided });
+}
+
+/** The command that repeats a guided removal in a script: it must carry what was confirmed. */
+function equivalentUninstall(ids: string[], force: boolean): string {
+  return ['sigil uninstall', ...ids, '--yes', force ? '--force' : ''].filter(Boolean).join(' ');
 }
 
 async function uninstallIds(
   ids: string[],
   manifest: ReturnType<typeof requireManifest>,
   targetName: string,
-  opts: UninstallOptions,
+  { opts, guided }: { opts: UninstallOptions; guided: boolean },
 ): Promise<void> {
   assertIdsInstalled(ids, manifest, targetName);
   const { pathsToDelete, removedEntries } = removeEntries(manifest, ids, targetName);
@@ -211,12 +174,14 @@ async function uninstallIds(
     printDryRunPreview(pathsToDelete, driftedPaths, configEntries);
     return;
   }
-  if (!(await confirmUninstall(ids, targetName, driftedPaths, opts))) return;
-  deleteWholeFiles(pathsToDelete, driftedPaths, opts);
-  finishUninstall(ids, manifest, { pathsToDelete, driftedPaths, configEntries }, opts);
+  const decision = await confirmUninstall(ids, targetName, driftedPaths, opts);
+  if (!decision) return;
+  const effective = { ...opts, force: decision.force };
+  if (guided) log.info(`Equivalent command: ${equivalentUninstall(ids, decision.force)}`);
+  finishUninstall(ids, manifest, { pathsToDelete, driftedPaths, configEntries }, effective);
 }
 
-/** Reverses config merges, saves the manifest and prints the summary, after files are deleted. */
+/** Deletes the files, reverses config merges, saves the manifest and prints the summary. */
 function finishUninstall(
   ids: string[],
   manifest: ReturnType<typeof requireManifest>,
@@ -224,6 +189,7 @@ function finishUninstall(
   opts: UninstallOptions,
 ): void {
   const { pathsToDelete, driftedPaths, configEntries } = plan;
+  deleteWholeFiles(pathsToDelete, driftedPaths, opts);
   // removeEntries left only what stays installed in manifest.entries
   const configRemovedCount = reverseMergeConfigEntries(
     configEntries,

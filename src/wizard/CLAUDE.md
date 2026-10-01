@@ -50,7 +50,9 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
 The rule: ask only when `isInteractiveTTY()` is true and the user did not already decide (`--yes`, `--dry-run`,
 `--apply`, `--json`, explicit ids or `--target`); every non-TTY path is byte-for-byte what it was. Outside a
 terminal a missing argument is a `SigilError` whose hint shows the command to run. Each guided flow logs an
-`Equivalent command:` line. `update-guided.ts` receives `applyUpdate` as a parameter so it and `update.ts` do not
+`Equivalent command:` line, logged AFTER the user confirms and complete enough to paste into a script
+(`uninstall` includes `--yes`, plus `--force` when edited files are deleted). Removing an artifact with
+edited files asks keep-or-delete in a terminal (`uninstall-confirm.ts`); a script keeps them unless `--force`. `update-guided.ts` receives `applyUpdate` as a parameter so it and `update.ts` do not
 import each other. The shared picker is `installed-picker.ts` (`installedOptions` is pure; `pickInstalled`
 returns `null` on cancel).
 

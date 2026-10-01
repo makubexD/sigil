@@ -92,6 +92,14 @@ menu offers "Repair the install record". It moves the damaged file aside as
 already installed stay where they are, but sigil stops tracking them, so installing them again asks
 before replacing anything.
 
+**Search.** "Search the catalog" asks for a word, then shows the matches as a list. Pick one to see its
+details; sigil then offers to install it, and says which helper rules or agents come with it. No
+match is said plainly. "Browse the catalog" lists by kind and points you to Install or Search.
+
+**Removing something you edited.** Remove asks what to do with files you changed after installing:
+keep them (they stay active, and sigil stops tracking them) or delete them too. The `Equivalent
+command:` it prints, such as `sigil uninstall <id> --yes --force`, matches what you chose.
+
 Each entry runs the same code as the matching command. The guided flows print an
 `Equivalent command:` line, so you learn the command as you go and can repeat it in a script.
 
@@ -103,15 +111,15 @@ standard output and exits 0, so nothing changes for automation.
 You can also reach the guided flows directly. These ask questions only in a terminal; in a script or CI
 each behaves exactly as before.
 
-| Command           | Guided when                                                  | What it asks                                                                                |
-| ----------------- | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------- |
-| `sigil add`       | No selector (`-i` forces)                                    | The install wizard below                                                                    |
-| `sigil init`      | No `--target`                                                | Which AI tool the project is for (the one already in the folder is first)                   |
-| `sigil uninstall` | No ids                                                       | Tick what to remove, then confirm                                                           |
-| `sigil update`    | No `--yes` and no `--dry-run`                                | Shows what would change, then: apply / apply and overwrite my edits / choose which / cancel |
-| `sigil prune`     | No `--apply` and no `--json`, and something would be removed | After the preview: remove them now?                                                         |
-| `sigil new`       | No kind (`-i` forces)                                        | Scaffolds a new catalog artifact (authors)                                                  |
-| `sigil edit <id>` | No `--yes`                                                   | Edits title, description, and tags (authors)                                                |
+| Command           | Guided when                                                  | What it asks                                                                                    |
+| ----------------- | ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------- |
+| `sigil add`       | No selector (`-i` forces)                                    | The install wizard below                                                                        |
+| `sigil init`      | No `--target`                                                | Which AI tool the project is for (the one already in the folder is first)                       |
+| `sigil uninstall` | No ids                                                       | Tick what to remove; if you edited any of its files, keep them or delete them too; then confirm |
+| `sigil update`    | No `--yes` and no `--dry-run`                                | Shows what would change, then: apply / apply and overwrite my edits / choose which / cancel     |
+| `sigil prune`     | No `--apply` and no `--json`, and something would be removed | After the preview: remove them now?                                                             |
+| `sigil new`       | No kind (`-i` forces)                                        | Scaffolds a new catalog artifact (authors)                                                      |
+| `sigil edit <id>` | No `--yes`                                                   | Edits title, description, and tags (authors)                                                    |
 
 In a script, pass what the command needs: `sigil uninstall <ids...>`, `sigil init --target claude`,
 `sigil update --yes`, `sigil prune --apply --yes`, `sigil add <selectors> --yes`. Without a terminal and

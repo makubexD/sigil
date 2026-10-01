@@ -18,7 +18,8 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   CLI verb, with the folder the menu is looking at. Never copy command logic into the menu.
 - **The folder picker** (`folder-list.ts`, `folder-picker.ts`) is arrow-key navigation, not a typed path. Folder
   entries carry absolute paths as values and navigation entries carry `FOLDER_CHOICE` sentinels; it returns an
-  existing folder or `null`, never an unchecked string. Do not swap it for `text`. Live path typeahead needs
+  existing folder, a folder it just created after the user confirmed (`New folder here`, or a typed path
+  that did not exist), or `null`, never an unchecked string. Do not swap it for `text`. Live path typeahead needs
   `@clack/prompts` 1.x, which is ESM-only and breaks `mockClack`'s `require.cache` approach.
 - `runHome` never exits on an action's failure: a `SigilError` is shown (message plus hint) and the menu
   returns. Ctrl+C at the menu leaves quietly. Handlers are injected so the loop is tested without installing.

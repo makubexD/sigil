@@ -11,7 +11,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Folder browser in the home menu: "Work in a different folder" now lists folders to pick with the
   arrow keys (project folders first, step in, go up, use this one) instead of asking for a typed path.
-  "Type a path" remains, and rejects a folder that does not exist before leaving the prompt.
+  "New folder here" creates a project folder, and "Type a path" offers to create a folder that does
+  not exist yet (it still rejects a file, or a path under one). Links to folders are listed, and a
+  bare `D:` means the root of that drive.
 - Guided home menu: `sigil` with no command, in a terminal, inspects the folder (targets, install
   health, catalog checkout, home folder), recommends the next step, and routes to set up, install,
   restore deleted files, update, remove, status, clean up, browse and search (then details, then

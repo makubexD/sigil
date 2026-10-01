@@ -14,6 +14,7 @@ export const FOLDER_CHOICE = {
   use: '::use',
   up: '::up',
   type: '::type',
+  create: '::create',
   back: '::back',
 } as const;
 
@@ -41,11 +42,22 @@ export function browseStart(current: string, homeDir: string): string {
   return samePath(current, homeDir) || isRoot(current) ? current : path.dirname(current);
 }
 
+/** A real folder, or a link (symlink / junction) that leads to one. */
+function isFolder(dir: string, entry: fs.Dirent): boolean {
+  if (entry.isDirectory()) return true;
+  if (!entry.isSymbolicLink()) return false;
+  try {
+    return fs.statSync(path.join(dir, entry.name)).isDirectory();
+  } catch {
+    return false;
+  }
+}
+
 /** The folders directly inside `dir`: projects first, then alphabetical. Throws if unreadable. */
 export function listSubfolders(dir: string): FolderEntry[] {
   return fs
     .readdirSync(dir, { withFileTypes: true })
-    .filter(e => e.isDirectory() && !e.name.startsWith('.') && !SKIPPED_FOLDERS.has(e.name))
+    .filter(e => isFolder(dir, e) && !e.name.startsWith('.') && !SKIPPED_FOLDERS.has(e.name))
     .map(e => {
       const full = path.join(dir, e.name);
       return {
@@ -71,9 +83,18 @@ function navigationOptions(dir: string): FolderOption[] {
     ? []
     : [{ value: FOLDER_CHOICE.up, label: '↑ Up one level', hint: path.dirname(dir) }];
   return [
-    { value: FOLDER_CHOICE.use, label: 'Use this folder', hint: path.basename(dir) || dir },
+    {
+      value: FOLDER_CHOICE.use,
+      label: `Use ${path.basename(dir) || dir}`,
+      hint: 'the folder above',
+    },
     ...up,
     { value: FOLDER_CHOICE.type, label: 'Type a path…', hint: 'another drive, or paste a path' },
+    {
+      value: FOLDER_CHOICE.create,
+      label: '＋ New folder here…',
+      hint: `create a folder inside ${path.basename(dir) || dir}`,
+    },
     { value: FOLDER_CHOICE.back, label: 'Back to menu' },
   ];
 }
@@ -88,19 +109,67 @@ export function folderOptions(dir: string, folders: FolderEntry[]): FolderOption
 }
 
 const QUOTED = /^(["'])(.*)\1$/;
+const BARE_DRIVE = /^[a-zA-Z]:$/;
 
-/** Cleans a typed or pasted path: quotes, `~`, and relative paths. */
+/** Cleans a typed or pasted path: quotes, `~`, a bare drive letter, and relative paths. */
 export function resolveFolderInput(input: string, base: string, homeDir: string): string {
   const unquoted = input.trim().replace(QUOTED, '$2');
   const expanded = /^~(?=$|[\\/])/.test(unquoted) ? homeDir + unquoted.slice(1) : unquoted;
-  return path.resolve(base, expanded);
+  // `D:` alone means "the current folder on D:" to Windows; the user means the drive itself.
+  const drive = process.platform === 'win32' && BARE_DRIVE.test(expanded);
+  return path.resolve(base, drive ? expanded + path.sep : expanded);
 }
 
-/** The error to show for a typed path, or `undefined` when it is a folder that exists. */
-export function checkFolderInput(input: string, base: string, homeDir: string): string | undefined {
-  if (input.trim() === '') return 'Enter a folder path, or press Ctrl+C to go back.';
+export type FolderInputStatus = 'empty' | 'file' | 'blocked' | 'missing' | 'ok';
+
+export interface FolderInput {
+  status: FolderInputStatus;
+  /** The absolute path the input points at. */
+  target: string;
+}
+
+/** Walks up from `target` to the first path that exists. */
+function nearestExisting(target: string): string {
+  let current = target;
+  while (!fs.existsSync(current) && path.dirname(current) !== current) {
+    current = path.dirname(current);
+  }
+  return current;
+}
+
+/**
+ * What a typed path points at: a folder (`ok`), a folder that can be created (`missing`), a file
+ * (`file`), a place that can never be created because a file is in the way (`blocked`), or nothing.
+ */
+export function classifyFolderInput(input: string, base: string, homeDir: string): FolderInput {
+  if (input.trim() === '') return { status: 'empty', target: base };
   const target = resolveFolderInput(input, base, homeDir);
-  if (!fs.existsSync(target)) return `No folder at ${target}`;
-  if (!fs.statSync(target).isDirectory()) return `${target} is a file, not a folder.`;
+  if (fs.existsSync(target)) {
+    return { status: fs.statSync(target).isDirectory() ? 'ok' : 'file', target };
+  }
+  const blocked = !fs.statSync(nearestExisting(target)).isDirectory();
+  return { status: blocked ? 'blocked' : 'missing', target };
+}
+
+/** The error to show for a typed path, or `undefined` when it is usable (or can be created). */
+export function folderInputError({ status, target }: FolderInput): string | undefined {
+  if (status === 'empty') return 'Enter a folder path, or press Ctrl+C to go back.';
+  if (status === 'file') return `${target} is a file, not a folder.`;
+  if (status === 'blocked') return `Cannot create ${target}: part of that path is a file.`;
+  return undefined;
+}
+
+const NOT_A_NAME = /[\\/:*?"<>|]/;
+
+/** The error to show for a new folder's name, or `undefined` when it can be created inside `dir`. */
+export function checkNewFolderName(name: string, dir: string): string | undefined {
+  const trimmed = name.trim();
+  if (trimmed === '') return 'Enter a name for the new folder.';
+  if (trimmed === '.' || trimmed === '..' || NOT_A_NAME.test(trimmed)) {
+    return 'Use a name, not a path (no \\ / : * ? " < > |).';
+  }
+  if (fs.existsSync(path.join(dir, trimmed))) {
+    return `${trimmed} already exists. Pick it from the list instead.`;
+  }
   return undefined;
 }

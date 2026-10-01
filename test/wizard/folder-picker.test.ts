@@ -52,10 +52,85 @@ describe('pickFolder', () => {
     });
   });
 
-  it('should go back to browsing when the typed path does not exist', async () => {
+  it('should create a typed folder that does not exist when the user says yes', async () => {
     await withTempDirAsync(async dir => {
-      const answers = [FOLDER_CHOICE.type, path.join(dir, 'missing'), FOLDER_CHOICE.back];
+      const target = path.join(dir, 'new', 'app');
+      assert.equal(await pick(dir, [FOLDER_CHOICE.type, target, true]), target);
+      assert.ok(fs.statSync(target).isDirectory());
+    });
+  });
+
+  it('should create nothing and keep browsing when the user says no', async () => {
+    await withTempDirAsync(async dir => {
+      const target = path.join(dir, 'missing');
+      const answers = [FOLDER_CHOICE.type, target, false, FOLDER_CHOICE.back];
       assert.equal(await pick(dir, answers), null);
+      assert.equal(fs.existsSync(target), false);
+    });
+  });
+
+  it('should keep browsing when the folder cannot be created', async () => {
+    await withTempDirAsync(async dir => {
+      const target = path.join(dir, 'bad\0name');
+      const answers = [FOLDER_CHOICE.type, target, true, FOLDER_CHOICE.back];
+      assert.equal(await pick(dir, answers), null);
+    });
+  });
+
+  it('should create a named folder inside the folder being browsed', async () => {
+    await withTempDirAsync(async dir => {
+      const child = path.join(dir, 'child');
+      fs.mkdirSync(child);
+      // browsing starts at the parent of `child`, which is `dir`
+      const made = path.join(dir, 'my-project');
+      assert.equal(await pick(child, [FOLDER_CHOICE.create, 'my-project']), made);
+      assert.ok(fs.statSync(made).isDirectory());
+    });
+  });
+
+  it('should keep browsing when the new folder name is cancelled', async () => {
+    await withTempDirAsync(async dir => {
+      const answers = [FOLDER_CHOICE.create, Symbol('cancel'), FOLDER_CHOICE.back];
+      assert.equal(await pick(dir, answers), null);
+    });
+  });
+
+  it('should keep browsing when the new folder name is not valid', async () => {
+    await withTempDirAsync(async dir => {
+      const child = path.join(dir, 'child');
+      fs.mkdirSync(child);
+      const answers = [FOLDER_CHOICE.create, 'a/b', FOLDER_CHOICE.back];
+      assert.equal(await pick(child, answers), null);
+      assert.equal(fs.existsSync(path.join(dir, 'a')), false);
+    });
+  });
+
+  it('should keep browsing when the typed path is under a file', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'a.txt'), '');
+      const answers = [FOLDER_CHOICE.type, path.join(dir, 'a.txt', 'x'), FOLDER_CHOICE.back];
+      assert.equal(await pick(dir, answers), null);
+    });
+  });
+
+  it('should start with the cursor on the folder the user came from', async () => {
+    await withTempDirAsync(async dir => {
+      const app = path.join(dir, 'app');
+      fs.mkdirSync(app);
+      const restore = mockClack([FOLDER_CHOICE.back]);
+      const clack = require('@clack/prompts') as { select: (o: unknown) => Promise<unknown> };
+      const original = clack.select;
+      let seen: unknown;
+      clack.select = async (o: unknown) => {
+        seen = (o as { initialValue?: unknown }).initialValue;
+        return original(o);
+      };
+      try {
+        await pickFolder(app, HOME);
+      } finally {
+        restore();
+      }
+      assert.equal(seen, app);
     });
   });
 

@@ -67,8 +67,10 @@ one action is shown and the menu stays open. Ctrl+C leaves quietly.
 **Choosing a folder.** "Work in a different folder" opens a folder browser, so you never have to type
 a path from memory. It starts one level up, where your other projects usually are, and lists folders
 that look like projects first. Move with the arrow keys: pick a folder to step into it, "Up one level"
-to go back, and "Use this folder" to choose the one on screen. "Type a path" is there for another
-drive or a pasted path. It checks the path as you type and tells you when no such folder exists.
+to go back, and "Use <folder>" to choose the one on screen. Starting a new project? Pick "New folder
+here" and type a name, and sigil creates it for you. "Type a path" is there for another drive or a
+pasted path; if the folder does not exist yet, sigil asks whether to create it. A path that is a
+file, or sits under a file, is rejected with a message.
 
 If the folder has both `.claude/` and `.github/`, the menu header and the update, remove, status, and
 clean-up entries work on the first one found (Claude Code). For the other target, use the command with

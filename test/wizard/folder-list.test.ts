@@ -9,7 +9,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {
   browseStart,
-  checkFolderInput,
+  checkNewFolderName,
+  classifyFolderInput,
+  folderInputError,
   folderOptions,
   listSubfolders,
   resolveFolderInput,
@@ -65,6 +67,7 @@ describe('folderOptions', () => {
         FOLDER_CHOICE.use,
         FOLDER_CHOICE.up,
         FOLDER_CHOICE.type,
+        FOLDER_CHOICE.create,
         FOLDER_CHOICE.back,
       ]);
     });
@@ -125,25 +128,96 @@ describe('resolveFolderInput', () => {
   });
 });
 
-describe('checkFolderInput', () => {
+describe('classifyFolderInput', () => {
   it('should accept an existing folder', () => {
-    withTempDir(dir => assert.equal(checkFolderInput(dir, dir, '/home'), undefined));
+    withTempDir(dir => assert.equal(classifyFolderInput(dir, dir, '/home').status, 'ok'));
   });
 
-  it('should say when there is no folder at the path', () => {
-    withTempDir(dir =>
-      assert.match(checkFolderInput('missing', dir, '/home') ?? '', /No folder at .*missing/),
-    );
-  });
-
-  it('should say when the path is a file', () => {
+  it('should call a folder that does not exist yet "missing" and resolve it', () => {
     withTempDir(dir => {
-      fs.writeFileSync(path.join(dir, 'a.txt'), '');
-      assert.match(checkFolderInput('a.txt', dir, '/home') ?? '', /file, not a folder/);
+      const found = classifyFolderInput('new-app', dir, '/home');
+      assert.equal(found.status, 'missing');
+      assert.equal(found.target, path.join(dir, 'new-app'));
     });
   });
 
-  it('should ask for a path when the input is empty', () => {
-    withTempDir(dir => assert.match(checkFolderInput('  ', dir, '/home') ?? '', /Enter a folder/));
+  it('should call a path that is a file "file"', () => {
+    withTempDir(dir => {
+      fs.writeFileSync(path.join(dir, 'a.txt'), '');
+      assert.equal(classifyFolderInput('a.txt', dir, '/home').status, 'file');
+    });
+  });
+
+  it('should call a path under a file "blocked", because it can never be created', () => {
+    withTempDir(dir => {
+      fs.writeFileSync(path.join(dir, 'a.txt'), '');
+      assert.equal(classifyFolderInput('a.txt/inner', dir, '/home').status, 'blocked');
+    });
+  });
+
+  it('should call blank input "empty"', () => {
+    withTempDir(dir => assert.equal(classifyFolderInput('  ', dir, '/home').status, 'empty'));
+  });
+});
+
+describe('folderInputError', () => {
+  it('should let an existing or creatable folder through', () => {
+    withTempDir(dir => {
+      assert.equal(folderInputError(classifyFolderInput(dir, dir, '/home')), undefined);
+      assert.equal(folderInputError(classifyFolderInput('new-app', dir, '/home')), undefined);
+    });
+  });
+
+  it('should explain empty input, a file, and a blocked path', () => {
+    withTempDir(dir => {
+      fs.writeFileSync(path.join(dir, 'a.txt'), '');
+      const message = (input: string): string =>
+        folderInputError(classifyFolderInput(input, dir, '/home')) ?? '';
+      assert.match(message(' '), /Enter a folder/);
+      assert.match(message('a.txt'), /file, not a folder/);
+      assert.match(message('a.txt/inner'), /part of that path is a file/);
+    });
+  });
+});
+
+describe('checkNewFolderName', () => {
+  it('should accept a plain name', () => {
+    withTempDir(dir => assert.equal(checkNewFolderName('my-app', dir), undefined));
+  });
+
+  it('should reject blank names, paths, dots and characters Windows forbids', () => {
+    withTempDir(dir => {
+      assert.match(checkNewFolderName('  ', dir) ?? '', /Enter a name/);
+      for (const bad of ['a/b', 'a\\b', '..', '.', 'a:b', 'a*b', 'a?b', 'a|b']) {
+        assert.match(checkNewFolderName(bad, dir) ?? '', /name, not a path/, bad);
+      }
+    });
+  });
+
+  it('should reject a name that already exists', () => {
+    withTempDir(dir => {
+      mk(dir, 'taken');
+      assert.match(checkNewFolderName('taken', dir) ?? '', /already exists/);
+    });
+  });
+});
+
+describe('listSubfolders and links', () => {
+  it('should list a link that points at a folder', () => {
+    withTempDir(dir => {
+      const real = mk(dir, 'real');
+      try {
+        fs.symlinkSync(real, path.join(dir, 'linked'), 'junction');
+      } catch {
+        return; // links need privileges on some machines
+      }
+      assert.ok(listSubfolders(dir).some(f => f.name === 'linked'));
+    });
+  });
+});
+
+describe('resolveFolderInput on Windows drives', { skip: process.platform !== 'win32' }, () => {
+  it('should treat a bare drive letter as the root of that drive', () => {
+    assert.equal(resolveFolderInput('D:', 'C:\\base', 'C:\\home'), 'D:\\');
   });
 });

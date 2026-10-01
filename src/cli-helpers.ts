@@ -10,6 +10,7 @@
 import fs from 'fs';
 import path from 'path';
 import yaml from 'js-yaml';
+import type { Command } from 'commander';
 import { loadCatalog } from './load';
 import { validateCatalog } from './validate';
 import { getAllTargets, defaultTargetName } from './targets';
@@ -46,6 +47,25 @@ export const pkg = JSON.parse(fs.readFileSync(path.resolve(PKG_ROOT, 'package.js
  */
 export function resolveDefault(relative: string): string {
   return path.resolve(PKG_ROOT, relative);
+}
+
+/**
+ * Replaces absolute-path option defaults in `--help` with machine-independent text
+ * (`<package>/catalog`, `<cwd>`). Without this, help (and docs/reference/cli-flags.md, which is
+ * pasted from it) prints the path of whichever machine ran it.
+ */
+export function describePathDefaults(root: Command): void {
+  for (const option of root.options) {
+    const value: unknown = option.defaultValue;
+    if (typeof value !== 'string' || option.defaultValueDescription !== undefined) continue;
+    if (value === process.cwd()) {
+      option.defaultValueDescription = '<cwd>';
+    } else if (value === PKG_ROOT || value.startsWith(PKG_ROOT + path.sep)) {
+      const relative = path.relative(PKG_ROOT, value).split(path.sep).join('/');
+      option.defaultValueDescription = `<package>/${relative}`;
+    }
+  }
+  for (const command of root.commands) describePathDefaults(command);
 }
 
 // ─── Catalog loading ──────────────────────────────────────────────────────────

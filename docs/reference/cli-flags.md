@@ -44,12 +44,9 @@ Compile the catalog to dist/<target>/.
 
 Options:
   --target <name>      Platform to emit (claude, copilot, all) (default: "all")
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
-  --packs <file>       Path to packs.yaml (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\packs.yaml")
-  --out-dir <dir>      Output root (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\dist")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
+  --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
+  --out-dir <dir>      Output root (default: <package>/dist)
   -h, --help           display help for command
 ```
 
@@ -62,10 +59,8 @@ Validate all catalog artifacts (schema + reference integrity). Exits non-zero
 on errors.
 
 Options:
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
-  --packs <file>       Path to packs.yaml (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\packs.yaml")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
+  --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
   -h, --help           display help for command
 ```
 
@@ -77,12 +72,9 @@ Usage: sigil index [options]
 Emit dist/registry.json — flat per-artifact index with sha256 + facets.
 
 Options:
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
-  --packs <file>       Path to packs.yaml (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\packs.yaml")
-  --out-dir <dir>      Output root (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\dist")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
+  --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
+  --out-dir <dir>      Output root (default: <package>/dist)
   --json               Print the registry to stdout instead of writing a file
   -h, --help           display help for command
 ```
@@ -96,9 +88,9 @@ List catalog artifacts, optionally filtered by language and/or kind.
 
 Options:
   --language <lang>    Filter by language (e.g. csharp, python)
-  --kind <kind>        Filter by kind (skill, agent, rule, prompt, workflow)
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --kind <kind>        Filter by kind (mcp, hook, settings, prompt, skill,
+                       agent, rule, workflow, template)
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   -h, --help           display help for command
 ```
 
@@ -110,8 +102,7 @@ Usage: sigil get|show [options] <id>
 Show full detail for a single catalog artifact (closure, targets, dest paths).
 
 Options:
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --json               Output as JSON (default: false)
   -h, --help           display help for command
 ```
@@ -124,8 +115,7 @@ Usage: sigil search [options] <query>
 Free-text search the catalog (id, title, description, tags). Ranked results.
 
 Options:
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --kind <kind>        Filter to this kind
   --language <lang>    Filter to this language
   --tag <tag>          Filter to artifacts with this tag (substring match)
@@ -143,12 +133,9 @@ guided wizard when called with no selector in a TTY.
 
 Options:
   --target <name>      Target platform (auto-detected if omitted)
-  --project-dir <dir>  Consumer project root (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil")
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
-  --packs <file>       Path to packs.yaml (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\packs.yaml")
+  --project-dir <dir>  Consumer project root (default: <cwd>)
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
+  --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
   --kind <list>        Comma-separated kinds to include after selector
                        expansion
   --exclude <list>     Comma-separated kinds to exclude after selector
@@ -177,8 +164,7 @@ Prepare a consumer project for a target platform.
 
 Options:
   --target <name>      Target platform: claude or copilot
-  --project-dir <dir>  Consumer project root (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil")
+  --project-dir <dir>  Consumer project root (default: <cwd>)
   -h, --help           display help for command
 ```
 
@@ -193,8 +179,7 @@ when called with no args in a TTY.
 Options:
   --language <lang>    Language (e.g. csharp). Omit for shared.
   --name <name>        Artifact name (kebab-case)
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --platforms <list>   Comma-separated platforms to restrict to.
   --yes                Non-interactive: skip wizard. Requires explicit kind and
                        --name.
@@ -211,8 +196,7 @@ Validate catalog source artifact files (schema, id/path/language, references,
 platforms). Exits non-zero on violations.
 
 Options:
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --schema-only        Only run zod schema validation (default: false)
   --trust              Run the trust/security scanner (secret detection +
                        injection heuristics) (default: false)
@@ -233,10 +217,8 @@ template drift to one template id, or omit for all; scope conformance with
 --rule/--kind/--language/--provider.
 
 Options:
-  --catalog-dir <dir>    Path to catalog/ (default:
-                         "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
-  --packs <file>         Path to packs.yaml (default:
-                         "C:\\WorkSpaceMaku\\Others\\sigil\\packs.yaml")
+  --catalog-dir <dir>    Path to catalog/ (default: <package>/catalog)
+  --packs <file>         Path to packs.yaml (default: <package>/packs.yaml)
   --check                Exit non-zero if any drift or conformance error is
                          found (CI gate) (default: false)
   --apply                Write the mechanical fixes; refuses on a dirty working
@@ -265,8 +247,7 @@ artifacts.
 Options:
   --language <lang>      Target language key (e.g. csharp, typescript)
   --display-name <name>  Override the language display name in generated titles
-  --catalog-dir <dir>    Path to catalog/ (default:
-                         "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>    Path to catalog/ (default: <package>/catalog)
   --dry-run              Preview only — print coverage report without writing
                          (default: false)
   --yes                  Non-interactive mode (default: false)
@@ -284,13 +265,10 @@ Usage: sigil status [options]
 Show health status of artifacts installed in a consumer project.
 
 Options:
-  --project-dir <dir>  Consumer project root (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil")
+  --project-dir <dir>  Consumer project root (default: <cwd>)
   --target <name>      Target platform (auto-detected if omitted)
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
-  --packs <file>       Path to packs.yaml (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\packs.yaml")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
+  --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
   --json               Output as JSON (default: false)
   -h, --help           display help for command
 ```
@@ -305,13 +283,10 @@ hook/settings/mcp fragments the catalog changed. Skips drifted files and edited
 config values unless --force.
 
 Options:
-  --project-dir <dir>  Consumer project root (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil")
+  --project-dir <dir>  Consumer project root (default: <cwd>)
   --target <name>      Target platform (auto-detected if omitted)
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
-  --packs <file>       Path to packs.yaml (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\packs.yaml")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
+  --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
   --force              Overwrite drifted (user-modified) files (default: false)
   --dry-run            Preview what would change without writing (default:
                        false)
@@ -328,13 +303,10 @@ orphaned artifacts (no longer in the bundled catalog) and reports
 deprecated-but-installed ones.
 
 Options:
-  --project-dir <dir>  Consumer project root (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil")
+  --project-dir <dir>  Consumer project root (default: <cwd>)
   --target <name>      Target platform (auto-detected if omitted)
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
-  --packs <file>       Path to packs.yaml (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\packs.yaml")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
+  --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
   --apply              Remove orphaned artifacts (preview-only without this
                        flag) (default: false)
   --yes                Skip confirmation prompt (default: false)
@@ -353,8 +325,7 @@ Remove installed artifacts from a consumer project. Refcount-aware: shared deps
 only removed when no dependents remain.
 
 Options:
-  --project-dir <dir>  Consumer project root (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil")
+  --project-dir <dir>  Consumer project root (default: <cwd>)
   --target <name>      Target platform (auto-detected if omitted)
   --yes                Skip confirmation prompt (default: false)
   --force              Remove even drifted (user-modified) files (default:
@@ -373,7 +344,7 @@ on validation failure.
 
 Options:
   --catalog-dir <dir>                Path to catalog/ (default:
-                                     "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+                                     <package>/catalog)
   --yes                              Non-interactive: apply without prompting
                                      (default: false)
   --title <title>                    New title
@@ -431,12 +402,11 @@ Options:
 ```text
 Usage: sigil move|rename [options] <id> <new-id>
 
-Rename/relocate a catalog artifact and rewrite all referrers. Transactional:
-rolls back on failure.
+Rename/relocate a catalog artifact and rewrite its extends/uses referrers.
+Transactional: rolls back on failure.
 
 Options:
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --dry-run            Preview the move without executing (default: false)
   --yes                Skip confirmation prompt (default: false)
   -h, --help           display help for command
@@ -454,8 +424,7 @@ Options:
   --remove <platforms>  Comma-separated platforms to remove
   --to <platforms>      Set targeting to exactly these (comma-separated, or
                         "all" to reset)
-  --catalog-dir <dir>   Path to catalog/ (default:
-                        "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>   Path to catalog/ (default: <package>/catalog)
   --yes                 Skip confirmation prompt (default: false)
   --with-deps           Also apply the targeting change to the artifact's uses:
                         closure (default: false)
@@ -473,8 +442,7 @@ Options:
   --title <title>       New title (replaces existing)
   --description <desc>  New description (replaces existing)
   --tags <list>         Comma-separated tags (replaces existing)
-  --catalog-dir <dir>   Path to catalog/ (default:
-                        "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>   Path to catalog/ (default: <package>/catalog)
   --yes                 Non-interactive: apply flags without prompting
   -h, --help            display help for command
 ```
@@ -488,8 +456,7 @@ Remove a catalog artifact from the source. Prompts for confirmation unless
 --yes.
 
 Options:
-  --catalog-dir <dir>  Path to catalog/ (default:
-                       "C:\\WorkSpaceMaku\\Others\\sigil\\catalog")
+  --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --yes                Skip confirmation prompt
   --dry-run            Preview what would be deleted without deleting
   -h, --help           display help for command

@@ -1,9 +1,10 @@
 /**
  * Trust scan rule definitions.
  *
- * 11 rules across two namespaces:
+ * 20 rules across three namespaces:
  *   secret/*    — credentials, tokens, API keys
  *   injection/* — jailbreak overrides, role-switch, data-exfil URLs
+ *   config/*    — dangerous or exfiltrating commands in config kinds
  *
  * Each rule specifies either a per-line `pattern` or a whole-file `globalPattern`.
  * `frontmatterOnly` restricts matching to the YAML block (content before the second ---).

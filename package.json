@@ -53,7 +53,7 @@
   "scripts": {
     "clean": "node -e \"const fs=require('fs');fs.rmSync('dist-cli',{recursive:true,force:true});fs.rmSync('test-compiled',{recursive:true,force:true})\"",
     "build": "npm run clean && cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js && node dist-cli/targets/emit-capability-doc.js",
-    "build:watch": "tsc -p tsconfig.build.json --watch",
+    "build:watch": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --watch",
     "build:test": "tsc -p tsconfig.test.json",
     "pretest": "npm run build && npm run build:test",
     "test": "node --test --experimental-test-coverage --test-coverage-exclude=\"test-compiled/**\" \"test-compiled/**/*.test.js\"",
@@ -66,7 +66,8 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check-doc-comments": "node scripts/check-doc-comments.cjs",
-    "check": "npm run lint && npm run format:check && npm run check-doc-comments && npm test"
+    "check": "npm run lint && npm run format:check && npm run check-doc-comments && npm test",
+    "ci:local": "npm audit --omit=dev && npm run lint && npm run format:check && npm run build && npm run validate && node dist-cli/cli.js sync --check && npm test && npm run catalog:build && node dist-cli/cli.js --version && node dist-cli/cli.js list"
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",

@@ -1,77 +1,101 @@
 # Sigil — Documentation
 
-> **New here?** Start with the [README](../README.md) for the one-minute pitch and install
-> instructions, then pick the guide that matches your goal below.
+> **New here?** Start with the [README](../README.md) for the pitch and install steps, then pick
+> your path below.
 
-## Guides
+## Use Sigil (install artifacts into a project)
 
-| Guide                                        | Who it's for                                 | Covers                                            |
-| -------------------------------------------- | -------------------------------------------- | ------------------------------------------------- |
-| [guides/consuming.md](guides/consuming.md)   | Developers adding skills to a project        | Wizard, `add`, `list`, `init`, shell completion   |
-| [guides/authoring.md](guides/authoring.md)   | Contributors adding artifacts to the catalog | New skill / rule / language / import walkthroughs |
-| [guides/operations.md](guides/operations.md) | Maintainers & CI                             | Build targets, CI gate, `release` command         |
+| Doc                                                          | Covers                                                          |
+| ------------------------------------------------------------ | --------------------------------------------------------------- |
+| [guides/consuming.md](guides/consuming.md)                   | Wizard, `add`, `list`, `init`, status/update/uninstall, plugins |
+| [reference/troubleshooting.md](reference/troubleshooting.md) | Common errors and FAQ                                           |
+| [reference/capabilities.md](reference/capabilities.md)       | Which kinds each target delivers, per channel (generated)       |
+| [reference/config-kinds.md](reference/config-kinds.md)       | How `mcp` / `hook` / `settings` merge into your JSON files      |
 
-## Decisions
+## Author artifacts (catalog authors)
 
-Point-in-time session retrospectives, kept only while still load-bearing. See
-[decisions/README.md](decisions/README.md) for the full archive index — including summaries of
-superseded logs that were deleted (recoverable via the commit hash listed there).
+| Doc                                          | Covers                                                                               |
+| -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| [guides/authoring.md](guides/authoring.md)   | Adding or changing a skill, rule, agent, or language; `get/search/patch/move/import` |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md)     | Authoring rules, PR process, what reviewers check                                    |
+| [guides/publishing.md](guides/publishing.md) | Publishing your own catalog or Claude marketplace                                    |
+| [reference/spec.md](reference/spec.md)       | Artifact kinds, frontmatter schema, platform mapping, CLI reference                  |
 
-## Audits
+## Contribute code
 
-Measurement logs and campaign notes live under [audits/](audits/). They record a point in time;
-the guides and reference describe the system as it stands.
+| Doc                                                    | Covers                                                                      |
+| ------------------------------------------------------ | --------------------------------------------------------------------------- |
+| [../CONTRIBUTING.md](../CONTRIBUTING.md)               | Contributing code: setup, checks, PR process                                |
+| [../CLAUDE.md](../CLAUDE.md)                           | Invariants that must not break, architecture, doc map                       |
+| [reference/architecture.md](reference/architecture.md) | Extension model, emit specs, templates, lexicon, conformance                |
+| [guides/operations.md](guides/operations.md)           | Build and link, targets, CI gate (`npm run ci:local` mirrors CI), `release` |
+| [../CHANGELOG.md](../CHANGELOG.md)                     | Version history                                                             |
 
-## Reference
+## Project history and backlog (not user docs)
 
-| Reference                                                    | Covers                                                                              |
-| ------------------------------------------------------------ | ----------------------------------------------------------------------------------- |
-| [reference/spec.md](reference/spec.md)                       | Artifact kinds, frontmatter schema, platform mapping, CLI reference, trust scanning |
-| [reference/cli-flags.md](reference/cli-flags.md)             | Per-command flags, generated from `sigil <cmd> --help`                              |
-| [reference/architecture.md](reference/architecture.md)       | Contributor internals: extension model, emit specs, templates, lexicon, conformance |
-| [reference/capabilities.md](reference/capabilities.md)       | Generated: which kinds each target delivers per channel (scaffold / plugin)         |
-| [reference/config-kinds.md](reference/config-kinds.md)       | `mcp` / `hook` / `settings` merge model, scope tables                               |
-| [reference/troubleshooting.md](reference/troubleshooting.md) | Common errors, FAQ, validation violations                                           |
+- [decisions/](decisions/README.md): point-in-time decision logs and retrospectives.
+- [audits/](audits/): measurement logs and campaign notes.
+- [ideas/](ideas/): the gap backlog; one short brief per planned or missing capability.
 
-## Root files
+The guides and reference describe the system as it stands; history and ideas do not.
 
-| File                                  | Covers                                                                       |
-| ------------------------------------- | ---------------------------------------------------------------------------- |
-| [README.md](../README.md)             | What Sigil is, install, quick start, artifact list                           |
-| [CONTRIBUTING.md](../CONTRIBUTING.md) | Authoring rules, PR process, what reviewers check                            |
-| [CHANGELOG.md](../CHANGELOG.md)       | Version history                                                              |
-| [CLAUDE.md](../CLAUDE.md)             | Agent-facing invariants, architecture, and a doc map (for code contributors) |
+## Support matrix
 
----
+| Scenario                             | Status                                | Details                                                                                                                                                                                                                                                                  |
+| ------------------------------------ | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| S1 Interactive wizard                | Supported (`add`, `new`, `edit` only) | `update`, `uninstall`, `status`, `prune`, and `init --target` are CLI-only; bare `sigil` prints help. [Home menu](ideas/home-menu-wizard.md), [update/uninstall wizard](ideas/wizard-update-uninstall.md)                                                                |
+| S2 Claude plugin marketplace         | Partial                               | Local build works (`sigil build --target claude` → `dist/claude`); a published marketplace is planned. [Brief](ideas/publish-claude-marketplace.md)                                                                                                                      |
+| S3 Publish your own marketplace/fork | Partial                               | `--catalog-dir` and `--packs` work; marketplace name, owner, and author are hardcoded; the manifest does not record the catalog source. [Guide](guides/publishing.md), [metadata](ideas/own-marketplace-metadata.md), [catalog source](ideas/manifest-catalog-source.md) |
+| S4 GitHub Copilot                    | Supported (scaffold only)             | Instructions, skills, agents, prompts, MCP. No plugin channel; no hooks or settings. [Capabilities](reference/capabilities.md), [plugin channel](ideas/copilot-plugin-channel.md), [hooks](ideas/copilot-hooks.md)                                                       |
+| S5 npm distribution                  | Planned                               | Not published; build from source. [Brief](ideas/npm-first-publish.md)                                                                                                                                                                                                    |
+| S6 Suggest an artifact without code  | Partial                               | Open an issue or discussion, or run the `sigil new` wizard from a clone. No issue form; `sigil import` reads Claude layouts only. [Issue form](ideas/artifact-proposal-issue-form.md), [Copilot import](ideas/import-copilot-layout.md)                                  |
+| S7 Other AI tools                    | Planned                               | Codex and Cursor targets planned; Gemini CLI to be evaluated. [Codex](ideas/codex-target.md), [Cursor](ideas/cursor-target.md), [Gemini CLI](ideas/gemini-cli-target.md)                                                                                                 |
+| S8 GUI / web browsing                | Not available                         | Terminal only. [Brief](ideas/ui-beyond-terminal.md)                                                                                                                                                                                                                      |
 
-## Command cheat-sheet
+## Glossary
 
-| Command                        | When to use                                                                    |
-| ------------------------------ | ------------------------------------------------------------------------------ |
-| `sigil add skill:<id>`         | Scaffold a skill + its full dependency closure into a project                  |
-| `sigil add all --yes`          | Bulk-install the entire catalog (CI-safe)                                      |
-| `sigil init --target <name>`   | Prepare a consumer project for `claude` or `copilot`                           |
-| `sigil list --kind rule`       | Browse available artifacts before authoring duplicates                         |
-| `sigil new <kind>`             | Start a new catalog artifact with the correct frontmatter template             |
-| `sigil import <dir>`           | Import a portable Claude template directory into the catalog                   |
-| `sigil validate`               | Schema + reference-graph checks — run before every build and in CI             |
-| `sigil build --target claude`  | Compile the Claude Code plugin layout to `dist/claude/`                        |
-| `sigil build --target copilot` | Compile the Copilot layout to `dist/copilot/`                                  |
-| `sigil check <file>`           | Validate a single source file (fast per-file feedback)                         |
-| `sigil edit <id>`              | Update an artifact's title, description, or tags                               |
-| `sigil patch <id>`             | Update a field that has an explicit patch flag (severity, uses, platform keys) |
-| `sigil get <id>`               | Show full detail — closure, reverse-deps, emit targets                         |
-| `sigil search <query>`         | Ranked free-text search across the catalog                                     |
-| `sigil delete <id>`            | Remove an artifact; warns about dependent skills                               |
-| `sigil move <id> <new-id>`     | Atomic rename — rewrites all referrers                                         |
-| `sigil retarget <id>`          | Widen or restrict which AI platforms an artifact targets                       |
-| `sigil status`                 | Show install health of artifacts in a consumer project                         |
-| `sigil update [ids...]`        | Refresh installed artifacts to the current catalog version                     |
-| `sigil uninstall <ids...>`     | Remove installed artifacts from a consumer project (bare catalog ids)          |
-| `sigil prune`                  | Report orphaned installed artifacts; `--apply` removes them                    |
-| `sigil completion [shell]`     | Print a shell completion script (bash, zsh, or fish)                           |
-| `sigil sync`                   | Catalog-author side: report/apply template-drift + stale doc links             |
-| `sigil index`                  | Emit `dist/registry.json` — flat per-artifact index                            |
-| `sigil release [level]`        | Bump version, rebuild, update CHANGELOG, commit + tag                          |
+- **Artifact**: one authored unit in the catalog: a Markdown file with YAML frontmatter, identified
+  by `<language>/<name>` (for example `typescript/ts-generate-tests`).
+- **Kind**: the type of an artifact: `skill`, `agent`, `rule`, `prompt`, `workflow`, or a config kind
+  (`mcp`, `hook`, `settings`) that merges into JSON instead of writing a whole file. See
+  [spec.md](reference/spec.md).
+- **Pack**: a curated bundle of artifacts, defined in [`packs.yaml`](../packs.yaml).
+  `sigil add pack:<name>` installs it.
+- **Target**: the AI tool Sigil compiles for. Today `claude` and `copilot`.
+- **Channel**: how a target delivers artifacts. **Scaffold** writes loose files into your project
+  (`sigil add` / `init`); **plugin** builds a distributable plugin layout (`sigil build`). Not every
+  kind is available on every channel; see [capabilities.md](reference/capabilities.md).
+- **Closure**: an artifact plus everything it pulls in through `uses:` (rules and agents),
+  resolved transitively. `add` installs the closure by default.
+- **Manifest**: `.sigil/manifest.json` in a consumer project: records what Sigil installed, with
+  content hashes, so `status`, `update`, and `uninstall` work.
+- **Template / slot**: shared body prose (`kind: template`) with `<!-- slot: key -->` markers;
+  an artifact opts in with `template:` and fills only the slots. See
+  [architecture.md](reference/architecture.md).
+- **Lexicon**: the per-provider vocabulary that turns neutral `{sigil:<term>}` tokens in artifact
+  bodies into provider-specific text (file names, argument syntax) at build time.
+- **Install state vs status**: both describe an installed artifact but at different moments.
+  _Install state_ (six values: `new`, `foreign`, `up-to-date`, `drifted`, `outdated`, `missing`)
+  is what the `add` wizard shows for each candidate, including ones never installed (`new`) or
+  files Sigil did not write (`foreign`). _Status_ (five values: `up-to-date`, `outdated`,
+  `drifted`, `orphaned`, `missing`) is what `sigil status` reports for entries already in the
+  manifest, adding `orphaned` (id gone from the catalog). Wizard legend:
+  [src/wizard/CLAUDE.md](../src/wizard/CLAUDE.md).
 
-Full flag reference → [reference/spec.md § CLI reference](reference/spec.md#cli-reference).
+## Common commands
+
+| Command                       | When to use                                                    |
+| ----------------------------- | -------------------------------------------------------------- |
+| `sigil add`                   | Install artifacts (wizard in a terminal, or `skill:<id>` etc.) |
+| `sigil list` / `sigil search` | Browse the catalog                                             |
+| `sigil status`                | Check the health of what is installed                          |
+| `sigil update [ids...]`       | Refresh installed artifacts to the current catalog             |
+| `sigil uninstall <ids...>`    | Remove installed artifacts                                     |
+| `sigil new <kind>`            | Start a new catalog artifact                                   |
+| `sigil validate`              | Schema and reference checks before a build or PR               |
+| `sigil build --target <name>` | Compile the plugin layout to `dist/<name>/`                    |
+
+Everything else (`get`, `edit`, `patch`, `move`, `delete`, `retarget`, `import`, `sync`, `prune`,
+`release`, …): [spec.md § CLI reference](reference/spec.md#cli-reference). Per-command flags:
+[cli-flags.md](reference/cli-flags.md). Note that `move` rewrites only `extends:` and `uses:`
+referrers, not other mentions of an id.

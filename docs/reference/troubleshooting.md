@@ -4,14 +4,22 @@
 
 ---
 
-## `npm run build` runs out of memory (heap OOM)
+## `tsc` runs out of memory (heap OOM)
 
-`npm run build` already sets `NODE_OPTIONS=--max-old-space-size=8192` via `cross-env`. If you
-invoke `tsc` directly (e.g. in `build:watch`), prefix it yourself:
+`npm run build` and `npm run build:watch` already set `NODE_OPTIONS=--max-old-space-size=8192` through
+`cross-env`, so use them. The error only appears when you call `tsc` yourself. Pick the form for your shell:
+
+```powershell
+# PowerShell
+$env:NODE_OPTIONS = "--max-old-space-size=8192"; npx tsc -p tsconfig.build.json
+```
 
 ```bash
-NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --watch
+# any shell
+npx cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json
 ```
+
+More on building: [operations.md](../guides/operations.md#build-and-link).
 
 ---
 
@@ -115,20 +123,22 @@ These merge into JSON. They do not write a standalone markdown file.
 
 ---
 
-## Tests fail after editing a test file
+## Tests fail or pass against stale code when run with `node --test`
 
-`npm test` builds everything. Its `pretest` script runs `npm run build` and compiles `test/` into
-`test-compiled/` (`tsc -p tsconfig.test.json`). Run:
+Compiled tests import from `dist-cli/`, not `src/`. If you run `node --test test-compiled/<file>.test.js`
+after editing `src/` or a test without rebuilding, you test the old compiled output: a fixed bug still
+fails, or a new test file is missing from `test-compiled/`. `npm test` avoids this because its `pretest`
+step rebuilds both ([why](../guides/operations.md#tests-and-pretest)). To run one file, rebuild first:
 
 ```bash
-npm test
+npm run build && npm run build:test && node --test test-compiled/<path>.test.js
 ```
 
 ---
 
 ## `sigil release` fails at the verify gate
 
-The gate runs `npm run build`, `npm run validate`, `npm test`, and `npm run catalog:build`, unless
+The gate runs `npm run build`, `npm run validate`, `npm test`, and `npm run catalog:build` (narrower than CI; see [operations.md](../guides/operations.md#release-a-new-version-sigil-release)), unless
 you passed `--no-verify` (that flag skips the gate entirely; it does not skip the version write or
 the commit). If any step fails, the version bump is already written but **not committed** — fix the
 failing step, then either:

@@ -12,11 +12,13 @@ npm run build          # clean, tsc, regenerate schema/*.schema.json and docs/re
 npm run validate       # schema + reference-graph check
 npm run catalog:build  # catalog source → dist/claude/ and dist/copilot/
 npm test               # pretest builds dist-cli/ and test-compiled/, then node --test
-npm run check          # lint && format:check && check-doc-comments && test
+npm run check          # lint && format:check && check-doc-comments && test (a subset of CI)
+npm run ci:local       # full CI mirror: audit, lint, format, build, validate, sync --check, test, catalog:build
 ```
 
 Heap size, why `pretest` exists, and `npm link` vs `npm run sigil` are in
-[Build and link](docs/guides/operations.md#build-and-link).
+[Build and link](docs/guides/operations.md#build-and-link). Run `npm run ci:local` before pushing. The human testing
+guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Before you push).
 
 ## Invariants — do not break
 
@@ -108,8 +110,11 @@ Heap size, why `pretest` exists, and `npm link` vs `npm run sigil` are in
   time. Put dispatch-disambiguation in `description`. `declared-but-unemitted` fails `sync --check` if the field is
   authored and unmapped. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
 - **A same-kind, same-topic "family" of artifacts across language namespaces is not automatically a templatization
-  candidate**. Templatize only after measuring real body overlap. Only `code-quality` and `release-skill`
-  (`catalog/shared/templates/`) cleared that bar. `catalog-symmetry`
+  candidate**. Templatize only after measuring real body overlap, with at least three concrete duplicates. Three
+  templates ship in `catalog/shared/templates/`: `mcp-note` (the four `shared/*.mcp.md` files, from
+  `docs/decisions/template-extraction-evidence-2026-08.md`, which left `hook`/`settings` hand-authored for lack of three
+  examples) plus `code-quality` and `release-skill` (added after the 2026-08-20 audit measured their overlap).
+  `catalog-symmetry`
   (`src/commands/sync/conformance/rules/catalog-symmetry.ts`) catches a family missing from one language namespace
   without assuming the bodies are duplicates. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
 - **Artifact bodies are provider-neutral prose — never a hardcoded provider-specific literal** (`CLAUDE.md`,
@@ -156,15 +161,9 @@ The registry lives in `src/targets/index.ts` — adding a platform is one new fi
 
 ### Two Claude delivery modes
 
-Claude Code plugins cannot ship loose rules (`CLAUDE.md` at plugin root is not loaded by Claude), so rules are
-materialised differently depending on delivery mode:
-
-| Delivery                          | Rule handling                                          | Agent handling                            |
-| --------------------------------- | ------------------------------------------------------ | ----------------------------------------- |
-| **Plugin build** (`dist/claude/`) | Inlined as `## Applied Rules` section in each SKILL.md | Written to `agents/<name>.md` in the pack |
-| **CLI scaffold** (`add` / `init`) | Written to `.claude/rules/<slug>.md` (loaded natively) | Written to `.claude/agents/<name>.md`     |
-
-`build` produces the plugin layout; `add` produces the scaffold layout.
+Claude Code plugins cannot ship loose rules, so `build` (`dist/claude/`) inlines rules into each SKILL.md while `add` /
+`init` write `.claude/rules/<slug>.md`; the per-adapter table is in
+[docs/reference/spec.md](docs/reference/spec.md#uses-skills-only) (Reuse mechanisms).
 
 ### Templates + emit specs (the source-of-truth layer)
 
@@ -179,10 +178,9 @@ the one `renderArtifact()` (`src/targets/emit.ts`). **`contracts.ts` under each 
 that provider's `KindEmitSpec[]` via `deriveContracts()`, never hand-written.** A `docs:` citation must name the
 provider's canonical home for the artifact, and cite both consumers when two products read the same emitted file.
 `KindEmitSpec.supersededBy` is an advisory `sigil sync` notice, never a `--check` failure. Shipped targets do not use
-`Target.frontmatterExtensions`. Six Claude skill fields (`allowedTools`, `argumentHint`,
-`disableModelInvocation`, `whenToUse`, `userInvocable`, `skillContext`) are still top-level on `SkillSchema` — known
-debt. `COPILOT_PROMPT_SPEC` hardcodes `tools:` to `codebase` and `github`; there is no `copilot: { tools }` override.
-`hook`/`settings` stay flagged `KindDescriptor.ownedBy` until a second target supports them. Mechanics:
+`Target.frontmatterExtensions`, which is known debt (the list is in
+[architecture.md](docs/reference/architecture.md#extension-model)). `hook`/`settings` stay flagged
+`KindDescriptor.ownedBy` until a second target supports them. Mechanics:
 [architecture.md](docs/reference/architecture.md).
 
 **`sigil sync`** (`src/commands/sync/`) is catalog-author tooling: `--check` for CI, `--apply` for mechanical fixes

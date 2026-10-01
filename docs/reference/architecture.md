@@ -139,46 +139,81 @@ artifact opts in with `template: <template-id>` in its frontmatter and then supp
 content — one or more `<!-- slot: key -->` markers followed by that slot's Markdown, nothing else at
 the top level:
 
+Shipped templates (all under `catalog/shared/templates/`): `code-quality` (the per-language `*-code-quality`
+rules), `mcp-note` (the four `shared/*.mcp.md` artifacts), and `release-skill` (the per-language `*-release`
+skills). Each was added only after measuring real body overlap; see
+[template-extraction-evidence-2026-08.md](../decisions/template-extraction-evidence-2026-08.md) and
+[catalog-quality-audit-2026-08.md](../decisions/catalog-quality-audit-2026-08.md).
+
+The template (`shared/templates/release-skill`, abridged; the real file also carries `title`, `description`,
+`tags`, and a `docs:` citation):
+
 ```markdown
 ---
-id: shared/templates/workflow-skill
+id: shared/templates/release-skill
 kind: template
 appliesToKind: [skill]
 revision: 1
 slots:
-  - { key: whenToUse, required: true, description: 'Trigger conditions, one paragraph.' }
-  - { key: steps, required: true, description: '### Step N — <verb> sections, in order.' }
-docs:
   - {
-      url: 'https://code.claude.com/docs/en/skills',
-      verifiedOn: '2026-08-04',
-      covers: 'SKILL.md layout',
+      key: quality-gates,
+      required: true,
+      description: "Step 1: how to discover and run this language's full quality gate.",
+    }
+  - {
+      key: version-determination,
+      required: true,
+      description: 'Step 3: where the version lives and the commit-type-to-bump rules.',
+    }
+  - {
+      key: changelog-format,
+      required: true,
+      description: 'Step 4: the changelog headings this language groups commits into.',
+    }
+  - { key: api-compat-step, required: false, description: 'Optional standalone api-compat step.' }
+  - {
+      key: checklist-and-next-steps,
+      required: true,
+      description: 'Final checklist plus the publish commands.',
     }
 ---
 
-## When to Use
+# Release Preparation
 
-<!-- slot: whenToUse -->
+**Target version:** {sigil:arguments}
 
-## Procedure
+## Step 1 — Verify quality gates
 
-<!-- slot: steps -->
+<!-- slot: quality-gates -->
+
+## Step 2 — Check the working tree
+
+(shared prose: `git status --porcelain`, stop on a dirty tree)
+
+...
 ```
+
+An artifact that uses it (`typescript/ts-release`, abridged) supplies only slot content:
 
 ```markdown
 ---
-id: typescript/ts-generate-tests
+id: typescript/ts-release
 kind: skill
-template: shared/templates/workflow-skill
+name: ts-release
+template: shared/templates/release-skill
+...
 ---
 
-<!-- slot: whenToUse -->
+<!-- slot: quality-gates -->
 
-Use when adding or reviewing unit tests in a TypeScript project.
+Discover the combined gate from `package.json` scripts and run it; stop and report if any gate fails.
 
-<!-- slot: steps -->
+<!-- slot: version-determination -->
 
-### Step 1 — Locate the test file
+1. Read the current version from `package.json`.
+2. Suggest a bump from the commit types since the last tag.
+
+<!-- slot: changelog-format -->
 
 ...
 ```

@@ -16,7 +16,7 @@ A `kind: hook` artifact (`src/schema/index.ts`, `HookSchema`) becomes one entry 
 | `matcher`      | Tool-name pattern, for tool events; defaults to `*`                                                                                   |
 | `command`      | Shell command to run or, with `args`, the executable to spawn                                                                         |
 | `args`         | Exec form: `command` is spawned with these arguments and no shell                                                                     |
-| `timeout`      | Optional timeout in **milliseconds** (`z.number().int().positive()`)                                                                  |
+| `timeout`      | Optional timeout in **seconds** (copied verbatim into Claude settings) (`z.number().int().positive()`)                                |
 | `defaultScope` | Recommended install scope: `project` (default), `local`, or `user`. Overridable with `--scope`                                        |
 | `language`     | Optional language scope. Omit for a hook that applies to every language                                                               |
 
@@ -96,7 +96,7 @@ drifted/not-drifted boolean:
 rather than `modified` when an item can't be found — both strategies are non-destructive to
 re-apply, so there's no overwrite risk to gate behind a flag the way there is for `object-spread`'s
 leaf assignment; restoring one appends a fresh copy alongside whatever the user has, rather than
-refusing. (see F14, [`docs/decisions/catalog-usage-audit-2026-08-21.md`](../decisions/catalog-usage-audit-2026-08-21.md))
+refusing. (Rule from audit finding F14: a reinstall once undid a hook fix and the old boolean drift check could not tell a vanished fragment from an edited one — see [`docs/decisions/catalog-usage-audit-2026-08-21.md`](../decisions/catalog-usage-audit-2026-08-21.md).)
 
 What `update` writes always comes from the bundled catalog, never from the manifest.
 `.sigil/manifest.json` is committed and anyone can edit it, so its record only says which
@@ -129,7 +129,7 @@ the current one) takes a pristine `.sigil.bak` copy before the first such write,
 `ensureHomeBackup()` helper (`src/config-utils.ts`). This applies uniformly across all three
 config-JSON writers — `sigil add`, `sigil update`, and `sigil uninstall`
 (`commands/add/execute-config.ts`, `commands/update-config-io.ts`, `commands/uninstall-config.ts`;
-see F23, [`docs/decisions/catalog-benchmark-audit-2026-08-22.md`](../decisions/catalog-benchmark-audit-2026-08-22.md)).
+rule from audit finding F23: the first backup guarantee covered only `add`, so every home-directory writer must take it — see [`docs/decisions/catalog-benchmark-audit-2026-08-22.md`](../decisions/catalog-benchmark-audit-2026-08-22.md)).
 The backup is written once, pristine; a
 second write to the same file in the same session keeps the existing backup and just warns that
 it's still there. Project-scoped config files (`.claude/settings.json`, `.mcp.json`) are protected

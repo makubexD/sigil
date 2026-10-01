@@ -5,7 +5,8 @@
 /** sigil CLI — Commander wiring only. Business logic lives in src/commands/<name>.ts. @module */
 import { Command } from 'commander';
 import { getAllTargets } from './targets';
-import { resolveDefault, pkg } from './cli-helpers';
+import { resolveDefault, describePathDefaults, pkg } from './cli-helpers';
+import { ALL_KINDS } from './kinds';
 import { handleFatal } from './cli-error';
 import { runBuild } from './commands/build';
 import { runValidate } from './commands/validate';
@@ -78,7 +79,7 @@ program
   .command('list')
   .description('List catalog artifacts, optionally filtered by language and/or kind.')
   .option('--language <lang>', 'Filter by language (e.g. csharp, python)')
-  .option('--kind <kind>', 'Filter by kind (skill, agent, rule, prompt, workflow)')
+  .option('--kind <kind>', `Filter by kind (${ALL_KINDS.join(', ')})`)
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .action(runList);
 // ─── get ──────────────────────────────────────────────────────────────────────
@@ -327,7 +328,7 @@ program
   .command('move <id> <new-id>')
   .alias('rename')
   .description(
-    'Rename/relocate a catalog artifact and rewrite all referrers. Transactional: rolls back on failure.',
+    'Rename/relocate a catalog artifact and rewrite its extends/uses referrers. Transactional: rolls back on failure.',
   )
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--dry-run', 'Preview the move without executing', false)
@@ -387,4 +388,5 @@ program
   .option('--yes', 'Non-interactive; skip the confirmation prompt (required when not a TTY)')
   .action(runRelease);
 
+describePathDefaults(program);
 program.parseAsync(process.argv).catch(handleFatal);

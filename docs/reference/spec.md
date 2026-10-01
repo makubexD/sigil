@@ -42,6 +42,36 @@ to the native file layout of each AI platform (Claude Code, GitHub Copilot, and 
 
 ## Artifact kinds
 
+Nine kinds exist (`KIND_REGISTRY` in `src/kinds.ts`; one zod schema each in `SCHEMAS`,
+`src/schema/index.ts`): the whole-file kinds `skill`, `agent`, `rule`, `prompt`, `workflow`; the
+config kinds `hook`, `settings`, `mcp`, which merge into user-owned JSON; and the authoring-only
+`template`. Which kinds each provider delivers is generated into
+[capabilities.md](capabilities.md).
+
+### Shared base fields
+
+Every kind's schema spreads `BaseFields` (`src/schema/shared.ts`):
+
+| Field         | Required | Meaning                                                                                                                                                                                             |
+| ------------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `id`          | yes      | Namespaced kebab-case, two or three segments (`shared/foo`, `typescript/ts-foo`). Enforced by `KEBAB_ID_RE`, because adapters interpolate it into output paths.                                     |
+| `kind`        | yes      | Discriminator; each schema pins it to its own literal.                                                                                                                                              |
+| `title`       | yes      | Short human-readable title.                                                                                                                                                                         |
+| `description` | yes      | One-line description used in listings and emitted as the provider `description`.                                                                                                                    |
+| `tags`        | no       | Discovery tags (default `[]`).                                                                                                                                                                      |
+| `platforms`   | no       | Restrict emission to the listed target names (`claude`, `copilot`), intersected with the targets that support the kind. Absent = every supporting target. Do not list every target; omit the field. |
+| `deprecated`  | no       | `{ since, reason, supersededBy? }`. Retires an artifact without deleting it: it stays resolvable, `validate` warns on live dependents, `sigil prune` reports installed copies.                      |
+
+Fields shared by several kinds, beyond the base set:
+
+| Field              | Kinds                                   | Meaning                                                                                                                                                              |
+| ------------------ | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `name`             | skill, agent                            | Invocation name; kebab-case (`KEBAB_NAME_RE`), used as the output file or directory name.                                                                            |
+| `language`         | skill, agent, rule, hook, settings, mcp | Language namespace; must match a `catalog/languages/<lang>/` directory. Omit for cross-language artifacts.                                                           |
+| `template`         | skill, agent, rule, prompt, workflow    | Id of a `template` artifact whose slots compose the body ([architecture.md](architecture.md#templates-one-body-structure-many-artifacts)).                           |
+| `relatedArtifacts` | skill, agent, rule                      | `[{ id, relation, reason }]` with `relation` one of `escalates-to`, `complements`, `see-also`. Rendered as a Boundary section only when the sibling is co-installed. |
+| `defaultScope`     | hook, settings, mcp                     | Recommended install scope (`project`, `local`, `user`); overridden by `--scope` or the wizard.                                                                       |
+
 ### skill
 
 A procedural how-to that an AI agent reads when asked to perform a specific task. Emitted as a
@@ -95,9 +125,24 @@ claude: # Claude-namespaced hints; other adapters ignore this block
   model: sonnet
   effort: medium
   maxTurns: 10
-  skills: [shared/cli] # preloaded into the subagent at startup; emitted as `skills: [cli]`
+  skills: [shared/cli] # preloaded into the subagent at startup; emitted as a `skills:` list of names
 ---
 ```
+
+Agent-specific fields (`AgentSchema`, beyond the shared fields above):
+
+| Field              | Meaning                                                                                                                                              |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools`            | Allow-list of tool names. Emitted by both providers; absent means the provider default of all tools, so an authored read-only agent must declare it. |
+| `disallowedTools`  | Tools the agent must not use. Emitted on Claude only.                                                                                                |
+| `claude.model`     | `haiku`, `sonnet`, or `opus`.                                                                                                                        |
+| `claude.effort`    | `low`, `medium`, or `high`.                                                                                                                          |
+| `claude.maxTurns`  | Positive integer turn cap.                                                                                                                           |
+| `claude.isolation` | `worktree` (run the subagent in an isolated git worktree).                                                                                           |
+| `claude.skills`    | Catalog skill ids to preload (see below).                                                                                                            |
+| `relatedArtifacts` | Sibling cross-references rendered as a Boundary section; see the shared-fields table.                                                                |
+
+Agents have no `whenToUse`; they dispatch on `description` alone.
 
 `claude.skills` takes catalog skill **ids** (checked by `validate` like `uses:`) and is emitted as
 Claude Code's subagent `skills:` field with each skill's name. Preloading injects the skill's
@@ -179,6 +224,9 @@ prompt file on Copilot — the same shapes as `prompt` — with `steps:` rendere
 checklist in the body. It is not a separate multi-step command type, and it does not emit
 `argument-hint` or `arguments`.
 
+The block below is illustrative: no `kind: workflow` artifact currently exists in `catalog/`. It
+shows the schema (`steps` is required and non-empty).
+
 ```yaml
 ---
 id: csharp/new-feature-workflow
@@ -194,6 +242,32 @@ steps:
     description: Generate the PR description
 ---
 ```
+
+### hook, settings, mcp (config kinds)
+
+These three kinds do not write whole files. They merge a fragment into a user-owned JSON file
+(`.claude/settings.json`, `.mcp.json`, and the Copilot/VS Code MCP files) and are usually language-agnostic
+(each schema still accepts an optional `language`). Source files are `*.hook.md`, `*.settings.md`, and `*.mcp.md` (shipped under
+`catalog/shared/hooks/`, `settings/`, `mcps/`). The kind-specific fields:
+
+| Kind       | Fields (beyond the shared set)                                                                                                                                                                |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `hook`     | `event` (required: `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `SubagentStop`, `Stop`, `SessionStart`, `Notification`), `command` (required), `args`, `matcher` (default `*`), `timeout` |
+| `settings` | `permissions` (`allow` / `deny` / `ask`), `env`, `model`, `statusLine`                                                                                                                        |
+| `mcp`      | `server`: stdio (`command`, `args`, `env`) or remote (`type: http` or `sse`, `url`, `headers`)                                                                                                |
+
+The merge model, scope tables, drift classification, and backup rules are owned by
+[config-kinds.md](config-kinds.md). `hook` and `settings` model Claude Code's own vocabulary and are
+flagged `KindDescriptor.ownedBy` until a second target supports them.
+
+### template
+
+A `kind: template` artifact (`*.template.md`, under `catalog/shared/templates/`) holds shared body
+structure with `<!-- slot: key -->` markers. It is authoring-time structure only and is never
+emitted to `dist/` or installed (every target marks it `none`). Fields: `appliesToKind`,
+`revision`, `slots` (`key`, `required`, `description`, optional `renamedFrom`), and `docs`
+(provider citations). Composition, shipped templates, and propagation are owned by
+[architecture.md](architecture.md#templates-one-body-structure-many-artifacts).
 
 ---
 
@@ -232,16 +306,16 @@ Adapters then decide how to materialise the closure:
 Sourced from `src/targets/doc-refs.ts` — the one place provider doc URLs are declared; every entry
 there carries a `verifiedOn` date and is staleness-tracked by `sigil sync --stale` (see
 [Templates](architecture.md#templates-one-body-structure-many-artifacts) for what that command checks).
-Native artifact names and output paths are one table, with a column for the Claude Code plugin build.
+Native artifact names and output paths are one table, with a column for the Claude Code plugin build. Plugin-column paths are relative to `dist/claude/plugins/<pack>/` (for example `dist/claude/plugins/<pack>/skills/<name>/SKILL.md`).
 
-| Catalog kind       | Claude native artifact                                                        | Claude plugin (`dist/claude/`)           | Claude scaffold (`.claude/`)                     | Copilot native artifact                                                                                                      | Copilot (`.github/`)                     |
-| ------------------ | ----------------------------------------------------------------------------- | ---------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
-| `skill`            | **Agent Skill** — `.claude/skills/<name>/SKILL.md`                            | `skills/<name>/SKILL.md` + `references/` | `.claude/skills/<name>/SKILL.md` + `references/` | **Agent Skill** — `.github/skills/<name>/SKILL.md`                                                                           | `skills/<name>/SKILL.md` + `references/` |
-| `prompt`           | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`                     | — (not packaged into plugins yet)        | `.claude/skills/<slug>/SKILL.md`                 | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                                                         | `prompts/<slug>.prompt.md`               |
-| `agent`            | **Subagent** — `.claude/agents/<name>.md`                                     | `agents/<name>.md`                       | `.claude/agents/<name>.md`                       | **Custom agent** — `.github/agents/<name>.agent.md`                                                                          | `agents/<name>.agent.md`                 |
-| `rule` (repo-wide) | **Memory rule** — `.claude/rules/<slug>.md` (no `appliesTo` → no path filter) | folded into skill SKILL.md               | `.claude/rules/<slug>.md` (no frontmatter)       | **Global instructions** — `.github/copilot-instructions.md` (full build); an `applyTo: "**"` instructions file (`sigil add`) | `copilot-instructions.md`                |
-| `rule` (scoped)    | **Memory rule** — `.claude/rules/<slug>.md` (`paths:` frontmatter)            | folded into skill SKILL.md               | `.claude/rules/<slug>.md` (`paths:` frontmatter) | **Scoped instructions** — `.github/instructions/<slug>.instructions.md` (`applyTo:`), with or without a `language`           | `instructions/<slug>.instructions.md`    |
-| `workflow`         | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`                     | `skills/<slug>/SKILL.md`                 | `.claude/skills/<slug>/SKILL.md`                 | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                                                         | `prompts/<slug>.prompt.md`               |
+| Catalog kind       | Claude native artifact                                                        | Claude plugin (`dist/claude/plugins/<pack>/`) | Claude scaffold (`.claude/`)                     | Copilot native artifact                                                                                                      | Copilot (`.github/`)                     |
+| ------------------ | ----------------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------- |
+| `skill`            | **Agent Skill** — `.claude/skills/<name>/SKILL.md`                            | `skills/<name>/SKILL.md` + `references/`      | `.claude/skills/<name>/SKILL.md` + `references/` | **Agent Skill** — `.github/skills/<name>/SKILL.md`                                                                           | `skills/<name>/SKILL.md` + `references/` |
+| `prompt`           | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`                     | — (not packaged into plugins yet)             | `.claude/skills/<slug>/SKILL.md`                 | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                                                         | `prompts/<slug>.prompt.md`               |
+| `agent`            | **Subagent** — `.claude/agents/<name>.md`                                     | `agents/<name>.md`                            | `.claude/agents/<name>.md`                       | **Custom agent** — `.github/agents/<name>.agent.md`                                                                          | `agents/<name>.agent.md`                 |
+| `rule` (repo-wide) | **Memory rule** — `.claude/rules/<slug>.md` (no `appliesTo` → no path filter) | folded into skill SKILL.md                    | `.claude/rules/<slug>.md` (no frontmatter)       | **Global instructions** — `.github/copilot-instructions.md` (full build); an `applyTo: "**"` instructions file (`sigil add`) | `copilot-instructions.md`                |
+| `rule` (scoped)    | **Memory rule** — `.claude/rules/<slug>.md` (`paths:` frontmatter)            | folded into skill SKILL.md                    | `.claude/rules/<slug>.md` (`paths:` frontmatter) | **Scoped instructions** — `.github/instructions/<slug>.instructions.md` (`applyTo:`), with or without a `language`           | `instructions/<slug>.instructions.md`    |
+| `workflow`         | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`                     | `skills/<slug>/SKILL.md`                      | `.claude/skills/<slug>/SKILL.md`                 | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                                                         | `prompts/<slug>.prompt.md`               |
 
 **Key vocabulary rules:**
 
@@ -285,7 +359,18 @@ Native artifact names and output paths are one table, with a column for the Clau
 - **Claude workflow (user-invoked skill):** `name:`, `description:`, and `disable-model-invocation: true`
   only. Workflows have `steps:`, not `args:`, so this spec does not emit `argument-hint` or
   `arguments`. `steps:` render as a `## Steps` checklist (`src/targets/claude-code/spec/workflow.ts`).
-- **Copilot agent files:** require `.agent.md` extension and `description:` frontmatter.
+- **Claude agent (subagent):** `name:`, `description:` (double-quoted), then each present `claude:`
+  hint flattened to a top-level key (`model`, `effort`, `maxTurns`, `isolation`), `skills:` as a list
+  of skill names (from the `claude.skills` ids), `tools: <csv>` (from `tools`), and `disallowedTools`
+  as a JSON array. An absent `tools` means the subagent inherits every tool. Same layout for plugin
+  and scaffold (`src/targets/claude-code/spec/agent.ts`).
+- **Copilot agent files:** require the `.agent.md` extension and `description:` frontmatter.
+  Frontmatter is `name`, `description`, and `tools` as a **JSON array** literal (a valid YAML array)
+  when `tools` is authored; `disallowedTools` and the `claude:` block are not emitted
+  (`src/targets/copilot/spec/agent.ts`).
+- **Copilot instructions (`.instructions.md`, from scoped rules):** `applyTo: "<globs>"`
+  (comma-joined from `appliesTo`, falling back to `**` when absent) and a single-line
+  `description:`; no `name` or `agent` (`src/targets/copilot/spec/rule.ts`).
 - **`appliesTo` on rules stays unchanged in catalog source** — adapters translate it to `paths:` (Claude)
   or `applyTo` (Copilot `.instructions.md`). The translation is language-independent: a language-less
   shared rule with `appliesTo` still emits `paths:`/`applyTo:` — it is never gated on `language` being
@@ -297,18 +382,20 @@ Native artifact names and output paths are one table, with a column for the Clau
 
 ## File conventions
 
-| Path                                                 | Contents                                                  |
-| ---------------------------------------------------- | --------------------------------------------------------- |
-| `catalog/shared/`                                    | Cross-language artifacts (skills, rules, agents, prompts) |
-| `catalog/languages/<lang>/`                          | Language-specific skills, rules, agents                   |
-| `catalog/languages/<lang>/language.yaml`             | Display name, file globs, icon                            |
-| `catalog/languages/<lang>/skills/<name>/SKILL.md`    | Skill entry point                                         |
-| `catalog/languages/<lang>/skills/<name>/references/` | Supplementary docs bundled with the skill                 |
-| `catalog/shared/skills/<name>/SKILL.md`              | Stack-agnostic (language-less) skill, plus `references/`  |
-| `packs.yaml`                                         | Curated bundles (explicit `artifacts:` or `languages:`)   |
-| `schema/*.schema.json`                               | JSON Schemas for editor autocomplete (generated from zod) |
-| `catalog/shared/templates/*.template.md`             | Shared body structure (`kind: template`)                  |
-| `.sigil/manifest.json`                               | Consumer install manifest                                 |
+| Path                                                      | Contents                                                                                                                                      |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `catalog/shared/`                                         | Cross-language artifacts, one subdirectory per kind: `skills/`, `agents/`, `rules/`, `prompts/`, `hooks/`, `settings/`, `mcps/`, `templates/` |
+| `catalog/languages/<lang>/`                               | Language-specific skills, rules, agents                                                                                                       |
+| `catalog/languages/<lang>/language.yaml`                  | Display name, file globs, icon                                                                                                                |
+| `catalog/languages/<lang>/skills/<name>/SKILL.md`         | Skill entry point                                                                                                                             |
+| `catalog/languages/<lang>/skills/<name>/references/`      | Supplementary docs bundled with the skill                                                                                                     |
+| `catalog/shared/skills/<name>/SKILL.md`                   | Stack-agnostic (language-less) skill, plus `references/`                                                                                      |
+| `packs.yaml`                                              | Curated bundles (explicit `artifacts:` or `languages:`)                                                                                       |
+| `schema/*.schema.json`                                    | JSON Schemas for editor autocomplete (generated from zod)                                                                                     |
+| `catalog/shared/templates/*.template.md`                  | Shared body structure (`kind: template`)                                                                                                      |
+| `*.agent.md`, `*.rule.md`, `*.prompt.md`, `*.workflow.md` | Single-file artifacts (kinds `agent`, `rule`, `prompt`, `workflow`)                                                                           |
+| `*.hook.md`, `*.settings.md`, `*.mcp.md`                  | Config-kind artifacts (kinds `hook`, `settings`, `mcp`)                                                                                       |
+| `.sigil/manifest.json`                                    | Consumer install manifest                                                                                                                     |
 
 ---
 
@@ -332,27 +419,24 @@ Per-command flags: see [cli-flags.md](cli-flags.md).
 | `sigil import <source-dir>`        | Import a portable Claude template directory into the catalog as first-class artifacts.                                                                                                                                    |
 | `sigil status`                     | Show health status of artifacts installed in a consumer project. `reason` names _why_ a non-up-to-date entry is that way (e.g. a template revision bump, missing files, local edits).                                     |
 | `sigil update [ids...]`            | Refresh installed artifacts to the current bundled catalog version, including hook/settings/mcp fragments the catalog changed. Skips drifted files and edited config values unless `--force`. No ids = update everything. |
-| `sigil sync [template-id]`         | Catalog-author propagation: template drift, conformance, and stale `docs:` citations (detail below this table).                                                                                                           |
+| `sigil sync [template-id]`         | Catalog-author propagation: template drift, conformance, and stale `docs:` citations (summary below this table).                                                                                                          |
 | `sigil uninstall <ids...>`         | Remove installed artifacts from a consumer project. Refcount-aware. Ids are bare catalog ids (`csharp/cs-generate-tests`), not `kind:` selectors.                                                                         |
 | `sigil prune`                      | Report orphaned installed artifacts (ids no longer in the bundled catalog) and deprecated-but-installed ones. Preview by default; `--apply` removes the orphaned entries.                                                 |
 | `sigil patch <id>`                 | Update any field(s) of an existing catalog artifact. Transactional: rolls back on validation failure.                                                                                                                     |
-| `sigil move\|rename <id> <new-id>` | Rename/relocate a catalog artifact and rewrite all referrers. Transactional.                                                                                                                                              |
+| `sigil move\|rename <id> <new-id>` | Rename/relocate a catalog artifact and rewrite its `extends` / `uses.rules` / `uses.agents` referrers. Transactional.                                                                                                     |
 | `sigil retarget <id>`              | Change platform targeting of a catalog artifact without touching its body.                                                                                                                                                |
 | `sigil edit <id>`                  | Update title, description, and tags. Use `sigil patch` for all other fields.                                                                                                                                              |
 | `sigil delete\|remove <id>`        | Remove a catalog artifact from the source. Prompts for confirmation unless `--yes`.                                                                                                                                       |
 | `sigil completion [shell]`         | Print a shell tab-completion script (bash, zsh, or fish).                                                                                                                                                                 |
 | `sigil release [level]`            | Bump version (patch\|minor\|major\|x.y.z), rebuild, update CHANGELOG, commit + tag. Does NOT push.                                                                                                                        |
 
-**Catalog-author side of propagation.** Two analyzers share one report/`--check`/`--apply` surface:
-template drift (artifact content vs its declared `template:`, `mechanical` vs `review`) and
-**conformance** (every catalog artifact vs the current provider standard —
-`src/commands/sync/conformance/`, [Conformance engine](architecture.md#conformance-engine)), plus
-stale `docs:` citations. Omit `template-id` to scan every template. `--check` exits non-zero on
-drift, a conformance error, or a stale doc; `--apply` writes mechanical fixes for both analyzers
-(refuses on a dirty tree); `--apply --editorial` also runs the model-backed conformance pass;
-`--rule`/`--kind`/`--language`/`--provider` scope conformance for mass-change review;
-`--changed-since <ref>` scopes template drift to a diff; `--stale <months>` tunes doc-staleness
-(default 6); `--json` for machine-readable output.
+**`sigil sync` in brief.** Catalog-author tooling: it reports template drift, conformance against
+the current provider standard, and stale `docs:` citations; `--check` is the CI gate and `--apply`
+writes the mechanical fixes. Flags: [cli-flags.md](cli-flags.md#sigil-sync). How-to:
+[authoring.md](../guides/authoring.md#keeping-artifacts-in-sync-with-their-template). Internals
+(drift analysis, conformance engine, staleness tracking):
+[architecture.md](architecture.md#conformance-engine). CI gate:
+[operations.md](../guides/operations.md#ci).
 
 **Selectors for `add` (variadic, combinable):**
 
@@ -377,8 +461,8 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
 `src/trust/scan/` — a pure, side-effect-free scanner (`scanner.ts`, `rules.ts`, `types.ts`,
 `allowlist.ts`) that runs over artifact content before it's authored or installed.
 
-- **20 rules** across three namespaces in `src/trust/scan/rules.ts` (the file's header comment
-  still says 11 / two namespaces; the `RULES` array is the source of truth):
+- **20 rules** across three namespaces in `src/trust/scan/rules.ts` (the `RULES` array is the
+  source of truth):
   - `secret/*` — AWS keys, PEM blocks, generic API keys, bearer tokens, password fields, GitHub /
     Anthropic / OpenAI / Slack / Stripe / Google / npm tokens, and JWTs.
   - `config/*` — dangerous shell patterns and possible exfiltration in hook or MCP commands.

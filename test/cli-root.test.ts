@@ -14,7 +14,7 @@ function run(...args: string[]) {
   const result = spawnSync(process.execPath, [CLI, ...args], {
     encoding: 'utf8',
     input: '',
-    env: { ...process.env, COLUMNS: '120', FORCE_COLOR: '0' },
+    env: { ...process.env, COLUMNS: '80', FORCE_COLOR: '0' },
     windowsHide: true,
   });
   return {
@@ -52,6 +52,59 @@ describe('sigil root command (no terminal)', () => {
     assert.equal(result.status, 1);
     assert.match(result.stderr, /unknown command 'instal'/);
     assert.match(result.stderr, /Did you mean/);
+  });
+
+  it('should group commands under task headings', () => {
+    const { stdout } = run('--help');
+    for (const heading of [
+      'Start here:',
+      'Browse the catalog:',
+      'Author the catalog:',
+      'Build & release:',
+    ]) {
+      assert.ok(stdout.includes(`\n${heading}\n`), `root help is missing "${heading}"`);
+    }
+  });
+
+  it('should leave no command outside a group except `help`', () => {
+    const { stdout } = run('--help');
+    const ungrouped = /\nCommands:\n((?: {2}.*\n)+)/.exec(stdout)?.[1] ?? '';
+    const names = ungrouped
+      .split('\n')
+      .filter(Boolean)
+      .map(line => line.trim().split(/\s+/)[0]);
+    assert.deepEqual(names, ['help'], 'add the new command to HELP_LAYOUT in src/cli.ts');
+  });
+
+  it('should list "Start here" before the other groups', () => {
+    const { stdout } = run('--help');
+    assert.ok(stdout.indexOf('Start here:') < stdout.indexOf('Browse the catalog:'));
+    assert.ok(stdout.indexOf('Browse the catalog:') < stdout.indexOf('Author the catalog:'));
+    assert.ok(stdout.indexOf('Author the catalog:') < stdout.indexOf('Build & release:'));
+  });
+
+  it('should show each command on one line in the root help', () => {
+    // 80 columns is the narrowest terminal we care about.
+    const { stdout } = run('--help');
+    const lines = stdout.split('\n');
+    const wrapped = lines.filter(line => /^ {20,}\S/.test(line));
+    assert.deepEqual(wrapped, [], 'a command description wraps; give it a short .summary()');
+    const tooWide = lines.filter(line => line.length > 80);
+    assert.deepEqual(tooWide, []);
+  });
+
+  it('should end the root help with how to start, get help and run from a clone', () => {
+    const { stdout } = run('--help');
+    assert.match(stdout, /Run `sigil` with no command/);
+    assert.match(stdout, /sigil <command> --help/);
+    assert.match(stdout, /npm run sigil -- /);
+  });
+
+  it('should keep the full description on `<command> --help`', () => {
+    assert.match(
+      run('sync', '--help').stdout,
+      /PLUS\s+conformance\s+against\s+the\s+current\s+provider/,
+    );
   });
 
   it('should still reject an unknown option', () => {

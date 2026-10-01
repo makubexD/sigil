@@ -3,7 +3,7 @@
    (see docs/decisions — "slim cli.ts to pure Commander wiring"); splitting it into
    per-command files would reintroduce the indirection that refactor deliberately removed. */
 /** sigil CLI — Commander wiring only. Business logic lives in src/commands/<name>.ts. @module */
-import { Command } from 'commander';
+import { Command, Help } from 'commander';
 import { getAllTargets } from './targets';
 import { resolveDefault, describePathDefaults, pkg } from './cli-helpers';
 import { ALL_KINDS } from './kinds';
@@ -390,8 +390,76 @@ program
   .option('--yes', 'Non-interactive; skip the confirmation prompt (required when not a TTY)')
   .action(runRelease);
 
+// ─── root help layout ─────────────────────────────────────────────────────────
+// Root help is a menu, so each command gets a task group and a summary short enough to stay on one
+// line in an 80-column terminal. `<command> --help` still prints the full description.
+const START = 'Start here:';
+const BROWSE = 'Browse the catalog:';
+const AUTHOR = 'Author the catalog:';
+const BUILD = 'Build & release:';
+const HELP_LAYOUT: Readonly<Record<string, { group: string; summary: string }>> = {
+  add: { group: START, summary: 'Install artifacts (guided with no id)' },
+  init: { group: START, summary: 'Prepare a project for a target' },
+  status: { group: START, summary: 'Show health of installed artifacts' },
+  update: { group: START, summary: 'Refresh installed artifacts' },
+  uninstall: { group: START, summary: 'Remove installed artifacts' },
+  prune: { group: START, summary: 'Clean up orphaned manifest entries' },
+  list: { group: BROWSE, summary: 'List catalog artifacts' },
+  search: { group: BROWSE, summary: 'Search the catalog by keyword' },
+  get: { group: BROWSE, summary: 'Show one artifact in detail' },
+  new: { group: AUTHOR, summary: 'Create a new catalog artifact' },
+  edit: { group: AUTHOR, summary: 'Edit title, description, tags' },
+  patch: { group: AUTHOR, summary: 'Change fields of a catalog artifact' },
+  move: { group: AUTHOR, summary: 'Rename or relocate an artifact' },
+  retarget: { group: AUTHOR, summary: "Change an artifact's platforms" },
+  delete: { group: AUTHOR, summary: 'Remove an artifact from the catalog' },
+  check: { group: AUTHOR, summary: 'Validate catalog source files' },
+  import: { group: AUTHOR, summary: 'Import a Claude template directory' },
+  sync: { group: AUTHOR, summary: 'Check catalog vs templates/standards' },
+  validate: { group: AUTHOR, summary: 'Check the catalog (schema + references)' },
+  build: { group: BUILD, summary: 'Compile the catalog to dist/<target>/' },
+  index: { group: BUILD, summary: 'Write dist/registry.json' },
+  release: { group: BUILD, summary: 'Bump version, tag (does not push)' },
+  completion: { group: BUILD, summary: 'Print a shell completion script' },
+};
+for (const command of program.commands) {
+  const layout = HELP_LAYOUT[command.name()];
+  if (layout) command.helpGroup(layout.group).summary(layout.summary);
+}
+// Commander lists groups in registration order; list them in HELP_LAYOUT order instead.
+const helpOrder = Object.keys(HELP_LAYOUT);
+const orderOf = (name: string): number => {
+  const index = helpOrder.indexOf(name);
+  return index === -1 ? helpOrder.length : index;
+};
+const groupOrder = [START, BROWSE, AUTHOR, BUILD];
+const groupRank = (heading: string): number => {
+  const index = groupOrder.indexOf(heading);
+  return index === -1 ? groupOrder.length : index;
+};
+program.configureHelp({
+  visibleCommands: cmd =>
+    new Help().visibleCommands(cmd).sort((a, b) => orderOf(a.name()) - orderOf(b.name())),
+  groupItems: (unsortedItems, visibleItems, getGroup) =>
+    new Map(
+      [...new Help().groupItems(unsortedItems, visibleItems, getGroup)].sort(
+        ([a], [b]) => groupRank(a) - groupRank(b),
+      ),
+    ),
+});
+program.addHelpText(
+  'after',
+  `
+Getting started:
+  Run \`sigil\` with no command for a guided menu that checks this folder.
+  Use \`sigil <command> --help\` for a command's options and defaults.
+  From a clone, use \`npm run sigil -- <command>\`. The \`--\` is required.
+  Without it, npm keeps flags such as --help for itself.`,
+);
+
 describePathDefaults(program);
-if (process.argv.length <= 2) {
+const NODE_AND_SCRIPT_ARGS = 2; // argv[0] = node, argv[1] = this script
+if (process.argv.length <= NODE_AND_SCRIPT_ARGS) {
   // Bare `sigil`. Handled before parsing: a root .action() would swallow mistyped commands.
   // Help goes to stdout with exit 0 (Commander's default is stderr + exit 1, which reads as a failure).
   program.outputHelp();

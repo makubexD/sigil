@@ -45,6 +45,7 @@ Match neighbours: `node:test` + `assert/strict`, import from `../dist-cli`, `wit
 ## Modules and success criteria
 
 ### cli-surface
+
 - `program.exitOverride()`; help/version set exit code and return so stdout drains (the `npm run sigil help` prints-nothing bug on Windows). `handleFatal` keeps CommanderError exit codes without re-printing.
 - `.summary()` on long-description commands; commander upgraded to ^14 for `.helpGroup()` (fallback: no groups).
 - Groups: Start here / Browse the catalog / Author the catalog / Build & release.
@@ -53,11 +54,13 @@ Match neighbours: `node:test` + `assert/strict`, import from `../dist-cli`, `wit
 - Tests: bare/help/--help → stdout, exit 0, empty stderr; `instal` → exit 1 + "Did you mean"; each root command line ≤ 120 cols; footer has `npm run sigil --`. cli-flags/help-accuracy tests parse commands under any group heading.
 
 ### project-context
+
 - `detectProjectContext(dir)`: detectedTargets[] (no silent fallback), manifest counts per target, health counts (drifted/missing/orphaned/template-outdated), isCatalogCheckout, looksLikeProject, isHomeDir.
 - `recommendNext(ctx)`: ordered actions with reasons (no target → set up; nothing installed → install; missing → restore; drifted → review; orphaned → clean up; catalog checkout → warn + change folder).
 - Precondition: verify which command restores a missing whole-file artifact; fix the `status` footer ("Run sigil update") if wrong; recommendations name the command that works.
 
 ### guided-verbs
+
 - Shared picker of installed entries (state hints, "required by X").
 - `uninstall [ids...]`: no ids + TTY → picker + existing confirm; no ids + non-TTY → SigilError with hint.
 - `update`: TTY, no `--yes`/`--dry-run` → preview, then confirm (drifted asks before forcing). Add `--yes`.
@@ -66,14 +69,18 @@ Match neighbours: `node:test` + `assert/strict`, import from `../dist-cli`, `wit
 - Each flow prints an "Equivalent command:" line. Tests with `mockClack` incl. one cancellation (no writes).
 
 ### home-menu
+
 - `runHome(dir, actions)`; header (folder · target · installed · health); recommended entry first; Use / Browse (list, search→get→install) / Author (checkout only) / Change folder / Show commands / Quit; unavailable entries hidden or disabled with reason; loop re-detects context; SigilError → `log.error` + hint, back to menu; Ctrl+C at menu → exit 0.
 
 ### docs
+
 - README quick start + "Getting help" box; consuming.md wizard/menu rewrite + "Getting help and defaults"; index support matrix; troubleshooting entries; cli-flags regenerated; `src/wizard/CLAUDE.md`; CHANGELOG `[Unreleased]`; retire the two absorbed briefs.
 
 ## Success criteria (whole)
+
 `npm run ci:local` green; user confirms `npm run sigil help` prints in PowerShell; scratch-project walkthrough matches the docs; CI green on both OS jobs.
 
 ## Open questions
+
 - Does `exitOverride` fully fix the Windows output loss? (Verify with the user's console.)
 - Commander 14 behaviour changes (excess args) — gated by the suite.

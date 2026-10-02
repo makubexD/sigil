@@ -1,4 +1,5 @@
-import { select, cancel } from '@clack/prompts';
+import { select } from '@clack/prompts';
+import { cancel } from '../../frame';
 import { computeInstallStates } from '../../../install-state';
 import { detectedTargetsIn } from '../../../project-context';
 import type { WizardStep, StepOutcome } from '../../engine';
@@ -35,16 +36,43 @@ async function refreshInstallStates(s: AddWizardState): Promise<void> {
   s.installStatesForTarget = targetName;
 }
 
-/** "Which AI tool?" plus what was found in the folder, so the default is never a mystery. */
+/** "Which AI tool?" plus what was found in the folder, so the default is never a mystery. One line. */
 function targetQuestion(s: AddWizardState): string {
   const found = detectedTargetsIn(s.ctx.projectDir);
   const label = (name: string): string =>
     s.ctx.scaffoldableTargets.find(t => t.name === name)?.displayName ?? name;
   const note =
     found.length > 0
-      ? `found: ${found.map(label).join(', ')}`
+      ? `set up here: ${found.map(label).join(', ')}`
       : `nothing set up in this folder yet, so ${label(s.ctx.detectedTarget)} is preselected`;
-  return `Which AI tool is this project for?  (${note}; for both tools, run the installer once for each)`;
+  return `Which AI tool is this install for?  (${note})`;
+}
+
+/** The tools the question offers: the ones already set up in the folder first. */
+function targetOptions(s: AddWizardState) {
+  const found = detectedTargetsIn(s.ctx.projectDir);
+  const rank = (name: string): number => (found.includes(name) ? 0 : 1);
+  return [...s.ctx.scaffoldableTargets]
+    .sort((a, b) => rank(a.name) - rank(b.name))
+    .map(t => ({
+      value: t.name,
+      label: t.displayName ?? t.name,
+      hint: t.installHint ?? '',
+    }));
+}
+
+/**
+ * Makes `name` the target: drops answers that depended on the previous one, then loads install
+ * states. False, after saying why, when the target has nothing to install.
+ */
+export async function adoptTarget(s: AddWizardState, name: string): Promise<boolean> {
+  applyChosenTarget(s, name);
+  if (visibleArtifacts(s).length === 0) {
+    cancel(`No installable artifacts for target '${s.target}'.`);
+    return false;
+  }
+  await refreshInstallStates(s);
+  return true;
 }
 
 /** Applies the chosen target to state, resetting downstream answers if it changed. */
@@ -62,27 +90,16 @@ function applyChosenTarget(s: AddWizardState, answer: string): void {
  */
 export const targetStep: WizardStep<AddWizardState> = {
   id: 'target',
+  /** Skipped when the folder or `--target` already says which tool (`ctx.fixedTarget`). */
+  shouldShow: s => s.ctx.fixedTarget === undefined,
   async run(s): Promise<StepOutcome> {
     const answer = await select({
       message: targetQuestion(s),
-      options: s.ctx.scaffoldableTargets.map(t => ({
-        value: t.name,
-        label: t.displayName ?? t.name,
-        hint: t.installHint ?? '',
-      })),
+      options: targetOptions(s),
       initialValue: s.target ?? s.ctx.detectedTarget,
     });
     const outcome = resolveOutcome(answer);
     if (outcome) return outcome;
-
-    applyChosenTarget(s, answer as string);
-
-    if (visibleArtifacts(s).length === 0) {
-      cancel(`No installable artifacts for target '${s.target}'.`);
-      return 'cancel';
-    }
-
-    await refreshInstallStates(s);
-    return 'next';
+    return (await adoptTarget(s, answer as string)) ? 'next' : 'cancel';
   },
 };

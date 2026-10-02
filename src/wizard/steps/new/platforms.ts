@@ -1,4 +1,5 @@
-import { multiselect, note, isCancel, cancel } from '@clack/prompts';
+import { multiselect, note, isCancel } from '@clack/prompts';
+import { cancel } from '../../frame';
 import { kindSupportingTargets, setPlatforms } from '../../../authoring/platforms';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { BACK, type NewWizardState } from './state';

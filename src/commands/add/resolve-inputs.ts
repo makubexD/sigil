@@ -5,10 +5,12 @@
  *
  * @module
  */
-import { isInteractiveTTY, runWizard, type WizardResult } from '../../wizard';
+import { isInteractiveTTY, runWizardAt, type FixedTarget, type WizardResult } from '../../wizard';
 import { SigilError } from '../../errors';
 import { detectProjectTarget } from '../../cli-helpers';
-import type { ConfigScope, ResolvedCatalog } from '../../types';
+import { detectedTargetsIn } from '../../project-context';
+import { getTarget } from '../../targets';
+import type { ConfigScope, ResolvedCatalog, Target } from '../../types';
 import type { AddOpts } from './index';
 
 export interface ResolvedAddInputs {
@@ -51,22 +53,48 @@ function fromWizardResult(
   };
 }
 
+const nameOf = (target: Target): string => target.displayName ?? target.name;
+
+/**
+ * The tool the wizard should not ask about: the one named with `--target`, else the only one set up
+ * in this folder. An unknown or non-installable `--target` fails here, as it does without the wizard.
+ */
+function fixedTargetFor(opts: AddOpts): FixedTarget | undefined {
+  if (opts.target !== undefined) {
+    const target = getTarget(opts.target);
+    if (!target.scaffold) {
+      throw new SigilError(`Target '${opts.target}' does not support the add command.`);
+    }
+    return { name: target.name, notice: `Installing for ${nameOf(target)} (--target).` };
+  }
+  const found = detectedTargetsIn(opts.projectDir)
+    .map(getTarget)
+    .filter(t => t.scaffold);
+  const [only] = found;
+  if (found.length !== 1 || !only) return undefined;
+  return {
+    name: only.name,
+    notice:
+      `Installing for ${nameOf(only)}, the tool set up in this folder. ` +
+      'For another tool, set it up first (sigil init) or run sigil add --target <name>.',
+  };
+}
+
 /** Runs the interactive wizard and maps its result to `ResolvedAddInputs`, or null on cancel. */
 async function resolveViaWizard(
   opts: AddOpts,
   resolved: ResolvedCatalog,
-  packs: Parameters<typeof runWizard>[1],
+  packs: Parameters<typeof runWizardAt>[1],
   baseScope: ConfigScope,
 ): Promise<ResolvedAddInputs | null> {
   if (!isInteractiveTTY()) throwNotInteractiveError();
 
   const detectedTarget = detectProjectTarget(opts.projectDir, { verbose: false });
-  const wizardResult: WizardResult | null = await runWizard(
-    resolved,
-    packs,
+  const wizardResult: WizardResult | null = await runWizardAt(resolved, packs, {
     detectedTarget,
-    opts.projectDir,
-  );
+    projectDir: opts.projectDir,
+    fixed: fixedTargetFor(opts),
+  });
   return wizardResult ? fromWizardResult(wizardResult, opts, baseScope) : null;
 }
 
@@ -81,7 +109,7 @@ export async function resolveInputs(
   selectors: string[],
   opts: AddOpts,
   resolved: ResolvedCatalog,
-  packs: Parameters<typeof runWizard>[1],
+  packs: Parameters<typeof runWizardAt>[1],
 ): Promise<ResolvedAddInputs | null> {
   const needsWizard = (selectors.length === 0 || opts.interactive) && !opts.yes;
   const baseScope = resolveBaseScope(opts);

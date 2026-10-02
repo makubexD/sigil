@@ -4,7 +4,8 @@
  *
  * @module
  */
-import { confirm, isCancel, cancel, log, note, select } from '@clack/prompts';
+import { confirm, isCancel, log, note, select } from '@clack/prompts';
+import { cancel } from '../wizard/frame';
 import { isInteractiveTTY } from '../wizard';
 import { SigilError } from '../errors';
 

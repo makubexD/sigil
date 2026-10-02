@@ -5,8 +5,10 @@
  *
  * @module
  */
+import os from 'node:os';
 import path from 'node:path';
-import { cancel, confirm, isCancel, log, select, text } from '@clack/prompts';
+import { confirm, isCancel, log, select, text } from '@clack/prompts';
+import { cancel } from './frame';
 import { detectProjectTarget, resolveDefault } from '../cli-helpers';
 import { getTarget } from '../targets';
 import { supportsKind } from '../targets/capabilities';
@@ -23,7 +25,7 @@ import { runList } from '../commands/list';
 import { runNew } from '../commands/new';
 import { runValidate } from '../commands/validate';
 import { detectProjectContext } from '../project-context';
-import { confirmInstallFolder } from './folder-guard';
+import { guardFolder } from './folder-guard';
 import type { HomeHandler } from './home';
 
 const CATALOG = (): string => resolveDefault('catalog');
@@ -111,7 +113,7 @@ function helpersNote(id: string, resolved: ResolvedCatalog): string {
 }
 
 /** Installs one catalog artifact (and its helpers) into `dir` through the same path as `sigil add`. */
-const installOne = (id: string, dir: string): Promise<void> =>
+const installOne = (id: string, dir: string): Promise<void | 'cancelled'> =>
   runAdd([id], {
     projectDir: dir,
     catalogDir: CATALOG(),
@@ -131,10 +133,13 @@ async function detailsThenInstall(
   resolved: ResolvedCatalog,
 ): Promise<void> {
   await runGet(id, { catalogDir: CATALOG(), json: false });
-  if (!(await confirmInstallFolder(detectProjectContext(dir)))) return;
-  const message = `Install ${id} into ${dir}?${helpersNote(id, resolved)}`;
+  const read = (folder: string) => detectProjectContext(folder);
+  const guarded = await guardFolder(read(dir), 'install', { read, homeDir: os.homedir() });
+  if (!guarded) return;
+  const into = guarded.ctx.projectDir;
+  const message = `Install ${id} into ${into}?${helpersNote(id, resolved)}`;
   const install = await confirm({ message, initialValue: false });
-  if (!isCancel(install) && install) await installOne(id, dir);
+  if (!isCancel(install) && install) await installOne(id, into);
 }
 
 /** Author actions work on the checkout's own `catalog/` and `packs.yaml`, not the bundled ones. */

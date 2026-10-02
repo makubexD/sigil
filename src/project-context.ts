@@ -133,6 +133,13 @@ export function detectedTargetsIn(projectDir: string): string[] {
     .map(t => t.name);
 }
 
+/** Names of the tools `sigil init` can still set up: they have folders to create and none are found yet. */
+export function toolsToSetUp(detected: readonly string[]): string[] {
+  return getAllTargets()
+    .filter(t => (t.initDirs?.length ?? 0) > 0 && !detected.includes(t.name))
+    .map(t => t.name);
+}
+
 export function detectProjectContext(
   projectDir: string,
   options: DetectOptions = {},

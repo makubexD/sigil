@@ -6,7 +6,7 @@
  * Caller must check `isInteractiveTTY()` before invoking.
  * Returns `null` when the user cancels at any step.
  */
-import { intro } from '@clack/prompts';
+import { intro } from './frame';
 import type { ResolvedCatalog, Target } from '../types';
 import type { NewWizardResult } from './types';
 import { runSteps } from './engine';

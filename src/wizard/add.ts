@@ -10,12 +10,14 @@
  *
  * Guard: caller must check isInteractiveTTY() before invoking runWizard().
  */
-import { intro, note } from '@clack/prompts';
+import { log } from '@clack/prompts';
+import { intro, noteOnce } from './frame';
 import type { ResolvedCatalog, Pack } from '../types';
 import { getAllTargets } from '../targets';
 import type { WizardResult } from './types';
 import { runSteps } from './engine';
 import { ADD_STEPS } from './steps/add';
+import { adoptTarget } from './steps/add/target';
 import type { AddWizardState } from './steps/add';
 
 const HOW_IT_WORKS = [
@@ -24,19 +26,34 @@ const HOW_IT_WORKS = [
   'Every step has a "← Back" row, and Ctrl+C cancels without changing anything.',
 ].join('\n');
 
+/** A tool the folder or `--target` already chose, and the sentence that tells the user so. */
+export interface FixedTarget {
+  name: string;
+  /** Shown once, so a skipped question is never a mystery. */
+  notice: string;
+}
+
+/** Where the wizard runs and what is already known about the tool. */
+export interface WizardSite {
+  projectDir: string;
+  /** The tool preselected when none is fixed. */
+  detectedTarget: string;
+  fixed?: FixedTarget | undefined;
+}
+
 function buildInitialState(
   catalog: ResolvedCatalog,
   packs: Pack[],
-  detectedTarget: string,
-  projectDir: string,
+  site: WizardSite,
 ): AddWizardState {
   return {
     ctx: {
       catalog,
       packs,
-      detectedTarget,
-      projectDir,
+      detectedTarget: site.detectedTarget,
+      projectDir: site.projectDir,
       scaffoldableTargets: getAllTargets().filter(t => Boolean(t.scaffold)),
+      fixedTarget: site.fixed?.name,
     },
     // Matches the pre-registry wizard's default: config-kind-only selections
     // (which skip the deps prompt entirely) behave as if "Yes" was answered.
@@ -57,16 +74,30 @@ function toWizardResult(done: AddWizardState): WizardResult {
   };
 }
 
-export async function runWizard(
+/** The installer wizard, with the tool question skipped when `site.fixed` names the tool. */
+export async function runWizardAt(
+  catalog: ResolvedCatalog,
+  packs: Pack[],
+  site: WizardSite,
+): Promise<WizardResult | null> {
+  intro('📦  sigil  —  interactive installer');
+  noteOnce('how-it-works', HOW_IT_WORKS, 'How this works');
+
+  const state = buildInitialState(catalog, packs, site);
+  if (site.fixed) {
+    log.info(site.fixed.notice);
+    if (!(await adoptTarget(state, site.fixed.name))) return null;
+  }
+  const done = await runSteps(ADD_STEPS, state);
+  return done ? toWizardResult(done) : null;
+}
+
+/** The installer wizard that always asks which tool. */
+export function runWizard(
   catalog: ResolvedCatalog,
   packs: Pack[],
   detectedTarget: string,
   projectDir: string,
 ): Promise<WizardResult | null> {
-  intro('📦  sigil  —  interactive installer');
-  note(HOW_IT_WORKS, 'How this works');
-
-  const state = buildInitialState(catalog, packs, detectedTarget, projectDir);
-  const done = await runSteps(ADD_STEPS, state);
-  return done ? toWizardResult(done) : null;
+  return runWizardAt(catalog, packs, { detectedTarget, projectDir });
 }

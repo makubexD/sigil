@@ -33,6 +33,16 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   artifact the catalog dropped goes to Clean up and never to Restore, which cannot bring it back.
   A preview (`--dry-run`) reports `pending`/`pendingCount`, never `updated`, so the guided update can
   say "nothing to apply".
+  The loop also protects itself at runtime: `runHome` keeps a per-folder `dismissed` set. When the user picks the
+  recommended action and the next turn would still put that same action first, it is added to `dismissed` (with one
+  `log.info` line) and `buildMenu(ctx, { dismissed })` stops marking it. Going ahead past the risky-folder guard
+  dismisses `change-folder` the same way. The set is cleared when the folder changes. The entry itself stays in the
+  menu. `buildMenu` stays pure.
+- **Set up offers only the tools not set up yet.** The `init` entry's label names the tool it adds ("Also set up for
+  GitHub Copilot") once another is detected, and its handler passes `only: toolsToSetUp(...)`
+  (`project-context.ts`) to `runInit`, so a single remaining tool is set up without a question and a tool already
+  shown in the header is never offered again. `sigil init` run by hand still lists every tool, not-yet-set-up first.
+  `--target` ignores `only`.
 - **A damaged manifest is its own state, not "nothing installed".** `recommendNext` returns only
   `repair` then (`project-advice.ts`), and the menu hides Install until `runRepair`
   (`commands/repair-manifest.ts`) moves the file aside. Never delete the damaged file.
@@ -40,9 +50,41 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   first `MAX_PROBED` (200) folders by name for project markers; the rest are listed without a check, because
   each check is file reads and a huge or networked folder would hang. `samePath` compares
   `realpathSync.native` results, so 8.3 short names and links cannot defeat the home-folder check.
-- **Install into a risky folder asks first** (`folder-guard.ts`): the home folder, a drive root, or a
-  catalog checkout, from the Install entry and from search→install. The reasons come from
-  `riskyFolderReason`, the same text the recommendation shows.
+- **Install or set up in a risky folder asks once, and offers the way out** (`folder-guard.ts` `guardFolder`, the
+  `GUARDED` table in `home.ts`): the home folder, a drive root, or a catalog checkout, from the Install and Set up
+  entries and from search→install. The reason is a `log.warn` (from `riskyFolderReason`, the text the recommendation
+  shows) and the question is one line: pick another folder (default) / use this one anyway / back. Picking another
+  folder runs the same action there, and the new folder is checked in turn. The picker gets `leaving` so the folder
+  is labelled and not preselected: Enter alone must never lead back into it, and choosing it again is refused.
+- **Never put a newline in a prompt message.** clack draws its `│` gutter only on the first line, so a second line
+  starts at column 0. Use `log.*` for the explanation and keep the question to one line. The journey tests assert it
+  on every prompt.
+- **A folder that already answers "which tool?" is not asked again.** `resolveViaWizard` (`commands/add/resolve-inputs.ts`)
+  fixes the tool to `--target`, or to the only detected tool, and `runWizardAt` skips `targetStep` (its
+  `shouldShow`) after `adoptTarget`, logging one line. `runSteps` returns `null` on "back" with no history, so
+  "← Back" on the first visible step leaves the wizard instead of repeating it.
+- **Provider lists in prose come from the registry** (`src/tool-names.ts`: `toolName`, `toolList`,
+  `setUpToolNames`). Never write "Claude Code or Copilot" or "both tools"; `toolList` caps a list ("A, B, C or 2
+  more"). `test/wizard/home-many-tools.test.ts` registers extra tools to prove it.
+- **The whole menu session is one frame.** `runHome` opens the only `intro` and closes the only `outro`. Wizards
+  and guided verbs import `intro`, `outro` and `cancel` from `wizard/frame.ts`, never from `@clack/prompts`
+  (`test/wizard/frame.test.ts` scans `src/`): inside the menu they print a log line instead of drawing a second
+  `┌`/`└`, and outside it they call clack as before. A note that would repeat ("How this works") goes through
+  `noteOnce`. `runHandler` runs each handler under `withGutter`, so a verb's plain `console.log` lines get the `│`
+  gutter: a new verb needs no change for that. A custom prompt must also collapse when answered (`picker/render.ts`
+  has a `submit` and a `cancel` frame) and start with a `│` line.
+- **After an install or a set up, a short "What next?" menu** (`buildNextMenu`, `nextSummary` in `home-next.ts`;
+  `Session.after` in `home.ts`) replaces the box and the full list: Done first after an install, Install first after
+  a set up, then check, add another tool, "Show all options". It shows only when the handler succeeded and nothing
+  more urgent than Install is advised (repair, restore, update…); then the full menu shows. A cancelled or failed
+  handler gets the full menu. In the full menu `init` sits after `prune`, so with no advice Enter lands on Install,
+  never on adding a second tool.
+- **The risky-folder question is asked once per folder.** `Session.riskAccepted` is set when the user goes ahead and
+  cleared when the folder changes; `settleFolder` skips the guard while it is set.
+- **A skip says why.** `SkippedArtifact.cause` is `kind`, `platform` or `inlined`. An inlined base rule is "already
+  included", never "not supported by <tool>" (`plan-box.ts`, `commands/add/render.ts`).
+- **A handler that was cancelled returns `'cancelled'`** (`HomeHandler`, `runAdd`, `runInit`, `runRepair`), so
+  backing out of a recommended action is not treated as "ran and changed nothing".
 - `runHome` never exits on an action's failure: a `SigilError` is shown (message plus hint) and the menu
   returns. Ctrl+C at the menu leaves quietly. Handlers are injected so the loop is tested without installing.
 - Author entries (`new`, `edit`, `validate`) show only inside a catalog checkout and use that checkout's
@@ -59,6 +101,21 @@ terminal a missing argument is a `SigilError` whose hint shows the command to ru
 edited files asks keep-or-delete in a terminal (`uninstall-confirm.ts`); a script keeps them unless `--force`. `update-guided.ts` receives `applyUpdate` as a parameter so it and `update.ts` do not
 import each other. The shared picker is `installed-picker.ts` (`installedOptions` is pure; `pickInstalled`
 returns `null` on cancel).
+
+**Testing the home menu.** Four layers, each catching a different class of bug; add a case to the right one
+instead of a one-off test.
+
+1. `home-matrix.test.ts` / `home-many-tools.test.ts`: `buildMenu` over folder kind × tools × installs × damaged
+   record (`test/helpers/menu-matrix.ts` holds the rules). A new state is a new value on an axis.
+2. `home-journeys.test.ts` and `home-after-setup.test.ts` (the real install wizard against a one-rule pack): scripted end-to-end flows with the real handlers for a beginner (Enter every time), an
+   experienced user (`--target`, shortcuts) and an indecisive one (Back, Ctrl+C, change of mind). They assert the exact
+   list of questions (`flow(rec)`), the files and the header.
+3. `home-walk.test.ts`: a seeded random walk (also checks one frame, the gutter, the guard asked once, and the short menu after a set up); a failure prints the seed and steps, replay with
+   `SIGIL_WALK_SEED=<n>` (`SIGIL_WALK_SEEDS` sets the count, default 60).
+4. Targeted unit tests next to each module.
+
+`mockClack` takes a queue or a driver function, records prompts, logs and notes into a `Recorder`, and accepts
+`ENTER` for "press Enter".
 
 **Testing guided flows.** `fakeTTY()` (`test/helpers/tty.ts`) makes `isInteractiveTTY()` true; `mockClack`
 answers prompts from a queue, and a queued `symbol` simulates Ctrl+C (`isCancel` is true only for symbols).

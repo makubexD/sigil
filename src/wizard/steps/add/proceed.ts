@@ -1,4 +1,5 @@
-import { select, outro, cancel } from '@clack/prompts';
+import { select } from '@clack/prompts';
+import { outro, cancel } from '../../frame';
 import { computeClosure } from '../../../select';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { BACK, type AddWizardState } from './state';

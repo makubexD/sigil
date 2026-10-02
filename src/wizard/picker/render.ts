@@ -70,10 +70,25 @@ export interface RenderFrameOptions {
   readonly terminalRows: number;
   readonly terminalColumns: number;
   readonly footerHint: string;
+  /** clack prompt state; only `active` draws the list. */
+  readonly state?: string;
+}
+
+/** What stays on screen once the prompt is answered or cancelled: one line, like clack's own prompts. */
+function settledFrame(opts: RenderFrameOptions): string | undefined {
+  const bar = pc.gray('│');
+  if (opts.state === 'submit') {
+    const picked = pc.dim(`${opts.selected.size} picked`);
+    return [bar, `${pc.green('◇')}  ${opts.message}`, `${bar}  ${picked}`].join('\n');
+  }
+  if (opts.state === 'cancel') return [bar, `${pc.red('■')}  ${opts.message}`].join('\n');
+  return undefined;
 }
 
 /** Builds the full multi-line frame string rendered on every keystroke. */
 export function renderFrame(opts: RenderFrameOptions): string {
+  const settled = settledFrame(opts);
+  if (settled !== undefined) return settled;
   const { message, options, cursor, selected, terminalRows, terminalColumns, footerHint } = opts;
   const bar = pc.gray('│');
   const viewportRows = computeViewportRows(terminalRows, options.length);
@@ -88,5 +103,5 @@ export function renderFrame(opts: RenderFrameOptions): string {
   const detail = buildDetailPane(options[cursor] ?? options[window.start], terminalColumns);
   const footer = `${pc.gray('└')}  ${pc.dim(footerHint)}`;
 
-  return [header, ...listLines, `${bar}${separator}`, ...detail, footer].join('\n');
+  return [bar, header, ...listLines, `${bar}${separator}`, ...detail, footer].join('\n');
 }

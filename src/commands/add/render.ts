@@ -66,9 +66,17 @@ function buildOutcomeSummaryLine(plan: AddPlan, outcome: AddOutcome, written: nu
       ? `, ${plan.upToDateIds.length} already up to date (skipped)`
       : '') +
     (skippedConflict > 0 ? `, ${skippedConflict} skipped (conflicts)` : '') +
-    (plan.skipped.length > 0
-      ? `, ${plan.skipped.length} artifact(s) not supported by '${plan.targetName}'`
-      : '')
+    skippedSummary(plan)
+  );
+}
+
+/** ", N already included in another artifact" and ", N artifact(s) not supported by 'x'", when non-zero. */
+export function skippedSummary(plan: AddPlan): string {
+  const included = plan.skipped.filter(x => x.cause === 'inlined').length;
+  const unsupported = plan.skipped.length - included;
+  return (
+    (unsupported > 0 ? `, ${unsupported} artifact(s) not supported by '${plan.targetName}'` : '') +
+    (included > 0 ? `, ${included} already included in another artifact` : '')
   );
 }
 

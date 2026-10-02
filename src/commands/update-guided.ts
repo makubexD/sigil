@@ -5,7 +5,8 @@
  *
  * @module
  */
-import { cancel, isCancel, log, select } from '@clack/prompts';
+import { isCancel, log, select } from '@clack/prompts';
+import { cancel } from '../wizard/frame';
 import { detectProjectTarget } from '../cli-helpers';
 import { isInteractiveTTY } from '../wizard';
 import { pickInstalled } from '../wizard/installed-picker';

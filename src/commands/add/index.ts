@@ -30,9 +30,10 @@ export interface AddOpts {
   settingsLocal: boolean;
 }
 
-export async function runAdd(selectors: string[], opts: AddOpts): Promise<void> {
+/** Returns `'cancelled'` when the user backed out of the wizard before anything was planned. */
+export async function runAdd(selectors: string[], opts: AddOpts): Promise<void | 'cancelled'> {
   const plan = await buildAddPlan(selectors, opts);
-  if (!plan) return; // wizard cancelled
+  if (!plan) return 'cancelled';
 
   if (plan.wholeFileIds.length === 0 && plan.configIds.length === 0) {
     console.log('No artifacts to install (all were filtered out or unsupported).');

@@ -6,7 +6,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { confirm, isCancel, cancel } from '@clack/prompts';
+import { confirm, isCancel } from '@clack/prompts';
+import { cancel } from '../wizard/frame';
 import { saveManifest, removeEntries, sha256 } from '../manifest';
 import { requireManifest } from './shared/manifest';
 import { isInteractiveTTY } from '../wizard';

@@ -84,13 +84,27 @@ function headerLines(s: AddWizardState, ct: TargetOrUndefined, scopeLines: strin
   ];
 }
 
-/** One line naming what the target cannot take, e.g. "2 skipped: GitHub Copilot has no hook". */
-function skippedLine(view: PlanView, ct: TargetOrUndefined): string[] {
-  if (view.skipped.length === 0) return [];
-  const kinds = [...new Set(view.skipped.map(x => x.kind))];
+/** One line naming what the target cannot take, e.g. "2 items skipped: GitHub Copilot does not support hook". */
+function unsupportedLine(skipped: SkippedArtifact[], ct: TargetOrUndefined): string[] {
+  if (skipped.length === 0) return [];
+  const kinds = [...new Set(skipped.map(x => x.kind))];
   const named = kinds.map(k => kindNoun(ct, k as Parameters<typeof kindNoun>[1])).join(', ');
   const who = ct?.displayName ?? 'This tool';
-  return ['', `${plural(view.skipped.length, 'item')} skipped: ${who} does not support ${named}.`];
+  return ['', `${plural(skipped.length, 'item')} skipped: ${who} does not support ${named}.`];
+}
+
+/** Artifacts another pick already carries (a base rule inlined into a rule that extends it). */
+function includedLine(skipped: SkippedArtifact[]): string[] {
+  if (skipped.length === 0) return [];
+  const ids = skipped.map(x => x.id).join(', ');
+  return ['', `Already included in another pick, nothing to add: ${ids}.`];
+}
+
+/** The lines explaining what the plan leaves out and why; an inlined rule is not "unsupported". */
+export function skippedLine(view: PlanView, ct: TargetOrUndefined): string[] {
+  const included = view.skipped.filter(x => x.cause === 'inlined');
+  const unsupported = view.skipped.filter(x => x.cause !== 'inlined');
+  return [...unsupportedLine(unsupported, ct), ...includedLine(included)];
 }
 
 /** Ids the plan covers: the picks, plus their helpers when those are included. */

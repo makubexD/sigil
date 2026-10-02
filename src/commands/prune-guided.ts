@@ -3,7 +3,8 @@
  *
  * @module
  */
-import { cancel, confirm, isCancel, log } from '@clack/prompts';
+import { confirm, isCancel, log } from '@clack/prompts';
+import { cancel } from '../wizard/frame';
 import { isInteractiveTTY } from '../wizard';
 import type { requireManifest } from './shared/manifest';
 import type { ApplyPruneCtx } from './prune-apply';

@@ -56,7 +56,7 @@ function toFlatRows(options: unknown): readonly FlatRow[] {
  * `PromptOptions.render` contract — matches how @clack/prompts' own built-ins are written.
  */
 function renderPrompt(
-  this: { options: unknown; cursor: number; value: unknown },
+  this: { options: unknown; cursor: number; value: unknown; state: string },
   message: string,
   footerHint: string,
 ): string {
@@ -68,6 +68,7 @@ function renderPrompt(
     terminalRows: process.stdout.rows || FALLBACK_TERMINAL_ROWS,
     terminalColumns: process.stdout.columns || FALLBACK_TERMINAL_COLUMNS,
     footerHint,
+    state: this.state,
   });
 }
 

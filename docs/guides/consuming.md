@@ -98,10 +98,13 @@ each command stays inside it.
 
 The menu adapts to the window at any terminal size or zoom level, and follows a zoom while a question is open: long lines
 wrap and keep the `│` gutter, and questions are shortened with `…` (an answered multi-select says "20 selected", not a list).
-The "Repeat non-interactively" and "Equivalent command" lines are the exception: each is printed as one unbroken line with
-nothing before it, so you can copy it whole and paste it into PowerShell, Git Bash or cmd. After `npm run sigil` it starts
-with `npm run sigil --` instead of `sigil`, because the `sigil` command is usually not on your PATH there. If a terminal
-reports the wrong width, set `SIGIL_COLUMNS=<width>`; `SIGIL_DEBUG=terminal` prints the size sigil sees.
+The "Repeat non-interactively" and "Equivalent command" lines are indented to line up with the menu text, with spaces and no `│`
+bar, so you can copy them whole. A long command is broken between words, never inside an id, every line at the same level,
+and each line ends with the continuation of your shell (a backtick in PowerShell, `^` in cmd, a backslash in Git Bash); the label
+names the shell. If sigil guesses wrong, set `SIGIL_SHELL=powershell`, `cmd` or `bash`. After `npm run sigil` it starts with
+`node <path to cli.js>` instead of `sigil`, because the `sigil` command is usually not on your PATH there. You can paste
+it in any folder and it installs there. If a terminal reports the
+wrong width, set `SIGIL_COLUMNS=<width>`; `SIGIL_DEBUG=terminal` prints the size sigil sees.
 
 **Which tool?** When the folder is set up for exactly one tool, Install does not ask which tool: it says
 "Installing for Claude Code, the tool set up in this folder" and goes straight to "What would you like to

@@ -12,8 +12,6 @@
 
 /** Below this a window cannot show a useful line; text is laid out as if it were this wide. */
 export const MIN_WIDTH = 20;
-/** How far a wrapped continuation line is indented past its source line. */
-const DEFAULT_HANG = 2;
 
 const ELLIPSIS = '…';
 const ANSI_RESET = '\u001b[0m';
@@ -160,26 +158,20 @@ interface Layout {
   width: number;
   /** Leading spaces of the source line, kept on every row. */
   base: number;
-  /** Extra indent of continuation rows. */
-  hang: number;
 }
 
 /** A row's indent, never more than half the width, so there is always room for text. */
-const indentOf = (layout: Layout, row: number): number =>
-  Math.min(layout.base + (row > 0 ? layout.hang : 0), Math.floor(layout.width / HALF));
+const indentOf = (layout: Layout): number => Math.min(layout.base, Math.floor(layout.width / HALF));
 
 function flush(layout: Layout): void {
-  const indent = ' '.repeat(indentOf(layout, layout.rows.length));
+  const indent = ' '.repeat(indentOf(layout));
   layout.rows.push([...indent, ...layout.current]);
   layout.current = [];
 }
 
 /** Columns left on the row being filled, after a separating space when it already holds text. */
 const roomLeft = (layout: Layout): number =>
-  layout.width -
-  indentOf(layout, layout.rows.length) -
-  lengthOf(layout.current) -
-  (layout.current.length > 0 ? 1 : 0);
+  layout.width - indentOf(layout) - lengthOf(layout.current) - (layout.current.length > 0 ? 1 : 0);
 
 /** Adds a word to the layout, starting new rows and splitting it as needed. */
 function place(layout: Layout, first: string[]): void {
@@ -198,15 +190,15 @@ function place(layout: Layout, first: string[]): void {
   layout.current = layout.current.length > 0 ? [...layout.current, ' ', ...word] : word;
 }
 
-/** Wraps one source line (no `\n`) into rows no wider than `width`; continuation rows are indented. */
-function wrapLine(line: string, width: number, hang: number): string[] {
+/** Wraps one source line (no `\n`) into rows no wider than `width`, each at the source line's indent. */
+function wrapLine(line: string, width: number): string[] {
   if (visibleLength(line) <= width) return [line];
   const chunks = chunksOf(line);
   const base = Math.max(
     chunks.findIndex(chunk => chunk !== ' '),
     0,
   );
-  const layout: Layout = { rows: [], current: [], width, base, hang };
+  const layout: Layout = { rows: [], current: [], width, base };
   for (const word of wordsOf(chunks)) place(layout, word);
   if (layout.current.length > 0) flush(layout);
   return layout.rows.length > 0 ? layout.rows.map(row => row.join('')) : [''];
@@ -214,13 +206,14 @@ function wrapLine(line: string, width: number, hang: number): string[] {
 
 /**
  * Wraps `text` so no line is wider than `width` (never below `MIN_WIDTH`). Each source line wraps at
- * spaces and keeps its own leading spaces; continuation lines are indented `hang` further. A word
- * wider than the line is split, after a path separator when there is one. Blank lines are kept.
+ * spaces and keeps its own leading spaces on every row, so a wrapped line stays at the level of its
+ * first row. A word wider than the line is split, after a path separator when there is one. Blank
+ * lines are kept.
  */
-export function wrapText(text: string, width: number, hang = DEFAULT_HANG): string {
+export function wrapText(text: string, width: number): string {
   const limit = Math.max(width, MIN_WIDTH);
   return text
     .split('\n')
-    .flatMap(line => wrapLine(line, limit, hang))
+    .flatMap(line => wrapLine(line, limit))
     .join('\n');
 }

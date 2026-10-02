@@ -100,9 +100,9 @@ export async function withGutter<T>(fn: () => Promise<T>): Promise<T> {
 }
 
 /**
- * Prints `text` flush-left on a line of its own, never wrapped and without the gutter: for a command
- * the user will copy. A selection then holds the command and nothing else, and the terminal's own
- * soft wrap keeps a long one aligned.
+ * Prints `text` as given, never wrapped and without the `│` bar: for a command the user will copy.
+ * The caller indents it with spaces to the text column, so a selection holds the command and
+ * nothing else (the bar would be copied, and `│` is an error in every shell).
  */
 export function copyableLine(text: string): void {
   process.stdout.write(`${text}\n`);

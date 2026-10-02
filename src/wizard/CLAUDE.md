@@ -71,7 +71,7 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   `@clack/core`). The four prompts are our own, built on `@clack/core` (`prompt-run.ts`) with pure renderers
   (`prompt-views.ts`, `prompt-fit.ts`): the window is read when each frame is drawn (`terminal.ts`), every line is cut to it
   with `…`, an answered prompt collapses to one line (a multi-select says "N selected", never a list of ids), and `text`
-  scrolls sideways around the cursor. `log.*` and `note` wrap (`say.ts`). **Cut, never wrap, a prompt line**: clack
+  scrolls sideways around the cursor. `log.*` and `note` wrap (`say.ts`); a wrapped line keeps the level of its first row (no hanging indent). **Cut, never wrap, a prompt line**: clack
   redraws by erasing a logical line count, so a line the terminal splits in two leaves leftovers behind (the overlapping
   text on a small or zoomed-in window). A `label (recommended)` keeps its marker. Never wrap, cut or measure by hand, and
   never read `process.stdout.columns` directly (a scan fails): `terminalWidth()` / `terminalHeight()` re-read the real
@@ -84,13 +84,19 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   mock (`clack-mock.ts`), which replaces our four prompts and records what a person would see. **`all-paths.test.ts` runs
   every interactive path in five window sizes** and a scan fails when a source file that draws a prompt is in neither a
   scenario nor the exemption list: **add a scenario (or a reasoned exemption) when you add a prompt to a new file.**
-- **The command to repeat is one flush-left line** (`printRepeatCommand` → `copyableLine`; used by `Repeat non-interactively`
-  and every `Equivalent command:`, a scan fails on a log line): never wrapped, no gutter, no line continuation. A wrapped
-  command pastes differently in PowerShell (backtick), bash (`\`) and cmd (`^`), and the shell cannot be detected (no
-  variable separates PowerShell from cmd), so the one form that works everywhere is a single line of inert characters
-  (`copyable-command.test.ts` checks every catalog id against `[A-Za-z0-9:/_.,@= -]`). What _can_ be detected is how sigil was
-  started: after `npm run sigil` the binary is not on PATH, so `launcherPrefix` (`src/invocation.ts`, from `npm_command`,
-  `npm_lifecycle_event`, `npm_lifecycle_script`) prints `npm run sigil -- …` instead of `sigil …`.
+- **The command to repeat is in the text column and pasteable** (`printRepeatCommand` → `wrapCommand` → `copyableLine`;
+  used by `Repeat non-interactively` and every `Equivalent command:`; a scan fails on a log line). Indented with 3 spaces
+  and no `│` bar (a selection would copy the bar, and `│` is an error in every shell), every line at one level. One line
+  when it fits; otherwise wrapped **between words only** (never inside an id), each line but the last ending in the
+  continuation of the shell the user is probably in (`detectShell`, `src/invocation.ts`): PowerShell backtick, cmd `^`,
+  bash backslash. The label names the shell. Detection is best effort, in order: `SIGIL_SHELL`; not Windows is bash;
+  `MSYSTEM`/`SHELL` is Git Bash; the per-user PowerShell folder in `PSModulePath` is PowerShell (a fresh cmd lacks it);
+  else cmd. Known miss: cmd started inside PowerShell reads as PowerShell, and `SIGIL_SHELL=cmd` fixes it. Not in a
+  terminal (pipes, CI) the command stays one plain line. `copyable-command.test.ts` checks every catalog id against
+  `[A-Za-z0-9:/_.,@= -]`. After `npm run sigil` the binary is not on PATH, so `launcherPrefix` (from `npm_command`,
+  `npm_lifecycle_event`, `npm_lifecycle_script`) prints `node <absolute cli.js> …` instead of `sigil …`, which runs
+  from any folder (`npm run` only works inside the repo). It falls back to `npm run sigil -- …` when the path holds a
+  character the shells read differently.
 - **The whole menu session is one frame.** `runHome` opens the only `intro` and closes the only `outro`. Wizards
   and guided verbs use `intro`, `outro` and `cancel` from `wizard/frame.ts` (re-exported by `prompts.ts`):
   inside the menu they print a log line instead of drawing a second

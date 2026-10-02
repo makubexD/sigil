@@ -205,7 +205,7 @@ describe('the same flows in a narrow or zoomed-in window', () => {
   const WINDOWS = [30, 40, 60, 100];
 
   for (const columns of WINDOWS) {
-    it(`S11 asks the same questions and prints a one-line command in ${columns} columns`, async () => {
+    it(`S11 asks the same questions and prints the command to repeat in ${columns} columns`, async () => {
       await withTempDirAsync(async root => {
         const dir = path.join(root, 'work');
         makeCheckout(dir);
@@ -215,8 +215,8 @@ describe('the same flows in a narrow or zoomed-in window', () => {
         const rec = await journey(dir, answers, { deps: miniInstallDeps(root), window });
         assert.deepEqual(flow(rec), SETUP_FLOW);
         assert.equal(rec.copied.length, 1);
-        assert.match(rec.copied[0] ?? '', /^sigil add pack:mini .*--yes$/);
-        assert.doesNotMatch(rec.copied[0] ?? '', /[\n│]/);
+        assert.match(rec.copied[0] ?? '', /^ {3}sigil add pack:mini [\s\S]*--yes$/);
+        assert.doesNotMatch(rec.copied[0] ?? '', /│/);
       }, 'sigil-narrow-');
     });
   }

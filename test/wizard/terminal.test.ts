@@ -64,11 +64,12 @@ describe('wrapText', () => {
     }
   });
 
-  it('should keep the leading spaces of a wrapped line and indent its continuation further', () => {
-    const lines = wrapText(`    ${'word '.repeat(30)}`, 40).split('\n');
-    assert.ok(lines.length > 2);
-    assert.match(lines[0] ?? '', /^ {4}word/);
-    for (const line of lines.slice(1)) assert.match(line, /^ {6}word/);
+  it('should keep a wrapped line at the level of its first row', () => {
+    for (const indent of [0, 2, 4]) {
+      const lines = wrapText(`${' '.repeat(indent)}${'word '.repeat(30)}`, 40).split('\n');
+      assert.ok(lines.length > 2);
+      for (const line of lines) assert.match(line, new RegExp(`^ {${indent}}word`));
+    }
   });
 
   it('should keep blank lines', () => {

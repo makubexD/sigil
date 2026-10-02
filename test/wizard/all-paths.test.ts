@@ -353,8 +353,18 @@ describe('every interactive path at every window size', () => {
         // The home menu keeps its console output in the gutter and so is checked in full; a command run on
         // its own prints plain lines, which the terminal soft-wraps.
         assertFits(rec, window.columns, { console: scenario.name.startsWith('the home menu') });
-        for (const line of rec.copied) {
-          assert.match(stripAnsi(line), INERT_COMMAND, `${window.columns} columns: ${line}`);
+        for (const block of rec.copied) {
+          const lines = stripAnsi(block).split('\n');
+          // Every line sits in the text column (3 spaces), with no gutter bar a selection would copy.
+          for (const line of lines) {
+            assert.match(line, /^ {3}\S/, `${window.columns} columns: ${JSON.stringify(line)}`);
+            assert.doesNotMatch(line, /│/);
+          }
+          const text = lines
+            .map(line => line.trim())
+            .join('\n')
+            .replace(/ [`^\\]\n/g, ' ');
+          assert.match(text, INERT_COMMAND, `${window.columns} columns: ${block}`);
         }
         if (scenario.repeats !== undefined) assert.equal(rec.copied.length, scenario.repeats);
         shapes.add(shape(rec));

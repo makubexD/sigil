@@ -21,62 +21,158 @@
  *   } finally {
  *     restore();
  *   }
+ *
+ * To see what the user would see (every prompt, log line and note, in order), pass a recorder:
+ *   const seen = createRecorder();
+ *   const restore = mockClack([ENTER, ENTER], seen);
  */
 
+/** A queued answer. A `symbol` simulates Ctrl+C: the mocked `isCancel` returns true for it. */
+export type MockAnswer = string | boolean | string[] | symbol;
+
+/** Press Enter: the prompt's preselected value, or its first option when nothing is preselected. */
+export const ENTER = '::enter::';
+
+/** One option as the user would see it. */
+export interface PromptOption {
+  value: string;
+  label: string;
+  hint?: string | undefined;
+}
+
+/** One prompt the code under test showed. */
+export interface PromptRecord {
+  kind: 'select' | 'multiselect' | 'groupMultiselect' | 'text' | 'confirm';
+  message: string;
+  options: PromptOption[];
+  initialValue?: unknown;
+}
+
+/** Everything the user would have seen, in order. */
+export interface Recorder {
+  prompts: PromptRecord[];
+  /** `level: text` for each `log.*` call. */
+  logs: string[];
+  /** Each `note(body, title)`. */
+  notes: Array<{ title: string; body: string }>;
+  /** `intro: text`, `outro: text`, `cancel: text`: the frame opens and closes clack drew. */
+  frames: string[];
+  /** Lines the code wrote with `console.*`; only a journey fills it. */
+  console: string[];
+}
+
+export function createRecorder(): Recorder {
+  return { prompts: [], logs: [], notes: [], frames: [], console: [] };
+}
+
+/** Decides the answer to a prompt. Lets a test react to what is on screen. */
+export type MockDriver = (prompt: PromptRecord) => MockAnswer;
+
+type RawOptions = {
+  message?: unknown;
+  options?: unknown;
+  initialValue?: unknown;
+  defaultValue?: unknown;
+};
+
+function flatten(options: unknown): PromptOption[] {
+  const list = Array.isArray(options)
+    ? options
+    : Object.values((options ?? {}) as Record<string, unknown[]>).flat();
+  return (list as Array<{ value: unknown; label?: string; hint?: string }>).map(o => ({
+    value: String(o.value),
+    label: o.label ?? String(o.value),
+    hint: o.hint,
+  }));
+}
+
+function describe(kind: PromptRecord['kind'], raw: RawOptions): PromptRecord {
+  const record: PromptRecord = {
+    kind,
+    message: String(raw.message ?? ''),
+    options: flatten(raw.options),
+  };
+  const initial = raw.initialValue ?? raw.defaultValue;
+  if (initial !== undefined) record.initialValue = initial;
+  return record;
+}
+
+/** What pressing Enter gives for this prompt. */
+function enterAnswer(p: PromptRecord): MockAnswer {
+  if (p.kind === 'confirm') return typeof p.initialValue === 'boolean' ? p.initialValue : true;
+  if (p.kind === 'text') return typeof p.initialValue === 'string' ? p.initialValue : '';
+  if (p.initialValue !== undefined) return p.initialValue as MockAnswer;
+  return p.options[0]?.value ?? '';
+}
+
 /**
- * Set up @clack/prompts mocks that draw answers from a sequential queue.
+ * Set up @clack/prompts mocks that draw answers from a sequential queue, or from a driver.
  * - `select` and `groupMultiselect` return the next value off the queue.
  * - `multiselect` returns the next value as an array (or the value itself if
  *   already an array).
  * - `text` and `confirm` return the next value off the queue.
+ * - `ENTER` answers with what pressing Enter would pick.
  * - `isCancel` is true only for a queued `symbol` (simulated Ctrl+C).
- * - All others (intro, outro, note, log, cancel) are silent no-ops.
+ * - `intro`, `outro`, `cancel`, `log` and `note` only record.
  *
  * Returns a `restore()` function that puts the originals back — always call it
  * in a `finally` block.
  *
  * @throws {Error} if the queue is exhausted before all prompts are answered.
  */
-/** A queued answer. A `symbol` simulates Ctrl+C: the mocked `isCancel` returns true for it. */
-export type MockAnswer = string | boolean | string[] | symbol;
-
-export function mockClack(queue: MockAnswer[]): () => void {
+export function mockClack(
+  answers: MockAnswer[] | MockDriver,
+  recorder: Recorder = createRecorder(),
+): () => void {
   const clackKey = require.resolve('@clack/prompts');
   const clackMod = require.cache[clackKey] as { exports: Record<string, unknown> };
   const ex = clackMod.exports;
   const orig = { ...ex };
 
-  const pop = () => {
-    if (queue.length === 0) throw new Error('clack mock: answer queue exhausted');
-    return queue.shift()!;
+  const ask = (kind: PromptRecord['kind'], raw: unknown): MockAnswer => {
+    const prompt = describe(kind, (raw ?? {}) as RawOptions);
+    recorder.prompts.push(prompt);
+    let answer: MockAnswer;
+    if (typeof answers === 'function') answer = answers(prompt);
+    else if (answers.length === 0) throw new Error('clack mock: answer queue exhausted');
+    else answer = answers.shift()!;
+    return answer === ENTER ? enterAnswer(prompt) : answer;
+  };
+  const many = (kind: 'multiselect' | 'groupMultiselect') => async (raw: unknown) => {
+    const v = ask(kind, raw);
+    if (typeof v === 'symbol') return v;
+    return Array.isArray(v) ? v : [v];
+  };
+  const logLevel = (level: string) => (message: unknown) => {
+    recorder.logs.push(`${level}: ${String(message)}`);
   };
 
-  ex['intro'] = () => {};
-  ex['outro'] = () => {};
-  ex['note'] = () => {};
-  ex['cancel'] = () => {};
+  ex['intro'] = (text: unknown) => {
+    recorder.frames.push(`intro: ${String(text)}`);
+  };
+  ex['outro'] = (text: unknown) => {
+    recorder.frames.push(`outro: ${String(text)}`);
+  };
+  ex['note'] = (body: unknown, title?: unknown) => {
+    recorder.notes.push({ title: String(title ?? ''), body: String(body) });
+  };
+  ex['cancel'] = (text: unknown) => {
+    recorder.frames.push(`cancel: ${String(text)}`);
+  };
   ex['log'] = {
-    info: () => {},
-    warn: () => {},
-    error: () => {},
-    success: () => {},
-    message: () => {},
-    step: () => {},
+    info: logLevel('info'),
+    warn: logLevel('warn'),
+    error: logLevel('error'),
+    success: logLevel('success'),
+    message: logLevel('message'),
+    step: logLevel('step'),
   };
   ex['isCancel'] = (value: unknown) => typeof value === 'symbol';
-  ex['select'] = async (_opts: unknown) => pop();
-  ex['multiselect'] = async (_opts: unknown) => {
-    const v = pop();
-    if (typeof v === 'symbol') return v;
-    return Array.isArray(v) ? v : [v];
-  };
-  ex['groupMultiselect'] = async (_opts: unknown) => {
-    const v = pop();
-    if (typeof v === 'symbol') return v;
-    return Array.isArray(v) ? v : [v];
-  };
-  ex['text'] = async (_opts: unknown) => pop();
-  ex['confirm'] = async (_opts: unknown) => pop();
+  ex['select'] = async (raw: unknown) => ask('select', raw);
+  ex['multiselect'] = many('multiselect');
+  ex['groupMultiselect'] = many('groupMultiselect');
+  ex['text'] = async (raw: unknown) => ask('text', raw);
+  ex['confirm'] = async (raw: unknown) => ask('confirm', raw);
 
   return () => {
     for (const k of Object.keys(orig)) ex[k] = orig[k];

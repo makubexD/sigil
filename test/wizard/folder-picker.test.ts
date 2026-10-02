@@ -8,7 +8,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { pickFolder } from '../../dist-cli/wizard/folder-picker';
 import { FOLDER_CHOICE } from '../../dist-cli/wizard/folder-list';
-import { mockClack } from '../helpers/clack-mock';
+import { createRecorder, mockClack } from '../helpers/clack-mock';
 import type { MockAnswer } from '../helpers/clack-mock';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
@@ -117,20 +117,14 @@ describe('pickFolder', () => {
     await withTempDirAsync(async dir => {
       const app = path.join(dir, 'app');
       fs.mkdirSync(app);
-      const restore = mockClack([FOLDER_CHOICE.back]);
-      const clack = require('@clack/prompts') as { select: (o: unknown) => Promise<unknown> };
-      const original = clack.select;
-      let seen: unknown;
-      clack.select = async (o: unknown) => {
-        seen = (o as { initialValue?: unknown }).initialValue;
-        return original(o);
-      };
+      const rec = createRecorder();
+      const restore = mockClack([FOLDER_CHOICE.back], rec);
       try {
         await pickFolder(app, HOME);
       } finally {
         restore();
       }
-      assert.equal(seen, app);
+      assert.equal(rec.prompts[0]?.initialValue, app);
     });
   });
 

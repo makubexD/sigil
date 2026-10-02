@@ -25,6 +25,7 @@ import {
   PACKS_FILE,
   PICKER,
   TOOL_QUESTION,
+  assertFits,
   assertGuttered,
   assertOneFrame,
   assertSingleLine,
@@ -33,9 +34,13 @@ import {
   makeCheckout,
   makeProject,
   makeTools,
+  same,
   shownFolder,
   snapshot,
+  startsLike,
 } from '../helpers/home-flow';
+import { withWindow } from '../helpers/window';
+import type { WindowSize } from '../helpers/window';
 import { runHome } from '../../dist-cli/wizard/home';
 import { defaultHomeDeps } from '../../dist-cli/wizard/home-actions';
 
@@ -47,12 +52,24 @@ type Folder = 'project' | 'empty' | 'catalog' | 'home';
 type Installs = 'none' | 'healthy' | 'missing';
 type Policy = 'enter' | 'recommended' | 'random';
 
+/** Windows from a phone-sized terminal to a wide one; most seeds run in a normal one. */
+const WINDOWS: ReadonlyArray<WindowSize | undefined> = [
+  undefined,
+  { columns: 80, rows: 24 },
+  { columns: 120, rows: 50 },
+  { columns: 30, rows: 14 },
+  { columns: 40, rows: 24 },
+  { columns: 60, rows: 24 },
+  { columns: 200, rows: 50 },
+];
+
 interface Start {
   folder: Folder;
   tools: string[];
   installs: Installs;
   damaged: boolean;
   policy: Policy;
+  window: WindowSize | undefined;
 }
 
 function mulberry32(seed: number): () => number {
@@ -77,6 +94,7 @@ function randomStart(rand: Rand): Start {
     installs,
     damaged: rand() < 0.15,
     policy: pick(rand, ['enter', 'recommended', 'random'] as const),
+    window: pick(rand, WINDOWS),
   };
 }
 
@@ -235,8 +253,8 @@ class Walker {
     if (this.step) this.step.incomplete ||= true;
     if (GUARD.test(prompt.message)) return this.guard();
     if (PICKER.test(prompt.message)) return this.picker(prompt);
-    if (prompt.message === INIT_QUESTION) return this.initQuestion(prompt);
-    if (prompt.message.startsWith('Set the damaged install record')) return this.repair();
+    if (same(prompt.message, INIT_QUESTION)) return this.initQuestion(prompt);
+    if (startsLike(prompt.message, 'Set the damaged install record')) return this.repair();
     if (TOOL_QUESTION.test(prompt.message)) this.checkToolQuestion();
     return CANCEL;
   }
@@ -359,11 +377,13 @@ async function walk(seed: number): Promise<void> {
     const capture = (...args: unknown[]): void => void rec.console.push(args.map(String).join(' '));
     Object.assign(console, { log: capture, info: capture, warn: capture, error: capture });
     try {
-      await runHome(dir, { ...defaultHomeDeps(() => {}), homeDir });
+      const run = (): Promise<void> => runHome(dir, { ...defaultHomeDeps(() => {}), homeDir });
+      await (start.window ? withWindow(start.window, run) : run());
       walker.finish();
       assertSingleLine(rec);
       assertOneFrame(rec);
       assertGuttered(rec);
+      if (start.window) assertFits(rec, start.window.columns);
     } catch (error) {
       walker.violations.push(`threw: ${error instanceof Error ? error.message : String(error)}`);
     } finally {

@@ -18,7 +18,7 @@ import { previewSelection, conflictsFor } from '../../dist-cli/wizard/steps/add/
 import type { ArtifactInstallState } from '../../dist-cli/install-state';
 import type { ResolvedCatalog } from '../../dist-cli/types';
 import { CATALOG_DIR } from '../helpers/catalog';
-import { mockClack } from '../helpers/clack-mock';
+import { createRecorder, mockClack } from '../helpers/clack-mock';
 import type { MockAnswer } from '../helpers/clack-mock';
 import '../../dist-cli/wizard/index';
 
@@ -131,16 +131,11 @@ describe('pickUntilUsable', () => {
 
 describe('scopeStep', () => {
   async function run(s: AddWizardState, answers: MockAnswer[]) {
-    const restore = mockClack(answers);
-    const clack = require('@clack/prompts') as { select: (o: unknown) => Promise<unknown> };
-    const inner = clack.select;
-    let initial: unknown;
-    clack.select = async (o: unknown) => {
-      initial ??= (o as { initialValue?: unknown }).initialValue;
-      return inner(o);
-    };
+    const seen = createRecorder();
+    const restore = mockClack(answers, seen);
     try {
-      return { outcome: await scopeStep.run(s), initial };
+      const outcome = await scopeStep.run(s);
+      return { outcome, initial: seen.prompts[0]?.initialValue };
     } finally {
       restore();
     }

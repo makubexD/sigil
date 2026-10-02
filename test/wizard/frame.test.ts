@@ -20,9 +20,9 @@ import { createRecorder, mockClack } from '../helpers/clack-mock';
 import { stripAnsi } from '../helpers/ansi';
 
 const SRC = path.resolve(__dirname, '../../src');
-const FRAME_OWNERS = new Set(['wizard/frame.ts', 'wizard/home.ts']);
-const CLACK_FRAME_IMPORT =
-  /import\s*\{[^}]*\b(intro|outro|cancel)\b[^}]*\}\s*from\s*'@clack\/prompts'/;
+// The only files allowed to talk to clack directly: they fit its output to the window and keep one frame.
+const CLACK_DOORS = new Set(['wizard/frame.ts', 'wizard/say.ts', 'wizard/prompts.ts']);
+const CLACK_IMPORT = /from\s*'@clack\/prompts'/;
 
 function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
@@ -168,11 +168,46 @@ describe('withGutter', () => {
 });
 
 describe('source scan', () => {
-  it('should import intro, outro and cancel only through wizard/frame.ts', () => {
+  it('should import @clack/prompts only in frame.ts, say.ts and prompts.ts', () => {
     const offenders = sourceFiles(SRC)
       .map(file => path.relative(SRC, file).split(path.sep).join('/'))
-      .filter(rel => !FRAME_OWNERS.has(rel))
-      .filter(rel => CLACK_FRAME_IMPORT.test(fs.readFileSync(path.join(SRC, rel), 'utf8')));
+      .filter(rel => !CLACK_DOORS.has(rel))
+      .filter(rel => CLACK_IMPORT.test(fs.readFileSync(path.join(SRC, rel), 'utf8')));
+    assert.deepEqual(offenders, []);
+  });
+});
+
+describe('source scan for the prompt layer', () => {
+  const CORE_IMPORT = /from\s*'@clack\/core'/;
+  const CORE_DOORS = new Set(['wizard/prompt-run.ts', 'wizard/picker/index.ts']);
+
+  const relative = (): string[] =>
+    sourceFiles(SRC).map(file => path.relative(SRC, file).split(path.sep).join('/'));
+
+  it('should import @clack/core only where a prompt is built on it', () => {
+    const offenders = relative()
+      .filter(rel => !CORE_DOORS.has(rel))
+      .filter(rel => CORE_IMPORT.test(fs.readFileSync(path.join(SRC, rel), 'utf8')));
+    assert.deepEqual(offenders, []);
+  });
+
+  it('should print every command to repeat through printRepeatCommand, never as a log line', () => {
+    const offenders = relative().flatMap(rel =>
+      fs
+        .readFileSync(path.join(SRC, rel), 'utf8')
+        .split('\n')
+        .filter(line => /Equivalent command/.test(line) && !/printRepeatCommand/.test(line))
+        .map(line => `${rel}: ${line.trim()}`),
+    );
+    assert.deepEqual(offenders, []);
+  });
+
+  it('should not read process.stdout.columns or rows outside the terminal helpers', () => {
+    const offenders = relative()
+      .filter(rel => rel !== 'wizard/terminal.ts')
+      .filter(rel =>
+        /process\.stdout\.(columns|rows)/.test(fs.readFileSync(path.join(SRC, rel), 'utf8')),
+      );
     assert.deepEqual(offenders, []);
   });
 });

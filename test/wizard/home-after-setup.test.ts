@@ -200,3 +200,39 @@ describe('after a setup: one frame, a short menu, no repeated questions', () => 
     });
   });
 });
+
+describe('the same flows in a narrow or zoomed-in window', () => {
+  const WINDOWS = [30, 40, 60, 100];
+
+  for (const columns of WINDOWS) {
+    it(`S11 asks the same questions and prints a one-line command in ${columns} columns`, async () => {
+      await withTempDirAsync(async root => {
+        const dir = path.join(root, 'work');
+        makeCheckout(dir);
+        fs.mkdirSync(path.join(dir, '.claude'));
+        const answers = ['install', 'go', ...INSTALL_MINI, ENTER];
+        const window = { columns, rows: 24 };
+        const rec = await journey(dir, answers, { deps: miniInstallDeps(root), window });
+        assert.deepEqual(flow(rec), SETUP_FLOW);
+        assert.equal(rec.copied.length, 1);
+        assert.match(rec.copied[0] ?? '', /^sigil add pack:mini .*--yes$/);
+        assert.doesNotMatch(rec.copied[0] ?? '', /[\n│]/);
+      }, 'sigil-narrow-');
+    });
+  }
+
+  it('N8 gets a beginner from nothing to one installed rule in a 30-column window', async () => {
+    await inRoot(async root => {
+      const dir = path.join(root, 'work');
+      makeProject(dir);
+      const driver = enterExcept([
+        [/^What would you like to i/, 'pack'],
+        [/^Which pack/, 'pack:mini'],
+      ]);
+      const window = { columns: 30, rows: 14 };
+      const rec = await journey(dir, driver, { deps: miniInstallDeps(root), window });
+      assert.equal(fs.existsSync(path.join(dir, MINI_RULE)), true);
+      assert.equal(nexts(rec)[1]?.options[0]?.value, 'quit');
+    });
+  });
+});

@@ -10,7 +10,7 @@ import { runUninstall } from '../../dist-cli/commands/uninstall';
 import { loadManifest, saveManifest, sha256 } from '../../dist-cli/manifest';
 import type { ManifestEntry } from '../../dist-cli/manifest/types';
 import { SigilError } from '../../dist-cli/errors';
-import { mockClack } from '../helpers/clack-mock';
+import { createRecorder, mockClack } from '../helpers/clack-mock';
 import { fakeTTY } from '../helpers/tty';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
@@ -101,15 +101,15 @@ describe('runUninstall without ids', () => {
         project(dir);
         fs.writeFileSync(path.join(dir, EDITED), 'my own edit\n');
         const restoreTTY = fakeTTY();
-        const restore = mockClack(answers);
-        const clack = require('@clack/prompts') as { log: { info: (m: string) => void } };
-        clack.log.info = (message: string) => void messages.push(message);
+        const rec = createRecorder();
+        const restore = mockClack(answers, rec);
         try {
           await runUninstall([], { ...OPTS, projectDir: dir });
         } finally {
           restore();
           restoreTTY();
         }
+        messages.push(...rec.copied);
         result = [
           fs.existsSync(path.join(dir, EDITED)) ? 'file-kept' : 'file-gone',
           ...installedIds(dir),
@@ -135,18 +135,12 @@ describe('runUninstall without ids', () => {
 
     it('should log an equivalent command that can be pasted into a script, after confirming', async () => {
       const keep = await removeEdited([['a/one'], 'keep', true]);
-      assert.ok(
-        keep.messages.includes('Equivalent command: sigil uninstall a/one --yes --target claude'),
-      );
+      assert.ok(keep.messages.includes('sigil uninstall a/one --yes --target claude'));
       const del = await removeEdited([['a/one'], 'delete', true]);
-      assert.ok(
-        del.messages.includes(
-          'Equivalent command: sigil uninstall a/one --yes --force --target claude',
-        ),
-      );
+      assert.ok(del.messages.includes('sigil uninstall a/one --yes --force --target claude'));
       const declined = await removeEdited([['a/one'], 'keep', false]);
       assert.deepEqual(
-        declined.messages.filter(m => m.startsWith('Equivalent')),
+        declined.messages.filter(m => m.startsWith('sigil uninstall')),
         [],
       );
     });
@@ -176,5 +170,71 @@ describe('runUninstall without ids', () => {
       });
       assert.deepEqual(installedIds(dir), ['a/one', 'b/two']);
     });
+  });
+});
+
+describe('short answers instead of id lists', () => {
+  const MANY = ['a/one', 'b/two', 'c/three', 'd/four'];
+
+  function crowded(dir: string): void {
+    fs.mkdirSync(path.join(dir, '.claude'), { recursive: true });
+    saveManifest(dir, {
+      manifestVersion: 2,
+      entries: MANY.map((id, i) => install(dir, id, `.claude/rules/r${i}.md`)),
+    });
+  }
+
+  async function run(
+    ids: string[],
+    answers: Array<string | boolean | string[] | symbol>,
+    terminal: boolean,
+  ) {
+    const rec = createRecorder();
+    const printed: string[] = [];
+    const original = console.log;
+    console.log = (text: unknown) => void printed.push(String(text));
+    await withTempDirAsync(async dir => {
+      crowded(dir);
+      const restoreTTY = terminal ? fakeTTY() : () => {};
+      const restore = mockClack(answers, rec);
+      try {
+        await runUninstall(ids, { ...OPTS, yes: !terminal, projectDir: dir });
+      } finally {
+        restore();
+        restoreTTY();
+        console.log = original;
+      }
+    });
+    return { rec, printed: printed.join('\n') };
+  }
+
+  it('should count the artifacts in the question and list them once above it, when there are many', async () => {
+    const { rec } = await run([], [MANY, true], true);
+    const question = rec.prompts.find(p => p.kind === 'confirm')?.message;
+    assert.equal(question, "Remove 4 artifacts from 'claude'?");
+    assert.ok(rec.logs.includes(`info: Removing: ${MANY.join(', ')}`));
+  });
+
+  it('should keep the names in the question when there are only a few', async () => {
+    const { rec } = await run([], [['a/one', 'b/two'], true], true);
+    assert.equal(
+      rec.prompts.find(p => p.kind === 'confirm')?.message,
+      "Remove a/one, b/two from 'claude'?",
+    );
+    assert.equal(rec.logs.filter(l => l.startsWith('info: Removing')).length, 0);
+  });
+
+  it('should summarise a long removal by count in a terminal, with the ids as a paragraph', async () => {
+    const { printed } = await run([], [MANY, true], true);
+    assert.match(printed, /✓ Uninstalled 4 artifacts {2}\(4 file\(s\) removed\)/);
+    assert.match(printed, /^ {2}a\/one, b\/two, c\/three, d\/four$/m);
+  });
+
+  it('should keep the one-line summary with every id for a script', async () => {
+    const { printed } = await run(MANY, [], false);
+    assert.match(
+      printed,
+      /✓ Uninstalled: a\/one, b\/two, c\/three, d\/four {2}\(4 file\(s\) removed\)/,
+    );
   });
 });

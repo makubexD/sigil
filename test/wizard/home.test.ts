@@ -371,20 +371,8 @@ describe('runHome', () => {
         settingsLocal: false,
       });
       fs.rmSync(path.join(dir, '.claude/rules/shared-git.md'));
-      const infos: string[] = [];
-      const prompts: string[] = [];
-      const restore = mockClack(['restore', 'quit']);
-      const clack = require('@clack/prompts') as {
-        log: { info: (m: string) => void };
-        select: (o: unknown) => Promise<unknown>;
-      };
-      clack.log.info = (m: string) => void infos.push(m);
-      const mockedSelect = clack.select;
-      clack.select = (opts: unknown) => {
-        const options = (opts as { options: Array<{ label: string }> }).options;
-        prompts.push(options.map(o => o.label).join('|'));
-        return mockedSelect(opts);
-      };
+      const seen = createRecorder();
+      const restore = mockClack(['restore', 'quit'], seen);
       try {
         await runHome(dir, {
           handlers: { restore: async () => {} }, // restores nothing, like a dropped catalog entry
@@ -393,9 +381,10 @@ describe('runHome', () => {
       } finally {
         restore();
       }
-      assert.match(prompts[0] ?? '', /Restore deleted files \(recommended\)/);
-      assert.doesNotMatch(prompts[1] ?? '', /recommended/);
-      assert.match(infos.join(' '), /Nothing changed after "Restore deleted files"/);
+      const labels = seen.prompts.map(p => p.options.map(o => o.label).join('|'));
+      assert.match(labels[0] ?? '', /Restore deleted files \(recommended\)/);
+      assert.doesNotMatch(labels[1] ?? '', /recommended/);
+      assert.match(seen.logs.join(' '), /Nothing changed after "Restore deleted files"/);
     });
   });
 

@@ -19,6 +19,9 @@ import type { ResolvedCatalog } from '../../dist-cli/types';
 import { CATALOG_DIR } from '../helpers/catalog';
 // Ensure @clack/prompts is loaded into require.cache before beforeEach accesses it.
 import '../../dist-cli/wizard/index';
+import { bridgePrompts } from '../helpers/clack-mock';
+
+bridgePrompts();
 
 const PACKS_MINIMAL = [
   {

@@ -81,3 +81,75 @@ describe('picker frame by prompt state', () => {
     assert.equal(heights.size, 1);
   });
 });
+
+const WINDOWS = {
+  columns: [24, 30, 40, 60, 80, 100, 160, 240],
+  rows: [12, 14, 18, 24, 40, 60],
+};
+const LONG_ROWS: FlatRow[] = rows.map(row =>
+  'id' in row
+    ? { ...row, id: `${row.id}-with-a-very-long-artifact-name`, description: 'Long. '.repeat(60) }
+    : row,
+);
+
+function activeAt(columns: number, terminalRows: number, cursor: number, options = LONG_ROWS) {
+  const opts: RenderFrameOptions = {
+    message: `${MESSAGE} and then a good deal more words than any window can hold`,
+    options,
+    cursor,
+    selected: new Set(['x']),
+    footerHint: 'space tick   ·   enter  confirm   ·   ← Back row  go back   ·   ctrl+c  quit',
+    state: 'active',
+    terminalColumns: columns,
+    terminalRows,
+  };
+  return stripAnsi(renderFrame(opts)).split('\n');
+}
+
+describe('picker frame at every window size', () => {
+  it('should fit every line in the window and leave a row free, so a redraw never overlaps', () => {
+    for (const columns of WINDOWS.columns) {
+      for (const terminalRows of WINDOWS.rows) {
+        for (const cursor of [0, 7, rows.length - 1]) {
+          const lines = activeAt(columns, terminalRows, cursor);
+          const where = `${columns}x${terminalRows} cursor ${cursor}`;
+          assert.ok(lines.length <= terminalRows - 1, `${where}: ${lines.length} lines`);
+          for (const line of lines) {
+            assert.ok(line.length <= columns - 1, `${where}: ${JSON.stringify(line)}`);
+          }
+        }
+      }
+    }
+  });
+
+  it('should keep the height constant for every cursor at each window size', () => {
+    for (const columns of WINDOWS.columns) {
+      for (const terminalRows of WINDOWS.rows) {
+        const heights = new Set(
+          LONG_ROWS.map((_, cursor) => activeAt(columns, terminalRows, cursor).length),
+        );
+        assert.equal(heights.size, 1, `${columns}x${terminalRows}: ${[...heights]}`);
+      }
+    }
+  });
+
+  it('should collapse to short lines that fit once answered, at any width', () => {
+    for (const columns of WINDOWS.columns) {
+      for (const state of ['submit', 'cancel']) {
+        const opts: RenderFrameOptions = {
+          message: `${MESSAGE} and then a good deal more words than any window can hold`,
+          options: LONG_ROWS,
+          cursor: 0,
+          selected: new Set(['x']),
+          footerHint: 'hint',
+          state,
+          terminalColumns: columns,
+          terminalRows: 30,
+        };
+        for (const line of stripAnsi(renderFrame(opts)).split('\n')) {
+          assert.ok(line.length <= columns - 1, `${columns} ${state}: ${JSON.stringify(line)}`);
+        }
+      }
+    }
+  });
+});

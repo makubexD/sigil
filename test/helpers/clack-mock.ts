@@ -1,7 +1,7 @@
 /**
  * @clack/prompts mock for wizard tests.
  *
- * runWizard uses @clack/prompts which requires a real TTY. Since tests run in a
+ * runWizard uses prompts that require a real TTY. Since tests run in a
  * non-TTY environment we mock @clack/prompts by mutating the already-loaded module
  * object in require.cache. The compiled wizard.js accesses prompts via
  * `prompts_1.<fn>(...)`, so mutating the cached exports object's properties is
@@ -26,6 +26,8 @@
  *   const seen = createRecorder();
  *   const restore = mockClack([ENTER, ENTER], seen);
  */
+import { fitView } from '../../dist-cli/wizard/prompt-fit';
+import { stripAnsi } from './ansi';
 
 /** A queued answer. A `symbol` simulates Ctrl+C: the mocked `isCancel` returns true for it. */
 export type MockAnswer = string | boolean | string[] | symbol;
@@ -59,14 +61,18 @@ export interface Recorder {
   frames: string[];
   /** Lines the code wrote with `console.*`; only a journey fills it. */
   console: string[];
+  /** Lines printed flush-left for copying (`copyableLine`); only a journey fills it. */
+  copied: string[];
 }
 
 export function createRecorder(): Recorder {
-  return { prompts: [], logs: [], notes: [], frames: [], console: [] };
+  return { prompts: [], logs: [], notes: [], frames: [], console: [], copied: [] };
 }
 
 /** Decides the answer to a prompt. Lets a test react to what is on screen. */
 export type MockDriver = (prompt: PromptRecord) => MockAnswer;
+
+type FitInput = Parameters<typeof fitView>[0];
 
 type RawOptions = {
   message?: unknown;
@@ -130,7 +136,7 @@ export function mockClack(
   const orig = { ...ex };
 
   const ask = (kind: PromptRecord['kind'], raw: unknown): MockAnswer => {
-    const prompt = describe(kind, (raw ?? {}) as RawOptions);
+    const prompt = describe(kind, fitView((raw ?? { message: '' }) as FitInput) as RawOptions);
     recorder.prompts.push(prompt);
     let answer: MockAnswer;
     if (typeof answers === 'function') answer = answers(prompt);
@@ -138,7 +144,7 @@ export function mockClack(
     else answer = answers.shift()!;
     return answer === ENTER ? enterAnswer(prompt) : answer;
   };
-  const many = (kind: 'multiselect' | 'groupMultiselect') => async (raw: unknown) => {
+  const many = (kind: 'multiselect') => async (raw: unknown) => {
     const v = ask(kind, raw);
     if (typeof v === 'symbol') return v;
     return Array.isArray(v) ? v : [v];
@@ -168,13 +174,37 @@ export function mockClack(
     step: logLevel('step'),
   };
   ex['isCancel'] = (value: unknown) => typeof value === 'symbol';
-  ex['select'] = async (raw: unknown) => ask('select', raw);
-  ex['multiselect'] = many('multiselect');
-  ex['groupMultiselect'] = many('groupMultiselect');
-  ex['text'] = async (raw: unknown) => ask('text', raw);
-  ex['confirm'] = async (raw: unknown) => ask('confirm', raw);
+  // The four prompts are our own (`wizard/prompts.ts`), not clack's: replace them there.
+  const prompts = require('../../dist-cli/wizard/prompts') as Record<string, unknown>;
+  const frame = require('../../dist-cli/wizard/frame') as Record<string, unknown>;
+  const replaced = ['select', 'multiselect', 'text', 'confirm'] as const;
+  const promptsOrig = Object.fromEntries(replaced.map(name => [name, prompts[name]]));
+  const copyOrig = frame['copyableLine'];
+  prompts['select'] = async (raw: unknown) => ask('select', raw);
+  prompts['multiselect'] = many('multiselect');
+  prompts['text'] = async (raw: unknown) => ask('text', raw);
+  prompts['confirm'] = async (raw: unknown) => ask('confirm', raw);
+  frame['copyableLine'] = (line: unknown) => {
+    recorder.copied.push(stripAnsi(String(line)));
+  };
 
   return () => {
     for (const k of Object.keys(orig)) ex[k] = orig[k];
+    for (const name of replaced) prompts[name] = promptsOrig[name];
+    frame['copyableLine'] = copyOrig;
   };
+}
+
+/**
+ * For a test file that mocks clack's own exports by hand (`ex['select'] = …`): makes our four
+ * prompts call through to whatever clack's `select`, `confirm`, `text` and `multiselect` currently
+ * are, so those hand-rolled mocks keep driving them. Call it once at the top of the file; every test
+ * file runs in its own process, so nothing leaks.
+ */
+export function bridgePrompts(): void {
+  const prompts = require('../../dist-cli/wizard/prompts') as Record<string, unknown>;
+  const clack = require('@clack/prompts') as Record<string, (opts: unknown) => unknown>;
+  for (const name of ['select', 'multiselect', 'text', 'confirm']) {
+    prompts[name] = (opts: unknown) => clack[name]?.(opts);
+  }
 }

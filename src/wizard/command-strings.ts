@@ -4,7 +4,10 @@
  * These are pure functions (or thin console wrappers) with no I/O side effects.
  */
 import pc from 'picocolors';
-import { log } from '@clack/prompts';
+import { copyableLine } from './frame';
+import { withLauncher } from '../invocation';
+import { log } from './prompts';
+import { terminalWidth, visibleLength } from './terminal';
 import type { Target } from '../types';
 import { kindNoun } from '../select';
 
@@ -83,13 +86,26 @@ export function printSkippedAdvice(
 }
 
 /**
- * Prints the equivalent CLI command once, at the very end of the install flow.
- * In an interactive TTY it renders as a styled clack note box; in CI/pipe it is plain text.
+ * Prints a command for the user to repeat, in a terminal: a label, then the command as one unbroken,
+ * flush-left line with no gutter. A wrapped multi-line command pastes differently in PowerShell
+ * (backtick), bash (backslash) and cmd (caret), and the shell cannot be detected, so one line of
+ * plain characters is the form that means the same everywhere; a narrow window soft-wraps it,
+ * which is fine. When an npm script launched sigil, `sigil` is replaced by how to launch it.
+ */
+export function printRepeatCommand(label: string, cmd: string): void {
+  const command = withLauncher(cmd);
+  const width = terminalWidth();
+  const tooWide = width !== undefined && visibleLength(command) > width;
+  const name = label.replace(/:$/, '');
+  log.message(pc.dim(`${name}${tooWide ? ' (one line, copy all of it)' : ''}:`));
+  copyableLine(pc.cyan(command));
+}
+
+/**
+ * Prints the equivalent CLI command once, at the very end of the install flow. In a terminal it is
+ * `printRepeatCommand`; in CI/pipe it is plain text.
  */
 export function printEquivalentCommand(cmd: string, fancy: boolean): void {
-  if (fancy) {
-    log.message(`${pc.dim('Repeat non-interactively:')}\n${pc.cyan(cmd)}`);
-  } else {
-    console.log('\nRepeat non-interactively:\n  ' + cmd);
-  }
+  if (fancy) printRepeatCommand('Repeat non-interactively:', cmd);
+  else console.log('\nRepeat non-interactively:\n  ' + cmd);
 }

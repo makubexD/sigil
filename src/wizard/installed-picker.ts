@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { multiselect, isCancel } from '@clack/prompts';
+import { multiselect, isCancel } from './prompts';
 import { cancel } from './frame';
 import { computeStatus } from '../manifest';
 import type { ManifestEntry, StatusResult } from '../manifest/types';

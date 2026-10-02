@@ -10,7 +10,7 @@ import path from 'node:path';
 import fs from 'node:fs';
 import matter from 'gray-matter';
 import fg from 'fast-glob';
-import { confirm, isCancel } from '@clack/prompts';
+import { confirm, isCancel } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
 import { getAllTargets } from '../targets';
 import { isInteractiveTTY } from '../wizard';

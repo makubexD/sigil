@@ -8,7 +8,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { confirm, isCancel, log } from '@clack/prompts';
+import { confirm, isCancel, log } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
 import { manifestPath } from '../manifest';
 

@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { isCancel, log, select } from '@clack/prompts';
+import { isCancel, log, select } from './prompts';
 import { riskyFolderReason, samePath } from '../project-context';
 import type { ProjectContext } from '../project-context';
 import { pickFolder } from './folder-picker';

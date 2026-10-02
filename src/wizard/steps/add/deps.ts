@@ -1,4 +1,4 @@
-import { select, note } from '@clack/prompts';
+import { select, note } from '../../prompts';
 import { computeClosure, kindNoun, type ClosurePreview } from '../../../select';
 import { hasUsesClosure } from '../../../kinds';
 import type { WizardStep, StepOutcome } from '../../engine';

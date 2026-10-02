@@ -7,7 +7,7 @@
  */
 import os from 'node:os';
 import path from 'node:path';
-import { confirm, isCancel, log, select, text } from '@clack/prompts';
+import { confirm, isCancel, log, select, text } from './prompts';
 import { cancel } from './frame';
 import { detectProjectTarget, resolveDefault } from '../cli-helpers';
 import { getTarget } from '../targets';

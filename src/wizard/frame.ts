@@ -10,14 +10,19 @@
  */
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { format } from 'node:util';
-import {
-  cancel as clackCancel,
-  intro as clackIntro,
-  log,
-  note,
-  outro as clackOutro,
-} from '@clack/prompts';
+import { cancel as clackCancel, intro as clackIntro, outro as clackOutro } from '@clack/prompts';
 import pc from 'picocolors';
+import { log, note } from './say';
+import { fitLine, terminalWidth, wrapText } from './terminal';
+
+/** The gutter bar and its two spaces, plus one spare column. */
+const GUTTER_WIDTH = 4;
+
+/** A one-line message cut to the window, for the frame's own `┌` / `└` lines. */
+const oneLine = (text: string): string => {
+  const width = terminalWidth();
+  return width === undefined ? text : fitLine(text, width - GUTTER_WIDTH);
+};
 
 interface HomeFrame {
   /** Notes already shown in this session, so a second install does not repeat "How this works". */
@@ -36,19 +41,19 @@ export const insideHomeFrame = (): boolean => frames.getStore() !== undefined;
 
 /** Opens a frame, unless the home menu already did. */
 export function intro(title: string): void {
-  if (!insideHomeFrame()) clackIntro(title);
+  if (!insideHomeFrame()) clackIntro(oneLine(title));
 }
 
 /** Closes the frame, or inside the home menu just prints the line and keeps the frame open. */
 export function outro(message: string): void {
   if (insideHomeFrame()) log.step(message);
-  else clackOutro(message);
+  else clackOutro(oneLine(message));
 }
 
 /** A cancel message that closes the frame, or inside the home menu a warning that does not. */
 export function cancel(message: string): void {
   if (insideHomeFrame()) log.warn(message);
-  else clackCancel(message);
+  else clackCancel(oneLine(message));
 }
 
 /** A note, shown once per home session when `key` is given a second time. */
@@ -62,10 +67,14 @@ export function noteOnce(key: string, body: string, title: string): void {
 type ConsoleMethod = 'log' | 'info' | 'warn' | 'error';
 const CONSOLE_METHODS: readonly ConsoleMethod[] = ['log', 'info', 'warn', 'error'];
 
-/** Prefixes every line with the gutter bar; an empty line becomes the bare bar. */
-export function gutterLines(text: string): string {
+/**
+ * Wraps `text` to the window and prefixes every line with the gutter bar, so a wrapped line keeps
+ * it. An empty line becomes the bare bar. `width` defaults to the window's; no window means no wrap.
+ */
+export function gutterLines(text: string, width = terminalWidth()): string {
   const bar = pc.gray('│');
-  return text
+  const fitted = width === undefined ? text : wrapText(text, width - GUTTER_WIDTH);
+  return fitted
     .split('\n')
     .map(line => (line.trim() === '' ? bar : `${bar}  ${line}`))
     .join('\n');
@@ -88,4 +97,13 @@ export async function withGutter<T>(fn: () => Promise<T>): Promise<T> {
   } finally {
     for (const name of CONSOLE_METHODS) console[name] = originals.get(name)!;
   }
+}
+
+/**
+ * Prints `text` flush-left on a line of its own, never wrapped and without the gutter: for a command
+ * the user will copy. A selection then holds the command and nothing else, and the terminal's own
+ * soft wrap keeps a long one aligned.
+ */
+export function copyableLine(text: string): void {
+  process.stdout.write(`${text}\n`);
 }

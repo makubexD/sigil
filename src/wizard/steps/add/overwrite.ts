@@ -1,4 +1,4 @@
-import { select, note } from '@clack/prompts';
+import { select, note } from '../../prompts';
 import type { ArtifactInstallState, InstallState } from '../../../install-state';
 import type { WizardStep, StepOutcome } from '../../engine';
 import type { AddWizardState } from './state';

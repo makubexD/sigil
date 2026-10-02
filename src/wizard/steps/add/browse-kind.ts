@@ -1,4 +1,4 @@
-import { select } from '@clack/prompts';
+import { select } from '../../prompts';
 import { availableKinds, kindPlural, kindHint } from '../../../select';
 import type { ArtifactKind } from '../../../types';
 import type { WizardStep, StepOutcome } from '../../engine';

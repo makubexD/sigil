@@ -96,6 +96,13 @@ for <tool>" while a tool is left, and "Show all options" for the full menu. If s
 (a damaged record, deleted files), the full menu shows instead. The whole session is one frame, and the output of
 each command stays inside it.
 
+The menu adapts to the window at any terminal size or zoom level, and follows a zoom while a question is open: long lines
+wrap and keep the `│` gutter, and questions are shortened with `…` (an answered multi-select says "20 selected", not a list).
+The "Repeat non-interactively" and "Equivalent command" lines are the exception: each is printed as one unbroken line with
+nothing before it, so you can copy it whole and paste it into PowerShell, Git Bash or cmd. After `npm run sigil` it starts
+with `npm run sigil --` instead of `sigil`, because the `sigil` command is usually not on your PATH there. If a terminal
+reports the wrong width, set `SIGIL_COLUMNS=<width>`; `SIGIL_DEBUG=terminal` prints the size sigil sees.
+
 **Which tool?** When the folder is set up for exactly one tool, Install does not ask which tool: it says
 "Installing for Claude Code, the tool set up in this folder" and goes straight to "What would you like to
 install?". `sigil add --target <name>` does the same for any folder. The question appears only when

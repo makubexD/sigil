@@ -7,7 +7,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { confirm, isCancel, log, select, text } from '@clack/prompts';
+import { confirm, isCancel, log, select, text } from './prompts';
 import {
   FOLDER_CHOICE,
   browseStart,

@@ -6,6 +6,7 @@
  * @module
  */
 import pc from 'picocolors';
+import { fitLine, MIN_WIDTH } from '../terminal';
 import {
   buildListRows,
   computeViewportRows,
@@ -85,23 +86,32 @@ function settledFrame(opts: RenderFrameOptions): string | undefined {
   return undefined;
 }
 
-/** Builds the full multi-line frame string rendered on every keystroke. */
-export function renderFrame(opts: RenderFrameOptions): string {
-  const settled = settledFrame(opts);
-  if (settled !== undefined) return settled;
+/** The lines of the active frame, before they are cut to the window. */
+function activeLines(opts: RenderFrameOptions): string[] {
   const { message, options, cursor, selected, terminalRows, terminalColumns, footerHint } = opts;
   const bar = pc.gray('│');
   const viewportRows = computeViewportRows(terminalRows, options.length);
   const listRows = buildListRows(options, { cursor, selected, viewportRows, colorize: COLORIZE });
   const listLines = listRows.map(row => `${bar}  ${row}`);
-
-  const pickedCount = selected.size;
-  const position = pc.dim(`${cursor + 1} of ${options.length} · ${pickedCount} picked`);
+  const position = pc.dim(`${cursor + 1} of ${options.length} · ${selected.size} picked`);
   const header = `${pc.cyan('◆')}  ${message}            ${position}`;
-  const separator = pc.gray('─'.repeat(Math.min(terminalColumns, SEPARATOR_MAX_WIDTH)));
+  const separator = pc.gray('─'.repeat(Math.min(terminalColumns - 1, SEPARATOR_MAX_WIDTH)));
   const window = computeWindow(options, cursor, viewportRows);
   const detail = buildDetailPane(options[cursor] ?? options[window.start], terminalColumns);
   const footer = `${pc.gray('└')}  ${pc.dim(footerHint)}`;
+  return [bar, header, ...listLines, `${bar}${separator}`, ...detail, footer];
+}
 
-  return [bar, header, ...listLines, `${bar}${separator}`, ...detail, footer].join('\n');
+/**
+ * Builds the full multi-line frame string rendered on every keystroke. Each line is cut to one
+ * column short of the window: a line the terminal wraps would count as two rows, and clack erases
+ * by line count, so the redraw would leave the second row behind.
+ */
+export function renderFrame(opts: RenderFrameOptions): string {
+  const max = Math.max(opts.terminalColumns, MIN_WIDTH) - 1;
+  const text = settledFrame(opts) ?? activeLines(opts).join('\n');
+  return text
+    .split('\n')
+    .map(line => fitLine(line, max))
+    .join('\n');
 }

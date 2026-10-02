@@ -3,8 +3,9 @@
  *
  * @module
  */
-import { isCancel, log, select } from '@clack/prompts';
+import { isCancel, select } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
+import { printRepeatCommand } from '../wizard/command-strings';
 import { SigilError } from '../errors';
 import { getAllTargets } from '../targets';
 import { detectedTargetsIn } from '../project-context';
@@ -52,7 +53,7 @@ export async function chooseInitTarget(
   const sole = opts.only?.length === 1 ? opts.only[0] : undefined;
   const answer = sole ?? (await askTarget(found, opts.only));
   if (answer === null) return null;
-  log.info(`Equivalent command: sigil init --target ${answer}`);
+  printRepeatCommand('Equivalent command:', `sigil init --target ${answer}`);
   return answer;
 }
 

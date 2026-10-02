@@ -1,4 +1,4 @@
-import { select } from '@clack/prompts';
+import { select } from '../../prompts';
 import { cancel } from '../../frame';
 import { computeInstallStates } from '../../../install-state';
 import { detectedTargetsIn } from '../../../project-context';

@@ -14,6 +14,7 @@ import { chooseIdsToUninstall } from './uninstall-guided';
 import { confirmUninstall, logEquivalentUninstall } from './uninstall-confirm';
 import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
+import { isInteractiveTTY } from '../wizard';
 import { configEntriesOf, reverseMergeConfigEntries } from './uninstall-config';
 
 export interface UninstallOptions {
@@ -124,26 +125,39 @@ interface UninstallSummaryStats {
   configRemovedCount: number;
 }
 
-/** Prints the final `✓ Uninstalled: ...` summary line. */
+/** More ids than this are summarised by count in a terminal; scripts always get every id on the line. */
+const MANY_IDS = 3;
+
+/** "(N file(s) removed, …)": what the removal did besides naming the artifacts. */
+function uninstallCounts(stats: UninstallSummaryStats, opts: UninstallOptions): string {
+  const { pathsToDelete, driftedPaths, configRemovedCount } = stats;
+  const keptCount = opts.force ? 0 : driftedPaths.length;
+  const kept =
+    driftedPaths.length > 0 && !opts.force
+      ? `, ${driftedPaths.length} edited file(s) kept (still active; sigil no longer tracks them)`
+      : '';
+  const merges = configRemovedCount > 0 ? `, ${configRemovedCount} JSON merge(s) reversed` : '';
+  return `(${pathsToDelete.length - keptCount} file(s) removed${merges}${kept})`;
+}
+
+/**
+ * Prints the final summary. A script gets `✓ Uninstalled: <ids>  (counts)`. In a terminal, a long list
+ * is summarised by count and the ids follow as a paragraph, so the line stays readable at any width.
+ */
 function printUninstallSummary(
   ids: string[],
   stats: UninstallSummaryStats,
   opts: UninstallOptions,
 ): void {
-  const { pathsToDelete, driftedPaths, configRemovedCount } = stats;
-  const keptCount = opts.force ? 0 : driftedPaths.length;
-  console.log(
-    `\n✓ Uninstalled: ${ids.join(', ')}` +
-      `  (${pathsToDelete.length - keptCount} file(s) removed` +
-      (configRemovedCount > 0 ? `, ${configRemovedCount} JSON merge(s) reversed` : '') +
-      (driftedPaths.length > 0 && !opts.force
-        ? `, ${driftedPaths.length} edited file(s) kept (still active; sigil no longer tracks them)`
-        : '') +
-      ')',
-  );
+  const counts = uninstallCounts(stats, opts);
+  if (isInteractiveTTY() && ids.length > MANY_IDS) {
+    console.log(`\n✓ Uninstalled ${ids.length} artifacts  ${counts}`);
+    console.log(`  ${ids.join(', ')}`);
+  } else {
+    console.log(`\n✓ Uninstalled: ${ids.join(', ')}  ${counts}`);
+  }
   console.log('');
 }
-
 export async function runUninstall(ids: string[], opts: UninstallOptions): Promise<void> {
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
   const manifest = requireManifest(opts.projectDir);

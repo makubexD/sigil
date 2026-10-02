@@ -5,8 +5,9 @@
  *
  * @module
  */
-import { isCancel, log, select } from '@clack/prompts';
+import { isCancel, log, select } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
+import { printRepeatCommand } from '../wizard/command-strings';
 import { detectProjectTarget } from '../cli-helpers';
 import { isInteractiveTTY } from '../wizard';
 import { pickInstalled } from '../wizard/installed-picker';
@@ -93,6 +94,6 @@ export async function runGuidedUpdate(
   const chosen = choice === 'pick' ? await pickIds(opts) : ids;
   if (!chosen) return;
   const force = opts.force || choice === 'force';
-  log.info(`Equivalent command: ${equivalentCommand(chosen, force)}`);
+  printRepeatCommand('Equivalent command:', equivalentCommand(chosen, force));
   await apply(chosen, { ...opts, force, dryRun: false, yes: true });
 }

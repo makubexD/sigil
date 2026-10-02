@@ -1,4 +1,4 @@
-import { select } from '@clack/prompts';
+import { select } from '../../prompts';
 import { partitionConfigKinds, buildLanguageOptions, hasLanguageChoice } from '../../../select';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { visibleArtifacts, type AddWizardState } from './state';

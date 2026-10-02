@@ -1,4 +1,4 @@
-import { select, note } from '@clack/prompts';
+import { select, note } from '../../prompts';
 import { CONFIG_KINDS } from '../../../select';
 import { isHomeScopedRoot } from '../../../config-utils';
 import type { ConfigKind, ConfigScopeInfo, ConfigScopeDestination } from '../../../types';

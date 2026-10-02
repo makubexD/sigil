@@ -10,7 +10,7 @@
  *
  * Guard: caller must check isInteractiveTTY() before invoking runWizard().
  */
-import { log } from '@clack/prompts';
+import { log } from './prompts';
 import { intro, noteOnce } from './frame';
 import type { ResolvedCatalog, Pack } from '../types';
 import { getAllTargets } from '../targets';

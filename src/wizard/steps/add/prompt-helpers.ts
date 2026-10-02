@@ -8,7 +8,7 @@
  *
  * @module
  */
-import { isCancel } from '@clack/prompts';
+import { isCancel } from '../../prompts';
 import { cancel } from '../../frame';
 import { BACK } from './state';
 import type { StepOutcome } from '../../engine';

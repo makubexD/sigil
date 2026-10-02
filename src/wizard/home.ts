@@ -9,7 +9,7 @@
  * @module
  */
 import os from 'node:os';
-import { intro, isCancel, log, note, outro, select } from '@clack/prompts';
+import { intro, isCancel, log, note, outro, select } from './prompts';
 import { detectProjectContext } from '../project-context';
 import type { NextAction, ProjectContext } from '../project-context';
 import { SigilError } from '../errors';
@@ -17,6 +17,7 @@ import { guardFolder } from './folder-guard';
 import type { GuardedFolder } from './folder-guard';
 import { pickFolder } from './folder-picker';
 import { runInHomeFrame, withGutter } from './frame';
+import { describeTerminal } from './terminal';
 import { buildMenu, describeContext, topRecommendation } from './home-menu';
 import type { HomeActionId, MenuItem } from './home-menu';
 import { buildNextMenu, nextSummary } from './home-next';
@@ -256,6 +257,7 @@ async function homeLoop(projectDir: string, deps: HomeDeps): Promise<void> {
     after: undefined,
     riskAccepted: false,
   };
+  if (process.env['SIGIL_DEBUG'] === 'terminal') log.info(describeTerminal());
   const catalogIds = await deps.catalogIds?.();
   for (;;) {
     const ctx = readContext(session.dir, catalogIds, deps);

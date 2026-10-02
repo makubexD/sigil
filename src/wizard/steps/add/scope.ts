@@ -1,4 +1,4 @@
-import { select, confirm, isCancel } from '@clack/prompts';
+import { select, confirm, isCancel } from '../../prompts';
 import { cancel } from '../../frame';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { visibleArtifacts, type AddWizardState, type ScopeChoice } from './state';

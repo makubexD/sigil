@@ -66,9 +66,34 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
 - **Provider lists in prose come from the registry** (`src/tool-names.ts`: `toolName`, `toolList`,
   `setUpToolNames`). Never write "Claude Code or Copilot" or "both tools"; `toolList` caps a list ("A, B, C or 2
   more"). `test/wizard/home-many-tools.test.ts` registers extra tools to prove it.
+- **Everything the user sees goes through `wizard/prompts.ts`, never clack** (`test/wizard/frame.test.ts` scans `src/`:
+  only `prompts.ts`, `say.ts`, `frame.ts` may import `@clack/prompts`, and only `prompt-run.ts` and `picker/index.ts`
+  `@clack/core`). The four prompts are our own, built on `@clack/core` (`prompt-run.ts`) with pure renderers
+  (`prompt-views.ts`, `prompt-fit.ts`): the window is read when each frame is drawn (`terminal.ts`), every line is cut to it
+  with `…`, an answered prompt collapses to one line (a multi-select says "N selected", never a list of ids), and `text`
+  scrolls sideways around the cursor. `log.*` and `note` wrap (`say.ts`). **Cut, never wrap, a prompt line**: clack
+  redraws by erasing a logical line count, so a line the terminal splits in two leaves leftovers behind (the overlapping
+  text on a small or zoomed-in window). A `label (recommended)` keeps its marker. Never wrap, cut or measure by hand, and
+  never read `process.stdout.columns` directly (a scan fails): `terminalWidth()` / `terminalHeight()` re-read the real
+  size, because Node's cached one goes stale in ConPTY terminals on Windows (VS Code, Windows Terminal), and
+  `watchWindowSize()` keeps an open prompt following a zoom. `SIGIL_COLUMNS` overrides a terminal that misreports and
+  `SIGIL_DEBUG=terminal` prints cached vs live size. With no terminal (pipes, CI, tests) nothing is changed.
+  Plain verbs (`build`, `list`, `status`, `--json` …) are deliberately not wrapped: they have no gutter, the terminal's
+  soft wrap is right, and wrapping would corrupt copied JSON or code.
+- **Tests for width.** `test/helpers/window.ts` (`withWindow`), `assertFits` and `inTerminal` (`home-flow.ts`), and the
+  mock (`clack-mock.ts`), which replaces our four prompts and records what a person would see. **`all-paths.test.ts` runs
+  every interactive path in five window sizes** and a scan fails when a source file that draws a prompt is in neither a
+  scenario nor the exemption list: **add a scenario (or a reasoned exemption) when you add a prompt to a new file.**
+- **The command to repeat is one flush-left line** (`printRepeatCommand` → `copyableLine`; used by `Repeat non-interactively`
+  and every `Equivalent command:`, a scan fails on a log line): never wrapped, no gutter, no line continuation. A wrapped
+  command pastes differently in PowerShell (backtick), bash (`\`) and cmd (`^`), and the shell cannot be detected (no
+  variable separates PowerShell from cmd), so the one form that works everywhere is a single line of inert characters
+  (`copyable-command.test.ts` checks every catalog id against `[A-Za-z0-9:/_.,@= -]`). What _can_ be detected is how sigil was
+  started: after `npm run sigil` the binary is not on PATH, so `launcherPrefix` (`src/invocation.ts`, from `npm_command`,
+  `npm_lifecycle_event`, `npm_lifecycle_script`) prints `npm run sigil -- …` instead of `sigil …`.
 - **The whole menu session is one frame.** `runHome` opens the only `intro` and closes the only `outro`. Wizards
-  and guided verbs import `intro`, `outro` and `cancel` from `wizard/frame.ts`, never from `@clack/prompts`
-  (`test/wizard/frame.test.ts` scans `src/`): inside the menu they print a log line instead of drawing a second
+  and guided verbs use `intro`, `outro` and `cancel` from `wizard/frame.ts` (re-exported by `prompts.ts`):
+  inside the menu they print a log line instead of drawing a second
   `┌`/`└`, and outside it they call clack as before. A note that would repeat ("How this works") goes through
   `noteOnce`. `runHandler` runs each handler under `withGutter`, so a verb's plain `console.log` lines get the `│`
   gutter: a new verb needs no change for that. A custom prompt must also collapse when answered (`picker/render.ts`

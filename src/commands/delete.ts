@@ -7,7 +7,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { confirm, isCancel, note } from '@clack/prompts';
+import { confirm, isCancel, note } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
 import { resolveCatalog } from '../resolve';
 import { isInteractiveTTY } from '../wizard';

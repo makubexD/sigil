@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { note } from '@clack/prompts';
+import { note } from '../../prompts';
 import { kindNoun, CONFIG_KINDS } from '../../../select';
 import type { ClosurePreview, SkippedArtifact } from '../../../select';
 import type { ConfigKind } from '../../../types';

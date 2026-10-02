@@ -9,7 +9,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { execSync, execFileSync } from 'node:child_process';
-import { confirm, isCancel } from '@clack/prompts';
+import { confirm, isCancel } from '../wizard/prompts';
 import { bumpVersion, promoteChangelog } from '../release';
 import { isInteractiveTTY } from '../wizard';
 import { pkg, PKG_ROOT } from '../cli-helpers';

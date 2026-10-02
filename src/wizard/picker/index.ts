@@ -19,6 +19,7 @@
  */
 import { GroupMultiSelectPrompt, isCancel } from '@clack/core';
 import { renderFrame } from './render';
+import { terminalHeight, terminalWidth, watchWindowSize } from '../terminal';
 import type { FlatRow } from './layout';
 import type { PickerGroups, PickerRow } from './types';
 
@@ -65,8 +66,8 @@ function renderPrompt(
     options: toFlatRows(this.options),
     cursor: this.cursor,
     selected: new Set(this.value as string[]),
-    terminalRows: process.stdout.rows || FALLBACK_TERMINAL_ROWS,
-    terminalColumns: process.stdout.columns || FALLBACK_TERMINAL_COLUMNS,
+    terminalRows: terminalHeight() ?? FALLBACK_TERMINAL_ROWS,
+    terminalColumns: terminalWidth() ?? FALLBACK_TERMINAL_COLUMNS,
     footerHint,
     state: this.state,
   });
@@ -88,5 +89,6 @@ export async function pickArtifacts(opts: PickArtifactsOptions): Promise<string[
       return renderPrompt.call(this, opts.message, footerHint);
     },
   });
-  return prompt.prompt() as Promise<string[] | symbol>;
+  const stop = watchWindowSize();
+  return (prompt.prompt() as Promise<string[] | symbol>).finally(stop);
 }

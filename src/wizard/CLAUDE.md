@@ -253,9 +253,9 @@ count depend on content, not just `viewportRows`, reintroduces the bug — verif
 
 Structural shape: a fixed-height scrolling list (with `↑ N more` / `↓ N more` sentinel rows and a
 pinned group header when scrolled mid-group) + a **fixed 3-line detail pane** below it showing the
-active row's full id/kind/state/description (this is why descriptions no longer need to be crammed
-into the row itself — see `toArtifactOption` in `options.ts`, which now returns structured fields
-(`id`, `kindNoun`, `stateGlyph`, `stateLabel`, `description`) instead of a pre-joined label string).
+active row's full id/kind/state/description, so the row itself stays short. `toArtifactOption`
+(`steps/add/options.ts`) returns structured fields (`id`, `kindNoun`, `stateGlyph`, `stateLabel`,
+`description`) that the row and the pane each render.
 A flat (single-group) picker is just `pickArtifacts` called with one descriptive group key — there
 is no separate flat-vs-grouped implementation.
 

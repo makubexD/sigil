@@ -74,10 +74,12 @@ Build and run the `sigil new` command with the gathered information:
 ```bash
 sigil new <kind> \
   --name <name> \
-  --language <lang>        \   # omit for shared
-  [--platforms claude]     \   # only if restricting; omit for DRY default
+  --language <lang> \
+  --platforms claude \
   --catalog-dir catalog/
 ```
+
+Drop `--language` for a shared artifact, and drop `--platforms` unless restricting (the DRY default).
 
 **Examples**:
 ```bash

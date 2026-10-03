@@ -20,6 +20,8 @@ export interface ResolvedAddInputs {
   overwrite: boolean;
   language: string | undefined;
   scope: ConfigScope;
+  /** True when the wizard chose these inputs, so the user has no command yet to repeat. */
+  fromWizard: boolean;
 }
 
 /** Throws the "no selectors + not a TTY" guidance error. */
@@ -50,6 +52,7 @@ function fromWizardResult(
     overwrite: wizardResult.overwrite,
     language: wizardResult.language ?? opts.language,
     scope: (wizardResult.configScope as ConfigScope | undefined) ?? baseScope,
+    fromWizard: true,
   };
 }
 
@@ -104,6 +107,19 @@ function resolveBaseScope(opts: AddOpts): ConfigScope {
   return (opts.scope as ConfigScope | undefined) ?? 'project';
 }
 
+/** The inputs as the user typed them on the command line. */
+function typedInputs(selectors: string[], opts: AddOpts, scope: ConfigScope): ResolvedAddInputs {
+  return {
+    selectors,
+    target: opts.target,
+    includeDeps: opts.deps !== false,
+    overwrite: opts.overwrite,
+    language: opts.language,
+    scope,
+    fromWizard: false,
+  };
+}
+
 /** Resolves the effective selectors/target/flags, running the wizard when needed. */
 export async function resolveInputs(
   selectors: string[],
@@ -114,16 +130,7 @@ export async function resolveInputs(
   const needsWizard = (selectors.length === 0 || opts.interactive) && !opts.yes;
   const baseScope = resolveBaseScope(opts);
 
-  if (!needsWizard) {
-    return {
-      selectors,
-      target: opts.target,
-      includeDeps: opts.deps !== false,
-      overwrite: opts.overwrite,
-      language: opts.language,
-      scope: baseScope,
-    };
-  }
+  if (!needsWizard) return typedInputs(selectors, opts, baseScope);
 
   return resolveViaWizard(opts, resolved, packs, baseScope);
 }

@@ -16,6 +16,8 @@ import { scaffoldManifestFiles, type FilesByArtifact } from './scaffold-files';
 export interface AddOutcome {
   overwrittenCount: number;
   configWrittenCount: number;
+  /** Listing lines for the config files merged into, printed with the written files. */
+  merged: string[];
 }
 
 /** Writes `toWrite`, plus `conflicting` when overwrite is allowed; else prints conflict advice. */
@@ -125,11 +127,9 @@ export async function executeAddPlan(plan: AddPlan): Promise<AddOutcome> {
     manifest,
     now,
   });
-  const configResult = await installConfigArtifacts(plan, manifest, now);
+  const { manifestDirty, ...config } = await installConfigArtifacts(plan, manifest, now);
 
-  if (fileManifestDirty || configResult.manifestDirty) {
-    trySaveManifest(opts.projectDir, manifest);
-  }
+  if (fileManifestDirty || manifestDirty) trySaveManifest(opts.projectDir, manifest);
 
-  return { overwrittenCount, configWrittenCount: configResult.configWrittenCount };
+  return { overwrittenCount, ...config };
 }

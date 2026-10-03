@@ -93,9 +93,9 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   `MSYSTEM`/`SHELL` is Git Bash; the per-user PowerShell folder in `PSModulePath` is PowerShell (a fresh cmd lacks it);
   else cmd. Known miss: cmd started inside PowerShell reads as PowerShell, and `SIGIL_SHELL=cmd` fixes it. Not in a
   terminal (pipes, CI) the command stays one plain line. `copyable-command.test.ts` checks every catalog id against
-  `[A-Za-z0-9:/_.,@= -]`. After `npm run sigil` the binary is not on PATH, so `launcherPrefix` (from `npm_command`,
-  `npm_lifecycle_event`, `npm_lifecycle_script`) prints `node <absolute cli.js> …` instead of `sigil …`, which runs
-  from any folder (`npm run` only works inside the repo). It falls back to `npm run sigil -- …` when the path holds a
+  `[A-Za-z0-9:/_.,@= -]`. After `npm run sigil`, or `node …/cli.js` with no `sigil` on PATH, `launcherPrefix` (from
+  `npm_command`, `npm_lifecycle_event`, `npm_lifecycle_script`, `PATH`) prints `node <absolute cli.js> …` instead of
+  `sigil …`, which runs from any folder (`npm run` only works inside the repo). It falls back to `npm run sigil -- …` when the path holds a
   character the shells read differently.
 - **The whole menu session is one frame.** `runHome` opens the only `intro` and closes the only `outro`. Wizards
   and guided verbs use `intro`, `outro` and `cancel` from `wizard/frame.ts` (re-exported by `prompts.ts`):
@@ -155,7 +155,8 @@ An empty queue throws, which is how a test proves "this path asks nothing".
 **Wizard (`src/wizard/add.ts`):** triggered when run with no selector in an interactive TTY. Uses
 `@clack/prompts` for a step-machine guided flow; every prompt maps 1:1 to a CLI flag so guided and
 scripted paths are equivalent. After install, `printEquivalentCommand()` prints the copy-pasteable
-`sigil add … --yes` line (boxed in a TTY, plain text in CI). The plan box shows summary + artifact
+`sigil add … --yes` line (boxed in a TTY, plain text in CI), only after a wizard install: a command the user
+typed is not echoed back. Picks that install nothing (cause `inlined`) are left out of it. The plan box shows summary + artifact
 preview only — never the command — so it is never printed twice.
 
 **Cancel/back handling (`src/wizard/steps/add/prompt-helpers.ts`):** every step under

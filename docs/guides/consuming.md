@@ -103,7 +103,8 @@ bar, so you can copy them whole. A long command is broken between words, never i
 and each line ends with the continuation of your shell (a backtick in PowerShell, `^` in cmd, a backslash in Git Bash); the label
 names the shell. If sigil guesses wrong, set `SIGIL_SHELL=powershell`, `cmd` or `bash`. After `npm run sigil` it starts with
 `node <path to cli.js>` instead of `sigil`, because the `sigil` command is usually not on your PATH there. You can paste
-it in any folder and it installs there. If a terminal reports the
+it in any folder and it installs there. Only a wizard install prints it. JSON merges (`.mcp.json` and the like) are
+listed with the written files, after the summary line. If a terminal reports the
 wrong width, set `SIGIL_COLUMNS=<width>`; `SIGIL_DEBUG=terminal` prints the size sigil sees.
 
 **Which tool?** When the folder is set up for exactly one tool, Install does not ask which tool: it says

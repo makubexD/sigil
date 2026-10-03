@@ -10,6 +10,9 @@
  * @module
  */
 
+import fs from 'fs';
+import path from 'path';
+
 /** The shells whose line continuation differs: PowerShell, cmd, and bash-like (Git Bash, macOS, Linux). */
 export type Shell = 'powershell' | 'cmd' | 'posix';
 
@@ -48,6 +51,16 @@ export function detectShell(
   return POWERSHELL_USER_MODULES.test(env['PSModulePath'] ?? '') ? 'powershell' : 'cmd';
 }
 
+const PATH_EXTENSIONS = ['', '.cmd', '.ps1', '.exe'];
+
+/** True when a `sigil` command sits in a `PATH` folder, so typing `sigil` works. */
+function sigilOnPath(env: NodeJS.ProcessEnv): boolean {
+  const dirs = (env['PATH'] ?? env['Path'] ?? '').split(path.delimiter).filter(Boolean);
+  return dirs.some(dir =>
+    PATH_EXTENSIONS.some(ext => fs.existsSync(path.join(dir, `sigil${ext}`))),
+  );
+}
+
 /** Characters one of PowerShell, cmd and bash still expands inside double quotes. */
 const UNSAFE_IN_QUOTES = /["$`%!^&|<>;()]/;
 
@@ -57,25 +70,33 @@ const UNSAFE_IN_QUOTES = /["$`%!^&|<>;()]/;
  */
 function nodeCommandFor(script: string | undefined): string | undefined {
   if (!script) return undefined;
-  const path = script.replace(/\\/g, '/');
-  if (UNSAFE_IN_QUOTES.test(path)) return undefined;
-  return `node ${path.includes(' ') ? `"${path}"` : path}`;
+  const posixPath = script.replace(/\\/g, '/');
+  if (UNSAFE_IN_QUOTES.test(posixPath)) return undefined;
+  return `node ${posixPath.includes(' ') ? `"${posixPath}"` : posixPath}`;
+}
+
+/** The npm script that launched sigil (`npm run <name>` running `cli.js`), or undefined. */
+function npmScriptName(env: NodeJS.ProcessEnv): string | undefined {
+  const launched =
+    env['npm_command'] === 'run-script' && /\bcli\.js\b/.test(env['npm_lifecycle_script'] ?? '');
+  return launched ? env['npm_lifecycle_event'] || undefined : undefined;
 }
 
 /**
- * What to type to run sigil: `sigil`; or, when an npm script launched it, `node <absolute cli.js>`,
- * which runs from any folder (`npm run` only works where that package.json is). It falls back to
- * `npm run <script> --` when the path has a character the shells treat differently.
+ * What to type to run sigil: `sigil`; or `node <absolute cli.js>` when an npm script launched it, or
+ * when it was run as `node …/cli.js` and no `sigil` command is on PATH. That form runs from any folder
+ * (`npm run` only works where that package.json is). An npm launch falls back to `npm run <script> --`
+ * when the path has a character the shells treat differently.
  */
 export function launcherPrefix(
   env: NodeJS.ProcessEnv = process.env,
   script: string | undefined = process.argv[1],
 ): string {
-  const event = env['npm_lifecycle_event'];
-  const launchedByScript =
-    env['npm_command'] === 'run-script' && /\bcli\.js\b/.test(env['npm_lifecycle_script'] ?? '');
-  if (!launchedByScript || !event) return 'sigil';
-  return nodeCommandFor(script) ?? `npm run ${event} --`;
+  const event = npmScriptName(env);
+  if (event) return nodeCommandFor(script) ?? `npm run ${event} --`;
+  const runFromCli = /(^|[\\/])cli\.js$/.test(script ?? '');
+  if (runFromCli && !sigilOnPath(env)) return nodeCommandFor(script) ?? 'sigil';
+  return 'sigil';
 }
 
 /** `command` with its leading `sigil` replaced by how sigil is launched here. */

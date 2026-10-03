@@ -179,7 +179,8 @@ platform target, see [docs/reference/architecture.md](docs/reference/architectur
   - `clack-mock.ts`: `mockClack(queue)` answers wizard prompts from a queue and returns `restore()`
   - `config.ts`: `makeConfigOp`; `ansi.ts`: `stripAnsi`
 
-**Run everything** (with coverage, which `npm test` prints via `--experimental-test-coverage`):
+**Run everything** (with coverage, which `npm test` prints via `--experimental-test-coverage`; CI sets
+`SIGIL_TEST_COVERAGE=0` because it instruments every test process and nothing enforces a threshold):
 
 ```bash
 npm test

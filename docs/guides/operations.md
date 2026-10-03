@@ -71,7 +71,10 @@ compiles `src/`, type errors there fail `npm test`. To run a single test file, s
 `dist-cli/` is current, so CI and `ci:local` use it right after their own Build step (that saved the duplicate
 build, about 10 s on Windows). Anywhere else, use `npm test`, which works alone on a clean checkout.
 
-`scripts/run-tests.cjs` preloads `scripts/quiet-console.cjs`, which silences `console.log`, `console.info` and
+`scripts/run-tests.cjs` runs one test file per CPU (`SIGIL_TEST_CONCURRENCY=<n>` overrides) and prints coverage
+unless `SIGIL_TEST_COVERAGE=0`, which the CI test step sets.
+
+The runner also preloads `scripts/quiet-console.cjs`, which silences `console.log`, `console.info` and
 `console.debug` in every test process. Under `node --test` those calls share a pipe with the runner's own
 messages, and on Node 20 stray text can corrupt them ("Unable to deserialize cloned data"). Set
 `SIGIL_TEST_OUTPUT=1` to see the output while debugging.

@@ -14,7 +14,7 @@
  * aggregate files like AGENTS.md or marketplace.json that have no fixed shape,
  * and for plugin-build paths that are structurally different from scaffold paths).
  */
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../frontmatter-parse';
 import type { FileMap, ContractEntry, OutputViolation } from '../types';
 import type { KindEmitSpec } from './spec-types';
 
@@ -45,7 +45,7 @@ export function deriveContracts(specs: readonly KindEmitSpec[]): ContractEntry[]
 /** Parses frontmatter safely — gray-matter handles files with and without `---`. */
 function safeParseFrontmatter(content: string): { keys: string[]; body: string } {
   try {
-    const parsed = matter(content);
+    const parsed = parseFrontmatter(content);
     return { keys: Object.keys(parsed.data), body: parsed.content };
   } catch {
     // Unparseable frontmatter: skip key checks, still run body checks

@@ -66,7 +66,26 @@ module.exports = tseslint.config(
       // or over complexity 10 was extracted into guard-clause helpers, behavior-preserving.
       'max-lines-per-function': ['error', { max: 20, skipBlankLines: true, skipComments: true }],
       complexity: ['error', 10],
+      // gray-matter caches parse results and hands every caller the same `data` object, so an
+      // edit in one place changed later parses of the same text. Parse through
+      // src/frontmatter-parse.ts, which always returns a fresh object.
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'gray-matter',
+              message:
+                'Use parseFrontmatter from src/frontmatter-parse.ts (gray-matter shares cached objects).',
+            },
+          ],
+        },
+      ],
     },
+  },
+  {
+    files: ['src/frontmatter-parse.ts'],
+    rules: { 'no-restricted-imports': 'off' },
   },
 
   // test only: node:test's describe()/it() intentionally return an unawaited Promise —

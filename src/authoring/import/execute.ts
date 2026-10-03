@@ -10,7 +10,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../../frontmatter-parse';
 import { checkSourceArtifact } from '../check-source';
 import { scanContent } from '../../trust/scan';
 import { renderArtifactFile } from './plan';
@@ -40,7 +40,7 @@ function makeArtifactFromContent(
   content: string,
   filePath: string,
 ): import('../../types').Artifact {
-  const parsed = matter(content);
+  const parsed = parseFrontmatter(content);
   const fm = parsed.data as Record<string, unknown>;
   return {
     id: fm.id as string,

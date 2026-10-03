@@ -4,7 +4,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
+import { parseFrontmatter } from './frontmatter-parse';
 import { glob } from 'tinyglobby';
 import yaml from 'js-yaml';
 import type { Artifact, LanguageMetadata, LoadedCatalog } from './types';
@@ -128,7 +128,7 @@ function parseArtifactFile(filePath: string, skipWarnings: string[]): Artifact |
     throw new Error(`[load] Cannot read file ${filePath}`, { cause: err });
   }
 
-  const parsed = matter(raw);
+  const parsed = parseFrontmatter(raw);
   const fm = parsed.data as Record<string, unknown>;
   if (missingRequiredField(fm, filePath, skipWarnings)) return null;
 

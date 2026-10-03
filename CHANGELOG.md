@@ -172,6 +172,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   source folder and file ending are now declared once and every command derives from them;
   `sigil check` also recognises hook, settings and mcp files by name, and shell completion offers
   `kind:hook`, `kind:settings` and `kind:mcp`.
+- After `sigil move`, `patch`, `edit` or `sync --apply` edited a file in a long-running session (the
+  wizard), a later read of any file with the same text returned the edited values: the frontmatter
+  parser's cache handed every caller the same object. Every read now gets its own copy.
 - `sigil move` of a template still refused its three-part id, and its post-move check ignored the
   catalog root and parsed files more loosely than the loader. `move`, `patch`, `edit` and
   `retarget` also rewrote a quoted date such as `verifiedOn: "2026-08-05"` without quotes, turning

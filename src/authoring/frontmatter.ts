@@ -10,7 +10,7 @@
  * matches the retarget command's existing output format exactly.
  */
 import fs from 'fs';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../frontmatter-parse';
 import yaml from 'js-yaml';
 
 // ─── Serialisation ────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ export function serializeYamlEntry(key: string, val: unknown): string {
  */
 export function writeArtifactFrontmatter(filePath: string, patch: Record<string, unknown>): void {
   const raw = fs.readFileSync(filePath, 'utf-8');
-  const parsed = matter(raw);
+  const parsed = parseFrontmatter(raw);
 
   for (const [k, v] of Object.entries(patch)) {
     if (v === undefined) {

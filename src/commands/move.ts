@@ -8,7 +8,7 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../frontmatter-parse';
 import { globSync } from 'tinyglobby';
 import { confirm, isCancel } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
@@ -30,7 +30,7 @@ export interface MoveOptions {
 function parseArtifactSync(filePath: string): LoadedCatalog['artifacts'][number] | undefined {
   try {
     const raw = fs.readFileSync(filePath, 'utf-8');
-    const parsed = matter(raw);
+    const parsed = parseFrontmatter(raw);
     const { id: fmId, kind } = parsed.data as { id?: string; kind?: string };
     if (!fmId || !kind) return undefined;
     return {

@@ -10,12 +10,10 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
-import { stripAnsi } from './helpers/ansi';
+import { cliHelp, mapParallel } from './helpers/cli-help';
 
-const CLI = path.resolve(__dirname, '../dist-cli/cli.js');
 const DOC = path.resolve(__dirname, '../docs/reference/cli-flags.md');
 const REGENERATE = 'Regenerate docs/reference/cli-flags.md.';
 const SKIPPED = new Set(['help', '__complete']);
@@ -27,20 +25,10 @@ interface RegisteredCommand {
   names: readonly string[];
 }
 
-function helpText(args: readonly string[]): string {
-  try {
-    return stripAnsi(
-      execFileSync(process.execPath, [CLI, ...args], {
-        encoding: 'utf8',
-        env: { ...process.env, COLUMNS: '200', FORCE_COLOR: '0' },
-        windowsHide: true,
-      }),
-    );
-  } catch (error) {
-    const err = error as { stdout?: string; stderr?: string; status?: number | null };
-    const detail = stripAnsi(err.stderr || err.stdout || String(error));
-    assert.fail(`sigil ${args.join(' ')} exited ${err.status ?? 'unknown'}: ${detail}`);
-  }
+const COLUMNS = 200;
+
+function helpText(args: readonly string[]): Promise<string> {
+  return cliHelp(args, { columns: COLUMNS });
 }
 
 /** Primary command plus aliases from one `Commands:` line (`get|show`). */
@@ -104,42 +92,43 @@ function sectionHasFlag(section: string, flag: string): boolean {
   return new RegExp(`(?<![\\w-])${escaped}(?![\\w-])`).test(section);
 }
 
-function loadDocAlignment(): {
+async function loadDocAlignment(): Promise<{
   commands: RegisteredCommand[];
   sections: Map<string, string>;
   registered: Set<string>;
-} {
-  const commands = parseRegisteredCommands(helpText(['--help']));
+}> {
+  const commands = parseRegisteredCommands(await helpText(['--help']));
   const sections = commandSections(fs.readFileSync(DOC, 'utf8'));
   const registered = new Set(commands.flatMap(command => command.names));
   return { commands, sections, registered };
 }
 
 describe('cli-flags.md matches sigil --help', () => {
-  it('should document every registered command and every flag in its help', () => {
-    const { commands, sections } = loadDocAlignment();
+  it('should document every registered command and every flag in its help', async () => {
+    const { commands, sections } = await loadDocAlignment();
+    const helps = await mapParallel(commands, command => helpText([command.name, '--help']));
     const problems: string[] = [];
-    for (const command of commands) {
+    commands.forEach((command, i) => {
       const section = sections.get(command.name);
       if (section === undefined) {
         problems.push(
           `sigil ${command.name} is registered but docs/reference/cli-flags.md has no section for it. ${REGENERATE}`,
         );
-        continue;
+        return;
       }
-      for (const flag of flagTokens(helpText([command.name, '--help']))) {
+      for (const flag of flagTokens(helps[i] as string)) {
         if (!sectionHasFlag(section, flag)) {
           problems.push(
             `sigil ${command.name}: ${flag} is in \`${command.name} --help\` but missing from its section in docs/reference/cli-flags.md. ${REGENERATE}`,
           );
         }
       }
-    }
+    });
     assert.equal(problems.length, 0, problems.join('\n'));
   });
 
-  it('should have no section for a command that is not registered', () => {
-    const { sections, registered } = loadDocAlignment();
+  it('should have no section for a command that is not registered', async () => {
+    const { sections, registered } = await loadDocAlignment();
     const extras = [...sections.keys()].filter(name => !registered.has(name));
     const problems = extras.map(
       name =>

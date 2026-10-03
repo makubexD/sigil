@@ -59,4 +59,15 @@ describe('Load phase', () => {
     assert.ok(skill.references && skill.references.length > 0, 'skill has references');
     assert.equal(skill.references![0]!.name, 'testing-library.md');
   });
+
+  it('should return artifacts in source-path order, whatever order the glob library walks in', async () => {
+    // Arrange
+    const catalog = await loadCatalog(CATALOG_DIR);
+
+    // Act
+    const paths = catalog.artifacts.map(a => a.filePath);
+
+    // Assert
+    assert.deepEqual(paths, [...paths].sort());
+  });
 });

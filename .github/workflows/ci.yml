@@ -37,11 +37,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # Raised from "any severity" on 2026-10-03: GHSA-vfj7-8cjw-p6xm (braces, reached through fast-glob)
-      # has no fix yet and needs an attacker-controlled glob, but sigil only globs its own catalog.
-      # Restore the default once braces is patched or fast-glob is replaced.
-      - name: Audit dependencies (runtime deps, fail on critical)
-        run: npm audit --omit=dev --audit-level=critical
+      - name: Audit dependencies (runtime deps, fail on any severity)
+        run: npm audit --omit=dev
 
       - name: Lint
         run: npm run lint

@@ -5,7 +5,7 @@
 import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
-import glob from 'fast-glob';
+import { glob } from 'tinyglobby';
 import yaml from 'js-yaml';
 import type { Artifact, LanguageMetadata, LoadedCatalog, ReferenceFile } from './types';
 import { SKILL_FILENAME } from './paths';
@@ -32,6 +32,7 @@ async function loadLanguages(catalogDir: string): Promise<Map<string, LanguageMe
   const langYamlPaths = await glob('languages/*/language.yaml', {
     cwd: catalogDir,
     absolute: true,
+    expandDirectories: false,
   });
 
   for (const yamlPath of langYamlPaths) {
@@ -74,7 +75,10 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
   const skipWarnings: string[] = [];
   const languages = await loadLanguages(catalogDir);
 
-  const filePaths = await glob(ARTIFACT_PATTERNS, { cwd: catalogDir, absolute: true });
+  // tinyglobby and fast-glob both return paths in traversal order; sorting keeps every emitted file stable.
+  const filePaths = (
+    await glob(ARTIFACT_PATTERNS, { cwd: catalogDir, absolute: true, expandDirectories: false })
+  ).sort();
   const artifacts = filePaths
     .map(filePath => parseArtifactFile(filePath, skipWarnings))
     .filter((a): a is Artifact => a !== null);

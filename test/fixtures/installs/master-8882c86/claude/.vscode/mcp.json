@@ -1,0 +1,7 @@
+{
+  "servers": {
+    "user-server": {
+      "command": "user-mcp"
+    }
+  }
+}

@@ -1,0 +1,29 @@
+{
+  "model": "user-choice",
+  "permissions": {
+    "allow": [
+      "Bash(make test)",
+      "Bash(npm run *)",
+      "Bash(npx tsc *)",
+      "Bash(npx eslint *)",
+      "Bash(npx prettier *)"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "-e",
+              "const fs = require('fs');\nconst path = require('path');\nlet raw = '';\nprocess.stdin.setEncoding('utf8');\nprocess.stdin.on('data', chunk => (raw += chunk)).on('end', () => {\n  let file;\n  try { file = JSON.parse(raw).tool_input.file_path; } catch { return; }\n  if (typeof file !== 'string') return;\n  const full = path.resolve(file);\n  const names = [file, full];\n  try { names.push(fs.realpathSync.native(full)); } catch {\n    try { names.push(path.join(fs.realpathSync.native(path.dirname(full)), path.basename(full))); } catch {}\n  }\n  const hit = names.flatMap(baseNames).find(isProtected);\n  if (hit) {\n    process.stderr.write('sigil-hook: blocked write to protected file ' + hit + '\\n');\n    process.exitCode = 2;\n  }\n});\nfunction baseNames(p) {\n  const b = p.split(/[\\\\/]/).pop().toLowerCase().replace(/[. ]+$/, '');\n  return [b, b.split(':')[0]];\n}\nfunction isProtected(b) {\n  if (/\\.(example|sample|template)$/.test(b)) return false;\n  if (/^\\.env([.-]|rc$|$)/.test(b) || b.endsWith('.env')) return true;\n  if (/^id_(rsa|dsa|ecdsa|ed25519)/.test(b)) return !b.endsWith('.pub');\n  if (/\\.(pem|key|p12|pfx|ppk|jks|keystore)$/.test(b)) return true;\n  const exact = ['credentials', '.git-credentials', 'secrets', '.secrets', '.netrc', '.pgpass'];\n  if (exact.includes(b)) return true;\n  return /^(secrets|credentials)\\.(json|ya?ml|toml|ini|env|txt|xml)$/.test(b);\n}"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

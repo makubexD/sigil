@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1 in progress — T0, N1 done; next N2.
+Status: M1 in progress — T0, N1, N2 done; next N3.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -11,7 +11,7 @@ Spec: `SPEC.md`
 
 - [x] T0 Plan commit
 - [x] N1 Output snapshot test (permanent, in-process)
-- [ ] N2 Frozen install fixture from master 8882c86, plus a migration test
+- [x] N2 Frozen install fixture from master 8882c86, plus a migration test
 - [ ] N3 Smoke test that installs every pack
 - [ ] S1 An agent's `tools` list can't silently widen (`.min(1)`)
 - [ ] S2 No frontmatter injection through tool strings

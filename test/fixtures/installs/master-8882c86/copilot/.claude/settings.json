@@ -1,0 +1,8 @@
+{
+  "model": "user-choice",
+  "permissions": {
+    "allow": [
+      "Bash(make test)"
+    ]
+  }
+}

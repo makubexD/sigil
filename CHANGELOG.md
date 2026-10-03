@@ -141,8 +141,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - An agent's tool restriction can no longer widen silently. `tools: []` and `disallowedTools: []` are
   schema errors (an empty list emitted no `tools:` line, which both tools read as "every tool"), and
-  `sigil sync --check` fails an agent whose `disallowedTools` would be dropped on a target it ships to
-  (Copilot has no such field), via the new `tool-restriction-coverage` rule.
+  an agent whose `disallowedTools` would be dropped on a target it ships to (Copilot has no such
+  field) is refused by `build`, `add` and `update` instead of being written with every tool; the new
+  `tool-restriction-coverage` rule reports it earlier, at `sigil sync --check`.
 - A tool name can no longer add or end a frontmatter key. `tools`, `disallowedTools` and
   `allowedTools` entries may use letters, digits, spaces and `_ . : * ( ) / -` only (a newline, `#`,
   quote, comma or bracket is a schema error), and the emitted `tools:` / `allowed-tools:` line is

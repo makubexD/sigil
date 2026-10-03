@@ -6,6 +6,7 @@
 import type { ResolvedArtifact } from '../types';
 import type { KindEmitSpec, EmitContext, FieldMapping } from './spec-types';
 import { applyLexicon } from './lexicon';
+import { assertRestrictionsCarried } from './tool-restriction';
 
 /**
  * Renders one FieldMapping's `key: value` line(s), or `''` to omit it entirely.
@@ -72,6 +73,7 @@ export function renderArtifact(
   artifact: ResolvedArtifact,
   ctx: EmitContext,
 ): string {
+  assertRestrictionsCarried(spec, artifact);
   const frontmatterBlock = renderFrontmatterBlock(spec, artifact.frontmatter);
   const beforeLines = renderSections(spec, artifact, ctx, 'before');
   const rawBody = artifact.resolvedBody ?? artifact.body;

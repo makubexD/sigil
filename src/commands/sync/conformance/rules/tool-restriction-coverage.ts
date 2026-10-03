@@ -15,8 +15,8 @@ import type { Artifact, Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
 import { ALL_PROVIDER_SPECS } from '../../../../targets/all-emit-specs';
 import { artifactTargetsPlatform } from '../../../../select';
-
-const RESTRICTION_FIELDS = ['tools', 'disallowedTools'] as const;
+import { supportsKind } from '../../../../targets/capabilities';
+import { TOOL_RESTRICTION_FIELDS } from '../../../../targets/tool-restriction';
 
 /** The agent fields `target`'s agent specs map — the restrictions it can carry. */
 function carriedFields(target: Target): Set<string> {
@@ -35,9 +35,9 @@ function findingsForAgent(
   targets: readonly Target[],
   carried: ReadonlyMap<string, Set<string>>,
 ): ConformanceFinding[] {
-  const declared = RESTRICTION_FIELDS.filter(f => agent.frontmatter[f] !== undefined);
+  const declared = TOOL_RESTRICTION_FIELDS.filter(f => agent.frontmatter[f] !== undefined);
   return targets
-    .filter(t => artifactTargetsPlatform(agent, t.name))
+    .filter(t => artifactTargetsPlatform(agent, t.name) && supportsKind(t, 'agent'))
     .flatMap(target =>
       declared
         .filter(field => !carried.get(target.name)?.has(field))

@@ -61,6 +61,18 @@ describe('agent tool restriction — emitted on every provider', () => {
   }
 });
 
+describe('agent tool restriction — refused at render time', () => {
+  it('should refuse to render an agent whose restriction the spec drops', () => {
+    const agent = makeAgent({ disallowedTools: ['Edit'] }) as unknown as ResolvedArtifact;
+    assert.throws(() => renderArtifact(COPILOT_AGENT_SPEC, agent, {}), /disallowedTools/);
+  });
+
+  it('should render it through a spec that carries the restriction', () => {
+    const agent = makeAgent({ disallowedTools: ['Edit'] }) as unknown as ResolvedArtifact;
+    assert.match(renderArtifact(CLAUDE_AGENT_SPEC, agent, {}), /^disallowedTools:/m);
+  });
+});
+
 describe('tool-restriction-coverage', () => {
   it('should flag a restriction a target the agent ships to cannot carry', () => {
     const agent = agentWith({ disallowedTools: ['Edit'] });

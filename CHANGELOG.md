@@ -139,6 +139,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- An agent's tool restriction can no longer widen silently. `tools: []` and `disallowedTools: []` are
+  schema errors (an empty list emitted no `tools:` line, which both tools read as "every tool"), and
+  `sigil sync --check` fails an agent whose `disallowedTools` would be dropped on a target it ships to
+  (Copilot has no such field), via the new `tool-restriction-coverage` rule.
 - `sigil help`, `--help` and `--version` could print nothing on a Windows console (`npm run sigil
   help`): the process exited right after writing. Commander's exits now return normally so Node
   flushes stdout first.

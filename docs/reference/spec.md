@@ -131,16 +131,16 @@ claude: # Claude-namespaced hints; other adapters ignore this block
 
 Agent-specific fields (`AgentSchema`, beyond the shared fields above):
 
-| Field              | Meaning                                                                                                                                              |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools`            | Allow-list of tool names. Emitted by both providers; absent means the provider default of all tools, so an authored read-only agent must declare it. |
-| `disallowedTools`  | Tools the agent must not use. Emitted on Claude only.                                                                                                |
-| `claude.model`     | `haiku`, `sonnet`, or `opus`.                                                                                                                        |
-| `claude.effort`    | `low`, `medium`, or `high`.                                                                                                                          |
-| `claude.maxTurns`  | Positive integer turn cap.                                                                                                                           |
-| `claude.isolation` | `worktree` (run the subagent in an isolated git worktree).                                                                                           |
-| `claude.skills`    | Catalog skill ids to preload (see below).                                                                                                            |
-| `relatedArtifacts` | Sibling cross-references rendered as a Boundary section; see the shared-fields table.                                                                |
+| Field              | Meaning                                                                                                                                                                    |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools`            | Allow-list of tool names, at least one. Emitted by both providers; absent means the provider default of all tools, so an authored read-only agent must declare it.         |
+| `disallowedTools`  | Tools the agent must not use, at least one. Emitted on Claude only, so `sync --check` (`tool-restriction-coverage`) fails an agent that sets it and also ships to Copilot. |
+| `claude.model`     | `haiku`, `sonnet`, or `opus`.                                                                                                                                              |
+| `claude.effort`    | `low`, `medium`, or `high`.                                                                                                                                                |
+| `claude.maxTurns`  | Positive integer turn cap.                                                                                                                                                 |
+| `claude.isolation` | `worktree` (run the subagent in an isolated git worktree).                                                                                                                 |
+| `claude.skills`    | Catalog skill ids to preload (see below).                                                                                                                                  |
+| `relatedArtifacts` | Sibling cross-references rendered as a Boundary section; see the shared-fields table.                                                                                      |
 
 Agents have no `whenToUse`; they dispatch on `description` alone.
 

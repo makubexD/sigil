@@ -70,13 +70,15 @@
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "minItems": 1
         },
         "disallowedTools": {
           "type": "array",
           "items": {
             "type": "string"
-          }
+          },
+          "minItems": 1
         },
         "claude": {
           "type": "object",

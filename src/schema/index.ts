@@ -125,6 +125,12 @@ export const SkillSchema = z.object({
 
 // ─── Agent ───────────────────────────────────────────────────────────────────
 
+/**
+ * Both providers give an agent every tool when its frontmatter has no `tools:` line, and an empty
+ * list emits no line — so `tools: []` would silently mean "all tools", the opposite of what it says.
+ */
+const EMPTY_TOOL_LIST = 'must list at least one tool; omit the field instead of leaving it empty';
+
 export const AgentSchema = z.object({
   ...BaseFields,
   kind: z.literal('agent'),
@@ -142,12 +148,12 @@ export const AgentSchema = z.object({
    * Adapters map these to platform-specific tool names.
    * Examples: "codebase", "terminal", "web-search", "file-read"
    */
-  tools: z.array(z.string()).optional(),
+  tools: z.array(z.string()).min(1, EMPTY_TOOL_LIST).optional(),
   /**
    * Vendor-neutral list of tools this agent must NOT use.
    * Examples: "file-write", "file-delete"
    */
-  disallowedTools: z.array(z.string()).optional(),
+  disallowedTools: z.array(z.string()).min(1, EMPTY_TOOL_LIST).optional(),
   /**
    * Claude Code-specific hints. Namespaced so other adapters can ignore them.
    * Adapter reads these and applies them to the agent's Markdown frontmatter.

@@ -19,6 +19,7 @@ import { redundantDefaultRule } from './rules/redundant-default';
 import { descriptionBudgetRule } from './rules/description-budget';
 import { providerTermLeakRule } from './rules/provider-term-leak';
 import { catalogSymmetryRule } from './rules/catalog-symmetry';
+import { toolRestrictionCoverageRule } from './rules/tool-restriction-coverage';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -34,4 +35,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   descriptionBudgetRule,
   providerTermLeakRule,
   catalogSymmetryRule,
+  toolRestrictionCoverageRule,
 ];

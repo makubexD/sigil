@@ -109,7 +109,9 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   (`src/commands/sync/conformance/rules/declared-but-unemitted.ts`) fails `--check`. It is derived from each spec's
   `FieldMapping[]`. Extend `SIGIL_INTERNAL_FIELDS` in that file only for fields that never reach a provider (`tags`,
   `severity`, `uses`, …), never to silence a real gap. (see
-  `docs/decisions/frontmatter-audit-and-catalog-sweep-2026-08.md`)
+  `docs/decisions/frontmatter-audit-and-catalog-sweep-2026-08.md`) An agent's `tools` / `disallowedTools` must also
+  reach every target it ships to: `tool-restriction-coverage` fails `--check` otherwise, and the schema rejects an
+  empty list (it would emit no line, which means all tools).
 - **Agents have no `whenToUse` frontmatter channel — only `description`**. Skills and prompts dispatch on
   `description` plus `whenToUse`; agents dispatch on `description` alone. `whenToUse:` on an agent is unread at build
   time. Put dispatch-disambiguation in `description`. `declared-but-unemitted` fails `sync --check` if the field is

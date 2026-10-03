@@ -210,6 +210,12 @@ leave it green. When you change emitted content on purpose, run `npm run snapsho
 only the files you meant to change moved (`git diff test/fixtures/output-snapshot/`), and commit the
 new baseline with the change.
 
+**Existing installs:** `test/fixtures/installs/master-8882c86/` is a project an older sigil set up, and
+`test/commands/install-migration.test.ts` checks that `status`, `update` and `prune` still treat it
+correctly. Never regenerate that fixture: it stands for what users already have on disk.
+`test/wizard/real-packs-smoke.test.ts` installs every pack in `packs.yaml` through the wizard for both
+tools, so a new or changed pack is covered automatically.
+
 ## Before you push
 
 ```bash

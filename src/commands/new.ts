@@ -10,7 +10,7 @@ import path from 'node:path';
 import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
 import { ALL_KINDS, isArtifactKind, sourceRelPath } from '../kinds';
-import { namespaceDir } from '../catalog-layout';
+import { SHARED_NAMESPACE, namespaceDir } from '../catalog-layout';
 import { isInteractiveTTY, buildEquivalentNewCommand, printEquivalentCommand } from '../wizard';
 import { checkSourceArtifact } from '../authoring/check-source';
 import { normPath } from '../paths';
@@ -77,8 +77,8 @@ function computeArtifactIdentity(inputs: EffectiveNewInputs): {
   id: string;
 } {
   const name = inputs.name ?? `new-${inputs.kind}`;
-  const lang = inputs.language ?? 'shared';
-  const idPrefix = lang === 'shared' ? 'shared' : lang;
+  const lang = inputs.language ?? SHARED_NAMESPACE;
+  const idPrefix = lang;
   return { name, lang, id: `${idPrefix}/${name}` };
 }
 
@@ -99,7 +99,7 @@ function buildNewArtifactHeader(identity: NewArtifactIdentity, inputs: Effective
     title: inputs.title ?? `TODO — ${name}`,
     description: inputs.description ?? 'TODO — one-line description used in catalog listings.',
     name: effectiveKind === 'skill' || effectiveKind === 'agent' ? name : undefined,
-    language: lang !== 'shared' ? lang : undefined,
+    language: lang !== SHARED_NAMESPACE ? lang : undefined,
     platforms: inputs.platforms,
   });
 }

@@ -9,7 +9,7 @@ import path from 'path';
 import type { ArtifactKind } from '../types';
 import { checkReferences, describeRefProblem, type RefCheck } from '../refs';
 import { normPath } from '../paths';
-import { locateSource, splitId } from '../catalog-layout';
+import { SHARED_NAMESPACE, locateSource, splitId } from '../catalog-layout';
 import { kindOfSourceFile } from '../kinds';
 import type { CheckCtx } from './check-source-ctx';
 
@@ -34,7 +34,7 @@ function inferIdPrefixFromPath(filePath: string, catalogRoot?: string): string |
   const normalized = normPath(filePath);
   const langMatch = normalized.match(/\/languages\/([^/]+)\//);
   if (langMatch) return langMatch[1];
-  if (normalized.includes('/shared/')) return 'shared';
+  if (normalized.includes(`/${SHARED_NAMESPACE}/`)) return SHARED_NAMESPACE;
   return undefined;
 }
 
@@ -68,7 +68,7 @@ function checkNameConsistency(ctx: CheckCtx, idName: string): void {
 
 /** frontmatter `language:` must match the id prefix. */
 function checkLanguageMatchesId(ctx: CheckCtx, idPrefix: string, frontmatterLang: string): void {
-  if (frontmatterLang === idPrefix || idPrefix === 'shared') return;
+  if (frontmatterLang === idPrefix || idPrefix === SHARED_NAMESPACE) return;
   ctx.v.push({
     file: ctx.artifact.filePath,
     problem: `frontmatter language '${frontmatterLang}' must match id prefix '${idPrefix}'`,
@@ -86,7 +86,7 @@ function checkLanguageConsistency(
   if (!frontmatterLang) return;
 
   checkLanguageMatchesId(ctx, idPrefix, frontmatterLang);
-  if (pathPrefix && pathPrefix !== 'shared' && pathPrefix !== frontmatterLang) {
+  if (pathPrefix && pathPrefix !== SHARED_NAMESPACE && pathPrefix !== frontmatterLang) {
     v.push({
       file: artifact.filePath,
       problem: `frontmatter language '${frontmatterLang}' doesn't match path-inferred language '${pathPrefix}'`,

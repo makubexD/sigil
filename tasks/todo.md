@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1 code tasks done (T0, N1–N3, S1–S3, T3, T4); next Phase 5 review.
+Status: M1 done incl. Phase 5 fixes; awaiting GATE 5 (push + PR), then R1 release.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -18,7 +18,7 @@ Spec: `SPEC.md`
 - [x] S3 Reference files are scanned and the loader is hardened
 - [x] T3 One table mapping each kind to its folder
 - [x] T4 `src/catalog-layout.ts`
-- [ ] Phase 5 review (code-reviewer, docs-drift, security-auditor)
+- [x] Phase 5 review (code-reviewer, docs-drift, security-auditor) — 6 fix commits
 - [ ] ⚠ R1 Release minor
 
 ## Milestone 2: catalog standard and guards

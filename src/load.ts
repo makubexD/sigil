@@ -10,6 +10,7 @@ import yaml from 'js-yaml';
 import type { Artifact, LanguageMetadata, LoadedCatalog } from './types';
 import { ALL_KINDS, sourceGlob } from './kinds';
 import { loadReferences } from './load-references';
+import { LANGUAGES_DIR } from './catalog-layout';
 
 /** One glob per kind, from KIND_REGISTRY's sourceDir/sourceSuffix (SKILL.md for skills). */
 const ARTIFACT_PATTERNS = ALL_KINDS.map(sourceGlob);
@@ -17,7 +18,7 @@ const ARTIFACT_PATTERNS = ALL_KINDS.map(sourceGlob);
 /** Loads every language.yaml under catalogDir's languages/ subdirectories into a langId → metadata map. */
 async function loadLanguages(catalogDir: string): Promise<Map<string, LanguageMetadata>> {
   const languages = new Map<string, LanguageMetadata>();
-  const langYamlPaths = await glob('languages/*/language.yaml', {
+  const langYamlPaths = await glob(`${LANGUAGES_DIR}/*/language.yaml`, {
     cwd: catalogDir,
     absolute: true,
     expandDirectories: false,

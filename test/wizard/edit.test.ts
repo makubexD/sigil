@@ -7,6 +7,9 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 // Pre-load wizard so @clack/prompts ends up in require.cache before beforeEach runs.
 import '../../dist-cli/wizard';
+import { bridgePrompts } from '../helpers/clack-mock';
+
+bridgePrompts();
 import type { Artifact } from '../../dist-cli/types';
 
 describe('runEditWizard', () => {

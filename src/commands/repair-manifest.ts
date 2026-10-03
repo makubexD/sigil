@@ -8,7 +8,8 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { cancel, confirm, isCancel, log } from '@clack/prompts';
+import { confirm, isCancel, log } from '../wizard/prompts';
+import { cancel } from '../wizard/frame';
 import { manifestPath } from '../manifest';
 
 /** Renames the manifest to `manifest.damaged-<timestamp>.json`. Returns the new path, or null if none. */
@@ -22,7 +23,7 @@ export function setAsideManifest(projectDir: string, now: Date = new Date()): st
 }
 
 /** Asks first, then sets the damaged record aside and says what to do next. */
-export async function runRepair(projectDir: string): Promise<void> {
+export async function runRepair(projectDir: string): Promise<void | 'cancelled'> {
   const go = await confirm({
     message:
       'Set the damaged install record aside and start a fresh one? ' +
@@ -31,7 +32,7 @@ export async function runRepair(projectDir: string): Promise<void> {
   });
   if (isCancel(go) || !go) {
     cancel('Nothing was changed.');
-    return;
+    return 'cancelled';
   }
   const saved = setAsideManifest(projectDir);
   log.success(saved ? `Damaged record kept as ${saved}` : 'There was no install record to repair.');

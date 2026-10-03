@@ -43,18 +43,22 @@ export async function runSteps<S>(steps: readonly WizardStep<S>[], state: S): Pr
       continue;
     }
 
-    const outcome = await step.run(state);
-
-    if (outcome === 'cancel') return null;
-
-    if (outcome === 'back') {
-      i = history.pop() ?? i;
-      continue;
-    }
-
-    history.push(i);
-    i++;
+    const next = indexAfter(await step.run(state), history, i);
+    if (next === null) return null;
+    i = next;
   }
 
   return state;
+}
+
+/**
+ * Where to go after step `i` returned `outcome`, or `null` to stop. `history.push` lives here and
+ * only on 'next'. 'back' with nothing in the history means the steps above this one were skipped,
+ * so there is nowhere to go back to: leave instead of asking the same step again.
+ */
+function indexAfter(outcome: StepOutcome, history: number[], i: number): number | null {
+  if (outcome === 'cancel') return null;
+  if (outcome === 'back') return history.pop() ?? null;
+  history.push(i);
+  return i + 1;
 }

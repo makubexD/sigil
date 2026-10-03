@@ -19,10 +19,14 @@ export interface SelectionFilters {
   language?: string | undefined;
 }
 
+/** Why an artifact is not installed: the tool lacks the kind, it is limited to other platforms, or another artifact already carries it. */
+export type SkipCause = 'kind' | 'platform' | 'inlined';
+
 export interface SkippedArtifact {
   id: string;
   kind: string;
   reason: string;
+  cause: SkipCause;
 }
 
 export interface SelectionResult {
@@ -110,6 +114,7 @@ export function dropInlinedBaseRules(
     skipped.push({
       id,
       kind: 'rule',
+      cause: 'inlined',
       reason: `inlined into ${inlinedInto} via extends — already delivered`,
     });
     return false;

@@ -1,4 +1,5 @@
-import { select, confirm, isCancel, cancel } from '@clack/prompts';
+import { select, confirm, isCancel } from '../../prompts';
+import { cancel } from '../../frame';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { visibleArtifacts, type AddWizardState, type ScopeChoice } from './state';
 import { BACK_OPTION, CANCEL_MESSAGE, resolveOutcome } from './prompt-helpers';
@@ -20,8 +21,10 @@ function packOption(s: AddWizardState): ScopeOption[] {
 /** Builds the top-level scope menu: the careful choices first, the whole catalog last. */
 function buildScopeOptions(s: AddWizardState): ScopeOption[] {
   const totalCount = visibleArtifacts(s).length;
+  // With the tool already chosen this is the first question, so Back leaves the installer.
+  const back = s.ctx.fixedTarget ? { ...BACK_OPTION, label: '← Back to the menu' } : BACK_OPTION;
   return [
-    BACK_OPTION,
+    back,
     { value: 'browse', label: 'Pick specific items', hint: 'choose by type, or mix across types' },
     ...packOption(s),
     {

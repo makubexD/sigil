@@ -5,10 +5,12 @@
  *
  * @module
  */
-import { isInteractiveTTY, runWizard, type WizardResult } from '../../wizard';
+import { isInteractiveTTY, runWizardAt, type FixedTarget, type WizardResult } from '../../wizard';
 import { SigilError } from '../../errors';
 import { detectProjectTarget } from '../../cli-helpers';
-import type { ConfigScope, ResolvedCatalog } from '../../types';
+import { detectedTargetsIn } from '../../project-context';
+import { getTarget } from '../../targets';
+import type { ConfigScope, ResolvedCatalog, Target } from '../../types';
 import type { AddOpts } from './index';
 
 export interface ResolvedAddInputs {
@@ -18,6 +20,8 @@ export interface ResolvedAddInputs {
   overwrite: boolean;
   language: string | undefined;
   scope: ConfigScope;
+  /** True when the wizard chose these inputs, so the user has no command yet to repeat. */
+  fromWizard: boolean;
 }
 
 /** Throws the "no selectors + not a TTY" guidance error. */
@@ -48,6 +52,34 @@ function fromWizardResult(
     overwrite: wizardResult.overwrite,
     language: wizardResult.language ?? opts.language,
     scope: (wizardResult.configScope as ConfigScope | undefined) ?? baseScope,
+    fromWizard: true,
+  };
+}
+
+const nameOf = (target: Target): string => target.displayName ?? target.name;
+
+/**
+ * The tool the wizard should not ask about: the one named with `--target`, else the only one set up
+ * in this folder. An unknown or non-installable `--target` fails here, as it does without the wizard.
+ */
+function fixedTargetFor(opts: AddOpts): FixedTarget | undefined {
+  if (opts.target !== undefined) {
+    const target = getTarget(opts.target);
+    if (!target.scaffold) {
+      throw new SigilError(`Target '${opts.target}' does not support the add command.`);
+    }
+    return { name: target.name, notice: `Installing for ${nameOf(target)} (--target).` };
+  }
+  const found = detectedTargetsIn(opts.projectDir)
+    .map(getTarget)
+    .filter(t => t.scaffold);
+  const [only] = found;
+  if (found.length !== 1 || !only) return undefined;
+  return {
+    name: only.name,
+    notice:
+      `Installing for ${nameOf(only)}, the tool set up in this folder. ` +
+      'For another tool, set it up first (sigil init) or run sigil add --target <name>.',
   };
 }
 
@@ -55,18 +87,17 @@ function fromWizardResult(
 async function resolveViaWizard(
   opts: AddOpts,
   resolved: ResolvedCatalog,
-  packs: Parameters<typeof runWizard>[1],
+  packs: Parameters<typeof runWizardAt>[1],
   baseScope: ConfigScope,
 ): Promise<ResolvedAddInputs | null> {
   if (!isInteractiveTTY()) throwNotInteractiveError();
 
   const detectedTarget = detectProjectTarget(opts.projectDir, { verbose: false });
-  const wizardResult: WizardResult | null = await runWizard(
-    resolved,
-    packs,
+  const wizardResult: WizardResult | null = await runWizardAt(resolved, packs, {
     detectedTarget,
-    opts.projectDir,
-  );
+    projectDir: opts.projectDir,
+    fixed: fixedTargetFor(opts),
+  });
   return wizardResult ? fromWizardResult(wizardResult, opts, baseScope) : null;
 }
 
@@ -76,26 +107,30 @@ function resolveBaseScope(opts: AddOpts): ConfigScope {
   return (opts.scope as ConfigScope | undefined) ?? 'project';
 }
 
+/** The inputs as the user typed them on the command line. */
+function typedInputs(selectors: string[], opts: AddOpts, scope: ConfigScope): ResolvedAddInputs {
+  return {
+    selectors,
+    target: opts.target,
+    includeDeps: opts.deps !== false,
+    overwrite: opts.overwrite,
+    language: opts.language,
+    scope,
+    fromWizard: false,
+  };
+}
+
 /** Resolves the effective selectors/target/flags, running the wizard when needed. */
 export async function resolveInputs(
   selectors: string[],
   opts: AddOpts,
   resolved: ResolvedCatalog,
-  packs: Parameters<typeof runWizard>[1],
+  packs: Parameters<typeof runWizardAt>[1],
 ): Promise<ResolvedAddInputs | null> {
   const needsWizard = (selectors.length === 0 || opts.interactive) && !opts.yes;
   const baseScope = resolveBaseScope(opts);
 
-  if (!needsWizard) {
-    return {
-      selectors,
-      target: opts.target,
-      includeDeps: opts.deps !== false,
-      overwrite: opts.overwrite,
-      language: opts.language,
-      scope: baseScope,
-    };
-  }
+  if (!needsWizard) return typedInputs(selectors, opts, baseScope);
 
   return resolveViaWizard(opts, resolved, packs, baseScope);
 }

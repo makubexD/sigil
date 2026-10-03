@@ -19,6 +19,8 @@ import type { AddPlan } from './plan';
 export interface ConfigInstallOutcome {
   configWrittenCount: number;
   manifestDirty: boolean;
+  /** One listing line per merged file, for the summary to print with the other writes. */
+  merged: string[];
 }
 
 /** Reads the existing JSON at `fullPath`, or `{}` if absent; logs+skips on parse failure. */
@@ -35,22 +37,22 @@ function readExistingConfigJson(fullPath: string, id: string): Record<string, un
 }
 
 /**
- * Applies one ConfigMergeOp to disk; returns true if a file was written. `previous` is the
- * fragment an earlier install of the same artifact recorded for this destination: it is reversed
- * first, so re-installing replaces sigil's fragment instead of stacking a second copy.
+ * Applies one ConfigMergeOp to disk; returns its listing line, or undefined when nothing was written.
+ * `previous` is the fragment an earlier install of the same artifact recorded for this destination:
+ * it is reversed first, so re-installing replaces sigil's fragment instead of stacking a second copy.
  */
 function applyConfigMergeOp(
   op: ConfigMergeOp,
   previous: ConfigMergeOp | undefined,
   id: string,
   projectDir: string,
-): boolean {
+): string | undefined {
   const rootDir = resolveConfigRoot(op.root as ConfigRoot | undefined, projectDir);
   const fullPath = path.join(rootDir, op.file);
   const opSecSuffix = op.section ? `  › ${op.section}` : '';
 
   const existing = readExistingConfigJson(fullPath, id);
-  if (existing === undefined) return false;
+  if (existing === undefined) return undefined;
 
   if (isHomeScopedRoot(op.root as ConfigRoot | undefined)) {
     ensureHomeBackup(fullPath);
@@ -59,12 +61,12 @@ function applyConfigMergeOp(
   const merged = replaceMerge(existing, previous, op);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
   fs.writeFileSync(fullPath, serialize(merged), 'utf-8');
-  console.log(`  ${fullPath}${opSecSuffix}  (merged: ${id})`);
-  return true;
+  return `${fullPath}${opSecSuffix}  (merged: ${id})`;
 }
 
 interface ConfigArtifactResult {
   written: number;
+  merged: string[];
   /** True whenever `upsertConfigEntry` ran: at least one op was written, or an earlier
    * record still describes a file this install skipped. */
   upserted: boolean;
@@ -80,18 +82,21 @@ function applyAllConfigMergeOps(
   installed: ManifestEntry | undefined,
   id: string,
   projectDir: string,
-): { written: number; toRecord: ConfigMergeOp[] } {
+): { merged: string[]; toRecord: ConfigMergeOp[] } {
   const toRecord: ConfigMergeOp[] = [];
-  let written = 0;
+  const merged: string[] = [];
   for (const op of ops) {
     const previous = previousOpFor(installed, op);
-    if (applyConfigMergeOp(op, previous, id, projectDir)) {
-      written++;
+    const line = applyConfigMergeOp(op, previous, id, projectDir);
+    if (line) {
+      merged.push(line);
       toRecord.push(op);
     } else if (previous) toRecord.push(previous);
   }
-  return { written, toRecord };
+  return { merged, toRecord };
 }
+
+const NOTHING_WRITTEN: ConfigArtifactResult = { written: 0, merged: [], upserted: false };
 
 /** Shared context threaded through the config-install helpers below. */
 interface InstallCtx {
@@ -124,14 +129,15 @@ async function scaffoldAndApplyConfig(
 ): Promise<ConfigArtifactResult> {
   const { target, resolved, plan } = ctx;
   const ops: ConfigMergeOp[] = await target.scaffoldConfig!(id, resolved, plan.scaffoldOpts);
-  if (ops.length === 0) return { written: 0, upserted: false };
+  if (ops.length === 0) return NOTHING_WRITTEN;
 
   const installed = ctx.manifest.entries.find(e => e.id === id && e.target === ctx.targetName);
   const applied = applyAllConfigMergeOps(ops, installed, id, plan.opts.projectDir);
-  const { written, toRecord } = applied;
-  if (toRecord.length === 0) return { written, upserted: false };
+  const { merged, toRecord } = applied;
+  const written = merged.length;
+  if (toRecord.length === 0) return { written, merged, upserted: false };
   recordConfigEntry(id, artifact.kind, toRecord, ctx);
-  return { written, upserted: true };
+  return { written, merged, upserted: true };
 }
 
 /** Installs one config artifact's merge ops. */
@@ -140,12 +146,12 @@ async function installOneConfigArtifact(
   ctx: InstallCtx,
 ): Promise<ConfigArtifactResult> {
   const artifact = ctx.resolved.byId.get(id);
-  if (!artifact) return { written: 0, upserted: false };
+  if (!artifact) return NOTHING_WRITTEN;
   try {
     return await scaffoldAndApplyConfig(id, artifact, ctx);
   } catch (err) {
     console.error(`✗ Failed to install config artifact '${id}': ${(err as Error).message}`);
-    return { written: 0, upserted: false };
+    return NOTHING_WRITTEN;
   }
 }
 
@@ -170,13 +176,21 @@ async function installAllConfigArtifacts(
 ): Promise<ConfigInstallOutcome> {
   let configWrittenCount = 0;
   let manifestDirty = false;
+  const merged: string[] = [];
   for (const id of configIds) {
     const result = await installOneConfigArtifact(id, ctx);
     configWrittenCount += result.written;
+    merged.push(...result.merged);
     if (result.upserted) manifestDirty = true;
   }
-  return { configWrittenCount, manifestDirty };
+  return { configWrittenCount, manifestDirty, merged };
 }
+
+const NOTHING_INSTALLED: ConfigInstallOutcome = {
+  configWrittenCount: 0,
+  manifestDirty: false,
+  merged: [],
+};
 
 /** Installs all config-kind (hook/settings/mcp) artifacts in the plan. */
 export async function installConfigArtifacts(
@@ -186,11 +200,11 @@ export async function installConfigArtifacts(
 ): Promise<ConfigInstallOutcome> {
   const { resolved, target, targetName, configIds } = plan;
 
-  if (configIds.length === 0) return { configWrittenCount: 0, manifestDirty: false };
+  if (configIds.length === 0) return NOTHING_INSTALLED;
 
   if (!target.scaffoldConfig) {
     warnUnsupportedConfigKinds(configIds, resolved, targetName);
-    return { configWrittenCount: 0, manifestDirty: false };
+    return NOTHING_INSTALLED;
   }
 
   return installAllConfigArtifacts(configIds, {

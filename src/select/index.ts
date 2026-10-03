@@ -8,7 +8,7 @@
  *   grouping  — groupArtifactsByLanguage, availableKinds, buildLanguageOptions, partitionConfigKinds
  */
 
-export type { SelectionFilters, SkippedArtifact, SelectionResult } from './selection';
+export type { SelectionFilters, SkippedArtifact, SkipCause, SelectionResult } from './selection';
 export {
   KIND_ORDER,
   CONFIG_KINDS,

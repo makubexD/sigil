@@ -29,11 +29,44 @@ describe('initTargetOptions', () => {
   it('should offer every target and say which one was found in the folder', () => {
     const options = initTargetOptions(['copilot']);
     assert.deepEqual(options.map(o => o.value).sort(), ['claude', 'copilot']);
-    assert.match(options.find(o => o.value === 'copilot')?.hint ?? '', /found in this folder/i);
-    assert.doesNotMatch(
-      options.find(o => o.value === 'claude')?.hint ?? '',
-      /found in this folder/i,
+    assert.match(options.find(o => o.value === 'copilot')?.hint ?? '', /already set up/i);
+    assert.doesNotMatch(options.find(o => o.value === 'claude')?.hint ?? '', /already set up/i);
+  });
+});
+
+describe('initTargetOptions order', () => {
+  it('should list the tools not set up yet first and mark the others as already set up', () => {
+    const options = initTargetOptions(['claude']);
+    assert.deepEqual(
+      options.map(o => o.value),
+      ['copilot', 'claude'],
     );
+    assert.match(options[1]?.hint ?? '', /already set up/i);
+  });
+});
+
+describe('runInit with a restricted tool list (home menu)', () => {
+  it('should set up the only offered tool without asking anything', async () => {
+    await withTempDirAsync(async dir => {
+      fs.mkdirSync(path.join(dir, '.claude'));
+      const restoreTTY = fakeTTY();
+      const restore = mockClack([]); // an empty queue throws on any prompt
+      try {
+        await runInit({ projectDir: dir, only: ['copilot'] });
+      } finally {
+        restore();
+        restoreTTY();
+      }
+      assert.equal(fs.existsSync(path.join(dir, '.github/instructions')), true);
+      assert.equal(fs.existsSync(path.join(dir, '.claude/skills')), false);
+    });
+  });
+
+  it('should ignore the restriction when --target is given', async () => {
+    await withTempDirAsync(async dir => {
+      await runInit({ target: 'claude', projectDir: dir, only: ['copilot'] });
+      assert.equal(fs.existsSync(path.join(dir, '.claude/skills')), true);
+    });
   });
 });
 

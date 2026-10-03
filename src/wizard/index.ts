@@ -8,5 +8,6 @@ export {
   printEquivalentCommand,
 } from './command-strings';
 export { runEditWizard } from './edit';
-export { runWizard } from './add';
+export { runWizard, runWizardAt } from './add';
+export type { FixedTarget } from './add';
 export { runNewWizard, buildEquivalentNewCommand } from './new';

@@ -3,7 +3,9 @@
  *
  * @module
  */
-import { cancel, confirm, isCancel, log } from '@clack/prompts';
+import { confirm, isCancel } from '../wizard/prompts';
+import { cancel } from '../wizard/frame';
+import { printRepeatCommand } from '../wizard/command-strings';
 import { isInteractiveTTY } from '../wizard';
 import type { requireManifest } from './shared/manifest';
 import type { ApplyPruneCtx } from './prune-apply';
@@ -29,6 +31,6 @@ export async function offerApply(
     cancel('Nothing was changed.');
     return;
   }
-  log.info('Equivalent command: sigil prune --apply --yes');
+  printRepeatCommand('Equivalent command:', 'sigil prune --apply --yes');
   await applyPrune(manifest, candidates, { ...ctx, opts: { ...ctx.opts, apply: true, yes: true } });
 }

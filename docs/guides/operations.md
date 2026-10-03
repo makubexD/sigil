@@ -75,7 +75,8 @@ compiles `src/`, type errors there fail `npm test`. To run a single test file, s
 `ubuntu-latest` / Node 22 and `windows-latest` / Node 20. Each job runs these steps, in order:
 
 1. `npm ci`
-2. `npm audit --omit=dev` (runtime dependencies, fails on any severity)
+2. `npm audit --omit=dev --audit-level=critical` (runtime dependencies, fails on critical; temporarily not "any
+   severity" because of an unfixed `braces` advisory reached through `fast-glob`)
 3. `npm run lint`
 4. `npm run format:check`
 5. `npm run build`

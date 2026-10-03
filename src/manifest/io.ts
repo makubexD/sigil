@@ -15,7 +15,8 @@ export function manifestPath(projectDir: string): string {
   return path.join(projectDir, MANIFEST_RELATIVE_PATH);
 }
 
-const EMPTY_MANIFEST: Manifest = { manifestVersion: MANIFEST_VERSION, entries: [] };
+/** A new object each time: callers mutate what `loadManifest` returns, so a shared one would leak entries between folders. */
+const emptyManifest = (): Manifest => ({ manifestVersion: MANIFEST_VERSION, entries: [] });
 
 /** JSON.parse with a manifest-specific error message; throws on invalid JSON. */
 function parseManifestJson(raw: string, p: string): unknown {
@@ -32,7 +33,7 @@ function parseManifestJson(raw: string, p: string): unknown {
 function validateManifestVersion(m: Manifest, p: string): Manifest | undefined {
   if (typeof m.manifestVersion !== 'number') {
     // Pre-schema manifest (empty-ish) — treat as empty
-    return EMPTY_MANIFEST;
+    return emptyManifest();
   }
   if (m.manifestVersion > MANIFEST_VERSION) {
     throw new Error(
@@ -61,7 +62,7 @@ function parseManifest(raw: string, p: string): Manifest {
  */
 export function loadManifest(projectDir: string): Manifest {
   const p = manifestPath(projectDir);
-  if (!fs.existsSync(p)) return EMPTY_MANIFEST;
+  if (!fs.existsSync(p)) return emptyManifest();
 
   let raw: string;
   try {

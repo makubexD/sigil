@@ -14,6 +14,7 @@ import { restoreMissing } from '../commands/restore-missing';
 import { runStatus } from '../commands/status';
 import { runUninstall } from '../commands/uninstall';
 import { runUpdate } from '../commands/update';
+import { detectedTargetsIn, toolsToSetUp } from '../project-context';
 import { browse, editArtifact, newArtifact, search, validateCatalog } from './home-browse';
 import { chooseInstalledTarget } from './home-target';
 import type { HomeDeps, HomeHandler } from './home';
@@ -23,8 +24,8 @@ const bundled = (): { catalogDir: string; packs: string } => ({
   packs: resolveDefault('packs.yaml'),
 });
 
-const install: HomeHandler = async dir => {
-  await runAdd([], {
+const install: HomeHandler = dir =>
+  runAdd([], {
     projectDir: dir,
     ...bundled(),
     deps: true,
@@ -34,7 +35,6 @@ const install: HomeHandler = async dir => {
     overwrite: false,
     settingsLocal: false,
   });
-};
 
 const restore: HomeHandler = async dir => {
   const restored = await restoreMissing({ projectDir: dir, ...bundled() });
@@ -92,7 +92,9 @@ const prune: HomeHandler = dir =>
 
 const repair: HomeHandler = dir => runRepair(dir);
 
-const init: HomeHandler = dir => runInit({ projectDir: dir });
+/** Offers only the tools this folder is not set up for yet, so the menu never re-creates what it shows. */
+const init: HomeHandler = dir =>
+  runInit({ projectDir: dir, only: toolsToSetUp(detectedTargetsIn(dir)) });
 
 /** The handlers for `sigil` with no command. `showHelp` prints the root help. */
 export function defaultHomeDeps(showHelp: () => void): HomeDeps {

@@ -36,7 +36,7 @@ function setupAdvice(ctx: ProjectContext): Recommendation[] {
     return [
       {
         action: 'init',
-        reason: `No Claude Code or Copilot setup found here. Set the project up for one of them${note}.`,
+        reason: `No AI tool is set up here yet${note}.`,
       },
     ];
   }

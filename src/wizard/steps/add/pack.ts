@@ -1,4 +1,4 @@
-import { select } from '@clack/prompts';
+import { select } from '../../prompts';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { chosenTarget, type AddWizardState } from './state';
 import { packContentHint } from './options';

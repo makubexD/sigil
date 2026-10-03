@@ -18,7 +18,9 @@ import { runList } from './commands/list';
 import { runGet } from './commands/get';
 import { runSearch } from './commands/search';
 import { runAdd } from './commands/add';
+import type { AddOpts } from './commands/add';
 import { runInit } from './commands/init';
+import type { InitOptions } from './commands/init';
 import { runNew } from './commands/new';
 import { runCheck } from './commands/check';
 import { runSync } from './commands/sync';
@@ -125,14 +127,18 @@ program
   .option('--overwrite', 'Replace existing files (default: warn and skip conflicts)', false)
   .option('--scope <scope>', 'Install scope for config-kind artifacts: project | local | user')
   .option('--settings-local', '(deprecated) Alias for --scope local', false)
-  .action(runAdd);
+  .action(async (selectors: string[], opts: AddOpts) => {
+    await runAdd(selectors, opts);
+  });
 // ─── init ─────────────────────────────────────────────────────────────────────
 program
   .command('init')
   .description('Prepare a consumer project for a target platform. Asks which one in a terminal.')
   .option('--target <name>', 'Target platform: claude or copilot (asked in a terminal if omitted)')
   .option('--project-dir <dir>', 'Consumer project root', process.cwd())
-  .action(runInit);
+  .action(async (opts: InitOptions) => {
+    await runInit(opts);
+  });
 // ─── new ──────────────────────────────────────────────────────────────────────
 program
   .command('new [kind]')

@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { isCancel, select } from '@clack/prompts';
+import { isCancel, select } from './prompts';
 import { loadManifest } from '../manifest';
 import { getAllTargets } from '../targets';
 

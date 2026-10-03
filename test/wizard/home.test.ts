@@ -8,13 +8,15 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { buildMenu, describeContext } from '../../dist-cli/wizard/home-menu';
+import { runAdd } from '../../dist-cli/commands/add';
 import { runHome } from '../../dist-cli/wizard/home';
 import { FOLDER_CHOICE } from '../../dist-cli/wizard/folder-list';
 import { defaultHomeDeps } from '../../dist-cli/wizard/home-actions';
 import type { HomeActionId } from '../../dist-cli/wizard/home-menu';
+import { detectProjectContext } from '../../dist-cli/project-context';
 import type { ProjectContext } from '../../dist-cli/project-context';
 import { SigilError } from '../../dist-cli/errors';
-import { mockClack } from '../helpers/clack-mock';
+import { createRecorder, mockClack } from '../helpers/clack-mock';
 import { fakeTTY } from '../helpers/tty';
 import type { MockAnswer } from '../helpers/clack-mock';
 import { withTempDirAsync } from '../helpers/temp-dir';
@@ -97,6 +99,28 @@ describe('buildMenu', () => {
     const [first] = buildMenu(context({ manifestPresent: false, installed: 0 }));
     assert.match(first?.hint ?? '', /Add skills, agents, rules/);
     assert.match(first?.hint ?? '', /Nothing is installed here yet/);
+  });
+
+  it('should name the tool the set-up entry adds once another one is set up', () => {
+    const init = buildMenu(context({ detectedTargets: ['claude'] })).find(i => i.value === 'init');
+    assert.equal(init?.label, 'Also set up for GitHub Copilot');
+    assert.match(init?.hint ?? '', /Already set up for Claude Code/);
+  });
+
+  it('should keep the plain set-up label when no tool is set up', () => {
+    const init = buildMenu(context({ detectedTargets: [], installed: 0 })).find(
+      i => i.value === 'init',
+    );
+    assert.match(init?.label ?? '', /^Set up this project/);
+  });
+
+  it('should not mark a dismissed recommendation, and mark the next one instead', () => {
+    const health = { 'up-to-date': 0, outdated: 1, drifted: 0, orphaned: 0, missing: 0 };
+    const ctx = context({ isCatalogCheckout: true, health });
+    const items = buildMenu(ctx, { dismissed: new Set(['change-folder']) });
+    assert.equal(items.find(i => i.value === 'change-folder')?.recommended, false);
+    assert.equal(items[0]?.value, 'update');
+    assert.equal(items[0]?.recommended, true);
   });
 
   it('should always end with help and quit, and always offer browse and search', () => {
@@ -249,7 +273,7 @@ describe('runHome', () => {
   it('should ask before installing into the home folder, and not install on "no"', async () => {
     await withTempDirAsync(async dir => {
       const calls: Calls = [];
-      const restore = mockClack(['install', false, 'quit']);
+      const restore = mockClack(['install', 'back', 'quit']);
       try {
         await runHome(dir, { handlers: handlers(calls), homeDir: dir });
       } finally {
@@ -262,7 +286,7 @@ describe('runHome', () => {
   it('should install into the home folder when the user confirms', async () => {
     await withTempDirAsync(async dir => {
       const calls: Calls = [];
-      const restore = mockClack(['install', true, 'quit']);
+      const restore = mockClack(['install', 'go', 'quit']);
       try {
         await runHome(dir, { handlers: handlers(calls), homeDir: dir });
       } finally {
@@ -282,6 +306,85 @@ describe('runHome', () => {
         restore();
       }
       assert.deepEqual(calls, [['status', dir]]);
+    });
+  });
+
+  it('should ask before setting up a risky folder, and not set up on "no"', async () => {
+    await withTempDirAsync(async dir => {
+      const calls: Calls = [];
+      const restore = mockClack(['init', 'back', 'quit']);
+      try {
+        await runHome(dir, { handlers: handlers(calls), homeDir: dir });
+      } finally {
+        restore();
+      }
+      assert.deepEqual(calls, []);
+    });
+  });
+
+  it('should set up a risky folder when the user confirms', async () => {
+    await withTempDirAsync(async dir => {
+      const calls: Calls = [];
+      const restore = mockClack(['init', 'go', 'quit']);
+      try {
+        await runHome(dir, { handlers: handlers(calls), homeDir: dir });
+      } finally {
+        restore();
+      }
+      assert.deepEqual(calls, [['init', dir]]);
+    });
+  });
+
+  it('should stop recommending a folder change once the user went ahead anyway', async () => {
+    await withTempDirAsync(async dir => {
+      fs.mkdirSync(path.join(dir, '.claude'));
+      const seen = createRecorder();
+      const restore = mockClack(['install', 'go', 'all', 'quit'], seen);
+      try {
+        await runHome(dir, { handlers: handlers([]), homeDir: dir });
+      } finally {
+        restore();
+      }
+      const [first, second = []] = seen.prompts
+        .filter(p => p.message === 'What would you like to do?')
+        .map(p => p.options);
+      assert.match(first?.[0]?.label ?? '', /different folder.*recommended/);
+      const change = second.find(o => o.value === 'change-folder');
+      assert.ok(change, 'the entry stays in the menu');
+      assert.doesNotMatch(change.label, /recommended/);
+      assert.match(second[0]?.label ?? '', /Install artifacts \(recommended\)/);
+    });
+  });
+
+  it('should stop recommending an action that changed nothing, and say so', async () => {
+    await withTempDirAsync(async dir => {
+      await runAdd(['rule:shared/git'], {
+        projectDir: dir,
+        catalogDir: path.resolve(__dirname, '../../catalog'),
+        packs: path.resolve(__dirname, '../../packs.yaml'),
+        target: 'claude',
+        deps: false,
+        dryRun: false,
+        interactive: false,
+        yes: true,
+        overwrite: false,
+        settingsLocal: false,
+      });
+      fs.rmSync(path.join(dir, '.claude/rules/shared-git.md'));
+      const seen = createRecorder();
+      const restore = mockClack(['restore', 'quit'], seen);
+      try {
+        await runHome(dir, {
+          handlers: { restore: async () => {} }, // restores nothing, like a dropped catalog entry
+          homeDir: '/nowhere/home',
+        });
+      } finally {
+        restore();
+      }
+      const labels = seen.prompts.map(p => p.options.map(o => o.label).join('|'));
+      assert.match(labels[0] ?? '', /Restore deleted files \(recommended\)/);
+      assert.doesNotMatch(labels[1] ?? '', /recommended/);
+      assert.match(seen.logs.join(' '), /Nothing changed after "Restore deleted files"/);
     });
   });
 
@@ -327,6 +430,28 @@ describe('home menu with the real handlers', () => {
       }
       assert.equal(fs.existsSync(path.join(dir, '.claude/skills')), true);
       assert.equal(fs.existsSync(path.join(dir, '.claude/rules')), true);
+    });
+  });
+
+  it('should add the missing tool without asking when one tool is already set up', async () => {
+    await withTempDirAsync(async dir => {
+      fs.mkdirSync(path.join(dir, '.claude'));
+      const restoreTTY = fakeTTY();
+      const restore = mockClack(['init', 'quit']); // no tool question: only Copilot is left
+      try {
+        await runHome(dir, { ...defaultHomeDeps(() => {}), homeDir: '/nowhere/home' });
+      } finally {
+        restore();
+        restoreTTY();
+      }
+      assert.equal(fs.existsSync(path.join(dir, '.github/instructions')), true);
+      assert.equal(fs.existsSync(path.join(dir, '.claude/skills')), false);
+      assert.equal(
+        buildMenu(detectProjectContext(dir, { homeDir: '/nowhere/home' })).some(
+          i => i.value === 'init',
+        ),
+        false,
+      );
     });
   });
 });

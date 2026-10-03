@@ -552,3 +552,19 @@ describe('L — Manifest config entries (manifest.ts)', () => {
     assert.equal(results[0].status, 'up-to-date', 'user key edit is not drift');
   });
 });
+
+describe('loadManifest without a file', () => {
+  it('should give every folder its own empty manifest, so one folder never shows another folder installs', () => {
+    const a = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-empty-a-'));
+    const b = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-empty-b-'));
+    try {
+      const first = loadManifest(a);
+      first.entries = [{ id: 'rule:x' } as never]; // what an install does to the object it loaded
+      assert.deepEqual(loadManifest(b).entries, []);
+      assert.notEqual(loadManifest(a), loadManifest(b));
+    } finally {
+      fs.rmSync(a, { recursive: true, force: true });
+      fs.rmSync(b, { recursive: true, force: true });
+    }
+  });
+});

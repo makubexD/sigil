@@ -42,6 +42,7 @@ export interface AddPlan {
   readonly effectiveIncludeDeps: boolean;
   readonly effectiveOverwrite: boolean;
   readonly effectiveScope: ConfigScope;
+  readonly fromWizard: boolean;
   readonly skipped: SkippedArtifact[];
   readonly upToDateIds: string[];
   readonly wholeFileIds: string[];
@@ -126,6 +127,7 @@ type EffectiveFields = Pick<
   | 'effectiveIncludeDeps'
   | 'effectiveOverwrite'
   | 'effectiveScope'
+  | 'fromWizard'
 >;
 
 /** Builds the "effective*" fields (echoing the resolved wizard/CLI inputs) of the AddPlan. */
@@ -141,6 +143,7 @@ function buildEffectiveFields(
     effectiveIncludeDeps: ctx.inputs.includeDeps,
     effectiveOverwrite: ctx.inputs.overwrite,
     effectiveScope: ctx.inputs.scope,
+    fromWizard: ctx.inputs.fromWizard,
   };
 }
 

@@ -31,6 +31,8 @@ export interface FolderEntry {
   isProject: boolean;
   /** Names of the targets the folder is already set up for. */
   targets: string[];
+  /** A sigil catalog checkout: installs would land inside the catalog, so it is never the project. */
+  isCatalog?: boolean;
 }
 
 const SKIPPED_FOLDERS = new Set(['node_modules']);
@@ -64,6 +66,10 @@ function describeFolder(dir: string, name: string, probe: boolean): FolderEntry 
     path: full,
     isProject: probe && looksLikeProject(full),
     targets: probe ? detectedTargetsIn(full) : [],
+    isCatalog:
+      probe &&
+      fs.existsSync(path.join(full, 'catalog')) &&
+      fs.existsSync(path.join(full, 'packs.yaml')),
   };
 }
 
@@ -79,6 +85,7 @@ export function listSubfolders(dir: string): FolderEntry[] {
 }
 
 function folderHint(entry: FolderEntry): string | undefined {
+  if (entry.isCatalog) return 'sigil catalog, not a project';
   const names = getAllTargets()
     .filter(t => entry.targets.includes(t.name))
     .map(t => t.displayName ?? t.name);
@@ -107,10 +114,20 @@ function navigationOptions(dir: string): FolderOption[] {
   ];
 }
 
-/** The select options for browsing `dir`: navigation first, then its subfolders. */
-export function folderOptions(dir: string, folders: FolderEntry[]): FolderOption[] {
+/**
+ * The select options for browsing `dir`: navigation first, then its subfolders. `leaving` is the
+ * folder the user is moving away from; it is labelled so it is not picked again by mistake.
+ */
+export function folderOptions(
+  dir: string,
+  folders: FolderEntry[],
+  leaving?: string,
+): FolderOption[] {
   const entries = folders.map((f): FolderOption => {
-    const hint = folderHint(f);
+    const hint =
+      leaving !== undefined && samePath(f.path, leaving)
+        ? 'the folder you are leaving'
+        : folderHint(f);
     return { value: f.path, label: `${f.name}${path.sep}`, ...(hint ? { hint } : {}) };
   });
   return [...navigationOptions(dir), ...entries];

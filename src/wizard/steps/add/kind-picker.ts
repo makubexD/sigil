@@ -1,4 +1,5 @@
-import { select, isCancel, cancel } from '@clack/prompts';
+import { select, isCancel } from '../../prompts';
+import { cancel } from '../../frame';
 import {
   buildLanguageOptions,
   hasLanguageChoice,

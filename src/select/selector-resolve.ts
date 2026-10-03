@@ -149,6 +149,17 @@ function applySelectionFilters(
   );
 }
 
+const skipOf = (
+  a: ResolvedArtifact,
+  cause: SkippedArtifact['cause'],
+  reason: string,
+): SkippedArtifact => ({
+  id: a.id,
+  kind: a.kind,
+  cause,
+  reason,
+});
+
 /** Classifies one candidate as target-unsupported or platform-restricted, else undefined. */
 function classifySkippedArtifact(
   a: ResolvedArtifact,
@@ -156,11 +167,11 @@ function classifySkippedArtifact(
   targetName: string | undefined,
 ): SkippedArtifact | undefined {
   if (supportedSet && !supportedSet.has(a.kind)) {
-    return { id: a.id, kind: a.kind, reason: `kind '${a.kind}' is not supported for this target` };
+    return skipOf(a, 'kind', `kind '${a.kind}' is not supported for this target`);
   }
   if (targetName && !artifactTargetsPlatform(a, targetName)) {
     const restricted = (a.frontmatter.platforms as string[]).join(', ');
-    return { id: a.id, kind: a.kind, reason: `restricted to platforms: [${restricted}]` };
+    return skipOf(a, 'platform', `restricted to platforms: [${restricted}]`);
   }
   return undefined;
 }

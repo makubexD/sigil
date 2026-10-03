@@ -66,9 +66,17 @@ function buildOutcomeSummaryLine(plan: AddPlan, outcome: AddOutcome, written: nu
       ? `, ${plan.upToDateIds.length} already up to date (skipped)`
       : '') +
     (skippedConflict > 0 ? `, ${skippedConflict} skipped (conflicts)` : '') +
-    (plan.skipped.length > 0
-      ? `, ${plan.skipped.length} artifact(s) not supported by '${plan.targetName}'`
-      : '')
+    skippedSummary(plan)
+  );
+}
+
+/** ", N already included in another artifact" and ", N artifact(s) not supported by 'x'", when non-zero. */
+export function skippedSummary(plan: AddPlan): string {
+  const included = plan.skipped.filter(x => x.cause === 'inlined').length;
+  const unsupported = plan.skipped.length - included;
+  return (
+    (unsupported > 0 ? `, ${unsupported} artifact(s) not supported by '${plan.targetName}'` : '') +
+    (included > 0 ? `, ${included} already included in another artifact` : '')
   );
 }
 
@@ -99,14 +107,21 @@ function printWrittenFileListing(plan: AddPlan, outcome: AddOutcome): void {
     ...Object.keys(plan.toWrite),
     ...(outcome.overwrittenCount > 0 ? conflictPaths : []),
   ].filter(isDep).length;
+  for (const line of outcome.merged) console.log(`  ${line}`);
   printDependencyFootnote(depCount);
+}
+
+/** `<kind>:<id>` selectors that name an artifact already delivered inside another pick. */
+function inlinedSelectors(plan: AddPlan): Set<string> {
+  return new Set(plan.skipped.filter(s => s.cause === 'inlined').map(s => `${s.kind}:${s.id}`));
 }
 
 /** Prints the equivalent non-interactive `sigil add …` command for this outcome. */
 function printOutcomeEquivalentCommand(plan: AddPlan): void {
+  const inlined = inlinedSelectors(plan);
   printEquivalentCommand(
     buildEquivalentCommand({
-      selectors: plan.effectiveSelectors,
+      selectors: plan.effectiveSelectors.filter(sel => !inlined.has(sel)),
       target: plan.targetName,
       language: plan.effectiveLanguage,
       kinds: plan.effectiveKinds,
@@ -131,7 +146,7 @@ export function renderOutcome(plan: AddPlan, outcome: AddOutcome): void {
   const written = Object.keys(plan.toWrite).length + outcome.overwrittenCount;
   console.log(buildOutcomeSummaryLine(plan, outcome, written));
 
-  if (written > 0) printWrittenFileListing(plan, outcome);
+  if (written > 0 || outcome.merged.length > 0) printWrittenFileListing(plan, outcome);
   printNextSteps(plan, outcome, written);
-  printOutcomeEquivalentCommand(plan);
+  if (plan.fromWizard) printOutcomeEquivalentCommand(plan);
 }

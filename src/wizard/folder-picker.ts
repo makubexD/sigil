@@ -7,7 +7,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { confirm, isCancel, log, select, text } from '@clack/prompts';
+import { confirm, isCancel, log, select, text } from './prompts';
 import {
   FOLDER_CHOICE,
   browseStart,
@@ -88,13 +88,23 @@ async function newFolderHere(dir: string): Promise<string | null> {
   return makeFolder(path.join(dir, String(name).trim()));
 }
 
-async function step(dir: string, homeDir: string, focus: string | undefined): Promise<Step> {
-  const choice = await select({
+/** Shows `dir` with its subfolders. `focus` starts the cursor on a folder; `leaving` is labelled. */
+function askFolder(dir: string, focus: string | undefined, leaving: string | undefined) {
+  return select({
     message: `Pick your project folder — ${dir}`,
-    options: folderOptions(dir, readFolders(dir)),
+    options: folderOptions(dir, readFolders(dir), leaving),
     maxItems: MAX_VISIBLE,
     ...(focus ? { initialValue: focus } : {}),
   });
+}
+
+async function step(
+  dir: string,
+  homeDir: string,
+  focus: string | undefined,
+  leaving: string | undefined,
+): Promise<Step> {
+  const choice = await askFolder(dir, focus, leaving);
   if (isCancel(choice) || choice === FOLDER_CHOICE.back) return { result: null };
   if (choice === FOLDER_CHOICE.use) return { result: dir };
   if (choice === FOLDER_CHOICE.up) return { dir: path.dirname(dir), focus: dir };
@@ -106,12 +116,21 @@ async function step(dir: string, homeDir: string, focus: string | undefined): Pr
   return made === null ? { dir } : { result: made };
 }
 
+export interface PickFolderOptions {
+  /** A folder the user is moving away from: the cursor does not start on it and it is labelled. */
+  leaving?: string;
+}
+
 /** Browses from near `current` until the user picks a folder or backs out (`null`). */
-export async function pickFolder(current: string, homeDir: string): Promise<string | null> {
+export async function pickFolder(
+  current: string,
+  homeDir: string,
+  opts: PickFolderOptions = {},
+): Promise<string | null> {
   let dir = browseStart(current, homeDir);
-  let focus: string | undefined = current;
+  let focus: string | undefined = opts.leaving === undefined ? current : undefined;
   for (;;) {
-    const next = await step(dir, homeDir, focus);
+    const next = await step(dir, homeDir, focus, opts.leaving);
     if ('result' in next) return next.result;
     dir = next.dir;
     focus = next.focus;

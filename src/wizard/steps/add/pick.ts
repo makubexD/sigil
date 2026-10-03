@@ -4,7 +4,7 @@
  *
  * @module
  */
-import { isCancel, log } from '@clack/prompts';
+import { isCancel, log } from '../../prompts';
 import { pickArtifacts } from '../../picker';
 import type { PickArtifactsOptions } from '../../picker';
 import { BACK } from './state';

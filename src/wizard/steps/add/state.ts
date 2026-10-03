@@ -20,6 +20,8 @@ export interface AddWizardContext {
   readonly detectedTarget: string;
   readonly projectDir: string;
   readonly scaffoldableTargets: Target[];
+  /** Set when the folder (one tool set up) or `--target` already answers "which tool"; the question is skipped. */
+  readonly fixedTarget?: string | undefined;
 }
 
 /** Mutable answers accumulated as the wizard progresses. */

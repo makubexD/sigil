@@ -46,7 +46,7 @@ export interface Window {
 
 /** How many list rows to show given terminal height, clamped to a sane range. */
 export function computeViewportRows(terminalRows: number, optionCount: number): number {
-  const MIN_ROWS = 5;
+  const MIN_ROWS = 3;
   const CHROME_ROWS = 9; // header + separator + detail header + 3 desc lines + footer + margin
   const available = Math.max(terminalRows - CHROME_ROWS, MIN_ROWS);
   return Math.min(available, Math.max(optionCount, 1));

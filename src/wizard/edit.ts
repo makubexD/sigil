@@ -4,7 +4,8 @@
  * Prefills each prompt with the current frontmatter value.
  * Returns null when the user cancels.
  */
-import { intro, outro, text, confirm, note, cancel, isCancel } from '@clack/prompts';
+import { text, confirm, note, isCancel } from './prompts';
+import { intro, outro, cancel } from './frame';
 import type { Artifact } from '../types';
 import type { EditWizardResult } from './types';
 

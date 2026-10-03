@@ -50,7 +50,7 @@ recommendation follows the state of the folder:
 | ----------------------------------------------------------------- | ------------------------------------------------------ |
 | Your home folder, the top of a drive, or a sigil catalog checkout | Work in a different folder (installs would land here)  |
 | The install record is damaged                                     | Repair the install record                              |
-| No Claude Code or Copilot setup in the folder                     | Set up this project                                    |
+| No AI tool set up in the folder                                   | Set up this project                                    |
 | Set up, nothing installed                                         | Install artifacts                                      |
 | Files sigil installed were deleted                                | Restore deleted files                                  |
 | Installed files you edited                                        | Nothing (an edit is your choice; the header counts it) |
@@ -83,8 +83,34 @@ when it has one of `.github/copilot-instructions.md`, `.github/instructions/`, `
 `.github/agents/`, or `.github/skills/`. A `.github/` folder that only holds workflows or issue
 templates does not count, so a normal GitHub repo is not mistaken for a Copilot project.
 
-**Installing in the wrong place.** Choosing Install (or installing from a search result) in your home
-folder, the top of a drive, or a sigil catalog checkout first asks "Install here anyway?" (default No).
+**Installing in the wrong place.** Choosing Install, Set up (or installing from a search result) in your
+home folder, the top of a drive, or a sigil catalog checkout first says why that is probably a mistake
+and asks "Where should sigil install?" with three answers: "Pick another folder" (the default; it opens the
+folder browser, with the folder you are leaving labelled, and carries on there), "Use this folder anyway",
+and "Back to the menu". Going ahead is remembered for that folder, so the menu stops recommending a different
+folder and does not ask again until you switch folders.
+
+**After an install or a set up.** The menu does not repeat its full list. A short "What next?" menu follows:
+"Done" first after an install, "Install artifacts" first after a set up, then "Check what's installed", "Also set up
+for <tool>" while a tool is left, and "Show all options" for the full menu. If something more urgent is advised
+(a damaged record, deleted files), the full menu shows instead. The whole session is one frame, and the output of
+each command stays inside it.
+
+The menu adapts to the window at any terminal size or zoom level, and follows a zoom while a question is open: long lines
+wrap and keep the `│` gutter, and questions are shortened with `…` (an answered multi-select says "20 selected", not a list).
+The "Repeat non-interactively" and "Equivalent command" lines are indented to line up with the menu text, with spaces and no `│`
+bar, so you can copy them whole. A long command is broken between words, never inside an id, every line at the same level,
+and each line ends with the continuation of your shell (a backtick in PowerShell, `^` in cmd, a backslash in Git Bash); the label
+names the shell. If sigil guesses wrong, set `SIGIL_SHELL=powershell`, `cmd` or `bash`. After `npm run sigil` it starts with
+`node <path to cli.js>` instead of `sigil`, because the `sigil` command is usually not on your PATH there. You can paste
+it in any folder and it installs there. Only a wizard install prints it. JSON merges (`.mcp.json` and the like) are
+listed with the written files, after the summary line. If a terminal reports the
+wrong width, set `SIGIL_COLUMNS=<width>`; `SIGIL_DEBUG=terminal` prints the size sigil sees.
+
+**Which tool?** When the folder is set up for exactly one tool, Install does not ask which tool: it says
+"Installing for Claude Code, the tool set up in this folder" and goes straight to "What would you like to
+install?". `sigil add --target <name>` does the same for any folder. The question appears only when
+no tool, or more than one, is set up. "← Back" on the first question returns to the menu.
 
 **A damaged install record.** If `.sigil/manifest.json` cannot be read, the header says so and the
 menu offers "Repair the install record". It moves the damaged file aside as
@@ -92,10 +118,12 @@ menu offers "Repair the install record". It moves the damaged file aside as
 already installed stay where they are, but sigil stops tracking them, so installing them again asks
 before replacing anything.
 
-**Setting up a second tool.** "Set up this project" stays in the menu until both Claude Code and
-Copilot have their folders, so you can add the other one later. `sigil init` says when a folder
-already exists and points to "Install artifacts" next. The recommended entry's hint says what the
-entry does as well as why it is first.
+**Setting up another tool.** The set-up entry stays in the menu until every tool has its folders. Once one
+tool is set up it reads "Also set up for GitHub Copilot" and creates those folders without asking; with
+several tools left it reads "Set up another AI tool" and asks which. Lists of tools in the menu are
+short ("A, B, C or 2 more"), so a new provider never makes a line longer. `sigil init` run by hand still
+lists every tool, the ones not set up first. It says when a folder already exists and points to "Install
+artifacts" next. The recommended entry's hint says what the entry does as well as why it is first.
 
 **When something cannot be written.** A read-only or locked folder shows the system's message plus a
 line telling you to pick another folder or check what is holding it.

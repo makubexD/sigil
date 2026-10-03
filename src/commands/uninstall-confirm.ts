@@ -4,7 +4,9 @@
  *
  * @module
  */
-import { confirm, isCancel, cancel, log, note, select } from '@clack/prompts';
+import { confirm, isCancel, log, note, select } from '../wizard/prompts';
+import { cancel } from '../wizard/frame';
+import { printRepeatCommand } from '../wizard/command-strings';
 import { isInteractiveTTY } from '../wizard';
 import { SigilError } from '../errors';
 
@@ -42,10 +44,15 @@ async function askAboutEditedFiles(editedPaths: string[]): Promise<boolean | nul
   return answer === 'delete';
 }
 
+/** More ids than this are counted in the question and listed once above it, so it stays one short line. */
+const MANY_IDS = 3;
+
 /** Prompts to confirm the uninstall (skipped when --yes). Returns false if cancelled. */
 async function promptUninstallConfirmation(ids: string[], targetName: string): Promise<boolean> {
+  const many = ids.length > MANY_IDS;
+  if (many) log.info(`Removing: ${ids.join(', ')}`);
   const ok = await confirm({
-    message: `Remove ${ids.join(', ')} from '${targetName}'?`,
+    message: `Remove ${many ? `${ids.length} artifacts` : ids.join(', ')} from '${targetName}'?`,
     initialValue: false,
   });
   if (isCancel(ok) || !ok) {
@@ -106,5 +113,5 @@ function equivalentUninstall(ids: string[], force: boolean, target?: string): st
 
 /** Logs the command that repeats a guided removal; call it only after the user confirmed. */
 export function logEquivalentUninstall(ids: string[], force: boolean, target?: string): void {
-  log.info(`Equivalent command: ${equivalentUninstall(ids, force, target)}`);
+  printRepeatCommand('Equivalent command:', equivalentUninstall(ids, force, target));
 }

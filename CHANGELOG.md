@@ -152,8 +152,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   rule globs (`paths:` / `applyTo:`) and prompt argument names (now limited to the `{{name}}`
   placeholder characters) are escaped or constrained, and a test renders every provider's spec with
   hostile values to check that no frontmatter key can be added.
-- A skill's `references/` files are now held to what ships safely: regular files only (a symbolic
-  link is not followed), kebab-case `.md` names, at most 256 KiB each and 1 MiB per skill. Anything
+- A skill's `references/` files are now held to what ships safely: regular files in a real folder
+  (no symbolic link or junction is followed, for a file, the `references/` folder or a skill
+  folder), kebab-case `.md` names, at most 256 KiB each and 1 MiB per skill, each checked on the
+  same open file it is read from. Anything
   else is skipped with a load warning. `sigil check --trust` now scans those files too, not only
   `SKILL.md`.
 - `sigil new settings` and `sigil move` of a settings artifact wrote into `settingss/` instead of

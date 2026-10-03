@@ -105,6 +105,45 @@ describe('skill references — loading', () => {
   });
 });
 
+/** Creates a directory symlink, or reports that this machine cannot (Windows without privilege). */
+function linkDir(target: string, link: string): boolean {
+  try {
+    fs.symlinkSync(target, link, process.platform === 'win32' ? 'junction' : 'dir');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+describe('skill references — symbolic links above the files', () => {
+  it('should not follow a references folder that is a symbolic link', async t => {
+    await withTempDirAsync(async root => {
+      const outside = path.join(root, 'outside');
+      fs.mkdirSync(outside);
+      fs.writeFileSync(path.join(outside, 'leaked.md'), 'outside the catalog');
+      const dir = writeCatalog(root, {});
+      const refs = path.join(dir, 'shared', 'skills', 'probe', 'references');
+      fs.rmSync(refs, { recursive: true });
+      if (!linkDir(outside, refs)) return t.skip('this machine cannot create symbolic links');
+      const { names, warnings } = await referencesOf(dir);
+      assert.deepEqual(names, []);
+      assert.match(warnings.join('\n'), /references/);
+    });
+  });
+
+  it('should not load a skill folder that is a symbolic link', async t => {
+    await withTempDirAsync(async root => {
+      const dir = writeCatalog(root, { 'ok.md': 'a' });
+      const elsewhere = path.join(root, 'elsewhere');
+      fs.renameSync(path.join(dir, 'shared', 'skills', 'probe'), elsewhere);
+      const link = path.join(dir, 'shared', 'skills', 'probe');
+      if (!linkDir(elsewhere, link)) return t.skip('this machine cannot create symbolic links');
+      const catalog = await loadCatalog(dir);
+      assert.equal(catalog.byId.has('shared/probe'), false);
+    });
+  });
+});
+
 describe('skill references — sigil check --trust', () => {
   const check = (catalogDir: string) =>
     runCheck([path.join(catalogDir, 'shared', 'skills', 'probe', 'SKILL.md')], {

@@ -65,7 +65,12 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
 
   // tinyglobby and fast-glob both return paths in traversal order; sorting keeps every emitted file stable.
   const filePaths = (
-    await glob(ARTIFACT_PATTERNS, { cwd: catalogDir, absolute: true, expandDirectories: false })
+    await glob(ARTIFACT_PATTERNS, {
+      cwd: catalogDir,
+      absolute: true,
+      expandDirectories: false,
+      followSymbolicLinks: false,
+    })
   ).sort();
   const artifacts = filePaths
     .map(filePath => parseArtifactFile(filePath, skipWarnings))

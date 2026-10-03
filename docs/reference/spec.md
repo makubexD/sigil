@@ -129,7 +129,9 @@ claude: # Claude-namespaced hints; other adapters ignore this block
 ---
 ```
 
-Agent-specific fields (`AgentSchema`, beyond the shared fields above):
+Agent-specific fields (`AgentSchema`, beyond the shared fields above). A tool name in `tools`,
+`disallowedTools` (and a skill's `allowedTools`) may use letters, digits, spaces and `_ . : * ( ) / -`
+only, so it can't end or add a frontmatter key; permission patterns like `Bash(git log:*)` fit.
 
 | Field              | Meaning                                                                                                                                                                    |
 | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

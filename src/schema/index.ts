@@ -40,6 +40,18 @@ const RelatedArtifactSchema = z.object({
 
 export type RelatedArtifact = z.infer<typeof RelatedArtifactSchema>;
 
+/**
+ * A tool name or permission pattern: `Read`, `Bash(git log:*)`, `mcp__github__get_issue`. Tool lists
+ * are emitted as one comma-separated frontmatter line, so a newline, `#`, quote, comma or bracket in a
+ * name could end that line or add a key (`permissionMode: …`); none of those is allowed.
+ */
+const ToolName = z
+  .string()
+  .regex(
+    /^[A-Za-z0-9_][A-Za-z0-9_.:*()/ -]*$/,
+    'a tool name may use letters, digits, spaces and _ . : * ( ) / - only',
+  );
+
 // ─── Skill ───────────────────────────────────────────────────────────────────
 
 export const SkillSchema = z.object({
@@ -79,7 +91,7 @@ export const SkillSchema = z.object({
    * Emitted as `allowed-tools:` in Claude Code SKILL.md frontmatter.
    * Absent = platform default (no restriction).
    */
-  allowedTools: z.array(z.string()).optional(),
+  allowedTools: z.array(ToolName).optional(),
   /**
    * Autocomplete hint shown in the /name picker (e.g. "[file] [--flag]").
    * Emitted as `argument-hint:` in Claude Code SKILL.md frontmatter.
@@ -148,12 +160,12 @@ export const AgentSchema = z.object({
    * Adapters map these to platform-specific tool names.
    * Examples: "codebase", "terminal", "web-search", "file-read"
    */
-  tools: z.array(z.string()).min(1, EMPTY_TOOL_LIST).optional(),
+  tools: z.array(ToolName).min(1, EMPTY_TOOL_LIST).optional(),
   /**
    * Vendor-neutral list of tools this agent must NOT use.
    * Examples: "file-write", "file-delete"
    */
-  disallowedTools: z.array(z.string()).min(1, EMPTY_TOOL_LIST).optional(),
+  disallowedTools: z.array(ToolName).min(1, EMPTY_TOOL_LIST).optional(),
   /**
    * Claude Code-specific hints. Namespaced so other adapters can ignore them.
    * Adapter reads these and applies them to the agent's Markdown frontmatter.

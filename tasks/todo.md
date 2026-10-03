@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1 in progress — T0, N1–N3, S1 done; next S2.
+Status: M1 in progress — T0, N1–N3, S1, S2 done; next S3.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -14,7 +14,7 @@ Spec: `SPEC.md`
 - [x] N2 Frozen install fixture from master 8882c86, plus a migration test
 - [x] N3 Smoke test that installs every pack
 - [x] S1 An agent's `tools` list can't silently widen (`.min(1)`)
-- [ ] S2 No frontmatter injection through tool strings
+- [x] S2 No frontmatter injection through tool strings
 - [ ] S3 Reference files are scanned and the loader is hardened
 - [ ] T3 One table mapping each kind to its folder
 - [ ] T4 `src/catalog-layout.ts`

@@ -5,7 +5,7 @@
  * to top-level frontmatter keys, and `disallowedTools` is emitted as a JSON array when present.
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
-import { yamlScalar } from '../../yaml-util';
+import { yamlList, yamlScalar } from '../../yaml-util';
 import { renderBoundarySection } from '../../shared/boundary';
 import { CLAUDE_AGENTS_DOC } from '../../doc-refs';
 import { CLAUDE_LEXICON } from '../lexicon';
@@ -73,7 +73,7 @@ const toolsMapping: FieldMapping = {
   to: 'tools',
   required: false,
   when: fm => Array.isArray(fm.tools) && (fm.tools as string[]).length > 0,
-  serialize: v => `tools: ${(v as string[]).join(', ')}`,
+  serialize: v => `tools: ${yamlList(v as string[])}`,
 };
 
 const AGENT_FRONTMATTER: readonly FieldMapping[] = [

@@ -27,3 +27,16 @@ export function yamlScalar(s: string): string {
   const escaped = normalized.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
   return `"${escaped}"`;
 }
+
+/** Characters a comma-separated list may use and still be a plain YAML scalar no key can hide in. */
+const PLAIN_LIST_RE = /^[A-Za-z0-9_][A-Za-z0-9_.()/ ,-]*$/;
+
+/**
+ * Joins tool names into one comma-separated frontmatter value (`tools: Read, Grep`), the form both
+ * tools read. Plain names stay unquoted; anything else (a permission pattern with `:` or `*`) is
+ * double-quoted, so the line always parses back to exactly the names given.
+ */
+export function yamlList(values: readonly string[]): string {
+  const joined = values.join(', ');
+  return PLAIN_LIST_RE.test(joined) ? joined : yamlScalar(joined);
+}

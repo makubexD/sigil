@@ -6,9 +6,43 @@ import assert from 'node:assert/strict';
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
+import matter from 'gray-matter';
 import { serializeYamlEntry, writeArtifactFrontmatter } from '../../dist-cli/authoring/frontmatter';
 
 // ─── serializeYamlEntry ───────────────────────────────────────────────────────
+
+/** Strings YAML would read as something else (a date, number, boolean, null, tag…) if left plain. */
+const AMBIGUOUS_STRINGS = [
+  '2026-08-05',
+  'true',
+  'false',
+  'null',
+  '~',
+  '',
+  '1.0',
+  '42',
+  '0x1F',
+  '- item',
+  '&anchor',
+  '!tag',
+  'a #b',
+  ' leading space',
+  "'single",
+  '@at',
+  '`tick',
+  '|',
+  '>',
+  '%percent',
+];
+
+describe('serializeYamlEntry — strings parse back as the same string', () => {
+  for (const value of AMBIGUOUS_STRINGS) {
+    it(`should keep ${JSON.stringify(value)} a string`, () => {
+      const parsed = matter(`---\n${serializeYamlEntry('k', value)}\n---\n`).data as { k: unknown };
+      assert.equal(parsed.k, value);
+    });
+  }
+});
 
 describe('serializeYamlEntry', () => {
   it('plain string with no special chars', () => {

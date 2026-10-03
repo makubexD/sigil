@@ -9,6 +9,8 @@ import fs from 'node:fs';
 import yaml from 'js-yaml';
 import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
+import { supportsKind } from '../targets/capabilities';
+import { KIND_ORDER } from '../kinds';
 import type { PacksConfig } from '../types';
 
 export interface CompleteOptions {
@@ -42,6 +44,12 @@ function loadPacksConfig(packsPath: string): PacksConfig {
   }) as PacksConfig;
 }
 
+/** Kinds at least one target can install, in selector order: the ones `kind:` can usefully name. */
+function installableKinds(): string[] {
+  const targets = getAllTargets();
+  return KIND_ORDER.filter(kind => targets.some(t => supportsKind(t, kind)));
+}
+
 /** Builds the full `add` selector completion list: all, pack:, kind:, and artifact ids. */
 function buildSelectorCompletions(
   packsConfig: PacksConfig,
@@ -51,7 +59,7 @@ function buildSelectorCompletions(
   for (const pack of packsConfig.packs) {
     completions.push(`pack:${pack.name}`);
   }
-  completions.push('kind:skill', 'kind:agent', 'kind:rule', 'kind:prompt', 'kind:workflow');
+  completions.push(...installableKinds().map(kind => `kind:${kind}`));
   if (catalog) {
     for (const a of catalog.artifacts) {
       completions.push(`${a.kind}:${a.id}`);

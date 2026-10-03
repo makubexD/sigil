@@ -48,3 +48,8 @@ docs/audits/**/fixtures/**/bin/
 
 # Packaging
 *.tgz
+
+# The frozen consumer install keeps the tool folders a real project has (ignored above)
+!test/fixtures/installs/**/.claude/
+!test/fixtures/installs/**/.sigil/
+!test/fixtures/installs/**/.vscode/

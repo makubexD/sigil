@@ -9,10 +9,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
-import { ALL_KINDS } from '../kinds';
+import { ALL_KINDS, isArtifactKind, sourceRelPath } from '../kinds';
+import { SHARED_NAMESPACE, namespaceDir } from '../catalog-layout';
 import { isInteractiveTTY, buildEquivalentNewCommand, printEquivalentCommand } from '../wizard';
 import { checkSourceArtifact } from '../authoring/check-source';
-import { normPath, SKILL_FILENAME } from '../paths';
+import { normPath } from '../paths';
 import { SigilError } from '../errors';
 import { headerFor } from '../authoring/header';
 import { resolveWizardInputs, resolveFlagsInputs } from './new-inputs';
@@ -20,33 +21,20 @@ import type { NewOptions, EffectiveNewInputs } from './new-inputs';
 
 export type { NewOptions };
 
-/** Computes the destination directory for the new artifact, creating it if needed. */
-function computeOutDir(
-  effectiveKind: string,
-  name: string,
-  lang: string,
-  catalogDir: string,
-): string {
-  const folder = effectiveKind === 'skill' ? path.join('skills', name) : `${effectiveKind}s`;
-  const dir =
-    lang === 'shared'
-      ? path.join(catalogDir, 'shared', folder)
-      : path.join(catalogDir, 'languages', lang, folder);
-  fs.mkdirSync(dir, { recursive: true });
-  return dir;
-}
-
-/** Computes the destination path for the new artifact, creating parent dirs as needed. */
+/**
+ * Computes the destination path for the new artifact (folder and file name from KIND_REGISTRY's
+ * sourceDir/sourceSuffix), creating parent dirs as needed.
+ */
 function computeOutPath(
   effectiveKind: string,
   name: string,
   lang: string,
   catalogDir: string,
 ): string {
-  const dir = computeOutDir(effectiveKind, name, lang, catalogDir);
-  return effectiveKind === 'skill'
-    ? path.join(dir, SKILL_FILENAME)
-    : path.join(dir, `${name}.${effectiveKind}.md`);
+  if (!isArtifactKind(effectiveKind)) throw new SigilError(`Unknown kind '${effectiveKind}'`);
+  const outPath = path.join(namespaceDir(catalogDir, lang), sourceRelPath(effectiveKind, name));
+  fs.mkdirSync(path.dirname(outPath), { recursive: true });
+  return outPath;
 }
 
 /** Prints the post-create platforms note (restricted vs. DRY-default all-platforms). */
@@ -89,8 +77,8 @@ function computeArtifactIdentity(inputs: EffectiveNewInputs): {
   id: string;
 } {
   const name = inputs.name ?? `new-${inputs.kind}`;
-  const lang = inputs.language ?? 'shared';
-  const idPrefix = lang === 'shared' ? 'shared' : lang;
+  const lang = inputs.language ?? SHARED_NAMESPACE;
+  const idPrefix = lang;
   return { name, lang, id: `${idPrefix}/${name}` };
 }
 
@@ -111,7 +99,7 @@ function buildNewArtifactHeader(identity: NewArtifactIdentity, inputs: Effective
     title: inputs.title ?? `TODO — ${name}`,
     description: inputs.description ?? 'TODO — one-line description used in catalog listings.',
     name: effectiveKind === 'skill' || effectiveKind === 'agent' ? name : undefined,
-    language: lang !== 'shared' ? lang : undefined,
+    language: lang !== SHARED_NAMESPACE ? lang : undefined,
     platforms: inputs.platforms,
   });
 }

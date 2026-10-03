@@ -1,0 +1,302 @@
+{
+  "manifestVersion": 2,
+  "entries": [
+    {
+      "id": "csharp/cs-generate-tests",
+      "kind": "skill",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/skills/cs-generate-tests/SKILL.md",
+          "sha256": "5d0c48038570a38e01aa32cdf6907fb0a4042c132a08151855754a4ae042f959"
+        }
+      ],
+      "dependentOf": [],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "shared/cli",
+      "kind": "skill",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/skills/cli/SKILL.md",
+          "sha256": "99dd6418420020cff44a27ed8d0bfac4d1419bb783b80fb5882d43cb4ec77645"
+        },
+        {
+          "path": ".claude/skills/cli/references/architecture.md",
+          "sha256": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f"
+        },
+        {
+          "path": ".claude/skills/cli/references/auditor.md",
+          "sha256": "129d3771e8f16c5d5209d7f914dc90934b559a6ffc019728c6f4fdee6f376581"
+        },
+        {
+          "path": ".claude/skills/cli/references/contract.md",
+          "sha256": "288e89d220a79f217e4a36200ec2e8767715d5fc6ba20d8b8341cb1267b2c739"
+        },
+        {
+          "path": ".claude/skills/cli/references/findings.md",
+          "sha256": "291ec65e34f07d993d5b86daaa11c8a539f6bdfd7a5dfd376b39cbdad5cb752c"
+        },
+        {
+          "path": ".claude/skills/cli/references/grammar.md",
+          "sha256": "a4553bf6847fd966de7d179e226e9b5296f63991e551b5c7e8c3c50ac5accc0b"
+        },
+        {
+          "path": ".claude/skills/cli/references/migration.md",
+          "sha256": "7e7ac8d585017536eb7ea4046c8f57fd2c196dfd08d5ba5f751296299a3eb172"
+        },
+        {
+          "path": ".claude/skills/cli/references/stack-dotnet.md",
+          "sha256": "8b356303fba3f1f55d2a2e43250e119ebc5a29b776f9d65f038812f3e7a1ef78"
+        },
+        {
+          "path": ".claude/skills/cli/references/stack-go.md",
+          "sha256": "7fe42acdb25a4134520031b12e64b8e72b60c50dd31c7f52d9bd8fff8523bd90"
+        },
+        {
+          "path": ".claude/skills/cli/references/stack-node-ts.md",
+          "sha256": "e867dc1be61cdec48106bbffcd09975725a3a0c376b25c0a2447d20ed98a485f"
+        },
+        {
+          "path": ".claude/skills/cli/references/stack-python.md",
+          "sha256": "746e19b1ccdc765492c7ccfd7e7843e5647f8431698bf4764f984bcc0c954cbd"
+        },
+        {
+          "path": ".claude/skills/cli/references/stack-rust.md",
+          "sha256": "30c62dc0116bf1345d714f2c59c23bcc2a646ee241200614554444d6778d1d58"
+        },
+        {
+          "path": ".claude/skills/cli/references/testing.md",
+          "sha256": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c"
+        }
+      ],
+      "dependentOf": [],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "typescript/ts-release",
+      "kind": "skill",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/skills/ts-release/SKILL.md",
+          "sha256": "9b272361bbfb347a5fb039de4b3a8682727225f986c08123ce9d105925d2edaa"
+        }
+      ],
+      "dependentOf": [],
+      "installedAt": "2026-10-03T20:57:43.991Z",
+      "template": {
+        "id": "shared/templates/release-skill",
+        "revision": 1
+      }
+    },
+    {
+      "id": "angular/ng-conventions",
+      "kind": "rule",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/rules/angular-ng-conventions.md",
+          "sha256": "41bbb78db1217b85e7dfad83e85f0d0b128e5fc6bac24ef4856928ba84e4934e"
+        }
+      ],
+      "dependentOf": [],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "shared/explain-diff",
+      "kind": "prompt",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/skills/shared-explain-diff/SKILL.md",
+          "sha256": "3af02c7ae277af9db10b412f58f4d21e6fa2541e6a125e9edf13408bc3a3cd44"
+        }
+      ],
+      "dependentOf": [],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "csharp/cs-testing",
+      "kind": "rule",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/rules/csharp-cs-testing.md",
+          "sha256": "658766f1519c89385663e047ad706f2f06aa24a6db532f29c353610e9dc5542e"
+        }
+      ],
+      "dependentOf": [
+        "csharp/cs-generate-tests"
+      ],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "csharp/cs-code-reviewer",
+      "kind": "agent",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/agents/cs-code-reviewer.md",
+          "sha256": "e8cb0f33c4f1d6a2e5da017805a6d99487f93d3a5acaf0c37c7f4f4a6803dbb7"
+        }
+      ],
+      "dependentOf": [
+        "csharp/cs-generate-tests"
+      ],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "shared/cli-rules",
+      "kind": "rule",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/rules/shared-cli-rules.md",
+          "sha256": "43f0cb82e2d4aa43fb3b0a6394fa11eceb8a193b13590b7c7260326f13d9478c"
+        }
+      ],
+      "dependentOf": [
+        "shared/cli"
+      ],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "shared/cli-auditor",
+      "kind": "agent",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/agents/cli-auditor.md",
+          "sha256": "857a44477c414c5b412492ef5152497064dc243cd2eda4fab9819cd0e00ce463"
+        }
+      ],
+      "dependentOf": [
+        "shared/cli"
+      ],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "typescript/ts-conventions",
+      "kind": "rule",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [
+        {
+          "path": ".claude/rules/typescript-ts-conventions.md",
+          "sha256": "53aefe10a0e641427ecf5a09594b806bcfeeaf247fe3032510a91bfd010bdd09"
+        }
+      ],
+      "dependentOf": [
+        "typescript/ts-release"
+      ],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "shared/filesystem",
+      "kind": "mcp",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [],
+      "configFiles": [
+        {
+          "file": ".mcp.json",
+          "fragment": {
+            "mcpServers": {
+              "filesystem": {
+                "command": "npx",
+                "args": [
+                  "-y",
+                  "@modelcontextprotocol/server-filesystem",
+                  "."
+                ]
+              }
+            }
+          },
+          "strategy": {
+            "mcpServers": "object-spread"
+          },
+          "fragmentSha256": "821e38354d06950afd027ad17849e6f6d6d4871fd3852615f0513ad0c8272811"
+        }
+      ],
+      "dependentOf": [],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "shared/protect-config",
+      "kind": "hook",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [],
+      "configFiles": [
+        {
+          "file": ".claude/settings.json",
+          "fragment": {
+            "hooks": {
+              "PreToolUse": [
+                {
+                  "matcher": "Edit|Write",
+                  "hooks": [
+                    {
+                      "type": "command",
+                      "command": "node",
+                      "args": [
+                        "-e",
+                        "const fs = require('fs');\nconst path = require('path');\nlet raw = '';\nprocess.stdin.setEncoding('utf8');\nprocess.stdin.on('data', chunk => (raw += chunk)).on('end', () => {\n  let file;\n  try { file = JSON.parse(raw).tool_input.file_path; } catch { return; }\n  if (typeof file !== 'string') return;\n  const full = path.resolve(file);\n  const names = [file, full];\n  try { names.push(fs.realpathSync.native(full)); } catch {\n    try { names.push(path.join(fs.realpathSync.native(path.dirname(full)), path.basename(full))); } catch {}\n  }\n  const hit = names.flatMap(baseNames).find(isProtected);\n  if (hit) {\n    process.stderr.write('sigil-hook: blocked write to protected file ' + hit + '\\n');\n    process.exitCode = 2;\n  }\n});\nfunction baseNames(p) {\n  const b = p.split(/[\\\\/]/).pop().toLowerCase().replace(/[. ]+$/, '');\n  return [b, b.split(':')[0]];\n}\nfunction isProtected(b) {\n  if (/\\.(example|sample|template)$/.test(b)) return false;\n  if (/^\\.env([.-]|rc$|$)/.test(b) || b.endsWith('.env')) return true;\n  if (/^id_(rsa|dsa|ecdsa|ed25519)/.test(b)) return !b.endsWith('.pub');\n  if (/\\.(pem|key|p12|pfx|ppk|jks|keystore)$/.test(b)) return true;\n  const exact = ['credentials', '.git-credentials', 'secrets', '.secrets', '.netrc', '.pgpass'];\n  if (exact.includes(b)) return true;\n  return /^(secrets|credentials)\\.(json|ya?ml|toml|ini|env|txt|xml)$/.test(b);\n}"
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "strategy": {
+            "hooks": "array-append"
+          },
+          "fragmentSha256": "3ef8c050d70f346916ac629020a78b007c2bb35f73eedec7540fc91f70423a45"
+        }
+      ],
+      "dependentOf": [],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    },
+    {
+      "id": "shared/allow-dev-tools",
+      "kind": "settings",
+      "target": "claude",
+      "sigilVersion": "0.1.0",
+      "files": [],
+      "configFiles": [
+        {
+          "file": ".claude/settings.json",
+          "fragment": {
+            "permissions": {
+              "allow": [
+                "Bash(npm run *)",
+                "Bash(npx tsc *)",
+                "Bash(npx eslint *)",
+                "Bash(npx prettier *)"
+              ]
+            }
+          },
+          "strategy": {
+            "permissions": "array-union"
+          },
+          "fragmentSha256": "170d975e5a1868f71f1b2d688bb5976c2cfae44b8f667bb43c7be781ed6ee7d1"
+        }
+      ],
+      "dependentOf": [],
+      "installedAt": "2026-10-03T20:57:43.991Z"
+    }
+  ]
+}

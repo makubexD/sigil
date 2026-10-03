@@ -16,6 +16,7 @@ import { getAllTargets } from '../targets';
 import { isInteractiveTTY } from '../wizard';
 import { planMove, executeMove, summarizePlan } from '../authoring/move';
 import type { LoadedCatalog } from '../types';
+import { ALL_KINDS, sourceGlob } from '../kinds';
 import { SigilError } from '../errors';
 import { requireValidCatalog } from '../cli-helpers';
 
@@ -52,13 +53,17 @@ function parseArtifactSync(filePath: string): LoadedCatalog['artifacts'][number]
  */
 function loadCatalogSync(dir: string): LoadedCatalog {
   const absDir = path.resolve(dir);
-  const mdFiles = globSync('**/*.md', { cwd: absDir, absolute: true, expandDirectories: false });
-  const artifacts = mdFiles
+  const sourceFiles = globSync(ALL_KINDS.map(sourceGlob), {
+    cwd: absDir,
+    absolute: true,
+    expandDirectories: false,
+  });
+  const artifacts = sourceFiles
     .map(parseArtifactSync)
     .filter((a): a is LoadedCatalog['artifacts'][number] => a !== undefined);
   const byId = new Map(artifacts.map(a => [a.id, a]));
 
-  return { artifacts, byId, languages: new Map(), skipWarnings: [] };
+  return { artifacts, byId, languages: new Map(), skipWarnings: [], root: absDir };
 }
 
 /** Prints the dry-run move plan (renames + referrer rewrites), no files touched. */

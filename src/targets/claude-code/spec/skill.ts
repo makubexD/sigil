@@ -11,7 +11,7 @@
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import type { ResolvedArtifact } from '../../../types';
-import { yamlScalar } from '../../yaml-util';
+import { yamlList, yamlScalar } from '../../yaml-util';
 import { CLAUDE_SKILLS_DOC } from '../../doc-refs';
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
@@ -43,14 +43,14 @@ const allowedToolsMapping: FieldMapping = {
   to: 'allowed-tools',
   required: false,
   when: fm => Array.isArray(fm.allowedTools) && (fm.allowedTools as string[]).length > 0,
-  serialize: v => `allowed-tools: ${(v as string[]).join(', ')}`,
+  serialize: v => `allowed-tools: ${yamlList(v as string[])}`,
 };
 
 const argumentHintMapping: FieldMapping = {
   from: 'argumentHint',
   to: 'argument-hint',
   required: false,
-  serialize: v => `argument-hint: "${(v as string).replace(/"/g, '\\"')}"`,
+  serialize: v => `argument-hint: ${yamlScalar(v as string)}`,
 };
 
 const disableModelInvocationMapping: FieldMapping = {

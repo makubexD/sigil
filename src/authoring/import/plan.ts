@@ -15,6 +15,7 @@ import { serializeYamlEntry } from '../frontmatter';
 import { translateFrontmatter } from './translate';
 import type { DiscoveredFile } from './discover';
 import type { CatalogFrontmatter } from './translate';
+import { namespaceDir } from '../../catalog-layout';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -192,5 +193,5 @@ export function buildImportPlan(discovered: DiscoveredFile[], opts: PlanOptions)
  * language prefix → catalog/languages/<lang>/language.yaml
  */
 export function languageYamlPath(language: string, catalogDir: string): string {
-  return path.join(catalogDir, 'languages', language, 'language.yaml');
+  return path.join(namespaceDir(catalogDir, language), 'language.yaml');
 }

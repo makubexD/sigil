@@ -25,6 +25,11 @@ slots** (a provider can rearrange a body without a catalog-side change).
 3. Add a pack entry to `packs.yaml`.
 4. Run `sigil validate && sigil build`.
 
+Where an artifact sits is read relative to the catalog root (`src/catalog-layout.ts`):
+`shared/<kindDir>/…` or `languages/<lang>/<kindDir>/…`, with `<kindDir>` and the file name taken
+from the kind's `sourceDir` / `sourceSuffix`. Folders above the root never count, so a catalog can
+live under any path. `loadCatalog` records that root on `LoadedCatalog.root`.
+
 ### Adding a platform target
 
 1. Create `src/targets/<platform>/index.ts` implementing the `Target` interface. The snippet is
@@ -100,7 +105,9 @@ slots** (a provider can rearrange a body without a catalog-side change).
 
 1. Add the kind to `ArtifactKind` (`src/types.ts`) and one entry to `KIND_REGISTRY`
    (`src/kinds.ts`) — `selectorOrder`/`displayOrder` place it in pickers and generated docs
-   automatically; there is no second hand-maintained list to update.
+   automatically, and `sourceDir`/`sourceSuffix` decide where its source files live (loading,
+   `sigil check`, `new` and `move` all derive from them); there is no second hand-maintained list
+   to update.
 2. Add its zod schema to `SCHEMAS` in `src/schema/index.ts`; `npm run build` regenerates
    `schema/<kind>.schema.json` from it — commit both.
 3. Each provider that supports the new kind adds a `KindEmitSpec` for it (see below). A provider

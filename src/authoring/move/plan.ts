@@ -4,7 +4,8 @@
  */
 import path from 'path';
 import type { Artifact, LoadedCatalog } from '../../types';
-import { SKILL_FILENAME, ID_PART_COUNT } from '../../paths';
+import { isArtifactKind, sourceRelPath } from '../../kinds';
+import { namespaceDir, splitId } from '../../catalog-layout';
 import { KEBAB_ID_RE } from '../../schema/shared';
 import { resolveContained } from '../../cli-helpers';
 
@@ -15,10 +16,10 @@ import { resolveContained } from '../../cli-helpers';
  * Mirrors the conventions used by `new` and `checkSourceArtifact`.
  *
  * Rules:
- *   - id = "shared/<name>"  → catalog/shared/{kind}s/<name>.{kind}.md
- *                             (skill: catalog/shared/skills/<name>/SKILL.md)
- *   - id = "<lang>/<name>"  → catalog/languages/<lang>/{kind}s/<name>.{kind}.md
- *                             (skill: catalog/languages/<lang>/skills/<name>/SKILL.md)
+ *   - id = "shared/<name>"  → catalog/shared/<sourceRelPath(kind, name)>
+ *   - id = "<lang>/<name>"  → catalog/languages/<lang>/<sourceRelPath(kind, name)>
+ *   The name is the id's last segment, so a template's `shared/templates/<name>` id resolves too.
+ *   Folder and file name come from KIND_REGISTRY (`sourceDir`, `sourceSuffix`).
  *
  * `newId` is validated against the same `KEBAB_ID_RE` the schema enforces on every catalog
  * artifact's `id` field before any path is computed, and the computed destination is re-checked
@@ -34,21 +35,12 @@ export function computeDestinationPath(newId: string, kind: string, catalogDir: 
       `Invalid id '${newId}' — id must be namespaced kebab-case (e.g. "shared/foo", "typescript/foo-bar")`,
     );
   }
-  const [prefix, name] = newId.split('/');
-  if (!prefix || !name) {
+  if (!isArtifactKind(kind)) throw new Error(`Unknown artifact kind '${kind}'`);
+  const split = splitId(newId, kind);
+  if (!split) {
     throw new Error(`Invalid id '${newId}' — must be '<prefix>/<name>'`);
   }
-
-  const base =
-    prefix === 'shared'
-      ? path.join(catalogDir, 'shared')
-      : path.join(catalogDir, 'languages', prefix);
-
-  const relPath =
-    kind === 'skill'
-      ? path.join('skills', name, SKILL_FILENAME)
-      : path.join(`${kind}s`, `${name}.${kind}.md`);
-  return resolveContained(base, relPath);
+  return resolveContained(namespaceDir(catalogDir, split.prefix), sourceRelPath(kind, split.name));
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -83,9 +75,9 @@ function resolveMoveSource(oldId: string, newId: string, catalog: LoadedCatalog)
     throw new Error(`Artifact '${oldId}' not found. Run \`sigil list\` to see available ids.`);
   }
 
-  const parts = newId.split('/');
-  if (parts.length !== ID_PART_COUNT || !parts[0] || !parts[1]) {
-    throw new Error(`New id '${newId}' must be in the form '<prefix>/<name>'`);
+  if (!splitId(newId, artifact.kind)) {
+    const shape = artifact.kind === 'template' ? '<prefix>/templates/<name>' : '<prefix>/<name>';
+    throw new Error(`New id '${newId}' must be in the form '${shape}'`);
   }
 
   if (catalog.byId.has(newId)) {

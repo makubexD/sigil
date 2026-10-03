@@ -1,0 +1,150 @@
+---
+name: cli
+description: "Design, build, audit, or refactor a command-line interface as a small language with a git-inspired grammar (app NOUN VERB OBJECT --modifiers) that composes through pipes and structured output. Covers command tree, arguments, options, help, stdout/stderr, errors, exit codes, configuration, tests, migration with deprecation, and stack-specific parsers (Node/TypeScript, Python, Go, Rust, .NET). Runs read-only in audit and design modes."
+---
+
+## When to Use
+
+Use when creating a new CLI, adding or renaming commands or flags, reviewing CLI UX, making a CLI predictable, scriptable or git-like, or refactoring a legacy CLI — or when the user asks to "design the command tree", "add --format json to", "rename this command", "audit this CLI", or "make this CLI git-like". Not for interactive setup wizards.
+
+# CLI
+
+Treat the CLI as a small language. Its commands, arguments, options, aliases, help, output,
+errors, and exit codes are a public interface: someone who has not read the implementation
+should be able to predict the next command from help alone. Preserve the domain behavior
+and the parser a repository already uses unless a finding the user approved says otherwise.
+
+The rules live in `references/`. Load only what the mode below lists; do not restate them in
+reports, apply them.
+
+## Decide the engagement
+
+Before any edit:
+
+**Narrow change.** The user named the exact delta ("rename `users show-all` to `users list`",
+"add `--format json` to `release list`"). Load grammar, contract, testing, migration,
+findings, and the matching stack file. Naming the exact delta is the explicit yes for it, even when it is `BREAKING`, but
+keep the deprecation path from `references/migration.md` unless the user asked for a hard
+break. Before editing, run a scoped audit: search for callers, write the current command's
+card, and state the delta's class, its callers, and its impact. Then write the contract test
+first, make the change, migrate the callers, and update help. Report in the "build and the end
+of refactor" shape from `references/findings.md`, ending with the validation list, the command
+reference, and "Not verified". The audit stays scoped to the delta.
+
+**Open-ended work.** Pick one mode. With no mode given, choose `audit` when a CLI exists and
+`design` when none does. If the user says both "review" and "fix", run `audit` and stop:
+their approval of finding ids starts the work.
+
+| Mode | When | Load | Edits |
+|---|---|---|---|
+| `design` | No CLI yet, or a grammar is wanted before code | grammar, contract, findings | none |
+| `build` | Create a CLI, or add a command group | grammar, contract, architecture, testing, findings, one stack file; auditor and migration too when a CLI already exists | yes, test-first |
+| `audit` | Review or explain an existing CLI | auditor (it loads the rest) | none |
+| `refactor` | Change an existing CLI without an exact delta | auditor, then testing, migration, architecture as needed | only approved ids |
+
+For open-ended work on an existing CLI, always audit before modifying it. That includes
+`build` when it adds a group to an existing CLI: audit the surrounding commands first so the
+new group matches them.
+
+## design
+
+1. Restate the domain in one line per resource: its nouns, the operations on each, and who
+   calls it (people, scripts, CI).
+2. Draft the tree with `references/grammar.md`: top-level verbs for the daily workflow, noun
+   groups for the rest, one verb vocabulary, positionals only for identities.
+3. Fix the contract with `references/contract.md`: formats, streams, exit codes,
+   environment variables, config location, destructive-operation safety.
+4. Report in the design shape from `references/findings.md` and stop. No code.
+
+## build
+
+1. Run `design` first unless the user already approved a grammar. Wait for approval.
+2. Pick the `references/stack-*.md` file that matches the repository (or the user's
+   choice). If none matches, map `references/architecture.md` to the stack yourself and say
+   the guidance is unverified for that stack.
+3. Build in the slices from `references/architecture.md`. For each slice: write the contract
+   test from `references/testing.md`, run it and see it fail for the expected reason,
+   implement, and run the whole suite.
+4. Generate help (and completion, if the stack supports it) from the declarations.
+5. Finish with the validation list and the command reference from `references/findings.md`.
+   If a fresh-context reviewer is available (the `cli-auditor` agent, a subagent, or a second
+   session), give it `references/auditor.md` for an independent pass; otherwise run that brief
+   yourself as a separate step.
+
+## audit
+
+Follow `references/auditor.md`. It is self-contained, so prefer handing it to a
+fresh-context reviewer (the `cli-auditor` agent when it is installed), and review its report
+against the evidence before presenting it. Present the report and stop the turn. Make no edits.
+
+## refactor
+
+1. Run `audit` and stop at its approval block. Wait for the user's answer.
+2. Write characterization tests for the current surface (`references/testing.md`) and run
+   them green against the unchanged code before the first edit.
+3. Implement the approved ids one at a time, following `references/migration.md`. Leave
+   unapproved `BREAKING` and `COMPATIBILITY` items untouched. For `MAINTAINABILITY` items,
+   use `references/architecture.md`.
+4. After each id: update the affected expectations (naming the id), migrate in-repo callers,
+   run the suite.
+5. Finish with the validation list, the command reference, and what you could not run.
+
+Never apply a breaking change without an explicit yes on its finding id.
+
+## Stacks
+
+| Stack | File |
+|---|---|
+| Node.js / TypeScript (`node:util` parseArgs, commander) | `references/stack-node-ts.md` |
+| Python (argparse, click, typer) | `references/stack-python.md` |
+| Go (cobra) | `references/stack-go.md` |
+| Rust (clap) | `references/stack-rust.md` |
+| .NET (System.CommandLine) | `references/stack-dotnet.md` |
+
+Stack files map the rules to the parser's features and list its pitfalls; they do not
+override the grammar or the contract. When a stack's default differs from the contract
+(for example an exit code), say so and configure the parser to follow the contract.
+
+## Gates
+
+- `audit` and `design` never edit files.
+- `BREAKING` and `COMPATIBILITY` findings wait for an explicit yes on their ids. A general
+  "looks good" is not a yes.
+- End every mode, and every narrow change, with "Not verified": what you could not run or check, and why.
+
+---
+
+## Coding guidelines to apply
+
+### CLI Rules (Small-Language Grammar)
+
+This project's command-line interface is a public, small language. Apply these rules to any
+change in command registration, arguments, options, help, output, or errors.
+
+- **Grammar:** `app <noun> <verb> [<object>] [--modifier value]`. One verb vocabulary
+  (`list`, `get`, `create`, `update`, `delete`, plus domain verbs), one spelling per
+  operation, nouns all singular or all plural. No operation spelled as a flag.
+- **Positionals** are identities only; every other input is a long option. Never a boolean
+  positional. Short aliases only for common interactive flags, one meaning tree-wide.
+- **Help** is generated from the same declarations the parser uses, at every level, shows
+  defaults, and never has side effects.
+- **stdout is the payload** only. Errors, warnings, progress, and prompts go to stderr.
+  `--format json` prints one valid JSON document and nothing else.
+- **Errors** start with `error:`, name the bad input, suggest the fix when there is one.
+- **Exit codes:** 0 success, 1 failure or a declined prompt, 2 usage error (including a
+  missing `--yes` when there is no terminal to prompt), 130 interrupted (unless this project
+  documents a different contract; then keep that one).
+- **Color**, decided per stream, first match wins: a `--color`/`--no-color` flag; then
+  `FORCE_COLOR` (`0`/`false` off, anything else on); then a non-empty `NO_COLOR` (off); then
+  `TERM=dumb` (off); otherwise on only when that stream is a terminal.
+- **Prompts** only on a terminal; destructive commands take `--yes`, and changes to shared
+  state offer `--dry-run`.
+- **Compatibility:** before changing a command or option, search the repository for callers
+  and update them in the same change. Keep old syntax with
+  `warning: '<old>' is deprecated and will be removed. Use '<new>'.` on stderr unless the
+  user approved a hard break.
+- **Tests** run the real entry point and cover help, exit codes, the stdout/stderr split,
+  and each deprecation path.
+
+For design, audits, and refactors, use the `cli` skill. The path globs that load this rule are
+generic defaults; narrow them to this project's layout.

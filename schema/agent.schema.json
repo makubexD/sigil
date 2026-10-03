@@ -69,14 +69,18 @@
         "tools": {
           "type": "array",
           "items": {
-            "type": "string"
-          }
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.:*()/ -]*$"
+          },
+          "minItems": 1
         },
         "disallowedTools": {
           "type": "array",
           "items": {
-            "type": "string"
-          }
+            "type": "string",
+            "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.:*()/ -]*$"
+          },
+          "minItems": 1
         },
         "claude": {
           "type": "object",

@@ -14,7 +14,7 @@ import { checkSourceArtifact } from '../authoring/check-source';
 import { scanContent, formatScanFindings } from '../trust/scan';
 import { normPath } from '../paths';
 import { SigilError } from '../errors';
-import type { LoadedCatalog, Target } from '../types';
+import type { Artifact, LoadedCatalog, Target } from '../types';
 
 export interface CheckOptions {
   catalogDir: string;
@@ -43,10 +43,9 @@ function expandFilesToCheck(
   return expandedFiles;
 }
 
-/** Runs the opt-in trust scan for one file; returns the violation count to add. */
-function runTrustScan(filePath: string, opts: CheckOptions): number {
-  const rawContent = fs.readFileSync(filePath, 'utf-8');
-  const scanResult = scanContent(filePath, rawContent);
+/** Runs the opt-in trust scan over one piece of content; returns the violation count to add. */
+function runTrustScan(label: string, content: string, opts: CheckOptions): number {
+  const scanResult = scanContent(label, content);
   if (scanResult.findings.length === 0) return 0;
 
   const trustLines = formatScanFindings(scanResult);
@@ -99,8 +98,21 @@ function checkOneFile(
     schemaOnly: opts.schemaOnly,
   });
   printFileCheckResult(artifact, filePath, violations);
-  const violationCount = violations.length + (opts.trust ? runTrustScan(filePath, opts) : 0);
+  const violationCount = violations.length + (opts.trust ? trustScanArtifact(artifact, opts) : 0);
   return { checked: true, violationCount };
+}
+
+/**
+ * Trust-scans an artifact's own file and, for a skill, every reference file it ships: references
+ * reach the user's project just like SKILL.md does.
+ */
+function trustScanArtifact(artifact: Artifact, opts: CheckOptions): number {
+  const own = runTrustScan(artifact.filePath, fs.readFileSync(artifact.filePath, 'utf-8'), opts);
+  const refsDir = path.join(path.dirname(artifact.filePath), 'references');
+  return (artifact.references ?? []).reduce(
+    (count, ref) => count + runTrustScan(path.join(refsDir, ref.name), ref.content, opts),
+    own,
+  );
 }
 
 /** Throws if no file arguments were passed. */

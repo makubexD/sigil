@@ -8,7 +8,9 @@
 import path from 'path';
 import type { ArtifactKind } from '../types';
 import { checkReferences, describeRefProblem, type RefCheck } from '../refs';
-import { normPath, SKILL_FILENAME, ID_PART_COUNT } from '../paths';
+import { normPath } from '../paths';
+import { SHARED_NAMESPACE, locateSource, splitId } from '../catalog-layout';
+import { kindOfSourceFile } from '../kinds';
 import type { CheckCtx } from './check-source-ctx';
 
 /** Renders one RefCheck in check-source.ts's established wording. */
@@ -22,16 +24,17 @@ function isKebabCase(s: string): boolean {
 }
 
 /**
- * Infer the expected id prefix from the artifact's file path.
- * Looks for the pattern: catalog/languages/<lang>/... → prefix = <lang>
- *                         catalog/shared/...           → prefix = "shared"
- * Returns undefined when the path doesn't match either convention.
+ * Infer the expected id prefix from the artifact's file path: `languages/<lang>/…` → `<lang>`,
+ * `shared/…` → `shared`, undefined otherwise. Read relative to the catalog root when the catalog
+ * has one (catalog-layout.ts), so folders above the root never count; a catalog built in memory has
+ * no root and falls back to matching the segments anywhere in the path.
  */
-function inferIdPrefixFromPath(filePath: string): string | undefined {
+function inferIdPrefixFromPath(filePath: string, catalogRoot?: string): string | undefined {
+  if (catalogRoot) return locateSource(catalogRoot, filePath).namespace;
   const normalized = normPath(filePath);
   const langMatch = normalized.match(/\/languages\/([^/]+)\//);
   if (langMatch) return langMatch[1];
-  if (normalized.includes('/shared/')) return 'shared';
+  if (normalized.includes(`/${SHARED_NAMESPACE}/`)) return SHARED_NAMESPACE;
   return undefined;
 }
 
@@ -40,14 +43,7 @@ function inferIdPrefixFromPath(filePath: string): string | undefined {
  * SKILL.md → 'skill'; *.rule.md → 'rule'; *.agent.md → 'agent'; etc.
  */
 function inferKindFromPath(filePath: string): ArtifactKind | undefined {
-  const base = path.basename(filePath);
-  if (base === SKILL_FILENAME) return 'skill';
-  if (base.endsWith('.rule.md')) return 'rule';
-  if (base.endsWith('.agent.md')) return 'agent';
-  if (base.endsWith('.prompt.md')) return 'prompt';
-  if (base.endsWith('.workflow.md')) return 'workflow';
-  if (base.endsWith('.template.md')) return 'template';
-  return undefined;
+  return kindOfSourceFile(path.basename(filePath));
 }
 
 /** name (skill/agent only) must be kebab-case and match the id's name segment. */
@@ -72,7 +68,7 @@ function checkNameConsistency(ctx: CheckCtx, idName: string): void {
 
 /** frontmatter `language:` must match the id prefix. */
 function checkLanguageMatchesId(ctx: CheckCtx, idPrefix: string, frontmatterLang: string): void {
-  if (frontmatterLang === idPrefix || idPrefix === 'shared') return;
+  if (frontmatterLang === idPrefix || idPrefix === SHARED_NAMESPACE) return;
   ctx.v.push({
     file: ctx.artifact.filePath,
     problem: `frontmatter language '${frontmatterLang}' must match id prefix '${idPrefix}'`,
@@ -90,7 +86,7 @@ function checkLanguageConsistency(
   if (!frontmatterLang) return;
 
   checkLanguageMatchesId(ctx, idPrefix, frontmatterLang);
-  if (pathPrefix && pathPrefix !== 'shared' && pathPrefix !== frontmatterLang) {
+  if (pathPrefix && pathPrefix !== SHARED_NAMESPACE && pathPrefix !== frontmatterLang) {
     v.push({
       file: artifact.filePath,
       problem: `frontmatter language '${frontmatterLang}' doesn't match path-inferred language '${pathPrefix}'`,
@@ -98,38 +94,20 @@ function checkLanguageConsistency(
   }
 }
 
-const TEMPLATE_ID_PART_COUNT = 3;
-
 /**
- * `kind: template` gets a one-off exception: `shared/templates/<name>` (3 parts, fixed middle
- * segment) — the `templates/` sub-namespace is the documented layout (CLAUDE.md's "Templates +
- * emit specs" section, catalog/shared/templates/*.template.md) and predates this checker.
+ * Validates the id shape (catalog-layout.ts `splitId`); returns [prefix, name] or pushes a violation
+ * and null. A template's id is `<prefix>/templates/<name>`, the documented `templates/` sub-namespace.
  */
-function requireTemplateId(ctx: CheckCtx): [string, string] | null {
-  const { artifact, v } = ctx;
-  const parts = artifact.id.split('/');
-  if (parts.length === TEMPLATE_ID_PART_COUNT && parts[0] && parts[1] === 'templates' && parts[2]) {
-    return [parts[0], parts[2]];
-  }
-  v.push({
-    file: artifact.filePath,
-    problem: `template id '${artifact.id}' must follow the convention '<language>/templates/<name>' or 'shared/templates/<name>'`,
-  });
-  return null;
-}
-
-/** Validates the id shape; returns [prefix, name] or pushes a violation and null. */
 function requireTwoPartId(ctx: CheckCtx): [string, string] | null {
   const { artifact, v } = ctx;
-  if (artifact.kind === 'template') return requireTemplateId(ctx);
-
-  const parts = artifact.id.split('/');
-  if (parts.length === ID_PART_COUNT && parts[0] && parts[1]) {
-    return [parts[0], parts[1]];
-  }
+  const split = splitId(artifact.id, artifact.kind);
+  if (split) return [split.prefix, split.name];
   v.push({
     file: artifact.filePath,
-    problem: `id '${artifact.id}' must follow the convention '<language>/<name>' or 'shared/<name>'`,
+    problem:
+      artifact.kind === 'template'
+        ? `template id '${artifact.id}' must follow the convention '<language>/templates/<name>' or 'shared/templates/<name>'`
+        : `id '${artifact.id}' must follow the convention '<language>/<name>' or 'shared/<name>'`,
   });
   return null;
 }
@@ -141,7 +119,7 @@ export function checkIdConsistency(ctx: CheckCtx): void {
   const [idPrefix, idName] = parts;
 
   const file = ctx.artifact.filePath;
-  const pathPrefix = inferIdPrefixFromPath(file);
+  const pathPrefix = inferIdPrefixFromPath(file, ctx.catalog.root);
   if (pathPrefix && pathPrefix !== idPrefix) {
     ctx.v.push({
       file,

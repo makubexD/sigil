@@ -39,7 +39,8 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `src/install-state-prescaffold.ts`). Never write a file with `canonicalize()`.
 - **Route every authored scalar through `serializeScalar`** (`src/authoring/frontmatter.ts`, called from
   `serializeYamlEntry`). It quotes strings containing `\n`, `:`, or `"`, and strings starting with `#`, `*`, `[`, or
-  `{`. A `"` anywhere in the string is quoted, not only a leading one.
+  `{`. A `"` anywhere in the string is quoted, not only a leading one. It also quotes any string whose plain form
+  would not parse back as the same string (dates, numbers, `true`, `null`, …), so a rewrite never changes a type.
 - **Never emit a bare plain scalar for `description:`** — a colon inside it breaks YAML. Always go through
   `yamlScalar()` (`src/targets/yaml-util.ts`), which double-quotes unconditionally.
 - **`plugin.json` gets `pkg.version` written explicitly** by `buildPluginJson`
@@ -55,7 +56,9 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `targets/copilot/build-helpers.ts` (`buildInstructionsFile`).
 - **`KIND_ORDER` (`src/select/selection.ts`) is derived from `KIND_REGISTRY`'s `selectorOrder`** in `src/kinds.ts`
   (selection.ts re-exports it), the same way `ALL_KINDS` derives from `displayOrder`. Never hand-list kinds in a
-  second array — a kind added to `KIND_REGISTRY` without `selectorOrder` fails to compile.
+  second array — a kind added to `KIND_REGISTRY` without `selectorOrder` fails to compile. The same goes for where a
+  kind's source lives: `sourceDir` / `sourceSuffix` on `KIND_REGISTRY`, read through `sourceGlob`, `sourceRelPath`
+  and `kindOfSourceFile` (loading, kind inference, `new`, `move`). Never build a source path as `${kind}s`.
 - **`src/schema/index.ts` (zod) is the single schema source of truth.** `src/schema/emit.ts` generates
   `schema/*.schema.json` from it via `npm run build`. Changing a zod schema without rebuilding leaves the JSON Schemas
   stale — commit both.
@@ -109,7 +112,10 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   (`src/commands/sync/conformance/rules/declared-but-unemitted.ts`) fails `--check`. It is derived from each spec's
   `FieldMapping[]`. Extend `SIGIL_INTERNAL_FIELDS` in that file only for fields that never reach a provider (`tags`,
   `severity`, `uses`, …), never to silence a real gap. (see
-  `docs/decisions/frontmatter-audit-and-catalog-sweep-2026-08.md`)
+  `docs/decisions/frontmatter-audit-and-catalog-sweep-2026-08.md`) An agent's `tools` / `disallowedTools` must also
+  reach every target it ships to: `renderArtifact` refuses to render one a spec can't carry
+  (`src/targets/tool-restriction.ts`), `tool-restriction-coverage` reports it at `--check`, and the schema rejects
+  an empty list (it would emit no line, which means all tools).
 - **Agents have no `whenToUse` frontmatter channel — only `description`**. Skills and prompts dispatch on
   `description` plus `whenToUse`; agents dispatch on `description` alone. `whenToUse:` on an agent is unread at build
   time. Put dispatch-disambiguation in `description`. `declared-but-unemitted` fails `sync --check` if the field is

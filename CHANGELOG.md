@@ -139,6 +139,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- An agent's tool restriction can no longer widen silently. `tools: []` and `disallowedTools: []` are
+  schema errors (an empty list emitted no `tools:` line, which both tools read as "every tool"), and
+  an agent whose `disallowedTools` would be dropped on a target it ships to (Copilot has no such
+  field) is refused by `build`, `add` and `update` instead of being written with every tool; the new
+  `tool-restriction-coverage` rule reports it earlier, at `sigil sync --check`.
+- A tool name can no longer add or end a frontmatter key. `tools`, `disallowedTools` and
+  `allowedTools` entries may use letters, digits, spaces and `_ . : * ( ) / -` only (a newline, `#`,
+  quote, comma or bracket is a schema error), and the emitted `tools:` / `allowed-tools:` line is
+  quoted whenever a name holds `:` or `*`, so it always parses back to the names authored. The same
+  holds for every other emitted field: `argument-hint` (a backslash could end the quoted value),
+  rule globs (`paths:` / `applyTo:`) and prompt argument names (now limited to the `{{name}}`
+  placeholder characters) are escaped or constrained, and a test renders every provider's spec with
+  hostile values to check that no frontmatter key can be added.
+- A skill's `references/` files are now held to what ships safely: regular files in a real folder
+  (no symbolic link or junction is followed, for a file, the `references/` folder or a skill
+  folder), kebab-case `.md` names, at most 256 KiB each and 1 MiB per skill, each checked on the
+  same open file it is read from. Anything
+  else is skipped with a load warning. `sigil check --trust` now scans those files too, not only
+  `SKILL.md`.
+- `sigil new settings` and `sigil move` of a settings artifact wrote into `settingss/` instead of
+  `settings/`, and `sigil move` of a template (three-part id) computed a wrong path. Each kind's
+  source folder and file ending are now declared once and every command derives from them;
+  `sigil check` also recognises hook, settings and mcp files by name, and shell completion offers
+  `kind:hook`, `kind:settings` and `kind:mcp`.
+- `sigil move` of a template still refused its three-part id, and its post-move check ignored the
+  catalog root and parsed files more loosely than the loader. `move`, `patch`, `edit` and
+  `retarget` also rewrote a quoted date such as `verifiedOn: "2026-08-05"` without quotes, turning
+  it into a date that then failed the schema; any string that would read back as another type
+  (a date, number, `true`, `null`, …) now stays quoted.
+- `sigil check` reads an artifact's namespace from its path inside the catalog folder only. A catalog
+  kept under a folder named `shared` or `languages/<x>` no longer reports a false
+  "id prefix doesn't match path" error.
 - `sigil help`, `--help` and `--version` could print nothing on a Windows console (`npm run sigil
   help`): the process exited right after writing. Commander's exits now return normally so Node
   flushes stdout first.

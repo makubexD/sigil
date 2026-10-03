@@ -7,29 +7,18 @@ import path from 'path';
 import matter from 'gray-matter';
 import { glob } from 'tinyglobby';
 import yaml from 'js-yaml';
-import type { Artifact, LanguageMetadata, LoadedCatalog, ReferenceFile } from './types';
-import { SKILL_FILENAME } from './paths';
+import type { Artifact, LanguageMetadata, LoadedCatalog } from './types';
+import { ALL_KINDS, sourceGlob } from './kinds';
+import { loadReferences } from './load-references';
+import { LANGUAGES_DIR } from './catalog-layout';
 
-/**
- * File-extension patterns that identify each artifact kind.
- * SKILL.md is a special case: it is always a directory-based skill.
- */
-const ARTIFACT_PATTERNS = [
-  `**/${SKILL_FILENAME}`,
-  '**/*.rule.md',
-  '**/*.agent.md',
-  '**/*.prompt.md',
-  '**/*.workflow.md',
-  '**/*.hook.md',
-  '**/*.settings.md',
-  '**/*.mcp.md',
-  '**/*.template.md',
-];
+/** One glob per kind, from KIND_REGISTRY's sourceDir/sourceSuffix (SKILL.md for skills). */
+const ARTIFACT_PATTERNS = ALL_KINDS.map(sourceGlob);
 
 /** Loads every language.yaml under catalogDir's languages/ subdirectories into a langId → metadata map. */
 async function loadLanguages(catalogDir: string): Promise<Map<string, LanguageMetadata>> {
   const languages = new Map<string, LanguageMetadata>();
-  const langYamlPaths = await glob('languages/*/language.yaml', {
+  const langYamlPaths = await glob(`${LANGUAGES_DIR}/*/language.yaml`, {
     cwd: catalogDir,
     absolute: true,
     expandDirectories: false,
@@ -77,14 +66,19 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
 
   // tinyglobby and fast-glob both return paths in traversal order; sorting keeps every emitted file stable.
   const filePaths = (
-    await glob(ARTIFACT_PATTERNS, { cwd: catalogDir, absolute: true, expandDirectories: false })
+    await glob(ARTIFACT_PATTERNS, {
+      cwd: catalogDir,
+      absolute: true,
+      expandDirectories: false,
+      followSymbolicLinks: false,
+    })
   ).sort();
   const artifacts = filePaths
     .map(filePath => parseArtifactFile(filePath, skipWarnings))
     .filter((a): a is Artifact => a !== null);
 
   const byId = indexById(artifacts);
-  return { artifacts, byId, languages, skipWarnings };
+  return { artifacts, byId, languages, skipWarnings, root: path.resolve(catalogDir) };
 }
 
 /** Checks the two frontmatter fields every artifact requires, recording a skip reason if absent. */
@@ -105,7 +99,12 @@ function missingRequiredField(
 }
 
 /** Builds the Artifact object once its frontmatter has passed the required-field check. */
-function buildArtifact(filePath: string, fm: Record<string, unknown>, body: string): Artifact {
+function buildArtifact(
+  filePath: string,
+  fm: Record<string, unknown>,
+  body: string,
+  warnings: string[],
+): Artifact {
   const artifact: Artifact = {
     id: fm.id as string,
     kind: fm.kind as Artifact['kind'],
@@ -115,7 +114,7 @@ function buildArtifact(filePath: string, fm: Record<string, unknown>, body: stri
   };
   // For skills: also load sibling references/ directory
   if (fm.kind === 'skill') {
-    artifact.references = loadReferences(path.dirname(filePath));
+    artifact.references = loadReferences(path.dirname(filePath), warnings);
   }
   return artifact;
 }
@@ -133,17 +132,5 @@ function parseArtifactFile(filePath: string, skipWarnings: string[]): Artifact |
   const fm = parsed.data as Record<string, unknown>;
   if (missingRequiredField(fm, filePath, skipWarnings)) return null;
 
-  return buildArtifact(filePath, fm, parsed.content.trim());
-}
-
-/** Reads all *.md files inside <skillDir>/references/ and returns them as ReferenceFile[]. */
-function loadReferences(skillDir: string): ReferenceFile[] {
-  const refsDir = path.join(skillDir, 'references');
-  if (!fs.existsSync(refsDir)) return [];
-
-  const files = fs.readdirSync(refsDir).filter(f => f.endsWith('.md'));
-  return files.map(filename => ({
-    name: filename,
-    content: fs.readFileSync(path.join(refsDir, filename), 'utf-8'),
-  }));
+  return buildArtifact(filePath, fm, parsed.content.trim(), skipWarnings);
 }

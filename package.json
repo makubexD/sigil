@@ -58,6 +58,7 @@
     "pretest": "npm run build && npm run build:test",
     "test": "node scripts/run-tests.cjs",
     "test:built": "npm run build:test && node scripts/run-tests.cjs",
+    "snapshot:update": "npm run build && npm run build:test && cross-env SIGIL_SNAPSHOT_UPDATE=1 node --test test-compiled/targets/output-snapshot.test.js",
     "validate": "node dist-cli/cli.js validate",
     "catalog:build": "node dist-cli/cli.js build",
     "sigil": "node dist-cli/cli.js",

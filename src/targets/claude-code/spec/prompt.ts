@@ -60,7 +60,7 @@ const argumentHintMapping: FieldMapping = {
   to: 'argument-hint',
   required: false,
   when: fm => Array.isArray(fm.args) && (fm.args as PromptArg[]).length > 0,
-  serialize: v => `argument-hint: "${buildArgumentHint(v as PromptArg[])}"`,
+  serialize: v => `argument-hint: ${yamlScalar(buildArgumentHint(v as PromptArg[]))}`,
 };
 
 /** `arguments:` declares named positional args so Claude's `$name` substitution resolves. */

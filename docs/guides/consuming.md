@@ -573,7 +573,8 @@ sigil add skill:csharp/cs-generate-tests --no-deps --target claude --yes
 # Writes only the skill folder: .claude/skills/cs-generate-tests/SKILL.md
 ```
 
-"Skill folder" means `SKILL.md` plus any `references/*.md` files that skill ships. Some skills have
+"Skill folder" means `SKILL.md` plus the `references/*.md` files that skill ships (regular
+Markdown files with kebab-case names, up to 256 KiB each; anything else in the catalog is skipped). Some skills have
 reference files and `cs-generate-tests` happens to have none, so only `SKILL.md` appears here.
 
 ---

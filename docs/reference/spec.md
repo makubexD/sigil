@@ -129,18 +129,20 @@ claude: # Claude-namespaced hints; other adapters ignore this block
 ---
 ```
 
-Agent-specific fields (`AgentSchema`, beyond the shared fields above):
+Agent-specific fields (`AgentSchema`, beyond the shared fields above). A tool name in `tools`,
+`disallowedTools` (and a skill's `allowedTools`) may use letters, digits, spaces and `_ . : * ( ) / -`
+only, so it can't end or add a frontmatter key; permission patterns like `Bash(git log:*)` fit.
 
-| Field              | Meaning                                                                                                                                              |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools`            | Allow-list of tool names. Emitted by both providers; absent means the provider default of all tools, so an authored read-only agent must declare it. |
-| `disallowedTools`  | Tools the agent must not use. Emitted on Claude only.                                                                                                |
-| `claude.model`     | `haiku`, `sonnet`, or `opus`.                                                                                                                        |
-| `claude.effort`    | `low`, `medium`, or `high`.                                                                                                                          |
-| `claude.maxTurns`  | Positive integer turn cap.                                                                                                                           |
-| `claude.isolation` | `worktree` (run the subagent in an isolated git worktree).                                                                                           |
-| `claude.skills`    | Catalog skill ids to preload (see below).                                                                                                            |
-| `relatedArtifacts` | Sibling cross-references rendered as a Boundary section; see the shared-fields table.                                                                |
+| Field              | Meaning                                                                                                                                                                                                          |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools`            | Allow-list of tool names, at least one. Emitted by both providers; absent means the provider default of all tools, so an authored read-only agent must declare it.                                               |
+| `disallowedTools`  | Tools the agent must not use, at least one. Emitted on Claude only, so an agent that sets it and also ships to Copilot is refused by `build`/`add` and reported by `sync --check` (`tool-restriction-coverage`). |
+| `claude.model`     | `haiku`, `sonnet`, or `opus`.                                                                                                                                                                                    |
+| `claude.effort`    | `low`, `medium`, or `high`.                                                                                                                                                                                      |
+| `claude.maxTurns`  | Positive integer turn cap.                                                                                                                                                                                       |
+| `claude.isolation` | `worktree` (run the subagent in an isolated git worktree).                                                                                                                                                       |
+| `claude.skills`    | Catalog skill ids to preload (see below).                                                                                                                                                                        |
+| `relatedArtifacts` | Sibling cross-references rendered as a Boundary section; see the shared-fields table.                                                                                                                            |
 
 Agents have no `whenToUse`; they dispatch on `description` alone.
 
@@ -475,7 +477,8 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
   `.sigil/allow.json` `{ "allow": [...] }`.
 - Binary extensions (`.png`, `.jpg`, `.pdf`, etc.) are skipped entirely.
 
-Surfaced by `sigil check <file> --trust` (authoring time); `--strict` makes warnings fail too.
+Surfaced by `sigil check <file> --trust` (authoring time); `--strict` makes warnings fail too. For a
+skill it also scans every `references/` file, since those ship to the user's project with it.
 `sigil add` / `update` do not run the scanner.
 
 ---

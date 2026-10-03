@@ -13,7 +13,7 @@
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import type { ResolvedArtifact } from '../../../types';
-import { yamlScalar } from '../../yaml-util';
+import { yamlList, yamlScalar } from '../../yaml-util';
 import {
   COPILOT_AGENT_SKILLS_DOC,
   VSCODE_AGENT_SKILLS_DOC,
@@ -49,7 +49,7 @@ const allowedToolsMapping: FieldMapping = {
   to: 'allowed-tools',
   required: false,
   when: fm => Array.isArray(fm.allowedTools) && (fm.allowedTools as string[]).length > 0,
-  serialize: v => `allowed-tools: ${(v as string[]).join(', ')}`,
+  serialize: v => `allowed-tools: ${yamlList(v as string[])}`,
 };
 
 /**

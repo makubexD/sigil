@@ -8,35 +8,19 @@ import { getAllTargets } from './targets';
 import { resolveDefault, describePathDefaults, pkg } from './cli-helpers';
 import { ALL_KINDS } from './kinds';
 import { handleFatal } from './cli-error';
-import { isInteractiveTTY } from './wizard';
-import { runHome } from './wizard/home';
-import { defaultHomeDeps } from './wizard/home-actions';
-import { runBuild } from './commands/build';
-import { runValidate } from './commands/validate';
-import { runIndex } from './commands/index';
-import { runList } from './commands/list';
-import { runGet } from './commands/get';
-import { runSearch } from './commands/search';
-import { runAdd } from './commands/add';
 import type { AddOpts } from './commands/add';
-import { runInit } from './commands/init';
 import type { InitOptions } from './commands/init';
-import { runNew } from './commands/new';
-import { runCheck } from './commands/check';
-import { runSync } from './commands/sync';
-import { runImport } from './commands/import';
-import { runStatus } from './commands/status';
-import { runUpdate } from './commands/update';
-import { runUninstall } from './commands/uninstall';
-import { runPrune } from './commands/prune';
-import { runPatch } from './commands/patch';
-import { runMove } from './commands/move';
-import { runRetarget } from './commands/retarget';
-import { runEdit } from './commands/edit';
-import { runDelete } from './commands/delete';
-import { runCompletion } from './commands/completion';
-import { runComplete } from './commands/complete';
-import { runRelease } from './commands/release';
+
+/**
+ * Wraps a command so its module loads the first time the command runs. Loading all of them up front
+ * cost about 120 ms on every start, including `sigil --version` and `sigil <command> --help`.
+ */
+function lazy<A extends unknown[]>(load: () => Promise<(...args: A) => unknown>) {
+  return async (...args: A): Promise<void> => {
+    const run = await load();
+    await run(...args);
+  };
+}
 
 const program = new Command();
 program
@@ -62,7 +46,7 @@ program
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
   .option('--out-dir <dir>', 'Output root', resolveDefault('dist'))
-  .action(runBuild);
+  .action(lazy(async () => (await import('./commands/build')).runBuild));
 // ─── validate ─────────────────────────────────────────────────────────────────
 program
   .command('validate')
@@ -71,7 +55,7 @@ program
   )
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
-  .action(runValidate);
+  .action(lazy(async () => (await import('./commands/validate')).runValidate));
 // ─── index ────────────────────────────────────────────────────────────────────
 program
   .command('index')
@@ -80,7 +64,7 @@ program
   .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
   .option('--out-dir <dir>', 'Output root', resolveDefault('dist'))
   .option('--json', 'Print the registry to stdout instead of writing a file')
-  .action(runIndex);
+  .action(lazy(async () => (await import('./commands/index')).runIndex));
 // ─── list ─────────────────────────────────────────────────────────────────────
 program
   .command('list')
@@ -88,7 +72,7 @@ program
   .option('--language <lang>', 'Filter by language (e.g. csharp, python)')
   .option('--kind <kind>', `Filter by kind (${ALL_KINDS.join(', ')})`)
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
-  .action(runList);
+  .action(lazy(async () => (await import('./commands/list')).runList));
 // ─── get ──────────────────────────────────────────────────────────────────────
 program
   .command('get <id>')
@@ -96,7 +80,7 @@ program
   .description('Show full detail for a single catalog artifact (closure, targets, dest paths).')
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--json', 'Output as JSON', false)
-  .action(runGet);
+  .action(lazy(async () => (await import('./commands/get')).runGet));
 // ─── search ───────────────────────────────────────────────────────────────────
 program
   .command('search <query>')
@@ -106,7 +90,7 @@ program
   .option('--language <lang>', 'Filter to this language')
   .option('--tag <tag>', 'Filter to artifacts with this tag (substring match)')
   .option('--json', 'Output as JSON', false)
-  .action(runSearch);
+  .action(lazy(async () => (await import('./commands/search')).runSearch));
 // ─── add ──────────────────────────────────────────────────────────────────────
 program
   .command('add [selectors...]')
@@ -128,7 +112,7 @@ program
   .option('--scope <scope>', 'Install scope for config-kind artifacts: project | local | user')
   .option('--settings-local', '(deprecated) Alias for --scope local', false)
   .action(async (selectors: string[], opts: AddOpts) => {
-    await runAdd(selectors, opts);
+    await (await import('./commands/add')).runAdd(selectors, opts);
   });
 // ─── init ─────────────────────────────────────────────────────────────────────
 program
@@ -137,7 +121,7 @@ program
   .option('--target <name>', 'Target platform: claude or copilot (asked in a terminal if omitted)')
   .option('--project-dir <dir>', 'Consumer project root', process.cwd())
   .action(async (opts: InitOptions) => {
-    await runInit(opts);
+    await (await import('./commands/init')).runInit(opts);
   });
 // ─── new ──────────────────────────────────────────────────────────────────────
 program
@@ -151,7 +135,7 @@ program
   .option('--platforms <list>', 'Comma-separated platforms to restrict to.')
   .option('--yes', 'Non-interactive: skip wizard. Requires explicit kind and --name.')
   .option('-i, --interactive', 'Force the guided wizard even when kind is provided.')
-  .action(runNew);
+  .action(lazy(async () => (await import('./commands/new')).runNew));
 // ─── check ────────────────────────────────────────────────────────────────────
 program
   .command('check [files...]')
@@ -166,7 +150,7 @@ program
     false,
   )
   .option('--strict', 'Exit non-zero on trust warnings (requires --trust)', false)
-  .action(runCheck);
+  .action(lazy(async () => (await import('./commands/check')).runCheck));
 // ─── sync ─────────────────────────────────────────────────────────────────────
 program
   .command('sync [template-id]')
@@ -196,8 +180,8 @@ program
   .option('--language <lang>', 'Scope conformance to one language')
   .option('--provider <name>', 'Scope conformance to one target/provider name')
   .option('--json', 'Output as JSON', false)
-  .action((templateId: string | undefined, options) =>
-    runSync(templateId, {
+  .action(async (templateId: string | undefined, options) =>
+    (await import('./commands/sync')).runSync(templateId, {
       catalogDir: options.catalogDir,
       packsFile: options.packs,
       changedSince: options.changedSince,
@@ -225,7 +209,7 @@ program
   .option('--yes', 'Non-interactive mode', false)
   .option('--overwrite', 'Overwrite existing catalog files', false)
   .option('--create-language', 'Create language.yaml when it does not exist', false)
-  .action(runImport);
+  .action(lazy(async () => (await import('./commands/import')).runImport));
 // ─── status ───────────────────────────────────────────────────────────────────
 program
   .command('status')
@@ -235,7 +219,7 @@ program
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
   .option('--json', 'Output as JSON', false)
-  .action(runStatus);
+  .action(lazy(async () => (await import('./commands/status')).runStatus));
 // ─── update ───────────────────────────────────────────────────────────────────
 program
   .command('update [ids...]')
@@ -249,7 +233,7 @@ program
   .option('--force', 'Overwrite drifted (user-modified) files', false)
   .option('--dry-run', 'Preview what would change without writing', false)
   .option('--yes', 'Apply without previewing and asking first (a terminal asks by default)', false)
-  .action(runUpdate);
+  .action(lazy(async () => (await import('./commands/update')).runUpdate));
 // ─── prune ────────────────────────────────────────────────────────────────────
 program
   .command('prune')
@@ -265,7 +249,7 @@ program
   .option('--yes', 'Skip confirmation prompt', false)
   .option('--force', 'Remove even drifted (user-modified) orphaned files', false)
   .option('--json', 'Output as JSON', false)
-  .action(runPrune);
+  .action(lazy(async () => (await import('./commands/prune')).runPrune));
 // ─── uninstall ────────────────────────────────────────────────────────────────
 program
   .command('uninstall [ids...]')
@@ -277,7 +261,7 @@ program
   .option('--yes', 'Skip confirmation prompt', false)
   .option('--force', 'Remove even drifted (user-modified) files', false)
   .option('--dry-run', 'Preview without removing', false)
-  .action(runUninstall);
+  .action(lazy(async () => (await import('./commands/uninstall')).runUninstall));
 // ─── patch ────────────────────────────────────────────────────────────────────
 const patchCmd = program
   .command('patch <id>')
@@ -334,7 +318,7 @@ patchCmd
     '--to-platforms <list>',
     'Set platforms: to exactly these (comma-separated, or "all" to reset)',
   )
-  .action(runPatch);
+  .action(lazy(async () => (await import('./commands/patch')).runPatch));
 // ─── move ─────────────────────────────────────────────────────────────────────
 program
   .command('move <id> <new-id>')
@@ -345,7 +329,7 @@ program
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--dry-run', 'Preview the move without executing', false)
   .option('--yes', 'Skip confirmation prompt', false)
-  .action(runMove);
+  .action(lazy(async () => (await import('./commands/move')).runMove));
 // ─── retarget ─────────────────────────────────────────────────────────────────
 program
   .command('retarget <id>')
@@ -356,7 +340,7 @@ program
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--yes', 'Skip confirmation prompt', false)
   .option('--with-deps', "Also apply the targeting change to the artifact's uses: closure", false)
-  .action(runRetarget);
+  .action(lazy(async () => (await import('./commands/retarget')).runRetarget));
 // ─── edit ─────────────────────────────────────────────────────────────────────
 program
   .command('edit <id>')
@@ -366,7 +350,7 @@ program
   .option('--tags <list>', 'Comma-separated tags (replaces existing)')
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--yes', 'Non-interactive: apply flags without prompting')
-  .action(runEdit);
+  .action(lazy(async () => (await import('./commands/edit')).runEdit));
 // ─── delete ───────────────────────────────────────────────────────────────────
 program
   .command('delete <id>')
@@ -375,12 +359,12 @@ program
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--yes', 'Skip confirmation prompt')
   .option('--dry-run', 'Preview what would be deleted without deleting')
-  .action(runDelete);
+  .action(lazy(async () => (await import('./commands/delete')).runDelete));
 // ─── completion ───────────────────────────────────────────────────────────────
 program
   .command('completion [shell]')
   .description('Print a shell tab-completion script (bash, zsh, or fish).')
-  .action(runCompletion);
+  .action(lazy(async () => (await import('./commands/completion')).runCompletion));
 // ─── __complete (hidden — called by completion scripts) ───────────────────────
 program
   .command('__complete', { hidden: true })
@@ -388,7 +372,7 @@ program
   .option('--prev <value>', 'Previous word/flag on the command line', '')
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
-  .action(runComplete);
+  .action(lazy(async () => (await import('./commands/complete')).runComplete));
 // ─── release ──────────────────────────────────────────────────────────────────
 program
   .command('release [level]')
@@ -398,7 +382,7 @@ program
   .option('--dry-run', 'Print every step and computed version; write nothing')
   .option('--no-verify', 'Skip the build/validate/test gate (escape hatch)')
   .option('--yes', 'Non-interactive; skip the confirmation prompt (required when not a TTY)')
-  .action(runRelease);
+  .action(lazy(async () => (await import('./commands/release')).runRelease));
 
 // ─── root help layout ─────────────────────────────────────────────────────────
 // Root help is a menu, so each command gets a task group and a summary short enough to stay on one
@@ -467,20 +451,30 @@ Getting started:
   Without it, npm keeps flags such as --help for itself.`,
 );
 
+/** Bare `sigil`: the guided menu in a terminal, help on stdout everywhere else. */
+async function runBare(): Promise<void> {
+  const { isInteractiveTTY } = await import('./wizard');
+  if (!isInteractiveTTY()) {
+    program.outputHelp();
+    return;
+  }
+  const [{ runHome }, { defaultHomeDeps }] = await Promise.all([
+    import('./wizard/home'),
+    import('./wizard/home-actions'),
+  ]);
+  await runHome(
+    process.cwd(),
+    defaultHomeDeps(() => program.outputHelp()),
+  );
+}
+
 describePathDefaults(program);
 const NODE_AND_SCRIPT_ARGS = 2; // argv[0] = node, argv[1] = this script
 if (process.argv.length <= NODE_AND_SCRIPT_ARGS) {
   // Bare `sigil`. Handled before parsing: a root .action() would swallow mistyped commands.
   // In a terminal that is the guided menu; elsewhere help goes to stdout with exit 0 (Commander's
   // default is stderr + exit 1, which reads as a failure).
-  if (isInteractiveTTY()) {
-    runHome(
-      process.cwd(),
-      defaultHomeDeps(() => program.outputHelp()),
-    ).catch(handleFatal);
-  } else {
-    program.outputHelp();
-  }
+  runBare().catch(handleFatal);
 } else {
   program.parseAsync(process.argv).catch(handleFatal);
 }

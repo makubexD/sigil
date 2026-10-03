@@ -26,6 +26,10 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
 - **Path anchoring is deliberately dual**: catalog source (`catalog/`, `packs.yaml`, `schema/`) resolves from
   `PKG_ROOT = path.resolve(__dirname, '..')` in `src/cli-helpers.ts`. The `--project-dir` default (`process.cwd()`)
   is set in `src/cli.ts` option definitions and must never anchor on `PKG_ROOT`.
+- **`src/cli.ts` loads command modules lazily** — wire a command with `.action(lazy(async () => (await import('./commands/x')).runX))`,
+  never a top-level `import { runX }`. An eager import puts that command's whole import tree on every start, including
+  `--version` and `--help` (about 120 ms for all of them; the test suite starts the CLI 100+ times).
+  `test/cli-startup.test.ts` fails when a command module loads during `--version` or `--help`.
 - **The 4-stage pipeline stays platform-neutral**: `src/load.ts`, `src/validate/` (`validateCatalog`), and
   `src/resolve.ts` know nothing about Claude or Copilot. Platform logic lives only in `src/targets/<name>/index.ts`.
 - **`serialize()` vs `canonicalize()`** (`src/config-merge/primitives.ts`) are not interchangeable. `serialize()` is

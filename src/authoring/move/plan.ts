@@ -4,7 +4,6 @@
  */
 import path from 'path';
 import type { Artifact, LoadedCatalog } from '../../types';
-import { ID_PART_COUNT } from '../../paths';
 import { isArtifactKind, sourceRelPath } from '../../kinds';
 import { namespaceDir, splitId } from '../../catalog-layout';
 import { KEBAB_ID_RE } from '../../schema/shared';
@@ -76,9 +75,9 @@ function resolveMoveSource(oldId: string, newId: string, catalog: LoadedCatalog)
     throw new Error(`Artifact '${oldId}' not found. Run \`sigil list\` to see available ids.`);
   }
 
-  const parts = newId.split('/');
-  if (parts.length !== ID_PART_COUNT || !parts[0] || !parts[1]) {
-    throw new Error(`New id '${newId}' must be in the form '<prefix>/<name>'`);
+  if (!splitId(newId, artifact.kind)) {
+    const shape = artifact.kind === 'template' ? '<prefix>/templates/<name>' : '<prefix>/<name>';
+    throw new Error(`New id '${newId}' must be in the form '${shape}'`);
   }
 
   if (catalog.byId.has(newId)) {

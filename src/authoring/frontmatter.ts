@@ -11,8 +11,18 @@
  */
 import fs from 'fs';
 import matter from 'gray-matter';
+import yaml from 'js-yaml';
 
 // ─── Serialisation ────────────────────────────────────────────────────────────
+
+/** True when `val` written as a plain YAML scalar parses back as exactly that string. */
+function readsBackPlain(val: string): boolean {
+  try {
+    return yaml.load(val) === val;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Serialise a scalar value to a safe YAML representation.
@@ -27,10 +37,14 @@ import matter from 'gray-matter';
  *   - `*`   at start — YAML alias anchor (`**\/*.cs` is read as alias `*` + `/*.cs`)
  *   - `[`   at start — YAML flow sequence indicator (`[optional]` is read as sequence)
  *   - `{`   at start — YAML flow mapping indicator
+ *   - and anything else whose plain form would not read back as the same string: a date
+ *     (`2026-08-05`), number, boolean, `null`, `~`, an empty string, `- x`, a tag or anchor, a
+ *     ` #` comment, leading spaces. A rewrite (`move`, `patch`, `edit`) must not change a value's type.
  */
 function serializeScalar(val: unknown): string {
   if (typeof val === 'string') {
     if (
+      !readsBackPlain(val) ||
       val.includes('\n') ||
       val.includes(':') ||
       val.includes('"') ||

@@ -161,6 +161,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   source folder and file ending are now declared once and every command derives from them;
   `sigil check` also recognises hook, settings and mcp files by name, and shell completion offers
   `kind:hook`, `kind:settings` and `kind:mcp`.
+- `sigil move` of a template still refused its three-part id, and its post-move check ignored the
+  catalog root and parsed files more loosely than the loader. `move`, `patch`, `edit` and
+  `retarget` also rewrote a quoted date such as `verifiedOn: "2026-08-05"` without quotes, turning
+  it into a date that then failed the schema; any string that would read back as another type
+  (a date, number, `true`, `null`, …) now stays quoted.
 - `sigil check` reads an artifact's namespace from its path inside the catalog folder only. A catalog
   kept under a folder named `shared` or `languages/<x>` no longer reports a false
   "id prefix doesn't match path" error.

@@ -39,7 +39,8 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `src/install-state-prescaffold.ts`). Never write a file with `canonicalize()`.
 - **Route every authored scalar through `serializeScalar`** (`src/authoring/frontmatter.ts`, called from
   `serializeYamlEntry`). It quotes strings containing `\n`, `:`, or `"`, and strings starting with `#`, `*`, `[`, or
-  `{`. A `"` anywhere in the string is quoted, not only a leading one.
+  `{`. A `"` anywhere in the string is quoted, not only a leading one. It also quotes any string whose plain form
+  would not parse back as the same string (dates, numbers, `true`, `null`, …), so a rewrite never changes a type.
 - **Never emit a bare plain scalar for `description:`** — a colon inside it breaks YAML. Always go through
   `yamlScalar()` (`src/targets/yaml-util.ts`), which double-quotes unconditionally.
 - **`plugin.json` gets `pkg.version` written explicitly** by `buildPluginJson`

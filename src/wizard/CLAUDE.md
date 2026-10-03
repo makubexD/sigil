@@ -141,7 +141,7 @@ instead of a one-off test.
 2. `home-journeys.test.ts` and `home-after-setup.test.ts` (the real install wizard against a one-rule pack): scripted end-to-end flows with the real handlers for a beginner (Enter every time), an
    experienced user (`--target`, shortcuts) and an indecisive one (Back, Ctrl+C, change of mind). They assert the exact
    list of questions (`flow(rec)`), the files and the header.
-3. `home-walk.test.ts`: a seeded random walk (also checks one frame, the gutter, the guard asked once, and the short menu after a set up); a failure prints the seed and steps, replay with
+3. `home-walk-<n>.test.ts` (four shards of `helpers/home-walk.ts`, so they run in parallel): a seeded random walk (also checks one frame, the gutter, the guard asked once, and the short menu after a set up); a failure prints the seed and steps, replay with
    `SIGIL_WALK_SEED=<n>` (`SIGIL_WALK_SEEDS` sets the count, default 60).
 4. Targeted unit tests next to each module.
 

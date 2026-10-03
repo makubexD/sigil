@@ -6,17 +6,19 @@
  * It checks the properties that were each fixed by hand before, so the next loop is found by a
  * failing seed instead of by a user. A failure prints the seed and the steps; set
  * SIGIL_WALK_SEED=<n> to replay just that one. SIGIL_WALK_SEEDS sets how many seeds run.
+ *
+ * The seeds are split over `SHARDS` test files (`wizard/home-walk-<n>.test.ts`): one test file runs its
+ * tests one after another, and this walk is by far the slowest, so one file made the whole suite wait.
  */
-import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
 import { detectedTargetsIn } from '../../dist-cli/project-context';
-import { ENTER, createRecorder, mockClack } from '../helpers/clack-mock';
-import type { MockAnswer, MockDriver, PromptRecord, Recorder } from '../helpers/clack-mock';
-import { fakeTTY } from '../helpers/tty';
-import { withTempDirAsync } from '../helpers/temp-dir';
+import { ENTER, createRecorder, mockClack } from './clack-mock';
+import type { MockAnswer, MockDriver, PromptRecord, Recorder } from './clack-mock';
+import { fakeTTY } from './tty';
+import { withTempDirAsync } from './temp-dir';
 import {
   CANCEL,
   CATALOG_DIR,
@@ -38,9 +40,9 @@ import {
   shownFolder,
   snapshot,
   startsLike,
-} from '../helpers/home-flow';
-import { withWindow } from '../helpers/window';
-import type { WindowSize } from '../helpers/window';
+} from './home-flow';
+import { withWindow } from './window';
+import type { WindowSize } from './window';
 import { runHome } from '../../dist-cli/wizard/home';
 import { defaultHomeDeps } from '../../dist-cli/wizard/home-actions';
 
@@ -399,12 +401,18 @@ async function walk(seed: number): Promise<void> {
   }, 'sigil-walk-');
 }
 
-describe('home menu random walk', () => {
-  it(`should never loop, re-ask, or write into a risky folder (${ONLY_SEED ?? SEEDS} seeds)`, async () => {
-    const seeds =
-      ONLY_SEED === undefined
-        ? Array.from({ length: SEEDS }, (_, i) => i + 1)
-        : [Number(ONLY_SEED)];
-    for (const seed of seeds) await walk(seed);
-  });
-});
+/** How many test files share the seeds. A new shard needs a `wizard/home-walk-<n>.test.ts` beside the others. */
+export const SHARDS = 4;
+
+/** Walks the seeds of one shard (1-based); `SIGIL_WALK_SEED` replays a single seed, in shard 1 only. */
+export async function walkShard(shard: number): Promise<void> {
+  const seeds =
+    ONLY_SEED === undefined
+      ? Array.from({ length: SEEDS }, (_, i) => i + 1).filter(
+          seed => seed % SHARDS === shard % SHARDS,
+        )
+      : shard === 1
+        ? [Number(ONLY_SEED)]
+        : [];
+  for (const seed of seeds) await walk(seed);
+}

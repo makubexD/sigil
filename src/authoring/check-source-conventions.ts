@@ -131,6 +131,28 @@ export function checkIdConsistency(ctx: CheckCtx): void {
   checkLanguageConsistency(ctx, idPrefix, pathPrefix);
 }
 
+/**
+ * The artifact's namespace must be a real one (catalog layout standard): a shared artifact names no
+ * language, and a language folder has a `language.yaml`. Read relative to the catalog root, so it
+ * applies to loaded catalogs only — one built in memory has no root and no layout to check.
+ */
+export function checkNamespace(ctx: CheckCtx): void {
+  const { artifact, catalog, v } = ctx;
+  if (!catalog.root) return;
+  const { namespace } = locateSource(catalog.root, artifact.filePath);
+  if (namespace === SHARED_NAMESPACE && artifact.frontmatter.language !== undefined) {
+    v.push({
+      file: artifact.filePath,
+      problem: `a shared artifact must not set language: — drop it, or move the artifact under languages/<lang>/`,
+    });
+  } else if (namespace && namespace !== SHARED_NAMESPACE && !catalog.languages.has(namespace)) {
+    v.push({
+      file: artifact.filePath,
+      problem: `language '${namespace}' has no languages/${namespace}/language.yaml — add one (sigil import --create-language does) or use an existing language`,
+    });
+  }
+}
+
 /** File-name-implied kind (SKILL.md / *.rule.md / etc.) must match frontmatter `kind`. */
 export function checkKindMatchesPath(ctx: CheckCtx): void {
   const { artifact, v } = ctx;

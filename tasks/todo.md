@@ -26,7 +26,7 @@ Spec: `SPEC.md`
 - [x] T1 ADR
 - [ ] V1 Reference-link check (you, in VS Code)
 - [ ] ⚠ T2 Delete the stray `add` file
-- [ ] T5 Prevent (import, new, move)
+- [ ] T5 Prevent (import, new, move) — T5a done
 - [ ] T6 Detect (`catalog-layout` rule)
 - [ ] T13 Markdown links, only if V1 needs them
 - [ ] T7 Content fixes

@@ -22,6 +22,7 @@ import type { CheckCtx } from './check-source-ctx';
 import { supportsKind } from '../targets/capabilities';
 import {
   checkIdConsistency,
+  checkNamespace,
   checkKindMatchesPath,
   checkDuplicateId,
   checkReferenceIntegrity,
@@ -159,6 +160,7 @@ export function checkSourceArtifact(
 
   const ctx: CheckCtx = { artifact, catalog, targets, v };
   checkIdConsistency(ctx);
+  checkNamespace(ctx);
   checkKindMatchesPath(ctx);
   checkDuplicateId(ctx);
   checkReferenceIntegrity(ctx);

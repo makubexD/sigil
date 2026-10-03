@@ -19,7 +19,9 @@ and delegates review to the shared code-reviewer agent.
 Naming convention: artifacts in a language namespace carry that language's short prefix in their
 name (`cs-` for C#, `py-`, `ts-`, `ng-`, `react-`), so `csharp/cs-generate-tests`, not
 `csharp/generate-tests`. `sigil new` uses the `--name` exactly as you type it and `validate` does not
-enforce the prefix, so include it yourself. Shared artifacts (`shared/...`) have no prefix.
+enforce the prefix, so include it yourself. Shared artifacts (`shared/...`) have no prefix and no
+`language:`. `--language` must name a registered language (a `languages/<lang>/language.yaml`);
+`sigil new` refuses any other, and `sigil check` flags a language folder without one.
 
 ```bash
 # Scaffold the template (or run `sigil new` with no arguments in a terminal for a guided wizard)

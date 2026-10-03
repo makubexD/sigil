@@ -90,6 +90,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `sigil new --language <lang>` refuses a language that has no `languages/<lang>/language.yaml` (a
+  typo used to create a new, unregistered language folder) and lists the known ones. `sigil check`,
+  and the authoring commands that run it, reject a shared artifact that sets `language:` and a
+  language folder with no `language.yaml`.
 - sigil finds catalog files with `tinyglobby` instead of `fast-glob`. That removes `micromatch` and `braces`
   (GHSA-vfj7-8cjw-p6xm, no fix released) from the runtime dependencies, so `npm audit --omit=dev` is clean
   again and CI fails on any severity.

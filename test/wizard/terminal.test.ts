@@ -5,7 +5,6 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import pc from 'picocolors';
 import {
   MIN_WIDTH,
   describeTerminal,
@@ -20,6 +19,8 @@ import { stripAnsi } from '../helpers/ansi';
 
 const WIDTHS = Array.from({ length: 181 }, (_, i) => MIN_WIDTH + i);
 const RED = '\u001b[31m';
+const CYAN = '\u001b[36m';
+const COLOUR_OFF = '\u001b[39m';
 const ARTIFACTS = ['typescript/ts-code-reviewer', 'shared/cli', 'agent:typescript/ts-debugger'];
 const LONG_COMMAND = `sigil add ${Array.from({ length: 12 }, (_, i) => `rule:typescript/ts-rule-number-${i}`).join(' ')} --target claude --overwrite --yes`;
 const LONG_PATH =
@@ -127,7 +128,7 @@ describe('fitLine', () => {
   });
 
   it('should count colour codes as zero and close a colour it cuts through', () => {
-    const cut = fitLine(pc.cyan('a long coloured sentence'), 10);
+    const cut = fitLine(`${CYAN}a long coloured sentence${COLOUR_OFF}`, 10);
     assert.equal(visibleLength(cut), 10);
     assert.equal(stripAnsi(cut), 'a long co…');
     assert.ok(cut.includes('\u001b[0m'));

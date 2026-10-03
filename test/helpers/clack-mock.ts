@@ -13,6 +13,9 @@
  *   3. Call runWizard(...) — it drives through the queue
  *   4. Call the returned restore() in finally{} to put the originals back
  *
+ * `mockClack` also replaces the artifact picker (`pickArtifacts`), so no test opens a real prompt on stdin.
+ * A test that stubs `pickArtifacts` itself does so after `mockClack`, and restores it before `restore()`.
+ *
  * Usage:
  *   const restore = mockClack(['claude', 'browse', '__all__', ...]);
  *   try {
@@ -79,6 +82,8 @@ type RawOptions = {
   options?: unknown;
   initialValue?: unknown;
   defaultValue?: unknown;
+  /** The picker's preselected values (plural: it is a multi-pick). */
+  initialValues?: unknown;
 };
 
 function flatten(options: unknown): PromptOption[] {
@@ -98,7 +103,7 @@ function describe(kind: PromptRecord['kind'], raw: RawOptions): PromptRecord {
     message: String(raw.message ?? ''),
     options: flatten(raw.options),
   };
-  const initial = raw.initialValue ?? raw.defaultValue;
+  const initial = raw.initialValue ?? raw.defaultValue ?? raw.initialValues;
   if (initial !== undefined) record.initialValue = initial;
   return record;
 }
@@ -135,8 +140,9 @@ export function mockClack(
   const ex = clackMod.exports;
   const orig = { ...ex };
 
-  const ask = (kind: PromptRecord['kind'], raw: unknown): MockAnswer => {
-    const prompt = describe(kind, fitView((raw ?? { message: '' }) as FitInput) as RawOptions);
+  const ask = (kind: PromptRecord['kind'], raw: unknown, fit = true): MockAnswer => {
+    const view = (raw ?? { message: '' }) as FitInput;
+    const prompt = describe(kind, (fit ? fitView(view) : view) as RawOptions);
     recorder.prompts.push(prompt);
     let answer: MockAnswer;
     if (typeof answers === 'function') answer = answers(prompt);
@@ -144,8 +150,8 @@ export function mockClack(
     else answer = answers.shift()!;
     return answer === ENTER ? enterAnswer(prompt) : answer;
   };
-  const many = (kind: 'multiselect') => async (raw: unknown) => {
-    const v = ask(kind, raw);
+  const many = (kind: 'multiselect' | 'groupMultiselect') => async (raw: unknown) => {
+    const v = ask(kind, raw, kind === 'multiselect');
     if (typeof v === 'symbol') return v;
     return Array.isArray(v) ? v : [v];
   };
@@ -180,6 +186,11 @@ export function mockClack(
   const replaced = ['select', 'multiselect', 'text', 'confirm'] as const;
   const promptsOrig = Object.fromEntries(replaced.map(name => [name, prompts[name]]));
   const copyOrig = frame['copyableLine'];
+  // The artifact picker is built on @clack/core, not on our four prompts. Left real, it opens stdin
+  // for reading, and a test process whose stdin stays open (as under `node --test` on Linux) never exits.
+  const picker = require('../../dist-cli/wizard/picker') as Record<string, unknown>;
+  const pickerOrig = picker['pickArtifacts'];
+  picker['pickArtifacts'] = many('groupMultiselect');
   prompts['select'] = async (raw: unknown) => ask('select', raw);
   prompts['multiselect'] = many('multiselect');
   prompts['text'] = async (raw: unknown) => ask('text', raw);
@@ -191,6 +202,7 @@ export function mockClack(
   return () => {
     for (const k of Object.keys(orig)) ex[k] = orig[k];
     for (const name of replaced) prompts[name] = promptsOrig[name];
+    picker['pickArtifacts'] = pickerOrig;
     frame['copyableLine'] = copyOrig;
   };
 }

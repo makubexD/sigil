@@ -86,14 +86,14 @@ const ask = (initialValues: string[] = []) => ({
 
 describe('pickUntilUsable', () => {
   async function run(answers: Array<string[] | symbol>, initial: string[] = []) {
-    const picker = mockPicker(answers);
     const restore = mockClack([]);
+    const picker = mockPicker(answers);
     try {
       const result = await pickUntilUsable(ask(initial));
       return { result, asked: picker.asked };
     } finally {
-      restore();
       picker.restore();
+      restore();
     }
   }
 

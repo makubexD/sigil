@@ -42,7 +42,9 @@ if (files.length === 0) {
   process.exit(1);
 }
 
-const args = ['--test', '--experimental-test-coverage'];
+const QUIET_CONSOLE = path.resolve(__dirname, 'quiet-console.cjs');
+
+const args = ['--require', QUIET_CONSOLE, '--test', '--experimental-test-coverage'];
 if (supportsCoverageExclude()) args.push(`--test-coverage-exclude=${ROOT}/**`);
 const result = spawnSync(process.execPath, [...args, ...files], { stdio: 'inherit' });
 process.exit(result.status === null ? 1 : result.status);

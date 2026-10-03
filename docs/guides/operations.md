@@ -88,14 +88,14 @@ messages, and on Node 20 stray text can corrupt them ("Unable to deserialize clo
 
 1. `npm ci`
 2. `npm audit --omit=dev` (runtime dependencies, fails on any severity)
-3. `npm run lint`
-4. `npm run format:check`
-5. `npm run build`
-6. `npm run validate`
-7. `node dist-cli/cli.js sync --check`
-8. `npm test`
-9. `npm run catalog:build`
-10. Smoke test: `node dist-cli/cli.js --version` and `node dist-cli/cli.js list`
+3. `npm run lint` and `npm run format:check`, run side by side by `scripts/run-parallel.cjs` (both only
+   read files; each one's output is grouped, and a failure in one does not hide the other)
+4. `npm run build`
+5. `npm run validate`
+6. `node dist-cli/cli.js sync --check`
+7. `npm run test:built` (the build just ran, so `npm test`'s `pretest` would repeat it)
+8. `npm run catalog:build`
+9. Smoke test: `node dist-cli/cli.js --version` and `node dist-cli/cli.js list`
 
 **Run the same thing locally before you push.** `npm run ci:local` chains every step above (except
 `npm ci`) in the same order. It is the full local equivalent of CI.

@@ -40,11 +40,10 @@ jobs:
       - name: Audit dependencies (runtime deps, fail on any severity)
         run: npm audit --omit=dev
 
-      - name: Lint
-        run: npm run lint
-
-      - name: Check formatting
-        run: npm run format:check
+      # Both only read files, so they run side by side (output is grouped per command, and a failure
+      # in one does not hide the other's result). See scripts/run-parallel.cjs.
+      - name: Lint and check formatting
+        run: node scripts/run-parallel.cjs "npm run lint" "npm run format:check"
 
       # build sets NODE_OPTIONS=--max-old-space-size=8192 via cross-env (see CLAUDE.md)
       - name: Build (TypeScript + schema emit)

@@ -8,7 +8,8 @@
 import path from 'path';
 import type { ArtifactKind } from '../types';
 import { checkReferences, describeRefProblem, type RefCheck } from '../refs';
-import { normPath, SKILL_FILENAME, ID_PART_COUNT } from '../paths';
+import { normPath, ID_PART_COUNT } from '../paths';
+import { kindOfSourceFile } from '../kinds';
 import type { CheckCtx } from './check-source-ctx';
 
 /** Renders one RefCheck in check-source.ts's established wording. */
@@ -40,14 +41,7 @@ function inferIdPrefixFromPath(filePath: string): string | undefined {
  * SKILL.md → 'skill'; *.rule.md → 'rule'; *.agent.md → 'agent'; etc.
  */
 function inferKindFromPath(filePath: string): ArtifactKind | undefined {
-  const base = path.basename(filePath);
-  if (base === SKILL_FILENAME) return 'skill';
-  if (base.endsWith('.rule.md')) return 'rule';
-  if (base.endsWith('.agent.md')) return 'agent';
-  if (base.endsWith('.prompt.md')) return 'prompt';
-  if (base.endsWith('.workflow.md')) return 'workflow';
-  if (base.endsWith('.template.md')) return 'template';
-  return undefined;
+  return kindOfSourceFile(path.basename(filePath));
 }
 
 /** name (skill/agent only) must be kebab-case and match the id's name segment. */

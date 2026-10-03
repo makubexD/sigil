@@ -15,7 +15,9 @@
  * @module
  */
 
+import path from 'node:path';
 import type { ArtifactKind, ConfigKind } from './types';
+import { SKILL_FILENAME } from './paths';
 
 // ─── Descriptor ───────────────────────────────────────────────────────────────
 
@@ -53,6 +55,13 @@ export interface KindDescriptor {
    * namespace before the second provider's shape has to coexist with them.
    */
   readonly ownedBy: readonly string[];
+  /** Folder that holds this kind inside a namespace (`catalog/shared/<sourceDir>/`). */
+  readonly sourceDir: string;
+  /**
+   * Ending of a source file of this kind (`.rule.md`). A directory-backed kind's file is always the
+   * same name inside a folder named after the artifact, so this holds that file name (`SKILL.md`).
+   */
+  readonly sourceSuffix: string;
 }
 
 // ─── Registry (one entry per ArtifactKind — compiler-enforced) ───────────────
@@ -76,6 +85,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     hasUsesClosure: false,
     isDirectoryBacked: false,
     ownedBy: [],
+    sourceDir: 'mcps',
+    sourceSuffix: '.mcp.md',
   },
   hook: {
     kind: 'hook',
@@ -87,6 +98,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     isDirectoryBacked: false,
     // event/matcher are Claude Code's lifecycle-hook vocabulary verbatim — see kinds.ts header.
     ownedBy: ['claude'],
+    sourceDir: 'hooks',
+    sourceSuffix: '.hook.md',
   },
   settings: {
     kind: 'settings',
@@ -99,6 +112,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     isDirectoryBacked: false,
     // permissions/statusLine/model mirror Claude Code's settings.json shape verbatim.
     ownedBy: ['claude'],
+    sourceDir: 'settings',
+    sourceSuffix: '.settings.md',
   },
   // Code kinds — write whole files, may be language-scoped
   prompt: {
@@ -110,6 +125,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     hasUsesClosure: false,
     isDirectoryBacked: false,
     ownedBy: [],
+    sourceDir: 'prompts',
+    sourceSuffix: '.prompt.md',
   },
   skill: {
     kind: 'skill',
@@ -120,6 +137,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     hasUsesClosure: true,
     isDirectoryBacked: true,
     ownedBy: [],
+    sourceDir: 'skills',
+    sourceSuffix: SKILL_FILENAME,
   },
   agent: {
     kind: 'agent',
@@ -130,6 +149,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     hasUsesClosure: false,
     isDirectoryBacked: false,
     ownedBy: [],
+    sourceDir: 'agents',
+    sourceSuffix: '.agent.md',
   },
   rule: {
     kind: 'rule',
@@ -140,6 +161,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     hasUsesClosure: false,
     isDirectoryBacked: false,
     ownedBy: [],
+    sourceDir: 'rules',
+    sourceSuffix: '.rule.md',
   },
   workflow: {
     kind: 'workflow',
@@ -150,6 +173,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     hasUsesClosure: false,
     isDirectoryBacked: false,
     ownedBy: [],
+    sourceDir: 'workflows',
+    sourceSuffix: '.workflow.md',
   },
   template: {
     kind: 'template',
@@ -164,6 +189,8 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     hasUsesClosure: false,
     isDirectoryBacked: false,
     ownedBy: [],
+    sourceDir: 'templates',
+    sourceSuffix: '.template.md',
   },
 };
 
@@ -223,4 +250,28 @@ export function hasUsesClosure(kind: string): boolean {
 /** True when `kind`'s artifacts are directory-backed (skill only — SKILL.md + assets). */
 export function isDirectoryBacked(kind: string): boolean {
   return isArtifactKind(kind) && KIND_REGISTRY[kind].isDirectoryBacked;
+}
+
+// ─── Source layout (derived from sourceDir / sourceSuffix) ───────────────────
+
+/** Glob, relative to the catalog root, that matches every source file of `kind`. */
+export function sourceGlob(kind: ArtifactKind): string {
+  const d = KIND_REGISTRY[kind];
+  return d.isDirectoryBacked ? `**/${d.sourceSuffix}` : `**/*${d.sourceSuffix}`;
+}
+
+/** Where an artifact of `kind` named `name` lives, relative to its namespace folder. */
+export function sourceRelPath(kind: ArtifactKind, name: string): string {
+  const d = KIND_REGISTRY[kind];
+  return d.isDirectoryBacked
+    ? path.join(d.sourceDir, name, d.sourceSuffix)
+    : path.join(d.sourceDir, `${name}${d.sourceSuffix}`);
+}
+
+/** The kind a source file name implies (`SKILL.md`, `x.rule.md`), or undefined for any other file. */
+export function kindOfSourceFile(fileName: string): ArtifactKind | undefined {
+  return ALL_KINDS.find(kind => {
+    const d = KIND_REGISTRY[kind];
+    return d.isDirectoryBacked ? fileName === d.sourceSuffix : fileName.endsWith(d.sourceSuffix);
+  });
 }

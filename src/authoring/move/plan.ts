@@ -4,7 +4,8 @@
  */
 import path from 'path';
 import type { Artifact, LoadedCatalog } from '../../types';
-import { SKILL_FILENAME, ID_PART_COUNT } from '../../paths';
+import { ID_PART_COUNT } from '../../paths';
+import { isArtifactKind, sourceRelPath } from '../../kinds';
 import { KEBAB_ID_RE } from '../../schema/shared';
 import { resolveContained } from '../../cli-helpers';
 
@@ -15,10 +16,10 @@ import { resolveContained } from '../../cli-helpers';
  * Mirrors the conventions used by `new` and `checkSourceArtifact`.
  *
  * Rules:
- *   - id = "shared/<name>"  → catalog/shared/{kind}s/<name>.{kind}.md
- *                             (skill: catalog/shared/skills/<name>/SKILL.md)
- *   - id = "<lang>/<name>"  → catalog/languages/<lang>/{kind}s/<name>.{kind}.md
- *                             (skill: catalog/languages/<lang>/skills/<name>/SKILL.md)
+ *   - id = "shared/<name>"  → catalog/shared/<sourceRelPath(kind, name)>
+ *   - id = "<lang>/<name>"  → catalog/languages/<lang>/<sourceRelPath(kind, name)>
+ *   The name is the id's last segment, so a template's `shared/templates/<name>` id resolves too.
+ *   Folder and file name come from KIND_REGISTRY (`sourceDir`, `sourceSuffix`).
  *
  * `newId` is validated against the same `KEBAB_ID_RE` the schema enforces on every catalog
  * artifact's `id` field before any path is computed, and the computed destination is re-checked
@@ -34,21 +35,19 @@ export function computeDestinationPath(newId: string, kind: string, catalogDir: 
       `Invalid id '${newId}' — id must be namespaced kebab-case (e.g. "shared/foo", "typescript/foo-bar")`,
     );
   }
-  const [prefix, name] = newId.split('/');
+  const segments = newId.split('/');
+  const prefix = segments[0];
+  const name = segments[segments.length - 1];
   if (!prefix || !name) {
     throw new Error(`Invalid id '${newId}' — must be '<prefix>/<name>'`);
   }
+  if (!isArtifactKind(kind)) throw new Error(`Unknown artifact kind '${kind}'`);
 
   const base =
     prefix === 'shared'
       ? path.join(catalogDir, 'shared')
       : path.join(catalogDir, 'languages', prefix);
-
-  const relPath =
-    kind === 'skill'
-      ? path.join('skills', name, SKILL_FILENAME)
-      : path.join(`${kind}s`, `${name}.${kind}.md`);
-  return resolveContained(base, relPath);
+  return resolveContained(base, sourceRelPath(kind, name));
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -8,24 +8,11 @@ import matter from 'gray-matter';
 import { glob } from 'tinyglobby';
 import yaml from 'js-yaml';
 import type { Artifact, LanguageMetadata, LoadedCatalog } from './types';
-import { SKILL_FILENAME } from './paths';
+import { ALL_KINDS, sourceGlob } from './kinds';
 import { loadReferences } from './load-references';
 
-/**
- * File-extension patterns that identify each artifact kind.
- * SKILL.md is a special case: it is always a directory-based skill.
- */
-const ARTIFACT_PATTERNS = [
-  `**/${SKILL_FILENAME}`,
-  '**/*.rule.md',
-  '**/*.agent.md',
-  '**/*.prompt.md',
-  '**/*.workflow.md',
-  '**/*.hook.md',
-  '**/*.settings.md',
-  '**/*.mcp.md',
-  '**/*.template.md',
-];
+/** One glob per kind, from KIND_REGISTRY's sourceDir/sourceSuffix (SKILL.md for skills). */
+const ARTIFACT_PATTERNS = ALL_KINDS.map(sourceGlob);
 
 /** Loads every language.yaml under catalogDir's languages/ subdirectories into a langId → metadata map. */
 async function loadLanguages(catalogDir: string): Promise<Map<string, LanguageMetadata>> {

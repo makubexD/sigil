@@ -55,7 +55,9 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `targets/copilot/build-helpers.ts` (`buildInstructionsFile`).
 - **`KIND_ORDER` (`src/select/selection.ts`) is derived from `KIND_REGISTRY`'s `selectorOrder`** in `src/kinds.ts`
   (selection.ts re-exports it), the same way `ALL_KINDS` derives from `displayOrder`. Never hand-list kinds in a
-  second array — a kind added to `KIND_REGISTRY` without `selectorOrder` fails to compile.
+  second array — a kind added to `KIND_REGISTRY` without `selectorOrder` fails to compile. The same goes for where a
+  kind's source lives: `sourceDir` / `sourceSuffix` on `KIND_REGISTRY`, read through `sourceGlob`, `sourceRelPath`
+  and `kindOfSourceFile` (loading, kind inference, `new`, `move`). Never build a source path as `${kind}s`.
 - **`src/schema/index.ts` (zod) is the single schema source of truth.** `src/schema/emit.ts` generates
   `schema/*.schema.json` from it via `npm run build`. Changing a zod schema without rebuilding leaves the JSON Schemas
   stale — commit both.

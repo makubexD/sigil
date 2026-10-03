@@ -218,6 +218,9 @@ describe('launcherPrefix', () => {
     npm_lifecycle_script: 'node scripts/run-tests.cjs',
   };
   const cli = 'C:\\work\\sigil\\dist-cli\\cli.js';
+  const shimDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-shim-'));
+  fs.writeFileSync(path.join(shimDir, 'sigil'), '');
+  const onPath = { PATH: shimDir };
   const cases: Array<[string, NodeJS.ProcessEnv, string, string]> = [
     ['npm run sigil', viaScript, cli, 'node C:/work/sigil/dist-cli/cli.js'],
     [
@@ -236,10 +239,14 @@ describe('launcherPrefix', () => {
       cli,
       'node C:/work/sigil/dist-cli/cli.js',
     ],
-    ['npm test', npmTest, cli, 'sigil'],
-    ['npx', { npm_command: 'exec', npm_lifecycle_event: 'npx' }, cli, 'sigil'],
-    ['an install on PATH', {}, cli, 'sigil'],
-    ['a script with no name', { ...viaScript, npm_lifecycle_event: '' }, cli, 'sigil'],
+    ['npm test', { ...npmTest, ...onPath }, cli, 'sigil'],
+    ['npx', { npm_command: 'exec', npm_lifecycle_event: 'npx', ...onPath }, cli, 'sigil'],
+    ['an install on PATH', onPath, cli, 'sigil'],
+    ['a script with no name', { ...viaScript, npm_lifecycle_event: '', ...onPath }, cli, 'sigil'],
+    ['node cli.js with no sigil on PATH', {}, cli, 'node C:/work/sigil/dist-cli/cli.js'],
+    ['node cli.js, path with a space', {}, 'C:\\My Work\\cli.js', 'node "C:/My Work/cli.js"'],
+    ['node cli.js, path with a dollar', {}, 'C:\\a$b\\cli.js', 'sigil'],
+    ['another script and no sigil on PATH', {}, 'C:\\work\\run-tests.cjs', 'sigil'],
   ];
 
   for (const [name, env, script, expected] of cases) {
@@ -254,7 +261,7 @@ describe('launcherPrefix', () => {
       'node C:/work/sigil/dist-cli/cli.js add rule:sigil/x --yes',
     );
     assert.equal(withLauncher('sigilx add', viaScript, cli), 'sigilx add');
-    assert.equal(withLauncher('sigil add x', {}, cli), 'sigil add x');
+    assert.equal(withLauncher('sigil add x', onPath, cli), 'sigil add x');
   });
 });
 

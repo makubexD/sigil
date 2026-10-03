@@ -74,7 +74,9 @@ A skill whose guidance applies across stacks omits `language:` and lives under
 `catalog/shared/skills/<name>/` (`sigil new skill --name <name>` with no `--language`). Put
 per-stack detail in the skill's own `references/` files (e.g. `references/stack-go.md`) and tell
 the model in `SKILL.md` when to read each one — the body loads only on invocation and each
-reference only when read. Only flat `references/*.md` files ship with a skill: `validate` warns
+reference only when read. Only flat `references/*.md` files ship with a skill, and only regular
+files (not symbolic links) with kebab-case names (`stack-go.md`), up to 256 KiB each and 1 MiB per
+skill; anything else is skipped with a load warning. `validate` warns
 when `SKILL.md` or a reference names a `references/<file>` that doesn't exist, or any `assets/` or
 `scripts/` path. Write paths relative to the skill root (the folder holding `SKILL.md`), including
 inside reference files. Shared skills belong to no language pack; install them by id

@@ -7,8 +7,9 @@ import path from 'path';
 import matter from 'gray-matter';
 import { glob } from 'tinyglobby';
 import yaml from 'js-yaml';
-import type { Artifact, LanguageMetadata, LoadedCatalog, ReferenceFile } from './types';
+import type { Artifact, LanguageMetadata, LoadedCatalog } from './types';
 import { SKILL_FILENAME } from './paths';
+import { loadReferences } from './load-references';
 
 /**
  * File-extension patterns that identify each artifact kind.
@@ -105,7 +106,12 @@ function missingRequiredField(
 }
 
 /** Builds the Artifact object once its frontmatter has passed the required-field check. */
-function buildArtifact(filePath: string, fm: Record<string, unknown>, body: string): Artifact {
+function buildArtifact(
+  filePath: string,
+  fm: Record<string, unknown>,
+  body: string,
+  warnings: string[],
+): Artifact {
   const artifact: Artifact = {
     id: fm.id as string,
     kind: fm.kind as Artifact['kind'],
@@ -115,7 +121,7 @@ function buildArtifact(filePath: string, fm: Record<string, unknown>, body: stri
   };
   // For skills: also load sibling references/ directory
   if (fm.kind === 'skill') {
-    artifact.references = loadReferences(path.dirname(filePath));
+    artifact.references = loadReferences(path.dirname(filePath), warnings);
   }
   return artifact;
 }
@@ -133,17 +139,5 @@ function parseArtifactFile(filePath: string, skipWarnings: string[]): Artifact |
   const fm = parsed.data as Record<string, unknown>;
   if (missingRequiredField(fm, filePath, skipWarnings)) return null;
 
-  return buildArtifact(filePath, fm, parsed.content.trim());
-}
-
-/** Reads all *.md files inside <skillDir>/references/ and returns them as ReferenceFile[]. */
-function loadReferences(skillDir: string): ReferenceFile[] {
-  const refsDir = path.join(skillDir, 'references');
-  if (!fs.existsSync(refsDir)) return [];
-
-  const files = fs.readdirSync(refsDir).filter(f => f.endsWith('.md'));
-  return files.map(filename => ({
-    name: filename,
-    content: fs.readFileSync(path.join(refsDir, filename), 'utf-8'),
-  }));
+  return buildArtifact(filePath, fm, parsed.content.trim(), skipWarnings);
 }

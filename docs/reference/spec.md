@@ -477,7 +477,8 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
   `.sigil/allow.json` `{ "allow": [...] }`.
 - Binary extensions (`.png`, `.jpg`, `.pdf`, etc.) are skipped entirely.
 
-Surfaced by `sigil check <file> --trust` (authoring time); `--strict` makes warnings fail too.
+Surfaced by `sigil check <file> --trust` (authoring time); `--strict` makes warnings fail too. For a
+skill it also scans every `references/` file, since those ship to the user's project with it.
 `sigil add` / `update` do not run the scanner.
 
 ---

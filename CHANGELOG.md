@@ -147,6 +147,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `allowedTools` entries may use letters, digits, spaces and `_ . : * ( ) / -` only (a newline, `#`,
   quote, comma or bracket is a schema error), and the emitted `tools:` / `allowed-tools:` line is
   quoted whenever a name holds `:` or `*`, so it always parses back to the names authored.
+- A skill's `references/` files are now held to what ships safely: regular files only (a symbolic
+  link is not followed), kebab-case `.md` names, at most 256 KiB each and 1 MiB per skill. Anything
+  else is skipped with a load warning. `sigil check --trust` now scans those files too, not only
+  `SKILL.md`.
 - `sigil help`, `--help` and `--version` could print nothing on a Windows console (`npm run sigil
   help`): the process exited right after writing. Commander's exits now return normally so Node
   flushes stdout first.

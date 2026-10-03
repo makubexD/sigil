@@ -67,6 +67,11 @@ from `../dist-cli/…`, not from `src/`, which is why the build must come first.
 compiles `src/`, type errors there fail `npm test`. To run a single test file, see
 [CONTRIBUTING.md](../../CONTRIBUTING.md#testing).
 
+`scripts/run-tests.cjs` preloads `scripts/quiet-console.cjs`, which silences `console.log`, `console.info` and
+`console.debug` in every test process. Under `node --test` those calls share a pipe with the runner's own
+messages, and on Node 20 stray text can corrupt them ("Unable to deserialize cloned data"). Set
+`SIGIL_TEST_OUTPUT=1` to see the output while debugging.
+
 ---
 
 ## CI
@@ -75,8 +80,7 @@ compiles `src/`, type errors there fail `npm test`. To run a single test file, s
 `ubuntu-latest` / Node 22 and `windows-latest` / Node 20. Each job runs these steps, in order:
 
 1. `npm ci`
-2. `npm audit --omit=dev --audit-level=critical` (runtime dependencies, fails on critical; temporarily not "any
-   severity" because of an unfixed `braces` advisory reached through `fast-glob`)
+2. `npm audit --omit=dev` (runtime dependencies, fails on any severity)
 3. `npm run lint`
 4. `npm run format:check`
 5. `npm run build`

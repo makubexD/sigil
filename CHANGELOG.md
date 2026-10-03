@@ -90,6 +90,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- sigil finds catalog files with `tinyglobby` instead of `fast-glob`. That removes `micromatch` and `braces`
+  (GHSA-vfj7-8cjw-p6xm, no fix released) from the runtime dependencies, so `npm audit --omit=dev` is clean
+  again and CI fails on any severity.
+
 - Home menu: files you edited on purpose no longer become the top recommendation forever (the header
   still counts them, and Update offers to keep or replace them). An artifact that left the catalog is
   classed as orphaned even when its files are gone, so Clean up handles it instead of Restore looping.

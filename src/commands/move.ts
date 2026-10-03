@@ -2,14 +2,14 @@
  * `sigil move <id> <new-id>` command — rename/relocate a catalog artifact.
  *
  * Extracted from cli.ts so it can be imported and tested without Commander.
- * Replaces 3 inline `require('fs'/'gray-matter'/'fast-glob')` calls with top-level imports.
+ * Replaces 3 inline `require('fs'/'gray-matter'/'tinyglobby')` calls with top-level imports.
  *
  * @module
  */
 import path from 'node:path';
 import fs from 'node:fs';
 import matter from 'gray-matter';
-import fg from 'fast-glob';
+import { globSync } from 'tinyglobby';
 import { confirm, isCancel } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
 import { getAllTargets } from '../targets';
@@ -52,7 +52,7 @@ function parseArtifactSync(filePath: string): LoadedCatalog['artifacts'][number]
  */
 function loadCatalogSync(dir: string): LoadedCatalog {
   const absDir = path.resolve(dir);
-  const mdFiles = fg.sync('**/*.md', { cwd: absDir, absolute: true });
+  const mdFiles = globSync('**/*.md', { cwd: absDir, absolute: true, expandDirectories: false });
   const artifacts = mdFiles
     .map(parseArtifactSync)
     .filter((a): a is LoadedCatalog['artifacts'][number] => a !== undefined);

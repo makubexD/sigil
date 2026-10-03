@@ -17,6 +17,7 @@ import { isInteractiveTTY } from '../wizard';
 import { planMove, executeMove, summarizePlan } from '../authoring/move';
 import type { LoadedCatalog } from '../types';
 import { ALL_KINDS, sourceGlob } from '../kinds';
+import { loadLanguages } from '../load';
 import { SigilError } from '../errors';
 import { requireValidCatalog } from '../cli-helpers';
 
@@ -63,7 +64,7 @@ function loadCatalogSync(dir: string): LoadedCatalog {
     .filter((a): a is LoadedCatalog['artifacts'][number] => a !== undefined);
   const byId = new Map(artifacts.map(a => [a.id, a]));
 
-  return { artifacts, byId, languages: new Map(), skipWarnings: [], root: absDir };
+  return { artifacts, byId, languages: loadLanguages(absDir), skipWarnings: [], root: absDir };
 }
 
 /** Prints the dry-run move plan (renames + referrer rewrites), no files touched. */

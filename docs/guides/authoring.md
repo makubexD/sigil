@@ -377,9 +377,10 @@ are `--<target>-<key>` (Claude: `--claude-model`, `--claude-effort`, `--claude-m
 `--claude-isolation`). `whenToUse`, `userInvocable`, and `skillContext` have no `patch` flags; edit
 the file. `move` (alias `rename`) rewrites only `extends`, `uses.rules`, and `uses.agents` in other
 artifacts that point at the old id; a skill moves its directory and every other kind moves the single
-file. It does **not** touch `packs.yaml` entries, `claude: { skills: [...] }` lists, or the moved
-artifact's own `name:` and `language:` fields. After a move, update those by hand (or with `patch`) and
-run `sigil validate`. Use `--dry-run` first to see the plan.
+file. The moved artifact's `language:` follows its new namespace (set for a language, removed for
+`shared/`). It does **not** touch `packs.yaml` entries, `claude: { skills: [...] }` lists, or the
+moved artifact's own `name:`. After a move, update those by hand (or with `patch`) and run
+`sigil validate`. Use `--dry-run` first to see the plan.
 
 ## Adding a platform target that skips catalog work entirely
 

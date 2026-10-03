@@ -7,6 +7,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
+import matter from 'gray-matter';
 import { runMove } from '../../dist-cli/commands/move';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
@@ -16,6 +17,16 @@ const BUNDLED_TEMPLATE = path.resolve(
 );
 const RULE =
   '---\nid: shared/probe\nkind: rule\ntitle: Probe\ndescription: A probe rule.\n---\n\n- **Probe.** x\n';
+
+const LANGUAGE_YAML = 'displayName: "C#"\nglobs:\n  - "**/*.cs"\n';
+const RULE_IN = (id: string, language: string) =>
+  `---\nid: ${id}\nkind: rule\ntitle: Probe\ndescription: A probe rule.\nlanguage: ${language}\n---\n\n- **Probe.** x\n`;
+
+function write(catalogDir: string, rel: string, content: string): void {
+  const file = path.join(catalogDir, rel);
+  fs.mkdirSync(path.dirname(file), { recursive: true });
+  fs.writeFileSync(file, content);
+}
 
 const move = (catalogDir: string, from: string, to: string) =>
   runMove(from, to, { catalogDir, dryRun: false, yes: true });
@@ -32,6 +43,28 @@ describe('sigil move — layout', () => {
       await move(path.join(root, 'catalog'), 'shared/templates/probe', 'shared/templates/renamed');
       assert.ok(fs.existsSync(path.join(dir, 'renamed.template.md')));
       assert.ok(!fs.existsSync(path.join(dir, 'probe.template.md')));
+    });
+  });
+
+  it('should drop language: when an artifact moves to shared/', async () => {
+    await withTempDirAsync(async root => {
+      const catalogDir = path.join(root, 'catalog');
+      write(catalogDir, 'languages/csharp/language.yaml', LANGUAGE_YAML);
+      write(catalogDir, 'languages/csharp/rules/probe.rule.md', RULE_IN('csharp/probe', 'csharp'));
+      await move(catalogDir, 'csharp/probe', 'shared/probe');
+      const moved = matter.read(path.join(catalogDir, 'shared', 'rules', 'probe.rule.md')).data;
+      assert.equal(moved.language, undefined);
+    });
+  });
+
+  it('should set language: when an artifact moves into a language', async () => {
+    await withTempDirAsync(async root => {
+      const catalogDir = path.join(root, 'catalog');
+      write(catalogDir, 'languages/csharp/language.yaml', LANGUAGE_YAML);
+      write(catalogDir, 'shared/rules/probe.rule.md', RULE);
+      await move(catalogDir, 'shared/probe', 'csharp/probe');
+      const file = path.join(catalogDir, 'languages', 'csharp', 'rules', 'probe.rule.md');
+      assert.equal(matter.read(file).data.language, 'csharp');
     });
   });
 

@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1 merged (#18, 2497e00); R1 release deferred until after M2 (user). M2 on feat/catalog-standard-m2: T1 done; next V1 prep + T5.
+Status: M2 on feat/catalog-standard-m2: T1, T5 done (+ gray-matter cache fix); next T6; V1 waiting on user.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -26,7 +26,7 @@ Spec: `SPEC.md`
 - [x] T1 ADR
 - [ ] V1 Reference-link check (you, in VS Code)
 - [ ] ⚠ T2 Delete the stray `add` file
-- [ ] T5 Prevent (import, new, move) — T5a done
+- [x] T5 Prevent (import, new, move)
 - [ ] T6 Detect (`catalog-layout` rule)
 - [ ] T13 Markdown links, only if V1 needs them
 - [ ] T7 Content fixes

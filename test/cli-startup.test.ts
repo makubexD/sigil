@@ -1,7 +1,7 @@
 /**
  * `sigil --version` and `sigil <command> --help` must not load any command module. `src/cli.ts` wraps
  * each command in `lazy()`; one eager `import { runX } from './commands/x'` puts that module's whole
- * import tree back on every start (about 120 ms for all of them, and the test suite starts the CLI
+ * import tree back on every start (about 95 ms for all of them, and the test suite starts the CLI
  * more than a hundred times).
  */
 import { describe, it } from 'node:test';

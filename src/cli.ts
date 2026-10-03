@@ -13,7 +13,7 @@ import type { InitOptions } from './commands/init';
 
 /**
  * Wraps a command so its module loads the first time the command runs. Loading all of them up front
- * cost about 120 ms on every start, including `sigil --version` and `sigil <command> --help`.
+ * cost about 95 ms on every start, including `sigil --version` and `sigil <command> --help`.
  */
 function lazy<A extends unknown[]>(load: () => Promise<(...args: A) => unknown>) {
   return async (...args: A): Promise<void> => {

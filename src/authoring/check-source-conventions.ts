@@ -9,7 +9,7 @@ import path from 'path';
 import type { ArtifactKind } from '../types';
 import { checkReferences, describeRefProblem, type RefCheck } from '../refs';
 import { normPath } from '../paths';
-import { SHARED_NAMESPACE, locateSource, splitId } from '../catalog-layout';
+import { SHARED_NAMESPACE, locateSource, namespaceProblems, splitId } from '../catalog-layout';
 import { kindOfSourceFile } from '../kinds';
 import type { CheckCtx } from './check-source-ctx';
 
@@ -139,17 +139,8 @@ export function checkIdConsistency(ctx: CheckCtx): void {
 export function checkNamespace(ctx: CheckCtx): void {
   const { artifact, catalog, v } = ctx;
   if (!catalog.root) return;
-  const { namespace } = locateSource(catalog.root, artifact.filePath);
-  if (namespace === SHARED_NAMESPACE && artifact.frontmatter.language !== undefined) {
-    v.push({
-      file: artifact.filePath,
-      problem: `a shared artifact must not set language: — drop it, or move the artifact under languages/<lang>/`,
-    });
-  } else if (namespace && namespace !== SHARED_NAMESPACE && !catalog.languages.has(namespace)) {
-    v.push({
-      file: artifact.filePath,
-      problem: `language '${namespace}' has no languages/${namespace}/language.yaml — add one (sigil import --create-language does) or use an existing language`,
-    });
+  for (const problem of namespaceProblems(catalog.root, catalog.languages, artifact)) {
+    v.push({ file: artifact.filePath, problem });
   }
 }
 

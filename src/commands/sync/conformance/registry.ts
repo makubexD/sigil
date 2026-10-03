@@ -20,6 +20,7 @@ import { descriptionBudgetRule } from './rules/description-budget';
 import { providerTermLeakRule } from './rules/provider-term-leak';
 import { catalogSymmetryRule } from './rules/catalog-symmetry';
 import { toolRestrictionCoverageRule } from './rules/tool-restriction-coverage';
+import { catalogLayoutRule } from './rules/catalog-layout';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -36,4 +37,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   providerTermLeakRule,
   catalogSymmetryRule,
   toolRestrictionCoverageRule,
+  catalogLayoutRule,
 ];

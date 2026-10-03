@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `sigil sync --check` enforces the catalog layout standard with a new `catalog-layout` rule
+  (error): an artifact outside `shared/` and `languages/<lang>/`, in another kind's folder, with
+  an id prefix or `language:` out of step with its folder, in a language with no `language.yaml`,
+  or a skill folder named differently from the skill; and skill-folder content that never ships
+  (`assets/`, `scripts/`, nested reference folders), a reference `SKILL.md` never mentions, or a
+  stack file not named `stack-<stack>.md`.
+
 - `sigil import --shared` imports into `catalog/shared/` with no `language:` (`--language` and
   `--shared` are now exclusive, one required). A skill's flat `references/*.md` files are imported
   with it, held to the catalog's reference rules and trust-scanned; what can't ship (`assets/`,

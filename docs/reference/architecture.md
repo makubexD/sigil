@@ -28,7 +28,8 @@ slots** (a provider can rearrange a body without a catalog-side change).
 Where an artifact sits is read relative to the catalog root (`src/catalog-layout.ts`):
 `shared/<kindDir>/…` or `languages/<lang>/<kindDir>/…`, with `<kindDir>` and the file name taken
 from the kind's `sourceDir` / `sourceSuffix`. Folders above the root never count, so a catalog can
-live under any path. `loadCatalog` records that root on `LoadedCatalog.root`.
+live under any path. `loadCatalog` records that root on `LoadedCatalog.root`. The `catalog-layout`
+conformance rule fails `sigil sync --check` (CI) on any artifact placed off this layout.
 
 ### Adding a platform target
 

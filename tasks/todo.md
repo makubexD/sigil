@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M2 on feat/catalog-standard-m2: T1, T5 done (+ gray-matter cache fix); next T6; V1 waiting on user.
+Status: M2: T1, T5, T6 done; next T7 content fixes; V1 waiting on user (decides T13).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -27,7 +27,7 @@ Spec: `SPEC.md`
 - [ ] V1 Reference-link check (you, in VS Code)
 - [ ] ⚠ T2 Delete the stray `add` file
 - [x] T5 Prevent (import, new, move)
-- [ ] T6 Detect (`catalog-layout` rule)
+- [x] T6 Detect (`catalog-layout` rule)
 - [ ] T13 Markdown links, only if V1 needs them
 - [ ] T7 Content fixes
 - [ ] ⚠ T8 ADO MCP env token and org scrub

@@ -67,6 +67,10 @@ from `../dist-cli/…`, not from `src/`, which is why the build must come first.
 compiles `src/`, type errors there fail `npm test`. To run a single test file, see
 [CONTRIBUTING.md](../../CONTRIBUTING.md#testing).
 
+`npm run test:built` compiles only the tests and runs them, with no `npm run build` first. It assumes
+`dist-cli/` is current, so CI and `ci:local` use it right after their own Build step (that saved the duplicate
+build, about 10 s on Windows). Anywhere else, use `npm test`, which works alone on a clean checkout.
+
 `scripts/run-tests.cjs` preloads `scripts/quiet-console.cjs`, which silences `console.log`, `console.info` and
 `console.debug` in every test process. Under `node --test` those calls share a pipe with the runner's own
 messages, and on Node 20 stray text can corrupt them ("Unable to deserialize cloned data"). Set

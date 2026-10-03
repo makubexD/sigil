@@ -26,16 +26,47 @@ export type EditorialModelClient = (
 
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 const ANTHROPIC_MODEL = 'claude-opus-5';
-const REQUEST_TIMEOUT_MS = 60_000;
-const MAX_RESPONSE_TOKENS = 4096;
+// The model thinks adaptively when `thinking` is omitted, and thinking counts toward max_tokens,
+// so the cap covers the thinking plus a full rewritten body.
+const REQUEST_TIMEOUT_MS = 300_000;
+const MAX_RESPONSE_TOKENS = 16_000;
 const JSON_INDENT = 2;
 const ERROR_HINT_MAX_CHARS = 500;
 
 const RESPONSE_FORMAT_INSTRUCTION =
-  'Respond with ONLY a JSON object of the shape ' +
-  '{ "frontmatterPatch"?: { <owned frontmatter keys>: <new value> }, ' +
-  '"body"?: "<full new body text, only if body is an owned field>" }. ' +
-  'Omit a key you are not changing. No prose, no markdown code fence — raw JSON only.';
+  'Put changed frontmatter fields in frontmatterPatch, and the full new body in body only when ' +
+  'body is an owned field you change. Omit a key you are not changing.';
+
+const RELATED_ARTIFACT_SCHEMA = {
+  type: 'object',
+  properties: {
+    id: { type: 'string' },
+    relation: { type: 'string', enum: ['escalates-to', 'complements', 'see-also'] },
+    reason: { type: 'string' },
+  },
+  required: ['id', 'relation', 'reason'],
+  additionalProperties: false,
+};
+
+/** JSON Schema for one owned frontmatter field: every one is a string except `relatedArtifacts`. */
+function fieldSchema(field: string): object {
+  return field === 'relatedArtifacts'
+    ? { type: 'array', items: RELATED_ARTIFACT_SCHEMA }
+    : { type: 'string' };
+}
+
+/** The reply shape, enforced by structured outputs: only the task's owned fields can appear. */
+export function responseSchema(task: EditorialTask): object {
+  const patchFields = task.ownedFields.filter(field => field !== 'body');
+  const frontmatterPatch = {
+    type: 'object',
+    properties: Object.fromEntries(patchFields.map(field => [field, fieldSchema(field)])),
+    additionalProperties: false,
+  };
+  const properties: Record<string, object> = { frontmatterPatch };
+  if (task.ownedFields.includes('body')) properties.body = { type: 'string' };
+  return { type: 'object', properties, additionalProperties: false };
+}
 
 function ownershipInstruction(task: EditorialTask): string {
   return (
@@ -65,7 +96,8 @@ function buildPrompt(
   ].join('\n');
 }
 
-function buildAnthropicRequest(prompt: string, apiKey: string): RequestInit {
+/** The Messages API request for one prompt, with the reply constrained to `schema`. */
+export function buildAnthropicRequest(prompt: string, schema: object, apiKey: string): RequestInit {
   return {
     method: 'POST',
     headers: {
@@ -76,6 +108,7 @@ function buildAnthropicRequest(prompt: string, apiKey: string): RequestInit {
     body: JSON.stringify({
       model: ANTHROPIC_MODEL,
       max_tokens: MAX_RESPONSE_TOKENS,
+      output_config: { format: { type: 'json_schema', schema } },
       messages: [{ role: 'user', content: prompt }],
     }),
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
@@ -88,7 +121,8 @@ async function postToAnthropic(
   apiKey: string,
 ): Promise<Response> {
   try {
-    return await fetch(ANTHROPIC_API_URL, buildAnthropicRequest(prompt, apiKey));
+    const request = buildAnthropicRequest(prompt, responseSchema(task), apiKey);
+    return await fetch(ANTHROPIC_API_URL, request);
   } catch (e) {
     throw new SigilError(`Anthropic API request failed for ${task.artifactId}`, { cause: e });
   }
@@ -101,11 +135,19 @@ async function extractResponseText(task: EditorialTask, res: Response): Promise<
       hint: bodyText,
     });
   }
-  const payload = (await res.json()) as { content?: { type: string; text?: string }[] };
+  const payload = (await res.json()) as {
+    stop_reason?: string;
+    content?: { type: string; text?: string }[];
+  };
+  if (payload.stop_reason !== 'end_turn') {
+    const reason = payload.stop_reason ?? 'unknown';
+    throw new SigilError(`Anthropic response for ${task.artifactId} stopped early (${reason})`);
+  }
   return payload.content?.find(block => block.type === 'text')?.text ?? '';
 }
 
-async function parseAnthropicResponse(
+/** Turns one Messages API response into a proposal; throws on an error status or an early stop. */
+export async function parseAnthropicResponse(
   task: EditorialTask,
   res: Response,
 ): Promise<EditorialProposal> {

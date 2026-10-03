@@ -8,6 +8,7 @@
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { CLAUDE_RULES_DOC } from '../../doc-refs';
+import { yamlScalar } from '../../yaml-util';
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 
@@ -16,7 +17,7 @@ const appliesToMapping: FieldMapping = {
   to: 'paths',
   required: false,
   when: fm => Array.isArray(fm.appliesTo) && (fm.appliesTo as string[]).length > 0,
-  serialize: v => `paths:\n${(v as string[]).map(g => `  - "${g}"`).join('\n')}`,
+  serialize: v => `paths:\n${(v as string[]).map(g => `  - ${yamlScalar(g)}`).join('\n')}`,
 };
 
 /** `# <title>` heading — rules render it as a body-level heading, not frontmatter. */

@@ -240,7 +240,10 @@ export const PromptSchema = z.object({
   args: z
     .array(
       z.object({
-        name: z.string(),
+        /** Same grammar as a `{{name}}` placeholder; emitted into frontmatter, so nothing else. */
+        name: z
+          .string()
+          .regex(/^[\w-]+$/, 'an argument name may use letters, digits, _ and - only'),
         description: z.string().optional(),
         required: z.boolean().optional().default(false),
       }),

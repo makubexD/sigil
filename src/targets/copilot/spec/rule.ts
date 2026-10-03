@@ -19,7 +19,7 @@ const applyToMapping: FieldMapping = {
   serialize: v => {
     const authored = v as string[] | undefined;
     const appliesTo = authored && authored.length > 0 ? authored : ['**'];
-    return `applyTo: "${appliesTo.join(',')}"`;
+    return `applyTo: ${yamlScalar(appliesTo.join(','))}`;
   },
 };
 

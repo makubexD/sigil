@@ -50,7 +50,7 @@ const argumentHintMapping: FieldMapping = {
   from: 'argumentHint',
   to: 'argument-hint',
   required: false,
-  serialize: v => `argument-hint: "${(v as string).replace(/"/g, '\\"')}"`,
+  serialize: v => `argument-hint: ${yamlScalar(v as string)}`,
 };
 
 const disableModelInvocationMapping: FieldMapping = {

@@ -146,7 +146,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A tool name can no longer add or end a frontmatter key. `tools`, `disallowedTools` and
   `allowedTools` entries may use letters, digits, spaces and `_ . : * ( ) / -` only (a newline, `#`,
   quote, comma or bracket is a schema error), and the emitted `tools:` / `allowed-tools:` line is
-  quoted whenever a name holds `:` or `*`, so it always parses back to the names authored.
+  quoted whenever a name holds `:` or `*`, so it always parses back to the names authored. The same
+  holds for every other emitted field: `argument-hint` (a backslash could end the quoted value),
+  rule globs (`paths:` / `applyTo:`) and prompt argument names (now limited to the `{{name}}`
+  placeholder characters) are escaped or constrained, and a test renders every provider's spec with
+  hostile values to check that no frontmatter key can be added.
 - A skill's `references/` files are now held to what ships safely: regular files only (a symbolic
   link is not followed), kebab-case `.md` names, at most 256 KiB each and 1 MiB per skill. Anything
   else is skipped with a load warning. `sigil check --trust` now scans those files too, not only

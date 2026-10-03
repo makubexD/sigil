@@ -6,6 +6,10 @@
  * does not either, so the Windows / Node 20 CI job failed before running a single test. This script
  * lists the files itself and adds the coverage exclusion only where Node supports it.
  *
+ * Two environment knobs, both for measuring and for CI tuning:
+ * - `SIGIL_TEST_COVERAGE=0` skips `--experimental-test-coverage` (default: on).
+ * - `SIGIL_TEST_CONCURRENCY=<n>` sets `--test-concurrency` (default: Node's own, CPUs - 1).
+ *
  * Run: node scripts/run-tests.cjs   (after `npm run build && npm run build:test`; `npm test` does both)
  */
 const fs = require('fs');
@@ -44,7 +48,13 @@ if (files.length === 0) {
 
 const QUIET_CONSOLE = path.resolve(__dirname, 'quiet-console.cjs');
 
-const args = ['--require', QUIET_CONSOLE, '--test', '--experimental-test-coverage'];
-if (supportsCoverageExclude()) args.push(`--test-coverage-exclude=${ROOT}/**`);
+const args = ['--require', QUIET_CONSOLE, '--test'];
+if (process.env.SIGIL_TEST_COVERAGE !== '0') {
+  args.push('--experimental-test-coverage');
+  if (supportsCoverageExclude()) args.push(`--test-coverage-exclude=${ROOT}/**`);
+}
+// SIGIL_TEST_CONCURRENCY: test files run at once. Unset keeps Node's default (CPUs - 1).
+const concurrency = Number.parseInt(process.env.SIGIL_TEST_CONCURRENCY ?? '', 10);
+if (concurrency > 0) args.push(`--test-concurrency=${concurrency}`);
 const result = spawnSync(process.execPath, [...args, ...files], { stdio: 'inherit' });
 process.exit(result.status === null ? 1 : result.status);

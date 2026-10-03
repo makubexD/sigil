@@ -72,7 +72,7 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
     .filter((a): a is Artifact => a !== null);
 
   const byId = indexById(artifacts);
-  return { artifacts, byId, languages, skipWarnings };
+  return { artifacts, byId, languages, skipWarnings, root: path.resolve(catalogDir) };
 }
 
 /** Checks the two frontmatter fields every artifact requires, recording a skip reason if absent. */

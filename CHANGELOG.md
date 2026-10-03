@@ -156,6 +156,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   source folder and file ending are now declared once and every command derives from them;
   `sigil check` also recognises hook, settings and mcp files by name, and shell completion offers
   `kind:hook`, `kind:settings` and `kind:mcp`.
+- `sigil check` reads an artifact's namespace from its path inside the catalog folder only. A catalog
+  kept under a folder named `shared` or `languages/<x>` no longer reports a false
+  "id prefix doesn't match path" error.
 - `sigil help`, `--help` and `--version` could print nothing on a Windows console (`npm run sigil
   help`): the process exited right after writing. Commander's exits now return normally so Node
   flushes stdout first.

@@ -58,6 +58,11 @@ export interface LanguageMetadata {
 export interface LoadedCatalog {
   artifacts: Artifact[];
   byId: Map<string, Artifact>;
+  /**
+   * Absolute path of the catalog directory, set by loadCatalog. Layout checks read an artifact's
+   * namespace relative to it (catalog-layout.ts); absent on catalogs built in memory.
+   */
+  root?: string;
   languages: Map<string, LanguageMetadata>; // keyed by language id
   /**
    * Human-readable reasons a source file was skipped during load (e.g. missing

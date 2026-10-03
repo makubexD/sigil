@@ -6,6 +6,7 @@ import path from 'path';
 import type { Artifact, LoadedCatalog } from '../../types';
 import { ID_PART_COUNT } from '../../paths';
 import { isArtifactKind, sourceRelPath } from '../../kinds';
+import { namespaceDir, splitId } from '../../catalog-layout';
 import { KEBAB_ID_RE } from '../../schema/shared';
 import { resolveContained } from '../../cli-helpers';
 
@@ -35,19 +36,12 @@ export function computeDestinationPath(newId: string, kind: string, catalogDir: 
       `Invalid id '${newId}' — id must be namespaced kebab-case (e.g. "shared/foo", "typescript/foo-bar")`,
     );
   }
-  const segments = newId.split('/');
-  const prefix = segments[0];
-  const name = segments[segments.length - 1];
-  if (!prefix || !name) {
+  if (!isArtifactKind(kind)) throw new Error(`Unknown artifact kind '${kind}'`);
+  const split = splitId(newId, kind);
+  if (!split) {
     throw new Error(`Invalid id '${newId}' — must be '<prefix>/<name>'`);
   }
-  if (!isArtifactKind(kind)) throw new Error(`Unknown artifact kind '${kind}'`);
-
-  const base =
-    prefix === 'shared'
-      ? path.join(catalogDir, 'shared')
-      : path.join(catalogDir, 'languages', prefix);
-  return resolveContained(base, sourceRelPath(kind, name));
+  return resolveContained(namespaceDir(catalogDir, split.prefix), sourceRelPath(kind, split.name));
 }
 
 // ─── Types ────────────────────────────────────────────────────────────────────

@@ -10,6 +10,7 @@ import path from 'node:path';
 import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
 import { ALL_KINDS, isArtifactKind, sourceRelPath } from '../kinds';
+import { namespaceDir } from '../catalog-layout';
 import { isInteractiveTTY, buildEquivalentNewCommand, printEquivalentCommand } from '../wizard';
 import { checkSourceArtifact } from '../authoring/check-source';
 import { normPath } from '../paths';
@@ -31,9 +32,7 @@ function computeOutPath(
   catalogDir: string,
 ): string {
   if (!isArtifactKind(effectiveKind)) throw new SigilError(`Unknown kind '${effectiveKind}'`);
-  const namespace =
-    lang === 'shared' ? path.join(catalogDir, 'shared') : path.join(catalogDir, 'languages', lang);
-  const outPath = path.join(namespace, sourceRelPath(effectiveKind, name));
+  const outPath = path.join(namespaceDir(catalogDir, lang), sourceRelPath(effectiveKind, name));
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
   return outPath;
 }

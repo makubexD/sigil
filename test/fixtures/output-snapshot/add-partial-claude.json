@@ -1,4 +1,5 @@
 {
+  ".claude/skills/cli/SKILL.md": "99dd6418420020cff44a27ed8d0bfac4d1419bb783b80fb5882d43cb4ec77645",
   ".claude/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
   ".claude/skills/cli/references/auditor.md": "129d3771e8f16c5d5209d7f914dc90934b559a6ffc019728c6f4fdee6f376581",
   ".claude/skills/cli/references/contract.md": "288e89d220a79f217e4a36200ec2e8767715d5fc6ba20d8b8341cb1267b2c739",
@@ -11,6 +12,5 @@
   ".claude/skills/cli/references/stack-python.md": "746e19b1ccdc765492c7ccfd7e7843e5647f8431698bf4764f984bcc0c954cbd",
   ".claude/skills/cli/references/stack-rust.md": "30c62dc0116bf1345d714f2c59c23bcc2a646ee241200614554444d6778d1d58",
   ".claude/skills/cli/references/testing.md": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c",
-  ".claude/skills/cli/SKILL.md": "99dd6418420020cff44a27ed8d0bfac4d1419bb783b80fb5882d43cb4ec77645",
   ".sigil/manifest.json": "fb9205a40ec3d11bb598c97d2fde1f7f1fb706ed55ca31e983671cd4debfd865"
 }

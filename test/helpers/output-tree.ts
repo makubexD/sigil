@@ -54,7 +54,7 @@ export function hashTree(dir: string): Record<string, string> {
     }
   };
   walk(dir);
-  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => a.localeCompare(b)));
+  return Object.fromEntries(Object.entries(out).sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0)));
 }
 
 /** Paths that differ between two hashed trees: `- removed`, `+ added`, `~ changed`. */

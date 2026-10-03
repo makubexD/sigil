@@ -165,12 +165,20 @@ for (const target of TARGETS) {
 
     if (target === 'claude') {
       it('should replace a hook the catalog changed instead of adding a second copy', async () => {
-        await withTempDirAsync(async dir => {
-          restoreFrozen(dir, target);
-          const before = hashTree(dir);
-          simulateOlderHook(dir);
-          await update(dir, target);
-          assert.deepEqual(treeDiff(before, hashTree(dir)), []);
+        await withTempDirAsync(async root => {
+          const untouched = path.join(root, 'untouched');
+          const older = path.join(root, 'older');
+          restoreFrozen(untouched, target);
+          restoreFrozen(older, target);
+          simulateOlderHook(older);
+          await update(untouched, target);
+          await update(older, target);
+          const hooks = (readJson(older, SETTINGS).hooks as Record<string, HookItem[]>).PreToolUse!;
+          assert.deepEqual(
+            hooks.map(h => h.matcher),
+            [CURRENT_MATCHER],
+          );
+          assert.deepEqual(treeDiff(hashTree(untouched), hashTree(older)), []);
         });
       });
     }

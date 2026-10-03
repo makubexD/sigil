@@ -12,6 +12,8 @@ import { ALL_KINDS, kindOfSourceFile, sourceRelPath } from '../dist-cli/kinds';
 import { computeDestinationPath } from '../dist-cli/authoring/move/plan';
 import { runNew } from '../dist-cli/commands/new';
 import { loadCatalog } from '../dist-cli/load';
+import { checkSourceArtifact } from '../dist-cli/authoring/check-source';
+import { getAllTargets } from '../dist-cli/targets/index';
 import { withTempDirAsync } from './helpers/temp-dir';
 
 const posix = (p: string) => p.split(path.sep).join('/');
@@ -55,6 +57,31 @@ describe('kind source layout', () => {
       assert.deepEqual(loaded, [...ALL_KINDS].sort());
     });
   });
+});
+
+describe('sigil check — file name and kind agree for every kind', () => {
+  for (const [kind, wrongFile] of [
+    ['mcp', 'probe.hook.md'],
+    ['hook', 'probe.settings.md'],
+    ['settings', 'probe.mcp.md'],
+  ] as const) {
+    it(`should flag a ${kind} artifact saved as ${wrongFile}`, async () => {
+      await withTempDirAsync(async root => {
+        const file = path.join(root, 'shared', `${kind}s`, wrongFile);
+        fs.mkdirSync(path.dirname(file), { recursive: true });
+        fs.writeFileSync(file, `---\nid: shared/probe\nkind: ${kind}\n---\n`);
+        const catalog = await loadCatalog(root);
+        const artifact = catalog.artifacts[0]!;
+        const problems = checkSourceArtifact(artifact, catalog, getAllTargets()).map(
+          v => v.problem,
+        );
+        assert.ok(
+          problems.some(p => p.includes(`declares kind '${kind}'`)),
+          problems.join('\n'),
+        );
+      });
+    });
+  }
 });
 
 describe('sigil move destination', () => {

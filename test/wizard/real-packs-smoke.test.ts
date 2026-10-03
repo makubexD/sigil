@@ -9,6 +9,10 @@ import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
 import { loadAndValidate } from '../../dist-cli/cli-helpers';
 import { loadManifest } from '../../dist-cli/manifest';
+import { getTarget } from '../../dist-cli/targets/index';
+import { supportsKind } from '../../dist-cli/targets/capabilities';
+import { artifactTargetsPlatform } from '../../dist-cli/select';
+import type { Artifact, Pack } from '../../dist-cli/types';
 import { ENTER, mockClack } from '../helpers/clack-mock';
 import type { MockDriver } from '../helpers/clack-mock';
 import { CATALOG_DIR, PACKS_FILE, SCOPE, PACK_QUESTION, makeProject } from '../helpers/home-flow';
@@ -20,6 +24,21 @@ const MAX_PROMPTS = 40;
 
 interface SkillUses {
   uses?: { rules?: string[]; agents?: string[] };
+}
+
+/** The pack's artifacts that `targetName` can install and that target it (`platforms:`). */
+function packMembers(pack: Pack, artifacts: readonly Artifact[], targetName: string): string[] {
+  const target = getTarget(targetName);
+  const ids = new Set(
+    pack.artifacts ??
+      artifacts
+        .filter(a => (pack.languages ?? []).includes(a.frontmatter.language as string))
+        .map(a => a.id),
+  );
+  return artifacts
+    .filter(a => ids.has(a.id))
+    .filter(a => supportsKind(target, a.kind) && artifactTargetsPlatform(a, targetName))
+    .map(a => a.id);
 }
 
 /** Picks the pack path and the given pack; otherwise accepts what the wizard offers. */
@@ -65,7 +84,10 @@ describe('every real pack installs through the wizard', async () => {
             restoreTTY();
           }
           const installed = new Set(loadManifest(dir).entries.map(e => e.id));
-          assert.ok(installed.size > 0, `${pack.name} installed nothing for ${target}`);
+          const missing = packMembers(pack, catalog.artifacts, target).filter(
+            id => !installed.has(id),
+          );
+          assert.deepEqual(missing, [], `${pack.name} for ${target} left members out`);
           for (const id of installed) {
             const uses = (byId.get(id)?.frontmatter as SkillUses | undefined)?.uses;
             for (const dep of [...(uses?.rules ?? []), ...(uses?.agents ?? [])]) {

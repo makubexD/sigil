@@ -57,8 +57,12 @@ jobs:
         run: node dist-cli/cli.js sync --check
 
       # `test:built` skips the rebuild that `npm test` (pretest) would repeat right after the Build step.
+      # Coverage is not enforced anywhere, and instrumenting every test process cost 13-16 s per job.
+      # `npm test` on a developer machine still prints it.
       - name: Run tests
         run: npm run test:built
+        env:
+          SIGIL_TEST_COVERAGE: '0'
 
       - name: Build catalog output (claude + copilot)
         run: npm run catalog:build

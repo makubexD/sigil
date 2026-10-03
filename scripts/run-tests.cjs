@@ -8,11 +8,12 @@
  *
  * Two environment knobs, both for measuring and for CI tuning:
  * - `SIGIL_TEST_COVERAGE=0` skips `--experimental-test-coverage` (default: on).
- * - `SIGIL_TEST_CONCURRENCY=<n>` sets `--test-concurrency` (default: Node's own, CPUs - 1).
+ * - `SIGIL_TEST_CONCURRENCY=<n>` sets `--test-concurrency` (default: one test file per CPU, `os.availableParallelism()`).
  *
  * Run: node scripts/run-tests.cjs   (after `npm run build && npm run build:test`; `npm test` does both)
  */
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const { spawnSync } = require('child_process');
 
@@ -53,8 +54,10 @@ if (process.env.SIGIL_TEST_COVERAGE !== '0') {
   args.push('--experimental-test-coverage');
   if (supportsCoverageExclude()) args.push(`--test-coverage-exclude=${ROOT}/**`);
 }
-// SIGIL_TEST_CONCURRENCY: test files run at once. Unset keeps Node's default (CPUs - 1).
-const concurrency = Number.parseInt(process.env.SIGIL_TEST_CONCURRENCY ?? '', 10);
-if (concurrency > 0) args.push(`--test-concurrency=${concurrency}`);
+// Node's default is CPUs - 1. One test file per CPU measured faster on the 4-vCPU Windows runner
+// (37 s against 50-56 s at 5 to 8 files, 3 runs each) and no slower on Ubuntu.
+const requested = Number.parseInt(process.env.SIGIL_TEST_CONCURRENCY ?? '', 10);
+const concurrency = requested > 0 ? requested : os.availableParallelism();
+args.push(`--test-concurrency=${concurrency}`);
 const result = spawnSync(process.execPath, [...args, ...files], { stdio: 'inherit' });
 process.exit(result.status === null ? 1 : result.status);

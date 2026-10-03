@@ -56,8 +56,9 @@ jobs:
       - name: Check template drift + catalog conformance + provider-doc staleness
         run: node dist-cli/cli.js sync --check
 
+      # `test:built` skips the rebuild that `npm test` (pretest) would repeat right after the Build step.
       - name: Run tests
-        run: npm test
+        run: npm run test:built
 
       - name: Build catalog output (claude + copilot)
         run: npm run catalog:build

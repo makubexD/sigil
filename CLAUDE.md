@@ -12,6 +12,7 @@ npm run build          # clean, tsc, regenerate schema/*.schema.json and docs/re
 npm run validate       # schema + reference-graph check
 npm run catalog:build  # catalog source → dist/claude/ and dist/copilot/
 npm test               # pretest builds dist-cli/ and test-compiled/, then node --test
+npm run test:built     # same, but trusts a current dist-cli/ (CI and ci:local build just before)
 npm run check          # lint && format:check && check-doc-comments && test (a subset of CI)
 npm run ci:local       # full CI mirror: audit, lint, format, build, validate, sync --check, test, catalog:build
 ```

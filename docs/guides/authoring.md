@@ -187,7 +187,17 @@ sigil import path/to/.ClaudeFoo --language foo --create-language --yes
 
 # Wire deps, polish titles (content-refinement stage, separate from mechanical import)
 sigil patch foo/foo-generate-tests --set-uses-agents shared/code-reviewer
+
+# Artifacts that belong to no language go to catalog/shared/ instead (no language: field)
+sigil import path/to/.ClaudeTools --shared --yes
 ```
+
+Pass exactly one of `--language` and `--shared`. A new language needs `--create-language` (or an
+existing `language.yaml`); without it the items are refused. A skill comes over with its flat
+`references/*.md` files, under the same rules the catalog loads them by, and every file is
+trust-scanned (an error-level finding blocks the whole skill). Anything else a skill folder
+carries (`assets/`, `scripts/`, nested `references/stacks/`) is listed as not imported: flatten
+per-stack folders into `references/stack-<x>.md` first.
 
 Source→catalog field mapping: rule `paths` → `appliesTo`; agent `tools` (comma string) →
 `tools[]`; skill `allowed-tools` → `allowedTools`; `argument-hint` → `argumentHint`;

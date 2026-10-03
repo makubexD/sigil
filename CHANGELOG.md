@@ -9,6 +9,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `sigil import --shared` imports into `catalog/shared/` with no `language:` (`--language` and
+  `--shared` are now exclusive, one required). A skill's flat `references/*.md` files are imported
+  with it, held to the catalog's reference rules and trust-scanned; what can't ship (`assets/`,
+  `scripts/`, nested reference folders) is listed instead of dropped silently.
+
 - Home menu: "Search the catalog" shows the matches as a list to pick from (no copying an id), says
   plainly when nothing matches, and names the helpers an install brings. Remove asks whether to keep or
   delete files you edited; the `Equivalent command:` is printed after you confirm and includes

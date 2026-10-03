@@ -14,6 +14,7 @@ import matter from 'gray-matter';
 import { checkSourceArtifact } from '../check-source';
 import { scanContent } from '../../trust/scan';
 import { renderArtifactFile } from './plan';
+import { resolveContained } from '../../cli-helpers';
 import type { ImportItem } from './plan';
 import type { LoadedCatalog, Target } from '../../types';
 
@@ -81,14 +82,29 @@ function renderAndValidate(
   const content = renderArtifactFile(item.frontmatter, item.body);
   const artifact = makeArtifactFromContent(content, item.destPath);
   const violations = checkSourceArtifact(artifact, catalog, targets);
-  const trustViolations = scanImportContent(content, item.destPath);
+  const trustViolations = [
+    ...scanImportContent(content, item.destPath),
+    ...(item.references ?? []).flatMap(ref =>
+      scanImportContent(ref.content, referencePath(item.destPath, ref.name)),
+    ),
+  ];
   return { content, violations: [...violations.map(v => v.problem), ...trustViolations] };
 }
 
-/** Writes rendered content to disk, creating parent directories as needed. */
-function writeItemToDisk(destPath: string, content: string): void {
-  fs.mkdirSync(path.dirname(destPath), { recursive: true });
-  fs.writeFileSync(destPath, content, 'utf-8');
+/** Where a skill's reference file lands: beside its SKILL.md, contained in references/. */
+function referencePath(skillPath: string, name: string): string {
+  return resolveContained(path.join(path.dirname(skillPath), 'references'), name);
+}
+
+/** Writes rendered content (and a skill's references) to disk, creating directories as needed. */
+function writeItemToDisk(item: ImportItem, content: string): void {
+  fs.mkdirSync(path.dirname(item.destPath), { recursive: true });
+  fs.writeFileSync(item.destPath, content, 'utf-8');
+  for (const ref of item.references ?? []) {
+    const refPath = referencePath(item.destPath, ref.name);
+    fs.mkdirSync(path.dirname(refPath), { recursive: true });
+    fs.writeFileSync(refPath, ref.content, 'utf-8');
+  }
 }
 
 /** Renders, validates, and (if valid) writes one item; never throws — errors become violations. */
@@ -102,7 +118,7 @@ function tryWriteImportItem(
     // Any schema/convention violation aborts this item without writing.
     const { content, violations } = renderAndValidate(item, catalog, targets);
     if (violations.length > 0) return { status: 'error', violations };
-    writeItemToDisk(item.destPath, content);
+    writeItemToDisk(item, content);
     return { status: 'written', violations: [] };
   } catch (err) {
     return { status: 'error', violations: [err instanceof Error ? err.message : String(err)] };

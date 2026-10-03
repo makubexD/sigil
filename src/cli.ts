@@ -202,7 +202,8 @@ program
   .description(
     'Import a portable Claude template directory into the catalog as first-class artifacts.',
   )
-  .requiredOption('--language <lang>', 'Target language key (e.g. csharp, typescript)')
+  .option('--language <lang>', 'Target language key (e.g. csharp, typescript)')
+  .option('--shared', 'Import into catalog/shared/ (no language); use instead of --language', false)
   .option('--display-name <name>', 'Override the language display name in generated titles')
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--dry-run', 'Preview only — print coverage report without writing', false)

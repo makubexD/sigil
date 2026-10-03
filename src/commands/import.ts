@@ -20,9 +20,13 @@ import {
 } from '../authoring/import';
 import { resolveDisplayName, maybeCreateLanguageYaml } from './import-language';
 import { computeOverlapLines, printCoverageReport } from './import-report';
+import { SHARED_NAMESPACE } from '../catalog-layout';
 
 export interface ImportOptions {
-  language: string;
+  /** Target language; exactly one of `language` and `shared` is given. */
+  language?: string | undefined;
+  /** Import into catalog/shared/ with no `language:`. */
+  shared?: boolean | undefined;
   displayName?: string | undefined;
   catalogDir: string;
   dryRun: boolean;
@@ -45,9 +49,20 @@ function printDiscoveryReport(
   }
 }
 
+/** The namespace to import into: --shared or --language <lang>, exactly one. */
+function resolveNamespace(opts: ImportOptions): string {
+  if (Boolean(opts.shared) === Boolean(opts.language)) {
+    throw new SigilError('Pass exactly one of --language <lang> and --shared.', {
+      hint: '  --language imports into catalog/languages/<lang>/; --shared into catalog/shared/.',
+    });
+  }
+  return opts.shared ? SHARED_NAMESPACE : opts.language!;
+}
+
 /** Ensures the target language.yaml exists (when --create-language was passed) and resolves its display name. */
 function resolveLanguageMeta(opts: ImportOptions): { lang: string; displayName: string } {
-  const lang = opts.language;
+  const lang = resolveNamespace(opts);
+  if (lang === SHARED_NAMESPACE) return { lang, displayName: '' };
   const yamlPath = languageYamlPath(lang, opts.catalogDir);
   const displayName = resolveDisplayName(lang, opts.displayName, yamlPath);
   if (opts.createLanguage) {

@@ -65,43 +65,74 @@ function readRegularFile(file: string, budget: number): ReadOutcome {
   }
 }
 
-/** The .md entries of a references/ folder, in name order. */
-function markdownNames(refsDir: string): string[] {
-  return fs
-    .readdirSync(refsDir)
-    .filter(f => f.endsWith('.md'))
-    .sort();
+/** One references/ entry the loader did not take, and why. */
+export interface SkippedReference {
+  readonly path: string;
+  readonly reason: string;
 }
 
-/** Whether `refsDir` is a real folder to read from; reports anything else in `warnings`. */
-function isRealFolder(refsDir: string, warnings: string[]): boolean {
+/** The entries of a real references/ folder: .md files to consider, and anything else to report. */
+function listEntries(refsDir: string): { names: string[]; skipped: SkippedReference[] } {
+  const names: string[] = [];
+  const skipped: SkippedReference[] = [];
+  for (const entry of fs.readdirSync(refsDir, { withFileTypes: true })) {
+    const entryPath = path.join(refsDir, entry.name);
+    if (entry.isDirectory()) {
+      skipped.push({ path: entryPath, reason: 'nested folder (references stay one level deep)' });
+    } else if (entry.name.endsWith('.md')) {
+      names.push(entry.name);
+    }
+  }
+  return { names: names.sort(), skipped };
+}
+
+/** The references/ folder's stat when it is a real folder, else why it is skipped (or nothing). */
+function folderProblem(refsDir: string): SkippedReference | 'absent' | undefined {
   const stat = fs.lstatSync(refsDir, { throwIfNoEntry: false });
-  if (!stat) return false;
-  if (stat.isDirectory()) return true;
-  warnings.push(`[load] Skipping references ${refsDir}: not a real folder (${NOT_FOLLOWED})`);
-  return false;
+  if (!stat) return 'absent';
+  if (stat.isDirectory()) return undefined;
+  return { path: refsDir, reason: `not a real folder (${NOT_FOLLOWED})` };
 }
 
 /**
- * Reads `<skillDir>/references/*.md` in name order. Skipped files are reported in `warnings`.
+ * Reads `<skillDir>/references/*.md` in name order, and reports every entry it did not take.
+ * Shared by the catalog loader and `sigil import`, so both ship exactly the same files.
  */
-export function loadReferences(skillDir: string, warnings: string[]): ReferenceFile[] {
+export function readReferences(skillDir: string): {
+  references: ReferenceFile[];
+  skipped: SkippedReference[];
+} {
   const refsDir = path.join(skillDir, 'references');
-  if (!isRealFolder(refsDir, warnings)) return [];
+  const problem = folderProblem(refsDir);
+  if (problem === 'absent') return { references: [], skipped: [] };
+  if (problem) return { references: [], skipped: [problem] };
 
+  const { names, skipped } = listEntries(refsDir);
+  return { references: readNamed(refsDir, names, skipped), skipped };
+}
+
+/** Reads each named file within the per-skill budget; records the ones it skips in `skipped`. */
+function readNamed(refsDir: string, names: string[], skipped: SkippedReference[]): ReferenceFile[] {
   const references: ReferenceFile[] = [];
   let total = 0;
-  for (const name of markdownNames(refsDir)) {
+  for (const name of names) {
     const file = path.join(refsDir, name);
     const outcome = REFERENCE_NAME_RE.test(name)
       ? readRegularFile(file, MAX_SKILL_REFERENCE_BYTES - total)
       : { reason: 'name is not kebab-case Markdown (e.g. stack-go.md)' };
     if ('reason' in outcome) {
-      warnings.push(`[load] Skipping reference ${file}: ${outcome.reason}`);
+      skipped.push({ path: file, reason: outcome.reason });
       continue;
     }
     total += Buffer.byteLength(outcome.content);
     references.push({ name, content: outcome.content });
   }
+  return references;
+}
+
+/** The loader's form of readReferences: skipped entries become load warnings. */
+export function loadReferences(skillDir: string, warnings: string[]): ReferenceFile[] {
+  const { references, skipped } = readReferences(skillDir);
+  for (const s of skipped) warnings.push(`[load] Skipping reference ${s.path}: ${s.reason}`);
   return references;
 }

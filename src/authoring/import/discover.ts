@@ -16,6 +16,8 @@ import path from 'path';
 import type { Dirent } from 'fs';
 import { SKILL_FILENAME } from '../../paths';
 import { parseMarkdown, stemOf } from './parse-markdown';
+import { readReferences } from '../../load-references';
+import type { ReferenceFile } from '../../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +35,8 @@ export interface DiscoveredFile {
   frontmatter: Record<string, unknown>;
   /** Raw body text (everything after the frontmatter block). */
   body: string;
+  /** A skill's flat references/*.md files, read by the same rules the catalog loader applies. */
+  references?: ReferenceFile[];
 }
 
 /** A file found but not classifiable as a known artifact kind. */
@@ -142,10 +146,42 @@ function discoverSkillsDir(sourceDir: string): DiscoverResult {
 
   for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
     const result = classifySkillEntry(entry, skillsDir);
-    if (result.discovered) discovered.push(result.discovered);
+    if (result.discovered) {
+      const { file, notShipped } = withReferences(result.discovered, skillsDir);
+      discovered.push(file);
+      unrecognised.push(...notShipped);
+    }
     if (result.unrecognised) unrecognised.push(result.unrecognised);
   }
   return { discovered, unrecognised };
+}
+
+/** Folder entries of a skill that import brings over; everything else is reported. */
+const SHIPPED_SKILL_ENTRIES = new Set([SKILL_FILENAME, 'references']);
+const NOT_SHIPPED =
+  'not imported: a skill ships only SKILL.md and flat references/*.md (flatten per-stack folders into references/stack-<x>.md)';
+
+/**
+ * Attaches a skill's references (same rules as the catalog loader) and lists what it carries that
+ * can't ship — nested reference folders, assets/, scripts/, other files — so import reports them
+ * instead of dropping them silently.
+ */
+function withReferences(
+  file: DiscoveredFile,
+  skillsDir: string,
+): { file: DiscoveredFile; notShipped: UnrecognisedFile[] } {
+  const skillDir = path.join(skillsDir, file.slug);
+  const { references, skipped } = readReferences(skillDir);
+  const relative = (p: string) => path.join('skills', path.relative(skillsDir, p));
+  const extras = fs
+    .readdirSync(skillDir)
+    .filter(name => !SHIPPED_SKILL_ENTRIES.has(name))
+    .map(name => ({ relativePath: path.join('skills', file.slug, name), reason: NOT_SHIPPED }));
+  const refs = skipped.map(s => ({
+    relativePath: relative(s.path),
+    reason: `not imported: ${s.reason}`,
+  }));
+  return { file: { ...file, references }, notShipped: [...refs, ...extras] };
 }
 
 /**

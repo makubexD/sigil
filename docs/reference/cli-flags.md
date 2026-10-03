@@ -245,6 +245,8 @@ artifacts.
 
 Options:
   --language <lang>      Target language key (e.g. csharp, typescript)
+  --shared               Import into catalog/shared/ (no language); use instead
+                         of --language (default: false)
   --display-name <name>  Override the language display name in generated titles
   --catalog-dir <dir>    Path to catalog/ (default: <package>/catalog)
   --dry-run              Preview only — print coverage report without writing

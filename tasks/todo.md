@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1 done incl. Phase 5 fixes; awaiting GATE 5 (push + PR), then R1 release.
+Status: M1 merged (#18, 2497e00); R1 release deferred until after M2 (user). M2 on feat/catalog-standard-m2: T1 done; next V1 prep + T5.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -23,7 +23,7 @@ Spec: `SPEC.md`
 
 ## Milestone 2: catalog standard and guards
 
-- [ ] T1 ADR
+- [x] T1 ADR
 - [ ] V1 Reference-link check (you, in VS Code)
 - [ ] ⚠ T2 Delete the stray `add` file
 - [ ] T5 Prevent (import, new, move)

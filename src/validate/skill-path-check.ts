@@ -6,8 +6,9 @@
  *
  * Found by the 2026-09-27 install audit of the migrated `shared/cli`/`shared/wizard` skills, whose
  * source had nested `references/stacks/` and `assets/` folders. A bare directory name (`stacks/`)
- * is deliberately not checked: it can't be told apart from a project path such as `src/`. This is
- * the minimal slice of the ADR's Phase 1c "links resolve inside the skill root" lint.
+ * is deliberately not checked: it can't be told apart from a project path such as `src/`.
+ * References stay flat by design (docs/decisions/catalog-layout-standard-2026-10.md drops the
+ * nested layout once planned as "Phase 1c"); the catalog-layout conformance rule enforces that.
  */
 import type { Artifact } from '../types';
 import type { ValidateCtx } from './types';

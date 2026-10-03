@@ -68,6 +68,20 @@ sigil build
 # Use `sigil build --target claude` (or `copilot`) to build just one.
 ```
 
+### Where an artifact goes
+
+The catalog keeps one rule (see `docs/decisions/catalog-layout-standard-2026-10.md`):
+
+| The content…                                | Goes to                                                                                      |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| does not vary by language                   | `catalog/shared/<kindDir>/`, with no `language:`                                             |
+| varies with the project's own language      | `catalog/languages/<lang>/<kindDir>/`, one artifact per language (`template:` once measured) |
+| varies with a stack the task itself chooses | one shared **skill** with `references/stack-<stack>.md` files and a table in `SKILL.md`      |
+
+Agents and rules always take the per-language row: they can't load reference files on demand, and
+rules activate by path. When the last two rows both seem to fit, choose per-language. Group
+artifacts with a pack in `packs.yaml`, never with a topic folder.
+
 ### Shared (stack-agnostic) skills
 
 A skill whose guidance applies across stacks omits `language:` and lives under

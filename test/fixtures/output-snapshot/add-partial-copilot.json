@@ -1,0 +1,16 @@
+{
+  ".github/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
+  ".github/skills/cli/references/auditor.md": "129d3771e8f16c5d5209d7f914dc90934b559a6ffc019728c6f4fdee6f376581",
+  ".github/skills/cli/references/contract.md": "288e89d220a79f217e4a36200ec2e8767715d5fc6ba20d8b8341cb1267b2c739",
+  ".github/skills/cli/references/findings.md": "291ec65e34f07d993d5b86daaa11c8a539f6bdfd7a5dfd376b39cbdad5cb752c",
+  ".github/skills/cli/references/grammar.md": "a4553bf6847fd966de7d179e226e9b5296f63991e551b5c7e8c3c50ac5accc0b",
+  ".github/skills/cli/references/migration.md": "7e7ac8d585017536eb7ea4046c8f57fd2c196dfd08d5ba5f751296299a3eb172",
+  ".github/skills/cli/references/stack-dotnet.md": "8b356303fba3f1f55d2a2e43250e119ebc5a29b776f9d65f038812f3e7a1ef78",
+  ".github/skills/cli/references/stack-go.md": "7fe42acdb25a4134520031b12e64b8e72b60c50dd31c7f52d9bd8fff8523bd90",
+  ".github/skills/cli/references/stack-node-ts.md": "e867dc1be61cdec48106bbffcd09975725a3a0c376b25c0a2447d20ed98a485f",
+  ".github/skills/cli/references/stack-python.md": "746e19b1ccdc765492c7ccfd7e7843e5647f8431698bf4764f984bcc0c954cbd",
+  ".github/skills/cli/references/stack-rust.md": "30c62dc0116bf1345d714f2c59c23bcc2a646ee241200614554444d6778d1d58",
+  ".github/skills/cli/references/testing.md": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c",
+  ".github/skills/cli/SKILL.md": "17ebb4ce46d491e4f9df3fa605882162ef9280cdd30fc69afe3cc0d62c70d6ae",
+  ".sigil/manifest.json": "75009f7e973bb9d74409c40eafe7b5983f7c29c2e6f2a1acafd16150e775d733"
+}

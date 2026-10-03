@@ -204,6 +204,12 @@ tests are emitted with `sourceMap: false` (`tsconfig.test.json`), so the debugge
 JavaScript in `test-compiled/`, not your TypeScript. Set breakpoints there. Stack traces from
 `dist-cli/` are compiled code too.
 
+**Output snapshot:** `test/targets/output-snapshot.test.ts` hashes every file that `build` and `add` write
+for the bundled catalog and compares the hashes with `test/fixtures/output-snapshot/`. A refactor must
+leave it green. When you change emitted content on purpose, run `npm run snapshot:update`, check that
+only the files you meant to change moved (`git diff test/fixtures/output-snapshot/`), and commit the
+new baseline with the change.
+
 ## Before you push
 
 ```bash

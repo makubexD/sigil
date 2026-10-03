@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1 in progress. T0 done; next is N1.
+Status: M1 in progress — T0, N1 done; next N2.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -10,7 +10,7 @@ Spec: `SPEC.md`
 ## Milestone 1: safety net and security fixes (branch `feat/catalog-standard-m1`)
 
 - [x] T0 Plan commit
-- [ ] N1 Output snapshot test (permanent, in-process)
+- [x] N1 Output snapshot test (permanent, in-process)
 - [ ] N2 Frozen install fixture from master 8882c86, plus a migration test
 - [ ] N3 Smoke test that installs every pack
 - [ ] S1 An agent's `tools` list can't silently widen (`.min(1)`)

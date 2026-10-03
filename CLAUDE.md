@@ -8,7 +8,7 @@ mapping, and step-by-step guides.
 ## Build & test
 
 ```bash
-npm run build          # clean, tsc, regenerate schema/*.schema.json and docs/reference/capabilities.md
+npm run build          # clean (also deletes test-compiled/), tsc, regenerate schema/*.schema.json and docs/reference/capabilities.md
 npm run validate       # schema + reference-graph check
 npm run catalog:build  # catalog source → dist/claude/ and dist/copilot/
 npm test               # pretest builds dist-cli/ and test-compiled/, then node --test
@@ -28,7 +28,7 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   is set in `src/cli.ts` option definitions and must never anchor on `PKG_ROOT`.
 - **`src/cli.ts` loads command modules lazily** — wire a command with `.action(lazy(async () => (await import('./commands/x')).runX))`,
   never a top-level `import { runX }`. An eager import puts that command's whole import tree on every start, including
-  `--version` and `--help` (about 120 ms for all of them; the test suite starts the CLI 100+ times).
+  `--version` and `--help` (about 95 ms for all of them; the test suite starts the CLI 100+ times).
   `test/cli-startup.test.ts` fails when a command module loads during `--version` or `--help`.
 - **The 4-stage pipeline stays platform-neutral**: `src/load.ts`, `src/validate/` (`validateCatalog`), and
   `src/resolve.ts` know nothing about Claude or Copilot. Platform logic lives only in `src/targets/<name>/index.ts`.
@@ -127,7 +127,7 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   and one `ProviderLexicon` per provider (`src/targets/<provider>/lexicon.ts`), applied by `renderArtifact()`
   (`src/targets/emit.ts`). Every `KindEmitSpec` must set `lexicon:` and include `UNTRANSLATED_TOKEN_FORBID`
   (`src/targets/lexicon-forbid.ts`) in `bodyForbids`. A hand-rolled aggregate that does not call `renderArtifact()`
-  (Copilot `AGENTS.md` / `copilot-instructions.md` in `copilot/build-helpers.ts`) must call `applyLexicon()` itself.
+  (Copilot `AGENTS.md` / `copilot-instructions.md` in `targets/copilot/build-helpers.ts`) must call `applyLexicon()` itself.
   `provider-term-leak` derives its literals from the registered lexicons, not a hand-listed set. (see
   `docs/decisions/provider-neutral-body-lexicon-2026-08.md`)
 - **`authoring/update/patch-types.ts` and `authoring/import/translate-shared.ts` are one-directional leaf modules —
@@ -206,18 +206,8 @@ surfaces `template <id> rev <old>→<new>` (`src/manifest/status.ts`); it never 
 (`src/commands/status.ts`) always returns null, so `outdated` on this command is only a template-revision mismatch.
 Propagation is `sigil update`. `sigil sync` is the catalog-author command, not the consumer one.
 
-### `src/` layout
-
-`commands/` is one file or directory per verb (`add/` and `sync/` are directories; `shared/` is helpers, not a verb).
-Also: `wizard/` (see `src/wizard/CLAUDE.md`), `targets/<platform>/` (one directory per adapter), `authoring/` (catalog
-CRUD), `manifest/`, `config-merge/`, `select/`, `query/`, `trust/scan/`, `schema/`, and `validate/` (schema,
-references, cycles, templates, deprecation).
-
-Top-level modules: `cli.ts`, `cli-helpers.ts`, `cli-error.ts`, `config-utils.ts`, `errors.ts`, `index.ts`,
-`install-state.ts`, `install-state-prescaffold.ts`, `json-util.ts`, `kinds.ts`, `load.ts`, `paths.ts`, `refs.ts`,
-`registry.ts`, `release.ts`, `resolve.ts`, `templates.ts`, `types.ts`.
-
 `errors.ts` / `cli-error.ts` are the single error type and the one `process.exit`. `kinds.ts` holds `KIND_REGISTRY`.
+`wizard/` has its own guide, `src/wizard/CLAUDE.md`.
 
 ## Where everything else lives
 

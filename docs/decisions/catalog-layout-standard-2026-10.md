@@ -106,8 +106,9 @@ and not registered anywhere.
   import source is read through `src/safe-read.ts` (regular files only, never a followed link).
 - **Detect:**
   - A `catalog-layout` conformance rule fails `sync --check` in CI.
-  - Planned (Milestone 3): provider limits (name, description, body size) kept as data on each
-    emit spec and checked by one generic rule.
+  - Provider limits (name, description, body size) kept as data on each emit spec
+    (`KindEmitSpec.limits`) and checked by one generic rule, `provider-limits`, on what each
+    provider actually receives.
   - These are author-only. `validateCatalog`, which gates `add`, `update`, `status` and the wizard on
     any user catalog, gets no new layout errors.
   - Exception: an agent whose tool restriction a target would drop fails closed at render time,

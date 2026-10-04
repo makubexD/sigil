@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `sigil sync --check` checks every emitted file against the size limits its provider documents
+  (new `provider-limits` rule): a skill's name (64 characters) and description (1024) per the Agent
+  Skills spec on both tools, a Copilot custom agent's body (30,000 characters), and a warning for a
+  `SKILL.md` body over 500 lines (Claude's guidance). The limits are data on each provider's emit
+  spec, so a new provider declares its own.
 - Skills now name their reference files with Markdown links (the visible text is still the
   backtick path), the form Claude's and VS Code's skill docs recommend; VS Code loads only the
   references `SKILL.md` references. The new `reference-links` rule fails `sigil sync --check` on a

@@ -52,6 +52,8 @@ const titleAndBoundarySection: BodySectionSpec = {
   ],
 };
 
+const MAX_AGENT_BODY_CHARS = 30_000;
+
 export const COPILOT_AGENT_SPEC: KindEmitSpec = {
   kind: 'agent',
   outputPath: artifact => `.github/agents/${artifact.frontmatter.name as string}.agent.md`,
@@ -65,4 +67,14 @@ export const COPILOT_AGENT_SPEC: KindEmitSpec = {
   // COPILOT_AGENTS_DOC covers the frontmatter table but never states the .github/agents/ path;
   // the other two do (GitHub's cloud-agent side and VS Code's local-agent side respectively).
   docs: [COPILOT_AGENTS_DOC, COPILOT_CREATE_AGENTS_DOC, VSCODE_CUSTOM_AGENTS_DOC],
+  // GitHub's custom agents configuration: the prompt (the body) is at most 30,000 characters.
+  limits: [
+    {
+      field: 'body',
+      max: MAX_AGENT_BODY_CHARS,
+      unit: 'chars',
+      severity: 'error',
+      doc: COPILOT_AGENTS_DOC,
+    },
+  ],
 };

@@ -13,6 +13,9 @@ import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-typ
 import type { ResolvedArtifact } from '../../../types';
 import { yamlList, yamlScalar } from '../../yaml-util';
 import { CLAUDE_SKILLS_DOC } from '../../doc-refs';
+import { AGENT_SKILLS_LIMITS } from '../../agent-skills-limits';
+
+const MAX_SKILL_BODY_LINES = 500;
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import { renderBoundarySection } from '../../shared/boundary';
@@ -151,6 +154,17 @@ export const CLAUDE_PLUGIN_SKILL_SPEC: KindEmitSpec = {
     UNTRANSLATED_TOKEN_FORBID,
   ],
   docs: [CLAUDE_SKILLS_DOC],
+  limits: [
+    ...AGENT_SKILLS_LIMITS,
+    // Claude's skill guidance: keep SKILL.md under 500 lines and move detail into references.
+    {
+      field: 'body',
+      max: MAX_SKILL_BODY_LINES,
+      unit: 'lines',
+      severity: 'warning',
+      doc: CLAUDE_SKILLS_DOC,
+    },
+  ],
 };
 
 export const CLAUDE_SCAFFOLD_SKILL_SPEC: KindEmitSpec = {

@@ -43,7 +43,7 @@ packs:
     description: >
       Complete setup for Python development.
       Includes the py-generate-tests skill (plus its Python conventions rule and the
-      shared code-reviewer agent as automatically resolved deps), the
+      py-code-reviewer agent as automatically resolved deps), the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
     artifacts:
       - python/py-generate-tests
@@ -56,7 +56,7 @@ packs:
     description: >
       Complete setup for React development.
       Includes the react-generate-tests skill (plus its React conventions rule and the
-      shared code-reviewer agent as automatically resolved deps), the
+      react-code-reviewer agent as automatically resolved deps), the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
     artifacts:
       - react/react-generate-tests

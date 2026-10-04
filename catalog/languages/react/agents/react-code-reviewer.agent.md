@@ -3,7 +3,7 @@ id: react/react-code-reviewer
 kind: agent
 title: Code Reviewer (React)
 description: >-
-  Use to review a diff, file, or scope for bugs, correctness, accessibility, and quality issues
+  Use to review a React diff, file, or scope for bugs, correctness, accessibility, and quality issues
   against the project's documented conventions. Fast per-change generalist gate — makes no edits
   (Bash is read-only by instruction, not sandboxed); returns a severity-ranked report. Use
   proactively after non-trivial React component changes.

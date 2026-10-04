@@ -3,7 +3,7 @@ id: python/py-security-auditor
 kind: agent
 title: Security Auditor (Python)
 description: >-
-  Use to conduct a deep, codebase-wide security audit and produce a prioritized remediation
+  Use to conduct a deep, codebase-wide security audit of a Python codebase and produce a prioritized remediation
   report. Makes no edits (Bash is read-only by instruction, not sandboxed). Sweeps the entire
   codebase for threat-surface issues: hardcoded secrets, injection, unsafe deserialization
   (pickle/yaml), and PyPI CVEs. Use proactively before releases, when adding authentication or

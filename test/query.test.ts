@@ -85,20 +85,16 @@ describe('F1 — searchArtifacts', () => {
 });
 
 describe('F2 — getArtifactDetail', () => {
-  it('includes reverse dependents for shared/code-reviewer', async () => {
+  it('includes reverse dependents for python/py-code-reviewer', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const targets = getAllTargets();
-    const artifact = resolved.byId.get('shared/code-reviewer')!;
+    const artifact = resolved.byId.get('python/py-code-reviewer')!;
     const detail = getArtifactDetail(artifact, catalog, targets);
 
     assert.ok(
       detail.reverseDependents.includes('python/py-generate-tests'),
       'py-generate-tests uses it',
-    );
-    assert.ok(
-      detail.reverseDependents.includes('react/react-generate-tests'),
-      'react-testing uses it',
     );
   });
 
@@ -146,7 +142,7 @@ describe('F2 — getArtifactDetail', () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const targets = getAllTargets();
-    const artifact = resolved.byId.get('shared/code-reviewer')!;
+    const artifact = resolved.byId.get('python/py-code-reviewer')!;
     const detail = getArtifactDetail(artifact, catalog, targets);
     const lines = formatDetailText(detail);
 

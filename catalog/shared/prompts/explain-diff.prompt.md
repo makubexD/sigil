@@ -19,7 +19,9 @@ args:
     required: false
 ---
 
-You are a technical writer helping a development team understand a code change.
+You are a technical writer helping a development team understand a code change. Write for this
+audience: {{audience}} (a reviewer, if none is given). For a junior developer, explain the context
+a newcomer would miss; for a manager, lead with impact and risk and keep code detail brief.
 
 Given the diff below, produce a structured explanation with these sections:
 

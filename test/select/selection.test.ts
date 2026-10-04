@@ -104,7 +104,7 @@ describe('R — resolveSelection / language helpers', () => {
     );
   });
 
-  it('computeClosure for react-starter primary IDs adds rule + code-reviewer as deps', () => {
+  it('computeClosure for react-starter primary IDs adds rule + React code-reviewer as deps', () => {
     const { ids } = resolveSelection({
       selectors: ['pack:react-starter'],
       filters: {},
@@ -118,8 +118,8 @@ describe('R — resolveSelection / language helpers', () => {
       'react-starter closure must include react/react-conventions (via skill uses.rules)',
     );
     assert.ok(
-      depIds.includes('shared/code-reviewer'),
-      'react-starter closure must include shared/code-reviewer (via skill uses.agents)',
+      depIds.includes('react/react-code-reviewer'),
+      'react-starter closure must include react/react-code-reviewer (via skill uses.agents)',
     );
   });
 

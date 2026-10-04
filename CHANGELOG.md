@@ -106,6 +106,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   typo used to create a new, unregistered language folder) and lists the known ones. `sigil check`,
   and the authoring commands that run it, reject a shared artifact that sets `language:` and a
   language folder with no `language.yaml`.
+- Catalog content: `python/py-generate-tests` and `react/react-generate-tests` now bring the
+  language's own reviewer (`py-code-reviewer`, `react-code-reviewer`) instead of
+  `shared/code-reviewer`, which is now described as the fallback for languages the catalog has no
+  reviewer for. Existing installs keep `shared/code-reviewer`; re-adding the skill or pack brings
+  the language reviewer. Python and React reviewer and auditor descriptions now start with their
+  language; the Python and React security rules are `severity: required` like the others;
+  `csharp/cs-git` is scoped to C# files instead of every file; `shared/explain-diff` now uses its
+  `audience` argument.
 - `sigil move` keeps the moved artifact's `language:` in step with its new namespace: it sets the
   language when moving into `languages/<lang>/` and removes it when moving to `shared/` (a moved
   shared artifact used to keep a stale `language:`).

@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Skills now name their reference files with Markdown links (the visible text is still the
+  backtick path), the form Claude's and VS Code's skill docs recommend; VS Code loads only the
+  references `SKILL.md` references. The new `reference-links` rule fails `sigil sync --check` on a
+  backtick-only mention, and `sigil sync --apply` rewrites it.
 - MCP artifacts reference environment variables with a neutral `{sigil:env:NAME}` token, written
   as `${NAME}` for Claude Code and the portable `.mcp.json` and as `${env:NAME}` for VS Code's
   `mcp.json`. Before, `shared/ado` shipped VS Code's syntax to every tool, so Claude Code passed
@@ -184,6 +188,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sigil sync --apply` corrupted a file whose frontmatter closed with text on the same line
+  (`---# Title`, which the loader accepts): it wrote an empty frontmatter block and moved the real
+  one into the body. The closing fence is now found the way the loader finds it, and a file with no
+  closing fence is refused instead of rewritten.
 - An agent's tool restriction can no longer widen silently. `tools: []` and `disallowedTools: []` are
   schema errors (an empty list emitted no `tools:` line, which both tools read as "every tool"), and
   an agent whose `disallowedTools` would be dropped on a target it ships to (Copilot has no such

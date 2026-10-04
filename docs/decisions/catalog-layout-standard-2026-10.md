@@ -168,5 +168,7 @@ and recommends Markdown links. The catalog's skills mention references as backti
 that counts is checked in VS Code (task V1). The result decides what the `catalog-layout` rule treats
 as "mentioned" and whether skills switch to links.
 
-_Result: pending._ Until it is in, the rule treats a reference as mentioned when `SKILL.md`
-contains its path (`references/<name>`) in any form, backticks or a link.
+_Result: pending_ (probe and instructions: `docs/audits/2026-10-03/`). Meanwhile the catalog follows
+the documented recommendation: skills link each reference (`reference-links`, with a mechanical
+`sync --apply` fix), and `catalog-layout` flags a reference `SKILL.md` never names. If V1 shows
+backtick paths load too, `reference-links` can drop to a warning for imported skills.

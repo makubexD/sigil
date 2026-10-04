@@ -60,13 +60,13 @@ Check the root `package.json` `"workspaces"` glob covers the new path (e.g. `"pa
 ## Step 3 — Scaffold the package
 
 Create `package.json`, `tsconfig.json`, `src/index.ts` (and `src/cli.ts` for `--type=cli`) —
-see `references/templates.md` for the worked examples, all keyed off the runner discovered in
+see [`references/templates.md`](references/templates.md) for the worked examples, all keyed off the runner discovered in
 Step 1.
 
 ## Step 4 — Scaffold the test file (unless `--type=test`)
 
 Create `test/index.test.ts` using the discovered runner's import/assertion style — see
-`references/templates.md` for the Vitest and `node:test` shapes.
+[`references/templates.md`](references/templates.md) for the Vitest and `node:test` shapes.
 
 ## Step 5 — Add to workspace
 

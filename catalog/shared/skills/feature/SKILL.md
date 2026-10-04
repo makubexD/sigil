@@ -46,7 +46,7 @@ tags:
 - **Mode hints:** Phases 0-3 are drafted in conversation and write nothing (plan mode, where
   the tool has one). SPEC, `tasks/todo.md` and the "Plan:" commit are written only after GATE 3
   is approved and edit permission is granted. Phases 4-6 need edit permission. If the current
-  mode doesn't match, say which mode to switch to and continue. `references/examples.md` has
+  mode doesn't match, say which mode to switch to and continue. [`references/examples.md`](references/examples.md) has
   the mode map for Claude Code and VS Code.
 - **Live state** lives in `tasks/todo.md` from GATE 3 on: after each task or phase, update its
   checkbox and a one-line `Status:` header, so `/feature resume` works in a new session.
@@ -142,5 +142,5 @@ docs drift, and list what's left. **GATE 5:** findings fixed · findings deferre
 
 Finish with: tasks done, tests added, commits (hash + title), docs touched, deferred items.
 
-Real prompt examples and mode guidance: `references/examples.md` (read it only when the user
+Real prompt examples and mode guidance: [`references/examples.md`](references/examples.md) (read it only when the user
 asks how to use this skill).

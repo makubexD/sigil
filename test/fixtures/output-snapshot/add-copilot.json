@@ -7,7 +7,7 @@
   ".github/instructions/shared-cli-rules.instructions.md": "6dccc1093e31533bd406a68c588cecbed1b68b8e7f60b2c4f14973ad783418f0",
   ".github/instructions/typescript-ts-conventions.instructions.md": "96d5f46762400c088b3100f6968b3bd96cbbadd49fecb897f4af101072f3fa5b",
   ".github/prompts/shared-explain-diff.prompt.md": "cb069c425ec23b81fbf039c9b66fee78a892ecd8fa7673b219757c62eb02b380",
-  ".github/skills/cli/SKILL.md": "4a0a80828919d66a837bb0d5f2eb72a4f50a5c3d788b90c20a74d48d5b2c9ae3",
+  ".github/skills/cli/SKILL.md": "25f750c009ef07f6589b49845c2333f68596f9fc11d60953cb2de652a2dcb45e",
   ".github/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
   ".github/skills/cli/references/auditor.md": "129d3771e8f16c5d5209d7f914dc90934b559a6ffc019728c6f4fdee6f376581",
   ".github/skills/cli/references/contract.md": "288e89d220a79f217e4a36200ec2e8767715d5fc6ba20d8b8341cb1267b2c739",
@@ -23,6 +23,6 @@
   ".github/skills/cs-generate-tests/SKILL.md": "cc4acdfcc55a66449718d402fb48e3d8b2b146b32b1c6bd03df108b3c155a47a",
   ".github/skills/ts-release/SKILL.md": "9db7c93568f13c481a1d07869373e625698c255ae8fe6420339fdd88d2009d11",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "78ade73c78c46529fd282f6f43b21f000de517b520b842d2340005ceaffb4cf2",
+  ".sigil/manifest.json": "cc54df272eed5307b5efabf6b5d0ee9920becd6e33a5b9a8fc55a4c93b4364c2",
   ".vscode/mcp.json": "2e3f5507877483c1d625d57e896356d8b62154761afe6ae09bd728d3df6455f3"
 }

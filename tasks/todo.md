@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1 (#18), M2 (#19) merged; R2 waiting on user go. M3: P1 done; next T13.
+Status: M3: P1, T13 done (+ sync --apply corruption fix); next T11 provider limits.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -42,7 +42,7 @@ Spec: `SPEC.md`
 - [ ] T11 Provider limits as spec data
 - [ ] T12 Re-verify the cited docs
 - [ ] T14 Claude validator in CI
-- [ ] T13 Markdown links for skill references (docs-backed; V1 at the end confirms the backtick case)
+- [x] T13 Markdown links for skill references (docs-backed; V1 at the end confirms the backtick case)
 - [ ] Phase 5 review
 
 ## Milestone 4: target-layer core (byte-identical)

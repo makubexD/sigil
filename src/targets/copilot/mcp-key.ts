@@ -1,21 +1,18 @@
-import type { EnvSyntax } from '../env-reference';
-
 /**
- * JSON section key where GitHub Copilot stores MCP server configs.
- * Copilot uses `servers` (not `mcpServers` which is the Claude Code convention).
+ * Where Copilot reads MCP servers: the portable format, which VS Code recommends for new servers and
+ * Copilot CLI and VS Code's Agent Host read directly (VSCODE_MCP_DOC, COPILOT_CLI_MCP_DOC). Servers
+ * sit under `mcpServers` in `.mcp.json` at the project root, or in `mcp-config.json` under
+ * `$COPILOT_HOME` (default `~/.copilot`) for the user. VS Code's own `.vscode/mcp.json` and
+ * user-profile `mcp.json` are deprecated; see COPILOT_RETIRED_MCP_DESTINATIONS (./config.ts).
+ *
+ * @module
  */
-export const COPILOT_MCP_SERVERS_KEY = 'servers';
 
-/**
- * Copilot CLI reads project MCP servers from `.mcp.json` under `mcpServers` — never from VS Code's
- * `.vscode/mcp.json` (docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/
- * add-mcp-servers). A project-scope Copilot install writes both files so the server reaches VS Code
- * and the CLI; the 2026-09-27 live-prompt campaign found the CLI never loaded it otherwise.
- */
-export const COPILOT_CLI_MCP_FILE = '.mcp.json';
-export const COPILOT_CLI_MCP_SERVERS_KEY = 'mcpServers';
+/** The JSON key that holds MCP servers in the portable format. */
+export const COPILOT_MCP_SERVERS_KEY = 'mcpServers';
 
-/** `${env:NAME}` — how VS Code's mcp.json files reference an environment variable. */
-export const VSCODE_MCP_ENV_SYNTAX: EnvSyntax = {
-  format: name => '${env:' + name + '}', // documented in VSCODE_VARIABLES_DOC (doc-refs.ts)
-};
+/** The project-level portable MCP file. */
+export const COPILOT_PROJECT_MCP_FILE = '.mcp.json';
+
+/** The user-level portable MCP file, under the `copilot-home` root. */
+export const COPILOT_USER_MCP_FILE = 'mcp-config.json';

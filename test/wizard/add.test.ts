@@ -645,7 +645,7 @@ describe('O — Wizard: config-scope for mcp', () => {
     assert.equal(scopes[0]!.value, 'project');
     assert.equal(scopes[1]!.value, 'user');
 
-    // project scope mcp → .vscode/mcp.json inside projectDir
+    // project scope mcp → the portable .mcp.json inside projectDir
     const projectMcpDest = scopes[0]!.destinations.find(d => d.kind === 'mcp');
     assert.ok(projectMcpDest, 'project scope must have mcp destination');
     assert.ok(
@@ -654,21 +654,21 @@ describe('O — Wizard: config-scope for mcp', () => {
     );
     assert.ok(path.isAbsolute(projectMcpDest.fullPath), 'fullPath must be absolute');
 
-    // user scope → vscode-user root (not homedir), blastRadius all-projects
+    // user scope → copilot-home root ($COPILOT_HOME or ~/.copilot), blastRadius all-projects
     assert.equal(scopes[1]!.blastRadius, 'all-projects');
     const userMcpDest = scopes[1]!.destinations.find(d => d.kind === 'mcp');
     assert.ok(userMcpDest, 'user scope must have mcp destination');
-    assert.equal(userMcpDest.root, 'vscode-user');
-    // Copilot mcp section is 'servers' (VS Code uses servers key, not mcpServers)
+    assert.equal(userMcpDest.root, 'copilot-home');
+    // The portable format keeps servers under mcpServers, as Claude Code does
     assert.equal(
       userMcpDest.section,
-      'servers',
-      `Copilot mcp section must be 'servers', got: ${userMcpDest.section}`,
+      'mcpServers',
+      `Copilot mcp section must be 'mcpServers', got: ${userMcpDest.section}`,
     );
     assert.equal(
       scopes[0]!.destinations.find(d => d.kind === 'mcp')?.section,
-      'servers',
-      'Copilot project mcp section must also be servers',
+      'mcpServers',
+      'Copilot project mcp section must also be mcpServers',
     );
   });
 

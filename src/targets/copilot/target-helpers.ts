@@ -21,19 +21,13 @@ import { basenameOfId } from '../../paths';
 import { buildCopilotInstructions } from './build-helpers';
 import { emitFile, specFor } from '../emit-files';
 import type { KindEmitSpec } from '../spec-types';
-import {
-  COPILOT_MCP_SERVERS_KEY,
-  COPILOT_CLI_MCP_FILE,
-  COPILOT_CLI_MCP_SERVERS_KEY,
-  VSCODE_MCP_ENV_SYNTAX,
-} from './mcp-key';
+import { COPILOT_MCP_SERVERS_KEY } from './mcp-key';
 import { expandEnvTokens, PORTABLE_MCP_ENV_SYNTAX } from '../env-reference';
-import type { EnvSyntax } from '../env-reference';
 
 /**
  * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
- * VS Code has NO distinct "local" MCP scope — project and local both resolve to the same
- * .vscode/mcp.json. So only two scopes are offered: Project (workspace) and User (profile).
+ * Copilot has no distinct "local" MCP scope — project and local both resolve to the project's
+ * .mcp.json. So only two scopes are offered: Project (.mcp.json) and User (mcp-config.json).
  */
 export const CONFIG_SCOPES = [
   {
@@ -41,30 +35,22 @@ export const CONFIG_SCOPES = [
     precedence: 1,
     shared: true,
     blastRadius: 'project' as const,
-    description: 'workspace — .vscode/mcp.json + .mcp.json (Copilot CLI), git-committed',
+    description: 'workspace — .mcp.json, git-committed',
   },
   {
     value: 'user' as ConfigScope,
     precedence: 2,
     shared: false,
     blastRadius: 'all-projects' as const,
-    description: 'VS Code user-profile — all workspaces',
+    description: 'user — ~/.copilot/mcp-config.json, all workspaces',
   },
 ];
 
-/** The files one scope's mcp install writes: VS Code's, plus `.mcp.json` for Copilot CLI (project). */
+/** The file one scope's mcp install writes, with the JSON key its servers sit under. */
 function mcpDestinations(
   scope: ConfigScope,
 ): { file: string; root: ConfigRoot; section: string }[] {
-  const vscode = {
-    ...resolveCopilotConfigDestination('mcp', scope),
-    section: COPILOT_MCP_SERVERS_KEY,
-  };
-  if (scope === 'user') return [vscode];
-  return [
-    vscode,
-    { file: COPILOT_CLI_MCP_FILE, root: 'project', section: COPILOT_CLI_MCP_SERVERS_KEY },
-  ];
+  return [{ ...resolveCopilotConfigDestination('mcp', scope), section: COPILOT_MCP_SERVERS_KEY }];
 }
 
 /** Builds one scope's mcp destinations (the same files buildMcpConfigOps writes), or []. */
@@ -131,55 +117,26 @@ export function buildArtifactFiles(
 
 type McpArtifact = NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>;
 
-/** The servers key and env-reference syntax of one MCP file. */
-interface McpFileFormat {
-  readonly key: string;
-  readonly env: EnvSyntax;
-}
-
-/** VS Code's mcp.json files. */
-const VSCODE_MCP_FORMAT: McpFileFormat = {
-  key: COPILOT_MCP_SERVERS_KEY,
-  env: VSCODE_MCP_ENV_SYNTAX,
-};
-/** The portable .mcp.json Copilot CLI reads (shared with Claude Code). */
-const PORTABLE_MCP_FORMAT: McpFileFormat = {
-  key: COPILOT_CLI_MCP_SERVERS_KEY,
-  env: PORTABLE_MCP_ENV_SYNTAX,
-};
-
-/** Builds one mcp ConfigMergeOp: the server under `key` (VS Code `servers` unless told otherwise). */
-export function buildMcpConfigOp(
-  artifact: McpArtifact,
-  dest: ReturnType<typeof resolveCopilotConfigDestination>,
-  format: McpFileFormat = VSCODE_MCP_FORMAT,
-): ConfigMergeOp {
-  const fm = artifact.frontmatter;
-  const server = fm.server as Record<string, unknown>;
-  const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
-  const { description: _d, ...authored } = server as Record<string, unknown>;
-  void _d;
-  const serverConfig = expandEnvTokens(authored, format.env);
-  const key = format.key;
-  return {
-    file: dest.file,
-    root: dest.root,
-    fragment: { [key]: { [serverName]: serverConfig } },
-    strategy: { [key]: 'object-spread' },
-    section: key,
-  };
-}
-
 /**
- * Every op one mcp install needs: VS Code's file for the scope, plus — for the project scope — the
- * portable `.mcp.json` Copilot CLI reads (see COPILOT_CLI_MCP_FILE). The user scope stays VS
- * Code-only; Copilot CLI's user file (`~/.copilot/mcp-config.json`) is not a sigil root.
+ * The op one mcp install needs for `scope`: the server, its `{sigil:env:NAME}` tokens written as
+ * `${NAME}` (the syntax GitHub documents for Copilot's MCP files), under `mcpServers` in the
+ * scope's portable file (./config.ts).
  */
 export function buildMcpConfigOps(artifact: McpArtifact, scope: ConfigScope): ConfigMergeOp[] {
-  const ops = [buildMcpConfigOp(artifact, resolveCopilotConfigDestination('mcp', scope))];
-  if (scope !== 'user') {
-    const cli = { file: COPILOT_CLI_MCP_FILE, root: 'project' as const };
-    ops.push(buildMcpConfigOp(artifact, cli, PORTABLE_MCP_FORMAT));
-  }
-  return ops;
+  const dest = resolveCopilotConfigDestination('mcp', scope);
+  const fm = artifact.frontmatter;
+  const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
+  const { description: _d, ...authored } = fm.server as Record<string, unknown>;
+  void _d;
+  const serverConfig = expandEnvTokens(authored, PORTABLE_MCP_ENV_SYNTAX);
+  const key = COPILOT_MCP_SERVERS_KEY;
+  return [
+    {
+      file: dest.file,
+      root: dest.root,
+      fragment: { [key]: { [serverName]: serverConfig } },
+      strategy: { [key]: 'object-spread' },
+      section: key,
+    },
+  ];
 }

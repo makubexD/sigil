@@ -41,7 +41,7 @@ function writeReversedConfigFile(
 
 /** Reverse-merges and removes sigil's contribution from one config-merge file; returns true
  * if it counted as removed (write succeeded or the file was deleted after emptying). */
-function reverseMergeOneConfigFile(
+export function reverseMergeOneConfigFile(
   cf: NonNullable<ManifestEntry['configFiles']>[number],
   projectDir: string,
 ): boolean {

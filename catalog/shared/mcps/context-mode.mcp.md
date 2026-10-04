@@ -19,4 +19,4 @@ on your system PATH (install it separately before using this artifact).
 
 **Install target:**
 - Claude Code: merged into `.mcp.json` under `mcpServers.context-mode`
-- Copilot (VS Code): merged into `.vscode/mcp.json` under `servers.context-mode`
+- Copilot (VS Code, Copilot CLI): merged into `.mcp.json` under `mcpServers.context-mode` (user scope: `~/.copilot/mcp-config.json`)

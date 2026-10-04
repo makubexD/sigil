@@ -25,7 +25,7 @@ the current directory (`.`).
 
 **Install target:**
 - Claude Code: merged into `.mcp.json` under `mcpServers.filesystem`
-- Copilot (VS Code): merged into `.vscode/mcp.json` under `servers.filesystem`
+- Copilot (VS Code, Copilot CLI): merged into `.mcp.json` under `mcpServers.filesystem` (user scope: `~/.copilot/mcp-config.json`)
 
 **Security note:** The server has access to the directory path you pass as its argument.
 Scope it to a specific subdirectory if you want to restrict access (replace `.` with

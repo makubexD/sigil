@@ -131,9 +131,11 @@ export function applyConfigEntry(
   entry: ManifestEntry,
   opts: UpdateOptions,
   freshOps: readonly ConfigMergeOp[],
+  isRetired: (cf: ManifestConfigMerge) => boolean = () => false,
 ): ConfigEntryResult {
   const result: ConfigEntryResult = { wrote: false, skipped: 0 };
-  for (const cf of entry.configFiles ?? []) {
+  // A record at a retired file was already moved, previewed or reported by moveRetiredFragments.
+  for (const cf of (entry.configFiles ?? []).filter(c => !isRetired(c))) {
     const outcome = updateFromCatalog(cf, entry, opts, freshOps);
     if (outcome === 'wrote') result.wrote = true;
     if (outcome === 'skipped') result.skipped++;

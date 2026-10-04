@@ -1,7 +1,7 @@
 /**
  * MCP configs reference environment variables through a neutral `{sigil:env:NAME}` token that each
  * target expands into the syntax of the file it writes: `${NAME}` for Claude Code's MCP files and
- * the portable `.mcp.json`, `${env:NAME}` for VS Code's `mcp.json`. No catalog value ships a
+ * Copilot's portable files (GitHub documents `$VAR` / `${VAR}`). No catalog value ships a
  * provider's syntax, an organisation name, or a floating package tag.
  */
 import { describe, it } from 'node:test';
@@ -48,11 +48,10 @@ describe('ADO MCP install', () => {
     });
   });
 
-  it('should write ${env:NAME} for VS Code and ${NAME} in the portable .mcp.json for Copilot', async () => {
+  it('should write ${NAME} in the portable .mcp.json, the only file Copilot gets', async () => {
     await withTempDirAsync(async dir => {
       await add(dir, 'copilot', ['mcp:shared/ado']);
-      const vscode = serverIn(dir, '.vscode/mcp.json', 'servers');
-      assert.ok((vscode.args as string[]).includes('${env:ADO_ORG}'));
+      assert.equal(fs.existsSync(path.join(dir, '.vscode/mcp.json')), false);
       const portable = serverIn(dir, '.mcp.json', 'mcpServers');
       assert.ok((portable.args as string[]).includes('${ADO_ORG}'));
     });

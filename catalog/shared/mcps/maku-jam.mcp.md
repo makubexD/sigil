@@ -19,4 +19,4 @@ Installs the MakuJam remote MCP server, connecting via HTTP to `https://mcp.jam.
 
 **Install target:**
 - Claude Code: merged into `.mcp.json` under `mcpServers.maku-jam`
-- Copilot (VS Code): merged into `.vscode/mcp.json` under `servers.maku-jam`
+- Copilot (VS Code, Copilot CLI): merged into `.mcp.json` under `mcpServers.maku-jam` (user scope: `~/.copilot/mcp-config.json`)

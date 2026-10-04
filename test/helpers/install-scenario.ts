@@ -62,15 +62,15 @@ export async function add(
   });
 }
 
-/** Non-interactive `sigil update --yes` in `dir`. */
-export async function update(dir: string, target: string): Promise<void> {
+/** Non-interactive `sigil update --yes` in `dir` (`--dry-run` when asked). */
+export async function update(dir: string, target: string, dryRun = false): Promise<void> {
   await runUpdate([], {
     projectDir: dir,
     target,
     catalogDir: CATALOG,
     packs: PACKS,
     force: false,
-    dryRun: false,
+    dryRun,
     yes: true,
   });
 }

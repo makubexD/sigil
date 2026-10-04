@@ -18,6 +18,7 @@ import type { ManifestEntry, Manifest } from '../manifest/types';
 import type { ResolvedCatalog, Target } from '../types';
 import { SigilError } from '../errors';
 import { applyConfigEntry, isConfigEntry } from './update-config';
+import { isAtRetiredDestination, moveRetiredFragments } from './update-config-move';
 import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
@@ -103,7 +104,13 @@ async function updateConfigOutcome(
 ): Promise<EntryUpdateOutcome> {
   const { opts } = ctx;
   const freshOps = await catalogConfigOps(entry.id, ctx, opts.projectDir);
-  const { wrote, skipped } = applyConfigEntry(entry, opts, freshOps);
+  const retired = ctx.target.retiredConfigDestinations ?? [];
+  const moved = moveRetiredFragments(entry, opts, freshOps, retired);
+  const applied = applyConfigEntry(entry, opts, freshOps, cf =>
+    isAtRetiredDestination(cf, retired),
+  );
+  const wrote = moved.wrote || applied.wrote;
+  const skipped = moved.skipped + applied.skipped;
   const pending = wrote && !!opts.dryRun;
   return { updated: wrote, pending, skippedDriftCount: skipped, orphaned: false };
 }

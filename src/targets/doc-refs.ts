@@ -277,23 +277,22 @@ export const CLAUDE_PLUGIN_MARKETPLACES_DOC: DocRef = {
     'src/targets/claude-code/target-helpers.ts buildMarketplaceJson() emits.',
 };
 
-/** VS Code's `${env:Name}` env-variable syntax (VSCODE_MCP_ENV_SYNTAX in copilot/mcp-key.ts). */
-export const VSCODE_VARIABLES_DOC: DocRef = {
-  url: 'https://code.visualstudio.com/docs/reference/variables-reference#_environment-variables',
-  title: 'VS Code — Variables reference (Environment variables)',
-  verifiedOn: '2026-10-03',
-  covers:
-    'the ${env:Name} syntax VS Code substitutes for an environment variable in its config files.',
+/** The `${NAME}` env-variable syntax GitHub documents for Copilot's MCP JSON (`$VAR`, `${VAR}`). */
+export const COPILOT_MCP_VARIABLES_DOC: DocRef = {
+  url: 'https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/extend-coding-agent-with-mcp#variable-substitution',
+  title: 'GitHub Docs — MCP for Copilot cloud agent (Variable substitution)',
+  verifiedOn: '2026-10-04',
+  covers: 'the ${VAR} syntax sigil writes in Copilot MCP files (cloud agent; VS Code: check F4).',
 };
 
 /** `.vscode/mcp.json` — VS Code's own MCP servers doc, the workspace-scope configuration file. */
 export const VSCODE_MCP_DOC: DocRef = {
   url: 'https://code.visualstudio.com/docs/copilot/customization/mcp-servers',
   title: 'VS Code — Add and manage MCP servers',
-  verifiedOn: '2026-10-03',
+  verifiedOn: '2026-10-04',
   covers:
-    '.vscode/mcp.json (top-level `servers`), which copilot/config.ts merges into and VS Code now ' +
-    'lists as deprecated in favour of the portable `.mcp.json` (`mcpServers`).',
+    'the portable MCP files VS Code recommends (.mcp.json, ~/.copilot/mcp-config.json; mcpServers) ' +
+    'that copilot/config.ts writes, and the deprecated .vscode/mcp.json and user-profile files.',
 };
 
 /**
@@ -305,7 +304,7 @@ export const COPILOT_CLI_MCP_DOC: DocRef = {
   title: 'GitHub Docs — Adding MCP servers for GitHub Copilot CLI',
   verifiedOn: '2026-10-03',
   covers:
-    'Project-level .mcp.json (mcpServers) that a project-scope copilot mcp install also merges ' +
-    'into (buildMcpConfigOps, src/targets/copilot/target-helpers.ts), because Copilot CLI never ' +
-    'reads .vscode/mcp.json.',
+    'Project-level .mcp.json (mcpServers) that a project-scope copilot mcp install merges into ' +
+    '(buildMcpConfigOps, src/targets/copilot/target-helpers.ts); Copilot CLI never reads ' +
+    '.vscode/mcp.json.',
 };

@@ -66,9 +66,7 @@ function printDryRunPreview(nextVersion: string, doVerify: boolean): void {
   console.log(`    • Write package.json version: ${nextVersion}`);
   console.log(`    • Write package-lock.json version: ${nextVersion}`);
   if (doVerify) {
-    console.log(
-      `    • Run: ${RELEASE_GATE.join(' && ')}`,
-    );
+    console.log(`    • Run: ${RELEASE_GATE.join(' && ')}`);
   }
   console.log('    • Promote CHANGELOG.md [Unreleased] → ' + `[${nextVersion}] - <today>`);
   console.log(`    • git commit -m "release: v${nextVersion}"`);

@@ -16,6 +16,9 @@ import path from 'path';
 import type { Dirent } from 'fs';
 import { SKILL_FILENAME } from '../../paths';
 import { parseMarkdown, stemOf } from './parse-markdown';
+import { readReferences, skillFolderExtras } from '../../load-references';
+import { SourceFileRejected } from './parse-markdown';
+import type { ReferenceFile } from '../../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -33,6 +36,8 @@ export interface DiscoveredFile {
   frontmatter: Record<string, unknown>;
   /** Raw body text (everything after the frontmatter block). */
   body: string;
+  /** A skill's flat references/*.md files, read by the same rules the catalog loader applies. */
+  references?: ReferenceFile[];
 }
 
 /** A file found but not classifiable as a known artifact kind. */
@@ -50,6 +55,16 @@ export interface DiscoverResult {
 
 /** Classifies one directory entry within a flat kind dir (rules/ or agents/). */
 type ClassifyResult = { discovered?: DiscoveredFile; unrecognised?: UnrecognisedFile };
+
+/** Runs `build`; a source file import won't read becomes a "not imported" entry instead. */
+function discoverOrReport(relativePath: string, build: () => DiscoveredFile): ClassifyResult {
+  try {
+    return { discovered: build() };
+  } catch (err) {
+    if (!(err instanceof SourceFileRejected)) throw err;
+    return { unrecognised: { relativePath, reason: `not imported: ${err.message}` } };
+  }
+}
 
 /** Builds a DiscoveredFile record for a flat-kind (rule/agent) source markdown file. */
 function buildFlatKindDiscoveredFile(
@@ -76,7 +91,9 @@ function classifyFlatKindEntry(
   }
   const filePath = path.join(dir, entry.name);
   const relativePath = path.join(dirName, entry.name);
-  return { discovered: buildFlatKindDiscoveredFile(filePath, relativePath, kind) };
+  return discoverOrReport(relativePath, () =>
+    buildFlatKindDiscoveredFile(filePath, relativePath, kind),
+  );
 }
 
 /** Discovers a flat kind directory (`rules/` or `agents/`) — one `.md` file per artifact. */
@@ -113,24 +130,17 @@ function buildSkillDiscoveredFile(skillFile: string, skillName: string): Discove
 
 /** Classifies one directory entry within `skills/` — a per-skill subdirectory. */
 function classifySkillEntry(entry: Dirent, skillsDir: string): ClassifyResult {
-  if (!entry.isDirectory()) {
-    return {
-      unrecognised: {
-        relativePath: path.join('skills', entry.name),
-        reason: 'Expected a directory per skill (skills/<name>/SKILL.md)',
-      },
-    };
-  }
+  const notASkill = (reason: string): ClassifyResult => ({
+    unrecognised: { relativePath: path.join('skills', entry.name), reason },
+  });
+  if (!entry.isDirectory())
+    return notASkill('Expected a directory per skill (skills/<name>/SKILL.md)');
   const skillFile = path.join(skillsDir, entry.name, SKILL_FILENAME);
-  if (!fs.existsSync(skillFile)) {
-    return {
-      unrecognised: {
-        relativePath: path.join('skills', entry.name),
-        reason: `Missing ${SKILL_FILENAME} inside skill directory`,
-      },
-    };
-  }
-  return { discovered: buildSkillDiscoveredFile(skillFile, entry.name) };
+  if (!fs.existsSync(skillFile))
+    return notASkill(`Missing ${SKILL_FILENAME} inside skill directory`);
+  return discoverOrReport(path.join('skills', entry.name, SKILL_FILENAME), () =>
+    buildSkillDiscoveredFile(skillFile, entry.name),
+  );
 }
 
 /** Discovers `skills/<name>/SKILL.md` — one directory per artifact. */
@@ -142,10 +152,32 @@ function discoverSkillsDir(sourceDir: string): DiscoverResult {
 
   for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
     const result = classifySkillEntry(entry, skillsDir);
-    if (result.discovered) discovered.push(result.discovered);
+    if (result.discovered) {
+      const { file, notShipped } = withReferences(result.discovered, skillsDir);
+      discovered.push(file);
+      unrecognised.push(...notShipped);
+    }
     if (result.unrecognised) unrecognised.push(result.unrecognised);
   }
   return { discovered, unrecognised };
+}
+
+/**
+ * Attaches a skill's references (same rules as the catalog loader) and lists what it carries that
+ * can't ship — nested reference folders, assets/, scripts/, other files — so import reports them
+ * instead of dropping them silently.
+ */
+function withReferences(
+  file: DiscoveredFile,
+  skillsDir: string,
+): { file: DiscoveredFile; notShipped: UnrecognisedFile[] } {
+  const skillDir = path.join(skillsDir, file.slug);
+  const { references, skipped } = readReferences(skillDir);
+  const notShipped = [...skipped, ...skillFolderExtras(skillDir)].map(s => ({
+    relativePath: path.join('skills', path.relative(skillsDir, s.path)),
+    reason: `not imported: ${s.reason}`,
+  }));
+  return { file: { ...file, references }, notShipped };
 }
 
 /**

@@ -14,7 +14,7 @@
  *
  * @module
  */
-import fs from 'fs';
+import { readRegularFile } from '../../safe-read';
 import path from 'path';
 import { FORBIDDEN_KEYS } from '../../config-merge/primitives';
 
@@ -120,12 +120,25 @@ function parseFrontmatterLines(frontmatterText: string): Record<string, unknown>
   return fm;
 }
 
-/** Parse a markdown file with simple, tolerant frontmatter (see module doc for why). */
+/** A source file import will not read (a link, not a regular file, or too large), and why. */
+export class SourceFileRejected extends Error {}
+
+/** A source artifact larger than this is not imported (catalog artifacts are a few KiB). */
+const MAX_SOURCE_KIB = 1024;
+const KIB = 1024;
+
+/**
+ * Parse a markdown file with simple, tolerant frontmatter (see module doc for why). The file is read
+ * through safe-read.ts (a regular file, never a followed link, within a size cap); anything else
+ * throws SourceFileRejected, which discovery reports as not imported.
+ */
 export function parseMarkdown(filePath: string): {
   frontmatter: Record<string, unknown>;
   body: string;
 } {
-  const raw = fs.readFileSync(filePath, 'utf-8');
+  const read = readRegularFile(filePath, { maxBytes: MAX_SOURCE_KIB * KIB });
+  if ('reason' in read) throw new SourceFileRejected(read.reason);
+  const raw = read.content;
 
   // Must start with ---
   if (!raw.startsWith(FRONTMATTER_FENCE)) {

@@ -16,7 +16,7 @@
  * @module
  */
 import fs from 'fs';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../../../frontmatter-parse';
 import {
   defaultEditorialModelClient,
   type EditorialModelClient,
@@ -95,7 +95,7 @@ async function runOneEditorialTask(
   modelClient: EditorialModelClient,
 ): Promise<EditorialResult> {
   const raw = fs.readFileSync(task.filePath, 'utf-8');
-  const parsed = matter(raw);
+  const parsed = parseFrontmatter(raw);
   const before = { ...parsed.data };
 
   let proposal: EditorialProposal;

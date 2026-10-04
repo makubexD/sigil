@@ -14,6 +14,7 @@ import { writeArtifactFrontmatter } from '../frontmatter';
 import { checkSourceArtifact } from '../check-source';
 import { SKILL_FILENAME } from '../../paths';
 import type { MovePlan } from './plan';
+import { languagePatch } from './language';
 
 export interface MoveResult {
   ok: boolean;
@@ -59,7 +60,7 @@ function updateMovedId(plan: MovePlan, rollbackSteps: Array<() => void>): void {
     }
   });
 
-  writeArtifactFrontmatter(movedFilePath, { id: plan.newId });
+  writeArtifactFrontmatter(movedFilePath, { id: plan.newId, ...languagePatch(plan) });
 }
 
 /** Replaces the first occurrence of `oldId` with `newId` in an id array, in place. */

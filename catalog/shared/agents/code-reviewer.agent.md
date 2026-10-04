@@ -4,9 +4,9 @@ kind: agent
 name: code-reviewer
 title: Code Reviewer
 description: >-
-  Generic fallback code-review agent for a language with no dedicated reviewer of its own
-  (currently: python, react). Invoke after writing or refactoring code in one of those languages
-  to catch correctness bugs, simplification opportunities, and style issues before committing.
+  Generic fallback code-review agent for a language the catalog has no reviewer for (for example
+  Go, Rust, Java). Invoke after writing or refactoring code in such a language to catch
+  correctness bugs, simplification opportunities, and style issues before committing.
   If a language-specific code reviewer is installed for the file's language instead, prefer that
   one — it additionally checks the project's own convention rules, which this language-agnostic
   agent does not load. Complements the language-specific reviewers rather than duplicating them.

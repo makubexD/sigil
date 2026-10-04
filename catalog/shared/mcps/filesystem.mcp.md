@@ -8,7 +8,7 @@ description: >-
   enabling structured read/write access to local directories via the MCP protocol.
 server:
   command: "npx"
-  args: ["-y", "@modelcontextprotocol/server-filesystem", "."]
+  args: ["-y", "@modelcontextprotocol/server-filesystem@2026.8.31", "."]
 tags: [mcp, filesystem, tools, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)

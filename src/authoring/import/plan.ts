@@ -14,6 +14,7 @@ import { computeDestinationPath } from '../move/plan';
 import { serializeYamlEntry } from '../frontmatter';
 import { translateFrontmatter } from './translate';
 import type { DiscoveredFile } from './discover';
+import type { ReferenceFile } from '../../types';
 import type { CatalogFrontmatter } from './translate';
 import { namespaceDir } from '../../catalog-layout';
 
@@ -36,6 +37,8 @@ export interface ImportItem {
   conflicts: boolean;
   /** True when the description was absent from the source and a generic fallback was used. */
   descriptionSynthesized?: boolean | undefined;
+  /** A skill's references/*.md files, written beside its SKILL.md. */
+  references?: ReferenceFile[] | undefined;
 }
 
 export interface ImportPlan {
@@ -169,6 +172,7 @@ function buildImportItem(file: DiscoveredFile, opts: PlanOptions): ImportItem {
     droppedFields: t.droppedFields,
     conflicts: fs.existsSync(destPath),
     descriptionSynthesized: t.descriptionSynthesized,
+    references: file.references,
   };
 }
 

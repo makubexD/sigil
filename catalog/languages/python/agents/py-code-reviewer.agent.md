@@ -3,7 +3,7 @@ id: python/py-code-reviewer
 kind: agent
 title: Code Reviewer (Python)
 description: >-
-  Use to review a diff, file, or scope for bugs, correctness, security, and quality issues against
+  Use to review a Python diff, file, or scope for bugs, correctness, security, and quality issues against
   the project's documented conventions. Fast per-change generalist gate — makes no edits (Bash is
   read-only by instruction, not sandboxed); returns a severity-ranked report. Use proactively
   after non-trivial Python changes.

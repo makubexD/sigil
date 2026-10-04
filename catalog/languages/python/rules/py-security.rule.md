@@ -4,6 +4,7 @@ kind: rule
 title: Security (Python)
 description: Python security invariants — secrets handling, injection (SQL/shell/YAML), pickle/deserialization bans, secure randomness
 language: python
+severity: required
 appliesTo:
   - "**/*.py"
 tags:

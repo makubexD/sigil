@@ -23,7 +23,8 @@ export interface CatalogFrontmatter {
   kind: 'skill' | 'agent' | 'rule';
   title: string;
   description: string;
-  language: string;
+  /** Absent for a shared artifact. */
+  language?: string | undefined;
   tags: string[];
   // rule-specific
   appliesTo?: string[] | undefined;
@@ -126,5 +127,5 @@ export function slugToTitle(slug: string, displayName: string, language?: string
   const words = withoutPrefix
     .split('-')
     .map(w => ACRONYM_MAP[w.toLowerCase()] ?? w.charAt(0).toUpperCase() + w.slice(1));
-  return `${words.join(' ')} (${displayName})`;
+  return displayName ? `${words.join(' ')} (${displayName})` : words.join(' ');
 }

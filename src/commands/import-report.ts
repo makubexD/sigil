@@ -6,7 +6,7 @@
  * @module
  */
 import path from 'node:path';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../frontmatter-parse';
 import type { LoadedCatalog, Target, ArtifactKind } from '../types';
 import { checkSourceArtifact } from '../authoring/check-source';
 import { normPath, basenameOfId } from '../paths';
@@ -74,7 +74,7 @@ function printRenderedValidation(
   catalog: LoadedCatalog,
   targets: Target[],
 ): void {
-  const parsed = matter(rendered);
+  const parsed = parseFrontmatter(rendered);
   const fm = parsed.data as Record<string, unknown>;
   const virtArtifact = {
     id: fm.id as string,

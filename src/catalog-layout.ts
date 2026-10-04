@@ -8,7 +8,7 @@
  */
 import path from 'node:path';
 import type { ArtifactKind } from './types';
-import { kindOfSourceFile } from './kinds';
+import { KIND_REGISTRY, kindOfSourceFile } from './kinds';
 import { ID_PART_COUNT } from './paths';
 
 /** The namespace for artifacts that belong to no language. */
@@ -70,4 +70,85 @@ export function namespaceDir(catalogRoot: string, prefix: string): string {
   return prefix === SHARED_NAMESPACE
     ? path.join(catalogRoot, SHARED_NAMESPACE)
     : path.join(catalogRoot, LANGUAGES_DIR, prefix);
+}
+
+/** What the layout checks need to know about an artifact. */
+export interface PlacedArtifact {
+  readonly id: string;
+  readonly kind: ArtifactKind;
+  readonly filePath: string;
+  readonly frontmatter: Record<string, unknown>;
+}
+
+/** The registered languages (any lookup by language id). */
+export interface LanguageRegistry {
+  has(language: string): boolean;
+}
+
+/**
+ * Problems with the namespace itself: a shared artifact that names a language, or a language
+ * folder with no language.yaml. Shared by `sigil check` (checkNamespace) and `catalog-layout`.
+ */
+export function namespaceProblems(
+  catalogRoot: string,
+  languages: LanguageRegistry,
+  artifact: PlacedArtifact,
+): string[] {
+  const { namespace } = locateSource(catalogRoot, artifact.filePath);
+  if (namespace === SHARED_NAMESPACE && artifact.frontmatter.language !== undefined) {
+    return [
+      'a shared artifact must not set language: — drop it, or move the artifact under languages/<lang>/',
+    ];
+  }
+  if (namespace && namespace !== SHARED_NAMESPACE && !languages.has(namespace)) {
+    return [
+      `language '${namespace}' has no languages/${namespace}/language.yaml — add one (sigil import --create-language does) or use an existing language`,
+    ];
+  }
+  return [];
+}
+
+/** Every layout problem with where `artifact` sits and what its frontmatter says about it. */
+export function positionProblems(
+  catalogRoot: string,
+  languages: LanguageRegistry,
+  artifact: PlacedArtifact,
+): string[] {
+  const location = locateSource(catalogRoot, artifact.filePath);
+  if (!location.namespace) return ['sits outside both namespaces (shared/ or languages/<lang>/)'];
+  return [
+    ...idProblems(artifact, location.namespace),
+    ...folderProblems(artifact, location.kindDir),
+    ...languageFieldProblems(artifact, location.namespace),
+    ...namespaceProblems(catalogRoot, languages, artifact),
+  ];
+}
+
+function idProblems(artifact: PlacedArtifact, namespace: string): string[] {
+  const prefix = splitId(artifact.id, artifact.kind)?.prefix;
+  return prefix && prefix !== namespace
+    ? [`id prefix '${prefix}' doesn't match its namespace folder '${namespace}'`]
+    : [];
+}
+
+function folderProblems(artifact: PlacedArtifact, kindDir: string | undefined): string[] {
+  const descriptor = KIND_REGISTRY[artifact.kind];
+  const problems: string[] = [];
+  if (kindDir !== descriptor.sourceDir) {
+    problems.push(
+      `a ${artifact.kind} belongs in ${descriptor.sourceDir}/, not ${kindDir ?? '(none)'}/`,
+    );
+  }
+  const name = artifact.frontmatter.name;
+  const folder = path.basename(path.dirname(artifact.filePath));
+  if (descriptor.isDirectoryBacked && typeof name === 'string' && folder !== name) {
+    problems.push(`skill folder '${folder}' doesn't match name '${name}'`);
+  }
+  return problems;
+}
+
+function languageFieldProblems(artifact: PlacedArtifact, namespace: string): string[] {
+  const language = artifact.frontmatter.language;
+  if (namespace === SHARED_NAMESPACE || language === undefined || language === namespace) return [];
+  return [`language: '${String(language)}' doesn't match its namespace folder '${namespace}'`];
 }

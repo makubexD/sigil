@@ -9,7 +9,7 @@ uses:
   rules:
     - react/react-conventions
   agents:
-    - shared/code-reviewer
+    - react/react-code-reviewer
 tags:
   - react
   - testing

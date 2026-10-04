@@ -5,8 +5,11 @@ title: Git (.NET / C#)
 description: .NET/C#-specific git additions — secrets hygiene, Obsolete-based deprecation, dotnet pre-push gate.
 language: csharp
 appliesTo:
-  - "**/*"
-appliesToRationale: Matches shared/git — it governs commit/PR workflow, not any specific file.
+  - "**/*.cs"
+  - "**/*.csproj"
+  - "**/*.sln"
+  - ".gitignore"
+appliesToRationale: Scoped to C# source, project and solution files, and .gitignore — the shared/git baseline it extends is repeated in every language's git rule, so "**/*" loaded it on every file of every stack and twice beside another language's (the other language git rules were scoped the same way after the 2026-09-27 live-prompt campaign).
 extends:
   - shared/git
 tags:

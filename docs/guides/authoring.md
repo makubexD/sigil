@@ -19,7 +19,9 @@ and delegates review to the shared code-reviewer agent.
 Naming convention: artifacts in a language namespace carry that language's short prefix in their
 name (`cs-` for C#, `py-`, `ts-`, `ng-`, `react-`), so `csharp/cs-generate-tests`, not
 `csharp/generate-tests`. `sigil new` uses the `--name` exactly as you type it and `validate` does not
-enforce the prefix, so include it yourself. Shared artifacts (`shared/...`) have no prefix.
+enforce the prefix, so include it yourself. Shared artifacts (`shared/...`) have no prefix and no
+`language:`. `--language` must name a registered language (a `languages/<lang>/language.yaml`);
+`sigil new` refuses any other, and `sigil check` flags a language folder without one.
 
 ```bash
 # Scaffold the template (or run `sigil new` with no arguments in a terminal for a guided wizard)
@@ -68,6 +70,20 @@ sigil build
 # Use `sigil build --target claude` (or `copilot`) to build just one.
 ```
 
+### Where an artifact goes
+
+The catalog keeps one rule (see `docs/decisions/catalog-layout-standard-2026-10.md`):
+
+| The content…                                | Goes to                                                                                      |
+| ------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| does not vary by language                   | `catalog/shared/<kindDir>/`, with no `language:`                                             |
+| varies with the project's own language      | `catalog/languages/<lang>/<kindDir>/`, one artifact per language (`template:` once measured) |
+| varies with a stack the task itself chooses | one shared **skill** with `references/stack-<stack>.md` files and a table in `SKILL.md`      |
+
+Agents and rules always take the per-language row: they can't load reference files on demand, and
+rules activate by path. When the last two rows both seem to fit, choose per-language. Group
+artifacts with a pack in `packs.yaml`, never with a topic folder.
+
 ### Shared (stack-agnostic) skills
 
 A skill whose guidance applies across stacks omits `language:` and lives under
@@ -81,7 +97,8 @@ when `SKILL.md` or a reference names a `references/<file>` that doesn't exist, o
 `scripts/` path. Write paths relative to the skill root (the folder holding `SKILL.md`), including
 inside reference files. Shared skills belong to no language pack; install them by id
 (`sigil add skill:shared/<name>`) or through a non-language pack (`shared/feature` ships in
-`pack:spec-driven`). `shared/cli` and `shared/wizard` are the worked examples of per-stack
+`pack:spec-driven`, `shared/cli` and `shared/wizard` in `pack:cli-builder`). `shared/cli` and
+`shared/wizard` are the worked examples of per-stack
 references; `shared/feature` shows a stack-less skill with a single `references/examples.md`.
 
 ### Provider-neutral bodies: `{sigil:<term>}`
@@ -171,7 +188,17 @@ sigil import path/to/.ClaudeFoo --language foo --create-language --yes
 
 # Wire deps, polish titles (content-refinement stage, separate from mechanical import)
 sigil patch foo/foo-generate-tests --set-uses-agents shared/code-reviewer
+
+# Artifacts that belong to no language go to catalog/shared/ instead (no language: field)
+sigil import path/to/.ClaudeTools --shared --yes
 ```
+
+Pass exactly one of `--language` and `--shared`. A new language needs `--create-language` (or an
+existing `language.yaml`); without it the items are refused. A skill comes over with its flat
+`references/*.md` files, under the same rules the catalog loads them by, and every file is
+trust-scanned (an error-level finding blocks the whole skill). Anything else a skill folder
+carries (`assets/`, `scripts/`, nested `references/stacks/`) is listed as not imported: flatten
+per-stack folders into `references/stack-<x>.md` first.
 
 Source→catalog field mapping: rule `paths` → `appliesTo`; agent `tools` (comma string) →
 `tools[]`; skill `allowed-tools` → `allowedTools`; `argument-hint` → `argumentHint`;
@@ -351,9 +378,10 @@ are `--<target>-<key>` (Claude: `--claude-model`, `--claude-effort`, `--claude-m
 `--claude-isolation`). `whenToUse`, `userInvocable`, and `skillContext` have no `patch` flags; edit
 the file. `move` (alias `rename`) rewrites only `extends`, `uses.rules`, and `uses.agents` in other
 artifacts that point at the old id; a skill moves its directory and every other kind moves the single
-file. It does **not** touch `packs.yaml` entries, `claude: { skills: [...] }` lists, or the moved
-artifact's own `name:` and `language:` fields. After a move, update those by hand (or with `patch`) and
-run `sigil validate`. Use `--dry-run` first to see the plan.
+file. The moved artifact's `language:` follows its new namespace (set for a language, removed for
+`shared/`). It does **not** touch `packs.yaml` entries, `claude: { skills: [...] }` lists, or the
+moved artifact's own `name:`. After a move, update those by hand (or with `patch`) and run
+`sigil validate`. Use `--dry-run` first to see the plan.
 
 ## Adding a platform target that skips catalog work entirely
 

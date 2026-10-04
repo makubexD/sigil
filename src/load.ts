@@ -4,21 +4,30 @@
  */
 import fs from 'fs';
 import path from 'path';
-import matter from 'gray-matter';
-import { glob } from 'tinyglobby';
+import { parseFrontmatter } from './frontmatter-parse';
+import { glob, globSync } from 'tinyglobby';
 import yaml from 'js-yaml';
 import type { Artifact, LanguageMetadata, LoadedCatalog } from './types';
 import { ALL_KINDS, sourceGlob } from './kinds';
 import { loadReferences } from './load-references';
+import { readRegularFile } from './safe-read';
 import { LANGUAGES_DIR } from './catalog-layout';
+
+/** An artifact file larger than this is skipped (catalog artifacts are a few KiB). */
+const KIB = 1024;
+const MAX_ARTIFACT_KIB = 1024;
+const MAX_ARTIFACT_BYTES = MAX_ARTIFACT_KIB * KIB;
 
 /** One glob per kind, from KIND_REGISTRY's sourceDir/sourceSuffix (SKILL.md for skills). */
 const ARTIFACT_PATTERNS = ALL_KINDS.map(sourceGlob);
 
-/** Loads every language.yaml under catalogDir's languages/ subdirectories into a langId → metadata map. */
-async function loadLanguages(catalogDir: string): Promise<Map<string, LanguageMetadata>> {
+/**
+ * Loads every language.yaml under catalogDir's languages/ subdirectories into a langId → metadata
+ * map. Synchronous so `sigil move`'s post-move check reads the same registry as loadCatalog.
+ */
+export function loadLanguages(catalogDir: string): Map<string, LanguageMetadata> {
   const languages = new Map<string, LanguageMetadata>();
-  const langYamlPaths = await glob(`${LANGUAGES_DIR}/*/language.yaml`, {
+  const langYamlPaths = globSync(`${LANGUAGES_DIR}/*/language.yaml`, {
     cwd: catalogDir,
     absolute: true,
     expandDirectories: false,
@@ -62,7 +71,7 @@ function indexById(artifacts: Artifact[]): Map<string, Artifact> {
  */
 export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
   const skipWarnings: string[] = [];
-  const languages = await loadLanguages(catalogDir);
+  const languages = loadLanguages(catalogDir);
 
   // tinyglobby and fast-glob both return paths in traversal order; sorting keeps every emitted file stable.
   const filePaths = (
@@ -121,14 +130,13 @@ function buildArtifact(
 
 /** Parses one artifact file; returns null and records a skip reason if it should be skipped. */
 function parseArtifactFile(filePath: string, skipWarnings: string[]): Artifact | null {
-  let raw: string;
-  try {
-    raw = fs.readFileSync(filePath, 'utf-8');
-  } catch (err) {
-    throw new Error(`[load] Cannot read file ${filePath}`, { cause: err });
+  const read = readRegularFile(filePath, { maxBytes: MAX_ARTIFACT_BYTES });
+  if ('reason' in read) {
+    skipWarnings.push(`[load] Skipping ${filePath}: ${read.reason}`);
+    return null;
   }
 
-  const parsed = matter(raw);
+  const parsed = parseFrontmatter(read.content);
   const fm = parsed.data as Record<string, unknown>;
   if (missingRequiredField(fm, filePath, skipWarnings)) return null;
 

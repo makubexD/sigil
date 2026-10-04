@@ -5,7 +5,7 @@
  * @module
  */
 import fs from 'fs';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../../frontmatter-parse';
 import type { Artifact, LoadedCatalog } from '../../types';
 import type { TemplateFrontmatter } from '../../schema/index';
 import {
@@ -110,7 +110,7 @@ export function buildRebuiltBody(
 /** Writes `newBody` to `filePath`, preserving the frontmatter block byte-for-byte. */
 function writeArtifactBody(filePath: string, newBody: string): void {
   const raw = fs.readFileSync(filePath, 'utf-8');
-  const parsed = matter(raw);
+  const parsed = parseFrontmatter(raw);
   const contentStart = raw.indexOf(parsed.content);
   fs.writeFileSync(filePath, raw.slice(0, contentStart) + newBody, 'utf-8');
 }

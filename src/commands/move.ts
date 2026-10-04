@@ -8,7 +8,7 @@
  */
 import path from 'node:path';
 import fs from 'node:fs';
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../frontmatter-parse';
 import { globSync } from 'tinyglobby';
 import { confirm, isCancel } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
@@ -17,6 +17,7 @@ import { isInteractiveTTY } from '../wizard';
 import { planMove, executeMove, summarizePlan } from '../authoring/move';
 import type { LoadedCatalog } from '../types';
 import { ALL_KINDS, sourceGlob } from '../kinds';
+import { loadLanguages } from '../load';
 import { SigilError } from '../errors';
 import { requireValidCatalog } from '../cli-helpers';
 
@@ -30,7 +31,7 @@ export interface MoveOptions {
 function parseArtifactSync(filePath: string): LoadedCatalog['artifacts'][number] | undefined {
   try {
     const raw = fs.readFileSync(filePath, 'utf-8');
-    const parsed = matter(raw);
+    const parsed = parseFrontmatter(raw);
     const { id: fmId, kind } = parsed.data as { id?: string; kind?: string };
     if (!fmId || !kind) return undefined;
     return {
@@ -63,7 +64,7 @@ function loadCatalogSync(dir: string): LoadedCatalog {
     .filter((a): a is LoadedCatalog['artifacts'][number] => a !== undefined);
   const byId = new Map(artifacts.map(a => [a.id, a]));
 
-  return { artifacts, byId, languages: new Map(), skipWarnings: [], root: absDir };
+  return { artifacts, byId, languages: loadLanguages(absDir), skipWarnings: [], root: absDir };
 }
 
 /** Prints the dry-run move plan (renames + referrer rewrites), no files touched. */

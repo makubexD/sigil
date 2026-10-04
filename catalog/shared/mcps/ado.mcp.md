@@ -10,8 +10,8 @@ server:
   command: "npx"
   args:
     - "-y"
-    - "@azure-devops/mcp@next"
-    - "cr360dev"
+    - "@azure-devops/mcp@2.10.0"
+    - "{sigil:env:ADO_ORG}"
     - "--authentication"
     - "pat"
     - "-d"
@@ -19,23 +19,23 @@ server:
     - "work"
     - "work-items"
   env:
-    ADO_MCP_PERSONAL_TOKEN: "${env:ADO_MCP_PERSONAL_TOKEN}"
+    ADO_MCP_PERSONAL_TOKEN: "{sigil:env:ADO_MCP_PERSONAL_TOKEN}"
 tags: [mcp, azure-devops, ado, work-items, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 # defaultScope: project  # recommended install scope: project | local | user
 ---
 <!-- slot: details -->
-Installs the `@azure-devops/mcp` server connected to the `cr360dev` organisation,
-authenticated via Personal Access Token, exposing the `core`, `work`, and `work-items`
-ADO modules.
+Installs the `@azure-devops/mcp` server (pinned to 2.10.0) for the Azure DevOps organisation named
+in `ADO_ORG`, authenticated via Personal Access Token, exposing the `core`, `work`, and
+`work-items` ADO modules.
 
-**Requires environment variable:**
-- `ADO_MCP_PERSONAL_TOKEN` — a PAT with read access to the target ADO organisation.
+**Requires environment variables:**
+- `ADO_ORG` — your Azure DevOps organisation name (the `<org>` in `dev.azure.com/<org>`).
+- `ADO_MCP_PERSONAL_TOKEN` — a PAT with read access to that organisation.
 
-**Note on environment variable syntax:** The value `${env:ADO_MCP_PERSONAL_TOKEN}` is
-VS Code input-variable syntax (resolved by Copilot). For a Claude-only install, use
-`${ADO_MCP_PERSONAL_TOKEN}` instead. Sigil stores the value verbatim as authored.
+Set them in the environment your AI tool starts from; sigil writes each tool's own syntax for
+reading them into its config file.
 
 **Install target:**
 - Claude Code: merged into `.mcp.json` under `mcpServers.ado`

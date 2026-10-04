@@ -7,10 +7,10 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadCatalog } from '../load';
+import { loadCatalog, loadLanguages } from '../load';
 import { getAllTargets } from '../targets';
 import { ALL_KINDS, isArtifactKind, sourceRelPath } from '../kinds';
-import { SHARED_NAMESPACE, namespaceDir } from '../catalog-layout';
+import { LANGUAGES_DIR, SHARED_NAMESPACE, namespaceDir } from '../catalog-layout';
 import { isInteractiveTTY, buildEquivalentNewCommand, printEquivalentCommand } from '../wizard';
 import { checkSourceArtifact } from '../authoring/check-source';
 import { normPath } from '../paths';
@@ -104,6 +104,23 @@ function buildNewArtifactHeader(identity: NewArtifactIdentity, inputs: Effective
   });
 }
 
+/** Languages registered in `catalogDir`, from the same registry loadCatalog reads. */
+function registeredLanguages(catalogDir: string): string[] {
+  return [...loadLanguages(catalogDir).keys()].sort();
+}
+
+/** Refuses a language with no language.yaml before anything is written (a typo made a new folder). */
+function assertLanguageRegistered(lang: string, catalogDir: string): void {
+  if (lang === SHARED_NAMESPACE) return;
+  const known = registeredLanguages(catalogDir);
+  if (known.includes(lang)) return;
+  throw new SigilError(`Unknown language '${lang}'.`, {
+    hint:
+      `  Known languages: ${known.join(', ') || '(none yet)'}. Omit --language for a shared artifact,\n` +
+      `  or add catalog/${LANGUAGES_DIR}/${lang}/language.yaml first.`,
+  });
+}
+
 /** Builds the header, writes it to the computed path, and returns that path. Throws if it exists. */
 function writeNewArtifactFile(
   identity: NewArtifactIdentity,
@@ -155,6 +172,7 @@ export async function runNew(kind: string | undefined, opts: NewOptions): Promis
 
   const { name, lang, id } = computeArtifactIdentity(inputs);
   const identity: NewArtifactIdentity = { effectiveKind: inputs.kind, id, name, lang };
+  assertLanguageRegistered(lang, opts.catalogDir);
   const outPath = writeNewArtifactFile(identity, inputs, opts.catalogDir);
 
   console.log(`✓ Created: ${outPath}`);

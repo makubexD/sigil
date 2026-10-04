@@ -43,7 +43,7 @@ packs:
     description: >
       Complete setup for Python development.
       Includes the py-generate-tests skill (plus its Python conventions rule and the
-      shared code-reviewer agent as automatically resolved deps), the
+      py-code-reviewer agent as automatically resolved deps), the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
     artifacts:
       - python/py-generate-tests
@@ -56,7 +56,7 @@ packs:
     description: >
       Complete setup for React development.
       Includes the react-generate-tests skill (plus its React conventions rule and the
-      shared code-reviewer agent as automatically resolved deps), the
+      react-code-reviewer agent as automatically resolved deps), the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
     artifacts:
       - react/react-generate-tests
@@ -126,3 +126,14 @@ packs:
       (addyosmani/agent-skills), installed separately. Works with any language.
     artifacts:
       - shared/feature
+
+  - name: cli-builder
+    displayName: CLI Builder
+    description: >
+      Design, build, audit, or refactor a command-line interface and the setup wizard layered over
+      it. Includes the cli and wizard skills (with per-stack guidance for Node/TypeScript, Python,
+      Go, Rust and .NET), their CLI and wizard rules, and the two auditor agents as automatically
+      resolved deps. Works with any language.
+    artifacts:
+      - shared/cli
+      - shared/wizard

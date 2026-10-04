@@ -6,7 +6,7 @@
  *
  * @module
  */
-import matter from 'gray-matter';
+import { parseFrontmatter } from '../../../frontmatter-parse';
 import { getSchema } from '../../../schema/index';
 import { renderArtifact } from '../../../targets/emit';
 import { deriveContracts, checkOutputContract } from '../../../targets/output-contract';
@@ -90,7 +90,7 @@ export function tryParseCandidate(
     : frontmatterLines;
   const content = `---\n${newFrontmatter.join('\n')}\n---\n\n${bodyAfter.trim()}\n`;
   try {
-    const parsed = matter(content);
+    const parsed = parseFrontmatter(content);
     if (typeof parsed.data !== 'object' || parsed.data === null) {
       return { ok: false, reason: 're-parsed frontmatter is not an object' };
     }

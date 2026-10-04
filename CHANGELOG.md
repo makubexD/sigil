@@ -7,7 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- `shared/ado` (Azure DevOps MCP) no longer hard-codes an organisation: set `ADO_ORG` (your
+  organisation name) and `ADO_MCP_PERSONAL_TOKEN` in the environment your AI tool starts from, then
+  run `sigil update`. The server is pinned to `@azure-devops/mcp@2.10.0` instead of the nightly
+  `@next` tag.
+
 ### Added
+
+- MCP artifacts reference environment variables with a neutral `{sigil:env:NAME}` token, written
+  as `${NAME}` for Claude Code and the portable `.mcp.json` and as `${env:NAME}` for VS Code's
+  `mcp.json`. Before, `shared/ado` shipped VS Code's syntax to every tool, so Claude Code passed
+  the literal text instead of the token. The filesystem MCP is now pinned to an exact version too.
+
+- New `cli-builder` pack (and Claude plugin): the `cli` and `wizard` skills with their per-stack
+  references, their rules and both auditor agents. Before it, no plugin carried them.
+
+- `sigil sync --check` enforces the catalog layout standard with a new `catalog-layout` rule
+  (error): an artifact outside `shared/` and `languages/<lang>/`, in another kind's folder, with
+  an id prefix or `language:` out of step with its folder, in a language with no `language.yaml`,
+  or a skill folder named differently from the skill; and skill-folder content that never ships
+  (`assets/`, `scripts/`, nested reference folders), a reference `SKILL.md` never mentions, or a
+  stack file not named `stack-<stack>.md`.
+
+- `sigil import --shared` imports into `catalog/shared/` with no `language:` (`--language` and
+  `--shared` are now exclusive, one required). A skill's flat `references/*.md` files are imported
+  with it, held to the catalog's reference rules and trust-scanned; what can't ship (`assets/`,
+  `scripts/`, nested reference folders) is listed instead of dropped silently.
 
 - Home menu: "Search the catalog" shows the matches as a list to pick from (no copying an id), says
   plainly when nothing matches, and names the helpers an install brings. Remove asks whether to keep or
@@ -90,6 +117,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `sigil new --language <lang>` refuses a language that has no `languages/<lang>/language.yaml` (a
+  typo used to create a new, unregistered language folder) and lists the known ones. `sigil check`,
+  and the authoring commands that run it, reject a shared artifact that sets `language:` and a
+  language folder with no `language.yaml`.
+- The `cli-auditor` and `wizard-auditor` agents find their brief in three places instead of five:
+  the path the calling skill now passes, the preloaded skill, then the project and user skills
+  folders.
+- Catalog content: `python/py-generate-tests` and `react/react-generate-tests` now bring the
+  language's own reviewer (`py-code-reviewer`, `react-code-reviewer`) instead of
+  `shared/code-reviewer`, which is now described as the fallback for languages the catalog has no
+  reviewer for. Existing installs keep `shared/code-reviewer`; re-adding the skill or pack brings
+  the language reviewer. Python and React reviewer and auditor descriptions now start with their
+  language; the Python and React security rules are `severity: required` like the others;
+  `csharp/cs-git` is scoped to C# files instead of every file; `shared/explain-diff` now uses its
+  `audience` argument.
+- `sigil move` keeps the moved artifact's `language:` in step with its new namespace: it sets the
+  language when moving into `languages/<lang>/` and removes it when moving to `shared/` (a moved
+  shared artifact used to keep a stale `language:`).
 - sigil finds catalog files with `tinyglobby` instead of `fast-glob`. That removes `micromatch` and `braces`
   (GHSA-vfj7-8cjw-p6xm, no fix released) from the runtime dependencies, so `npm audit --omit=dev` is clean
   again and CI fails on any severity.
@@ -158,11 +203,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same open file it is read from. Anything
   else is skipped with a load warning. `sigil check --trust` now scans those files too, not only
   `SKILL.md`.
+- Every file sigil takes from a catalog or an import source is read the same safe way: an artifact
+  file that is a symbolic link is not followed (a cloned catalog or import source can't make sigil
+  read a file such as `~/.ssh/config` into the catalog), and artifact files over 1 MiB are skipped.
+  A non-Markdown file in `references/` is now reported instead of ignored. `sigil import` refuses a
+  `--language` that isn't a plain name, writes no `language.yaml` on `--dry-run`, and won't write a
+  file through a symbolic link already in the catalog.
 - `sigil new settings` and `sigil move` of a settings artifact wrote into `settingss/` instead of
   `settings/`, and `sigil move` of a template (three-part id) computed a wrong path. Each kind's
   source folder and file ending are now declared once and every command derives from them;
   `sigil check` also recognises hook, settings and mcp files by name, and shell completion offers
   `kind:hook`, `kind:settings` and `kind:mcp`.
+- After `sigil move`, `patch`, `edit` or `sync --apply` edited a file in a long-running session (the
+  wizard), a later read of any file with the same text returned the edited values: the frontmatter
+  parser's cache handed every caller the same object. Every read now gets its own copy.
 - `sigil move` of a template still refused its three-part id, and its post-move check ignored the
   catalog root and parsed files more loosely than the loader. `move`, `patch`, `edit` and
   `retarget` also rewrote a quoted date such as `verifiedOn: "2026-08-05"` without quotes, turning

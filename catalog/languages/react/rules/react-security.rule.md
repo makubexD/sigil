@@ -4,6 +4,7 @@ kind: rule
 title: Security (React)
 description: React/browser security invariants — XSS, dangerouslySetInnerHTML, client-exposed secrets, redirect validation
 language: react
+severity: required
 appliesTo:
   - "**/*.tsx"
 tags:

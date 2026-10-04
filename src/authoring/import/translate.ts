@@ -27,6 +27,7 @@
  * (see translate-shared.ts's header).
  */
 import { translateRule, translateAgent, translateSkill } from './translate-kinds';
+import { SHARED_NAMESPACE } from '../../catalog-layout';
 
 export {
   stripLanguagePrefix,
@@ -48,6 +49,19 @@ import type { TranslateOptions, TranslateResult } from './translate-shared';
  * @param opts      Language and display-name context
  */
 export function translateFrontmatter(
+  kind: 'skill' | 'agent' | 'rule',
+  slug: string,
+  sourceFm: Record<string, unknown>,
+  opts: TranslateOptions,
+): TranslateResult {
+  const result = translateByKind(kind, slug, sourceFm, opts);
+  if (opts.language !== SHARED_NAMESPACE) return result;
+  const { language: _dropped, ...frontmatter } = result.frontmatter;
+  return { ...result, frontmatter };
+}
+
+/** Dispatches to the per-kind translator. */
+function translateByKind(
   kind: 'skill' | 'agent' | 'rule',
   slug: string,
   sourceFm: Record<string, unknown>,

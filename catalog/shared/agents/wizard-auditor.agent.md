@@ -34,12 +34,11 @@ nothing else enforces this, so treat it as a hard rule.
 Your brief is the `wizard` skill's `references/auditor.md`. Find it in this order and use the first
 that exists:
 
-1. The path the caller gave you.
+1. The path the caller gave you (the `wizard` skill passes its own when it hands you the audit).
 2. The folder of the preloaded `wizard` skill, if one was preloaded (its `SKILL.md` sits beside
    `references/`).
-3. `{sigil:skills-dir}wizard/references/auditor.md` in the project.
-4. The same skill in your tool's user-level skills folder, in the user's home directory.
-5. A search for `**/skills/wizard/references/auditor.md`.
+3. `{sigil:skills-dir}wizard/references/auditor.md` in the project, then the same path in your tool's
+   user-level skills folder in the user's home directory.
 
 Follow it exactly. Every path the brief names (`references/…`) is relative to the skill root, the
 folder that holds `SKILL.md`. If you can't find the brief, say so and stop rather than auditing from

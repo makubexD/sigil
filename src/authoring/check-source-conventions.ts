@@ -9,7 +9,7 @@ import path from 'path';
 import type { ArtifactKind } from '../types';
 import { checkReferences, describeRefProblem, type RefCheck } from '../refs';
 import { normPath } from '../paths';
-import { SHARED_NAMESPACE, locateSource, splitId } from '../catalog-layout';
+import { SHARED_NAMESPACE, locateSource, namespaceProblems, splitId } from '../catalog-layout';
 import { kindOfSourceFile } from '../kinds';
 import type { CheckCtx } from './check-source-ctx';
 
@@ -129,6 +129,19 @@ export function checkIdConsistency(ctx: CheckCtx): void {
 
   checkNameConsistency(ctx, idName);
   checkLanguageConsistency(ctx, idPrefix, pathPrefix);
+}
+
+/**
+ * The artifact's namespace must be a real one (catalog layout standard): a shared artifact names no
+ * language, and a language folder has a `language.yaml`. Read relative to the catalog root, so it
+ * applies to loaded catalogs only — one built in memory has no root and no layout to check.
+ */
+export function checkNamespace(ctx: CheckCtx): void {
+  const { artifact, catalog, v } = ctx;
+  if (!catalog.root) return;
+  for (const problem of namespaceProblems(catalog.root, catalog.languages, artifact)) {
+    v.push({ file: artifact.filePath, problem });
+  }
 }
 
 /** File-name-implied kind (SKILL.md / *.rule.md / etc.) must match frontmatter `kind`. */

@@ -50,10 +50,19 @@ async function referencesOf(catalogDir: string) {
 describe('skill references — loading', () => {
   it('should load safe Markdown files in name order', async () => {
     await withTempDirAsync(async root => {
-      const dir = writeCatalog(root, { 'zeta.md': 'z', 'alpha.md': 'a', 'notes.txt': 'x' });
+      const dir = writeCatalog(root, { 'zeta.md': 'z', 'alpha.md': 'a' });
       const { names, warnings } = await referencesOf(dir);
       assert.deepEqual(names, ['alpha.md', 'zeta.md']);
       assert.deepEqual(warnings, []);
+    });
+  });
+
+  it('should report a file that is not Markdown instead of dropping it silently', async () => {
+    await withTempDirAsync(async root => {
+      const dir = writeCatalog(root, { 'ok.md': 'a', 'diagram.png': 'binary' });
+      const { names, warnings } = await referencesOf(dir);
+      assert.deepEqual(names, ['ok.md']);
+      assert.match(warnings.join('\n'), /diagram\.png.*not a Markdown file/);
     });
   });
 

@@ -9,7 +9,7 @@ uses:
   rules:
     - python/py-conventions
   agents:
-    - shared/code-reviewer
+    - python/py-code-reviewer
 tags:
   - python
   - testing

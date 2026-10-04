@@ -1,13 +1,13 @@
 {
   ".claude/settings.json": "9f1395a16aad569f6ddde5cca5372baf3fc60c9069f726e1bfc533bd3c52acca",
-  ".github/agents/cli-auditor.agent.md": "55bf5d03f6d527e9e0c24fd7a49a2be3dbca148a73d74ec41c59c24a949d77a3",
+  ".github/agents/cli-auditor.agent.md": "403e8bde0972f0617726f0b51dba5fb26bcc6b24eeef354456728d2c1adb0887",
   ".github/agents/cs-code-reviewer.agent.md": "2f51f4de96fa1ed9fa4d85dd721e20cbb61eb8c3ebb4074f6bc27034d3747b67",
   ".github/instructions/angular-ng-conventions.instructions.md": "8d07ed6d5349b5d8be4004cacc0e3b50c85f14b1a8687e200e11846f37eebec5",
   ".github/instructions/csharp-cs-testing.instructions.md": "eb3e6206f4483ce758d47d6021bd98bc98cc2d764188ba58a2824511a4a23fff",
   ".github/instructions/shared-cli-rules.instructions.md": "6dccc1093e31533bd406a68c588cecbed1b68b8e7f60b2c4f14973ad783418f0",
   ".github/instructions/typescript-ts-conventions.instructions.md": "96d5f46762400c088b3100f6968b3bd96cbbadd49fecb897f4af101072f3fa5b",
-  ".github/prompts/shared-explain-diff.prompt.md": "ff899a77108f0ecbea6873ace56fe31a1279cd5087e654f1abec223d1d6486a3",
-  ".github/skills/cli/SKILL.md": "17ebb4ce46d491e4f9df3fa605882162ef9280cdd30fc69afe3cc0d62c70d6ae",
+  ".github/prompts/shared-explain-diff.prompt.md": "cb069c425ec23b81fbf039c9b66fee78a892ecd8fa7673b219757c62eb02b380",
+  ".github/skills/cli/SKILL.md": "4a0a80828919d66a837bb0d5f2eb72a4f50a5c3d788b90c20a74d48d5b2c9ae3",
   ".github/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
   ".github/skills/cli/references/auditor.md": "129d3771e8f16c5d5209d7f914dc90934b559a6ffc019728c6f4fdee6f376581",
   ".github/skills/cli/references/contract.md": "288e89d220a79f217e4a36200ec2e8767715d5fc6ba20d8b8341cb1267b2c739",
@@ -22,7 +22,7 @@
   ".github/skills/cli/references/testing.md": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c",
   ".github/skills/cs-generate-tests/SKILL.md": "cc4acdfcc55a66449718d402fb48e3d8b2b146b32b1c6bd03df108b3c155a47a",
   ".github/skills/ts-release/SKILL.md": "9db7c93568f13c481a1d07869373e625698c255ae8fe6420339fdd88d2009d11",
-  ".mcp.json": "c22a37a45342f26304ffb3d2f45a15593df689974715243e3f573a864655bd48",
-  ".sigil/manifest.json": "81c46f9863d74bb4ceb83247f1122fe9c53969e797c7b39ca4d0eae9669665c8",
-  ".vscode/mcp.json": "24534b856ad3d76d800a4e40ce0841cfa4daeed1736d5b78b8bbc17e52dfc1e1"
+  ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
+  ".sigil/manifest.json": "78ade73c78c46529fd282f6f43b21f000de517b520b842d2340005ceaffb4cf2",
+  ".vscode/mcp.json": "2e3f5507877483c1d625d57e896356d8b62154761afe6ae09bd728d3df6455f3"
 }

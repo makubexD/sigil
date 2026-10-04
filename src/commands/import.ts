@@ -20,9 +20,14 @@ import {
 } from '../authoring/import';
 import { resolveDisplayName, maybeCreateLanguageYaml } from './import-language';
 import { computeOverlapLines, printCoverageReport } from './import-report';
+import { SHARED_NAMESPACE } from '../catalog-layout';
+import { KEBAB_NAME_RE } from '../schema/shared';
 
 export interface ImportOptions {
-  language: string;
+  /** Target language; exactly one of `language` and `shared` is given. */
+  language?: string | undefined;
+  /** Import into catalog/shared/ with no `language:`. */
+  shared?: boolean | undefined;
   displayName?: string | undefined;
   catalogDir: string;
   dryRun: boolean;
@@ -45,12 +50,30 @@ function printDiscoveryReport(
   }
 }
 
+/** The namespace to import into: --shared or --language <lang>, exactly one. */
+function resolveNamespace(opts: ImportOptions): string {
+  if (Boolean(opts.shared) === Boolean(opts.language)) {
+    throw new SigilError('Pass exactly one of --language <lang> and --shared.', {
+      hint: '  --language imports into catalog/languages/<lang>/; --shared into catalog/shared/.',
+    });
+  }
+  if (opts.shared) return SHARED_NAMESPACE;
+  const lang = opts.language!;
+  if (!KEBAB_NAME_RE.test(lang)) {
+    throw new SigilError(
+      `Invalid language '${lang}': a language name is kebab-case (e.g. csharp, go).`,
+    );
+  }
+  return lang;
+}
+
 /** Ensures the target language.yaml exists (when --create-language was passed) and resolves its display name. */
 function resolveLanguageMeta(opts: ImportOptions): { lang: string; displayName: string } {
-  const lang = opts.language;
+  const lang = resolveNamespace(opts);
+  if (lang === SHARED_NAMESPACE) return { lang, displayName: '' };
   const yamlPath = languageYamlPath(lang, opts.catalogDir);
   const displayName = resolveDisplayName(lang, opts.displayName, yamlPath);
-  if (opts.createLanguage) {
+  if (opts.createLanguage && !opts.dryRun) {
     maybeCreateLanguageYaml(lang, yamlPath, opts.displayName, displayName);
   }
   return { lang, displayName };

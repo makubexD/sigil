@@ -93,7 +93,8 @@ and not registered anywhere.
 
 - `name` is kebab-case, at most 64 characters, and matches its folder;
 - `description` says what the artifact does and when to use it, in at most 1024 characters;
-- `SKILL.md` is under 500 lines;
+- `SKILL.md` stays under 500 lines (the Agent Skills spec and Claude's guidance; checked as a
+  warning on the Claude skill specs);
 - every reference file is mentioned in `SKILL.md`.
 
 ## Guards

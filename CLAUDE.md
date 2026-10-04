@@ -14,7 +14,8 @@ npm run catalog:build  # catalog source → dist/claude/ and dist/copilot/
 npm test               # pretest builds dist-cli/ and test-compiled/, then node --test
 npm run test:built     # same, but trusts a current dist-cli/ (CI and ci:local build just before)
 npm run check          # lint && format:check && check-doc-comments && test (a subset of CI)
-npm run ci:local       # full CI mirror: audit, lint, format, build, validate, sync --check, test, catalog:build
+npm run ci:local       # full CI mirror: audit, lint, format, build, validate, sync --check, test, catalog:build,
+                       # claude plugin validate --strict (skipped when `claude` is not on PATH)
 ```
 
 Heap size, why `pretest` exists, and `npm link` vs `npm run sigil` are in
@@ -138,6 +139,10 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
 - **Read catalog and import files only through `src/safe-read.ts`** (regular files, never a followed link, size cap,
   checked on the handle it reads from), and **parse frontmatter only through `src/frontmatter-parse.ts`** —
   gray-matter caches and shares parsed objects, so ESLint forbids importing it anywhere else in `src/`.
+- **A provider's documented size limits are data on its `KindEmitSpec.limits`**, checked by the one generic
+  `provider-limits` rule against the rendered file; never hard-code a provider's limit in a rule. `packs.yaml` is
+  read only through `parsePacksConfig` (`src/packs-config.ts`): pack names become folder names and must be
+  kebab-case.
 - **MCP config never carries a provider's env syntax.** Catalog `server` values write `{sigil:env:NAME}`; each target
   expands it for the file it writes (`src/targets/env-reference.ts`, an `EnvSyntax` per file format).
 - **Artifact bodies are provider-neutral prose — never a hardcoded provider-specific literal** (`CLAUDE.md`,

@@ -30,6 +30,8 @@ holds the raw material behind it.
 - `2026-09-27/` has `findings.md` (the findings and improvement list), `live-probe-report.md`
   (the raw result matrix), `campaign.json` (the install combinations and prompts), and
   `fixtures/` and `results/` (inputs and per-run output).
+- `2026-10-03/` has `probe/` (a portable test project) and `results.md` (filled in by whoever runs
+  it): the V1 check of whether Copilot loads a reference named only in backticks.
 
 ## Reading the IDs
 

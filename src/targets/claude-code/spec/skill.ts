@@ -14,11 +14,11 @@ import type { ResolvedArtifact } from '../../../types';
 import { yamlList, yamlScalar } from '../../yaml-util';
 import { CLAUDE_SKILLS_DOC } from '../../doc-refs';
 import { AGENT_SKILLS_LIMITS } from '../../agent-skills-limits';
-
-const MAX_SKILL_BODY_LINES = 500;
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import { renderBoundarySection } from '../../shared/boundary';
+
+const MAX_SKILL_BODY_LINES = 500;
 
 const nameMapping: FieldMapping = {
   from: 'name',

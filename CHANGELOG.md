@@ -196,6 +196,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `packs.yaml` is now validated wherever it is read: a pack name must be kebab-case, like an
+  artifact name, because it becomes an output folder (`dist/claude/plugins/<name>`). A malformed
+  file fails with the reason instead of being used as is.
+- `sigil sync --apply` (template slots) found where the body starts by searching for the body
+  text, so an empty body, or one whose text also appeared in the frontmatter, overwrote the
+  frontmatter. The body now starts right after the closing fence. A file with no opening `---`
+  fence is refused instead of rewritten.
+- `reference-links` missed a reference linked once but also named only in backticks elsewhere,
+  could nest a link inside an existing link's text, and ended a fenced block on any fence line;
+  a fence now closes only on the same marker at least as long as the one that opened it.
 - `sigil sync --apply` corrupted a file whose frontmatter closed with text on the same line
   (`---# Title`, which the loader accepts): it wrote an empty frontmatter block and moved the real
   one into the body. The closing fence is now found the way the loader finds it, and a file with no

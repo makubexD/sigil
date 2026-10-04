@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M3: P1, T11, T12, T13, T14 done; next Phase 5 review, PR, merge.
+Status: M3 done (Phase 5 fixed); next push, PR, CI, merge.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -43,7 +43,7 @@ Spec: `SPEC.md`
 - [x] T12 Re-verify the cited docs
 - [x] T14 Claude validator in CI
 - [x] T13 Markdown links for skill references (docs-backed; V1 at the end confirms the backtick case)
-- [ ] Phase 5 review
+- [x] Phase 5 review
 
 ## Follow-ups from the 2026-10-03 doc re-verification (kept, prioritised; none dropped)
 
@@ -56,7 +56,7 @@ Spec: `SPEC.md`
 
 - [ ] T16 Generic emitter
 - [ ] T17 One provider registry
-- [ ] Phase 5 review
+- [x] Phase 5 review
 - [ ] ⚠ R3 Release minor
 - [ ] V1 Copilot reference-loading check on a licensed machine (user) → relax or keep the link rule; record in the ADR
 - [ ] Phase 6 close-out

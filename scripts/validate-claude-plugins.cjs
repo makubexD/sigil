@@ -27,7 +27,11 @@ function claudeAvailable() {
 }
 
 function validate(target) {
-  const result = spawnSync('claude', ['plugin', 'validate', '--strict', target], {
+  // Windows runs `claude` (a .cmd shim) through cmd.exe, which joins the arguments unquoted, so a
+  // path with spaces needs quotes. Pack names are kebab-case (packs-config.ts), so nothing else
+  // in the path needs escaping.
+  const arg = SHELL ? `"${target}"` : target;
+  const result = spawnSync('claude', ['plugin', 'validate', '--strict', arg], {
     shell: SHELL,
     env: ENV,
     encoding: 'utf8',

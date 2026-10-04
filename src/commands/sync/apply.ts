@@ -5,7 +5,6 @@
  * @module
  */
 import fs from 'fs';
-import { parseFrontmatter } from '../../frontmatter-parse';
 import type { Artifact, LoadedCatalog } from '../../types';
 import type { TemplateFrontmatter } from '../../schema/index';
 import {
@@ -14,6 +13,7 @@ import {
   splitArtifactSlotBlocks,
 } from '../../templates';
 import type { SyncDrift, SyncFinding } from './types';
+import { bodyOffset } from './conformance/frontmatter-patch';
 
 /** Slot keys marked `slot-removed` — dropped entirely from the rebuilt body. */
 function removedKeys(drifts: readonly SyncDrift[]): Set<string> {
@@ -110,9 +110,7 @@ export function buildRebuiltBody(
 /** Writes `newBody` to `filePath`, preserving the frontmatter block byte-for-byte. */
 function writeArtifactBody(filePath: string, newBody: string): void {
   const raw = fs.readFileSync(filePath, 'utf-8');
-  const parsed = parseFrontmatter(raw);
-  const contentStart = raw.indexOf(parsed.content);
-  fs.writeFileSync(filePath, raw.slice(0, contentStart) + newBody, 'utf-8');
+  fs.writeFileSync(filePath, raw.slice(0, bodyOffset(raw)) + newBody, 'utf-8');
 }
 
 export interface ApplyResult {

@@ -17,38 +17,48 @@ import type { Artifact } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding, ArtifactEdit } from '../types';
 import { splitFrontmatterBlock, extractOriginalBody } from '../frontmatter-patch';
 
-const FENCE_RE = /^\s*(```|~~~)/;
-const BACKTICK_REF_RE = /(\[)?`references\/([a-z0-9-]+\.md)`(\]\()?/g;
+const FENCE_RE = /^\s*(`{3,}|~{3,})/;
+// A whole Markdown link (left as it is, so a mention inside its text never nests) or a bare
+// backtick mention of a reference file.
+const LINK_OR_REF_RE = /(\[[^\]\n]*\]\([^)\n]*\))|`references\/([a-z0-9-]+\.md)`/g;
 
 /** The link form of a reference mention. */
 const linkFor = (name: string) => `[\`references/${name}\`](references/${name})`;
 
-/** Rewrites backtick-only mentions of `names` into links, line by line, skipping fenced code. */
+/** Links the bare mentions of `known` names on one line outside code. */
+const linkLine = (line: string, known: ReadonlySet<string>) =>
+  line.replace(LINK_OR_REF_RE, (match, link: string | undefined, name: string | undefined) =>
+    link || !name || !known.has(name) ? match : linkFor(name),
+  );
+
+/**
+ * Rewrites backtick-only mentions of `names` into links, line by line, skipping fenced code. A
+ * fence closes only on the same marker at least as long as the one that opened it (CommonMark).
+ */
 export function linkReferences(body: string, names: readonly string[]): string {
   const known = new Set(names);
-  let inFence = false;
+  let fence: string | undefined;
   return body
     .split('\n')
     .map(line => {
-      if (FENCE_RE.test(line)) {
-        inFence = !inFence;
-        return line;
+      const marker = FENCE_RE.exec(line)?.[1];
+      if (fence === undefined) {
+        if (marker) fence = marker;
+        return marker ? line : linkLine(line, known);
       }
-      if (inFence) return line;
-      return line.replace(BACKTICK_REF_RE, (match, open, name: string, close) =>
-        open || close || !known.has(name) ? match : linkFor(name),
-      );
+      if (marker && closesFence(marker, fence)) fence = undefined;
+      return line;
     })
     .join('\n');
 }
 
-/** The loaded references `skill`'s body mentions only in backticks. */
+const closesFence = (marker: string, open: string) =>
+  marker[0] === open[0] && marker.length >= open.length;
+
+/** The loaded references `skill`'s body still names somewhere only in backticks. */
 function unlinkedReferences(skill: Artifact): string[] {
   const names = (skill.references ?? []).map(ref => ref.name);
-  const linked = linkReferences(skill.body, names);
-  return names.filter(
-    name => linked.includes(linkFor(name)) && !skill.body.includes(linkFor(name)),
-  );
+  return names.filter(name => linkReferences(skill.body, [name]) !== skill.body);
 }
 
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
@@ -60,7 +70,7 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
         severity: 'error' as const,
         artifactId: skill.id,
         filePath: skill.filePath,
-        detail: `references/${name} is named only in backticks; link it so every tool loads it`,
+        detail: `references/${name} is named only in backticks; link it, as the providers' skill docs recommend`,
       })),
     );
 }
@@ -87,7 +97,7 @@ export const referenceLinksRule: ConformanceRule = {
   appliesTo: { kinds: ['skill'] },
   rationale:
     "Claude's and VS Code's skill docs recommend linking reference files, and VS Code loads only " +
-    'the ones SKILL.md references; a link works in every tool, a bare backtick path may not.',
+    'the ones SKILL.md references; whether a bare backtick path counts is unverified (V1).',
   detect,
   fix,
 };

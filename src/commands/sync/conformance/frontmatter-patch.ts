@@ -9,6 +9,7 @@
  * @module
  */
 import { serializeYamlEntry } from '../../../authoring/frontmatter';
+import { SigilError } from '../../../errors';
 
 export interface FrontmatterBlock {
   readonly frontmatterLines: string[];
@@ -26,10 +27,26 @@ const FENCE = '---';
  */
 export function splitFrontmatterBlock(raw: string): FrontmatterBlock {
   const lines = raw.split(/\r?\n/);
+  if (lines[0]?.trimEnd() !== FENCE)
+    throw new SigilError('file has no opening --- frontmatter fence; not rewriting it');
   const closeIdx = lines.findIndex((line, i) => i > 0 && line.startsWith(FENCE));
   if (closeIdx < 1)
-    throw new Error('frontmatter has no closing --- fence; not rewriting this file');
+    throw new SigilError('frontmatter has no closing --- fence; not rewriting this file');
   return { frontmatterLines: lines.slice(1, closeIdx), bodyStart: closeIdx + 1 };
+}
+
+/**
+ * The character offset where the body starts in `raw`: just past the closing fence and its line
+ * break, where gray-matter's `content` starts. Found from the fence, never by searching for the
+ * body text (an empty body, or a body that also appears in the frontmatter, would match early).
+ */
+export function bodyOffset(raw: string): number {
+  const closeLine = splitFrontmatterBlock(raw).bodyStart - 1;
+  let pos = 0;
+  for (let i = 0; i < closeLine; i++) pos = raw.indexOf('\n', pos) + 1;
+  pos += FENCE.length;
+  const lineBreak = /^\r?\n/.exec(raw.slice(pos))?.[0] ?? '';
+  return pos + lineBreak.length;
 }
 
 /** Lines not naming a patched key — a patched key's continuation lines (indented) drop with it. */

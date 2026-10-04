@@ -41,6 +41,34 @@ describe('linkReferences', () => {
   });
 });
 
+const BT = '`';
+const bare = (name: string) => `${BT}references/${name}${BT}`;
+const FENCE4 = BT.repeat(4);
+const FENCE3 = BT.repeat(3);
+
+describe('linkReferences, review edge cases', () => {
+  it('should not nest a link when the mention sits inside another link text', () => {
+    const body = `[see ${bare('grammar.md')} for details](references/grammar.md)`;
+    assert.equal(linkReferences(body, NAMES), body);
+  });
+
+  it('should link every bare mention on a line, beside a linked one', () => {
+    const body = `${LINKED('grammar.md')} then ${bare('grammar.md')} and ${bare('stack-go.md')}`;
+    assert.equal(
+      linkReferences(body, NAMES),
+      `${LINKED('grammar.md')} then ${LINKED('grammar.md')} and ${LINKED('stack-go.md')}`,
+    );
+  });
+
+  it('should keep a fence open until a closing line of the same marker and length', () => {
+    const inside = [FENCE4, '~~~', bare('grammar.md'), FENCE3, bare('grammar.md'), FENCE4].join(
+      '\n',
+    );
+    const out = linkReferences(`${inside}\nThen ${bare('grammar.md')}.`, NAMES);
+    assert.equal(out, `${inside}\nThen ${LINKED('grammar.md')}.`);
+  });
+});
+
 describe('reference-links rule', () => {
   it('should flag a backtick-only mention and fix it with --apply', async () => {
     await withTempDirAsync(async root => {
@@ -67,6 +95,21 @@ describe('reference-links rule', () => {
       );
       const after = runConformance(await loadCatalog(root), getAllTargets(), { ruleId: RULE });
       assert.deepEqual(after, []);
+    });
+  });
+
+  it('should flag a reference linked once but also named bare elsewhere', async () => {
+    await withTempDirAsync(async root => {
+      const skillDir = path.join(root, 'shared', 'skills', 'p');
+      fs.mkdirSync(path.join(skillDir, 'references'), { recursive: true });
+      fs.writeFileSync(
+        path.join(skillDir, 'SKILL.md'),
+        '---\nid: shared/p\nkind: skill\nname: p\ntitle: P\ndescription: A probe. Use when probing.\n---\n\n' +
+          `Read ${LINKED('grammar.md')}.\n\nLater, ${bare('grammar.md')} again.\n`,
+      );
+      fs.writeFileSync(path.join(skillDir, 'references', 'grammar.md'), '# G\n');
+      const findings = runConformance(await loadCatalog(root), getAllTargets(), { ruleId: RULE });
+      assert.equal(findings.length, 1);
     });
   });
 });

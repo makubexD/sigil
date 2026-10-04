@@ -9,9 +9,9 @@
  *
  * @module
  */
-import type { ResolvedArtifact, Target } from '../../../../types';
+import type { ResolvedArtifact, ResolvedCatalog, Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
-import type { KindEmitSpec, SpecLimit } from '../../../../targets/spec-types';
+import type { EmitContext, KindEmitSpec, SpecLimit } from '../../../../targets/spec-types';
 import { ALL_PROVIDER_SPECS } from '../../../../targets/all-emit-specs';
 import { renderArtifact } from '../../../../targets/emit';
 import { supportsKind } from '../../../../targets/capabilities';
@@ -19,12 +19,26 @@ import { artifactTargetsPlatform } from '../../../../select';
 import { resolveCatalog } from '../../../../resolve';
 import { parseFrontmatter } from '../../../../frontmatter-parse';
 
-/** The file `spec` writes for `artifact`, or undefined when it refuses to render. */
-function renderSafely(spec: KindEmitSpec, artifact: ResolvedArtifact): string | undefined {
+const RULE_ID = 'provider-limits';
+
+/**
+ * The file `spec` writes for `artifact`, measured at its largest: `ctx` co-installs everything, so
+ * every Boundary section renders. Undefined when the spec refuses to render: that refusal is
+ * another rule's finding (tool-restriction-coverage), reported there.
+ */
+function renderSafely(
+  spec: KindEmitSpec,
+  artifact: ResolvedArtifact,
+  ctx: EmitContext,
+): string | undefined {
   try {
-    return renderArtifact(spec, artifact, spec.variant === 'plugin' ? { packName: 'pack' } : {});
+    return renderArtifact(
+      spec,
+      artifact,
+      spec.variant === 'plugin' ? { ...ctx, packName: 'pack' } : ctx,
+    );
   } catch {
-    return undefined; // a render refusal is another rule's finding (e.g. tool-restriction-coverage)
+    return undefined;
   }
 }
 
@@ -32,14 +46,15 @@ function renderSafely(spec: KindEmitSpec, artifact: ResolvedArtifact): string | 
 function emitted(
   spec: KindEmitSpec,
   artifact: ResolvedArtifact,
-): Record<string, string> | undefined {
-  const rendered = renderSafely(spec, artifact);
+  ctx: EmitContext,
+): Record<SpecLimit['field'], string> | undefined {
+  const rendered = renderSafely(spec, artifact, ctx);
   if (rendered === undefined) return undefined;
   const { data, content } = parseFrontmatter(rendered);
   return {
     name: String(data.name ?? ''),
     description: String(data.description ?? ''),
-    body: content,
+    body: content.trim(),
   };
 }
 
@@ -49,19 +64,26 @@ const measure = (text: string, limit: SpecLimit) =>
 /** The specs of `target` for `artifact`'s kind that declare limits. */
 function limitedSpecs(target: Target, artifact: ResolvedArtifact): KindEmitSpec[] {
   return ALL_PROVIDER_SPECS.filter(
-    s => s.source.startsWith(`${target.name}/`) && s.spec.kind === artifact.kind && s.spec.limits,
+    s => s.provider === target.name && s.spec.kind === artifact.kind && s.spec.limits,
   ).map(s => s.spec);
 }
 
-/** One finding per (provider, field) the artifact's emitted files exceed. */
-function findingsFor(artifact: ResolvedArtifact, targets: readonly Target[]): ConformanceFinding[] {
+/**
+ * One finding per (provider, field) the artifact's emitted files exceed. A provider with two
+ * channels (Claude's plugin and scaffold specs) reports a field once, from whichever is over.
+ */
+function findingsFor(
+  artifact: ResolvedArtifact,
+  targets: readonly Target[],
+  ctx: EmitContext,
+): ConformanceFinding[] {
   const seen = new Map<string, ConformanceFinding>();
   for (const target of targets.filter(t => artifactTargetsPlatform(artifact, t.name))) {
     if (!supportsKind(target, artifact.kind)) continue;
     for (const spec of limitedSpecs(target, artifact)) {
-      const values = emitted(spec, artifact);
+      const values = emitted(spec, artifact, ctx);
       for (const limit of values ? (spec.limits ?? []) : []) {
-        const size = measure(values![limit.field] ?? '', limit);
+        const size = measure(values![limit.field], limit);
         const key = `${target.name}:${limit.field}`;
         if (size <= limit.max || seen.has(key)) continue;
         seen.set(key, finding(artifact, target.name, limit, size));
@@ -78,7 +100,7 @@ function finding(
   size: number,
 ): ConformanceFinding {
   return {
-    ruleId: 'provider-limits',
+    ruleId: RULE_ID,
     severity: limit.severity,
     artifactId: artifact.id,
     filePath: artifact.filePath,
@@ -87,13 +109,30 @@ function finding(
   };
 }
 
+/** The resolved catalog, or the reason it can't be resolved (validate reports that in full). */
+function resolveOrReason(catalog: Parameters<typeof resolveCatalog>[0]): ResolvedCatalog | string {
+  try {
+    return resolveCatalog(catalog);
+  } catch (err) {
+    return (err as Error).message;
+  }
+}
+
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
-  const resolved = resolveCatalog(ctx.catalog);
-  return resolved.artifacts.flatMap(artifact => findingsFor(artifact, ctx.targets));
+  const resolved = resolveOrReason(ctx.catalog);
+  if (typeof resolved === 'string') {
+    const detail = `the catalog does not resolve, so limits were not checked: ${resolved}`;
+    return [{ ruleId: RULE_ID, severity: 'warning', detail }];
+  }
+  const emitCtx: EmitContext = {
+    catalog: resolved,
+    installSet: new Set(resolved.artifacts.map(a => a.id)),
+  };
+  return resolved.artifacts.flatMap(artifact => findingsFor(artifact, ctx.targets, emitCtx));
 }
 
 export const providerLimitsRule: ConformanceRule = {
-  id: 'provider-limits',
+  id: RULE_ID,
   title: 'Emitted files stay within the size limits their provider documents',
   class: 'mechanical',
   appliesTo: {},

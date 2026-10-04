@@ -41,7 +41,7 @@ import type { DocRef } from './spec-types';
 export const CLAUDE_SKILLS_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/skills',
   title: 'Claude Code — Agent Skills',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers:
     'SKILL.md frontmatter (name, description, when_to_use, allowed-tools, argument-hint, ' +
     'disable-model-invocation, user-invocable, context) and progressive-disclosure layout. Also ' +
@@ -52,14 +52,14 @@ export const CLAUDE_SKILLS_DOC: DocRef = {
 export const COPILOT_AGENT_SKILLS_DOC: DocRef = {
   url: 'https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills',
   title: 'GitHub Copilot — Add skills to the coding agent',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers: '.github/skills/<name>/SKILL.md, name/description frontmatter, GitHub cloud agent side',
 };
 
 export const VSCODE_AGENT_SKILLS_DOC: DocRef = {
   url: 'https://code.visualstudio.com/docs/agent-customization/agent-skills',
   title: 'VS Code — Agent Skills',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers:
     "SKILL.md for VS Code's local agent — same shared Agent Skills open standard, VS Code side",
 };
@@ -76,7 +76,7 @@ export const VSCODE_AGENT_SKILLS_DOC: DocRef = {
 export const AGENT_SKILLS_SPEC_DOC: DocRef = {
   url: 'https://agentskills.io',
   title: 'Agent Skills — the open standard',
-  verifiedOn: '2026-08-10',
+  verifiedOn: '2026-10-03',
   covers:
     'The six-field frontmatter spec for SKILL.md outside Claude Code: name, description, ' +
     'license, compatibility, metadata, allowed-tools.',
@@ -85,7 +85,7 @@ export const AGENT_SKILLS_SPEC_DOC: DocRef = {
 export const CLAUDE_RULES_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/memory#organize-rules-with-claude/rules/',
   title: 'Claude Code — Memory: Organize rules with .claude/rules/',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers:
     '.claude/rules/*.md paths: frontmatter and path-scoped loading. Filed on the Memory page — ' +
     'Anthropic\'s own claude-directory.md "File reference" table maps rules/*.md to this exact ' +
@@ -95,7 +95,7 @@ export const CLAUDE_RULES_DOC: DocRef = {
 export const COPILOT_INSTRUCTIONS_DOC: DocRef = {
   url: 'https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/add-custom-instructions/add-repository-instructions',
   title: 'GitHub Copilot — Add repository custom instructions',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers:
     '.instructions.md applyTo: frontmatter and copilot-instructions.md. Path-specific ' +
     'instructions are documented here as supported ONLY for Copilot cloud agent and code review ' +
@@ -106,7 +106,7 @@ export const COPILOT_INSTRUCTIONS_DOC: DocRef = {
 export const VSCODE_INSTRUCTIONS_DOC: DocRef = {
   url: 'https://code.visualstudio.com/docs/agent-customization/custom-instructions',
   title: 'VS Code — Custom instructions',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers:
     '.instructions.md applyTo: frontmatter, copilot-instructions.md, and AGENTS.md — VS Code ' +
     'applies path-specific instructions generally (not restricted to cloud agent/code review the ' +
@@ -116,7 +116,7 @@ export const VSCODE_INSTRUCTIONS_DOC: DocRef = {
 export const CLAUDE_AGENTS_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/sub-agents',
   title: 'Claude Code — Subagents',
-  verifiedOn: '2026-08-10',
+  verifiedOn: '2026-10-03',
   covers:
     'agent .md frontmatter: name, description, model/effort/maxTurns/isolation, tools ' +
     '(omitted = inherits every tool), disallowedTools',
@@ -125,7 +125,7 @@ export const CLAUDE_AGENTS_DOC: DocRef = {
 export const COPILOT_AGENTS_DOC: DocRef = {
   url: 'https://docs.github.com/en/copilot/reference/custom-agents-configuration',
   title: 'GitHub Copilot — Custom agents configuration reference',
-  verifiedOn: '2026-08-10',
+  verifiedOn: '2026-10-03',
   covers:
     '.agent.md YAML frontmatter table: name (optional), description (required), target, ' +
     'tools (omitted = defaults to all tools; comma-string or YAML array), model, ' +
@@ -143,14 +143,14 @@ export const COPILOT_CREATE_AGENTS_DOC: DocRef = {
 export const VSCODE_CUSTOM_AGENTS_DOC: DocRef = {
   url: 'https://code.visualstudio.com/docs/agent-customization/custom-agents',
   title: 'VS Code — Custom agents',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers: "the .github/agents/ (and .claude/agents/) file locations on VS Code's local-agent side",
 };
 
 export const COPILOT_PROMPT_FILES_DOC: DocRef = {
   url: 'https://code.visualstudio.com/docs/agent-customization/prompt-files',
   title: 'VS Code — Prompt files',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers:
     '.github/prompts/*.prompt.md, workspace-scoped by default. Frontmatter table: description, ' +
     'name, argument-hint, agent, model, tools — ALL documented "Required: No". ' +
@@ -163,7 +163,7 @@ export const COPILOT_PROMPT_FILES_DOC: DocRef = {
 export const AGENTS_MD_STANDARD_DOC: DocRef = {
   url: 'https://agents.md/',
   title: 'AGENTS.md — the open standard',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers:
     'the AGENTS.md convention itself: a prose "README for agents". Specifies no frontmatter and ' +
     "no per-agent sections — the ## <name> sectioning buildAgentsMd() renders is sigil's own " +
@@ -178,7 +178,7 @@ export const AGENTS_MD_STANDARD_DOC: DocRef = {
 export const CLAUDE_DIRECTORY_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/claude-directory',
   title: 'Claude Code — Explore the .claude directory',
-  verifiedOn: '2026-08-06',
+  verifiedOn: '2026-10-03',
   covers:
     'the "File reference" table mapping every .claude/ file (rules/*.md, skills/, agents/, ' +
     "commands/, workflows/*.js, …) to its canonical doc page — the source this file's Claude " +
@@ -197,7 +197,7 @@ export const CLAUDE_DIRECTORY_DOC: DocRef = {
 export const CLAUDE_MCP_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/mcp',
   title: 'Claude Code — Connect Claude Code to tools via MCP',
-  verifiedOn: '2026-08-07',
+  verifiedOn: '2026-10-03',
   covers:
     '.mcp.json server configuration shape (mcpServers: { name: { command/args/env, or ' +
     'url/type for remote transports } }) that catalog/shared/mcps/*.mcp.md frontmatter mirrors ' +
@@ -216,7 +216,7 @@ export const CLAUDE_MCP_DOC: DocRef = {
 export const CLAUDE_HOOKS_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/hooks#configuration',
   title: 'Claude Code — Hooks reference: Configuration',
-  verifiedOn: '2026-08-07',
+  verifiedOn: '2026-10-03',
   covers:
     'the hooks JSON schema (event → matcher → hooks[] → {type, command}) that catalog `hook` ' +
     'artifacts author and src/targets/claude-code/config-scaffold.ts merges into the `hooks` ' +
@@ -228,9 +228,9 @@ export const CLAUDE_HOOKS_DOC: DocRef = {
  * claude-directory.md's own table maps settings.json to exactly this page.
  */
 export const CLAUDE_SETTINGS_DOC: DocRef = {
-  url: 'https://code.claude.com/docs/en/settings',
-  title: 'Claude Code — Settings',
-  verifiedOn: '2026-08-07',
+  url: 'https://code.claude.com/docs/en/settings-reference',
+  title: 'Claude Code — Settings reference',
+  verifiedOn: '2026-10-03',
   covers:
     'settings.json fields (permissions, env vars, model defaults, statusLine) that catalog ' +
     '`settings` artifacts (catalog/shared/settings/*.settings.md) author and ' +
@@ -244,7 +244,7 @@ export const CLAUDE_SETTINGS_DOC: DocRef = {
 export const CLAUDE_PLUGIN_MANIFEST_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/plugins-reference',
   title: 'Claude Code — Plugins reference',
-  verifiedOn: '2026-08-07',
+  verifiedOn: '2026-10-03',
   covers:
     '.claude-plugin/plugin.json manifest fields (name, description, version, mcpServers, hooks, ' +
     'skills/commands/agents path overrides) that src/targets/claude-code/plugin-assemble.ts ' +
@@ -260,7 +260,7 @@ export const CLAUDE_PLUGIN_MANIFEST_DOC: DocRef = {
 export const CLAUDE_PLUGIN_COMPONENTS_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/plugins/components',
   title: 'Claude Code — Plugin components',
-  verifiedOn: '2026-09-26',
+  verifiedOn: '2026-10-03',
   covers:
     'Plugins do not load a CLAUDE.md at the plugin root ("To include instructions in a plugin, ' +
     'write them as a skill") and a plugin settings.json applies only `agent` and ' +
@@ -271,7 +271,7 @@ export const CLAUDE_PLUGIN_COMPONENTS_DOC: DocRef = {
 export const CLAUDE_PLUGIN_MARKETPLACES_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/plugin-marketplaces',
   title: 'Claude Code — Create and distribute a plugin marketplace',
-  verifiedOn: '2026-08-07',
+  verifiedOn: '2026-10-03',
   covers:
     'marketplace.json top-level shape (name/owner/plugins[]) that ' +
     'src/targets/claude-code/target-helpers.ts buildMarketplaceJson() emits.',
@@ -282,18 +282,18 @@ export const VSCODE_VARIABLES_DOC: DocRef = {
   url: 'https://code.visualstudio.com/docs/reference/variables-reference#_environment-variables',
   title: 'VS Code — Variables reference (Environment variables)',
   verifiedOn: '2026-10-03',
-  covers: 'the ${env:Name} syntax VS Code substitutes in config files such as mcp.json.',
+  covers:
+    'the ${env:Name} syntax VS Code substitutes for an environment variable in its config files.',
 };
 
 /** `.vscode/mcp.json` — VS Code's own MCP servers doc, the workspace-scope configuration file. */
 export const VSCODE_MCP_DOC: DocRef = {
   url: 'https://code.visualstudio.com/docs/copilot/customization/mcp-servers',
   title: 'VS Code — Add and manage MCP servers',
-  verifiedOn: '2026-08-07',
+  verifiedOn: '2026-10-03',
   covers:
-    '.vscode/mcp.json workspace-scope server configuration that ' +
-    'src/targets/copilot/config.ts merges into (top-level `servers` — the VS Code format), plus ' +
-    'the Agent Host forwarding caveat and the portable `.mcp.json` (`mcpServers`) alternative.',
+    '.vscode/mcp.json (top-level `servers`), which copilot/config.ts merges into and VS Code now ' +
+    'lists as deprecated in favour of the portable `.mcp.json` (`mcpServers`).',
 };
 
 /**
@@ -303,7 +303,7 @@ export const VSCODE_MCP_DOC: DocRef = {
 export const COPILOT_CLI_MCP_DOC: DocRef = {
   url: 'https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers#adding-per-repository-mcp-servers',
   title: 'GitHub Docs — Adding MCP servers for GitHub Copilot CLI',
-  verifiedOn: '2026-09-28',
+  verifiedOn: '2026-10-03',
   covers:
     'Project-level .mcp.json (mcpServers) that a project-scope copilot mcp install also merges ' +
     'into (buildMcpConfigOps, src/targets/copilot/target-helpers.ts), because Copilot CLI never ' +

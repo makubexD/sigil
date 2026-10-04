@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M3: P1, T13, T11, T14 done; next T12 (doc re-verify results).
+Status: M3: P1, T11, T12, T13, T14 done; next Phase 5 review, PR, merge.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -40,10 +40,17 @@ Spec: `SPEC.md`
 
 - [x] P1 Commit the V1 probe to the repo with instructions (portable to another machine)
 - [x] T11 Provider limits as spec data
-- [ ] T12 Re-verify the cited docs
+- [x] T12 Re-verify the cited docs
 - [x] T14 Claude validator in CI
 - [x] T13 Markdown links for skill references (docs-backed; V1 at the end confirms the backtick case)
 - [ ] Phase 5 review
+
+## Follow-ups from the 2026-10-03 doc re-verification (kept, prioritised; none dropped)
+
+- [ ] F1 (P1) Copilot MCP: write the portable `.mcp.json` only, or keep `.vscode/mcp.json` behind an option (VS Code deprecates it) — output change, needs a go
+- [ ] F2 (P2) `allowed-tools`: follow the Agent Skills spec's space-separated form once a provider requires it
+- [ ] F3 (P2) Copilot prompt → skill migration when Copilot skills gain arguments (Agent Host no longer loads prompt files)
+- [ ] F4 (P2) Verify Copilot CLI `${NAME}` expansion in `.mcp.json` (with V1, on the licensed machine)
 
 ## Milestone 4: target-layer core (byte-identical)
 

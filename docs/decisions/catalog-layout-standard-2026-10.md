@@ -174,3 +174,32 @@ _Result: pending_ (probe and instructions: `docs/audits/2026-10-03/`). Meanwhile
 the documented recommendation: skills link each reference (`reference-links`, with a mechanical
 `sync --apply` fix), and `catalog-layout` flags a reference `SKILL.md` never names. If V1 shows
 backtick paths load too, `reference-links` can drop to a warning for imported skills.
+
+## Appendix: provider baseline, re-verified 2026-10-03
+
+Every cited provider doc (`src/targets/doc-refs.ts`) was fetched again. No key or value sigil emits
+is rejected by any provider's docs, and the Claude plugins pass `claude plugin validate --strict`.
+`COPILOT_CREATE_AGENTS_DOC` was reachable but not re-read, so its `verifiedOn` stays.
+
+**Changed since the last verification:**
+
+- VS Code now lists `.vscode/mcp.json` as deprecated in favour of the portable `.mcp.json`
+  (`mcpServers`). sigil's Copilot target still writes both; Copilot CLI never reads
+  `.vscode/mcp.json`.
+- Copilot prompt files are deprecated for VS Code's Agent Host sessions (Local agent only "for
+  now"); VS Code recommends migrating prompts to skills. Copilot skills still have no argument
+  input, which is why sigil keeps prompt files.
+- The Claude settings key reference moved to `settings-reference` (citation re-pointed).
+- Claude skills now accept `paths`; sigil's Claude skill spec forbids it by policy (path scoping
+  belongs to rules).
+- The Agent Skills spec marks `allowed-tools` experimental, as a space-separated string; sigil
+  emits a comma-separated list, which Claude Code and Copilot accept today.
+
+**Still undocumented:** whether Copilot CLI expands `${NAME}` in `.mcp.json`; the Copilot lexicon's
+`arguments` value (skills have no argument mechanism) has no explicit sentence in the cited doc.
+
+**Documented but not mapped** (map only when the catalog needs one): Claude skill `model`,
+`effort`, `disallowed-tools`, `shell`, `hooks`, `background`; Claude subagent `permissionMode`,
+`memory`, `background`, `color`, `omitClaudeMd`; Copilot agent `user-invocable`,
+`disable-model-invocation`, `target` (`infer` is retired); instructions `excludeAgent`;
+plugin.json `displayName`, `keywords`, `license`, `dependencies`, `userConfig`.

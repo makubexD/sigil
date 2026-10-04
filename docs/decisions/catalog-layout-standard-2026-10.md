@@ -98,17 +98,22 @@ and not registered anywhere.
 
 ## Guards
 
-- **Prevent:** every writer (`import`, `new`, `move`) shares the layout module and the trust scan.
-  Shared imports carry no `language:`, and an unknown language is refused.
+- **Prevent:** the writers keep files on the layout. `import` (`--shared` or a registered
+  `--language`) brings a skill's flat references, trust-scans everything it writes, and lists what
+  can't ship; `new` refuses an unknown language; `move` keeps `language:` in step with the
+  namespace. `sigil check` (run by every authoring command) rejects `language:` on a shared
+  artifact and a language folder with no `language.yaml`. Every file taken from a catalog or an
+  import source is read through `src/safe-read.ts` (regular files only, never a followed link).
 - **Detect:**
   - A `catalog-layout` conformance rule fails `sync --check` in CI.
-  - Provider limits (name, description, body size) are kept as data on each emit spec and checked by
-    one generic rule.
-  - Both are author-only. `validateCatalog`, which gates `add`, `update`, `status` and the wizard on
+  - Planned (Milestone 3): provider limits (name, description, body size) kept as data on each
+    emit spec and checked by one generic rule.
+  - These are author-only. `validateCatalog`, which gates `add`, `update`, `status` and the wizard on
     any user catalog, gets no new layout errors.
   - Exception: an agent whose tool restriction a target would drop fails closed at render time,
     because shipping it would silently grant every tool.
-- **Verify the output:** `claude plugin validate --strict` runs in CI on `dist/claude`.
+- **Verify the output** (planned, Milestone 3): `claude plugin validate --strict` in CI on
+  `dist/claude`.
 - **Never break:**
   - the output snapshot test;
   - the frozen install from master `8882c86` (`test/fixtures/installs/`);
@@ -131,8 +136,12 @@ and not registered anywhere.
 - **Shared primitives:** one emitter, serializers, and generic checks. `registerTarget()` is the only
   list of providers.
 
-**Built now (Milestone 4):** the generic emitter and the single provider registry. Both remove
-duplication that exists today.
+**Planned next (Milestone 4):** the generic emitter and the single provider registry. Both remove
+duplication that exists today. Already built in this round: MCP config references environment
+variables with a neutral `{sigil:env:NAME}` token that each target expands into its file's syntax
+(`src/targets/env-reference.ts`); Claude Code documents `${NAME}` in `.mcp.json`, VS Code
+documents `${env:NAME}`, and Copilot CLI's reading of `${NAME}` in the shared `.mcp.json` is not
+documented yet.
 
 **Built with the first new target:** TOML/JSON serializers, an aggregate spec, tool-name aliases, and
 moving `claude:` into `frontmatterExtensions`. Until a consumer exists they would be guesses, and
@@ -159,4 +168,5 @@ and recommends Markdown links. The catalog's skills mention references as backti
 that counts is checked in VS Code (task V1). The result decides what the `catalog-layout` rule treats
 as "mentioned" and whether skills switch to links.
 
-_Result: pending._
+_Result: pending._ Until it is in, the rule treats a reference as mentioned when `SKILL.md`
+contains its path (`references/<name>`) in any form, backticks or a link.

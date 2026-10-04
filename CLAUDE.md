@@ -129,10 +129,17 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   (`src/commands/sync/conformance/rules/catalog-symmetry.ts`) catches a family missing from one language namespace
   without assuming the bodies are duplicates. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
 - **Where an artifact goes is one rule**: no language variation → `shared/`; varies with the project's language →
-  `languages/<lang>/` (always, for agents and rules); varies with a stack the task chooses → one shared skill with
-  flat `references/stack-<stack>.md`. Tie → per-language. Group with `packs.yaml`, never topic folders; references
-  stay one level deep. `catalog-layout` (`src/commands/sync/conformance/rules/catalog-layout.ts`) fails `sync --check`
-  on a violation. (see `docs/decisions/catalog-layout-standard-2026-10.md`)
+  `languages/<lang>/` (the only option for a language-varying agent or rule — neither loads references on demand);
+  varies with a stack the task chooses → one shared skill with flat `references/stack-<stack>.md`. Tie →
+  per-language. Group with `packs.yaml`, never topic folders; references stay one level deep. `catalog-layout`
+  (`src/commands/sync/conformance/rules/catalog-layout.ts`) fails `sync --check` on placement and skill-folder
+  violations; it is author-only and adds nothing to `validateCatalog`. (see
+  `docs/decisions/catalog-layout-standard-2026-10.md`)
+- **Read catalog and import files only through `src/safe-read.ts`** (regular files, never a followed link, size cap,
+  checked on the handle it reads from), and **parse frontmatter only through `src/frontmatter-parse.ts`** —
+  gray-matter caches and shares parsed objects, so ESLint forbids importing it anywhere else in `src/`.
+- **MCP config never carries a provider's env syntax.** Catalog `server` values write `{sigil:env:NAME}`; each target
+  expands it for the file it writes (`src/targets/env-reference.ts`, an `EnvSyntax` per file format).
 - **Artifact bodies are provider-neutral prose — never a hardcoded provider-specific literal** (`CLAUDE.md`,
   `$ARGUMENTS`, `.claude/rules/`, …). Bodies use `{sigil:<term>}` tokens (`LEXICON_TERMS` in `src/targets/lexicon.ts`)
   and one `ProviderLexicon` per provider (`src/targets/<provider>/lexicon.ts`), applied by `renderArtifact()`

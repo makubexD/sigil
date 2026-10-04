@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M2: all tasks done except V1/T13 (user check pending); next Phase 5 review, then PR + merge.
+Status: M2 done incl. Phase 5 fixes; V1 pending (user) → T13 moves to M3. Next: PR, merge, release R2.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -28,12 +28,12 @@ Spec: `SPEC.md`
 - [x] ⚠ T2 Delete the stray `add` file
 - [x] T5 Prevent (import, new, move)
 - [x] T6 Detect (`catalog-layout` rule)
-- [ ] T13 Markdown links, only if V1 needs them
+- [ ] T13 → moved to M3 (V1 pending)
 - [x] T7 Content fixes
 - [x] ⚠ T8 ADO MCP env token and org scrub
 - [x] T9 `cli-builder` pack
 - [x] T10 Auditor lookup (P2)
-- [ ] Phase 5 review
+- [x] Phase 5 review
 - [ ] ⚠ R2 Release minor
 
 ## Milestone 3: provider conformance
@@ -41,6 +41,7 @@ Spec: `SPEC.md`
 - [ ] T11 Provider limits as spec data
 - [ ] T12 Re-verify the cited docs
 - [ ] T14 Claude validator in CI
+- [ ] T13 Markdown links, only if V1 needs them (moved from M2; V1 pending)
 - [ ] Phase 5 review
 
 ## Milestone 4: target-layer core (byte-identical)

@@ -25,7 +25,7 @@ or stack (or "shared"). A guided issue form is planned:
 
 If you cloned the repo, `sigil new` runs a wizard that scaffolds the file for you (step 3 below).
 `sigil import <dir> --language <lang>` converts an existing Claude-style template folder into
-catalog artifacts; it reads Claude-style folders only and needs `--language`. See
+catalog artifacts; it reads Claude-style folders only and needs `--language <lang>` or `--shared`. See
 [authoring.md](docs/guides/authoring.md#import-an-existing-portable-template-directory).
 
 ---

@@ -22,7 +22,7 @@
   ".github/skills/cli/references/testing.md": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c",
   ".github/skills/cs-generate-tests/SKILL.md": "cc4acdfcc55a66449718d402fb48e3d8b2b146b32b1c6bd03df108b3c155a47a",
   ".github/skills/ts-release/SKILL.md": "9db7c93568f13c481a1d07869373e625698c255ae8fe6420339fdd88d2009d11",
-  ".mcp.json": "c22a37a45342f26304ffb3d2f45a15593df689974715243e3f573a864655bd48",
-  ".sigil/manifest.json": "36ff6e48388a6f96d9edded1d93989ec5750972fb7545fa1cee2cfac2536e3c4",
-  ".vscode/mcp.json": "24534b856ad3d76d800a4e40ce0841cfa4daeed1736d5b78b8bbc17e52dfc1e1"
+  ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
+  ".sigil/manifest.json": "78ade73c78c46529fd282f6f43b21f000de517b520b842d2340005ceaffb4cf2",
+  ".vscode/mcp.json": "2e3f5507877483c1d625d57e896356d8b62154761afe6ae09bd728d3df6455f3"
 }

@@ -22,7 +22,7 @@
   ".claude/skills/cs-generate-tests/SKILL.md": "5d0c48038570a38e01aa32cdf6907fb0a4042c132a08151855754a4ae042f959",
   ".claude/skills/shared-explain-diff/SKILL.md": "02800e7c98d7ad21040948a5e3b84f36aa6bdd2dd7daf075aa0c6732f82ad679",
   ".claude/skills/ts-release/SKILL.md": "9b272361bbfb347a5fb039de4b3a8682727225f986c08123ce9d105925d2edaa",
-  ".mcp.json": "c22a37a45342f26304ffb3d2f45a15593df689974715243e3f573a864655bd48",
-  ".sigil/manifest.json": "a4c704b976fff3525a5e706c4de19feb6c7e111b7872482f690b0583b094acb7",
+  ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
+  ".sigil/manifest.json": "9ec01b0775d914dad942b108e3bce1b5964590372178e8d85419f4f5a0915eb7",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

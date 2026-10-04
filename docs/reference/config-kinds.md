@@ -49,6 +49,12 @@ artifact's `name`. Claude nests it under `mcpServers`; Copilot's project scope w
 | `defaultScope` | Recommended install scope. Claude: `project` = `.mcp.json`, `local` = `~/.claude.json` per-project key, `user` = `~/.claude.json`. Copilot: `project` / `local` = `.vscode/mcp.json` + `.mcp.json`; `user` = the VS Code user-profile `mcp.json` |
 | `language`     | Optional language scope. Omit for a shared server                                                                                                                                                                                                |
 
+Reference an environment variable anywhere in `server` with the neutral token `{sigil:env:NAME}`
+(`src/targets/env-reference.ts`). Each target writes the syntax of the file it merges into:
+`${NAME}` in Claude Code's files and the portable `.mcp.json`, `${env:NAME}` in VS Code's
+`mcp.json`. Never write one tool's syntax in the catalog. Pin every `npx` package to an exact
+version (`@scope/pkg@1.2.3`); a test fails on a floating one.
+
 ## Merge strategies
 
 Each config merge op names a strategy per top-level JSON key (`MergeStrategy` in `src/types.ts`,

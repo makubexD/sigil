@@ -36,7 +36,10 @@ import {
   COPILOT_MCP_SERVERS_KEY,
   COPILOT_CLI_MCP_FILE,
   COPILOT_CLI_MCP_SERVERS_KEY,
+  VSCODE_MCP_ENV_SYNTAX,
 } from './mcp-key';
+import { expandEnvTokens, PORTABLE_MCP_ENV_SYNTAX } from '../env-reference';
+import type { EnvSyntax } from '../env-reference';
 
 /**
  * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
@@ -189,17 +192,36 @@ export function scaffoldByKind(
 
 type McpArtifact = NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>;
 
+/** The servers key and env-reference syntax of one MCP file. */
+interface McpFileFormat {
+  readonly key: string;
+  readonly env: EnvSyntax;
+}
+
+/** VS Code's mcp.json files. */
+const VSCODE_MCP_FORMAT: McpFileFormat = {
+  key: COPILOT_MCP_SERVERS_KEY,
+  env: VSCODE_MCP_ENV_SYNTAX,
+};
+/** The portable .mcp.json Copilot CLI reads (shared with Claude Code). */
+const PORTABLE_MCP_FORMAT: McpFileFormat = {
+  key: COPILOT_CLI_MCP_SERVERS_KEY,
+  env: PORTABLE_MCP_ENV_SYNTAX,
+};
+
 /** Builds one mcp ConfigMergeOp: the server under `key` (VS Code `servers` unless told otherwise). */
 export function buildMcpConfigOp(
   artifact: McpArtifact,
   dest: ReturnType<typeof resolveCopilotConfigDestination>,
-  key: string = COPILOT_MCP_SERVERS_KEY,
+  format: McpFileFormat = VSCODE_MCP_FORMAT,
 ): ConfigMergeOp {
   const fm = artifact.frontmatter;
   const server = fm.server as Record<string, unknown>;
   const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
-  const { description: _d, ...serverConfig } = server as Record<string, unknown>;
+  const { description: _d, ...authored } = server as Record<string, unknown>;
   void _d;
+  const serverConfig = expandEnvTokens(authored, format.env);
+  const key = format.key;
   return {
     file: dest.file,
     root: dest.root,
@@ -218,7 +240,7 @@ export function buildMcpConfigOps(artifact: McpArtifact, scope: ConfigScope): Co
   const ops = [buildMcpConfigOp(artifact, resolveCopilotConfigDestination('mcp', scope))];
   if (scope !== 'user') {
     const cli = { file: COPILOT_CLI_MCP_FILE, root: 'project' as const };
-    ops.push(buildMcpConfigOp(artifact, cli, COPILOT_CLI_MCP_SERVERS_KEY));
+    ops.push(buildMcpConfigOp(artifact, cli, PORTABLE_MCP_FORMAT));
   }
   return ops;
 }

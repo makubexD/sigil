@@ -7,7 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Breaking
+
+- `shared/ado` (Azure DevOps MCP) no longer hard-codes an organisation: set `ADO_ORG` (your
+  organisation name) and `ADO_MCP_PERSONAL_TOKEN` in the environment your AI tool starts from, then
+  run `sigil update`. The server is pinned to `@azure-devops/mcp@2.10.0` instead of the nightly
+  `@next` tag.
+
 ### Added
+
+- MCP artifacts reference environment variables with a neutral `{sigil:env:NAME}` token, written
+  as `${NAME}` for Claude Code and the portable `.mcp.json` and as `${env:NAME}` for VS Code's
+  `mcp.json`. Before, `shared/ado` shipped VS Code's syntax to every tool, so Claude Code passed
+  the literal text instead of the token. The filesystem MCP is now pinned to an exact version too.
 
 - New `cli-builder` pack (and Claude plugin): the `cli` and `wizard` skills with their per-stack
   references, their rules and both auditor agents. Before it, no plugin carried them.

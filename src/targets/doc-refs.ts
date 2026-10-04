@@ -277,6 +277,14 @@ export const CLAUDE_PLUGIN_MARKETPLACES_DOC: DocRef = {
     'src/targets/claude-code/target-helpers.ts buildMarketplaceJson() emits.',
 };
 
+/** VS Code's `${env:Name}` env-variable syntax (VSCODE_MCP_ENV_SYNTAX in copilot/mcp-key.ts). */
+export const VSCODE_VARIABLES_DOC: DocRef = {
+  url: 'https://code.visualstudio.com/docs/reference/variables-reference#_environment-variables',
+  title: 'VS Code — Variables reference (Environment variables)',
+  verifiedOn: '2026-10-03',
+  covers: 'the ${env:Name} syntax VS Code substitutes in config files such as mcp.json.',
+};
+
 /** `.vscode/mcp.json` — VS Code's own MCP servers doc, the workspace-scope configuration file. */
 export const VSCODE_MCP_DOC: DocRef = {
   url: 'https://code.visualstudio.com/docs/copilot/customization/mcp-servers',

@@ -9,6 +9,7 @@ import type { Artifact, ConfigMergeOp, MergeStrategy } from '../../types';
 import { basenameOfId } from '../../paths';
 import { CLAUDE_MCP_SERVERS_KEY } from './config';
 import type { ConfigDestination } from './config';
+import { expandEnvTokens, PORTABLE_MCP_ENV_SYNTAX } from '../env-reference';
 
 /** Builds the single hook entry ({type, command, args?, timeout?}) from an artifact's frontmatter. */
 function buildHookEntry(fm: Artifact['frontmatter']): Record<string, unknown> {
@@ -135,8 +136,9 @@ export function buildMcpConfigOps(artifact: Artifact, dest: ConfigDestination): 
   const server = fm.server as Record<string, unknown>;
   const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
   // Strip any catalog-only fields before storing
-  const { description: _d, ...serverConfig } = server as Record<string, unknown>;
+  const { description: _d, ...authored } = server as Record<string, unknown>;
   void _d;
+  const serverConfig = expandEnvTokens(authored, PORTABLE_MCP_ENV_SYNTAX);
 
   if (dest.wrapPath) {
     return [buildWrappedMcpOp(dest, serverName, serverConfig)];

@@ -67,7 +67,7 @@ function printDryRunPreview(nextVersion: string, doVerify: boolean): void {
   console.log(`    • Write package-lock.json version: ${nextVersion}`);
   if (doVerify) {
     console.log(
-      '    • Run: npm run build && npm run validate && npm test && npm run catalog:build',
+      `    • Run: ${RELEASE_GATE.join(' && ')}`,
     );
   }
   console.log('    • Promote CHANGELOG.md [Unreleased] → ' + `[${nextVersion}] - <today>`);
@@ -101,10 +101,15 @@ function writeVersionFiles(nextVersion: string): { pkgPath: string; lockPath: st
   return { pkgPath, lockPath };
 }
 
-/** Runs the build/validate/test/catalog:build gate, aborting with a SigilError on failure. */
+/**
+ * The release gate: the full CI mirror, so a release can't pass a narrower check than a pull
+ * request (release.yml runs the same command before publishing).
+ */
+export const RELEASE_GATE: readonly string[] = ['npm run ci:local'];
+
+/** Runs the release gate, aborting with a SigilError on failure. */
 function runVerifyGate(): void {
-  const gate = ['npm run build', 'npm run validate', 'npm test', 'npm run catalog:build'];
-  for (const cmd of gate) {
+  for (const cmd of RELEASE_GATE) {
     process.stdout.write(`  running: ${cmd} … `);
     try {
       execSync(cmd, { stdio: 'pipe', cwd: PKG_ROOT });

@@ -16,9 +16,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '20'
           registry-url: 'https://registry.npmjs.org'
@@ -27,14 +27,23 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Build
-        run: npm run build
+      # The release runs the same gate as CI (npm run ci:local): audit, lint, format, build,
+      # validate, sync --check, tests, catalog build and Claude plugin validation, so a release
+      # can never pass a narrower check than a pull request. The plugin validator needs the
+      # Claude Code CLI, pinned once in package.json (config.claudeCodeVersion).
+      - name: Install Claude Code CLI (pinned)
+        env:
+          DISABLE_AUTOUPDATER: '1'
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+        run: |
+          npm install --global "@anthropic-ai/claude-code@$(node -p "require('./package.json').config.claudeCodeVersion")"
+          claude --version
 
-      - name: Validate catalog
-        run: npm run validate
-
-      - name: Run tests
-        run: npm test
+      - name: Full CI gate
+        env:
+          DISABLE_AUTOUPDATER: '1'
+          CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+        run: npm run ci:local
 
       # ── Publish ──────────────────────────────────────────────────────────────
       #

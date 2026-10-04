@@ -15,10 +15,20 @@ export interface FrontmatterBlock {
   readonly bodyStart: number;
 }
 
-/** Splits a raw file into its `---\n...\n---` frontmatter lines and the line index the body starts at. */
+const FENCE = '---';
+
+/**
+ * Splits a raw file into its `---\n...\n---` frontmatter lines and the line index the body starts
+ * at. The closing fence is the first later line starting with `---`, as gray-matter (the loader)
+ * reads it: text after it on that line (`---# Title`) is the start of the body, which
+ * extractOriginalBody keeps. Throws when there is no closing fence rather than letting a writer
+ * emit an empty frontmatter block.
+ */
 export function splitFrontmatterBlock(raw: string): FrontmatterBlock {
   const lines = raw.split(/\r?\n/);
-  const closeIdx = lines.slice(1).findIndex(line => line === '---') + 1;
+  const closeIdx = lines.findIndex((line, i) => i > 0 && line.startsWith(FENCE));
+  if (closeIdx < 1)
+    throw new Error('frontmatter has no closing --- fence; not rewriting this file');
   return { frontmatterLines: lines.slice(1, closeIdx), bodyStart: closeIdx + 1 };
 }
 
@@ -64,7 +74,9 @@ export function applyFrontmatterPatch(
   return [...kept, ...added];
 }
 
-/** The body text of a raw file, given where the frontmatter block ends. */
+/** The body text of a raw file, given where the frontmatter block ends (text after the fence too). */
 export function extractOriginalBody(raw: string, bodyStart: number): string {
-  return raw.split(/\r?\n/).slice(bodyStart).join('\n').trim();
+  const lines = raw.split(/\r?\n/);
+  const afterFence = (lines[bodyStart - 1] ?? '').slice(FENCE.length);
+  return [afterFence, ...lines.slice(bodyStart)].join('\n').trim();
 }

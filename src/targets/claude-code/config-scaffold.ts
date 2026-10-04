@@ -6,10 +6,9 @@
  * @module
  */
 import type { Artifact, ConfigMergeOp, MergeStrategy } from '../../types';
-import { basenameOfId } from '../../paths';
 import { CLAUDE_MCP_SERVERS_KEY } from './config';
+import { portableMcpOp, portableMcpServer } from '../portable-mcp';
 import type { ConfigDestination } from './config';
-import { expandEnvTokens, PORTABLE_MCP_ENV_SYNTAX } from '../env-reference';
 
 /** Builds the single hook entry ({type, command, args?, timeout?}) from an artifact's frontmatter. */
 function buildHookEntry(fm: Artifact['frontmatter']): Record<string, unknown> {
@@ -132,25 +131,10 @@ function buildWrappedMcpOp(
 }
 
 export function buildMcpConfigOps(artifact: Artifact, dest: ConfigDestination): ConfigMergeOp[] {
-  const fm = artifact.frontmatter;
-  const server = fm.server as Record<string, unknown>;
-  const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
-  // Strip any catalog-only fields before storing
-  const { description: _d, ...authored } = server as Record<string, unknown>;
-  void _d;
-  const serverConfig = expandEnvTokens(authored, PORTABLE_MCP_ENV_SYNTAX);
-
   if (dest.wrapPath) {
-    return [buildWrappedMcpOp(dest, serverName, serverConfig)];
+    const { name, config } = portableMcpServer(artifact);
+    return [buildWrappedMcpOp(dest, name, config)];
   }
-
-  return [
-    {
-      file: dest.file,
-      root: dest.root,
-      fragment: { [CLAUDE_MCP_SERVERS_KEY]: { [serverName]: serverConfig } },
-      strategy: { [CLAUDE_MCP_SERVERS_KEY]: 'object-spread' },
-      section: CLAUDE_MCP_SERVERS_KEY,
-    },
-  ];
+  // The same entry Copilot writes into the shared .mcp.json (../portable-mcp.ts).
+  return [portableMcpOp(artifact, { file: dest.file, root: dest.root ?? 'project' })];
 }

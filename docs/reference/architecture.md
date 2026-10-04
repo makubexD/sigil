@@ -47,9 +47,10 @@ carrying content that never ships. It needs that root, so a catalog built in mem
      scaffold?(artifactId, catalog, options): Promise<FileMap>; // optional
    }
    ```
-   `scaffold` is usually one line, `scaffoldArtifact({ specs: this.emitSpecs, artifact, catalog,
-options })` from `src/targets/emit-files.ts`; `compile` writes each artifact with `emitFile`.
-   Neither builds a file path itself.
+   `scaffold` is usually one call to `scaffoldArtifact` (`src/targets/emit-files.ts`) with
+   `this.emitSpecs`; `compile` decides which artifacts go where and writes each one with
+   `emitFile`, directly or through a helper. Neither builds a file path itself. The optional
+   `lexicon`, `aggregateDocs` and `privateDirs` fields are covered in step 8.
 2. Register in `src/targets/index.ts` with `registerTarget(new YourTarget())`.
 3. The `--target <name>` CLI flag and `dist/<name>/` output directory work automatically.
 4. Declare kind support once, in `src/targets/<platform>/capabilities.ts`: a `TargetCapabilities`
@@ -258,9 +259,9 @@ artifact built against it needs its output regenerated. `sigil sync` is the comm
 **Doc citations are staleness-tracked, not continuously verified.** Every `docs:` entry — on a
 template, or in a provider's `KindEmitSpec.docs` (`src/targets/doc-refs.ts`) — carries a
 `verifiedOn` date. `sigil sync --stale <months>` (default 6) walks both: template citations via
-`findStaleDocs` and every provider spec's (plus the two hand-written aggregates',
-`copilot-instructions.md`/`AGENTS.md`) citations via `findStaleProviderDocs`
-(`src/targets/all-emit-specs.ts` flattens the input; `src/commands/sync/analyze.ts` does the date
+`findStaleDocs` and every registered target's citations (spec `docs`, `aggregateDocs` for aggregates and merged
+config files, and capability rows) via `findStaleProviderDocs` (`allProviderDocRefs` in
+`src/targets/all-emit-specs.ts` gathers them; `src/commands/sync/analyze.ts` does the date
 check). `--check` fails CI when any entry is stale — wired into `.github/workflows/ci.yml`. What
 stays manual: nothing re-fetches a URL or confirms the page still describes the cited structure —
 a person does that and then updates `verifiedOn`.

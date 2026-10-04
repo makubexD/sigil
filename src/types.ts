@@ -420,6 +420,8 @@ export interface Target {
    * Checked by `build` and `add` after emit; any violation causes a non-zero exit.
    * Each entry maps a path regex to required/forbidden frontmatter keys and body constraints.
    * Files matching no entry are skipped (aggregate files like AGENTS.md have no fixed shape).
+   * Raw: check output with `contractsFor(target)` (src/targets/all-emit-specs.ts), which adds the
+   * literals other providers forbid here (lexicon `forbidElsewhere`).
    */
   outputContracts?: ContractEntry[];
 

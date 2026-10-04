@@ -1,7 +1,6 @@
 /**
- * Every Copilot KindEmitSpec, assembled for deriveContracts() and `sigil sync --stale`.
- * Individual specs are imported directly by the emitters that use them (build-helpers.ts) — this
- * array exists only for code that needs the full set. Copilot has no `hook`/`settings` spec —
+ * Every Copilot KindEmitSpec: the target's `emitSpecs`, which ../../emit-files.ts writes every
+ * per-artifact file through, and the input to deriveContracts() and `sigil sync --stale`. Copilot has no `hook`/`settings` spec —
  * that absence is the unsupported-kind statement for those two config kinds. `workflow` DOES have
  * a spec (COPILOT_WORKFLOW_SPEC) even though it renders through the exact same shape as `prompt`
  * (see prompt.ts's buildPromptLikeSpec) — without its own entry here, `workflow` would be a

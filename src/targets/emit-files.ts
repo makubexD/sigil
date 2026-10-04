@@ -69,10 +69,11 @@ export function scaffoldArtifact(input: ScaffoldInput, files: FileMap = {}): Fil
     ...(artifact.resolvedRules ?? []),
     ...(artifact.resolvedAgentIds ?? []).flatMap(id => catalog.byId.get(id) ?? []),
   ];
-  for (const dep of deps)
-    scaffoldArtifact(
-      { ...input, artifact: dep, options: { ...options, includeDeps: false } },
-      files,
-    );
+  // A dependency whose kind this target can't write is skipped, as resolveSelection skips a
+  // top-level pick: the skill still installs.
+  const depOptions = { ...options, includeDeps: false };
+  for (const dep of deps.filter(d => specFor(specs, d.kind, 'scaffold'))) {
+    scaffoldArtifact({ ...input, artifact: dep, options: depOptions }, files);
+  }
   return files;
 }

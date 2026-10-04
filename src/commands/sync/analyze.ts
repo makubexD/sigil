@@ -199,8 +199,8 @@ export function findStaleDocs(catalog: LoadedCatalog, staleMonths: number): Stal
 }
 
 /**
- * Every registered provider's `KindEmitSpec.docs` (plus the two hand-written aggregate outputs)
- * whose `verifiedOn` is older than `staleMonths`. This is what makes `KindEmitSpec.docs` actually
+ * Every registered target's citation (spec `docs`, its `aggregateDocs` for files no spec renders,
+ * and its capability rows) whose `verifiedOn` is older than `staleMonths`. This is what makes `KindEmitSpec.docs` actually
  * tracked, not just declared — see src/targets/all-emit-specs.ts.
  */
 export function findStaleProviderDocs(staleMonths: number): StaleDoc[] {

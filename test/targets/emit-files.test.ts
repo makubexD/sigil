@@ -14,7 +14,7 @@ import { loadResolvedCatalog } from '../helpers/catalog';
 const TARGETS_SRC = path.resolve(__dirname, '../../src/targets');
 const WRITER = path.join(TARGETS_SRC, 'emit-files.ts');
 // A FileMap key built by hand for a whole-file kind's folder.
-const HAND_BUILT_PATH = /files\[`[^`]*\/(skills|agents|rules|instructions|prompts)\//;
+const HAND_BUILT_PATH = /files\[[`'"][^`'"]*\/(skills|agents|rules|instructions|prompts)\//;
 
 function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
@@ -53,6 +53,18 @@ describe('emit-files', () => {
       const dir = path.posix.dirname(skillPath);
       const expected = [skillPath, ...skill.references!.map(r => `${dir}/references/${r.name}`)];
       assert.deepEqual(Object.keys(files).sort(), expected.sort(), target.name);
+    }
+  });
+
+  it("should place every plugin-channel file at a path its own spec's pattern matches", async () => {
+    const catalog = await loadResolvedCatalog();
+    for (const target of getAllTargets().filter(t => t.emitSpecs)) {
+      for (const artifact of catalog.artifacts) {
+        const spec = specFor(target.emitSpecs!, artifact.kind, 'plugin');
+        if (!spec) continue;
+        const file = spec.outputPath(artifact, { packName: 'pack' });
+        assert.ok(spec.pathPattern.test(file), `${target.name}: ${file} vs ${spec.pathPattern}`);
+      }
     }
   });
 

@@ -61,7 +61,7 @@ describe('Copilot target', () => {
 
   it('buildInstructionsFile: language-less rule with narrow appliesTo keeps its own glob (A1)', () => {
     // shared/clean-code-style has no `language` but authors a narrow appliesTo — the Claude
-    // adapter's A1 fix (scaffold.ts) already honors this; the Copilot adapter must too.
+    // adapter's A1 fix (claude-code/spec/rule.ts) already honors this; the Copilot adapter must too.
     const rule = makeRule({
       id: 'shared/markdown-style',
       title: 'Markdown Style',

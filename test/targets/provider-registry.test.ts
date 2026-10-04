@@ -18,10 +18,27 @@ import { getAllTargets, getTarget, registerTarget } from '../../dist-cli/targets
 import type { Target } from '../../dist-cli/types';
 
 const SRC = path.resolve(__dirname, '../../src');
+const TARGETS_DIR = path.join(SRC, 'targets');
+const REGISTRY = path.join(TARGETS_DIR, 'index.ts');
 const PROVIDER_DIRS = ['claude-code', 'copilot'];
-const PROVIDER_IMPORT = new RegExp(
-  `from '[./]*(targets/)?(${PROVIDER_DIRS.join('|')})(/[\\w-]+)*'`,
-);
+// Static `from '…'` and dynamic `import('…')` specifiers.
+const IMPORT_RE = /(?:from\s+|import\()\s*['"]([^'"]+)['"]/g;
+
+/** The provider folder `file` lives in, if any. */
+function providerOf(file: string): string | undefined {
+  const rel = path.relative(TARGETS_DIR, file).split(path.sep);
+  return rel.length > 1 && PROVIDER_DIRS.includes(rel[0]!) ? rel[0] : undefined;
+}
+
+/** The provider folders `file` imports from, by resolving each relative specifier. */
+function importedProviders(file: string): string[] {
+  const source = fs.readFileSync(file, 'utf8');
+  return [...source.matchAll(IMPORT_RE)]
+    .map(m => m[1]!)
+    .filter(spec => spec.startsWith('.'))
+    .map(spec => providerOf(path.resolve(path.dirname(file), spec, 'x.ts')))
+    .filter((p): p is string => p !== undefined);
+}
 
 function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
@@ -51,20 +68,15 @@ const probeTarget = {
 } as unknown as Target;
 
 describe('provider registry', () => {
-  it('should import provider folders only from src/targets/index.ts', () => {
+  it('should import a provider folder only from itself or src/targets/index.ts', () => {
     const offenders = sourceFiles(SRC)
-      .filter(
-        file =>
-          !PROVIDER_DIRS.some(dir =>
-            file.includes(`${path.sep}targets${path.sep}${dir}${path.sep}`),
-          ),
-      )
-      .filter(file => file !== path.join(SRC, 'targets', 'index.ts'))
-      .filter(file => PROVIDER_IMPORT.test(fs.readFileSync(file, 'utf8')));
-    assert.deepEqual(
-      offenders.map(f => path.relative(SRC, f)),
-      [],
-    );
+      .filter(file => file !== REGISTRY)
+      .flatMap(file =>
+        importedProviders(file)
+          .filter(provider => provider !== providerOf(file))
+          .map(provider => `${path.relative(SRC, file)} -> ${provider}`),
+      );
+    assert.deepEqual(offenders, []);
   });
 
   it("should forbid another provider's flagged literals, never a provider's own", () => {

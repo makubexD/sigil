@@ -65,9 +65,8 @@ import { CLAUDE_EMIT_SPECS } from './spec';
 import { CLAUDE_LEXICON } from './lexicon';
 import { CLAUDE_AGGREGATE_DOCS } from './aggregate-docs';
 import type { ProviderLexicon } from '../lexicon';
-import type { SourcedDocRef } from '../spec-types';
+import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
 import { scaffoldArtifact } from '../emit-files';
-import type { KindEmitSpec } from '../spec-types';
 import { CLAUDE_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 

@@ -34,12 +34,18 @@ function leakedDirs(artifact: Artifact, targets: readonly Target[]): Array<[Targ
   );
 }
 
+/** Whether `artifact`'s kind installs on `target` at all (an `ownedBy` kind only on its owners). */
+function shipsTo(artifact: Artifact, target: Target): boolean {
+  const owners = KIND_REGISTRY[artifact.kind].ownedBy;
+  return owners.length === 0 || owners.includes(target.name);
+}
+
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
   const targets = getAllTargets();
   return ctx.catalog.artifacts.flatMap(artifact =>
     leakedDirs(artifact, targets).flatMap(([owner, dir]) =>
       targets
-        .filter(other => other.name !== owner.name)
+        .filter(other => other.name !== owner.name && shipsTo(artifact, other))
         .map(other => ({
           ruleId: 'platform-path-leak',
           severity: 'warning' as const,

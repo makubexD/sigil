@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M4: T16, T17 done; next Phase 5 review, PR, CI, merge.
+Status: M1-M4 done. Next: the end block (live checks, decisions, one release).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`

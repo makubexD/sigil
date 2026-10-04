@@ -1,5 +1,5 @@
 /**
- * Copilot `skill` emission spec — declarative counterpart to build-helpers.ts's buildSkillMd().
+ * Copilot `skill` emission spec.
  * Frontmatter is deliberately minimal: `name` + `description` only. NO `applyTo`/`paths` —
  * Copilot Agent Skills load by description relevance, not file-path matching. Resolved rule
  * bodies are always inlined (Copilot has no equivalent to Claude's native .claude/rules/ loading
@@ -111,11 +111,8 @@ const codingGuidelinesSection: BodySectionSpec = {
 
 export const COPILOT_SKILL_SPEC: KindEmitSpec = {
   kind: 'skill',
-  outputPath: (artifact, ctx) => {
-    const name = artifact.frontmatter.name as string;
-    const root = ctx.packName ? '.github' : '.github'; // same layout for compile and scaffold
-    return `${root}/skills/${name}/SKILL.md`;
-  },
+  // Same layout for compile and scaffold: Copilot has no plugin channel.
+  outputPath: artifact => `.github/skills/${artifact.frontmatter.name as string}/SKILL.md`,
   pathPattern: /\.github\/skills\/.*\/SKILL\.md$/,
   frontmatter: [nameMapping, descriptionMapping, allowedToolsMapping],
   emitEmptyFrontmatter: true,

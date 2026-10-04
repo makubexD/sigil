@@ -8,12 +8,10 @@ import type {
   ResolvedCatalog,
   FileMap,
   CompileOptions,
-  ScaffoldOptions,
   ConfigMergeOp,
   ConfigScope,
   ConfigKind,
   ConfigScopeDestination,
-  ArtifactKind,
 } from '../../types';
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
@@ -21,13 +19,6 @@ import { resolveClaudeConfigDestination, CLAUDE_MCP_SERVERS_KEY } from './config
 import { JSON_INDENT } from '../../json-util';
 import { getPackArtifacts } from './plugin-build';
 import { buildPlugin } from './plugin-assemble';
-import {
-  scaffoldSkill,
-  scaffoldRule,
-  scaffoldAgent,
-  scaffoldPrompt,
-  scaffoldWorkflow,
-} from './scaffold';
 import { buildHookConfigOps, buildSettingsConfigOps, buildMcpConfigOps } from './config-scaffold';
 
 /** The 3 Claude Code config scopes, ordered by documented precedence (highest → lowest). */
@@ -133,37 +124,6 @@ export function buildOnePackPlugin(
     homepage: options.homepage,
   });
   return { files, entry: buildPluginEntry(pack) };
-}
-
-/** Maps an artifact kind to its scaffold* function; throws for unsupported kinds. */
-const SCAFFOLD_BY_KIND: Partial<
-  Record<
-    ArtifactKind,
-    (
-      artifact: NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>,
-      catalog: ResolvedCatalog,
-      files: FileMap,
-      options: ScaffoldOptions,
-    ) => void
-  >
-> = {
-  skill: (a, catalog, files, options) => scaffoldSkill(a, catalog, files, options),
-  agent: (a, catalog, files, options) => scaffoldAgent(a, files, catalog, options.coInstallSet),
-  rule: (a, _catalog, files) => scaffoldRule(a, files),
-  prompt: (a, _catalog, files) => scaffoldPrompt(a, files),
-  workflow: (a, _catalog, files) => scaffoldWorkflow(a, files),
-};
-
-/** Scaffolds one artifact by kind, dispatching to the matching scaffold* function. */
-export function scaffoldByKind(
-  artifact: NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>,
-  catalog: ResolvedCatalog,
-  files: FileMap,
-  options: ScaffoldOptions,
-): void {
-  const fn = SCAFFOLD_BY_KIND[artifact.kind];
-  if (!fn) throw new Error(`Scaffolding not supported for kind '${artifact.kind}'`);
-  fn(artifact, catalog, files, options);
 }
 
 /** Builds config merge ops for one config-kind artifact, dispatching by kind. */

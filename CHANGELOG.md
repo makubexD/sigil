@@ -129,6 +129,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Internal: every target writes skills, agents, rules, prompts and workflows through one writer
+  (`src/targets/emit-files.ts`), taking each file's path from its emit spec's `outputPath`. The
+  per-target `scaffold.ts` modules and their dispatch tables are gone, and `Target` gains
+  `emitSpecs`. Output is byte-identical (snapshot test).
 - `sigil new --language <lang>` refuses a language that has no `languages/<lang>/language.yaml` (a
   typo used to create a new, unregistered language folder) and lists the known ones. `sigil check`,
   and the authoring commands that run it, reject a shared artifact that sets `language:` and a

@@ -1,6 +1,6 @@
 /**
  * Claude Code `rule` emission spec — scaffold-path only (compile-path rules are never written as
- * standalone files; plugin-build.ts inlines resolvedBody straight into the owning skill's
+ * standalone files; the plugin skill spec inlines resolvedBody straight into the owning skill's
  * "## Applied Rules" section via spec/skill.ts, so there is no second `paths:` site to keep in
  * sync here). Any rule with an authored `appliesTo` gets a `paths:` block so Claude Code loads it
  * only when editing matching files; a rule with no `appliesTo` at all has no frontmatter and

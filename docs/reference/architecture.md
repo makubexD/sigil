@@ -42,10 +42,14 @@ carrying content that never ships. It needs that root, so a catalog built in mem
    export interface Target {
      name: string;
      capabilities: TargetCapabilities; // see step 4
+     emitSpecs?: readonly KindEmitSpec[]; // one per (kind, channel); see § Emit specs
      compile(catalog: ResolvedCatalog, options: CompileOptions): Promise<FileMap>;
      scaffold?(artifactId, catalog, options): Promise<FileMap>; // optional
    }
    ```
+   `scaffold` is usually one line, `scaffoldArtifact({ specs: this.emitSpecs, artifact, catalog,
+options })` from `src/targets/emit-files.ts`; `compile` writes each artifact with `emitFile`.
+   Neither builds a file path itself.
 2. Register in `src/targets/index.ts` with `registerTarget(new YourTarget())`.
 3. The `--target <name>` CLI flag and `dist/<name>/` output directory work automatically.
 4. Declare kind support once, in `src/targets/<platform>/capabilities.ts`: a `TargetCapabilities`
@@ -125,7 +129,13 @@ patterns) the emitted file must satisfy, and the size limits the provider docume
 name, description and body, each with its doc and an error or warning severity; the shared Agent
 Skills limits live in `src/targets/agent-skills-limits.ts`). `renderArtifact(spec, artifact, ctx)`
 (`src/targets/emit.ts`) is the single renderer every spec runs through — there is one emission
-function in the whole codebase, not one per platform.
+function in the whole codebase, not one per platform. `src/targets/emit-files.ts` is the single
+writer: `emitFile` puts the rendered file at `spec.outputPath(artifact, ctx)` (and a skill's
+references beside it), `specFor` picks a target's spec for a kind on a channel (`scaffold` or
+`plugin`), and `scaffoldArtifact` adds a skill's rules and agents. `outputPath` is therefore the
+only source of a whole-file path; `test/targets/emit-files.test.ts` fails if code under
+`src/targets/` builds one by hand. Only the aggregates (Copilot's `AGENTS.md` and
+`copilot-instructions.md`, `plugin.json`, `marketplace.json`) are written directly.
 
 Two consequences of this being data rather than code:
 

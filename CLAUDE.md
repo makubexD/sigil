@@ -53,8 +53,8 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   is not installed (`src/commands/add/co-install.ts`). Dependencies come only from `uses:`.
 - **`appliesTo` stays unchanged in `catalog/` source and the zod schema** — adapters translate it (`paths:` for
   Claude, `applyTo:` for Copilot `.instructions.md` only). Never gate that translation on `language`. All three
-  emitters must agree: `targets/claude-code/scaffold.ts`, `targets/claude-code/plugin-build.ts`, and
-  `targets/copilot/build-helpers.ts` (`buildInstructionsFile`).
+  emitters must agree: the Claude scaffold rule spec (`targets/claude-code/spec/rule.ts`), the Claude plugin skill
+  spec's inlined rules (`spec/skill.ts`), and the Copilot rule spec (`targets/copilot/spec/rule.ts`).
 - **`KIND_ORDER` (`src/select/selection.ts`) is derived from `KIND_REGISTRY`'s `selectorOrder`** in `src/kinds.ts`
   (selection.ts re-exports it), the same way `ALL_KINDS` derives from `displayOrder`. Never hand-list kinds in a
   second array — a kind added to `KIND_REGISTRY` without `selectorOrder` fails to compile. The same goes for where a
@@ -202,7 +202,8 @@ with `template: <id>` and supplies only slot content. `src/templates.ts` compose
 `resolvedAncestorBodies`. Never paste template prose back into an artifact body — `validate` flags it.
 
 Every (provider, kind) rendering is a data-only `KindEmitSpec` (`src/targets/<provider>/spec/<kind>.ts`) run through
-the one `renderArtifact()` (`src/targets/emit.ts`). **`contracts.ts` under each `targets/<provider>/` is derived from
+the one `renderArtifact()` (`src/targets/emit.ts`) and written by the one `emit-files.ts` (`emitFile` / `scaffoldArtifact`).
+**A whole-file path comes only from `spec.outputPath`** — never build one in a target (`test/targets/emit-files.test.ts`). **`contracts.ts` under each `targets/<provider>/` is derived from
 that provider's `KindEmitSpec[]` via `deriveContracts()`, never hand-written.** A `docs:` citation must name the
 provider's canonical home for the artifact, and cite both consumers when two products read the same emitted file.
 `KindEmitSpec.supersededBy` is an advisory `sigil sync` notice, never a `--check` failure. Shipped targets do not use

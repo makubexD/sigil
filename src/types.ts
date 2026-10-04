@@ -3,6 +3,7 @@
  * These interfaces flow through Load → Validate → Resolve → Emit.
  */
 import type { TargetCapabilities } from './targets/capability-types';
+import type { KindEmitSpec } from './targets/spec-types';
 
 // ─── Artifact kinds ──────────────────────────────────────────────────────────
 
@@ -420,6 +421,13 @@ export interface Target {
    * Files matching no entry are skipped (aggregate files like AGENTS.md have no fixed shape).
    */
   outputContracts?: ContractEntry[];
+
+  /**
+   * This target's whole-file renderings (one KindEmitSpec per kind and channel). The single
+   * source of each emitted file's path and content: `scaffold`, `compile` and plugin builds write
+   * through src/targets/emit-files.ts with these specs.
+   */
+  readonly emitSpecs?: readonly KindEmitSpec[];
 
   /**
    * Directories created by `sigil init` for this target (relative to project root).

@@ -7,12 +7,16 @@ import { loadCatalog } from '../../dist-cli/load';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
 import { loadResolvedCatalog } from '../helpers/catalog';
-import { buildInstructionsFile } from '../../dist-cli/targets/copilot/build-helpers';
+import { COPILOT_RULE_SPEC } from '../../dist-cli/targets/copilot/spec/rule';
 import { COPILOT_SKILL_SPEC } from '../../dist-cli/targets/copilot/spec/skill';
 import { renderArtifact } from '../../dist-cli/targets/emit';
 import type { ResolvedArtifact } from '../../dist-cli/types';
 import { CATALOG_DIR } from '../helpers/catalog';
 import { makeRule, makeSkill } from '../helpers/fixtures';
+
+/** A rule's .instructions.md, as compile and add write it. */
+const buildInstructionsFile = (rule: Parameters<typeof renderArtifact>[1]) =>
+  renderArtifact(COPILOT_RULE_SPEC, rule, {});
 
 const VERSION = '0.1.0';
 const PACKS = [

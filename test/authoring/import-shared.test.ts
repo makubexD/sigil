@@ -107,6 +107,50 @@ describe('sigil import --shared', () => {
     });
   });
 
+  it('should refuse a --language that is not a plain language name', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const source = writeSource(root);
+      await assert.rejects(
+        runImport(source, importOpts(catalog, { language: '../escape', createLanguage: true })),
+        /language/,
+      );
+      assert.equal(fs.existsSync(path.join(root, 'escape')), false);
+    });
+  });
+
+  it('should not create language.yaml on a dry run', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      await captured(() =>
+        runImport(
+          writeSource(root),
+          importOpts(catalog, { language: 'go', createLanguage: true, dryRun: true }),
+        ),
+      );
+      assert.equal(fs.existsSync(path.join(catalog, 'languages', 'go', 'language.yaml')), false);
+    });
+  });
+
+  it('should not write a reference through a symbolic link in the catalog', async t => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const outside = path.join(root, 'outside.md');
+      fs.writeFileSync(outside, 'untouched\n');
+      const refs = path.join(catalog, 'shared', 'skills', 'demo', 'references');
+      fs.mkdirSync(refs, { recursive: true });
+      try {
+        fs.symlinkSync(outside, path.join(refs, 'stack-go.md'), 'file');
+      } catch {
+        return t.skip('this machine cannot create file symlinks');
+      }
+      await captured(() =>
+        runImport(writeSource(root), importOpts(catalog, { shared: true, overwrite: true })),
+      ).catch(() => undefined);
+      assert.equal(fs.readFileSync(outside, 'utf8'), 'untouched\n');
+    });
+  });
+
   it('should require exactly one of --language and --shared', async () => {
     await withTempDirAsync(async root => {
       const catalog = emptyCatalog(root);

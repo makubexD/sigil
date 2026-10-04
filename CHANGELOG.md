@@ -203,6 +203,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   same open file it is read from. Anything
   else is skipped with a load warning. `sigil check --trust` now scans those files too, not only
   `SKILL.md`.
+- Every file sigil takes from a catalog or an import source is read the same safe way: an artifact
+  file that is a symbolic link is not followed (a cloned catalog or import source can't make sigil
+  read a file such as `~/.ssh/config` into the catalog), and artifact files over 1 MiB are skipped.
+  A non-Markdown file in `references/` is now reported instead of ignored. `sigil import` refuses a
+  `--language` that isn't a plain name, writes no `language.yaml` on `--dry-run`, and won't write a
+  file through a symbolic link already in the catalog.
 - `sigil new settings` and `sigil move` of a settings artifact wrote into `settingss/` instead of
   `settings/`, and `sigil move` of a template (three-part id) computed a wrong path. Each kind's
   source folder and file ending are now declared once and every command derives from them;

@@ -96,14 +96,26 @@ function referencePath(skillPath: string, name: string): string {
   return resolveContained(path.join(path.dirname(skillPath), 'references'), name);
 }
 
+/** Refuses to write through a symbolic link already sitting at a destination in the catalog. */
+function assertNoLinkAt(destPath: string): void {
+  if (fs.lstatSync(destPath, { throwIfNoEntry: false })?.isSymbolicLink()) {
+    throw new Error(`${destPath} is a symbolic link in the catalog; refusing to write through it`);
+  }
+}
+
 /** Writes rendered content (and a skill's references) to disk, creating directories as needed. */
 function writeItemToDisk(item: ImportItem, content: string): void {
-  fs.mkdirSync(path.dirname(item.destPath), { recursive: true });
-  fs.writeFileSync(item.destPath, content, 'utf-8');
-  for (const ref of item.references ?? []) {
-    const refPath = referencePath(item.destPath, ref.name);
-    fs.mkdirSync(path.dirname(refPath), { recursive: true });
-    fs.writeFileSync(refPath, ref.content, 'utf-8');
+  const writes = [
+    { file: item.destPath, content },
+    ...(item.references ?? []).map(ref => ({
+      file: referencePath(item.destPath, ref.name),
+      content: ref.content,
+    })),
+  ];
+  writes.forEach(w => assertNoLinkAt(w.file));
+  for (const w of writes) {
+    fs.mkdirSync(path.dirname(w.file), { recursive: true });
+    fs.writeFileSync(w.file, w.content, 'utf-8');
   }
 }
 

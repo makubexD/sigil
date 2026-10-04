@@ -21,6 +21,7 @@ import {
 import { resolveDisplayName, maybeCreateLanguageYaml } from './import-language';
 import { computeOverlapLines, printCoverageReport } from './import-report';
 import { SHARED_NAMESPACE } from '../catalog-layout';
+import { KEBAB_NAME_RE } from '../schema/shared';
 
 export interface ImportOptions {
   /** Target language; exactly one of `language` and `shared` is given. */
@@ -56,7 +57,14 @@ function resolveNamespace(opts: ImportOptions): string {
       hint: '  --language imports into catalog/languages/<lang>/; --shared into catalog/shared/.',
     });
   }
-  return opts.shared ? SHARED_NAMESPACE : opts.language!;
+  if (opts.shared) return SHARED_NAMESPACE;
+  const lang = opts.language!;
+  if (!KEBAB_NAME_RE.test(lang)) {
+    throw new SigilError(
+      `Invalid language '${lang}': a language name is kebab-case (e.g. csharp, go).`,
+    );
+  }
+  return lang;
 }
 
 /** Ensures the target language.yaml exists (when --create-language was passed) and resolves its display name. */
@@ -65,7 +73,7 @@ function resolveLanguageMeta(opts: ImportOptions): { lang: string; displayName: 
   if (lang === SHARED_NAMESPACE) return { lang, displayName: '' };
   const yamlPath = languageYamlPath(lang, opts.catalogDir);
   const displayName = resolveDisplayName(lang, opts.displayName, yamlPath);
-  if (opts.createLanguage) {
+  if (opts.createLanguage && !opts.dryRun) {
     maybeCreateLanguageYaml(lang, yamlPath, opts.displayName, displayName);
   }
   return { lang, displayName };

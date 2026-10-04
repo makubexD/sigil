@@ -15,27 +15,23 @@
  *
  * @module
  */
-import fs from 'node:fs';
 import path from 'node:path';
 import type { Artifact } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
 import { positionProblems } from '../../../../catalog-layout';
-import { readReferences } from '../../../../load-references';
-import { SKILL_FILENAME } from '../../../../paths';
+import { readReferences, skillFolderExtras } from '../../../../load-references';
 
-const SHIPPED_ENTRIES = new Set([SKILL_FILENAME, 'references']);
 const STACK_FILE_RE = /^stack-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
-/** Skill-folder entries besides SKILL.md and flat references/*.md, which no target ships. */
+/**
+ * Everything a skill folder carries that never ships — the same lists `sigil import` reports and
+ * the loader warns about (load-references.ts), so the three can't disagree.
+ */
 function unshippedEntries(skillDir: string): string[] {
-  const extras = fs
-    .readdirSync(skillDir)
-    .filter(name => !SHIPPED_ENTRIES.has(name))
-    .map(name => `${name} never ships (a skill ships only SKILL.md and flat references/*.md)`);
-  const skipped = readReferences(skillDir).skipped.map(
-    s => `${path.relative(skillDir, s.path).split(path.sep).join('/')} never ships: ${s.reason}`,
+  const { skipped } = readReferences(skillDir);
+  return [...skillFolderExtras(skillDir), ...skipped].map(
+    s => `${path.relative(skillDir, s.path).split(path.sep).join('/')}: ${s.reason}`,
   );
-  return [...extras, ...skipped];
 }
 
 /** Loaded references SKILL.md never names, and stack files named off the stack-<stack>.md shape. */
@@ -45,7 +41,9 @@ function referenceProblems(skill: Artifact): string[] {
     if (!skill.body.includes(`references/${ref.name}`)) {
       problems.push(`references/${ref.name} is never mentioned in SKILL.md, so it may never load`);
     }
-    if (/^stack/.test(ref.name) && !STACK_FILE_RE.test(ref.name)) {
+    // Any name starting "stack" is treated as meant for a stack file, so "stackgo.md" or
+    // "stacks.md" is caught; a reference about something else should not start with "stack".
+    if (ref.name.startsWith('stack') && !STACK_FILE_RE.test(ref.name)) {
       problems.push(`references/${ref.name}: a stack file is named stack-<stack>.md`);
     }
     return problems;

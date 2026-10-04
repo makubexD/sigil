@@ -10,7 +10,13 @@ import yaml from 'js-yaml';
 import type { Artifact, LanguageMetadata, LoadedCatalog } from './types';
 import { ALL_KINDS, sourceGlob } from './kinds';
 import { loadReferences } from './load-references';
+import { readRegularFile } from './safe-read';
 import { LANGUAGES_DIR } from './catalog-layout';
+
+/** An artifact file larger than this is skipped (catalog artifacts are a few KiB). */
+const KIB = 1024;
+const MAX_ARTIFACT_KIB = 1024;
+const MAX_ARTIFACT_BYTES = MAX_ARTIFACT_KIB * KIB;
 
 /** One glob per kind, from KIND_REGISTRY's sourceDir/sourceSuffix (SKILL.md for skills). */
 const ARTIFACT_PATTERNS = ALL_KINDS.map(sourceGlob);
@@ -124,14 +130,13 @@ function buildArtifact(
 
 /** Parses one artifact file; returns null and records a skip reason if it should be skipped. */
 function parseArtifactFile(filePath: string, skipWarnings: string[]): Artifact | null {
-  let raw: string;
-  try {
-    raw = fs.readFileSync(filePath, 'utf-8');
-  } catch (err) {
-    throw new Error(`[load] Cannot read file ${filePath}`, { cause: err });
+  const read = readRegularFile(filePath, { maxBytes: MAX_ARTIFACT_BYTES });
+  if ('reason' in read) {
+    skipWarnings.push(`[load] Skipping ${filePath}: ${read.reason}`);
+    return null;
   }
 
-  const parsed = parseFrontmatter(raw);
+  const parsed = parseFrontmatter(read.content);
   const fm = parsed.data as Record<string, unknown>;
   if (missingRequiredField(fm, filePath, skipWarnings)) return null;
 

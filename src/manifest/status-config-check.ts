@@ -11,6 +11,7 @@ import { resolveConfigRoot } from '../config-utils';
 import { resolveContained } from '../contained-path';
 import type { ConfigMergeOp, ConfigRoot, MergeStrategy, RetiredConfigDestination } from '../types';
 import type { ManifestConfigMerge, ManifestEntry } from './types';
+import { isAtRetiredDestination } from './config-fragments';
 
 /** Reads and parses an existing JSON config file; returns undefined when it's unparseable. */
 function readLiveConfigJson(fullPath: string): Record<string, unknown> | undefined {
@@ -42,10 +43,35 @@ function driftLabel(file: string, drift: 'missing' | 'modified'): string {
     : `${file} (values changed — needs 'sigil update --force')`;
 }
 
-/** Where a recorded fragment lives: under its root (project, home, …), never outside it. */
-function recordedPath(cf: ManifestConfigMerge, projectDir: string): string {
-  const root = resolveConfigRoot((cf.root as ConfigRoot | undefined) ?? 'project', projectDir);
-  return resolveContained(root, cf.file); // the manifest is editable: stay in the root
+/**
+ * Where a recorded fragment lives: under its root (project, home, …). Undefined when the recorded
+ * path would leave its root — the manifest is editable, and status reports that record instead
+ * of reading outside the root.
+ */
+function recordedPath(cf: ManifestConfigMerge, projectDir: string): string | undefined {
+  const rootName = (cf.root as ConfigRoot | undefined) ?? 'project';
+  const root = resolveConfigRoot(rootName, projectDir, { quiet: true });
+  try {
+    return resolveContained(root, cf.file);
+  } catch {
+    return undefined;
+  }
+}
+
+/** A recorded file's live JSON, or why it can't be compared (missing, or a drift label). */
+type RecordedRead =
+  | { readonly live: Record<string, unknown> }
+  | { readonly missing: true }
+  | { readonly drifted: string };
+
+function readRecorded(cf: ManifestConfigMerge, projectDir: string): RecordedRead {
+  const fullPath = recordedPath(cf, projectDir);
+  if (fullPath === undefined) {
+    return { drifted: `${cf.file} (path is outside its root — check the manifest)` };
+  }
+  if (!fs.existsSync(fullPath)) return { missing: true };
+  const live = readLiveConfigJson(fullPath);
+  return live ? { live } : { drifted: cf.file }; // unreadable JSON counts as drift
 }
 
 /** Checks one config-fragment record against its live on-disk JSON file. */
@@ -55,16 +81,10 @@ function checkOneConfigFile(
   driftedFiles: string[],
   missingFiles: string[],
 ): void {
-  const fullPath = recordedPath(cf, projectDir);
-  if (!fs.existsSync(fullPath)) {
-    missingFiles.push(cf.file);
-    return;
-  }
-  const live = readLiveConfigJson(fullPath);
-  if (!live) {
-    driftedFiles.push(cf.file); // unreadable JSON counts as drift
-    return;
-  }
+  const read = readRecorded(cf, projectDir);
+  if ('missing' in read) return void missingFiles.push(cf.file);
+  if ('drifted' in read) return void driftedFiles.push(read.drifted);
+  const live = read.live;
   const drift = classifyConfigDrift(live, toConfigMergeOp(cf));
   if (drift !== 'intact') driftedFiles.push(driftLabel(cf.file, drift));
 }
@@ -77,9 +97,6 @@ export interface ConfigFileFindings {
   readonly movedFiles: string[];
 }
 
-const atRetired = (cf: ManifestConfigMerge, retired: readonly RetiredConfigDestination[]) =>
-  retired.some(r => r.from.file === cf.file && r.from.root === ((cf.root as string) ?? 'project'));
-
 /** Checks every config-fragment record on `entry` against its live on-disk JSON file. */
 export function checkConfigFiles(
   entry: ManifestEntry,
@@ -88,7 +105,7 @@ export function checkConfigFiles(
   found: ConfigFileFindings,
 ): void {
   for (const cf of entry.configFiles!) {
-    if (atRetired(cf, retired)) found.movedFiles.push(cf.file);
+    if (isAtRetiredDestination(cf, retired)) found.movedFiles.push(cf.file);
     else checkOneConfigFile(cf, projectDir, found.driftedFiles, found.missingFiles);
   }
 }

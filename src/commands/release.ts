@@ -108,15 +108,14 @@ export const RELEASE_GATE: readonly string[] = ['npm run ci:local'];
 /** Runs the release gate, aborting with a SigilError on failure. */
 function runVerifyGate(): void {
   for (const cmd of RELEASE_GATE) {
-    process.stdout.write(`  running: ${cmd} … `);
+    console.log(`  running: ${cmd}`);
     try {
-      execSync(cmd, { stdio: 'pipe', cwd: PKG_ROOT });
-      process.stdout.write('✓\n');
+      // Inherit the terminal: the gate runs for minutes, and lint/test failures print to stdout.
+      execSync(cmd, { stdio: 'inherit', cwd: PKG_ROOT });
+      console.log(`  ✓ ${cmd}`);
     } catch (e: unknown) {
-      process.stdout.write('✗\n');
-      const stderr = (e as { stderr?: Buffer; stdout?: Buffer }).stderr?.toString() ?? String(e);
-      throw new SigilError(`Gate failed at: ${cmd}`, {
-        hint: `${stderr}\n  Restore: git checkout package.json package-lock.json`,
+      throw new SigilError(`Gate failed at: ${cmd} (its output is above)`, {
+        hint: '  Restore: git checkout package.json package-lock.json',
         cause: e,
       });
     }

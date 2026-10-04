@@ -25,6 +25,7 @@ import type { Manifest } from './manifest';
 import { CONFIG_KINDS } from './select';
 import type { Target, ResolvedCatalog, ConfigScope } from './types';
 import { prescaffoldAll } from './install-state-prescaffold';
+import { retiredConfigDestinationsOf } from './targets';
 
 export { scaffoldHashesForArtifact } from './install-state-prescaffold';
 
@@ -174,7 +175,7 @@ function computeStatusResultsFor(
   const subManifest = buildSubManifest(ctx.manifest, ctx.target.name, ctx.candidateIds);
   return computeStatus(subManifest, ctx.projectDir, ctx.catalogIds, {
     scaffoldHashFn: id => freshByArtifact.get(id) ?? null,
-    retiredFor: () => ctx.target.retiredConfigDestinations ?? [],
+    retiredFor: retiredConfigDestinationsOf,
   });
 }
 

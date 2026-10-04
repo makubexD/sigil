@@ -9,6 +9,7 @@
  * @module
  */
 import { computeStatus, loadManifest } from '../manifest';
+import { retiredConfigDestinationsOf } from '../targets';
 import type { StatusResult } from '../manifest/types';
 import { isConfigKind } from '../kinds';
 import { runAdd } from './add';
@@ -24,7 +25,10 @@ export interface RestoreOptions {
 function missingResults(opts: RestoreOptions): StatusResult[] {
   const manifest = loadManifest(opts.projectDir);
   const known = new Set(manifest.entries.map(e => e.id));
-  return computeStatus(manifest, opts.projectDir, known).filter(s => s.status === 'missing');
+  const extras = { retiredFor: retiredConfigDestinationsOf };
+  return computeStatus(manifest, opts.projectDir, known, extras).filter(
+    s => s.status === 'missing',
+  );
 }
 
 /**

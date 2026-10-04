@@ -383,7 +383,7 @@ export const McpSchema = z.object({
   /**
    * Default install scope recommended by the catalog author.
    * Claude: 'project' = .mcp.json; 'local' = ~/.claude.json per-project; 'user' = ~/.claude.json.
-   * Copilot: 'project'/'local' = .vscode/mcp.json + .mcp.json (Copilot CLI); 'user' = VS Code user-profile mcp.json.
+   * Copilot: 'project'/'local' = .mcp.json; 'user' = mcp-config.json under $COPILOT_HOME (default ~/.copilot).
    */
   defaultScope: z.enum(CONFIG_SCOPES).optional(),
   /**

@@ -1,8 +1,7 @@
 /**
- * Copilot CLI reads project MCP servers from `.mcp.json` / `.github/mcp.json` (`mcpServers`), never
- * VS Code's `.vscode/mcp.json` (`servers`): docs.github.com/en/copilot/how-tos/copilot-cli/
- * customize-copilot/add-mcp-servers. The 2026-09-27 live-prompt campaign found Copilot CLI never
- * loaded a server `sigil add --target copilot` installed, so a project-scope install writes both.
+ * Copilot gets MCP servers in the portable `.mcp.json` (`mcpServers`), which VS Code, its Agent Host
+ * and Copilot CLI all read (VS Code lists its own `.vscode/mcp.json` as deprecated, and Copilot CLI
+ * never reads it). A project-scope install writes that one file, shared with Claude Code.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,12 +22,12 @@ function sigil(cwd: string, ...args: string[]): string {
 const readJson = (dir: string, file: string) =>
   JSON.parse(fs.readFileSync(path.join(dir, file), 'utf8'));
 
-describe('copilot MCP reaches both VS Code and Copilot CLI', () => {
-  it('project scope writes .vscode/mcp.json (servers) and .mcp.json (mcpServers)', () => {
+describe('copilot MCP in the portable .mcp.json', () => {
+  it('project scope writes only .mcp.json (mcpServers), never the deprecated .vscode/mcp.json', () => {
     withTempDir(dir => {
       sigil(dir, 'add', MCP, '--target', 'copilot', '--scope', 'project', '--yes');
-      assert.ok(readJson(dir, '.vscode/mcp.json').servers.filesystem, 'VS Code file');
-      assert.ok(readJson(dir, '.mcp.json').mcpServers.filesystem, 'Copilot CLI file');
+      assert.ok(readJson(dir, '.mcp.json').mcpServers.filesystem, 'portable file');
+      assert.equal(fs.existsSync(path.join(dir, '.vscode/mcp.json')), false);
     });
   });
 
@@ -54,7 +53,7 @@ describe('copilot MCP reaches both VS Code and Copilot CLI', () => {
     });
   });
 
-  it('uninstall removes the server from both files', () => {
+  it('uninstall removes the server', () => {
     withTempDir(dir => {
       sigil(dir, 'add', MCP, '--target', 'copilot', '--scope', 'project', '--yes');
       sigil(dir, 'uninstall', 'shared/filesystem', '--target', 'copilot', '--yes');

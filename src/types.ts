@@ -161,9 +161,22 @@ export type ConfigKind = 'hook' | 'settings' | 'mcp';
  *
  *   project    — the consumer project root (opts.projectDir). Default.
  *   home       — os.homedir(). Used for Claude user/local MCP + user settings.
- *   vscode-user — VS Code user-profile directory (platform-specific). Used for Copilot user MCP.
+ *   copilot-home — $COPILOT_HOME, default ~/.copilot. Used for Copilot user MCP (mcp-config.json).
+ *   vscode-user — VS Code user-profile directory (platform-specific). Copilot user MCP before it
+ *                 moved to copilot-home; still resolved so recorded installs can be updated and
+ *                 uninstalled.
  */
-export type ConfigRoot = 'project' | 'home' | 'vscode-user';
+export type ConfigRoot = 'project' | 'home' | 'copilot-home' | 'vscode-user';
+
+/**
+ * A config file a provider no longer writes, and the file that replaced it. `sigil update` moves a
+ * fragment recorded at `from` to `to` (merged there, taken out of `from`), so an install made
+ * before the move follows the provider's current documentation.
+ */
+export interface RetiredConfigDestination {
+  readonly from: { readonly file: string; readonly root: ConfigRoot };
+  readonly to: { readonly file: string; readonly root: ConfigRoot };
+}
 
 /**
  * One merge operation produced by a target adapter's scaffoldConfig().
@@ -446,6 +459,12 @@ export interface Target {
    * since it ships unchanged to every other provider. Leave out folders other tools share.
    */
   readonly privateDirs?: readonly string[];
+
+  /**
+   * Config files this provider no longer writes, each with its replacement. `sigil update` moves a
+   * fragment an older install recorded there (src/commands/update-config-move.ts).
+   */
+  readonly retiredConfigDestinations?: readonly RetiredConfigDestination[];
 
   /**
    * Directories created by `sigil init` for this target (relative to project root).

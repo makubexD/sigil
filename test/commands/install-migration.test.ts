@@ -155,11 +155,12 @@ for (const target of TARGETS) {
       await withTempDirAsync(async dir => {
         restoreFrozen(dir, target);
         await update(dir, target);
-        const mcpFile = target === 'claude' ? '.mcp.json' : '.vscode/mcp.json';
-        const serversKey = target === 'claude' ? 'mcpServers' : 'servers';
-        const servers = readJson(dir, mcpFile)[serversKey] as Record<string, unknown>;
+        const servers = readJson(dir, '.mcp.json').mcpServers as Record<string, unknown>;
         assert.deepEqual(Object.keys(servers).sort(), ['filesystem', 'user-server']);
         assert.equal(readJson(dir, '.claude/settings.json').model, 'user-choice');
+        // Copilot's server moved out of VS Code's deprecated file; the user's own entry stays.
+        const vscode = readJson(dir, '.vscode/mcp.json').servers as Record<string, unknown>;
+        assert.deepEqual(Object.keys(vscode), ['user-server']);
       });
     });
 
@@ -179,6 +180,27 @@ for (const target of TARGETS) {
             [CURRENT_MATCHER],
           );
           assert.deepEqual(treeDiff(hashTree(untouched), hashTree(older)), []);
+        });
+      });
+    }
+
+    if (target === 'copilot') {
+      it('should preview the move to .mcp.json under --dry-run, writing nothing', async () => {
+        await withTempDirAsync(async dir => {
+          restoreFrozen(dir, target);
+          const before = hashTree(dir);
+          const original = console.log;
+          const lines: string[] = [];
+          console.log = (...args: unknown[]) => lines.push(args.join(' '));
+          try {
+            await update(dir, target, true);
+          } finally {
+            console.log = original;
+          }
+          const output = lines.join('\n');
+          assert.match(output, /\.vscode\/mcp\.json → \.mcp\.json {2}\(would be moved\)/);
+          assert.doesNotMatch(output, /not in the current catalog/);
+          assert.deepEqual(treeDiff(before, hashTree(dir)), []);
         });
       });
     }

@@ -21,11 +21,18 @@ function resolveVsCodeUserDir(): string {
   }
 }
 
+/** $COPILOT_HOME as an absolute path, else ~/.copilot (an empty value counts as unset). */
+function resolveCopilotHome(): string {
+  const home = process.env.COPILOT_HOME;
+  return home ? path.resolve(home) : path.join(os.homedir(), '.copilot');
+}
+
 /**
  * Resolves a symbolic ConfigRoot to an absolute base directory.
  *
  *   project    → projectDir  (default, stays inside the consumer repo)
  *   home       → os.homedir()  (user-global: ~/.claude/settings.json, ~/.claude.json)
+ *   copilot-home → $COPILOT_HOME, default ~/.copilot (Copilot's user MCP file)
  *   vscode-user → VS Code user-profile directory (best-effort; warns when absent)
  *                 win32   : %APPDATA%/Code/User
  *                 darwin  : ~/Library/Application Support/Code/User
@@ -38,6 +45,8 @@ export function resolveConfigRoot(root: ConfigRoot | undefined, projectDir: stri
   switch (root) {
     case 'home':
       return os.homedir();
+    case 'copilot-home':
+      return resolveCopilotHome();
     case 'vscode-user': {
       const vsDir = resolveVsCodeUserDir();
       if (!fs.existsSync(vsDir)) {
@@ -54,7 +63,7 @@ export function resolveConfigRoot(root: ConfigRoot | undefined, projectDir: stri
 
 /** True when `root` writes to a directory shared across all of the user's projects. */
 export function isHomeScopedRoot(root: ConfigRoot | undefined): boolean {
-  return root === 'home' || root === 'vscode-user';
+  return root === 'home' || root === 'copilot-home' || root === 'vscode-user';
 }
 
 /**

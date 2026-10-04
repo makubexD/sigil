@@ -5,6 +5,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import os from 'os';
+import path from 'path';
 import {
   resolveClaudeConfigDestination,
   ClaudeCodeTarget,
@@ -65,22 +66,22 @@ describe('N — Scope-aware config destinations', () => {
 
   // ── Copilot scope → destination table ─────────────────────────────────────
 
-  it('Copilot mcp: project scope → .vscode/mcp.json (root: project)', () => {
+  it('Copilot mcp: project scope → the portable .mcp.json (root: project)', () => {
     const d = resolveCopilotConfigDestination('mcp', 'project');
-    assert.equal(d.file, '.vscode/mcp.json');
+    assert.equal(d.file, '.mcp.json');
     assert.equal(d.root, 'project');
   });
 
-  it('Copilot mcp: local scope → .vscode/mcp.json (aliased, no distinct local scope)', () => {
+  it('Copilot mcp: local scope → .mcp.json (aliased, no distinct local scope)', () => {
     const d = resolveCopilotConfigDestination('mcp', 'local');
-    assert.equal(d.file, '.vscode/mcp.json');
+    assert.equal(d.file, '.mcp.json');
     assert.equal(d.root, 'project');
   });
 
-  it('Copilot mcp: user scope → mcp.json (root: vscode-user)', () => {
+  it('Copilot mcp: user scope → mcp-config.json (root: copilot-home)', () => {
     const d = resolveCopilotConfigDestination('mcp', 'user');
-    assert.equal(d.file, 'mcp.json');
-    assert.equal(d.root, 'vscode-user');
+    assert.equal(d.file, 'mcp-config.json');
+    assert.equal(d.root, 'copilot-home');
   });
 
   // ── CLI resolveConfigRoot ─────────────────────────────────────────────────
@@ -92,6 +93,23 @@ describe('N — Scope-aware config destinations', () => {
 
   it('resolveConfigRoot: home → os.homedir()', () => {
     assert.equal(resolveConfigRoot('home', '/abs/project'), os.homedir());
+  });
+
+  it('resolveConfigRoot: copilot-home → $COPILOT_HOME, else ~/.copilot', () => {
+    const saved = process.env.COPILOT_HOME;
+    try {
+      delete process.env.COPILOT_HOME;
+      assert.equal(resolveConfigRoot('copilot-home', '/p'), path.join(os.homedir(), '.copilot'));
+      process.env.COPILOT_HOME = '';
+      assert.equal(resolveConfigRoot('copilot-home', '/p'), path.join(os.homedir(), '.copilot'));
+      process.env.COPILOT_HOME = path.join(os.tmpdir(), 'copilot-home-probe');
+      assert.equal(resolveConfigRoot('copilot-home', '/p'), process.env.COPILOT_HOME);
+      process.env.COPILOT_HOME = 'relative-home';
+      assert.equal(resolveConfigRoot('copilot-home', '/p'), path.resolve('relative-home'));
+    } finally {
+      if (saved === undefined) delete process.env.COPILOT_HOME;
+      else process.env.COPILOT_HOME = saved;
+    }
   });
 
   it('resolveConfigRoot: vscode-user → a non-empty path string', () => {

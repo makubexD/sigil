@@ -188,8 +188,8 @@ is rejected by any provider's docs, and the Claude plugins pass `claude plugin v
 **Changed since the last verification:**
 
 - VS Code now lists `.vscode/mcp.json` as deprecated in favour of the portable `.mcp.json`
-  (`mcpServers`). sigil's Copilot target still writes both; Copilot CLI never reads
-  `.vscode/mcp.json`.
+  (`mcpServers`). Decided 2026-10-04 (F1): Copilot writes only the portable files, `.mcp.json`
+  and `~/.copilot/mcp-config.json`, with no fallback; `sigil update` moves older installs.
 - Copilot prompt files are deprecated for VS Code's Agent Host sessions (Local agent only "for
   now"); VS Code recommends migrating prompts to skills. Copilot skills still have no argument
   input, which is why sigil keeps prompt files.

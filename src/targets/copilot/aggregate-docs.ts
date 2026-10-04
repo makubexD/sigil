@@ -13,7 +13,7 @@ import {
   AGENTS_MD_STANDARD_DOC,
   VSCODE_MCP_DOC,
   COPILOT_CLI_MCP_DOC,
-  VSCODE_VARIABLES_DOC,
+  COPILOT_MCP_VARIABLES_DOC,
 } from '../doc-refs';
 
 export const COPILOT_AGGREGATE_DOCS: readonly SourcedDocRef[] = [
@@ -21,7 +21,10 @@ export const COPILOT_AGGREGATE_DOCS: readonly SourcedDocRef[] = [
   { source: 'copilot AGENTS.md aggregate', doc: AGENTS_MD_STANDARD_DOC },
   { source: 'copilot AGENTS.md aggregate', doc: COPILOT_INSTRUCTIONS_DOC },
   { source: 'copilot AGENTS.md aggregate', doc: VSCODE_INSTRUCTIONS_DOC },
-  { source: 'copilot .vscode/mcp.json aggregate', doc: VSCODE_MCP_DOC },
-  { source: 'copilot .mcp.json aggregate (Copilot CLI)', doc: COPILOT_CLI_MCP_DOC },
-  { source: 'copilot mcp.json env references (VSCODE_MCP_ENV_SYNTAX)', doc: VSCODE_VARIABLES_DOC },
+  { source: 'copilot .mcp.json / mcp-config.json aggregate (VS Code)', doc: VSCODE_MCP_DOC },
+  {
+    source: 'copilot .mcp.json / mcp-config.json aggregate (Copilot CLI)',
+    doc: COPILOT_CLI_MCP_DOC,
+  },
+  { source: 'copilot MCP env references (${NAME})', doc: COPILOT_MCP_VARIABLES_DOC },
 ];

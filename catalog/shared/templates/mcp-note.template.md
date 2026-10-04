@@ -14,7 +14,7 @@ slots:
     required: true
     description: >-
       What this MCP server provides, any required environment variables, and the
-      "Install target" block naming the .mcp.json / .vscode/mcp.json key it merges under.
+      "Install target" block naming the .mcp.json key it merges under.
 docs:
   - url: "https://modelcontextprotocol.io/introduction"
     verifiedOn: "2026-08-05"

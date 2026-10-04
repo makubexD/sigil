@@ -129,6 +129,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Copilot MCP servers are written in the portable format VS Code now recommends, which VS Code,
+  its Agent Host and Copilot CLI all read: `.mcp.json` for a project, `~/.copilot/mcp-config.json`
+  (or `$COPILOT_HOME`) for the user. sigil no longer writes VS Code's deprecated `.vscode/mcp.json`
+  or user-profile `mcp.json`. Run `sigil update` in an existing project: it moves each server to the
+  new file and takes sigil's entry out of the old one, keeping your own entries (a server you
+  edited there stays until `--force`). As with `add`, a server of the same name already in the new
+  file is replaced by sigil's; home-directory files get a `.sigil.bak` first.
 - Internal: `registerTarget()` is now the only list of providers. Specs, doc citations, lexicon
   literals and the literals one provider must never receive from another are derived from the
   registered targets (`Target.lexicon`, `aggregateDocs`, `privateDirs`); a lexicon value marked

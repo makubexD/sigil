@@ -61,7 +61,7 @@ the frozen install, `sync --check` and the CI validators. Everything below runs 
 
 **2. Output-changing decisions (each needs a go)**
 
-- [ ] F1 Copilot MCP: write only the portable `.mcp.json`, or keep `.vscode/mcp.json` behind an option (VS Code deprecates it)
+- [x] F1 Copilot MCP: portable files only (`.mcp.json`, `~/.copilot/mcp-config.json`), no fallback — decided 2026-10-04; `update` moves older installs
 - [ ] F2 `allowed-tools`: follow the Agent Skills spec's space-separated form once a provider requires it
 - [ ] F3 Migrate Copilot prompts to skills once Copilot skills gain arguments (Agent Host no longer loads prompt files)
 

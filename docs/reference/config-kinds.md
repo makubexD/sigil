@@ -40,19 +40,21 @@ Claude Code destinations are in the scope table below.
 ## MCP fields
 
 A `kind: mcp` artifact (`McpSchema`) merges one server entry. The server key defaults to the
-artifact's `name`. Claude nests it under `mcpServers`; Copilot's project scope writes both VS Code's
-`.vscode/mcp.json` (`servers`) and `.mcp.json` (`mcpServers`).
+artifact's `name`, under `mcpServers` on both targets: Copilot writes the portable format VS Code
+recommends (`.mcp.json`, or `~/.copilot/mcp-config.json` for the user), which VS Code, its Agent
+Host and Copilot CLI all read.
 
-| Field          | Meaning                                                                                                                                                                                                                                          |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `server`       | Either stdio (`command`, optional `args`, optional `env`) or remote (`type: http \| sse`, `url`, optional `headers`)                                                                                                                             |
-| `defaultScope` | Recommended install scope. Claude: `project` = `.mcp.json`, `local` = `~/.claude.json` per-project key, `user` = `~/.claude.json`. Copilot: `project` / `local` = `.vscode/mcp.json` + `.mcp.json`; `user` = the VS Code user-profile `mcp.json` |
-| `language`     | Optional language scope. Omit for a shared server                                                                                                                                                                                                |
+| Field          | Meaning                                                                                                                                                                                                                                                |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `server`       | Either stdio (`command`, optional `args`, optional `env`) or remote (`type: http \| sse`, `url`, optional `headers`)                                                                                                                                   |
+| `defaultScope` | Recommended install scope. Claude: `project` = `.mcp.json`, `local` = `~/.claude.json` per-project key, `user` = `~/.claude.json`. Copilot: `project` / `local` = `.mcp.json`; `user` = `mcp-config.json` under `$COPILOT_HOME` (default `~/.copilot`) |
+| `language`     | Optional language scope. Omit for a shared server                                                                                                                                                                                                      |
 
 Reference an environment variable anywhere in `server` with the neutral token `{sigil:env:NAME}`
 (`src/targets/env-reference.ts`). Each target writes the syntax of the file it merges into:
-`${NAME}` in Claude Code's files and the portable `.mcp.json`, `${env:NAME}` in VS Code's
-`mcp.json`. Never write one tool's syntax in the catalog. Pin every `npx` package to an exact
+`${NAME}` in every file sigil writes today. Claude Code documents it; GitHub documents `$VAR` /
+`${VAR}` for Copilot cloud agent's MCP JSON. Whether VS Code expands it in `.mcp.json` is not yet
+verified (live check F4 in the release end block). Never write one tool's syntax in the catalog. Pin every `npx` package to an exact
 version (`@scope/pkg@1.2.3`); a test fails on a floating one.
 
 ## Merge strategies
@@ -129,8 +131,8 @@ detects and applies it.
 
 ## `.sigil.bak` home-directory backup
 
-Any write or delete to a home-scoped config file (`ConfigRoot: 'home' | 'vscode-user'` — files like
-`~/.claude.json` or the VS Code user-profile `mcp.json`, which affect **every** project, not just
+Any write or delete to a home-scoped config file (`ConfigRoot: 'home' | 'copilot-home' | 'vscode-user'`
+— files like `~/.claude.json` or `~/.copilot/mcp-config.json`, which affect **every** project, not just
 the current one) takes a pristine `.sigil.bak` copy before the first such write, via the shared
 `ensureHomeBackup()` helper (`src/config-utils.ts`). This applies uniformly across all three
 config-JSON writers — `sigil add`, `sigil update`, and `sigil uninstall`
@@ -209,17 +211,24 @@ Claude Code (3 scopes, highest precedence first):
 | project (2)        | `.claude/settings.json`       | `.mcp.json`                        |
 | user (3)           | `~/.claude/settings.json`     | `~/.claude.json`                   |
 
-GitHub Copilot (2 scopes — no distinct local MCP scope in VS Code):
+GitHub Copilot (2 scopes — no distinct local MCP scope):
 
-| Scope (precedence) | mcp                                                                  |
-| ------------------ | -------------------------------------------------------------------- |
-| project (1)        | `.vscode/mcp.json` (`servers`, VS Code) + `.mcp.json` (`mcpServers`) |
-| user (2)           | VS Code user-profile `mcp.json`                                      |
+| Scope (precedence) | mcp                                                            |
+| ------------------ | -------------------------------------------------------------- |
+| project (1)        | `.mcp.json` (`mcpServers`)                                     |
+| user (2)           | `mcp-config.json` under `$COPILOT_HOME` (default `~/.copilot`) |
 
-A project-scope Copilot install writes both files: Copilot CLI reads only `.mcp.json` /
-`.github/mcp.json`, never `.vscode/mcp.json` ([GitHub docs](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/add-mcp-servers#adding-per-repository-mcp-servers)).
-`.mcp.json` is the same file Claude Code's project scope uses, so with both targets installed one
-server entry serves both. The user scope stays VS Code-only.
+These are the portable files VS Code recommends for new servers; VS Code, its Agent Host and
+Copilot CLI read them ([VS Code docs](https://code.visualstudio.com/docs/copilot/reference/mcp-configuration)).
+VS Code lists its own `.vscode/mcp.json` and user-profile `mcp.json` as deprecated, and Copilot CLI
+never reads `.vscode/mcp.json`. `.mcp.json` is the same file Claude Code's project scope uses, so
+with both targets installed one server entry serves both.
+
+**Moving an older install.** Installs made before this recorded the VS Code files. `sigil update`
+moves each recorded server to its portable file and takes sigil's entry out of the old one (deleting
+the file if nothing else is left), the same reverse-merge `uninstall` uses. A server whose values
+you edited in the old file stays there until you pass `--force`. The moves are data: a target
+declares `retiredConfigDestinations` (`src/commands/update-config-move.ts` applies them).
 
 **Blast-radius warning.** Driven by `ConfigScopeInfo.blastRadius === 'all-projects'`
 (provider-agnostic). The warning note names the concrete `fullPath  › section` target(s) from the

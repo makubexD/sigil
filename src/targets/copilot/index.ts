@@ -40,10 +40,12 @@ import type {
   ArtifactKind,
   KindVocabulary,
   ContractEntry,
+  RetiredConfigDestination,
 } from '../../types';
 import { buildAgentsMd } from './build-helpers';
 import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
 import { COPILOT_EMIT_SPECS } from './spec';
+import { COPILOT_RETIRED_MCP_DESTINATIONS } from './config';
 import { COPILOT_LEXICON } from './lexicon';
 import { COPILOT_AGGREGATE_DOCS } from './aggregate-docs';
 import type { ProviderLexicon } from '../lexicon';
@@ -75,8 +77,8 @@ export class CopilotTarget implements Target {
 
   /**
    * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
-   * VS Code has NO distinct "local" MCP scope — project and local both resolve to the same
-   * .vscode/mcp.json. So only two scopes are offered: Project (workspace) and User (profile).
+   * Copilot has no distinct "local" MCP scope — project and local both resolve to the project's
+   * .mcp.json. So only two scopes are offered: Project (.mcp.json) and User (mcp-config.json).
    */
   configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
     return CONFIG_SCOPES.map(sc => ({
@@ -90,6 +92,8 @@ export class CopilotTarget implements Target {
   readonly emitSpecs: readonly KindEmitSpec[] = COPILOT_EMIT_SPECS;
   readonly lexicon: ProviderLexicon = COPILOT_LEXICON;
   readonly aggregateDocs: readonly SourcedDocRef[] = COPILOT_AGGREGATE_DOCS;
+  readonly retiredConfigDestinations: readonly RetiredConfigDestination[] =
+    COPILOT_RETIRED_MCP_DESTINATIONS;
 
   // ── Full build ───────────────────────────────────────────────────────────────
 
@@ -124,13 +128,13 @@ export class CopilotTarget implements Target {
   // ── Config scaffold (mcp only — hook/settings are Claude Code-only) ──────────
 
   /**
-   * Produce merge ops for mcp artifacts targeting VS Code / Copilot.
+   * Produce merge ops for mcp artifacts targeting Copilot (VS Code and Copilot CLI).
    *
    * Scope behaviour:
-   *   project / local → .vscode/mcp.json (VS Code) + .mcp.json (Copilot CLI), root: project
-   *   user            → mcp.json in VS Code user-profile dir (root: vscode-user)
+   *   project / local → .mcp.json, root: project (VS Code, its Agent Host and Copilot CLI)
+   *   user            → mcp-config.json, root: copilot-home ($COPILOT_HOME, default ~/.copilot)
    *
-   * Note: VS Code has no separate "local" MCP scope — `local` aliases to workspace.
+   * Note: Copilot has no separate "local" MCP scope — `local` aliases to the project.
    */
   async scaffoldConfig(
     artifactId: string,

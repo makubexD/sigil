@@ -39,4 +39,4 @@ reading them into its config file.
 
 **Install target:**
 - Claude Code: merged into `.mcp.json` under `mcpServers.ado`
-- Copilot (VS Code): merged into `.vscode/mcp.json` under `servers.ado`
+- Copilot (VS Code, Copilot CLI): merged into `.mcp.json` under `mcpServers.ado` (user scope: `~/.copilot/mcp-config.json`)

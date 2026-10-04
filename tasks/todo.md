@@ -31,7 +31,7 @@ Spec: `SPEC.md`
 - [ ] T13 Markdown links, only if V1 needs them
 - [x] T7 Content fixes
 - [ ] ⚠ T8 ADO MCP env token and org scrub
-- [ ] T9 `cli-builder` pack
+- [x] T9 `cli-builder` pack
 - [ ] T10 Auditor lookup (P2)
 - [ ] Phase 5 review
 - [ ] ⚠ R2 Release minor

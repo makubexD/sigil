@@ -482,7 +482,8 @@ sigil build --target claude
 
 The marketplace is named `sigil`, and each pack in `packs.yaml` becomes a plugin of the same name,
 for example `essentials`, `dotnet-starter`, `dotnet-tooling`, `python-starter`, `react-starter`,
-`typescript-starter`, `typescript-tooling`, `angular-starter`, `angular-tooling`, and `spec-driven`.
+`typescript-starter`, `typescript-tooling`, `angular-starter`, `angular-tooling`, `spec-driven`, and
+`cli-builder`.
 `dist/claude/.claude-plugin/marketplace.json` lists them all. Without `--target`, `sigil build` builds
 **both** targets (`dist/claude/` and `dist/copilot/`).
 

@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New `cli-builder` pack (and Claude plugin): the `cli` and `wizard` skills with their per-stack
+  references, their rules and both auditor agents. Before it, no plugin carried them.
+
 - `sigil sync --check` enforces the catalog layout standard with a new `catalog-layout` rule
   (error): an artifact outside `shared/` and `languages/<lang>/`, in another kind's folder, with
   an id prefix or `language:` out of step with its folder, in a language with no `language.yaml`,

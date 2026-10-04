@@ -97,7 +97,8 @@ when `SKILL.md` or a reference names a `references/<file>` that doesn't exist, o
 `scripts/` path. Write paths relative to the skill root (the folder holding `SKILL.md`), including
 inside reference files. Shared skills belong to no language pack; install them by id
 (`sigil add skill:shared/<name>`) or through a non-language pack (`shared/feature` ships in
-`pack:spec-driven`). `shared/cli` and `shared/wizard` are the worked examples of per-stack
+`pack:spec-driven`, `shared/cli` and `shared/wizard` in `pack:cli-builder`). `shared/cli` and
+`shared/wizard` are the worked examples of per-stack
 references; `shared/feature` shows a stack-less skill with a single `references/examples.md`.
 
 ### Provider-neutral bodies: `{sigil:<term>}`

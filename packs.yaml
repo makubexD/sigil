@@ -126,3 +126,14 @@ packs:
       (addyosmani/agent-skills), installed separately. Works with any language.
     artifacts:
       - shared/feature
+
+  - name: cli-builder
+    displayName: CLI Builder
+    description: >
+      Design, build, audit, or refactor a command-line interface and the setup wizard layered over
+      it. Includes the cli and wizard skills (with per-stack guidance for Node/TypeScript, Python,
+      Go, Rust and .NET), their CLI and wizard rules, and the two auditor agents as automatically
+      resolved deps. Works with any language.
+    artifacts:
+      - shared/cli
+      - shared/wizard

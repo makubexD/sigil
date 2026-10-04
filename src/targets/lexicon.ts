@@ -38,6 +38,12 @@ export interface LexiconEntry {
   readonly value: string;
   /** Official documentation backing this value — re-verified the same way spec `docs:` are. */
   readonly doc: DocRef;
+  /**
+   * The value is meaningful only on this provider (`CLAUDE.md`, `$ARGUMENTS`): every other
+   * registered provider's output contract forbids it in a rendered body (foreignLiteralForbids,
+   * all-emit-specs.ts). Leave unset for ordinary words another provider may legitimately emit.
+   */
+  readonly forbidElsewhere?: boolean;
 }
 
 export type ProviderLexicon = Readonly<Record<LexiconTerm, LexiconEntry>>;

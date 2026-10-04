@@ -13,7 +13,7 @@
  * generate unattended.
  *
  * Config kinds (hook/settings/mcp) are JSON merges, not markdown renders — their citation coverage
- * is asserted by the AGGREGATE_DOC_REFS wiring itself (src/targets/all-emit-specs.ts), not by this
+ * is asserted by each target's aggregateDocs (src/targets/<provider>/aggregate-docs.ts), not by this
  * rule, which is scoped to the whole-file kinds where a KindEmitSpec is the right coverage unit.
  * `via`/`none` rows need no spec: `via` carries its own citation, `none` emits nothing.
  *
@@ -21,7 +21,7 @@
  */
 import type { ArtifactKind, Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
-import { ALL_PROVIDER_SPECS } from '../../../../targets/all-emit-specs';
+import { allProviderSpecs } from '../../../../targets/all-emit-specs';
 import { CHANNELS, type ChannelId } from '../../../../targets/capability-types';
 import { nativeKinds } from '../../../../targets/capabilities';
 
@@ -36,7 +36,8 @@ const WHOLE_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
 /** Kinds that have a KindEmitSpec usable on `channel` for `target`. */
 function specKindsFor(target: Target, channel: ChannelId): Set<ArtifactKind> {
   return new Set(
-    ALL_PROVIDER_SPECS.filter(s => s.provider === target.name)
+    allProviderSpecs()
+      .filter(s => s.provider === target.name)
       .filter(s => s.spec.variant === undefined || s.spec.variant === channel)
       .map(s => s.spec.kind),
   );

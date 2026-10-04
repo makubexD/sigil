@@ -3,7 +3,8 @@
  * These interfaces flow through Load → Validate → Resolve → Emit.
  */
 import type { TargetCapabilities } from './targets/capability-types';
-import type { KindEmitSpec } from './targets/spec-types';
+import type { KindEmitSpec, SourcedDocRef } from './targets/spec-types';
+import type { ProviderLexicon } from './targets/lexicon';
 
 // ─── Artifact kinds ──────────────────────────────────────────────────────────
 
@@ -428,6 +429,21 @@ export interface Target {
    * through src/targets/emit-files.ts with these specs.
    */
   readonly emitSpecs?: readonly KindEmitSpec[];
+
+  /** The literal each `{sigil:<term>}` body token becomes on this provider (src/targets/lexicon.ts). */
+  readonly lexicon?: ProviderLexicon;
+
+  /**
+   * Citations for files no KindEmitSpec renders (aggregates such as AGENTS.md, plugin.json, and
+   * the merged config files), tracked by `sigil sync --stale` with the spec citations.
+   */
+  readonly aggregateDocs?: readonly SourcedDocRef[];
+
+  /**
+   * Folders only this provider reads (`.claude/`). `platform-path-leak` flags a body naming one,
+   * since it ships unchanged to every other provider. Leave out folders other tools share.
+   */
+  readonly privateDirs?: readonly string[];
 
   /**
    * Directories created by `sigil init` for this target (relative to project root).

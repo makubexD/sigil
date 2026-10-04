@@ -62,6 +62,10 @@ import {
 } from './metadata';
 import { CLAUDE_OUTPUT_CONTRACTS } from './contracts';
 import { CLAUDE_EMIT_SPECS } from './spec';
+import { CLAUDE_LEXICON } from './lexicon';
+import { CLAUDE_AGGREGATE_DOCS } from './aggregate-docs';
+import type { ProviderLexicon } from '../lexicon';
+import type { SourcedDocRef } from '../spec-types';
 import { scaffoldArtifact } from '../emit-files';
 import type { KindEmitSpec } from '../spec-types';
 import { CLAUDE_CAPABILITIES } from './capabilities';
@@ -102,6 +106,9 @@ export class ClaudeCodeTarget implements Target {
 
   readonly outputContracts: ContractEntry[] = CLAUDE_OUTPUT_CONTRACTS;
   readonly emitSpecs: readonly KindEmitSpec[] = CLAUDE_EMIT_SPECS;
+  readonly lexicon: ProviderLexicon = CLAUDE_LEXICON;
+  readonly aggregateDocs: readonly SourcedDocRef[] = CLAUDE_AGGREGATE_DOCS;
+  readonly privateDirs: readonly string[] = ['.claude/'];
 
   // ── Full build ───────────────────────────────────────────────────────────────
 

@@ -5,7 +5,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { ALL_PROVIDER_DOC_REFS } from '../../dist-cli/targets/all-emit-specs';
+import { allProviderDocRefs } from '../../dist-cli/targets/all-emit-specs';
 import { CLAUDE_EMIT_SPECS } from '../../dist-cli/targets/claude-code/spec';
 import { COPILOT_EMIT_SPECS } from '../../dist-cli/targets/copilot/spec';
 
@@ -30,10 +30,10 @@ describe('every KindEmitSpec carries at least one docs[] citation', () => {
   }
 });
 
-describe('ALL_PROVIDER_DOC_REFS — the sigil sync --stale input', () => {
+describe('allProviderDocRefs() — the sigil sync --stale input', () => {
   it('should include at least one entry per registered provider plus the two aggregates', () => {
     // Arrange
-    const sources = ALL_PROVIDER_DOC_REFS.map(ref => ref.source);
+    const sources = allProviderDocRefs().map(ref => ref.source);
 
     // Act / Assert
     assert.ok(
@@ -56,7 +56,7 @@ describe('ALL_PROVIDER_DOC_REFS — the sigil sync --stale input', () => {
 
   it('should have a well-formed YYYY-MM-DD verifiedOn on every citation', () => {
     // Arrange
-    const malformed = ALL_PROVIDER_DOC_REFS.filter(
+    const malformed = allProviderDocRefs().filter(
       ref => !VERIFIED_ON_FORMAT.test(ref.doc.verifiedOn),
     );
 

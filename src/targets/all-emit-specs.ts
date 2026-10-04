@@ -1,39 +1,26 @@
 /**
- * Flattens every provider doc citation across all KindEmitSpecs, plus the two hand-written
- * aggregate outputs (copilot-instructions.md, AGENTS.md) that have no spec of their own and so
- * cite their DocRef directly (see src/targets/copilot/build-helpers.ts).
+ * Everything that spans providers, derived from the registered targets (`registerTarget()`, the
+ * only provider list): every spec, every doc citation, and the literals one provider's output must
+ * never carry from another. A new provider is picked up here with no edit. These are functions,
+ * not constants, so a target registered after import (a test fixture) is included too.
  *
- * The sole consumer is `sigil sync --stale` (src/commands/sync/analyze.ts) — this is what makes
- * `KindEmitSpec.docs` actually "tracked by sigil sync --stale" rather than merely declared.
+ * Consumers: `sigil sync --stale` and `--check` (analyze.ts and the conformance rules), and the
+ * output-contract checks in `build` and `add` (contractsFor).
  *
  * @module
  */
-import type { DocRef, KindEmitSpec } from './spec-types';
-import { CLAUDE_EMIT_SPECS } from './claude-code/spec';
-import { COPILOT_EMIT_SPECS } from './copilot/spec';
-import { CLAUDE_CAPABILITIES } from './claude-code/capabilities';
-import { COPILOT_CAPABILITIES } from './copilot/capabilities';
+import type { ContractEntry, Target } from '../types';
+import type { KindEmitSpec, SourcedDocRef } from './spec-types';
 import { CHANNELS, type TargetCapabilities } from './capability-types';
 import { ALL_KINDS } from '../kinds';
-import {
-  COPILOT_INSTRUCTIONS_DOC,
-  VSCODE_INSTRUCTIONS_DOC,
-  AGENTS_MD_STANDARD_DOC,
-  CLAUDE_DIRECTORY_DOC,
-  CLAUDE_MCP_DOC,
-  CLAUDE_HOOKS_DOC,
-  CLAUDE_SETTINGS_DOC,
-  CLAUDE_PLUGIN_MANIFEST_DOC,
-  CLAUDE_PLUGIN_MARKETPLACES_DOC,
-  VSCODE_MCP_DOC,
-  COPILOT_CLI_MCP_DOC,
-  VSCODE_VARIABLES_DOC,
-} from './doc-refs';
+import { getAllTargets } from './index';
 
-/** One DocRef paired with a human-readable label identifying what cites it. */
-export interface SourcedDocRef {
-  readonly source: string;
-  readonly doc: DocRef;
+export type { SourcedDocRef } from './spec-types';
+
+/** A body literal one provider's output must not contain, with why. */
+export interface BodyForbid {
+  readonly pattern: RegExp;
+  readonly reason: string;
 }
 
 function specLabel(provider: string, spec: KindEmitSpec): string {
@@ -43,34 +30,6 @@ function specLabel(provider: string, spec: KindEmitSpec): string {
 function specDocs(provider: string, specs: readonly KindEmitSpec[]): SourcedDocRef[] {
   return specs.flatMap(spec => spec.docs.map(doc => ({ source: specLabel(provider, spec), doc })));
 }
-
-/**
- * Hand-written aggregate outputs with no KindEmitSpec of their own — see doc-refs.ts.
- * AGENTS.md carries three citations: the open standard itself, plus each consumer's doc for
- * actually reading AGENTS.md (GitHub and VS Code, which diverge on subfolder support — see
- * VSCODE_INSTRUCTIONS_DOC.covers). `claude-directory aggregate` is the provenance for the whole
- * Claude Code mapping this file's Claude citations follow — see doc-refs.ts's header.
- *
- * The six `mcp`/`hook`/`settings`/plugin-manifest entries close the 2026-08-07 audit's citation
- * gap: these kinds are JSON merges and manifests (config.ts, config-scaffold.ts, plugin-assemble.ts,
- * target-helpers.ts), not markdown renders, so no KindEmitSpec exists to carry a `docs:` field —
- * they're cited here the same way copilot-instructions.md/AGENTS.md are.
- */
-const AGGREGATE_DOC_REFS: readonly SourcedDocRef[] = [
-  { source: 'copilot copilot-instructions.md aggregate', doc: COPILOT_INSTRUCTIONS_DOC },
-  { source: 'copilot AGENTS.md aggregate', doc: AGENTS_MD_STANDARD_DOC },
-  { source: 'copilot AGENTS.md aggregate', doc: COPILOT_INSTRUCTIONS_DOC },
-  { source: 'copilot AGENTS.md aggregate', doc: VSCODE_INSTRUCTIONS_DOC },
-  { source: 'claude-directory aggregate', doc: CLAUDE_DIRECTORY_DOC },
-  { source: 'claude .mcp.json aggregate', doc: CLAUDE_MCP_DOC },
-  { source: 'claude .claude/settings.json hooks aggregate', doc: CLAUDE_HOOKS_DOC },
-  { source: 'claude .claude/settings.json aggregate', doc: CLAUDE_SETTINGS_DOC },
-  { source: 'claude plugin.json aggregate', doc: CLAUDE_PLUGIN_MANIFEST_DOC },
-  { source: 'claude marketplace.json aggregate', doc: CLAUDE_PLUGIN_MARKETPLACES_DOC },
-  { source: 'copilot .vscode/mcp.json aggregate', doc: VSCODE_MCP_DOC },
-  { source: 'copilot .mcp.json aggregate (Copilot CLI)', doc: COPILOT_CLI_MCP_DOC },
-  { source: 'copilot mcp.json env references (VSCODE_MCP_ENV_SYNTAX)', doc: VSCODE_VARIABLES_DOC },
-];
 
 /**
  * Citations carried by capability rows (`via` rows, and `none` rows that name a platform limit) —
@@ -88,15 +47,16 @@ function capabilityDocs(provider: string, capabilities: TargetCapabilities): Sou
   });
 }
 
-export const ALL_PROVIDER_DOC_REFS: readonly SourcedDocRef[] = [
-  ...specDocs('claude', CLAUDE_EMIT_SPECS),
-  ...specDocs('copilot', COPILOT_EMIT_SPECS),
-  ...AGGREGATE_DOC_REFS,
-  ...capabilityDocs('claude', CLAUDE_CAPABILITIES),
-  ...capabilityDocs('copilot', COPILOT_CAPABILITIES),
-];
+/** Every citation of every registered target: its specs, its aggregates, its capability rows. */
+export function allProviderDocRefs(): SourcedDocRef[] {
+  return getAllTargets().flatMap(target => [
+    ...specDocs(target.name, target.emitSpecs ?? []),
+    ...(target.aggregateDocs ?? []),
+    ...capabilityDocs(target.name, target.capabilities),
+  ]);
+}
 
-/** One spec paired with its provider-qualified label — the `supersededBy` surfacing input. */
+/** One spec paired with its provider and a provider-qualified label. */
 export interface SourcedSpec {
   /** The provider (a registered target's name) whose spec this is; match on this, not `source`. */
   readonly provider: string;
@@ -104,13 +64,53 @@ export interface SourcedSpec {
   readonly spec: KindEmitSpec;
 }
 
-function sourcedSpecs(provider: string, specs: readonly KindEmitSpec[]): SourcedSpec[] {
-  return specs.map(spec => ({ provider, source: specLabel(provider, spec), spec }));
+/** Every registered target's specs, labeled. */
+export function allProviderSpecs(): SourcedSpec[] {
+  return getAllTargets().flatMap(target =>
+    (target.emitSpecs ?? []).map(spec => ({
+      provider: target.name,
+      source: specLabel(target.name, spec),
+      spec,
+    })),
+  );
 }
 
-/** Every registered provider's specs, labeled — lets `sigil sync --check` walk `supersededBy`
- * without importing `claude-code/spec` and `copilot/spec` directly (see analyze.ts). */
-export const ALL_PROVIDER_SPECS: readonly SourcedSpec[] = [
-  ...sourcedSpecs('claude', CLAUDE_EMIT_SPECS),
-  ...sourcedSpecs('copilot', COPILOT_EMIT_SPECS),
-];
+const escapeRegExp = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+/**
+ * The literals other providers flag `forbidElsewhere` in their lexicon (`CLAUDE.md` on Claude):
+ * a body rendered for `provider` that contains one was hard-coded for another provider.
+ */
+export function foreignLiteralForbids(provider: string): BodyForbid[] {
+  return getAllTargets()
+    .filter(target => target.name !== provider && target.lexicon)
+    .flatMap(target =>
+      Object.values(target.lexicon!)
+        .filter(entry => entry.forbidElsewhere)
+        .map(entry => ({
+          pattern: new RegExp(escapeRegExp(entry.value)),
+          reason: `hardcoded ${target.name} literal ${entry.value} in a body rendered for ${provider}`,
+        })),
+    );
+}
+
+/** `target`'s output contracts, each also forbidding the other providers' flagged literals. */
+export function contractsFor(target: Target): ContractEntry[] {
+  return withForeignForbids(target.outputContracts ?? [], target.name);
+}
+
+/** `contracts` with `provider`'s foreign-literal forbids added to every entry. */
+export function withForeignForbids(
+  contracts: readonly ContractEntry[],
+  provider: string,
+): ContractEntry[] {
+  const foreign = foreignLiteralForbids(provider);
+  if (foreign.length === 0) return [...contracts];
+  return contracts.map(entry => ({
+    ...entry,
+    contract: {
+      ...entry.contract,
+      bodyForbids: [...(entry.contract.bodyForbids ?? []), ...foreign],
+    },
+  }));
+}

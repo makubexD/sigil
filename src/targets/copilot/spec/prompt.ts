@@ -16,7 +16,7 @@ import { yamlScalar } from '../../yaml-util';
 import { toCopilotPlaceholders } from '../../prompt-args';
 import { COPILOT_AGENT_SKILLS_DOC, COPILOT_PROMPT_FILES_DOC } from '../../doc-refs';
 import { COPILOT_LEXICON } from '../lexicon';
-import { UNTRANSLATED_TOKEN_FORBID, CLAUDE_LITERAL_FORBIDS_ON_COPILOT } from '../../lexicon-forbid';
+import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 
 const agentMapping: FieldMapping = {
   from: 'kind', // any always-present field works as the trigger; the value is hardcoded below
@@ -73,7 +73,6 @@ function buildPromptLikeSpec(kind: ArtifactKind): KindEmitSpec {
     bodyForbids: [
       { pattern: /\{\{/, reason: 'unresolved {{…}} placeholder (should be translated)' },
       UNTRANSLATED_TOKEN_FORBID,
-      ...CLAUDE_LITERAL_FORBIDS_ON_COPILOT,
     ],
     docs: [COPILOT_PROMPT_FILES_DOC],
     supersededBy: PROMPT_FILE_SUPERSEDED_BY,

@@ -14,7 +14,7 @@ import { COPILOT_LEXICON } from './lexicon';
  *
  * No KindEmitSpec backs this aggregate (it has no per-artifact frontmatter to map), so its
  * citation is declared directly: see COPILOT_INSTRUCTIONS_DOC (../doc-refs.ts), tracked for
- * staleness via src/targets/all-emit-specs.ts's AGGREGATE_DOC_REFS. Same reasoning as
+ * staleness via the target's aggregateDocs (copilot/aggregate-docs.ts). Same reasoning as
  * renderAgentSection above for the explicit `applyLexicon` call — this bypasses renderArtifact
  * entirely, so it needs its own lexicon pass.
  */
@@ -84,7 +84,7 @@ function renderAgentSection(
  * No KindEmitSpec backs this aggregate — its citations are AGENTS_MD_STANDARD_DOC (the standard
  * itself), COPILOT_INSTRUCTIONS_DOC, and VSCODE_INSTRUCTIONS_DOC (../doc-refs.ts, each consumer's
  * doc for actually reading it), tracked for staleness via
- * src/targets/all-emit-specs.ts's AGGREGATE_DOC_REFS.
+ * the target's aggregateDocs (copilot/aggregate-docs.ts).
  */
 export function buildAgentsMd(agents: ResolvedArtifact[], catalog?: ResolvedCatalog): string {
   // In the full build, all agents in the file are co-present.

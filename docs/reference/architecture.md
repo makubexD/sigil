@@ -96,12 +96,17 @@ options })` from `src/targets/emit-files.ts`; `compile` writes each artifact wit
    _bodies_ provider-neutral the same way `FieldMapping` already keeps _frontmatter_ neutral — see
    `src/targets/lexicon.ts` and
    [`docs/decisions/provider-neutral-body-lexicon-2026-08.md`](../decisions/provider-neutral-body-lexicon-2026-08.md).
-   Also add each of your
-   provider's `bodyForbids` entries: `UNTRANSLATED_TOKEN_FORBID` (a `{sigil:}` token surviving to
-   output means an unknown term or a spec that forgot step 8) on every spec, plus
-   `CLAUDE_LITERAL_FORBIDS_ON_COPILOT`-style entries for any OTHER provider's literal your provider
-   must never see (`src/targets/lexicon-forbid.ts`) — this is the second net that catches a
-   hardcoded literal an author typed instead of using the lexicon token in the first place.
+   Set it as the target's `lexicon`, and add `UNTRANSLATED_TOKEN_FORBID` (a `{sigil:}` token
+   surviving to output means an unknown term or a spec that forgot step 8) to every spec's
+   `bodyForbids`. Mark a value `forbidElsewhere: true` when it is meaningful only on your provider
+   (Claude marks `CLAUDE.md` and `$ARGUMENTS`): `contractsFor` (`src/targets/all-emit-specs.ts`)
+   then forbids it in every other registered provider's output — the second net that catches a
+   literal an author typed instead of the lexicon token. A provider never lists another provider's
+   literals itself. Folders only your provider reads go in the target's `privateDirs`
+   (`platform-path-leak` warns when a body names one). Citations for files no spec renders
+   (aggregates, merged config) go in its `aggregateDocs`. Nothing outside your folder and
+   `registerTarget()` lists providers: every cross-provider list is derived from `getAllTargets()`,
+   and `test/targets/provider-registry.test.ts` fails if another module imports a provider folder.
    **Any hand-rolled aggregate that assembles an artifact's body without going through
    `renderArtifact()`** (Copilot's `AGENTS.md`/`copilot-instructions.md` — see
    `copilot/build-helpers.ts`) must call `applyLexicon()` directly; it does not get the pass for

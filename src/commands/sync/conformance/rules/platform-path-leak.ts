@@ -1,8 +1,8 @@
 /**
- * `platform-path-leak` — a skill/rule/agent/prompt/workflow body that hardcodes `.claude/` in
- * prose ("Read any .md files under .claude/") ships that path verbatim into Copilot's `.github/`
- * output too, where it doesn't exist. `hook`/`settings` are exempt — those kinds are
- * `ownedBy: ['claude']` (src/kinds.ts), so `.claude/` in their bodies is accurate, not a leak.
+ * `platform-path-leak` — a body naming a folder only one provider reads (that target's
+ * `privateDirs`, e.g. Claude's `.claude/`: "Read any .md files under .claude/") ships that path
+ * verbatim to every other provider, where it doesn't exist. A kind `ownedBy` that provider
+ * (src/kinds.ts: hook, settings) is exempt, since only that provider installs it.
  * Rewriting to provider-neutral phrasing needs judgment (what to say instead) — `editorial`.
  *
  * Covers free-form `.claude/` prose that needs real rewriting (varied phrasing, no fixed
@@ -16,39 +16,52 @@
  *
  * @module
  */
-import type { ArtifactKind } from '../../../../types';
+import type { Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding, EditorialTask } from '../types';
+import { getAllTargets } from '../../../../targets/index';
+import { KIND_REGISTRY } from '../../../../kinds';
 
-const PLATFORM_PATH_RE = /\.claude\//;
-const EXEMPT_KINDS: ReadonlySet<ArtifactKind> = new Set(['hook', 'settings']);
+type Artifact = Parameters<ConformanceRule['detect']>[0]['catalog']['artifacts'][number];
 
-function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
-  const findings: ConformanceFinding[] = [];
-  for (const artifact of ctx.catalog.artifacts) {
-    if (EXEMPT_KINDS.has(artifact.kind)) continue;
-    if (!PLATFORM_PATH_RE.test(artifact.body)) continue;
-    findings.push({
-      ruleId: 'platform-path-leak',
-      severity: 'warning',
-      artifactId: artifact.id,
-      filePath: artifact.filePath,
-      provider: 'copilot',
-      detail:
-        "body references .claude/ verbatim — ships unchanged into Copilot's .github/ output " +
-        'where the path does not exist',
-    });
-  }
-  return findings;
+/** The private folders (Target.privateDirs) of other providers that `artifact`'s body names. */
+function leakedDirs(artifact: Artifact, targets: readonly Target[]): Array<[Target, string]> {
+  return targets.flatMap(owner =>
+    KIND_REGISTRY[artifact.kind].ownedBy.includes(owner.name)
+      ? [] // a kind only this provider installs (hook, settings) may name its folders
+      : (owner.privateDirs ?? [])
+          .filter(dir => artifact.body.includes(dir))
+          .map((dir): [Target, string] => [owner, dir]),
+  );
 }
 
-const REWRITE_INSTRUCTION =
-  'Rewrite every mention of ".claude/" in the body to provider-neutral phrasing — e.g. ' +
-  '"the project\'s documented conventions and any rules files present" instead of ' +
-  '"CLAUDE.md and .claude/ rules if present". Use the {sigil:conventions-file} and ' +
-  '{sigil:rules-dir} lexicon tokens (see src/targets/lexicon.ts) in place of literal ' +
-  '"CLAUDE.md" or ".claude/rules/" when the sentence is naming those specific paths — do not ' +
-  "hardcode either provider's literal filename or directory anywhere in the rewrite. Preserve " +
-  "the surrounding sentence's meaning. Do not change anything else in the body.";
+function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
+  const targets = getAllTargets();
+  return ctx.catalog.artifacts.flatMap(artifact =>
+    leakedDirs(artifact, targets).flatMap(([owner, dir]) =>
+      targets
+        .filter(other => other.name !== owner.name)
+        .map(other => ({
+          ruleId: 'platform-path-leak',
+          severity: 'warning' as const,
+          artifactId: artifact.id,
+          filePath: artifact.filePath,
+          provider: other.name,
+          detail:
+            `body references ${dir} verbatim — ships unchanged into ${other.name}'s output ` +
+            'where the path does not exist',
+        })),
+    ),
+  );
+}
+
+/** The editorial rewrite for a body that names `dir`, a folder only one provider reads. */
+const rewriteInstruction = (dir: string) =>
+  `Rewrite every mention of "${dir}" in the body to provider-neutral phrasing — e.g. ` +
+  `"the project's documented conventions and any rules files present". Use the ` +
+  '{sigil:conventions-file}, {sigil:rules-dir} and {sigil:skills-dir} lexicon tokens (see ' +
+  'src/targets/lexicon.ts) when the sentence is naming those specific paths — do not hardcode ' +
+  "any provider's literal filename or directory anywhere in the rewrite. Preserve the " +
+  "surrounding sentence's meaning. Do not change anything else in the body.";
 
 function editorialTask(
   finding: ConformanceFinding,
@@ -61,19 +74,21 @@ function editorialTask(
     artifactId: finding.artifactId,
     filePath: finding.filePath,
     kind: artifact.kind,
-    instruction: REWRITE_INSTRUCTION,
+    instruction: rewriteInstruction(
+      leakedDirs(artifact, getAllTargets())[0]?.[1] ?? 'the provider-specific folder',
+    ),
     ownedFields: ['body'],
   };
 }
 
 export const platformPathLeakRule: ConformanceRule = {
   id: 'platform-path-leak',
-  title: 'Body prose must not hardcode .claude/ paths',
+  title: "Body prose must not hardcode a provider's private folder",
   class: 'editorial',
   appliesTo: {},
   rationale:
-    'An artifact emitting to both Claude and Copilot must read correctly on both — a hardcoded ' +
-    '.claude/ path is accurate on one and nonsense on the other.',
+    'An artifact emitting to several providers must read correctly on each — a folder only one ' +
+    'provider reads (Target.privateDirs, e.g. .claude/) is accurate there and nonsense elsewhere.',
   detect,
   editorialTask,
 };

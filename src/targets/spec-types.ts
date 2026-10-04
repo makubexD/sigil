@@ -12,6 +12,12 @@
 import type { ArtifactKind, ResolvedArtifact, ResolvedCatalog } from '../types';
 import type { ProviderLexicon } from './lexicon';
 
+/** One DocRef paired with a human-readable label identifying what cites it. */
+export interface SourcedDocRef {
+  readonly source: string;
+  readonly doc: DocRef;
+}
+
 /** A dated citation to the official provider documentation a spec's shape is following. */
 export interface DocRef {
   readonly url: string;

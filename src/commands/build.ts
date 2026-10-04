@@ -12,6 +12,7 @@ import { resolveCatalog } from '../resolve';
 import { getAllTargets, getTarget } from '../targets';
 import { artifactTargetsPlatform } from '../select';
 import { checkOutputContract } from '../targets/output-contract';
+import { contractsFor } from '../targets/all-emit-specs';
 import { buildRegistry } from '../registry';
 import { loadAndValidate, writeFilesSync, pkg } from '../cli-helpers';
 import { SigilError } from '../errors';
@@ -43,7 +44,7 @@ async function buildOneTarget(
   const files = await target.compile(filterForTarget(resolved, target.name), compileOpts);
 
   // Output-conformance check: verify emitted file shapes match the target's contracts.
-  const violations = checkOutputContract(files, target.outputContracts ?? []);
+  const violations = checkOutputContract(files, contractsFor(target));
   if (violations.length > 0) {
     throw new SigilError(
       `${violations.length} output-conformance error(s) in target '${target.name}'. Fix the catalog source or adapter before shipping.`,

@@ -20,7 +20,7 @@ import {
   AGENT_SKILLS_SPEC_DOC,
 } from '../../doc-refs';
 import { COPILOT_LEXICON } from '../lexicon';
-import { UNTRANSLATED_TOKEN_FORBID, CLAUDE_LITERAL_FORBIDS_ON_COPILOT } from '../../lexicon-forbid';
+import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import { renderBoundarySection } from '../../shared/boundary';
 import { AGENT_SKILLS_LIMITS } from '../../agent-skills-limits';
 
@@ -122,7 +122,7 @@ export const COPILOT_SKILL_SPEC: KindEmitSpec = {
   // No {{ forbid — skill bodies never go through placeholder translation (that's a
   // prompt/workflow-only concept), and Angular skills legitimately contain literal `{{ }}`
   // template-binding syntax in their prose/examples.
-  bodyForbids: [UNTRANSLATED_TOKEN_FORBID, ...CLAUDE_LITERAL_FORBIDS_ON_COPILOT],
+  bodyForbids: [UNTRANSLATED_TOKEN_FORBID],
   // Both consumers of .github/skills/*/SKILL.md — GitHub's cloud agent and VS Code's local agent
   // read the same shared Agent Skills open standard, each with its own docs page.
   docs: [COPILOT_AGENT_SKILLS_DOC, VSCODE_AGENT_SKILLS_DOC, AGENT_SKILLS_SPEC_DOC],

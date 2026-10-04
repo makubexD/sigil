@@ -44,6 +44,10 @@ import type {
 import { buildAgentsMd } from './build-helpers';
 import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
 import { COPILOT_EMIT_SPECS } from './spec';
+import { COPILOT_LEXICON } from './lexicon';
+import { COPILOT_AGGREGATE_DOCS } from './aggregate-docs';
+import type { ProviderLexicon } from '../lexicon';
+import type { SourcedDocRef } from '../spec-types';
 import { scaffoldArtifact } from '../emit-files';
 import type { KindEmitSpec } from '../spec-types';
 import { COPILOT_CAPABILITIES } from './capabilities';
@@ -85,6 +89,8 @@ export class CopilotTarget implements Target {
 
   readonly outputContracts: ContractEntry[] = COPILOT_OUTPUT_CONTRACTS;
   readonly emitSpecs: readonly KindEmitSpec[] = COPILOT_EMIT_SPECS;
+  readonly lexicon: ProviderLexicon = COPILOT_LEXICON;
+  readonly aggregateDocs: readonly SourcedDocRef[] = COPILOT_AGGREGATE_DOCS;
 
   // ── Full build ───────────────────────────────────────────────────────────────
 

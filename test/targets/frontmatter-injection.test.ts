@@ -7,7 +7,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import yaml from 'js-yaml';
-import { ALL_PROVIDER_SPECS } from '../../dist-cli/targets/all-emit-specs';
+import { allProviderSpecs } from '../../dist-cli/targets/all-emit-specs';
 import { renderArtifact } from '../../dist-cli/targets/emit';
 import { PromptSchema } from '../../dist-cli/schema';
 import type { ResolvedArtifact } from '../../dist-cli/types';
@@ -40,7 +40,7 @@ function frontmatterKeys(rendered: string): string[] {
 }
 
 describe('frontmatter injection — every provider spec', () => {
-  for (const { source, spec } of ALL_PROVIDER_SPECS.filter(s =>
+  for (const { source, spec } of allProviderSpecs().filter(s =>
     WHOLE_FILE_KINDS.has(s.spec.kind),
   )) {
     it(`should keep ${source} frontmatter to its own keys`, () => {

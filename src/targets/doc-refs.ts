@@ -188,7 +188,7 @@ export const CLAUDE_DIRECTORY_DOC: DocRef = {
 /**
  * 2026-08-07 audit — closing the citation gap for JSON-merge/manifest outputs, which have no
  * KindEmitSpec (they aren't markdown renders) and so were emitted with zero doc citation. Cited
- * as AGGREGATE_DOC_REFS entries (all-emit-specs.ts), same mechanism as copilot-instructions.md /
+ * as aggregateDocs entries (<provider>/aggregate-docs.ts), same mechanism as copilot-instructions.md /
  * AGENTS.md above. Each was verified against claude-directory.md's own "File reference" table
  * where that table has a row for the file; verified live 2026-08-07.
  */

@@ -104,7 +104,7 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
 - **Every whole-file kind (`skill`/`agent`/`rule`/`prompt`/`workflow`) a target emits `native` on a channel must have
   a matching `KindEmitSpec` for it.** `provider-kind-coverage`
   (`src/commands/sync/conformance/rules/provider-kind-coverage.ts`) fails `sigil sync --check` on the gap. Config
-  kinds (`hook` / `settings` / `mcp`) are citation-covered via `AGGREGATE_DOC_REFS` (`src/targets/all-emit-specs.ts`).
+  kinds (`hook` / `settings` / `mcp`) are citation-covered via each target's `aggregateDocs` (`src/targets/<provider>/aggregate-docs.ts`).
   (see `docs/decisions/catalog-conformance-audit-2026-08.md`)
 - **Every catalog frontmatter field authored on a whole-file kind must be mapped by at least one provider's
   `KindEmitSpec`**. Both providers default an absent `tools` to all tools, so an unmapped read-only agent `tools`

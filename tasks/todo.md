@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M4: T16 done; next T17 (one provider registry).
+Status: M4: T16, T17 done; next Phase 5 review, PR, CI, merge.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -45,7 +45,7 @@ Spec: `SPEC.md`
 ## Milestone 4: target-layer core (byte-identical)
 
 - [x] T16 Generic emitter
-- [ ] T17 One provider registry
+- [x] T17 One provider registry
 - [x] Phase 5 review
 
 ## End block: before the release (development first; nothing here is dropped)

@@ -20,7 +20,7 @@
  */
 import type { ArtifactKind } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
-import { ALL_PROVIDER_SPECS } from '../../../../targets/all-emit-specs';
+import { allProviderSpecs } from '../../../../targets/all-emit-specs';
 
 /**
  * Scope: the whole-file kinds that render through a `KindEmitSpec`'s `FieldMapping[]` at all.
@@ -74,7 +74,7 @@ function authoredKeys(frontmatter: Record<string, unknown>): string[] {
 /** The set of frontmatter keys any registered spec for this kind actually maps (`from:`, root segment). */
 function mappedKeysForKind(kind: ArtifactKind): Set<string> {
   const mapped = new Set<string>();
-  for (const { spec } of ALL_PROVIDER_SPECS) {
+  for (const { spec } of allProviderSpecs()) {
     if (spec.kind !== kind) continue;
     for (const mapping of spec.frontmatter) {
       mapped.add(mapping.from.split('.')[0] ?? mapping.from);

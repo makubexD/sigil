@@ -84,7 +84,7 @@ messages, and on Node 20 stray text can corrupt them ("Unable to deserialize clo
 ## CI
 
 `.github/workflows/ci.yml` runs on every pull request and on pushes to `master`. The matrix is
-`ubuntu-latest` / Node 22 and `windows-latest` / Node 20. Each job runs these steps, in order:
+`ubuntu-latest` / Node 22 and `windows-latest` / Node 20. Each matrix job runs these steps, in order:
 
 1. `npm ci`
 2. `npm audit --omit=dev` (runtime dependencies, fails on any severity)
@@ -97,8 +97,14 @@ messages, and on Node 20 stray text can corrupt them ("Unable to deserialize clo
 8. `npm run catalog:build`
 9. Smoke test: `node dist-cli/cli.js --version` and `node dist-cli/cli.js list`
 
+A separate Linux job, **Claude plugin validation**, installs a pinned Claude Code CLI and runs
+`npm run validate:claude-plugins`: `claude plugin validate --strict` over `dist/claude` (the
+marketplace) and every plugin, so warnings fail too. It needs no login and uses no secrets. The CLI
+version is pinned in that job's install step in `.github/workflows/ci.yml`; bump it there.
+
 **Run the same thing locally before you push.** `npm run ci:local` chains every step above (except
-`npm ci`) in the same order. It is the full local equivalent of CI.
+`npm ci`) in the same order, plus the plugin validation, which it skips with a notice when `claude`
+is not on PATH. It is the full local equivalent of CI.
 
 `npm run check` is a faster **subset**: lint, format check, `check-doc-comments`, and tests. It skips
 the audit, `validate`, `sync --check`, `catalog:build`, and the smoke test, so a green `check` does not

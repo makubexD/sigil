@@ -98,12 +98,14 @@ export const ALL_PROVIDER_DOC_REFS: readonly SourcedDocRef[] = [
 
 /** One spec paired with its provider-qualified label — the `supersededBy` surfacing input. */
 export interface SourcedSpec {
+  /** The provider (a registered target's name) whose spec this is; match on this, not `source`. */
+  readonly provider: string;
   readonly source: string;
   readonly spec: KindEmitSpec;
 }
 
 function sourcedSpecs(provider: string, specs: readonly KindEmitSpec[]): SourcedSpec[] {
-  return specs.map(spec => ({ source: specLabel(provider, spec), spec }));
+  return specs.map(spec => ({ provider, source: specLabel(provider, spec), spec }));
 }
 
 /** Every registered provider's specs, labeled — lets `sigil sync --check` walk `supersededBy`

@@ -17,7 +17,9 @@ tags:
   - vitest
   - jest
 whenToUse: "Use when adding, updating, or reviewing tests for a React component — e.g. \"write tests for UserCard\", \"test this form submission\", \"check accessibility in this component's tests\". Covers React Testing Library queries, user-event interactions, async queries, mocking, and accessibility assertions."
----# Writing React Component Tests
+---
+
+# Writing React Component Tests
 
 When asked to add, update, or review component tests, follow these conventions.
 These patterns apply whether you use Vitest or Jest — the Testing Library API is identical.
@@ -58,7 +60,7 @@ screen.getByText('Submit')                         // ⚠️  for non-interactiv
 screen.getByTestId('submit-button')                // 🔴 last resort
 ```
 
-See `references/testing-library.md` for the full query reference.
+See [`references/testing-library.md`](references/testing-library.md) for the full query reference.
 
 ## User Interactions
 

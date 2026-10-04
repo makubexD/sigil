@@ -58,29 +58,29 @@ and "fix" without approving anything, run `audit` and stop: their approval start
 | `audit` | Review or explain an existing wizard | auditor (it loads the rest) | none |
 | `refactor` | Fix an existing wizard | auditor (it loads the rest) | only approved ids |
 
-Every mode starts with the readiness scan (`references/readiness.md`). A CLI that
+Every mode starts with the readiness scan ([`references/readiness.md`](references/readiness.md)). A CLI that
 fails it gets its prerequisites listed as the first tasks (or, with no command layer at all, the
 minimal CLI described there). Only `build` and `refactor` carry them out.
 
 ## design
 
 1. Run the readiness scan and report it.
-2. Following `references/flow.md`: choose the entry point, list the commands the wizard will run,
+2. Following [`references/flow.md`](references/flow.md): choose the entry point, list the commands the wizard will run,
    write the step table (every row names its flag and validator), and draw the decision tree.
-3. Fix the behaviour with `references/contract.md`: no-terminal exit, streams, exit codes, cancel,
+3. Fix the behaviour with [`references/contract.md`](references/contract.md): no-terminal exit, streams, exit codes, cancel,
    review for destructive steps, secrets.
-4. Report in the design shape from `references/findings.md` and stop. No code.
+4. Report in the design shape from [`references/findings.md`](references/findings.md) and stop. No code.
 
 ## build
 
 1. Unless the user already approved a flow, run design steps 1–3, present the design, and wait
    for approval. "Whatever you recommend" counts as approval of your design: state that in the
-   report and continue. For a new app, build the minimal CLI from `references/readiness.md`
+   report and continue. For a new app, build the minimal CLI from [`references/readiness.md`](references/readiness.md)
    first, with its tests.
 2. Pick the `references/stack-*.md` file that matches the repository. Use the project's
    prompt library if it has one; otherwise the stack file's. If no stack file matches, map
-   `references/architecture.md` to the stack yourself and say that guidance is unverified.
-3. Build in this order, each slice test-first (`references/testing.md`): write the test, run it
+   [`references/architecture.md`](references/architecture.md) to the stack yourself and say that guidance is unverified.
+3. Build in this order, each slice test-first ([`references/testing.md`](references/testing.md)): write the test, run it
    and see it fail for the expected reason, implement, run the whole suite.
    1. the terminal check and `--help` for the entry point (no-terminal → exit 2 naming flags);
    2. the engine with a scripted prompter: steps, skip given flags, back, cancel, validation;
@@ -88,15 +88,15 @@ minimal CLI described there). Only `build` and `refactor` carry them out.
    4. the review and run step, calling the commands' own functions;
    5. the library adapter, last, as the only file that imports the prompt library.
 4. Add the entry point to the app's help and README.
-5. Finish with the report from `references/findings.md`: the validation list ticked, a transcript
+5. Finish with the report from [`references/findings.md`](references/findings.md): the validation list ticked, a transcript
    of one scripted run (questions, review, equivalent command), and "Not verified" (at least:
    the manual check in a real terminal, with the exact command). If a fresh-context reviewer
    is available (the `wizard-auditor` agent, a subagent, or a second session), hand it the full
-   path of this skill's `references/auditor.md` for an independent pass.
+   path of this skill's [`references/auditor.md`](references/auditor.md) for an independent pass.
 
 ## audit
 
-Follow `references/auditor.md`. It is self-contained within this skill, so prefer handing it to a
+Follow [`references/auditor.md`](references/auditor.md). It is self-contained within this skill, so prefer handing it to a
 fresh-context reviewer (the `wizard-auditor` agent when it is installed) along with that file's full
 path, and check its report
 against the evidence before presenting it. Present the report and stop the turn. Make no edits.
@@ -109,25 +109,25 @@ against the evidence before presenting it. Present the report and stop the turn.
    commands it ends up running, the files it produces) and run them green before the first edit.
    Behaviour that a finding changes gets a new test instead.
 3. Implement the approved ids one at a time, usually by moving the wizard onto the engine
-   from `references/architecture.md`. After each id: update expectations (naming the id), run the suite.
+   from [`references/architecture.md`](references/architecture.md). After each id: update expectations (naming the id), run the suite.
 4. Finish with the build report, listing the ids implemented and any left untouched.
 
 ## Stacks
 
 | Stack | Library | File |
 |---|---|---|
-| Node.js / TypeScript | @clack/prompts | `references/stack-node-ts.md` |
-| Python | questionary (prompt_toolkit) | `references/stack-python.md` |
-| Go | huh | `references/stack-go.md` |
-| Rust | inquire | `references/stack-rust.md` |
-| .NET | Spectre.Console | `references/stack-dotnet.md` |
+| Node.js / TypeScript | @clack/prompts | [`references/stack-node-ts.md`](references/stack-node-ts.md) |
+| Python | questionary (prompt_toolkit) | [`references/stack-python.md`](references/stack-python.md) |
+| Go | huh | [`references/stack-go.md`](references/stack-go.md) |
+| Rust | inquire | [`references/stack-rust.md`](references/stack-rust.md) |
+| .NET | Spectre.Console | [`references/stack-dotnet.md`](references/stack-dotnet.md) |
 
 Stack files map the architecture onto a library and list its pitfalls; they never override
 the contract. Where a library's default breaks the contract (prompts on stdout, cancel exiting 0),
 the stack file says how to configure it.
 
 A question about one stack, with no project to change, is `design` work answered from its stack file,
-`references/architecture.md`, and `references/contract.md` (the exit codes and streams apply
+[`references/architecture.md`](references/architecture.md), and [`references/contract.md`](references/contract.md) (the exit codes and streams apply
 there too). Say what the library lacks, show the adapter and the tests, and cite the stack
 file's source links for every library fact so the reader can check them against their version.
 

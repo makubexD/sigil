@@ -223,7 +223,8 @@ npm run ci:local
 ```
 
 This runs every CI step in order (audit, lint, format check, build, validate, `sync --check`, tests,
-catalog build, CLI smoke test). `npm run check` is a faster subset that skips several of them and is
+catalog build, Claude plugin validation, CLI smoke test). The plugin validation is skipped with a
+notice when the `claude` CLI is not on PATH; CI always runs it. `npm run check` is a faster subset that skips several of them and is
 not enough on its own. The CI step list is in [operations.md](docs/guides/operations.md#ci).
 
 ## Changelog and docs

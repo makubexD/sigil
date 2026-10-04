@@ -9,7 +9,7 @@
 
 import fs from 'fs';
 import path from 'path';
-import yaml from 'js-yaml';
+import { parsePacksConfig } from './packs-config';
 import type { Command } from 'commander';
 import { loadCatalog } from './load';
 import { validateCatalog } from './validate';
@@ -100,7 +100,7 @@ export async function loadAndValidate(
 ): Promise<{ catalog: Awaited<ReturnType<typeof loadCatalog>>; packsConfig: PacksConfig }> {
   const catalog = await requireValidCatalog(catalogDir);
   const packsRaw = fs.readFileSync(packsFile, 'utf-8');
-  const packsConfig = yaml.load(packsRaw, { schema: yaml.JSON_SCHEMA }) as PacksConfig;
+  const packsConfig = parsePacksConfig(packsRaw, packsFile);
   return { catalog, packsConfig };
 }
 

@@ -114,4 +114,22 @@ export interface KindEmitSpec {
    * reviewed migration (see spec/prompt.ts's header for how the Claude one was carried out).
    */
   readonly supersededBy?: { readonly by: string; readonly note: string; readonly doc: DocRef };
+  /**
+   * Size limits the provider documents for this output. The `provider-limits` conformance rule
+   * renders each artifact through the spec and measures the emitted file against them, so a new
+   * provider declares its limits here and is checked with no rule change.
+   */
+  readonly limits?: readonly SpecLimit[];
+}
+
+/** One documented size limit on an emitted file. */
+export interface SpecLimit {
+  /** What is measured: an emitted frontmatter value, or the emitted body. */
+  readonly field: 'name' | 'description' | 'body';
+  readonly max: number;
+  readonly unit: 'chars' | 'lines';
+  /** `error` when the provider rejects or drops the file past the limit, `warning` for guidance. */
+  readonly severity: 'error' | 'warning';
+  /** The documentation that states the limit. */
+  readonly doc: DocRef;
 }

@@ -95,7 +95,10 @@ files (not symbolic links) with kebab-case names (`stack-go.md`), up to 256 KiB 
 skill; anything else is skipped with a load warning. `validate` warns
 when `SKILL.md` or a reference names a `references/<file>` that doesn't exist, or any `assets/` or
 `scripts/` path. Write paths relative to the skill root (the folder holding `SKILL.md`), including
-inside reference files. Shared skills belong to no language pack; install them by id
+inside reference files. In `SKILL.md`, name each reference with a Markdown link,
+``[`references/stack-go.md`](references/stack-go.md)``: Claude's and VS Code's skill docs recommend
+links, and VS Code loads only the references `SKILL.md` references. `sync --check`
+(`reference-links`) flags a backtick-only mention and `sync --apply` links it. Shared skills belong to no language pack; install them by id
 (`sigil add skill:shared/<name>`) or through a non-language pack (`shared/feature` ships in
 `pack:spec-driven`, `shared/cli` and `shared/wizard` in `pack:cli-builder`). `shared/cli` and
 `shared/wizard` are the worked examples of per-stack

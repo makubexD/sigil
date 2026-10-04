@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- CI runs Claude Code's own validator, `claude plugin validate --strict`, over the built marketplace
+  and every Claude plugin (`npm run validate:claude-plugins`, also part of `ci:local`), so sigil's
+  Claude output is checked against Claude Code's rules, not only sigil's.
+- `sigil sync --check` checks every emitted file against the size limits its provider documents
+  (new `provider-limits` rule): a skill's name (64 characters) and description (1024) per the Agent
+  Skills spec on both tools, a Copilot custom agent's body (30,000 characters), and a warning for a
+  `SKILL.md` body over 500 lines (Claude's guidance). The limits are data on each provider's emit
+  spec, so a new provider declares its own.
+- Skills now name their reference files with Markdown links (the visible text is still the
+  backtick path), the form Claude's and VS Code's skill docs recommend; VS Code loads only the
+  references `SKILL.md` references. The new `reference-links` rule fails `sigil sync --check` on a
+  backtick-only mention, and `sigil sync --apply` rewrites it.
 - MCP artifacts reference environment variables with a neutral `{sigil:env:NAME}` token, written
   as `${NAME}` for Claude Code and the portable `.mcp.json` and as `${env:NAME}` for VS Code's
   `mcp.json`. Before, `shared/ado` shipped VS Code's syntax to every tool, so Claude Code passed
@@ -184,6 +196,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `packs.yaml` is now validated wherever it is read: a pack name must be kebab-case, like an
+  artifact name, because it becomes an output folder (`dist/claude/plugins/<name>`). A malformed
+  file fails with the reason instead of being used as is.
+- `sigil sync --apply` (template slots) found where the body starts by searching for the body
+  text, so an empty body, or one whose text also appeared in the frontmatter, overwrote the
+  frontmatter. The body now starts right after the closing fence. A file with no opening `---`
+  fence is refused instead of rewritten.
+- `reference-links` missed a reference linked once but also named only in backticks elsewhere,
+  could nest a link inside an existing link's text, and ended a fenced block on any fence line;
+  a fence now closes only on the same marker at least as long as the one that opened it.
+- `sigil sync --apply` corrupted a file whose frontmatter closed with text on the same line
+  (`---# Title`, which the loader accepts): it wrote an empty frontmatter block and moved the real
+  one into the body. The closing fence is now found the way the loader finds it, and a file with no
+  closing fence is refused instead of rewritten.
 - An agent's tool restriction can no longer widen silently. `tools: []` and `disallowedTools: []` are
   schema errors (an empty list emitted no `tools:` line, which both tools read as "every tool"), and
   an agent whose `disallowedTools` would be dropped on a target it ships to (Copilot has no such

@@ -93,7 +93,8 @@ and not registered anywhere.
 
 - `name` is kebab-case, at most 64 characters, and matches its folder;
 - `description` says what the artifact does and when to use it, in at most 1024 characters;
-- `SKILL.md` is under 500 lines;
+- `SKILL.md` stays under 500 lines (the Agent Skills spec and Claude's guidance; checked as a
+  warning on the Claude skill specs);
 - every reference file is mentioned in `SKILL.md`.
 
 ## Guards
@@ -106,14 +107,16 @@ and not registered anywhere.
   import source is read through `src/safe-read.ts` (regular files only, never a followed link).
 - **Detect:**
   - A `catalog-layout` conformance rule fails `sync --check` in CI.
-  - Planned (Milestone 3): provider limits (name, description, body size) kept as data on each
-    emit spec and checked by one generic rule.
+  - Provider limits (name, description, body size) kept as data on each emit spec
+    (`KindEmitSpec.limits`) and checked by one generic rule, `provider-limits`, on what each
+    provider actually receives.
   - These are author-only. `validateCatalog`, which gates `add`, `update`, `status` and the wizard on
     any user catalog, gets no new layout errors.
   - Exception: an agent whose tool restriction a target would drop fails closed at render time,
     because shipping it would silently grant every tool.
-- **Verify the output** (planned, Milestone 3): `claude plugin validate --strict` in CI on
-  `dist/claude`.
+- **Verify the output:** `claude plugin validate --strict` runs in CI (its own Linux job, pinned CLI,
+  no secrets) on the marketplace and every plugin in `dist/claude`. Copilot has no validator CLI,
+  so its specs, contracts and limits remain its gate.
 - **Never break:**
   - the output snapshot test;
   - the frozen install from master `8882c86` (`test/fixtures/installs/`);
@@ -168,5 +171,36 @@ and recommends Markdown links. The catalog's skills mention references as backti
 that counts is checked in VS Code (task V1). The result decides what the `catalog-layout` rule treats
 as "mentioned" and whether skills switch to links.
 
-_Result: pending._ Until it is in, the rule treats a reference as mentioned when `SKILL.md`
-contains its path (`references/<name>`) in any form, backticks or a link.
+_Result: pending_ (probe and instructions: `docs/audits/2026-10-03/`). Meanwhile the catalog follows
+the documented recommendation: skills link each reference (`reference-links`, with a mechanical
+`sync --apply` fix), and `catalog-layout` flags a reference `SKILL.md` never names. If V1 shows
+backtick paths load too, `reference-links` can drop to a warning for imported skills.
+
+## Appendix: provider baseline, re-verified 2026-10-03
+
+Every cited provider doc (`src/targets/doc-refs.ts`) was fetched again. No key or value sigil emits
+is rejected by any provider's docs, and the Claude plugins pass `claude plugin validate --strict`.
+`COPILOT_CREATE_AGENTS_DOC` was reachable but not re-read, so its `verifiedOn` stays.
+
+**Changed since the last verification:**
+
+- VS Code now lists `.vscode/mcp.json` as deprecated in favour of the portable `.mcp.json`
+  (`mcpServers`). sigil's Copilot target still writes both; Copilot CLI never reads
+  `.vscode/mcp.json`.
+- Copilot prompt files are deprecated for VS Code's Agent Host sessions (Local agent only "for
+  now"); VS Code recommends migrating prompts to skills. Copilot skills still have no argument
+  input, which is why sigil keeps prompt files.
+- The Claude settings key reference moved to `settings-reference` (citation re-pointed).
+- Claude skills now accept `paths`; sigil's Claude skill spec forbids it by policy (path scoping
+  belongs to rules).
+- The Agent Skills spec marks `allowed-tools` experimental, as a space-separated string; sigil
+  emits a comma-separated list, which Claude Code and Copilot accept today.
+
+**Still undocumented:** whether Copilot CLI expands `${NAME}` in `.mcp.json`; the Copilot lexicon's
+`arguments` value (skills have no argument mechanism) has no explicit sentence in the cited doc.
+
+**Documented but not mapped** (map only when the catalog needs one): Claude skill `model`,
+`effort`, `disallowed-tools`, `shell`, `hooks`, `background`; Claude subagent `permissionMode`,
+`memory`, `background`, `color`, `omitClaudeMd`; Copilot agent `user-invocable`,
+`disable-model-invocation`, `target` (`infer` is retired); instructions `excludeAgent`;
+plugin.json `displayName`, `keywords`, `license`, `dependencies`, `userConfig`.

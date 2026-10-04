@@ -71,3 +71,38 @@ jobs:
         run: |
           node dist-cli/cli.js --version
           node dist-cli/cli.js list
+
+  # Claude Code's own validator over the built plugins and marketplace (strict: warnings fail).
+  # One Linux job beside the test matrix, so it adds no time to it. The CLI version is pinned, the
+  # auto-updater and non-essential traffic are off, and the job uses no secrets: validation is local
+  # and needs no login (see scripts/validate-claude-plugins.cjs).
+  claude-plugins:
+    name: Claude plugin validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      DISABLE_AUTOUPDATER: '1'
+      CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Claude Code CLI (pinned)
+        run: |
+          npm install --global @anthropic-ai/claude-code@2.1.288
+          claude --version
+
+      - name: Build and emit catalog output
+        run: |
+          npm run build
+          npm run catalog:build
+
+      - name: Validate Claude plugins and marketplace
+        run: npm run validate:claude-plugins

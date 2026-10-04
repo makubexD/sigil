@@ -16,7 +16,9 @@ tags:
   - pytest
   - mocking
 whenToUse: "Use when adding, updating, or reviewing tests in a Python project — e.g. \"write tests for this service\", \"add pytest fixtures\", \"review my test coverage\". Covers project layout, fixtures, parametrize, mocking, and async test patterns."
----# Writing pytest Tests for Python
+---
+
+# Writing pytest Tests for Python
 
 When asked to add, update, or review tests in a Python project, follow these conventions.
 
@@ -41,7 +43,7 @@ def user_service(user_repo: FakeUserRepository) -> UserService:
 ```
 
 Inject fixtures as function arguments — pytest wires them automatically. Use `scope="session"` only
-for expensive shared state (DB setup, network). See `references/fixtures.md` for scope options and
+for expensive shared state (DB setup, network). See [`references/fixtures.md`](references/fixtures.md) for scope options and
 teardown patterns.
 
 ## Arrange / Act / Assert

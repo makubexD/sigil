@@ -36,7 +36,7 @@ const WHOLE_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
 /** Kinds that have a KindEmitSpec usable on `channel` for `target`. */
 function specKindsFor(target: Target, channel: ChannelId): Set<ArtifactKind> {
   return new Set(
-    ALL_PROVIDER_SPECS.filter(s => s.source.startsWith(`${target.name}/`))
+    ALL_PROVIDER_SPECS.filter(s => s.provider === target.name)
       .filter(s => s.spec.variant === undefined || s.spec.variant === channel)
       .map(s => s.spec.kind),
   );

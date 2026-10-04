@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M2 done incl. Phase 5 fixes; V1 pending (user) → T13 moves to M3. Next: PR, merge, release R2.
+Status: M3 done (Phase 5 fixed); next push, PR, CI, merge.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -24,7 +24,7 @@ Spec: `SPEC.md`
 ## Milestone 2: catalog standard and guards
 
 - [x] T1 ADR
-- [ ] V1 Reference-link check (you, in VS Code)
+- [ ] V1 → moved to the end (needs a machine with a Copilot licence)
 - [x] ⚠ T2 Delete the stray `add` file
 - [x] T5 Prevent (import, new, move)
 - [x] T6 Detect (`catalog-layout` rule)
@@ -36,18 +36,27 @@ Spec: `SPEC.md`
 - [x] Phase 5 review
 - [ ] ⚠ R2 Release minor
 
-## Milestone 3: provider conformance
+## Milestone 3: provider conformance (branch `feat/catalog-standard-m3`)
 
-- [ ] T11 Provider limits as spec data
-- [ ] T12 Re-verify the cited docs
-- [ ] T14 Claude validator in CI
-- [ ] T13 Markdown links, only if V1 needs them (moved from M2; V1 pending)
-- [ ] Phase 5 review
+- [x] P1 Commit the V1 probe to the repo with instructions (portable to another machine)
+- [x] T11 Provider limits as spec data
+- [x] T12 Re-verify the cited docs
+- [x] T14 Claude validator in CI
+- [x] T13 Markdown links for skill references (docs-backed; V1 at the end confirms the backtick case)
+- [x] Phase 5 review
+
+## Follow-ups from the 2026-10-03 doc re-verification (kept, prioritised; none dropped)
+
+- [ ] F1 (P1) Copilot MCP: write the portable `.mcp.json` only, or keep `.vscode/mcp.json` behind an option (VS Code deprecates it) — output change, needs a go
+- [ ] F2 (P2) `allowed-tools`: follow the Agent Skills spec's space-separated form once a provider requires it
+- [ ] F3 (P2) Copilot prompt → skill migration when Copilot skills gain arguments (Agent Host no longer loads prompt files)
+- [ ] F4 (P2) Verify Copilot CLI `${NAME}` expansion in `.mcp.json` (with V1, on the licensed machine)
 
 ## Milestone 4: target-layer core (byte-identical)
 
 - [ ] T16 Generic emitter
 - [ ] T17 One provider registry
-- [ ] Phase 5 review
+- [x] Phase 5 review
 - [ ] ⚠ R3 Release minor
+- [ ] V1 Copilot reference-loading check on a licensed machine (user) → relax or keep the link rule; record in the ADR
 - [ ] Phase 6 close-out

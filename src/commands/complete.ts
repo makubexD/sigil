@@ -6,7 +6,7 @@
  * @module
  */
 import fs from 'node:fs';
-import yaml from 'js-yaml';
+import { parsePacksConfig } from '../packs-config';
 import { loadCatalog } from '../load';
 import { getAllTargets } from '../targets';
 import { supportsKind } from '../targets/capabilities';
@@ -39,9 +39,11 @@ function tryStaticFlagCompletion(prev: string): boolean {
 /** Loads packs.yaml, or an empty pack list when the file doesn't exist. */
 function loadPacksConfig(packsPath: string): PacksConfig {
   if (!fs.existsSync(packsPath)) return { packs: [] };
-  return yaml.load(fs.readFileSync(packsPath, 'utf-8'), {
-    schema: yaml.JSON_SCHEMA,
-  }) as PacksConfig;
+  try {
+    return parsePacksConfig(fs.readFileSync(packsPath, 'utf-8'), packsPath);
+  } catch {
+    return { packs: [] }; // completion offers no pack names; the next real command reports why
+  }
 }
 
 /** Kinds at least one target can install, in selector order: the ones `kind:` can usefully name. */

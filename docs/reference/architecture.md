@@ -121,7 +121,9 @@ carrying content that never ships. It needs that root, so a catalog built in mem
 `src/targets/spec-types.ts` defines `KindEmitSpec` — a declarative, data-only description of one
 (provider, kind) pairing: its output path, which frontmatter fields map to which provider keys, which
 body sections wrap the artifact body, and which contract (required/forbidden keys, forbidden body
-patterns) the emitted file must satisfy. `renderArtifact(spec, artifact, ctx)`
+patterns) the emitted file must satisfy, and the size limits the provider documents (`limits`:
+name, description and body, each with its doc and an error or warning severity; the shared Agent
+Skills limits live in `src/targets/agent-skills-limits.ts`). `renderArtifact(spec, artifact, ctx)`
 (`src/targets/emit.ts`) is the single renderer every spec runs through — there is one emission
 function in the whole codebase, not one per platform.
 

@@ -22,6 +22,7 @@ import {
 import { COPILOT_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID, CLAUDE_LITERAL_FORBIDS_ON_COPILOT } from '../../lexicon-forbid';
 import { renderBoundarySection } from '../../shared/boundary';
+import { AGENT_SKILLS_LIMITS } from '../../agent-skills-limits';
 
 const nameMapping: FieldMapping = {
   from: 'name',
@@ -128,4 +129,6 @@ export const COPILOT_SKILL_SPEC: KindEmitSpec = {
   // Both consumers of .github/skills/*/SKILL.md — GitHub's cloud agent and VS Code's local agent
   // read the same shared Agent Skills open standard, each with its own docs page.
   docs: [COPILOT_AGENT_SKILLS_DOC, VSCODE_AGENT_SKILLS_DOC, AGENT_SKILLS_SPEC_DOC],
+  // VS Code: a skill whose name breaks the spec silently fails to load.
+  limits: AGENT_SKILLS_LIMITS,
 };

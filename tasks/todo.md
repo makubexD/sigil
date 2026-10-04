@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M2 done incl. Phase 5 fixes; V1 pending (user) → T13 moves to M3. Next: PR, merge, release R2.
+Status: M1 (#18), M2 (#19) merged; R2 waiting on user go. M3: P1 done; next T13.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -24,7 +24,7 @@ Spec: `SPEC.md`
 ## Milestone 2: catalog standard and guards
 
 - [x] T1 ADR
-- [ ] V1 Reference-link check (you, in VS Code)
+- [ ] V1 → moved to the end (needs a machine with a Copilot licence)
 - [x] ⚠ T2 Delete the stray `add` file
 - [x] T5 Prevent (import, new, move)
 - [x] T6 Detect (`catalog-layout` rule)
@@ -36,12 +36,13 @@ Spec: `SPEC.md`
 - [x] Phase 5 review
 - [ ] ⚠ R2 Release minor
 
-## Milestone 3: provider conformance
+## Milestone 3: provider conformance (branch `feat/catalog-standard-m3`)
 
+- [x] P1 Commit the V1 probe to the repo with instructions (portable to another machine)
 - [ ] T11 Provider limits as spec data
 - [ ] T12 Re-verify the cited docs
 - [ ] T14 Claude validator in CI
-- [ ] T13 Markdown links, only if V1 needs them (moved from M2; V1 pending)
+- [ ] T13 Markdown links for skill references (docs-backed; V1 at the end confirms the backtick case)
 - [ ] Phase 5 review
 
 ## Milestone 4: target-layer core (byte-identical)
@@ -50,4 +51,5 @@ Spec: `SPEC.md`
 - [ ] T17 One provider registry
 - [ ] Phase 5 review
 - [ ] ⚠ R3 Release minor
+- [ ] V1 Copilot reference-loading check on a licensed machine (user) → relax or keep the link rule; record in the ADR
 - [ ] Phase 6 close-out

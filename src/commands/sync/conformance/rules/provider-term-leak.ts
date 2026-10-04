@@ -10,8 +10,8 @@
  * through). 29 files leaked `CLAUDE.md`, 18 leaked `$ARGUMENTS`; both passed `sigil sync --check`
  * before this rule existed. See docs/decisions/provider-neutral-body-lexicon-2026-08.md.
  *
- * Detection is derived from every registered provider's lexicon `value`s (../../../../targets/
- * all-emit-specs.ts's per-provider lexicon exports) — not a hand-listed string set — so adding a
+ * Detection is derived from every registered target's `lexicon` values (getAllTargets()) — not a
+ * hand-listed string set — so adding a provider or a
  * lexicon term automatically extends what this rule catches, the same "derive from the live
  * source of truth" shape as `declared-but-unemitted` (mapped keys) and `redundant-default`
  * (zod schema defaults).
@@ -32,8 +32,7 @@
 import fs from 'fs';
 import type { ArtifactKind } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding, ArtifactEdit } from '../types';
-import { CLAUDE_LEXICON } from '../../../../targets/claude-code/lexicon';
-import { COPILOT_LEXICON } from '../../../../targets/copilot/lexicon';
+import { getAllTargets } from '../../../../targets/index';
 import type { LexiconTerm, ProviderLexicon } from '../../../../targets/lexicon';
 import { splitFrontmatterBlock, extractOriginalBody } from '../frontmatter-patch';
 
@@ -57,10 +56,9 @@ function termsOf(lexicon: ProviderLexicon): Array<[LexiconTerm, string]> {
  * provider's literal is a leak, regardless of which provider that literal "belongs" to, because
  * the catalog source is meant to be provider-neutral (the leak is the hardcoding itself).
  */
-const ALL_LEXICON_TERMS: ReadonlyArray<[LexiconTerm, string]> = [
-  ...termsOf(CLAUDE_LEXICON),
-  ...termsOf(COPILOT_LEXICON),
-];
+function allLexiconTerms(): Array<[LexiconTerm, string]> {
+  return getAllTargets().flatMap(target => (target.lexicon ? termsOf(target.lexicon) : []));
+}
 
 /** Escapes a literal string for safe use inside a `RegExp` constructor. */
 function escapeRegExp(s: string): string {
@@ -72,7 +70,7 @@ function findingsForArtifact(
   artifact: Parameters<ConformanceRule['detect']>[0]['catalog']['artifacts'][number],
 ): ConformanceFinding[] {
   const findings: ConformanceFinding[] = [];
-  for (const [term, value] of ALL_LEXICON_TERMS) {
+  for (const [term, value] of allLexiconTerms()) {
     if (!new RegExp(escapeRegExp(value)).test(artifact.body)) continue;
     findings.push({
       ruleId: 'provider-term-leak',
@@ -118,7 +116,7 @@ function fix(
   if (!artifact) return undefined;
   const term = finding.detail.match(/^term='([^']+)'/)?.[1] as LexiconTerm | undefined;
   if (!term) return undefined;
-  const entry = ALL_LEXICON_TERMS.find(([t]) => t === term);
+  const entry = allLexiconTerms().find(([t]) => t === term);
   if (!entry) return undefined;
   const [, value] = entry;
 

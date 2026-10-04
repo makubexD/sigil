@@ -1,25 +1,20 @@
 /**
  * Full-build helpers for the GitHub Copilot target.
  *
- * Each function produces one artifact's file content from a ResolvedArtifact.
- * These are used by both the full compile() path and the scaffold path (buildInstructionsFile,
- * buildSkillMd shared by scaffoldRule and scaffoldSkill respectively).
+ * The two hand-rolled aggregates, which no KindEmitSpec renders: .github/copilot-instructions.md
+ * (repo-wide rules) and .github/AGENTS.md. Per-artifact files go through src/targets/emit-files.ts.
  */
 import type { ResolvedArtifact, ResolvedCatalog } from '../../types';
 import { renderBoundarySection } from '../shared/boundary';
-import { renderArtifact } from '../emit';
 import { applyLexicon } from '../lexicon';
 import { COPILOT_LEXICON } from './lexicon';
-import { COPILOT_SKILL_SPEC } from './spec/skill';
-import { COPILOT_RULE_SPEC } from './spec/rule';
-import { COPILOT_PROMPT_SPEC } from './spec/prompt';
 
 /**
  * Builds .github/copilot-instructions.md from shared (cross-language) rules.
  *
  * No KindEmitSpec backs this aggregate (it has no per-artifact frontmatter to map), so its
  * citation is declared directly: see COPILOT_INSTRUCTIONS_DOC (../doc-refs.ts), tracked for
- * staleness via src/targets/all-emit-specs.ts's AGGREGATE_DOC_REFS. Same reasoning as
+ * staleness via the target's aggregateDocs (copilot/aggregate-docs.ts). Same reasoning as
  * renderAgentSection above for the explicit `applyLexicon` call — this bypasses renderArtifact
  * entirely, so it needs its own lexicon pass.
  */
@@ -39,57 +34,6 @@ export function buildCopilotInstructions(sharedRules: ResolvedArtifact[]): strin
     ...sections,
     '',
   ].join('\n');
-}
-
-/**
- * Builds a .github/instructions/<slug>.instructions.md for a rule.
- * `applyTo` is derived from the authored `appliesTo` regardless of `language` — a
- * language-less shared rule keeps its own narrowed globs. Only a rule with no
- * `appliesTo` at all falls back to "**" (applies to every file). The applyTo
- * frontmatter field uses Copilot's comma-separated glob syntax.
- */
-export function buildInstructionsFile(rule: ResolvedArtifact): string {
-  return renderArtifact(COPILOT_RULE_SPEC, rule, {});
-}
-
-/**
- * Builds a .github/skills/<name>/SKILL.md for the native Agent Skills open standard.
- *
- * Frontmatter uses only `name` and `description` — NO `applyTo`/`paths`, because Copilot
- * skills load by description relevance rather than file-path matching.
- * Resolved rule bodies are inlined under "## Coding guidelines to apply" so the skill
- * stays self-contained even when installed with --no-deps.
- *
- * Delegates to the declarative spec in `spec/skill.ts` — see spec-types.ts for why the format
- * knowledge lives there rather than here.
- *
- * `catalog`/`installSet`, when provided, drive the same conditional `## Boundary` rendering
- * `renderAgentSection` below already does for a skill's own `relatedArtifacts`.
- */
-export function buildSkillMd(
-  skill: ResolvedArtifact,
-  catalog?: ResolvedCatalog,
-  installSet?: Set<string>,
-): string {
-  return renderArtifact(COPILOT_SKILL_SPEC, skill, { catalog, installSet });
-}
-
-/**
- * Builds a .github/prompts/<slug>.prompt.md for a catalog `prompt` or `workflow`.
- *
- * Copilot prompt files use YAML frontmatter (agent, description, tools) and are invoked
- * as /name in Copilot Chat. Note: "prompt file" is Copilot's native term — Claude Code
- * calls the equivalent artifact a "custom command" (no "prompt" artifact type there).
- *
- * `applyTo` is NOT valid inside .prompt.md — it belongs only in .instructions.md.
- * `agent:` is the current field name (renamed from `mode:` in recent Copilot docs).
- * `{{name}}` placeholders in the body are translated to `${input:name}` (VS Code input
- * variable syntax). The 2-part form is used deliberately — 3-part `${input:name:placeholder}`
- * breaks when the description contains a colon (e.g. "Options: reviewer, junior").
- * Delegates to the declarative spec in `spec/prompt.ts`.
- */
-export function buildPromptFile(prompt: ResolvedArtifact): string {
-  return renderArtifact(COPILOT_PROMPT_SPEC, prompt, {});
 }
 
 /**
@@ -140,7 +84,7 @@ function renderAgentSection(
  * No KindEmitSpec backs this aggregate — its citations are AGENTS_MD_STANDARD_DOC (the standard
  * itself), COPILOT_INSTRUCTIONS_DOC, and VSCODE_INSTRUCTIONS_DOC (../doc-refs.ts, each consumer's
  * doc for actually reading it), tracked for staleness via
- * src/targets/all-emit-specs.ts's AGGREGATE_DOC_REFS.
+ * the target's aggregateDocs (copilot/aggregate-docs.ts).
  */
 export function buildAgentsMd(agents: ResolvedArtifact[], catalog?: ResolvedCatalog): string {
   // In the full build, all agents in the file are co-present.

@@ -21,7 +21,7 @@ import type { KindEmitSpec } from './spec-types';
 /**
  * Derives ContractEntry[] from one or more KindEmitSpecs — the emitter↔contract duplication this
  * removes: previously `contracts.ts` was a hand-written parallel restatement of the same
- * required/forbidden keys `plugin-build.ts`/`build-helpers.ts` already encoded imperatively, and
+ * required/forbidden keys the per-provider builders encoded imperatively, and
  * the two had already drifted (contracts.ts covered only scaffold paths; compile/plugin paths had
  * no contract at all). A KindEmitSpec is now read by BOTH the renderer (emit.ts) and this
  * function, so a spec change updates emission and verification together.

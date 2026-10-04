@@ -19,9 +19,9 @@
  *
  * Sub-modules:
  *   config         — CopilotConfigDestination, resolveCopilotConfigDestination
- *   build-helpers  — buildCopilotInstructions, buildInstructionsFile, buildSkillMd,
- *                    buildPromptFile, buildAgentsMd
- *   scaffold       — scaffoldSkill, scaffoldRule, scaffoldAgent, scaffoldPrompt, scaffoldWorkflow
+ *   build-helpers  — buildCopilotInstructions, buildAgentsMd (the two aggregates)
+ *   spec/          — one KindEmitSpec per kind (COPILOT_EMIT_SPECS = emitSpecs); every
+ *                    per-artifact file is written through ../emit-files.ts with these
  *   mcp-key        — COPILOT_MCP_SERVERS_KEY
  *   target-helpers — free-standing helpers backing the class methods below
  */
@@ -43,16 +43,19 @@ import type {
 } from '../../types';
 import { buildAgentsMd } from './build-helpers';
 import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
+import { COPILOT_EMIT_SPECS } from './spec';
+import { COPILOT_LEXICON } from './lexicon';
+import { COPILOT_AGGREGATE_DOCS } from './aggregate-docs';
+import type { ProviderLexicon } from '../lexicon';
+import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
+import { scaffoldArtifact } from '../emit-files';
 import { COPILOT_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 import { COPILOT_INIT_DIRS, COPILOT_PROJECT_MARKERS, COPILOT_VOCABULARY } from './metadata';
 import {
   CONFIG_SCOPES,
   buildScopeDestinations,
-  buildRuleFiles,
-  buildSkillFiles,
-  buildPromptFiles,
-  scaffoldByKind,
+  buildArtifactFiles,
   buildMcpConfigOps,
 } from './target-helpers';
 
@@ -84,24 +87,18 @@ export class CopilotTarget implements Target {
   }
 
   readonly outputContracts: ContractEntry[] = COPILOT_OUTPUT_CONTRACTS;
+  readonly emitSpecs: readonly KindEmitSpec[] = COPILOT_EMIT_SPECS;
+  readonly lexicon: ProviderLexicon = COPILOT_LEXICON;
+  readonly aggregateDocs: readonly SourcedDocRef[] = COPILOT_AGGREGATE_DOCS;
 
   // ── Full build ───────────────────────────────────────────────────────────────
 
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {
     const files: FileMap = {};
-    const byKind = (kind: ArtifactKind) => catalog.artifacts.filter(a => a.kind === kind);
-
-    // Full build: every artifact in the catalog is co-present — same "all co-present" install
-    // set buildAgentsMd already uses, so a skill's relatedArtifacts resolve the same way an
-    // agent's do.
-    const installSet = new Set(catalog.artifacts.map(a => a.id));
-
-    buildRuleFiles(byKind('rule'), files);
-    buildSkillFiles(byKind('skill'), files, catalog, installSet);
-    buildPromptFiles(byKind('prompt'), byKind('workflow'), files);
+    buildArtifactFiles(catalog, this.emitSpecs, files);
 
     // AGENTS.md — pass catalog so Boundary sections can be rendered for co-present agents
-    const agents = byKind('agent');
+    const agents = catalog.artifacts.filter(a => a.kind === 'agent');
     if (agents.length > 0) {
       files['.github/AGENTS.md'] = buildAgentsMd(agents, catalog);
     }
@@ -121,9 +118,7 @@ export class CopilotTarget implements Target {
       throw new Error(`Artifact '${artifactId}' not found in the catalog`);
     }
 
-    const files: FileMap = {};
-    scaffoldByKind(artifact, catalog, files, options);
-    return files;
+    return scaffoldArtifact({ specs: this.emitSpecs, artifact, catalog, options });
   }
 
   // ── Config scaffold (mcp only — hook/settings are Claude Code-only) ──────────

@@ -1,7 +1,6 @@
 /**
- * Every Claude Code KindEmitSpec, assembled for deriveContracts() and `sigil sync --stale`.
- * Individual specs are imported directly by the emitters that use them (plugin-build.ts,
- * scaffold.ts) — this array exists only for code that needs the full set.
+ * Every Claude Code KindEmitSpec: the target's `emitSpecs`, which ../../emit-files.ts writes every
+ * file through, and the input to deriveContracts() and `sigil sync --stale`.
  */
 import type { KindEmitSpec } from '../../spec-types';
 import { CLAUDE_PLUGIN_SKILL_SPEC, CLAUDE_SCAFFOLD_SKILL_SPEC } from './skill';

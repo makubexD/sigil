@@ -5,8 +5,7 @@
  * only becomes a rendered section when the related sibling is actually co-present in
  * the same install/build set — a standalone agent shouldn't tell the model to delegate
  * to something that isn't there. Both adapters needed this exact rendering; it was
- * previously copy-pasted verbatim in three places (claude-code/plugin-build.ts,
- * copilot/build-helpers.ts, copilot/scaffold.ts).
+ * once copy-pasted into three per-provider builders, since replaced by the emit specs.
  *
  * @module
  */

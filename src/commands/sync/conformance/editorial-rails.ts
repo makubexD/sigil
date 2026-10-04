@@ -10,7 +10,8 @@ import { parseFrontmatter } from '../../../frontmatter-parse';
 import { getSchema } from '../../../schema/index';
 import { renderArtifact } from '../../../targets/emit';
 import { deriveContracts, checkOutputContract } from '../../../targets/output-contract';
-import { ALL_PROVIDER_SPECS } from '../../../targets/all-emit-specs';
+import { allProviderSpecs, withForeignForbids } from '../../../targets/all-emit-specs';
+import type { SourcedSpec } from '../../../targets/all-emit-specs';
 import type { ResolvedArtifact } from '../../../types';
 import { applyFrontmatterPatch, splitFrontmatterBlock } from './frontmatter-patch';
 import type { EditorialTask } from './types';
@@ -110,13 +111,13 @@ export function passesSchemaRail(
   return `schema validation failed: ${result.error.issues.map(i => i.message).join('; ')}`;
 }
 
-function checkOneSpecContract(
-  candidate: ResolvedArtifact,
-  spec: (typeof ALL_PROVIDER_SPECS)[number],
-): string | undefined {
+function checkOneSpecContract(candidate: ResolvedArtifact, spec: SourcedSpec): string | undefined {
   const outputPath = spec.spec.outputPath(candidate, {});
   const rendered = renderArtifact(spec.spec, candidate, {});
-  const violations = checkOutputContract({ [outputPath]: rendered }, deriveContracts([spec.spec]));
+  const violations = checkOutputContract(
+    { [outputPath]: rendered },
+    withForeignForbids(deriveContracts([spec.spec]), spec.provider),
+  );
   if (violations.length === 0) return undefined;
   return `output contract failed for ${spec.source}: ${violations.map(v => v.problem).join('; ')}`;
 }
@@ -135,7 +136,7 @@ export function passesOutputContractRail(
     body,
     resolvedBody: body,
   };
-  const specs = ALL_PROVIDER_SPECS.filter(s => s.spec.kind === task.kind);
+  const specs = allProviderSpecs().filter(s => s.spec.kind === task.kind);
   for (const spec of specs) {
     const failure = checkOneSpecContract(candidate, spec);
     if (failure) return failure;

@@ -82,8 +82,9 @@ const stepsSection: BodySectionSpec = {
 
 export const CLAUDE_WORKFLOW_SPEC: KindEmitSpec = {
   kind: 'workflow',
-  outputPath: artifact => `.claude/skills/${slugOf(artifact.id)}/SKILL.md`,
-  pathPattern: /\.claude\/skills\/.*\/SKILL\.md$/,
+  outputPath: (artifact, ctx) =>
+    `${ctx.packName ? `plugins/${ctx.packName}` : '.claude'}/skills/${slugOf(artifact.id)}/SKILL.md`,
+  pathPattern: /(plugins\/[^/]+|\.claude)\/skills\/.*\/SKILL\.md$/,
   bodyTransform: body => body.trim(),
   frontmatter: [nameMapping, descriptionMapping, disableModelInvocationMapping],
   emitEmptyFrontmatter: true,

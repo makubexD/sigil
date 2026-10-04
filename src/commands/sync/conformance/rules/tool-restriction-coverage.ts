@@ -13,7 +13,7 @@
  */
 import type { Artifact, Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
-import { ALL_PROVIDER_SPECS } from '../../../../targets/all-emit-specs';
+import { allProviderSpecs } from '../../../../targets/all-emit-specs';
 import { artifactTargetsPlatform } from '../../../../select';
 import { supportsKind } from '../../../../targets/capabilities';
 import { TOOL_RESTRICTION_FIELDS } from '../../../../targets/tool-restriction';
@@ -21,9 +21,8 @@ import { TOOL_RESTRICTION_FIELDS } from '../../../../targets/tool-restriction';
 /** The agent fields `target`'s agent specs map — the restrictions it can carry. */
 function carriedFields(target: Target): Set<string> {
   return new Set(
-    ALL_PROVIDER_SPECS.filter(
-      s => s.source.startsWith(`${target.name}/`) && s.spec.kind === 'agent',
-    )
+    allProviderSpecs()
+      .filter(s => s.source.startsWith(`${target.name}/`) && s.spec.kind === 'agent')
       .flatMap(s => s.spec.frontmatter)
       .map(mapping => mapping.from),
   );

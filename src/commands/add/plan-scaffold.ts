@@ -7,6 +7,7 @@
  */
 import { SigilError } from '../../errors';
 import { checkOutputContract } from '../../targets/output-contract';
+import { contractsFor } from '../../targets/all-emit-specs';
 import { partitionFiles } from '../../cli-helpers';
 import { renderViolations } from '../shared/contract';
 import type { FileMap } from '../../types';
@@ -54,7 +55,7 @@ async function scaffoldAllIds(
 
 /** Throws when the scaffolded files fail the target's output contract. */
 function assertOutputContract(ctx: PlanCtx, allFiles: FileMap): void {
-  const violations = checkOutputContract(allFiles, ctx.target.outputContracts ?? []);
+  const violations = checkOutputContract(allFiles, contractsFor(ctx.target));
   if (violations.length > 0) {
     throw new SigilError(
       `${violations.length} output-conformance error(s). Install aborted — no files were written.`,

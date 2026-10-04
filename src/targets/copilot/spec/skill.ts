@@ -1,5 +1,5 @@
 /**
- * Copilot `skill` emission spec — declarative counterpart to build-helpers.ts's buildSkillMd().
+ * Copilot `skill` emission spec.
  * Frontmatter is deliberately minimal: `name` + `description` only. NO `applyTo`/`paths` —
  * Copilot Agent Skills load by description relevance, not file-path matching. Resolved rule
  * bodies are always inlined (Copilot has no equivalent to Claude's native .claude/rules/ loading
@@ -20,7 +20,7 @@ import {
   AGENT_SKILLS_SPEC_DOC,
 } from '../../doc-refs';
 import { COPILOT_LEXICON } from '../lexicon';
-import { UNTRANSLATED_TOKEN_FORBID, CLAUDE_LITERAL_FORBIDS_ON_COPILOT } from '../../lexicon-forbid';
+import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import { renderBoundarySection } from '../../shared/boundary';
 import { AGENT_SKILLS_LIMITS } from '../../agent-skills-limits';
 
@@ -111,11 +111,8 @@ const codingGuidelinesSection: BodySectionSpec = {
 
 export const COPILOT_SKILL_SPEC: KindEmitSpec = {
   kind: 'skill',
-  outputPath: (artifact, ctx) => {
-    const name = artifact.frontmatter.name as string;
-    const root = ctx.packName ? '.github' : '.github'; // same layout for compile and scaffold
-    return `${root}/skills/${name}/SKILL.md`;
-  },
+  // Same layout for compile and scaffold: Copilot has no plugin channel.
+  outputPath: artifact => `.github/skills/${artifact.frontmatter.name as string}/SKILL.md`,
   pathPattern: /\.github\/skills\/.*\/SKILL\.md$/,
   frontmatter: [nameMapping, descriptionMapping, allowedToolsMapping],
   emitEmptyFrontmatter: true,
@@ -125,7 +122,7 @@ export const COPILOT_SKILL_SPEC: KindEmitSpec = {
   // No {{ forbid — skill bodies never go through placeholder translation (that's a
   // prompt/workflow-only concept), and Angular skills legitimately contain literal `{{ }}`
   // template-binding syntax in their prose/examples.
-  bodyForbids: [UNTRANSLATED_TOKEN_FORBID, ...CLAUDE_LITERAL_FORBIDS_ON_COPILOT],
+  bodyForbids: [UNTRANSLATED_TOKEN_FORBID],
   // Both consumers of .github/skills/*/SKILL.md — GitHub's cloud agent and VS Code's local agent
   // read the same shared Agent Skills open standard, each with its own docs page.
   docs: [COPILOT_AGENT_SKILLS_DOC, VSCODE_AGENT_SKILLS_DOC, AGENT_SKILLS_SPEC_DOC],

@@ -7,7 +7,6 @@
 import type {
   ResolvedCatalog,
   FileMap,
-  ScaffoldOptions,
   ConfigMergeOp,
   ConfigScope,
   ConfigKind,
@@ -18,20 +17,10 @@ import type {
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
 import { resolveCopilotConfigDestination } from './config';
-import { basenameOfId, SKILL_FILENAME } from '../../paths';
-import {
-  buildCopilotInstructions,
-  buildInstructionsFile,
-  buildSkillMd,
-  buildPromptFile,
-} from './build-helpers';
-import {
-  scaffoldSkill,
-  scaffoldRule,
-  scaffoldAgent,
-  scaffoldPrompt,
-  scaffoldWorkflow,
-} from './scaffold';
+import { basenameOfId } from '../../paths';
+import { buildCopilotInstructions } from './build-helpers';
+import { emitFile, specFor } from '../emit-files';
+import type { KindEmitSpec } from '../spec-types';
 import {
   COPILOT_MCP_SERVERS_KEY,
   COPILOT_CLI_MCP_FILE,
@@ -109,85 +98,35 @@ function isRepoWideRule(rule: ResolvedCatalog['artifacts'][number]): boolean {
   return !globs || globs.every(glob => REPO_WIDE_GLOBS.has(glob));
 }
 
-/** Builds copilot-instructions.md (repo-wide rules) + one instructions file per scoped rule. */
-export function buildRuleFiles(rules: ResolvedCatalog['artifacts'], files: FileMap): void {
-  const repoWideRules = rules.filter(isRepoWideRule);
+/** The per-file kinds `compile` writes; agents go only into the AGENTS.md aggregate. */
+const COMPILED_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
+  'rule',
+  'skill',
+  'prompt',
+  'workflow',
+]);
+
+/**
+ * Writes every per-file artifact of a full build through its spec (src/targets/emit-files.ts):
+ * scoped rules, skills with their references, prompts and workflows. Repo-wide rules go into
+ * `.github/copilot-instructions.md` instead. `ctx` co-installs the whole catalog, so a skill's
+ * Boundary section resolves the way an agent's does in AGENTS.md.
+ */
+export function buildArtifactFiles(
+  catalog: ResolvedCatalog,
+  specs: readonly KindEmitSpec[],
+  files: FileMap,
+): void {
+  const ctx = { catalog, installSet: new Set(catalog.artifacts.map(a => a.id)) };
+  const repoWideRules = catalog.artifacts.filter(a => a.kind === 'rule' && isRepoWideRule(a));
   if (repoWideRules.length > 0) {
     files['.github/copilot-instructions.md'] = buildCopilotInstructions(repoWideRules);
   }
-
-  const scopedRules = rules.filter(r => !isRepoWideRule(r));
-  for (const rule of scopedRules) {
-    const slug = rule.id.replace(/\//g, '-');
-    files[`.github/instructions/${slug}.instructions.md`] = buildInstructionsFile(rule);
+  for (const artifact of catalog.artifacts) {
+    if (!COMPILED_FILE_KINDS.has(artifact.kind) || repoWideRules.includes(artifact)) continue;
+    const spec = specFor(specs, artifact.kind, 'scaffold');
+    if (spec) emitFile(spec, artifact, ctx, files);
   }
-}
-
-/**
- * Builds each skill's SKILL.md + reference files from catalog skills. `catalog`/`installSet`,
- * when provided, drive each skill's own conditional `## Boundary` section (its `relatedArtifacts`)
- * — same mechanism `buildAgentsMd` already uses for agents in the same full build.
- */
-export function buildSkillFiles(
-  skills: ResolvedCatalog['artifacts'],
-  files: FileMap,
-  catalog?: ResolvedCatalog,
-  installSet?: Set<string>,
-): void {
-  for (const skill of skills) {
-    const name = skill.frontmatter.name as string;
-    files[`.github/skills/${name}/${SKILL_FILENAME}`] = buildSkillMd(skill, catalog, installSet);
-    for (const ref of skill.references ?? []) {
-      files[`.github/skills/${name}/references/${ref.name}`] = ref.content;
-    }
-  }
-}
-
-/** Builds prompts/*.prompt.md from catalog prompts and workflows (both render as prompt files). */
-export function buildPromptFiles(
-  prompts: ResolvedCatalog['artifacts'],
-  workflows: ResolvedCatalog['artifacts'],
-  files: FileMap,
-): void {
-  for (const prompt of prompts) {
-    const slug = prompt.id.replace(/\//g, '-');
-    files[`.github/prompts/${slug}.prompt.md`] = buildPromptFile(prompt);
-  }
-  for (const workflow of workflows) {
-    const slug = workflow.id.replace(/\//g, '-');
-    files[`.github/prompts/${slug}.prompt.md`] = buildPromptFile(workflow);
-  }
-}
-
-/** Maps an artifact kind to its scaffold* function; throws for unsupported kinds. */
-const SCAFFOLD_BY_KIND: Partial<
-  Record<
-    ArtifactKind,
-    (
-      artifact: NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>,
-      catalog: ResolvedCatalog,
-      files: FileMap,
-      options: ScaffoldOptions,
-    ) => void
-  >
-> = {
-  skill: (a, catalog, files, options) => scaffoldSkill(a, catalog, files, options),
-  agent: (a, catalog, files, options) => scaffoldAgent(a, files, catalog, options.coInstallSet),
-  rule: (a, _catalog, files) => scaffoldRule(a, files),
-  prompt: (a, _catalog, files) => scaffoldPrompt(a, files),
-  workflow: (a, _catalog, files) => scaffoldWorkflow(a, files),
-};
-
-/** Scaffolds one artifact by kind, dispatching to the matching scaffold* function. */
-export function scaffoldByKind(
-  artifact: NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>,
-  catalog: ResolvedCatalog,
-  files: FileMap,
-  options: ScaffoldOptions,
-): void {
-  const fn = SCAFFOLD_BY_KIND[artifact.kind];
-  if (!fn) throw new Error(`Scaffolding not supported for kind '${artifact.kind}'`);
-  fn(artifact, catalog, files, options);
 }
 
 type McpArtifact = NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>;

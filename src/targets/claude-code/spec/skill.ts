@@ -1,13 +1,9 @@
 /**
- * Claude Code `skill` emission spec — declarative counterpart to the logic that used to live
- * only in plugin-build.ts's buildPluginSkillMd(). Two variants share one field-mapping table:
+ * Claude Code `skill` emission spec. Two variants share one field-mapping table:
  *   - 'plugin'   → dist/claude/plugins/<pack>/skills/<name>/SKILL.md, rule bodies inlined
  *                  under "## Applied Rules" (plugins cannot ship loose rule files).
  *   - 'scaffold' → .claude/skills/<name>/SKILL.md in a consumer project, rules NOT inlined
  *                  (.claude/rules/*.md are loaded natively instead).
- *
- * outputPath here documents the shape for deriveContracts()/audit tooling; the actual path
- * strings at call sites (plugin-assemble.ts's pack-prefix, scaffold.ts) are unchanged.
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import type { ResolvedArtifact } from '../../../types';

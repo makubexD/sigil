@@ -139,8 +139,11 @@ and not registered anywhere.
 - **Shared primitives:** one emitter, serializers, and generic checks. `registerTarget()` is the only
   list of providers.
 
-**Planned next (Milestone 4):** the generic emitter and the single provider registry. Both remove
-duplication that exists today. Already built in this round: MCP config references environment
+**Built in Milestone 4:** the generic emitter (`src/targets/emit-files.ts`, the one writer, with
+`outputPath` as the only path source) and the single provider registry (`registerTarget()`; every
+cross-provider list, lexicon literal and foreign-literal forbid derives from the registered
+targets). Both are enforced by tests (`emit-files.test.ts`, `provider-registry.test.ts`). Also
+built: MCP config references environment
 variables with a neutral `{sigil:env:NAME}` token that each target expands into its file's syntax
 (`src/targets/env-reference.ts`); Claude Code documents `${NAME}` in `.mcp.json`, VS Code
 documents `${env:NAME}`, and Copilot CLI's reading of `${NAME}` in the shared `.mcp.json` is not

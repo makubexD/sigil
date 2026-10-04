@@ -42,10 +42,15 @@ carrying content that never ships. It needs that root, so a catalog built in mem
    export interface Target {
      name: string;
      capabilities: TargetCapabilities; // see step 4
+     emitSpecs?: readonly KindEmitSpec[]; // one per (kind, channel); see § Emit specs
      compile(catalog: ResolvedCatalog, options: CompileOptions): Promise<FileMap>;
      scaffold?(artifactId, catalog, options): Promise<FileMap>; // optional
    }
    ```
+   `scaffold` is usually one call to `scaffoldArtifact` (`src/targets/emit-files.ts`) with
+   `this.emitSpecs`; `compile` decides which artifacts go where and writes each one with
+   `emitFile`, directly or through a helper. Neither builds a file path itself. The optional
+   `lexicon`, `aggregateDocs` and `privateDirs` fields are covered in step 8.
 2. Register in `src/targets/index.ts` with `registerTarget(new YourTarget())`.
 3. The `--target <name>` CLI flag and `dist/<name>/` output directory work automatically.
 4. Declare kind support once, in `src/targets/<platform>/capabilities.ts`: a `TargetCapabilities`
@@ -92,12 +97,17 @@ carrying content that never ships. It needs that root, so a catalog built in mem
    _bodies_ provider-neutral the same way `FieldMapping` already keeps _frontmatter_ neutral — see
    `src/targets/lexicon.ts` and
    [`docs/decisions/provider-neutral-body-lexicon-2026-08.md`](../decisions/provider-neutral-body-lexicon-2026-08.md).
-   Also add each of your
-   provider's `bodyForbids` entries: `UNTRANSLATED_TOKEN_FORBID` (a `{sigil:}` token surviving to
-   output means an unknown term or a spec that forgot step 8) on every spec, plus
-   `CLAUDE_LITERAL_FORBIDS_ON_COPILOT`-style entries for any OTHER provider's literal your provider
-   must never see (`src/targets/lexicon-forbid.ts`) — this is the second net that catches a
-   hardcoded literal an author typed instead of using the lexicon token in the first place.
+   Set it as the target's `lexicon`, and add `UNTRANSLATED_TOKEN_FORBID` (a `{sigil:}` token
+   surviving to output means an unknown term or a spec that forgot step 8) to every spec's
+   `bodyForbids`. Mark a value `forbidElsewhere: true` when it is meaningful only on your provider
+   (Claude marks `CLAUDE.md` and `$ARGUMENTS`): `contractsFor` (`src/targets/all-emit-specs.ts`)
+   then forbids it in every other registered provider's output — the second net that catches a
+   literal an author typed instead of the lexicon token. A provider never lists another provider's
+   literals itself. Folders only your provider reads go in the target's `privateDirs`
+   (`platform-path-leak` warns when a body names one). Citations for files no spec renders
+   (aggregates, merged config) go in its `aggregateDocs`. Nothing outside your folder and
+   `registerTarget()` lists providers: every cross-provider list is derived from `getAllTargets()`,
+   and `test/targets/provider-registry.test.ts` fails if another module imports a provider folder.
    **Any hand-rolled aggregate that assembles an artifact's body without going through
    `renderArtifact()`** (Copilot's `AGENTS.md`/`copilot-instructions.md` — see
    `copilot/build-helpers.ts`) must call `applyLexicon()` directly; it does not get the pass for
@@ -125,7 +135,13 @@ patterns) the emitted file must satisfy, and the size limits the provider docume
 name, description and body, each with its doc and an error or warning severity; the shared Agent
 Skills limits live in `src/targets/agent-skills-limits.ts`). `renderArtifact(spec, artifact, ctx)`
 (`src/targets/emit.ts`) is the single renderer every spec runs through — there is one emission
-function in the whole codebase, not one per platform.
+function in the whole codebase, not one per platform. `src/targets/emit-files.ts` is the single
+writer: `emitFile` puts the rendered file at `spec.outputPath(artifact, ctx)` (and a skill's
+references beside it), `specFor` picks a target's spec for a kind on a channel (`scaffold` or
+`plugin`), and `scaffoldArtifact` adds a skill's rules and agents. `outputPath` is therefore the
+only source of a whole-file path; `test/targets/emit-files.test.ts` fails if code under
+`src/targets/` builds one by hand. Only the aggregates (Copilot's `AGENTS.md` and
+`copilot-instructions.md`, `plugin.json`, `marketplace.json`) are written directly.
 
 Two consequences of this being data rather than code:
 
@@ -243,9 +259,9 @@ artifact built against it needs its output regenerated. `sigil sync` is the comm
 **Doc citations are staleness-tracked, not continuously verified.** Every `docs:` entry — on a
 template, or in a provider's `KindEmitSpec.docs` (`src/targets/doc-refs.ts`) — carries a
 `verifiedOn` date. `sigil sync --stale <months>` (default 6) walks both: template citations via
-`findStaleDocs` and every provider spec's (plus the two hand-written aggregates',
-`copilot-instructions.md`/`AGENTS.md`) citations via `findStaleProviderDocs`
-(`src/targets/all-emit-specs.ts` flattens the input; `src/commands/sync/analyze.ts` does the date
+`findStaleDocs` and every registered target's citations (spec `docs`, `aggregateDocs` for aggregates and merged
+config files, and capability rows) via `findStaleProviderDocs` (`allProviderDocRefs` in
+`src/targets/all-emit-specs.ts` gathers them; `src/commands/sync/analyze.ts` does the date
 check). `--check` fails CI when any entry is stale — wired into `.github/workflows/ci.yml`. What
 stays manual: nothing re-fetches a URL or confirms the page still describes the cited structure —
 a person does that and then updates `verifiedOn`.

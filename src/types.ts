@@ -3,6 +3,8 @@
  * These interfaces flow through Load → Validate → Resolve → Emit.
  */
 import type { TargetCapabilities } from './targets/capability-types';
+import type { KindEmitSpec, SourcedDocRef } from './targets/spec-types';
+import type { ProviderLexicon } from './targets/lexicon';
 
 // ─── Artifact kinds ──────────────────────────────────────────────────────────
 
@@ -418,8 +420,32 @@ export interface Target {
    * Checked by `build` and `add` after emit; any violation causes a non-zero exit.
    * Each entry maps a path regex to required/forbidden frontmatter keys and body constraints.
    * Files matching no entry are skipped (aggregate files like AGENTS.md have no fixed shape).
+   * Raw: check output with `contractsFor(target)` (src/targets/all-emit-specs.ts), which adds the
+   * literals other providers forbid here (lexicon `forbidElsewhere`).
    */
   outputContracts?: ContractEntry[];
+
+  /**
+   * This target's whole-file renderings (one KindEmitSpec per kind and channel). The single
+   * source of each emitted file's path and content: `scaffold`, `compile` and plugin builds write
+   * through src/targets/emit-files.ts with these specs.
+   */
+  readonly emitSpecs?: readonly KindEmitSpec[];
+
+  /** The literal each `{sigil:<term>}` body token becomes on this provider (src/targets/lexicon.ts). */
+  readonly lexicon?: ProviderLexicon;
+
+  /**
+   * Citations for files no KindEmitSpec renders (aggregates such as AGENTS.md, plugin.json, and
+   * the merged config files), tracked by `sigil sync --stale` with the spec citations.
+   */
+  readonly aggregateDocs?: readonly SourcedDocRef[];
+
+  /**
+   * Folders only this provider reads (`.claude/`). `platform-path-leak` flags a body naming one,
+   * since it ships unchanged to every other provider. Leave out folders other tools share.
+   */
+  readonly privateDirs?: readonly string[];
 
   /**
    * Directories created by `sigil init` for this target (relative to project root).

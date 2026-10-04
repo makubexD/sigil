@@ -18,7 +18,7 @@ import {
   parseTemplateSlotOrder,
   type TemplateSlotDef,
 } from '../../templates';
-import { ALL_PROVIDER_DOC_REFS, ALL_PROVIDER_SPECS } from '../../targets/all-emit-specs';
+import { allProviderDocRefs, allProviderSpecs } from '../../targets/all-emit-specs';
 import type { SyncDrift, SyncFinding } from './types';
 
 /** Minimum line length considered for the "prose already owned by the template" heuristic. */
@@ -199,17 +199,19 @@ export function findStaleDocs(catalog: LoadedCatalog, staleMonths: number): Stal
 }
 
 /**
- * Every registered provider's `KindEmitSpec.docs` (plus the two hand-written aggregate outputs)
- * whose `verifiedOn` is older than `staleMonths`. This is what makes `KindEmitSpec.docs` actually
+ * Every registered target's citation (spec `docs`, its `aggregateDocs` for files no spec renders,
+ * and its capability rows) whose `verifiedOn` is older than `staleMonths`. This is what makes `KindEmitSpec.docs` actually
  * tracked, not just declared — see src/targets/all-emit-specs.ts.
  */
 export function findStaleProviderDocs(staleMonths: number): StaleDoc[] {
   const cutoff = staleCutoff(staleMonths);
-  return ALL_PROVIDER_DOC_REFS.filter(ref => isStale(ref.doc.verifiedOn, cutoff)).map(ref => ({
-    source: ref.source,
-    url: ref.doc.url,
-    verifiedOn: ref.doc.verifiedOn,
-  }));
+  return allProviderDocRefs()
+    .filter(ref => isStale(ref.doc.verifiedOn, cutoff))
+    .map(ref => ({
+      source: ref.source,
+      url: ref.doc.url,
+      verifiedOn: ref.doc.verifiedOn,
+    }));
 }
 
 /** Union of template-doc and provider-spec-doc staleness — the full `sigil sync --stale` report. */
@@ -231,13 +233,13 @@ export interface SupersededSpec {
  * not only by the next manual audit that happens to re-read the same docs.
  */
 export function findSupersededSpecs(): SupersededSpec[] {
-  return ALL_PROVIDER_SPECS.filter(({ spec }) => spec.supersededBy !== undefined).map(
-    ({ source, spec }) => ({
+  return allProviderSpecs()
+    .filter(({ spec }) => spec.supersededBy !== undefined)
+    .map(({ source, spec }) => ({
       source,
       by: spec.supersededBy!.by,
       note: spec.supersededBy!.note,
-    }),
-  );
+    }));
 }
 
 /** Runs drift analysis over the whole catalog (or one template id when `templateFilter` is set). */

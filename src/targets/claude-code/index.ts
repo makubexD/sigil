@@ -25,9 +25,10 @@
  *
  * Sub-modules:
  *   config          — ConfigDestination, resolveClaudeConfigDestination
- *   plugin-build    — getPackArtifacts, buildPluginSkillMd, buildAgentMd, buildWorkflowMd
+ *   plugin-build    — getPackArtifacts (a pack's members)
  *   plugin-assemble — buildPlugin (assembles a pack's full FileMap)
- *   scaffold        — scaffoldSkill, scaffoldRule, scaffoldAgent, scaffoldPrompt, scaffoldWorkflow
+ *   spec/           — one KindEmitSpec per kind and channel (CLAUDE_EMIT_SPECS = emitSpecs);
+ *                     every file is written through ../emit-files.ts with these
  *   target-helpers  — free-standing helpers backing the class methods below
  */
 import type {
@@ -51,7 +52,6 @@ import {
   buildScopeDestination,
   buildMarketplaceJson,
   buildOnePackPlugin,
-  scaffoldByKind,
   scaffoldConfigByKind,
 } from './target-helpers';
 import {
@@ -61,6 +61,12 @@ import {
   CLAUDE_VOCABULARY,
 } from './metadata';
 import { CLAUDE_OUTPUT_CONTRACTS } from './contracts';
+import { CLAUDE_EMIT_SPECS } from './spec';
+import { CLAUDE_LEXICON } from './lexicon';
+import { CLAUDE_AGGREGATE_DOCS } from './aggregate-docs';
+import type { ProviderLexicon } from '../lexicon';
+import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
+import { scaffoldArtifact } from '../emit-files';
 import { CLAUDE_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 
@@ -98,6 +104,10 @@ export class ClaudeCodeTarget implements Target {
   }
 
   readonly outputContracts: ContractEntry[] = CLAUDE_OUTPUT_CONTRACTS;
+  readonly emitSpecs: readonly KindEmitSpec[] = CLAUDE_EMIT_SPECS;
+  readonly lexicon: ProviderLexicon = CLAUDE_LEXICON;
+  readonly aggregateDocs: readonly SourcedDocRef[] = CLAUDE_AGGREGATE_DOCS;
+  readonly privateDirs: readonly string[] = ['.claude/'];
 
   // ── Full build ───────────────────────────────────────────────────────────────
 
@@ -135,9 +145,7 @@ export class ClaudeCodeTarget implements Target {
       throw new Error(`Artifact '${artifactId}' not found in the catalog`);
     }
 
-    const files: FileMap = {};
-    scaffoldByKind(artifact, catalog, files, options);
-    return files;
+    return scaffoldArtifact({ specs: this.emitSpecs, artifact, catalog, options });
   }
 
   // ── Config scaffold (hook / settings / mcp) ──────────────────────────────────

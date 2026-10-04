@@ -24,7 +24,7 @@ export const CHANNELS: readonly ChannelId[] = ['scaffold', 'plugin'];
 /**
  * How one kind is delivered on one channel.
  *   - `native` — emitted as its own file or config fragment. Its provider citation lives on the
- *     kind's KindEmitSpec (or AGGREGATE_DOC_REFS for config kinds), which `provider-kind-coverage`
+ *     kind's KindEmitSpec (or the target's aggregateDocs for config kinds), which `provider-kind-coverage`
  *     enforces — so it is not repeated here.
  *   - `via` — not emitted on its own, but carried by another artifact (`inline`: a rule's text is
  *     folded into each skill that `uses:` it). Cites the doc establishing why.

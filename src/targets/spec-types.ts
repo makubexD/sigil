@@ -3,15 +3,20 @@
  * require for this kind." One `KindEmitSpec` per (provider, kind[, variant]) pair lives in
  * `src/targets/<provider>/spec/<kind>.ts`; this file defines only the shared shape, no data.
  *
- * Why this exists: today the imperative builders in plugin-build.ts / scaffold.ts /
- * build-helpers.ts are the sole authority on emitted format, and contracts.ts is a hand-written
- * parallel restatement of the same required/forbidden keys used only for post-hoc verification —
- * two places that can (and have) drifted apart. A KindEmitSpec is read by BOTH renderArtifact()
- * (src/targets/emit.ts, the emitter) and deriveContracts() (src/targets/output-contract.ts, the
- * verifier), so there is exactly one place per (provider, kind) that states the format.
+ * Why this exists: imperative builders and a hand-written contracts.ts once restated the same
+ * format in two places that drifted apart. A KindEmitSpec is read by renderArtifact()
+ * (src/targets/emit.ts, the renderer), emit-files.ts (the one writer, which takes each file's path
+ * from `outputPath`) and deriveContracts() (src/targets/output-contract.ts, the verifier), so
+ * there is exactly one place per (provider, kind) that states the format and the path.
  */
 import type { ArtifactKind, ResolvedArtifact, ResolvedCatalog } from '../types';
 import type { ProviderLexicon } from './lexicon';
+
+/** One DocRef paired with a human-readable label identifying what cites it. */
+export interface SourcedDocRef {
+  readonly source: string;
+  readonly doc: DocRef;
+}
 
 /** A dated citation to the official provider documentation a spec's shape is following. */
 export interface DocRef {

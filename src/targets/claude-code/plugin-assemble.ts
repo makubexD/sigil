@@ -1,14 +1,14 @@
 /**
- * Assembles a pack's full plugin FileMap (plugin.json + skills/agents/workflows) from
- * the per-artifact renderers in plugin-build.ts. Split out to keep that file under the
- * repo's own module-size threshold.
+ * Assembles a pack's full plugin FileMap: plugin.json, plus its skills, agents and workflows
+ * written through their plugin-channel specs (../emit-files.ts).
  *
  * @module
  */
 import type { ResolvedCatalog, ResolvedArtifact, FileMap, Pack } from '../../types';
-import { SKILL_FILENAME } from '../../paths';
 import { JSON_INDENT } from '../../json-util';
-import { buildPluginSkillMd, buildAgentMd, buildWorkflowMd } from './plugin-build';
+import { CLAUDE_EMIT_SPECS } from './spec';
+import { emitFile, specFor } from '../emit-files';
+import type { EmitContext } from '../spec-types';
 import type { ArtifactKind } from '../../types';
 import { nativeKinds } from '../capabilities';
 import { CLAUDE_CAPABILITIES } from './capabilities';
@@ -37,7 +37,7 @@ function buildPluginJson(pack: Pack, version: string, homepage: string | undefin
 
 /**
  * Compute the shared-agent ids referenced by `skills` that aren't already part of `agents`,
- * and add them to `packInstallSet` (mutated in place) so `buildAgentMd`'s conditional Boundary
+ * and add them to `packInstallSet` (mutated in place) so each file's conditional Boundary
  * section sees them as co-present.
  */
 function computeSharedAgentIds(
@@ -61,69 +61,20 @@ function computeSharedAgentIds(
   return sharedAgentIds;
 }
 
-/** Write workflow → user-invoked-skill files into `files`. Formerly `${prefix}/commands/*.md` —
- * see spec/workflow.ts's header for the commands-merged-into-skills migration. */
-function writeWorkflowFiles(workflows: ResolvedArtifact[], prefix: string, files: FileMap): void {
-  for (const workflow of workflows) {
-    const slug = workflow.id.replace(/\//g, '-');
-    files[`${prefix}/skills/${slug}/${SKILL_FILENAME}`] = buildWorkflowMd(workflow);
-  }
-}
-
-/** Shared build context for {@link writeSkillFiles} — same shape as {@link AgentFilesCtx}. */
-interface SkillFilesCtx {
-  catalog: ResolvedCatalog;
-  packInstallSet: Set<string>;
-  prefix: string;
-}
-
-/** Write skill SKILL.md + reference files into `files`. */
-function writeSkillFiles(skills: ResolvedArtifact[], ctx: SkillFilesCtx, files: FileMap): void {
-  const { catalog, packInstallSet, prefix } = ctx;
-  for (const skill of skills) {
-    const skillName = skill.frontmatter.name as string;
-    // Plugin build (dist/claude/) — rules are inlined (inlineRules: true) because plugins
-    // cannot ship loose rule files; see buildPluginSkillMd's doc comment. catalog/packInstallSet
-    // drive the skill's own conditional Boundary section, same as writeAgentFiles below.
-    files[`${prefix}/skills/${skillName}/${SKILL_FILENAME}`] = buildPluginSkillMd(
-      skill,
-      true,
-      catalog,
-      packInstallSet,
-    );
-
-    for (const ref of skill.references ?? []) {
-      files[`${prefix}/skills/${skillName}/references/${ref.name}`] = ref.content;
-    }
-  }
-}
-
-/** Shared build context for {@link writeAgentFiles}. */
-interface AgentFilesCtx {
-  catalog: ResolvedCatalog;
-  packInstallSet: Set<string>;
-  prefix: string;
-}
-
-/** Write agent .md files (pack agents + shared agents) into `files`. */
-function writeAgentFiles(
-  agents: ResolvedArtifact[],
-  sharedAgentIds: Set<string>,
-  ctx: AgentFilesCtx,
+/**
+ * Writes the pack's workflows, skills and agents (plus the shared agents its skills use) through
+ * their plugin-channel specs (src/targets/emit-files.ts). Skills inline their rules: a plugin can't
+ * ship loose rule files. `ctx` carries the pack name (paths under `plugins/<pack>/`) and the
+ * pack's install set, which drives each file's conditional Boundary section.
+ */
+function writeMemberFiles(
+  members: readonly ResolvedArtifact[],
+  ctx: EmitContext,
   files: FileMap,
 ): void {
-  const { catalog, packInstallSet, prefix } = ctx;
-  for (const agent of agents) {
-    const agentName = agent.frontmatter.name as string;
-    files[`${prefix}/agents/${agentName}.md`] = buildAgentMd(agent, catalog, packInstallSet);
-  }
-
-  for (const agentId of sharedAgentIds) {
-    const agent = catalog.byId.get(agentId);
-    if (agent) {
-      const agentName = agent.frontmatter.name as string;
-      files[`${prefix}/agents/${agentName}.md`] = buildAgentMd(agent, catalog, packInstallSet);
-    }
+  for (const artifact of members) {
+    const spec = specFor(CLAUDE_EMIT_SPECS, artifact.kind, 'plugin');
+    if (spec) emitFile(spec, artifact, ctx, files);
   }
 }
 
@@ -187,13 +138,13 @@ export function buildPlugin(options: BuildPluginOptions): FileMap {
   const workflows = members('workflow');
 
   // Build the co-install set for the plugin: pack artifacts + shared agents.
-  // Used by buildAgentMd for conditional Boundary section rendering.
+  // Drives each file's conditional Boundary section.
   const packInstallSet = new Set<string>(packArtifacts.map(a => a.id));
   const sharedAgentIds = computeSharedAgentIds(skills, agents, packInstallSet);
 
-  writeWorkflowFiles(workflows, prefix, files);
-  writeSkillFiles(skills, { catalog, packInstallSet, prefix }, files);
-  writeAgentFiles(agents, sharedAgentIds, { catalog, packInstallSet, prefix }, files);
+  const sharedAgents = [...sharedAgentIds].flatMap(id => catalog.byId.get(id) ?? []);
+  const ctx: EmitContext = { catalog, installSet: packInstallSet, packName: pack.name };
+  writeMemberFiles([...workflows, ...skills, ...agents, ...sharedAgents], ctx, files);
 
   return files;
 }

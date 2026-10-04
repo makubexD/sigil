@@ -12,7 +12,7 @@
 import type { ResolvedArtifact, ResolvedCatalog, Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
 import type { EmitContext, KindEmitSpec, SpecLimit } from '../../../../targets/spec-types';
-import { ALL_PROVIDER_SPECS } from '../../../../targets/all-emit-specs';
+import { allProviderSpecs } from '../../../../targets/all-emit-specs';
 import { renderArtifact } from '../../../../targets/emit';
 import { supportsKind } from '../../../../targets/capabilities';
 import { artifactTargetsPlatform } from '../../../../select';
@@ -63,9 +63,9 @@ const measure = (text: string, limit: SpecLimit) =>
 
 /** The specs of `target` for `artifact`'s kind that declare limits. */
 function limitedSpecs(target: Target, artifact: ResolvedArtifact): KindEmitSpec[] {
-  return ALL_PROVIDER_SPECS.filter(
-    s => s.provider === target.name && s.spec.kind === artifact.kind && s.spec.limits,
-  ).map(s => s.spec);
+  return allProviderSpecs()
+    .filter(s => s.provider === target.name && s.spec.kind === artifact.kind && s.spec.limits)
+    .map(s => s.spec);
 }
 
 /**

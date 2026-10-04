@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M2: T1, T5, T6, T7 done; next T8 (ADO, ⚠ approved as part of plan) + T9, T10; V1 waiting on user.
+Status: M2: T1, T5–T7, T9, T10 done; open: V1 (user), T13 (after V1), ⚠ T2 + ⚠ T8 (need go), Phase 5, ⚠ R2.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -32,7 +32,7 @@ Spec: `SPEC.md`
 - [x] T7 Content fixes
 - [ ] ⚠ T8 ADO MCP env token and org scrub
 - [x] T9 `cli-builder` pack
-- [ ] T10 Auditor lookup (P2)
+- [x] T10 Auditor lookup (P2)
 - [ ] Phase 5 review
 - [ ] ⚠ R2 Release minor
 

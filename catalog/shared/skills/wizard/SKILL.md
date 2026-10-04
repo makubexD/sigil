@@ -91,13 +91,14 @@ minimal CLI described there). Only `build` and `refactor` carry them out.
 5. Finish with the report from `references/findings.md`: the validation list ticked, a transcript
    of one scripted run (questions, review, equivalent command), and "Not verified" (at least:
    the manual check in a real terminal, with the exact command). If a fresh-context reviewer
-   is available (the `wizard-auditor` agent, a subagent, or a second session), hand it
-   `references/auditor.md` for an independent pass.
+   is available (the `wizard-auditor` agent, a subagent, or a second session), hand it the full
+   path of this skill's `references/auditor.md` for an independent pass.
 
 ## audit
 
 Follow `references/auditor.md`. It is self-contained within this skill, so prefer handing it to a
-fresh-context reviewer (the `wizard-auditor` agent when it is installed), and check its report
+fresh-context reviewer (the `wizard-auditor` agent when it is installed) along with that file's full
+path, and check its report
 against the evidence before presenting it. Present the report and stop the turn. Make no edits.
 
 ## refactor

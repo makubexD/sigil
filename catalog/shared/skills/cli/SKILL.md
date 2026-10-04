@@ -90,13 +90,14 @@ new group matches them.
 4. Generate help (and completion, if the stack supports it) from the declarations.
 5. Finish with the validation list and the command reference from `references/findings.md`.
    If a fresh-context reviewer is available (the `cli-auditor` agent, a subagent, or a second
-   session), give it `references/auditor.md` for an independent pass; otherwise run that brief
-   yourself as a separate step.
+   session), give it the full path of this skill's `references/auditor.md` for an independent
+   pass; otherwise run that brief yourself as a separate step.
 
 ## audit
 
 Follow `references/auditor.md`. It is self-contained, so prefer handing it to a
-fresh-context reviewer (the `cli-auditor` agent when it is installed), and review its report
+fresh-context reviewer (the `cli-auditor` agent when it is installed) along with that file's full
+path, and review its report
 against the evidence before presenting it. Present the report and stop the turn. Make no edits.
 
 ## refactor

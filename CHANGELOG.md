@@ -109,6 +109,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   typo used to create a new, unregistered language folder) and lists the known ones. `sigil check`,
   and the authoring commands that run it, reject a shared artifact that sets `language:` and a
   language folder with no `language.yaml`.
+- The `cli-auditor` and `wizard-auditor` agents find their brief in three places instead of five:
+  the path the calling skill now passes, the preloaded skill, then the project and user skills
+  folders.
 - Catalog content: `python/py-generate-tests` and `react/react-generate-tests` now bring the
   language's own reviewer (`py-code-reviewer`, `react-code-reviewer`) instead of
   `shared/code-reviewer`, which is now described as the fallback for languages the catalog has no

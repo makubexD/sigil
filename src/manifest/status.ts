@@ -14,6 +14,8 @@ import path from 'path';
 import { isConfigKind } from '../kinds';
 import { sha256 } from './hash';
 import { checkConfigFiles } from './status-config-check';
+import type { ConfigFileFindings } from './status-config-check';
+import type { RetiredConfigDestination } from '../types';
 import type { Manifest, ManifestEntry, StatusResult } from './types';
 
 /** Looks up an artifact's CURRENT `{id, revision}` template reference in the bundled catalog. */
@@ -25,6 +27,8 @@ export interface ComputeStatusExtras {
   scaffoldHashFn?: ((id: string, target: string) => Map<string, string> | null) | undefined;
   /** Looks up an artifact's live template revision, letting `reason` name *why* it's outdated. */
   currentTemplateOf?: CurrentTemplateOf | undefined;
+  /** A target's retired config files (Target.retiredConfigDestinations): records there are moved. */
+  retiredFor?: ((target: string) => readonly RetiredConfigDestination[]) | undefined;
 }
 
 /**
@@ -46,15 +50,15 @@ export function computeStatus(
 function checkEntryFiles(
   entry: ManifestEntry,
   projectDir: string,
-): { driftedFiles: string[]; missingFiles: string[] } {
-  const driftedFiles: string[] = [];
-  const missingFiles: string[] = [];
+  extras: ComputeStatusExtras,
+): ConfigFileFindings {
+  const found: ConfigFileFindings = { driftedFiles: [], missingFiles: [], movedFiles: [] };
   if (isConfigKind(entry.kind) && entry.configFiles && entry.configFiles.length > 0) {
-    checkConfigFiles(entry, projectDir, driftedFiles, missingFiles);
+    checkConfigFiles(entry, projectDir, extras.retiredFor?.(entry.target) ?? [], found);
   } else {
-    checkWholeFiles(entry, projectDir, driftedFiles, missingFiles);
+    checkWholeFiles(entry, projectDir, found.driftedFiles, found.missingFiles);
   }
-  return { driftedFiles, missingFiles };
+  return found;
 }
 
 function statusForEntry(
@@ -63,12 +67,13 @@ function statusForEntry(
   catalogIds: Set<string>,
   extras: ComputeStatusExtras,
 ): StatusResult {
-  const { driftedFiles, missingFiles } = checkEntryFiles(entry, projectDir);
+  const { driftedFiles, missingFiles, movedFiles } = checkEntryFiles(entry, projectDir, extras);
   return deriveStatus({
     entry,
     catalogIds,
     driftedFiles,
     missingFiles,
+    movedFiles,
     scaffoldHashFn: extras.scaffoldHashFn,
     currentTemplateOf: extras.currentTemplateOf,
   });
@@ -98,6 +103,7 @@ interface DeriveStatusOptions {
   catalogIds: Set<string>;
   driftedFiles: string[];
   missingFiles: string[];
+  movedFiles?: string[];
   scaffoldHashFn?: ((id: string, target: string) => Map<string, string> | null) | undefined;
   currentTemplateOf?: CurrentTemplateOf | undefined;
 }
@@ -166,7 +172,9 @@ function deriveReason(
     case 'drifted':
       return `local edits differ from installed content: ${driftedFiles.join(', ')}`;
     case 'outdated':
-      return outdatedReason(entry, currentTemplateOf);
+      return options.movedFiles?.length
+        ? `config moved: ${options.movedFiles.join(', ')} → run 'sigil update'`
+        : outdatedReason(entry, currentTemplateOf);
     case 'up-to-date':
       return undefined;
   }
@@ -182,7 +190,8 @@ function deriveStatus(options: DeriveStatusOptions): StatusResult {
       ? 'missing'
       : driftedFiles.length > 0
         ? 'drifted'
-        : isOutdated(entry, scaffoldHashFn, currentTemplateOf)
+        : (options.movedFiles?.length ?? 0) > 0 ||
+            isOutdated(entry, scaffoldHashFn, currentTemplateOf)
           ? 'outdated'
           : 'up-to-date';
 

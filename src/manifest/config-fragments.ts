@@ -5,7 +5,7 @@
  *
  * @module
  */
-import type { ConfigMergeOp, ConfigRoot, MergeStrategy } from '../types';
+import type { ConfigMergeOp, ConfigRoot, MergeStrategy, RetiredConfigDestination } from '../types';
 import type { ManifestConfigMerge, ManifestEntry } from './types';
 
 /** Rebuilds the ConfigMergeOp a recorded fragment came from. */
@@ -20,6 +20,15 @@ export function recordedOp(cf: ManifestConfigMerge): ConfigMergeOp {
 
 /** A fragment scoped to one project inside a shared file (nested under `projects.<dir>`). */
 const perProject = (fragment: Record<string, unknown>): boolean => 'projects' in fragment;
+
+/** Whether `cf` is recorded at a file its provider retired (Target.retiredConfigDestinations). */
+export function isAtRetiredDestination(
+  cf: ManifestConfigMerge,
+  retired: readonly RetiredConfigDestination[],
+): boolean {
+  const root = cf.root ?? 'project';
+  return retired.some(r => r.from.file === cf.file && r.from.root === root);
+}
 
 /**
  * True when `op` writes the same place `cf` recorded: same file and root. Two scopes can share

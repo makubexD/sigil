@@ -129,6 +129,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `sigil release` and the release workflow now run the full CI gate (`npm run ci:local`: audit,
+  lint, format, build, validate, `sync --check`, tests, catalog build and Claude plugin validation)
+  before tagging or publishing; they used to skip lint, format, `sync --check` and the audit. The
+  Claude Code CLI version is pinned once in `package.json`, and GitHub Actions are pinned to commit
+  SHAs.
 - Copilot MCP servers are written in the portable format VS Code now recommends, which VS Code,
   its Agent Host and Copilot CLI all read: `.mcp.json` for a project, `~/.copilot/mcp-config.json`
   (or `$COPILOT_HOME`) for the user. sigil no longer writes VS Code's deprecated `.vscode/mcp.json`
@@ -212,6 +217,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sigil status` read every config fragment under the project folder, so a server or setting
+  installed in a home-directory file (`~/.claude.json`, `~/.claude/settings.json`,
+  `~/.copilot/mcp-config.json`) showed as `missing` while it was in place. Each fragment is now read
+  from its own root. `status` (and the wizard's update badge) also shows a config entry whose file its
+  provider moved as `outdated: config moved … run 'sigil update'`.
 - `packs.yaml` is now validated wherever it is read: a pack name must be kebab-case, like an
   artifact name, because it becomes an output folder (`dist/claude/plugins/<name>`). A malformed
   file fails with the reason instead of being used as is.

@@ -7,9 +7,10 @@
  *
  * @module
  */
+import { PORTABLE_MCP_SERVERS_KEY } from '../portable-mcp';
 
 /** The JSON key that holds MCP servers in the portable format. */
-export const COPILOT_MCP_SERVERS_KEY = 'mcpServers';
+export const COPILOT_MCP_SERVERS_KEY = PORTABLE_MCP_SERVERS_KEY;
 
 /** The project-level portable MCP file. */
 export const COPILOT_PROJECT_MCP_FILE = '.mcp.json';

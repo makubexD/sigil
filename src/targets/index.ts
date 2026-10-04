@@ -8,7 +8,7 @@
  *
  * No other code needs to change.
  */
-import type { Target } from '../types';
+import type { RetiredConfigDestination, Target } from '../types';
 
 // Import and register all built-in adapters
 import { ClaudeCodeTarget } from './claude-code';
@@ -37,6 +37,14 @@ export function getTarget(name: string): Target {
 }
 
 /** Returns all registered targets. */
+/**
+ * The config files a registered target retired (Target.retiredConfigDestinations), or none for an
+ * unknown name. Passed to computeStatus as `retiredFor` so every status view reports moved config.
+ */
+export function retiredConfigDestinationsOf(name: string): readonly RetiredConfigDestination[] {
+  return registry.get(name)?.retiredConfigDestinations ?? [];
+}
+
 export function getAllTargets(): Target[] {
   return [...registry.values()];
 }

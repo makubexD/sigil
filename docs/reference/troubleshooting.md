@@ -198,7 +198,7 @@ npm run build && npm run build:test && node --test test-compiled/<path>.test.js
 
 ## `sigil release` fails at the verify gate
 
-The gate runs `npm run build`, `npm run validate`, `npm test`, and `npm run catalog:build` (narrower than CI; see [operations.md](../guides/operations.md#release-a-new-version-sigil-release)), unless
+The gate runs `npm run ci:local`, the same checks as CI (see [operations.md](../guides/operations.md#release-a-new-version-sigil-release)), unless
 you passed `--no-verify` (that flag skips the gate entirely; it does not skip the version write or
 the commit). If any step fails, the version bump is already written but **not committed** — fix the
 failing step, then either:

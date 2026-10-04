@@ -17,12 +17,11 @@ import type {
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
 import { resolveCopilotConfigDestination } from './config';
-import { basenameOfId } from '../../paths';
 import { buildCopilotInstructions } from './build-helpers';
 import { emitFile, specFor } from '../emit-files';
 import type { KindEmitSpec } from '../spec-types';
 import { COPILOT_MCP_SERVERS_KEY } from './mcp-key';
-import { expandEnvTokens, PORTABLE_MCP_ENV_SYNTAX } from '../env-reference';
+import { portableMcpOp } from '../portable-mcp';
 
 /**
  * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
@@ -118,25 +117,9 @@ export function buildArtifactFiles(
 type McpArtifact = NonNullable<ReturnType<ResolvedCatalog['byId']['get']>>;
 
 /**
- * The op one mcp install needs for `scope`: the server, its `{sigil:env:NAME}` tokens written as
- * `${NAME}` (the syntax GitHub documents for Copilot's MCP files), under `mcpServers` in the
- * scope's portable file (./config.ts).
+ * The op one mcp install needs for `scope`: the portable entry (../portable-mcp.ts, the same one
+ * Claude Code writes into the shared .mcp.json) in the scope's portable file (./config.ts).
  */
 export function buildMcpConfigOps(artifact: McpArtifact, scope: ConfigScope): ConfigMergeOp[] {
-  const dest = resolveCopilotConfigDestination('mcp', scope);
-  const fm = artifact.frontmatter;
-  const serverName = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
-  const { description: _d, ...authored } = fm.server as Record<string, unknown>;
-  void _d;
-  const serverConfig = expandEnvTokens(authored, PORTABLE_MCP_ENV_SYNTAX);
-  const key = COPILOT_MCP_SERVERS_KEY;
-  return [
-    {
-      file: dest.file,
-      root: dest.root,
-      fragment: { [key]: { [serverName]: serverConfig } },
-      strategy: { [key]: 'object-spread' },
-      section: key,
-    },
-  ];
+  return [portableMcpOp(artifact, resolveCopilotConfigDestination('mcp', scope))];
 }

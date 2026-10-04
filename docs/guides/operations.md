@@ -100,7 +100,8 @@ messages, and on Node 20 stray text can corrupt them ("Unable to deserialize clo
 A separate Linux job, **Claude plugin validation**, installs a pinned Claude Code CLI and runs
 `npm run validate:claude-plugins`: `claude plugin validate --strict` over `dist/claude` (the
 marketplace) and every plugin, so warnings fail too. It needs no login and uses no secrets. The CLI
-version is pinned in that job's install step in `.github/workflows/ci.yml`; bump it there.
+version is pinned once, in `package.json` (`config.claudeCodeVersion`); `ci.yml` and `release.yml`
+both install that version. GitHub Actions are pinned to full commit SHAs (the tag in a comment).
 
 **Run the same thing locally before you push.** `npm run ci:local` chains every step above (except
 `npm ci`) in the same order, plus the plugin validation, which it skips with a notice when `claude`
@@ -192,7 +193,7 @@ sigil release major          # 0.1.0 → 1.0.0
 sigil release 0.2.1          # explicit version
 
 sigil release patch --dry-run    # preview every step without writing anything
-sigil release patch --no-verify  # skip the build/validate/test gate (escape hatch)
+sigil release patch --no-verify  # skip the release gate, npm run ci:local (escape hatch)
 ```
 
 **What it does, in order:**
@@ -205,8 +206,9 @@ sigil release patch --no-verify  # skip the build/validate/test gate (escape hat
    proceeds without a prompt. (The help text calls `--yes` required off a TTY; the implementation does
    not enforce that.) `--dry-run` returns before this prompt.
 4. **Write version** to `package.json` and `package-lock.json`.
-5. **Verify gate.** Runs `npm run build && npm run validate && npm test && npm run catalog:build`
-   unless `--no-verify` is set. That flag skips only the gate; the version write and the commit still
+5. **Verify gate.** Runs `npm run ci:local`, the full CI mirror (`RELEASE_GATE` in
+   `src/commands/release.ts`), unless `--no-verify` is set. Step 1 already requires a clean working
+   tree, so stash any untracked scratch files first; the format check reads them too. That flag skips only the gate; the version write and the commit still
    happen. `dist/` is gitignored, so the plugin.json files the gate regenerates are not committed.
 6. **Promote CHANGELOG.** Renames `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` and inserts a fresh
    `## [Unreleased]` above it. This runs after the gate, so a failed gate leaves CHANGELOG alone.
@@ -220,12 +222,15 @@ Then push:
 git push && git push --tags
 ```
 
-Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which runs `npm ci`, `npm run build`,
-`npm run validate`, `npm test`, and `npm publish --provenance --access public` using npm OIDC Trusted
-Publishing (no stored token).
+Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which runs `npm ci`, installs the
+pinned Claude Code CLI, runs `npm run ci:local` (the same gate as CI), and then
+`npm publish --provenance --access public` using npm OIDC Trusted Publishing (no stored token).
 
-> **The release gate is narrower than CI.** Both `sigil release` and `release.yml` skip lint,
-> `format:check`, `sync --check`, and `npm audit`. Run `npm run ci:local` on the commit before you tag it.
+> **The release gate is the CI gate.** `sigil release` and `release.yml` both run `npm run ci:local`,
+> so a release can't pass a narrower check than a pull request (`test/workflows.test.ts` guards this).
+> Two differences remain. Locally, the Claude plugin validation is skipped when the `claude` CLI is not
+> installed (CI always runs it). And because `release.yml` runs `npm audit` after the tag is pushed, an
+> advisory published in between blocks the publish of that tag: fix it and release a new version.
 
 ### One-time npm setup (before the first automated release)
 

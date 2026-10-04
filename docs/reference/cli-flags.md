@@ -483,7 +483,7 @@ Does NOT push.
 
 Options:
   --dry-run    Print every step and computed version; write nothing
-  --no-verify  Skip the build/validate/test gate (escape hatch)
+  --no-verify  Skip the release gate, npm run ci:local (escape hatch)
   --yes        Non-interactive; skip the confirmation prompt (required when not
                a TTY)
   -h, --help   display help for command

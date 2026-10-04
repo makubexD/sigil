@@ -12,7 +12,9 @@
  */
 import fs from 'node:fs';
 import { canonicalize, classifyConfigDrift } from '../config-merge';
-import { sha256 } from '../manifest';
+import { isAtRetiredDestination, sha256 } from '../manifest';
+
+export { isAtRetiredDestination };
 import type { ManifestConfigMerge, ManifestEntry } from '../manifest/types';
 import type { ConfigMergeOp, RetiredConfigDestination } from '../types';
 import type { UpdateOptions } from './update';
@@ -100,14 +102,6 @@ function moveOne(
   }
   console.log(`  ✓  ${entry.id}  (${cf.file} moved to ${next.file})`);
   return 'moved';
-}
-
-/** Whether `cf` is recorded at a file its provider retired. */
-export function isAtRetiredDestination(
-  cf: ManifestConfigMerge,
-  retired: readonly RetiredConfigDestination[],
-): boolean {
-  return retired.some(r => sameFile(cf, r.from));
 }
 
 /** Moves every fragment `entry` records at a retired destination to the file that replaced it. */

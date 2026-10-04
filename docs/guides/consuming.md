@@ -646,15 +646,17 @@ All four accept `--project-dir` and `--target`. Step-by-step output for each is 
 | Status       | Meaning                                                                                                                                            |
 | ------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `up-to-date` | Files match what sigil installed                                                                                                                   |
-| `outdated`   | The artifact's shared template was revised since you installed. Run `sigil update`                                                                 |
+| `outdated`   | The artifact's shared template was revised since you installed, or its config file moved (`config moved: …`). Run `sigil update`                   |
 | `drifted`    | You edited a file. `update` keeps your version unless the catalog changed it too, and then needs `--force`                                         |
 | `missing`    | A file sigil installed was deleted. `sigil add <that entry's own id>` writes it again; `update` restores only config entries (MCP, hook, settings) |
 | `orphaned`   | The artifact is no longer in the catalog. `sigil prune` reports it and `--apply` removes it                                                        |
 
 A non-`up-to-date` row prints its reason on the next line. `status` is diagnostic only: a catalog
 change that is not a template revision still shows `up-to-date` here, and `sigil update` applies it
-anyway. Config entries (MCP servers, hooks, settings) never show as `outdated`; a changed JSON
-fragment shows as `drifted` or `missing`. Catalog **authors**, not consumers, run `sigil sync` to fix
+anyway. A config entry (MCP server, hook, settings) shows as `outdated` only when its provider moved
+the file it lives in (Copilot's MCP servers moved out of `.vscode/mcp.json`); otherwise a changed JSON
+fragment shows as `drifted` or `missing`. Each fragment is checked in its own root, so a server in
+`~/.claude.json` or `~/.copilot/mcp-config.json` is read there, not under the project. Catalog **authors**, not consumers, run `sigil sync` to fix
 artifacts that drifted from their own template; see
 [authoring.md § Keeping artifacts in sync with their template](authoring.md#keeping-artifacts-in-sync-with-their-template).
 

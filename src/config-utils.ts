@@ -28,6 +28,20 @@ function resolveCopilotHome(): string {
 }
 
 /**
+ * The VS Code user-profile directory, warning when it is absent. A reader (status) passes quiet:
+ * the warning is about writing there, which a reader never does.
+ */
+function vsCodeUserRoot(quiet: boolean): string {
+  const vsDir = resolveVsCodeUserDir();
+  if (!quiet && !fs.existsSync(vsDir)) {
+    console.warn(
+      `  ⚠  VS Code user-profile directory not found at ${vsDir} — writing anyway (directory will be created).`,
+    );
+  }
+  return vsDir;
+}
+
+/**
  * Resolves a symbolic ConfigRoot to an absolute base directory.
  *
  *   project    → projectDir  (default, stays inside the consumer repo)
@@ -41,21 +55,18 @@ function resolveCopilotHome(): string {
  * Note: resolves the DEFAULT VS Code profile only. Projects using custom profiles
  * must specify the path manually.
  */
-export function resolveConfigRoot(root: ConfigRoot | undefined, projectDir: string): string {
+export function resolveConfigRoot(
+  root: ConfigRoot | undefined,
+  projectDir: string,
+  opts: { quiet?: boolean } = {},
+): string {
   switch (root) {
     case 'home':
       return os.homedir();
     case 'copilot-home':
       return resolveCopilotHome();
-    case 'vscode-user': {
-      const vsDir = resolveVsCodeUserDir();
-      if (!fs.existsSync(vsDir)) {
-        console.warn(
-          `  ⚠  VS Code user-profile directory not found at ${vsDir} — writing anyway (directory will be created).`,
-        );
-      }
-      return vsDir;
-    }
+    case 'vscode-user':
+      return vsCodeUserRoot(opts.quiet ?? false);
     default: // 'project' or undefined
       return projectDir;
   }

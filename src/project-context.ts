@@ -10,7 +10,7 @@ import os from 'os';
 import path from 'path';
 import { loadManifest, computeStatus } from './manifest';
 import type { ArtifactStatus, ManifestEntry } from './manifest/types';
-import { getAllTargets } from './targets';
+import { getAllTargets, retiredConfigDestinationsOf } from './targets';
 
 /** Files and folders that mark a directory as a project someone works in. */
 const PROJECT_MARKERS = [
@@ -117,7 +117,8 @@ function readHealth(dir: string, catalogIds: Set<string> | undefined): Health {
     const manifest = loadManifest(dir);
     // Without catalog ids, treat every installed id as known so nothing is called orphaned.
     const known = catalogIds ?? new Set(manifest.entries.map(e => e.id));
-    for (const result of computeStatus(manifest, dir, known)) health[result.status] += 1;
+    const extras = { retiredFor: retiredConfigDestinationsOf };
+    for (const result of computeStatus(manifest, dir, known, extras)) health[result.status] += 1;
     const installedByTarget = countByTarget(manifest.entries);
     return { manifestPresent, installed: manifest.entries.length, installedByTarget, health };
   } catch (error) {

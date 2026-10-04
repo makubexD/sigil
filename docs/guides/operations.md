@@ -193,7 +193,7 @@ sigil release major          # 0.1.0 → 1.0.0
 sigil release 0.2.1          # explicit version
 
 sigil release patch --dry-run    # preview every step without writing anything
-sigil release patch --no-verify  # skip the build/validate/test gate (escape hatch)
+sigil release patch --no-verify  # skip the release gate, npm run ci:local (escape hatch)
 ```
 
 **What it does, in order:**
@@ -228,6 +228,9 @@ pinned Claude Code CLI, runs `npm run ci:local` (the same gate as CI), and then
 
 > **The release gate is the CI gate.** `sigil release` and `release.yml` both run `npm run ci:local`,
 > so a release can't pass a narrower check than a pull request (`test/workflows.test.ts` guards this).
+> Two differences remain. Locally, the Claude plugin validation is skipped when the `claude` CLI is not
+> installed (CI always runs it). And because `release.yml` runs `npm audit` after the tag is pushed, an
+> advisory published in between blocks the publish of that tag: fix it and release a new version.
 
 ### One-time npm setup (before the first automated release)
 

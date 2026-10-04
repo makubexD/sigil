@@ -381,7 +381,7 @@ program
     'Bump version (patch|minor|major|x.y.z), rebuild, update CHANGELOG, commit + tag. Does NOT push.',
   )
   .option('--dry-run', 'Print every step and computed version; write nothing')
-  .option('--no-verify', 'Skip the build/validate/test gate (escape hatch)')
+  .option('--no-verify', 'Skip the release gate, npm run ci:local (escape hatch)')
   .option('--yes', 'Non-interactive; skip the confirmation prompt (required when not a TTY)')
   .action(lazy(async () => (await import('./commands/release')).runRelease));
 

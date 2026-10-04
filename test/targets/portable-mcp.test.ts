@@ -3,7 +3,8 @@
  * fragments must be byte-identical: `uninstall` keeps a server another target still records only
  * when the recorded hashes match (sharedWith, src/commands/uninstall-config.ts), and two different
  * values for one server key would overwrite each other. Both targets build the entry with
- * `portableMcpOp` (src/targets/portable-mcp.ts).
+ * `portableMcpOp` (src/targets/portable-mcp.ts). Only the project scope is shared: Claude's local
+ * scope wraps the same server under a per-project key in ~/.claude.json, which Copilot never writes.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

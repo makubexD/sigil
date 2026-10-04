@@ -7,8 +7,7 @@
  *
  * @module
  */
-import type { DocRef } from './spec-types';
-import { CLAUDE_MCP_DOC } from './doc-refs';
+import { SigilError } from '../errors';
 
 /**
  * `${NAME}` — the syntax of the portable `.mcp.json` (`mcpServers`), the file Claude Code reads and
@@ -16,15 +15,12 @@ import { CLAUDE_MCP_DOC } from './doc-refs';
  * Copilot CLI's reading of it in the shared file is not documented (see the catalog layout ADR).
  */
 export const PORTABLE_MCP_ENV_SYNTAX: EnvSyntax = {
-  format: name => '${' + name + '}',
-  doc: CLAUDE_MCP_DOC,
+  format: name => '${' + name + '}', // documented in CLAUDE_MCP_DOC (doc-refs.ts)
 };
 
 /** How one config file references an environment variable. */
 export interface EnvSyntax {
   readonly format: (name: string) => string;
-  /** The documentation that states this syntax for that file. */
-  readonly doc?: DocRef;
 }
 
 const ENV_TOKEN_RE = /\{sigil:env:([^}]*)\}/g;
@@ -33,7 +29,9 @@ const ENV_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 function expandString(value: string, syntax: EnvSyntax): string {
   return value.replace(ENV_TOKEN_RE, (token, name: string) => {
     if (!ENV_NAME_RE.test(name)) {
-      throw new Error(`Malformed ${token}: an environment variable name is letters, digits and _`);
+      throw new SigilError(
+        `Malformed ${token} in an MCP config: an environment variable name is letters, digits and _`,
+      );
     }
     return syntax.format(name);
   });

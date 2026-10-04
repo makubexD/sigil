@@ -7,7 +7,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadCatalog } from '../load';
+import { loadCatalog, loadLanguages } from '../load';
 import { getAllTargets } from '../targets';
 import { ALL_KINDS, isArtifactKind, sourceRelPath } from '../kinds';
 import { LANGUAGES_DIR, SHARED_NAMESPACE, namespaceDir } from '../catalog-layout';
@@ -104,14 +104,9 @@ function buildNewArtifactHeader(identity: NewArtifactIdentity, inputs: Effective
   });
 }
 
-/** Languages registered in `catalogDir` (a folder under languages/ with a language.yaml). */
+/** Languages registered in `catalogDir`, from the same registry loadCatalog reads. */
 function registeredLanguages(catalogDir: string): string[] {
-  const dir = path.join(catalogDir, LANGUAGES_DIR);
-  if (!fs.existsSync(dir)) return [];
-  return fs
-    .readdirSync(dir)
-    .filter(lang => fs.existsSync(path.join(dir, lang, 'language.yaml')))
-    .sort();
+  return [...loadLanguages(catalogDir).keys()].sort();
 }
 
 /** Refuses a language with no language.yaml before anything is written (a typo made a new folder). */

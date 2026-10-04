@@ -1,5 +1,4 @@
 import type { EnvSyntax } from '../env-reference';
-import { VSCODE_VARIABLES_DOC } from '../doc-refs';
 
 /**
  * JSON section key where GitHub Copilot stores MCP server configs.
@@ -18,6 +17,5 @@ export const COPILOT_CLI_MCP_SERVERS_KEY = 'mcpServers';
 
 /** `${env:NAME}` — how VS Code's mcp.json files reference an environment variable. */
 export const VSCODE_MCP_ENV_SYNTAX: EnvSyntax = {
-  format: name => '${env:' + name + '}',
-  doc: VSCODE_VARIABLES_DOC,
+  format: name => '${env:' + name + '}', // documented in VSCODE_VARIABLES_DOC (doc-refs.ts)
 };

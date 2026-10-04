@@ -6,9 +6,10 @@
  * @module
  */
 import fs from 'fs';
-import path from 'path';
 import { classifyConfigDrift } from '../config-merge';
-import type { ConfigMergeOp, MergeStrategy } from '../types';
+import { resolveConfigRoot } from '../config-utils';
+import { resolveContained } from '../contained-path';
+import type { ConfigMergeOp, ConfigRoot, MergeStrategy, RetiredConfigDestination } from '../types';
 import type { ManifestConfigMerge, ManifestEntry } from './types';
 
 /** Reads and parses an existing JSON config file; returns undefined when it's unparseable. */
@@ -41,6 +42,12 @@ function driftLabel(file: string, drift: 'missing' | 'modified'): string {
     : `${file} (values changed — needs 'sigil update --force')`;
 }
 
+/** Where a recorded fragment lives: under its root (project, home, …), never outside it. */
+function recordedPath(cf: ManifestConfigMerge, projectDir: string): string {
+  const root = resolveConfigRoot((cf.root as ConfigRoot | undefined) ?? 'project', projectDir);
+  return resolveContained(root, cf.file); // the manifest is editable: stay in the root
+}
+
 /** Checks one config-fragment record against its live on-disk JSON file. */
 function checkOneConfigFile(
   cf: ManifestConfigMerge,
@@ -48,7 +55,7 @@ function checkOneConfigFile(
   driftedFiles: string[],
   missingFiles: string[],
 ): void {
-  const fullPath = path.join(projectDir, cf.file);
+  const fullPath = recordedPath(cf, projectDir);
   if (!fs.existsSync(fullPath)) {
     missingFiles.push(cf.file);
     return;
@@ -62,14 +69,26 @@ function checkOneConfigFile(
   if (drift !== 'intact') driftedFiles.push(driftLabel(cf.file, drift));
 }
 
+/** What checking an entry's config records found, by kind of problem. */
+export interface ConfigFileFindings {
+  readonly driftedFiles: string[];
+  readonly missingFiles: string[];
+  /** Records at a file the provider retired; `sigil update` moves them. */
+  readonly movedFiles: string[];
+}
+
+const atRetired = (cf: ManifestConfigMerge, retired: readonly RetiredConfigDestination[]) =>
+  retired.some(r => r.from.file === cf.file && r.from.root === ((cf.root as string) ?? 'project'));
+
 /** Checks every config-fragment record on `entry` against its live on-disk JSON file. */
 export function checkConfigFiles(
   entry: ManifestEntry,
   projectDir: string,
-  driftedFiles: string[],
-  missingFiles: string[],
+  retired: readonly RetiredConfigDestination[],
+  found: ConfigFileFindings,
 ): void {
   for (const cf of entry.configFiles!) {
-    checkOneConfigFile(cf, projectDir, driftedFiles, missingFiles);
+    if (atRetired(cf, retired)) found.movedFiles.push(cf.file);
+    else checkOneConfigFile(cf, projectDir, found.driftedFiles, found.missingFiles);
   }
 }

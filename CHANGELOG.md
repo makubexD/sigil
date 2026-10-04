@@ -217,6 +217,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sigil status` read every config fragment under the project folder, so a server or setting
+  installed in a home-directory file (`~/.claude.json`, `~/.claude/settings.json`,
+  `~/.copilot/mcp-config.json`) showed as `missing` while it was in place. Each fragment is now read
+  from its own root. `status` (and the wizard's update badge) also shows a config entry whose file its
+  provider moved as `outdated: config moved … run 'sigil update'`.
 - `packs.yaml` is now validated wherever it is read: a pack name must be kebab-case, like an
   artifact name, because it becomes an output folder (`dist/claude/plugins/<name>`). A malformed
   file fails with the reason instead of being used as is.

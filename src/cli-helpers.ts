@@ -17,6 +17,9 @@ import { getAllTargets, defaultTargetName } from './targets';
 import { detectedTargetsIn } from './project-context';
 import type { FileMap, PacksConfig, Target } from './types';
 import { SigilError } from './errors';
+import { resolveContained } from './contained-path';
+
+export { resolveContained } from './contained-path';
 
 /**
  * Column width for the leading label in aligned CLI/wizard output lines (kind noun,
@@ -105,21 +108,6 @@ export async function loadAndValidate(
 }
 
 // ─── File I/O helpers ─────────────────────────────────────────────────────────
-
-/**
- * Resolves `relPath` under `outputDir` and throws if it escapes — defense-in-depth against a
- * malformed `FileMap` key reaching the write path (schema-level `id`/`name` regexes are the
- * primary guard; this is the second net in case a target's own path template is ever wrong).
- * See docs/decisions/catalog-benchmark-audit-2026-08-22.md F22.
- */
-export function resolveContained(outputDir: string, relPath: string): string {
-  const root = path.resolve(outputDir);
-  const full = path.resolve(root, relPath);
-  if (full !== root && !full.startsWith(root + path.sep)) {
-    throw new SigilError(`Refusing to write outside output directory: ${relPath}`);
-  }
-  return full;
-}
 
 /**
  * Writes a FileMap to outputDir, creating parent directories as needed.

@@ -174,6 +174,7 @@ function computeStatusResultsFor(
   const subManifest = buildSubManifest(ctx.manifest, ctx.target.name, ctx.candidateIds);
   return computeStatus(subManifest, ctx.projectDir, ctx.catalogIds, {
     scaffoldHashFn: id => freshByArtifact.get(id) ?? null,
+    retiredFor: () => ctx.target.retiredConfigDestinations ?? [],
   });
 }
 

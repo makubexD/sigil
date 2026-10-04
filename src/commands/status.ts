@@ -6,7 +6,7 @@
  * @module
  */
 import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
-import { getTarget } from '../targets';
+import { getAllTargets, getTarget } from '../targets';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { requireManifest } from './shared/manifest';
 import { JSON_INDENT } from '../json-util';
@@ -165,6 +165,7 @@ function buildStatuses(
   return computeStatus(manifest, opts.projectDir, catalogIds, {
     scaffoldHashFn: makeScaffoldHashStub(targetName, target),
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
+    retiredFor: name => getAllTargets().find(t => t.name === name)?.retiredConfigDestinations ?? [],
   });
 }
 

@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M3: P1, T13, T11 done; next T12 doc re-verify, T14 validator in CI.
+Status: M3: P1, T13, T11, T14 done; next T12 (doc re-verify results).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -41,7 +41,7 @@ Spec: `SPEC.md`
 - [x] P1 Commit the V1 probe to the repo with instructions (portable to another machine)
 - [x] T11 Provider limits as spec data
 - [ ] T12 Re-verify the cited docs
-- [ ] T14 Claude validator in CI
+- [x] T14 Claude validator in CI
 - [x] T13 Markdown links for skill references (docs-backed; V1 at the end confirms the backtick case)
 - [ ] Phase 5 review
 

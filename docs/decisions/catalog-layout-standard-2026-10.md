@@ -113,8 +113,9 @@ and not registered anywhere.
     any user catalog, gets no new layout errors.
   - Exception: an agent whose tool restriction a target would drop fails closed at render time,
     because shipping it would silently grant every tool.
-- **Verify the output** (planned, Milestone 3): `claude plugin validate --strict` in CI on
-  `dist/claude`.
+- **Verify the output:** `claude plugin validate --strict` runs in CI (its own Linux job, pinned CLI,
+  no secrets) on the marketplace and every plugin in `dist/claude`. Copilot has no validator CLI,
+  so its specs, contracts and limits remain its gate.
 - **Never break:**
   - the output snapshot test;
   - the frozen install from master `8882c86` (`test/fixtures/installs/`);

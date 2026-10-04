@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- CI runs Claude Code's own validator, `claude plugin validate --strict`, over the built marketplace
+  and every Claude plugin (`npm run validate:claude-plugins`, also part of `ci:local`), so sigil's
+  Claude output is checked against Claude Code's rules, not only sigil's.
 - `sigil sync --check` checks every emitted file against the size limits its provider documents
   (new `provider-limits` rule): a skill's name (64 characters) and description (1024) per the Agent
   Skills spec on both tools, a Copilot custom agent's body (30,000 characters), and a warning for a

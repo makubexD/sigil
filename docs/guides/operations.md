@@ -97,8 +97,13 @@ messages, and on Node 20 stray text can corrupt them ("Unable to deserialize clo
 8. `npm run catalog:build`
 9. Smoke test: `node dist-cli/cli.js --version` and `node dist-cli/cli.js list`
 
+A separate Linux job, **Claude plugin validation**, installs a pinned Claude Code CLI and runs
+`npm run validate:claude-plugins`: `claude plugin validate --strict` over `dist/claude` (the
+marketplace) and every plugin, so warnings fail too. It needs no login and uses no secrets.
+
 **Run the same thing locally before you push.** `npm run ci:local` chains every step above (except
-`npm ci`) in the same order. It is the full local equivalent of CI.
+`npm ci`) in the same order, plus the plugin validation, which it skips with a notice when `claude`
+is not on PATH. It is the full local equivalent of CI.
 
 `npm run check` is a faster **subset**: lint, format check, `check-doc-comments`, and tests. It skips
 the audit, `validate`, `sync --check`, `catalog:build`, and the smoke test, so a green `check` does not

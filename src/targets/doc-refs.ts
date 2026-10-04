@@ -280,9 +280,9 @@ export const CLAUDE_PLUGIN_MARKETPLACES_DOC: DocRef = {
 /** The `${NAME}` env-variable syntax GitHub documents for Copilot's MCP JSON (`$VAR`, `${VAR}`). */
 export const COPILOT_MCP_VARIABLES_DOC: DocRef = {
   url: 'https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/extend-coding-agent-with-mcp#variable-substitution',
-  title: 'GitHub Docs — MCP for Copilot cloud agent (Variable substitution)',
+  title: 'GitHub Docs — Configure MCP servers (MCP JSON reference, Variable substitution)',
   verifiedOn: '2026-10-04',
-  covers: 'the ${VAR} syntax sigil writes in Copilot MCP files (cloud agent; VS Code: check F4).',
+  covers: "${VAR} ('Claude Code syntax') in the MCP JSON format Copilot CLI's MCP page points to.",
 };
 
 /** `.vscode/mcp.json` — VS Code's own MCP servers doc, the workspace-scope configuration file. */

@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M3 done (Phase 5 fixed); next push, PR, CI, merge.
+Status: M1-M3 merged (PR #20). Next: Milestone 4 (T16, T17). Releases, decisions and live checks wait for the end block.
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -19,22 +19,19 @@ Spec: `SPEC.md`
 - [x] T3 One table mapping each kind to its folder
 - [x] T4 `src/catalog-layout.ts`
 - [x] Phase 5 review (code-reviewer, docs-drift, security-auditor) — 6 fix commits
-- [ ] ⚠ R1 Release minor
 
 ## Milestone 2: catalog standard and guards
 
 - [x] T1 ADR
-- [ ] V1 → moved to the end (needs a machine with a Copilot licence)
 - [x] ⚠ T2 Delete the stray `add` file
 - [x] T5 Prevent (import, new, move)
 - [x] T6 Detect (`catalog-layout` rule)
-- [ ] T13 → moved to M3 (V1 pending)
+- [x] T13 → done in M3 (Markdown links; V1 in the end block)
 - [x] T7 Content fixes
 - [x] ⚠ T8 ADO MCP env token and org scrub
 - [x] T9 `cli-builder` pack
 - [x] T10 Auditor lookup (P2)
 - [x] Phase 5 review
-- [ ] ⚠ R2 Release minor
 
 ## Milestone 3: provider conformance (branch `feat/catalog-standard-m3`)
 
@@ -45,18 +42,30 @@ Spec: `SPEC.md`
 - [x] T13 Markdown links for skill references (docs-backed; V1 at the end confirms the backtick case)
 - [x] Phase 5 review
 
-## Follow-ups from the 2026-10-03 doc re-verification (kept, prioritised; none dropped)
-
-- [ ] F1 (P1) Copilot MCP: write the portable `.mcp.json` only, or keep `.vscode/mcp.json` behind an option (VS Code deprecates it) — output change, needs a go
-- [ ] F2 (P2) `allowed-tools`: follow the Agent Skills spec's space-separated form once a provider requires it
-- [ ] F3 (P2) Copilot prompt → skill migration when Copilot skills gain arguments (Agent Host no longer loads prompt files)
-- [ ] F4 (P2) Verify Copilot CLI `${NAME}` expansion in `.mcp.json` (with V1, on the licensed machine)
-
 ## Milestone 4: target-layer core (byte-identical)
 
 - [ ] T16 Generic emitter
 - [ ] T17 One provider registry
 - [x] Phase 5 review
-- [ ] ⚠ R3 Release minor
-- [ ] V1 Copilot reference-loading check on a licensed machine (user) → relax or keep the link rule; record in the ADR
+
+## End block: before the release (development first; nothing here is dropped)
+
+During development, only automated code tests gate the work: unit tests, the output snapshot,
+the frozen install, `sync --check` and the CI validators. Everything below runs last, in this order.
+
+**1. Live, E2E and integration checks**
+
+- [ ] V1 Copilot reference-loading check on a licensed machine (user): relax or keep the link rule, and record the result in the ADR (probe in `docs/audits/2026-10-03/`)
+- [ ] F4 Verify that Copilot CLI expands `${NAME}` in `.mcp.json` (with V1, on the licensed machine)
+- [ ] Install the `cli-builder` plugin once in Claude Code to confirm the auditor runs with `cli` preloaded
+
+**2. Output-changing decisions (each needs a go)**
+
+- [ ] F1 Copilot MCP: write only the portable `.mcp.json`, or keep `.vscode/mcp.json` behind an option (VS Code deprecates it)
+- [ ] F2 `allowed-tools`: follow the Agent Skills spec's space-separated form once a provider requires it
+- [ ] F3 Migrate Copilot prompts to skills once Copilot skills gain arguments (Agent Host no longer loads prompt files)
+
+**3. Release and close-out**
+
+- [ ] ⚠ Release minor (one release covering M1-M4; includes the breaking ADO env vars)
 - [ ] Phase 6 close-out

@@ -16,6 +16,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `sigil status` notes an artifact that a tool loads twice: GitHub Copilot reads skills from
+  `.claude/skills` and `.agents/skills` as well as `.github/skills`, so a skill installed for Copilot
+  and for Claude Code or the open standard shows up twice in Copilot. The overlap is data on the target
+  (`Target.alsoLoads`, cited to GitHub's skills doc); nothing is changed.
 - New target `agents-standard`: the open standard. `sigil add --target agents-standard` writes
   Agent Skills to `.agents/skills/<name>/SKILL.md` per the Agent Skills spec (rules inlined,
   `allowed-tools` space-separated as the spec writes it), and `sigil build` also writes a root

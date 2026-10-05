@@ -46,6 +46,7 @@ import { buildAgentsMd } from './build-helpers';
 import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
 import { COPILOT_EMIT_SPECS } from './spec';
 import { COPILOT_RETIRED_MCP_DESTINATIONS } from './config';
+import { COPILOT_AGENT_SKILLS_DOC } from '../doc-refs';
 import { COPILOT_LEXICON } from './lexicon';
 import { COPILOT_AGGREGATE_DOCS } from './aggregate-docs';
 import type { ProviderLexicon } from '../lexicon';
@@ -94,6 +95,14 @@ export class CopilotTarget implements Target {
   readonly aggregateDocs: readonly SourcedDocRef[] = COPILOT_AGGREGATE_DOCS;
   readonly retiredConfigDestinations: readonly RetiredConfigDestination[] =
     COPILOT_RETIRED_MCP_DESTINATIONS;
+  /** Copilot reads project skills from .github/skills, .claude/skills and .agents/skills. */
+  readonly alsoLoads = [
+    {
+      kind: 'skill' as const,
+      targets: ['claude', 'agents-standard'],
+      doc: COPILOT_AGENT_SKILLS_DOC,
+    },
+  ];
 
   // ── Full build ───────────────────────────────────────────────────────────────
 

@@ -653,7 +653,9 @@ All four accept `--project-dir` and `--target`. Step-by-step output for each is 
 | `missing`    | A file sigil installed was deleted. `sigil add <that entry's own id>` writes it again; `update` restores only config entries (MCP, hook, settings) |
 | `orphaned`   | The artifact is no longer in the catalog. `sigil prune` reports it and `--apply` removes it                                                        |
 
-A non-`up-to-date` row prints its reason on the next line. `status` is diagnostic only: a catalog
+A non-`up-to-date` row prints its reason on the next line. After the table, `status` also notes any artifact a tool
+loads twice: Copilot reads `.claude/skills` and `.agents/skills` as well as its own folder, so a skill
+installed for Copilot and for Claude Code (or the open standard) appears twice there; keep one install. `status` is diagnostic only: a catalog
 change that is not a template revision still shows `up-to-date` here, and `sigil update` applies it
 anyway. A config entry (MCP server, hook, settings) shows as `outdated` only when its provider moved
 the file it lives in (Copilot's MCP servers moved out of `.vscode/mcp.json`); otherwise a changed JSON

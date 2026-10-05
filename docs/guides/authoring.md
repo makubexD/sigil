@@ -296,7 +296,7 @@ sigil validate
 # ✓ All N artifact(s) are valid.
 
 sigil build
-# → dist/claude/plugins/go-pack/  and  dist/copilot/.github/  (both targets; add --target to pick one)
+# → dist/claude/plugins/go-pack/, dist/copilot/.github/ and dist/agents-standard/ (add --target to pick one)
 ```
 
 No changes to `src/` required.

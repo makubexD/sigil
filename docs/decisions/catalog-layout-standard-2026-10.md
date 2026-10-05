@@ -139,6 +139,15 @@ and not registered anywhere.
 - **Shared primitives:** one emitter, serializers, and generic checks. `registerTarget()` is the only
   list of providers.
 
+**First new target (2026-10-04): `agents-standard`** — Agent Skills in `.agents/skills/` plus a root
+`AGENTS.md`, cited to the Agent Skills spec, agents.md, and the GitHub Copilot and Cursor docs that
+read `.agents/skills/`. Adding it took its own folder (specs, lexicon, capabilities, citations as
+data), one `registerTarget()` line, and moving two Copilot pieces to `src/targets/shared/` so both
+targets use them (the skill body sections, the repo-wide rules document). Tests that had listed the
+two tools by hand now derive from the registry. The wizard needed no change: its multi-tool flow
+already existed. Still deferred to a target that needs them: TOML/JSON serializers, aggregate specs,
+tool-name aliases, moving `claude:` into `frontmatterExtensions`.
+
 **Built in Milestone 4:** the generic emitter (`src/targets/emit-files.ts`, the one writer, with
 `outputPath` as the only path source) and the single provider registry (`registerTarget()`; every
 cross-provider list, lexicon literal and foreign-literal forbid derives from the registered

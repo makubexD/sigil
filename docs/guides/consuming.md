@@ -81,7 +81,9 @@ without asking.
 **What counts as "set up".** Claude Code is set up when the folder has `.claude/`. Copilot is set up
 when it has one of `.github/copilot-instructions.md`, `.github/instructions/`, `.github/prompts/`,
 `.github/agents/`, or `.github/skills/`. A `.github/` folder that only holds workflows or issue
-templates does not count, so a normal GitHub repo is not mistaken for a Copilot project.
+templates does not count, so a normal GitHub repo is not mistaken for a Copilot project. The open
+standard is set up when it has `.agents/skills/` (a root `AGENTS.md` alone does not count: many tools
+use one).
 
 **Installing in the wrong place.** Choosing Install, Set up (or installing from a search result) in your
 home folder, the top of a drive, or a sigil catalog checkout first says why that is probably a mistake
@@ -173,7 +175,7 @@ row, and Ctrl+C cancels without writing anything. In the picker, Space ticks an 
 confirms; Enter with nothing ticked asks again instead of going back. The steps run in this order; a
 step that does not apply to your choices is skipped:
 
-1. **Which AI tool** — Claude Code or GitHub Copilot. The question says what sigil found in the
+1. **Which AI tool** — Claude Code, GitHub Copilot, or the open standard (`.agents/skills`). The question says what sigil found in the
    folder; with nothing found, Claude Code is preselected and the question says so.
 2. **Scope** — Pick specific items (preselected), Recommended (a curated pack), or Everything.
    Everything asks "Install all N artifacts?" (default No) because it includes hooks and MCP servers,

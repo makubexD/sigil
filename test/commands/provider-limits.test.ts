@@ -11,6 +11,7 @@ import path from 'node:path';
 import { loadCatalog } from '../../dist-cli/load';
 import { runConformance } from '../../dist-cli/commands/sync/conformance/detect';
 import { getAllTargets } from '../../dist-cli/targets/index';
+import { allProviderSpecs } from '../../dist-cli/targets/all-emit-specs';
 import { CATALOG_DIR } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
@@ -40,6 +41,17 @@ const skillAt = (name: string, description: string, body?: string) =>
   findings(`shared/skills/${name}/SKILL.md`, skill(name, description, body));
 const lines = (n: number) => Array.from({ length: n }, (_, i) => `line ${i}`).join('\n');
 
+/** "severity provider" for every provider whose `kind` spec declares a limit on `field`. */
+function declaring(kind: string, field: string): string[] {
+  const found = new Set<string>();
+  for (const { provider, spec } of allProviderSpecs()) {
+    const limit = spec.kind === kind ? spec.limits?.find(l => l.field === field) : undefined;
+    if (limit) found.add(`${limit.severity} ${provider}`);
+  }
+  return [...found].sort();
+}
+const head = (finding: string) => finding.split(' ').slice(0, 2).join(' ');
+
 describe('provider-limits', () => {
   it('should find no error in the bundled catalog', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
@@ -52,26 +64,23 @@ describe('provider-limits', () => {
   it('should accept a skill name of 64 characters and flag 65 on every provider', async () => {
     assert.deepEqual(await skillAt('a'.repeat(64), 'Probe. Use when probing.'), []);
     const over = await skillAt('a'.repeat(65), 'Probe. Use when probing.');
-    assert.deepEqual(over.map(f => f.split(' ').slice(0, 2).join(' ')).sort(), [
-      'error claude',
-      'error copilot',
-    ]);
+    assert.deepEqual(over.map(head).sort(), declaring('skill', 'name'));
     assert.ok(over.every(f => /name/.test(f)));
   });
 
   it('should accept a description of 1024 characters and flag 1025', async () => {
     assert.deepEqual(await skillAt('probe', 'd'.repeat(1024)), []);
     const over = await skillAt('probe', 'd'.repeat(1025));
-    assert.equal(over.length, 2, over.join('\n'));
+    assert.deepEqual(over.map(head).sort(), declaring('skill', 'description'));
     assert.ok(over.every(f => /^error .* description/.test(f)));
   });
 
   it('should warn when a SKILL.md body runs past 500 lines', async () => {
     assert.deepEqual(await skillAt('probe', 'Probe. Use when probing.', lines(400)), []);
     const over = await skillAt('probe', 'Probe. Use when probing.', lines(600));
-    assert.ok(over.length > 0);
+    assert.deepEqual(over.map(head).sort(), declaring('skill', 'body'));
     assert.ok(
-      over.every(f => /^warning claude .*body/.test(f)),
+      over.every(f => /^warning .*body/.test(f)),
       over.join('\n'),
     );
   });
@@ -79,9 +88,6 @@ describe('provider-limits', () => {
   it("should flag a Copilot agent body over Copilot's 30,000 characters", async () => {
     assert.deepEqual(await findings('shared/agents/probe.agent.md', agent('x'.repeat(29_000))), []);
     const over = await findings('shared/agents/probe.agent.md', agent('x'.repeat(31_000)));
-    assert.deepEqual(
-      over.map(f => f.split(' ').slice(0, 2).join(' ')),
-      ['error copilot'],
-    );
+    assert.deepEqual(over.map(head).sort(), declaring('agent', 'body'));
   });
 });

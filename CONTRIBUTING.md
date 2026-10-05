@@ -42,7 +42,7 @@ installs.
 ## 2. Understand platform targeting (the DRY rule)
 
 By default, every artifact propagates to **all AIs that support its kind**. The registered targets
-are Claude Code and GitHub Copilot. Which kinds each target delivers is the generated matrix in
+are Claude Code, GitHub Copilot and the open standard (`agents-standard`). Which kinds each target delivers is the generated matrix in
 [docs/reference/capabilities.md](docs/reference/capabilities.md); do not assume both support every kind.
 
 Restrict an artifact when you create it, or change it later:

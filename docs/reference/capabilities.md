@@ -12,20 +12,27 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 
 ## scaffold
 
-| Kind | claude | copilot |
-| --- | --- | --- |
-| mcp | native | native |
-| hook | native | — (1) |
-| settings | native | — (1) |
-| prompt | native | native |
-| skill | native | native |
-| agent | native | native |
-| rule | native | native |
-| workflow | native | native |
-| template | — (2) | — (2) |
+| Kind | claude | copilot | agents-standard |
+| --- | --- | --- | --- |
+| mcp | native | native | — (1) |
+| hook | native | — (2) | — (3) |
+| settings | native | — (2) | — (4) |
+| prompt | native | native | — (5) |
+| skill | native | native | native |
+| agent | native | native | — (6) |
+| rule | native | native | via inline (7) |
+| workflow | native | native | — (8) |
+| template | — (9) | — (9) | — (9) |
 
-1. this kind's schema is Claude Code's own vocabulary — sigil has no Copilot emitter for it
-2. templates are composed into other artifacts at resolve time, never emitted
+1. the open standard (Agent Skills, AGENTS.md) defines no MCP config file shared by its tools; install it for a tool-specific target
+2. this kind's schema is Claude Code's own vocabulary — sigil has no Copilot emitter for it
+3. the open standard (Agent Skills, AGENTS.md) defines no hooks; install it for a tool-specific target
+4. the open standard (Agent Skills, AGENTS.md) defines no settings; install it for a tool-specific target
+5. the open standard (Agent Skills, AGENTS.md) defines no user-invoked prompts with arguments; install it for a tool-specific target
+6. the open standard (Agent Skills, AGENTS.md) defines no subagents; install it for a tool-specific target
+7. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
+8. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
+9. templates are composed into other artifacts at resolve time, never emitted
 
 ## plugin
 

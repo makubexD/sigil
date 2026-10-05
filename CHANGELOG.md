@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New target `agents-standard`: the open standard. `sigil add --target agents-standard` writes
+  Agent Skills to `.agents/skills/<name>/SKILL.md` per the Agent Skills spec (rules inlined,
+  `allowed-tools` space-separated as the spec writes it), and `sigil build` also writes a root
+  `AGENTS.md` with the repo-wide rules. GitHub Copilot and Cursor document reading `.agents/skills/`.
+  It shows in the wizard and `--target` like the other tools; kinds the open standard doesn't define
+  (agents, prompts, workflows, MCP, hooks, settings) are skipped with a reason.
 - CI runs Claude Code's own validator, `claude plugin validate --strict`, over the built marketplace
   and every Claude plugin (`npm run validate:claude-plugins`, also part of `ci:local`), so sigil's
   Claude output is checked against Claude Code's rules, not only sigil's.

@@ -37,6 +37,13 @@ import {
   shownFolder,
   snapshot,
 } from '../helpers/home-flow';
+import { getAllTargets } from '../../dist-cli/targets/index';
+
+/** The home menu's Set up label once `setUp` tools are set up (src/wizard/home-menu.ts). */
+function setUpLabelAfter(setUp: readonly string[]): string {
+  const left = getAllTargets().filter(t => !setUp.includes(t.name));
+  return left.length === 1 ? `Also set up for ${left[0]!.displayName}` : 'Set up another AI tool';
+}
 
 /** A temp root holding the folders of one scenario, so a picker can only wander inside it. */
 async function inRoot(fn: (root: string) => Promise<void>): Promise<void> {
@@ -221,12 +228,13 @@ describe('experienced user journeys (knows the shortcuts)', () => {
     });
   });
 
-  it('S3: after adding Copilot from the menu, install asks which of the two tools', async () => {
+  it('S3: after adding Copilot from the menu, install asks which of the set-up tools', async () => {
     await inRoot(async root => {
       const dir = path.join(root, 'work');
       makeProject(dir, ['claude']);
-      const rec = await journey(dir, ['init', 'install', CANCEL, 'quit']);
-      assert.deepEqual(flow(rec), ['menu', 'next', 'tool', 'menu']);
+      // With more than one tool left, Set up asks which one (init-tool) before setting it up.
+      const rec = await journey(dir, ['init', 'copilot', 'install', CANCEL, 'quit']);
+      assert.deepEqual(flow(rec), ['menu', 'init-tool', 'next', 'tool', 'menu']);
       const [question] = asked(rec, TOOL_QUESTION);
       assert.match(question?.message ?? '', /set up here: Claude Code, GitHub Copilot/);
     });
@@ -240,7 +248,7 @@ describe('experienced user journeys (knows the shortcuts)', () => {
       const [question] = asked(rec, TOOL_QUESTION);
       assert.deepEqual(
         question?.options.map(o => o.value),
-        ['claude', 'copilot'],
+        getAllTargets().map(t => t.name),
       );
       assert.equal(question?.initialValue, 'claude');
       assert.equal(asked(rec, SCOPE).length, 1);
@@ -366,7 +374,7 @@ describe('indecisive user journeys (changes their mind)', () => {
       const rec = await journey(dir, ['init', 'claude', 'all', 'quit']);
       const second = menus(rec)[1];
       assert.match(labels(second)[0] ?? '', /^Install artifacts \(recommended\)/);
-      assert.ok(labels(second).includes('Also set up for GitHub Copilot'));
+      assert.ok(labels(second).includes(setUpLabelAfter(['claude'])), labels(second).join(' | '));
       const header = rec.notes.filter(n => n.title === 'This folder')[1]?.body ?? '';
       assert.match(header, /Set up for:\s+Claude Code/);
     });

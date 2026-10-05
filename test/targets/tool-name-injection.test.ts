@@ -16,6 +16,7 @@ import {
   CLAUDE_SCAFFOLD_SKILL_SPEC,
 } from '../../dist-cli/targets/claude-code/spec/skill';
 import { COPILOT_SKILL_SPEC } from '../../dist-cli/targets/copilot/spec/skill';
+import { AGENTS_STANDARD_SKILL_SPEC } from '../../dist-cli/targets/agents-standard/spec/skill';
 import type { ResolvedArtifact } from '../../dist-cli/types';
 import { makeAgent, makeSkill } from '../helpers/fixtures';
 
@@ -70,9 +71,33 @@ describe('tool names — emitted line parses back to the authored names', () => 
       csv(frontmatterOf(renderArtifact(CLAUDE_AGENT_SPEC, agent, {})).tools),
       PERMISSION_PATTERNS,
     );
-    for (const spec of [CLAUDE_PLUGIN_SKILL_SPEC, CLAUDE_SCAFFOLD_SKILL_SPEC, COPILOT_SKILL_SPEC]) {
+    for (const spec of [CLAUDE_PLUGIN_SKILL_SPEC, CLAUDE_SCAFFOLD_SKILL_SPEC]) {
       const fm = frontmatterOf(renderArtifact(spec, skill, {}));
       assert.deepEqual(csv(fm['allowed-tools']), PERMISSION_PATTERNS);
+    }
+  });
+});
+
+describe('allowed-tools — the Agent Skills spec form (space-separated string)', () => {
+  const SPEC_FORM_SKILL_SPECS = [COPILOT_SKILL_SPEC, AGENTS_STANDARD_SKILL_SPEC];
+  // The spec's own example pattern (`Bash(git:*)`); none of these contain a space.
+  const SPEC_PATTERNS = ['Bash(git:*)', 'mcp__github__get_issue', 'Read(./src/**)'];
+
+  it('should round-trip permission patterns for every target that reads the spec', () => {
+    const skill = makeSkill({ allowedTools: SPEC_PATTERNS }) as unknown as ResolvedArtifact;
+    for (const spec of SPEC_FORM_SKILL_SPECS) {
+      const fm = frontmatterOf(renderArtifact(spec, skill, {}));
+      assert.deepEqual(String(fm['allowed-tools']).split(' '), SPEC_PATTERNS);
+    }
+  });
+
+  it('should refuse a tool name the space-separated form would split', () => {
+    const skill = makeSkill({ allowedTools: ['Read', 'Bash(git log *)'] });
+    for (const spec of SPEC_FORM_SKILL_SPECS) {
+      assert.throws(
+        () => renderArtifact(spec, skill as unknown as ResolvedArtifact, {}),
+        /Bash\(git log \*\)/,
+      );
     }
   });
 });

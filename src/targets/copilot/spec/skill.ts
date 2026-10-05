@@ -10,9 +10,12 @@
  * alone, so the field is rendered as a leading `## When to Use` body section instead of being
  * dropped — see whenToUseSection below. (Fixed 2026-08-07: the field was previously silently
  * absent from both Copilot frontmatter and body for any artifact authoring it.)
+ *
+ * `allowed-tools` uses the Agent Skills spec's space-separated string, the form GitHub's
+ * create-skills page shows (`allowed-tools: shell`); Claude Code keeps its list, which its own docs
+ * accept.
  */
-import type { KindEmitSpec, FieldMapping } from '../../spec-types';
-import { yamlList } from '../../yaml-util';
+import type { KindEmitSpec } from '../../spec-types';
 import {
   COPILOT_AGENT_SKILLS_DOC,
   VSCODE_AGENT_SKILLS_DOC,
@@ -24,26 +27,12 @@ import { AGENT_SKILLS_LIMITS } from '../../agent-skills-limits';
 import {
   nameMapping,
   descriptionMapping,
+  allowedToolsMapping,
   whenToUseSection,
   argumentHintSection,
   boundarySection,
   codingGuidelinesSection,
 } from '../../shared/skill-sections';
-
-/**
- * Vendor-neutral `allowedTools` (schema/index.ts's SkillSchema), same source field
- * claude-code/spec/skill.ts's `allowedToolsMapping` consumes. Valid on Copilot per
- * AGENT_SKILLS_SPEC_DOC's six-field outside-Claude-Code spec. Previously dropped entirely — a
- * skill declaring 4 read-only tools got Copilot's unrestricted default, the same bug class as the
- * agent `tools` gap fixed 2026-08-10 (see declared-but-unemitted conformance rule).
- */
-const allowedToolsMapping: FieldMapping = {
-  from: 'allowedTools',
-  to: 'allowed-tools',
-  required: false,
-  when: fm => Array.isArray(fm.allowedTools) && (fm.allowedTools as string[]).length > 0,
-  serialize: v => `allowed-tools: ${yamlList(v as string[])}`,
-};
 
 export const COPILOT_SKILL_SPEC: KindEmitSpec = {
   kind: 'skill',

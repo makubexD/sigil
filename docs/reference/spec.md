@@ -353,9 +353,11 @@ reaches it inside skills, and a full build also writes repo-wide rules to a root
   `user-invocable: false` (from `userInvocable`), `context: fork` (from `skillContext`) — `argument-hint`,
   `disable-model-invocation`, `user-invocable`, and `context` are Claude-only and skipped entirely in
   Copilot's SKILL.md output.
-- **Copilot skill SKILL.md:** frontmatter is `name`, `description`, and `allowed-tools: <csv>` (from
-  `allowedTools` — valid outside Claude Code per the Agent Skills spec's six-field list,
-  `AGENT_SKILLS_SPEC_DOC`) — no `applyTo`, `paths:`, `when_to_use`, or any Claude-only field.
+- **Copilot skill SKILL.md:** frontmatter is `name`, `description`, and `allowed-tools` (from
+  `allowedTools`, written as the Agent Skills spec's quoted space-separated string, the same as the
+  open-standard target; valid outside Claude Code per the spec's six-field list,
+  `AGENT_SKILLS_SPEC_DOC`). A tool name containing whitespace can't be carried, so rendering
+  refuses it. No `applyTo`, `paths:`, `when_to_use`, or any Claude-only field.
   `argumentHint` has no Copilot frontmatter equivalent (`argument-hint` is a documented hard error
   outside Claude Code) and instead renders as a `**Arguments:** <hint>` body line, the same pattern
   `whenToUse` already used for its own `## When to Use` body section — see `copilot/spec/skill.ts`.

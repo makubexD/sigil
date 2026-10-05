@@ -1,7 +1,8 @@
 /**
  * Skill emission pieces shared by every target that writes an Agent Skills SKILL.md without a
  * native field for the catalog's `whenToUse` / `argumentHint` (Copilot, the open-standard target):
- * the required `name` / `description` mappings and the body sections that carry the rest, plus
+ * the required `name` / `description` mappings, the spec's `allowed-tools` form, and the body
+ * sections that carry the rest, plus
  * the inlined rules. One definition, so those targets' SKILL.md files can't drift apart.
  *
  * @module
@@ -23,6 +24,32 @@ export const descriptionMapping: FieldMapping = {
   to: 'description',
   required: true,
   serialize: v => `description: ${yamlScalar(v as string)}`,
+};
+
+/**
+ * `allowed-tools` as the Agent Skills spec writes it: one space-separated string, quoted. The
+ * field pre-approves tools; it doesn't restrict them. A tool name with whitespace can't be carried
+ * (it would split into other names), so rendering refuses it rather than pre-approve the wrong
+ * tools or drop the field.
+ */
+function serializeSpecAllowedTools(value: unknown): string {
+  const tools = value as string[];
+  const spaced = tools.filter(tool => /\s/.test(tool));
+  if (spaced.length > 0) {
+    throw new Error(
+      `allowed-tools ${spaced.map(t => `"${t}"`).join(', ')} contain whitespace, ` +
+        "which the Agent Skills spec's space-separated list cannot carry",
+    );
+  }
+  return `allowed-tools: ${yamlScalar(tools.join(' '))}`;
+}
+
+export const allowedToolsMapping: FieldMapping = {
+  from: 'allowedTools',
+  to: 'allowed-tools',
+  required: false,
+  when: fm => Array.isArray(fm.allowedTools) && (fm.allowedTools as string[]).length > 0,
+  serialize: serializeSpecAllowedTools,
 };
 
 /**

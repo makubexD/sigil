@@ -205,8 +205,13 @@ is rejected by any provider's docs, and the Claude plugins pass `claude plugin v
 - The Claude settings key reference moved to `settings-reference` (citation re-pointed).
 - Claude skills now accept `paths`; sigil's Claude skill spec forbids it by policy (path scoping
   belongs to rules).
-- The Agent Skills spec marks `allowed-tools` experimental, as a space-separated string; sigil
-  emits a comma-separated list, which Claude Code and Copilot accept today.
+- The Agent Skills spec marks `allowed-tools` experimental, as a space-separated string. Decided
+  2026-10-05 (F2): each target follows its own docs. Claude Code keeps the comma-separated list,
+  which its docs accept ("a space- or comma-separated string, or a YAML list"). Copilot and the
+  open-standard target write the spec's space-separated string, which GitHub's create-skills page
+  shows. In both products the field pre-approves tools; it does not restrict them. Copilot's tool
+  names (`shell`, `bash`) differ from Claude's (`Bash`), and sigil doesn't translate them, so on
+  Copilot the field pre-approves only the names Copilot recognises.
 
 **Still undocumented:** whether Copilot CLI expands `${NAME}` in `.mcp.json`; the Copilot lexicon's
 `arguments` value (skills have no argument mechanism) has no explicit sentence in the cited doc.

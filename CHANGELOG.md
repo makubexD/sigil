@@ -139,6 +139,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Copilot skills now write `allowed-tools` as the Agent Skills spec's space-separated string, the
+  form GitHub's docs show, instead of a comma-separated list. Claude Code keeps its list, which its
+  docs accept. Installed Copilot skills that declare `allowed-tools` show "update available". A tool
+  name containing whitespace is now refused for Copilot, as it already was for the open standard.
 - `sigil release` and the release workflow now run the full CI gate (`npm run ci:local`: audit,
   lint, format, build, validate, `sync --check`, tests, catalog build and Claude plugin validation)
   before tagging or publishing; they used to skip lint, format, `sync --check` and the audit. The

@@ -70,9 +70,9 @@ the frozen install, `sync --check` and the CI validators. Everything below runs 
 **2. Output-changing decisions (each needs a go)**
 
 - [x] F1 Copilot MCP: portable files only (`.mcp.json`, `~/.copilot/mcp-config.json`), no fallback — decided 2026-10-04; `update` moves older installs
-- [ ] F2 `allowed-tools`: follow the Agent Skills spec's space-separated form once a provider requires it
-- [ ] B1 Reviewer agents that state "Bash is read-only by instruction, not sandboxed" (26): keep Bash (git diff, npm audit, tsc, madge) or remove it to enforce read-only
-- [ ] F3 Migrate Copilot prompts to skills once Copilot skills gain arguments (Agent Host no longer loads prompt files)
+- [x] F2 `allowed-tools`: each tool's own docs — decided 2026-10-05. Claude keeps the list (its docs accept it); Copilot writes the spec's space-separated string (ADR provider baseline)
+- [x] B1 Reviewer agents keep Bash (git diff, npm audit, tsc, madge) — decided 2026-10-05; their descriptions already say "read-only by instruction, not sandboxed". No output change
+- [x] F3 Keep Copilot prompt files until Copilot skills gain arguments — decided 2026-10-05. Revisit when GitHub documents skill arguments; Agent Host users miss prompts until then
 
 **3. Release and close-out**
 

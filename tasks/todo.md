@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1-M4 done. Next: the end block (live checks, decisions, one release).
+Status: M1-M4 done, plus hardening (PR #24), the agents-standard target (PR #25) and the status duplicate-load note (PR #26). Next: the end block (live checks, decisions, one release).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -48,6 +48,14 @@ Spec: `SPEC.md`
 - [x] T17 One provider registry
 - [x] Phase 5 review
 
+## Done after M4 (no decision needed)
+
+- [x] Release gate = CI gate, SHA-pinned actions, one Claude CLI pin (PR #24)
+- [x] `sigil status` reads config from its root; moved MCP config shows as outdated (PR #24)
+- [x] One portable MCP builder for Claude and Copilot (PR #24)
+- [x] New target `agents-standard`: Agent Skills in `.agents/skills` + AGENTS.md, CLI and wizard (PR #25)
+- [x] `sigil status` notes skills Copilot loads twice (PR #26)
+
 ## End block: before the release (development first; nothing here is dropped)
 
 During development, only automated code tests gate the work: unit tests, the output snapshot,
@@ -63,9 +71,10 @@ the frozen install, `sync --check` and the CI validators. Everything below runs 
 
 - [x] F1 Copilot MCP: portable files only (`.mcp.json`, `~/.copilot/mcp-config.json`), no fallback — decided 2026-10-04; `update` moves older installs
 - [ ] F2 `allowed-tools`: follow the Agent Skills spec's space-separated form once a provider requires it
+- [ ] B1 Reviewer agents that state "Bash is read-only by instruction, not sandboxed" (26): keep Bash (git diff, npm audit, tsc, madge) or remove it to enforce read-only
 - [ ] F3 Migrate Copilot prompts to skills once Copilot skills gain arguments (Agent Host no longer loads prompt files)
 
 **3. Release and close-out**
 
-- [ ] ⚠ Release minor (one release covering M1-M4; includes the breaking ADO env vars)
+- [ ] ⚠ Release minor (one release covering M1-M4 and the work after; includes the breaking ADO env vars). Needs: the npm package name (`sigil` was unpublished by someone else in 2024; maybe a scoped name) and the first manual publish from the owner's npm account
 - [ ] Phase 6 close-out

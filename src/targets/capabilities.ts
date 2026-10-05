@@ -41,6 +41,25 @@ export function nativeKinds(
   return ALL_KINDS.filter(kind => kindSupport(target, kind, channel)?.mode === 'native');
 }
 
+/**
+ * Kinds `sigil add` can install on their own for `target`: the scaffold channel's `native` kinds.
+ * A `via` kind is delivered (supportsKind is true) but only inside another artifact, so it is
+ * never written as its own file; selection skips it with that reason (carriedKinds).
+ */
+export function installableKinds(target: CapabilityHolder): ArtifactKind[] {
+  return nativeKinds(target, 'scaffold');
+}
+
+/** Kinds `target` delivers on the scaffold channel only inside other artifacts (mode `via`). */
+export function carriedKinds(target: CapabilityHolder): ArtifactKind[] {
+  return ALL_KINDS.filter(kind => kindSupport(target, kind, 'scaffold')?.mode === 'via');
+}
+
+/** True when `target` can install `kind` on its own (see installableKinds). */
+export function isInstallable(target: CapabilityHolder, kind: string): boolean {
+  return isArtifactKind(kind) && kindSupport(target, kind, 'scaffold')?.mode === 'native';
+}
+
 /** True when `target` delivers `kind` on `channel`. Accepts raw strings from frontmatter. */
 export function supportsKind(
   target: CapabilityHolder,

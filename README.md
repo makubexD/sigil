@@ -9,8 +9,8 @@
 ---
 
 > **Status:** v0.1, early. The catalog covers C#, TypeScript, Angular, Python, and React. Sigil is
-> **not on npm yet**, so you build it from source (below). Two targets exist today: Claude Code and
-> GitHub Copilot.
+> **not on npm yet**, so you build it from source (below). Three targets exist today: Claude Code,
+> GitHub Copilot, and the open standard (`.agents/skills` + `AGENTS.md`).
 
 ## Why
 
@@ -112,11 +112,16 @@ Files land in your project (`.claude/` or `.github/`) and are tracked in `.sigil
   prompts, and MCP config. Commit those files; Copilot's cloud agent reads repository files. There is
   no plugin channel, and no hooks or settings. See [consuming.md](docs/guides/consuming.md) and
   [capabilities](docs/reference/capabilities.md).
-- **Other tools**: only the `claude` and `copilot` targets exist. Codex and Cursor targets are planned
-  ([Codex](docs/ideas/codex-target.md), [Cursor](docs/ideas/cursor-target.md)). Skills follow the open
-  [Agent Skills](https://agentskills.io/specification) format, and some agents read `.claude/skills/`
-  or `.github/skills/` directly, so scaffolding with `--target claude` or `--target copilot` may work
-  for them.
+- **Open standard** (`agents-standard`): `sigil add --target agents-standard` writes Agent Skills to
+  `.agents/skills/<name>/SKILL.md` exactly as the [Agent Skills spec](https://agentskills.io/specification)
+  defines them, with each skill's rules inlined; a full build also writes a root `AGENTS.md`
+  ([agents.md](https://agents.md/)) with the repo-wide rules. Tools that read `.agents/skills/` use it
+  as-is: GitHub Copilot and Cursor document it. Copilot reads it too, so don't install the same skills
+  for both `copilot` and `agents-standard`. The open standard has no subagents, prompts, hooks,
+  settings or shared MCP file, so those kinds are skipped for this target.
+- **Other tools**: dedicated Codex and Cursor targets (agents, rules, MCP) are planned
+  ([Codex](docs/ideas/codex-target.md), [Cursor](docs/ideas/cursor-target.md)); until then
+  `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
 
 ## What is in the catalog
 

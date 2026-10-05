@@ -160,13 +160,18 @@ const skipOf = (
   reason,
 });
 
+/** Why a `via` kind is skipped when picked on its own: it travels inside other artifacts. */
+const carriedReason = (kind: string) =>
+  `a ${kind} reaches this target only inside the skills that use it; pick a skill that uses it`;
+
 /** Classifies one candidate as target-unsupported or platform-restricted, else undefined. */
 function classifySkippedArtifact(
   a: ResolvedArtifact,
-  supportedSet: Set<string> | undefined,
+  sets: { supportedSet: Set<string> | undefined; carriedSet: Set<string> },
   targetName: string | undefined,
 ): SkippedArtifact | undefined {
-  if (supportedSet && !supportedSet.has(a.kind)) {
+  if (sets.carriedSet.has(a.kind)) return skipOf(a, 'kind', carriedReason(a.kind));
+  if (sets.supportedSet && !sets.supportedSet.has(a.kind)) {
     return skipOf(a, 'kind', `kind '${a.kind}' is not supported for this target`);
   }
   if (targetName && !artifactTargetsPlatform(a, targetName)) {
@@ -179,23 +184,21 @@ function classifySkippedArtifact(
 /** Partitions filtered candidates into target-supported ids vs. skipped (kind/platform). */
 function partitionSupportedAndSkipped(
   candidates: ResolvedArtifact[],
-  supportedKinds: readonly ArtifactKind[] | undefined,
+  kinds: {
+    supported?: readonly ArtifactKind[] | undefined;
+    carried?: readonly ArtifactKind[] | undefined;
+  },
   targetName: string | undefined,
 ): SelectionResult {
-  const supportedSet = supportedKinds ? new Set<string>(supportedKinds) : undefined;
-  const ids: string[] = [];
-  const skipped: SkippedArtifact[] = [];
-
+  const supportedSet = kinds.supported ? new Set<string>(kinds.supported) : undefined;
+  const carriedSet = new Set<string>(kinds.carried ?? []);
+  const result: SelectionResult = { ids: [], skipped: [] };
   for (const a of candidates) {
-    const skip = classifySkippedArtifact(a, supportedSet, targetName);
-    if (skip) {
-      skipped.push(skip);
-    } else {
-      ids.push(a.id);
-    }
+    const skip = classifySkippedArtifact(a, { supportedSet, carriedSet }, targetName);
+    if (skip) result.skipped.push(skip);
+    else result.ids.push(a.id);
   }
-
-  return { ids, skipped };
+  return result;
 }
 
 /** Parameters for {@link resolveSelection}. */
@@ -213,13 +216,15 @@ export interface ResolveSelectionOptions {
    * wizard previews selections before a target is applied); `[]` means the target supports nothing.
    */
   supportedKinds?: readonly ArtifactKind[] | undefined;
+  /** Kinds the target delivers only inside other artifacts (`via`), skipped with that reason. */
+  carriedKinds?: readonly ArtifactKind[] | undefined;
   /** Optional platform name — used to apply platform restriction. */
   targetName?: string;
 }
 
 /** Resolve a list of selector strings + filters into a concrete set of artifact IDs. */
 export function resolveSelection(options: ResolveSelectionOptions): SelectionResult {
-  const { selectors, filters, catalog, packs, supportedKinds, targetName } = options;
+  const { selectors, filters, catalog, packs, supportedKinds, carriedKinds, targetName } = options;
   const candidateIds = resolveSelectorsToIds(selectors, catalog, packs);
   // Every id in candidateIds was added via addId() from either catalog.artifacts directly
   // or after an explicit catalog.byId.has(id) check, so this lookup cannot miss — the
@@ -228,7 +233,8 @@ export function resolveSelection(options: ResolveSelectionOptions): SelectionRes
     .map(id => catalog.byId.get(id))
     .filter((a): a is ResolvedArtifact => a !== undefined);
   const filtered = applySelectionFilters(candidates, filters);
-  const partitioned = partitionSupportedAndSkipped(filtered, supportedKinds, targetName);
+  const kinds = { supported: supportedKinds, carried: carriedKinds };
+  const partitioned = partitionSupportedAndSkipped(filtered, kinds, targetName);
   const deduped = dropInlinedBaseRules(partitioned.ids, catalog);
   return { ids: deduped.ids, skipped: [...partitioned.skipped, ...deduped.skipped] };
 }

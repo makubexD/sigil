@@ -7,7 +7,7 @@
 import { resolveSelection, computeClosure } from '../../../select';
 import type { SelectionResult } from '../../../select';
 import type { ArtifactInstallState } from '../../../install-state';
-import { supportedKinds } from '../../../targets/capabilities';
+import { carriedKinds, installableKinds } from '../../../targets/capabilities';
 import { chosenTarget } from './state';
 import type { AddWizardState } from './state';
 
@@ -19,7 +19,9 @@ export function previewSelection(s: AddWizardState): SelectionResult {
     filters: { language: s.language },
     catalog: s.ctx.catalog,
     packs: s.ctx.packs,
-    ...(target ? { supportedKinds: supportedKinds(target) } : {}),
+    ...(target
+      ? { supportedKinds: installableKinds(target), carriedKinds: carriedKinds(target) }
+      : {}),
     ...(s.target ? { targetName: s.target } : {}),
   });
 }
@@ -33,7 +35,7 @@ const CONFLICT_STATES = new Set<string>(['foreign', 'drifted', 'outdated']);
 
 /** Picks (and their helpers, when included) that meet a file already on disk that is not an untouched sigil install. */
 export function conflictsFor(s: AddWizardState): ArtifactInstallState[] {
-  const closure = computeClosure(previewSelection(s).ids, s.ctx.catalog);
+  const closure = computeClosure(previewSelection(s).ids, s.ctx.catalog, chosenTarget(s));
   const ids = [
     ...closure.primary.map(a => a.id),
     ...(s.includeDeps ? closure.dependencies.map(d => d.artifact.id) : []),

@@ -6,6 +6,7 @@
  * @module
  */
 import { hasUsesClosure } from '../../kinds';
+import { isInstallable } from '../../targets/capabilities';
 import { currentTemplateOf as templateOf } from '../../manifest/template-of';
 import type { ResolvedCatalog, Target } from '../../types';
 import type { AddPlan } from './plan';
@@ -92,6 +93,20 @@ function buildDependencyMap(
   return depMap;
 }
 
+/** `depMap` without the dependencies `target` can't install on their own (isInstallable). */
+function installableOnly(
+  depMap: Map<string, string[]>,
+  resolved: ResolvedCatalog,
+  target: Target,
+): Map<string, string[]> {
+  return new Map(
+    [...depMap].filter(([id]) => {
+      const kind = resolved.byId.get(id)?.kind;
+      return kind !== undefined && isInstallable(target, kind);
+    }),
+  );
+}
+
 /** Scaffolds each dependency artifact and records the subset of paths actually written. */
 async function scaffoldDependencyFiles(
   depMap: Map<string, string[]>,
@@ -121,8 +136,9 @@ export async function scaffoldManifestFiles(
 
   const filesByArtifact = await scaffoldPrimaryFiles(wholeFileIds, ctx);
 
+  // A dependency the target only carries inside the skill (a `via` kind) has no file of its own.
   const depMap = plan.effectiveIncludeDeps
-    ? buildDependencyMap(wholeFileIds, resolved)
+    ? installableOnly(buildDependencyMap(wholeFileIds, resolved), resolved, target)
     : new Map<string, string[]>();
   if (plan.effectiveIncludeDeps) {
     await scaffoldDependencyFiles(depMap, ctx, filesByArtifact);

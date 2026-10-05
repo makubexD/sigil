@@ -100,7 +100,10 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   (`src/targets/claude-code/plugin-assemble.ts`) is implementation coverage, and that same test cross-checks it
   against the table.
 - **`resolveSelection()`** (`src/select/selector-resolve.ts`) checks each artifact's kind against the target's
-  scaffold capabilities. Unsupported kinds go to `skipped[]` — warn-and-skip, not an error.
+  scaffold capabilities. Unsupported kinds go to `skipped[]` — warn-and-skip, not an error. Install paths (`add`, the
+  wizard's lists and preview, `add`'s dependency closure) use `installableKinds` / `isInstallable` (`native` only): a
+  `via` kind is delivered but only inside another artifact, so picking it alone is skipped with that reason, never
+  scaffolded. `supportsKind` (native or via) stays the "is it delivered at all" check.
 - **Every whole-file kind (`skill`/`agent`/`rule`/`prompt`/`workflow`) a target emits `native` on a channel must have
   a matching `KindEmitSpec` for it.** `provider-kind-coverage`
   (`src/commands/sync/conformance/rules/provider-kind-coverage.ts`) fails `sigil sync --check` on the gap. Config

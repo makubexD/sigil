@@ -11,7 +11,7 @@ import { confirm, isCancel, log, select, text } from './prompts';
 import { cancel } from './frame';
 import { detectProjectTarget, resolveDefault } from '../cli-helpers';
 import { getTarget } from '../targets';
-import { supportsKind } from '../targets/capabilities';
+import { isInstallable } from '../targets/capabilities';
 import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { searchArtifacts } from '../query';
@@ -81,7 +81,7 @@ function usableResults(
   dir: string,
 ): ReturnType<typeof searchArtifacts> {
   const target = getTarget(detectProjectTarget(dir));
-  const usable = results.filter(r => supportsKind(target, r.artifact.kind));
+  const usable = results.filter(r => isInstallable(target, r.artifact.kind));
   const hidden = results.length - usable.length;
   if (hidden > 0) {
     log.info(
@@ -105,8 +105,9 @@ export const search: HomeHandler = async dir => {
 };
 
 /** "It also installs: a, b" for the helpers (rules, agents) a skill pulls in; empty when none. */
-function helpersNote(id: string, resolved: ResolvedCatalog): string {
-  const helpers = computeClosure([id], resolved).dependencies.map(d => d.artifact.id);
+function helpersNote(id: string, resolved: ResolvedCatalog, dir: string): string {
+  const target = getTarget(detectProjectTarget(dir));
+  const helpers = computeClosure([id], resolved, target).dependencies.map(d => d.artifact.id);
   return helpers.length > 0
     ? ` It also installs ${helpers.length} helper(s): ${helpers.join(', ')}.`
     : '';
@@ -137,7 +138,7 @@ async function detailsThenInstall(
   const guarded = await guardFolder(read(dir), 'install', { read, homeDir: os.homedir() });
   if (!guarded) return;
   const into = guarded.ctx.projectDir;
-  const message = `Install ${id} into ${into}?${helpersNote(id, resolved)}`;
+  const message = `Install ${id} into ${into}?${helpersNote(id, resolved, into)}`;
   const install = await confirm({ message, initialValue: false });
   if (!isCancel(install) && install) await installOne(id, into);
 }

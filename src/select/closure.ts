@@ -9,6 +9,7 @@
  */
 import type { ResolvedCatalog, ResolvedArtifact } from '../types';
 import { hasUsesClosure } from '../kinds';
+import { isInstallable, type CapabilityHolder } from '../targets/capabilities';
 
 /**
  * One artifact in the dependency closure, annotated with which skills pulled it in.
@@ -81,13 +82,23 @@ function splitDepEntries(
  * Returns:
  *   - `primary`: the resolved artifacts for each primary ID (in selection order)
  *   - `dependencies`: rules first, then agents, each tagged with the `via` skill IDs
+ *
+ * With `target`, only dependencies it can install on their own (isInstallable): a kind it carries
+ * inside the skill (`via`, e.g. rules on the open-standard target) is no separate install.
  */
-export function computeClosure(primaryIds: string[], catalog: ResolvedCatalog): ClosurePreview {
+export function computeClosure(
+  primaryIds: string[],
+  catalog: ResolvedCatalog,
+  target?: CapabilityHolder,
+): ClosurePreview {
   const primarySet = new Set(primaryIds);
   const primary: ResolvedArtifact[] = primaryIds
     .map(id => catalog.byId.get(id))
     .filter((a): a is ResolvedArtifact => a !== undefined);
 
   const depVia = buildDepVia(primary, primarySet);
-  return { primary, dependencies: splitDepEntries(depVia, catalog) };
+  const dependencies = splitDepEntries(depVia, catalog).filter(
+    d => !target || isInstallable(target, d.artifact.kind),
+  );
+  return { primary, dependencies };
 }

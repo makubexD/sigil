@@ -2,7 +2,7 @@ import { select } from '../../prompts';
 import { outro, cancel } from '../../frame';
 import { computeClosure } from '../../../select';
 import type { WizardStep, StepOutcome } from '../../engine';
-import { BACK, type AddWizardState } from './state';
+import { BACK, chosenTarget, type AddWizardState } from './state';
 import { CANCEL_MESSAGE, resolveOutcome } from './prompt-helpers';
 import { previewSelection, upToDateIds } from './plan-preview';
 import { showPlanBox } from './plan-box';
@@ -11,7 +11,7 @@ import type { PlanView } from './plan-box';
 /** Everything the plan box needs, resolved the way the real install resolves it. */
 function buildPlanView(s: AddWizardState): PlanView {
   const selection = previewSelection(s);
-  const closure = computeClosure(selection.ids, s.ctx.catalog);
+  const closure = computeClosure(selection.ids, s.ctx.catalog, chosenTarget(s));
   const ids = [
     ...closure.primary.map(a => a.id),
     ...(s.includeDeps ? closure.dependencies.map(d => d.artifact.id) : []),

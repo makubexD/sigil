@@ -13,6 +13,7 @@ import { mockClack } from '../helpers/clack-mock';
 import type { MockAnswer } from '../helpers/clack-mock';
 import { fakeTTY } from '../helpers/tty';
 import { withTempDirAsync } from '../helpers/temp-dir';
+import { getAllTargets } from '../../dist-cli/targets/index';
 
 async function inTerminal(dir: string, answers: MockAnswer[]): Promise<void> {
   const restoreTTY = fakeTTY();
@@ -28,7 +29,12 @@ async function inTerminal(dir: string, answers: MockAnswer[]): Promise<void> {
 describe('initTargetOptions', () => {
   it('should offer every target and say which one was found in the folder', () => {
     const options = initTargetOptions(['copilot']);
-    assert.deepEqual(options.map(o => o.value).sort(), ['claude', 'copilot']);
+    assert.deepEqual(
+      options.map(o => o.value).sort(),
+      getAllTargets()
+        .map(t => t.name)
+        .sort(),
+    );
     assert.match(options.find(o => o.value === 'copilot')?.hint ?? '', /already set up/i);
     assert.doesNotMatch(options.find(o => o.value === 'claude')?.hint ?? '', /already set up/i);
   });
@@ -37,11 +43,15 @@ describe('initTargetOptions', () => {
 describe('initTargetOptions order', () => {
   it('should list the tools not set up yet first and mark the others as already set up', () => {
     const options = initTargetOptions(['claude']);
+    // Every tool not set up yet comes first, in registry order; the set-up one comes last.
+    const notSetUp = getAllTargets()
+      .map(t => t.name)
+      .filter(name => name !== 'claude');
     assert.deepEqual(
       options.map(o => o.value),
-      ['copilot', 'claude'],
+      [...notSetUp, 'claude'],
     );
-    assert.match(options[1]?.hint ?? '', /already set up/i);
+    assert.match(options.at(-1)?.hint ?? '', /already set up/i);
   });
 });
 

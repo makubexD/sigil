@@ -1,6 +1,7 @@
 /**
- * The menu with more than two AI tools. This file registers two extra tools, so it must stay in
- * its own file: the registry is per process and has no way to remove a tool again.
+ * The menu with more than two AI tools: every real tool plus two extra ones this file registers,
+ * so it must stay in its own file (the registry is per process and has no way to remove a tool
+ * again). Expectations derive from the registry, so a new real tool needs no edit here.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -16,6 +17,7 @@ import { createRecorder, mockClack } from '../helpers/clack-mock';
 import { fakeTTY } from '../helpers/tty';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { cells, checkCell } from '../helpers/menu-matrix';
+import { toolList } from '../../dist-cli/tool-names';
 
 /** A copy of an existing tool under another name, with its own folders. */
 function clone(base: Target, name: string, displayName: string): Target {
@@ -49,11 +51,13 @@ const ctx = (detectedTargets: string[]) => ({
 
 const initEntry = (detected: string[]) => buildMenu(ctx(detected)).find(i => i.value === 'init');
 
-describe('home menu with four AI tools', () => {
+describe('home menu with every real tool plus two extra ones', () => {
   const tools = getAllTargets().map(t => t.name);
+  const without = (set: readonly string[]) => tools.filter(name => !set.includes(name));
 
-  it('should have registered the two extra tools', () => {
-    assert.deepEqual(tools, ['claude', 'copilot', 'acme', 'zeta']);
+  it('should have registered the two extra tools after the real ones', () => {
+    assert.deepEqual(tools.slice(-2), ['acme', 'zeta']);
+    assert.ok(tools.length >= 4);
   });
 
   it('should satisfy every menu rule in every folder state', () => {
@@ -63,23 +67,25 @@ describe('home menu with four AI tools', () => {
   });
 
   it('should not list every tool in the set-up hint of an empty folder', () => {
-    assert.equal(
-      initEntry([])?.hint.split('. ')[0],
-      'Create the folders for Claude Code, GitHub Copilot, Acme AI or 1 more',
-    );
+    const hint = initEntry([])?.hint.split('. ')[0] ?? '';
+    assert.equal(hint, `Create the folders for ${toolList(tools, 'or')}`);
+    assert.match(hint, /or [0-9]+ more$/);
   });
 
   it('should stay generic while several tools are left, and name the last one', () => {
     assert.equal(initEntry(['claude'])?.label, 'Set up another AI tool');
-    assert.equal(initEntry(['claude'])?.hint, 'Choose one of GitHub Copilot, Acme AI or Zeta AI');
-    assert.equal(initEntry(['claude', 'copilot', 'acme'])?.label, 'Also set up for Zeta AI');
-    assert.equal(initEntry(['claude', 'copilot', 'acme', 'zeta']), undefined);
+    assert.equal(
+      initEntry(['claude'])?.hint,
+      `Choose one of ${toolList(without(['claude']), 'or')}`,
+    );
+    assert.equal(initEntry(tools.slice(0, -1))?.label, 'Also set up for Zeta AI');
+    assert.equal(initEntry(tools), undefined);
   });
 
   it('should offer only the tools not set up yet, the rest after them', () => {
     const order = initTargetOptions(['claude', 'acme']).map(o => o.value);
-    assert.deepEqual(order, ['copilot', 'zeta', 'claude', 'acme']);
-    assert.deepEqual(toolsToSetUp(['claude', 'acme']), ['copilot', 'zeta']);
+    assert.deepEqual(order, [...without(['claude', 'acme']), 'claude', 'acme']);
+    assert.deepEqual(toolsToSetUp(['claude', 'acme']), without(['claude', 'acme']));
   });
 
   it('should ask only among the tools that are left, and set up the one chosen', async () => {
@@ -100,7 +106,7 @@ describe('home menu with four AI tools', () => {
       }
       assert.deepEqual(
         rec.prompts[0]?.options.map(o => o.value),
-        ['copilot', 'zeta'],
+        without(['claude', 'acme']),
       );
       assert.equal(fs.existsSync(path.join(dir, '.zeta/rules')), true);
       assert.equal(fs.existsSync(path.join(dir, '.github')), false);

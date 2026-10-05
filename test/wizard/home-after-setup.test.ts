@@ -112,9 +112,13 @@ describe('after a setup: one frame, a short menu, no repeated questions', () => 
     });
   });
 
-  it('S13: setting up the other tool from the short menu asks nothing and leads to Install', async () => {
+  it('S13: setting up another tool from the short menu asks which one and leads to Install', async () => {
     await inCheckout(async (dir, deps) => {
-      const rec = await journey(dir, ['install', 'go', ...INSTALL_MINI, 'init', 'quit'], { deps });
+      const rec = await journey(
+        dir,
+        ['install', 'go', ...INSTALL_MINI, 'init', 'copilot', 'quit'],
+        { deps },
+      );
       assert.equal(asked(rec, GUARD).length, 1);
       assert.equal(fs.existsSync(path.join(dir, '.github/prompts')), true);
       assert.deepEqual(

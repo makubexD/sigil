@@ -319,6 +319,14 @@ Native artifact names and output paths are one table, with a column for the Clau
 | `rule` (scoped)    | **Memory rule** — `.claude/rules/<slug>.md` (`paths:` frontmatter)            | folded into skill SKILL.md                    | `.claude/rules/<slug>.md` (`paths:` frontmatter) | **Scoped instructions** — `.github/instructions/<slug>.instructions.md` (`applyTo:`), with or without a `language`           | `instructions/<slug>.instructions.md`    |
 | `workflow`         | **User-invoked skill** — `.claude/skills/<slug>/SKILL.md`                     | `skills/<slug>/SKILL.md`                      | `.claude/skills/<slug>/SKILL.md`                 | **Prompt file** — `.github/prompts/<slug>.prompt.md`                                                                         | `prompts/<slug>.prompt.md`               |
 
+**Open standard (`agents-standard`).** One kind ships natively: a `skill` becomes
+`.agents/skills/<name>/SKILL.md` with the [Agent Skills spec](https://agentskills.io/specification)'s
+own frontmatter (`name`, `description`, `allowed-tools` as a space-separated list); `whenToUse`,
+`argumentHint`, the Boundary and the skill's `uses.rules` become body sections, as on Copilot. A `rule`
+reaches it inside skills, and a full build also writes repo-wide rules to a root `AGENTS.md`
+([agents.md](https://agents.md/)). Every other kind is skipped with the reason in
+[capabilities.md](capabilities.md). Specs and citations: `src/targets/agents-standard/`.
+
 **Key vocabulary rules:**
 
 - Claude Code has **no "prompt" artifact** — catalog `prompt` becomes a _user-invoked skill_

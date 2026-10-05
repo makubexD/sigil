@@ -22,6 +22,7 @@ import { emitFile, specFor } from '../emit-files';
 import type { KindEmitSpec } from '../spec-types';
 import { COPILOT_MCP_SERVERS_KEY } from './mcp-key';
 import { portableMcpOp } from '../portable-mcp';
+import { isRepoWideRule } from '../shared/repo-wide-rules';
 
 /**
  * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
@@ -69,20 +70,6 @@ export function buildScopeDestinations(
 }
 
 /** Globs that mean "every file" — a rule scoped only to these belongs in the repo-wide aggregate. */
-const REPO_WIDE_GLOBS: ReadonlySet<string> = new Set(['**', '**/*']);
-
-/**
- * True for a language-less rule with no `appliesTo`, or one scoped only to every file. Any other
- * rule — including a language-less one with narrowed globs — needs its own `applyTo` file: folding
- * it into copilot-instructions.md would silently widen it to the whole repository (CLAUDE.md's
- * `appliesTo` invariant).
- */
-function isRepoWideRule(rule: ResolvedCatalog['artifacts'][number]): boolean {
-  if (rule.frontmatter.language) return false;
-  const globs = rule.frontmatter.appliesTo as string[] | undefined;
-  return !globs || globs.every(glob => REPO_WIDE_GLOBS.has(glob));
-}
-
 /** The per-file kinds `compile` writes; agents go only into the AGENTS.md aggregate. */
 const COMPILED_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'rule',

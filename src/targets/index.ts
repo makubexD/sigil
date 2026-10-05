@@ -13,11 +13,13 @@ import type { RetiredConfigDestination, Target } from '../types';
 // Import and register all built-in adapters
 import { ClaudeCodeTarget } from './claude-code';
 import { CopilotTarget } from './copilot';
+import { AgentsStandardTarget } from './agents-standard';
 
 const registry = new Map<string, Target>();
 
 registerTarget(new ClaudeCodeTarget());
 registerTarget(new CopilotTarget());
+registerTarget(new AgentsStandardTarget());
 
 export function registerTarget(target: Target): void {
   if (registry.has(target.name)) {
@@ -56,4 +58,4 @@ export function defaultTargetName(): string {
   return first.name;
 }
 
-export { ClaudeCodeTarget, CopilotTarget };
+export { ClaudeCodeTarget, CopilotTarget, AgentsStandardTarget };

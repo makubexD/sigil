@@ -294,8 +294,11 @@ describe('conformance rule: platform-path-leak', () => {
     };
     const catalog = makeCatalog([artifact]);
     const findings = runConformance(catalog, [], { ruleId: 'platform-path-leak' });
-    assert.equal(findings.length, 1);
-    assert.equal(findings[0]!.provider, 'copilot');
+    // One finding per provider other than the folder's owner (Claude): every one ships the body.
+    const others = getAllTargets()
+      .map(t => t.name)
+      .filter(name => name !== 'claude');
+    assert.deepEqual(findings.map(f => f.provider).sort(), others.sort());
   });
 
   it('does not flag a settings artifact (ownedBy claude — legitimate)', () => {

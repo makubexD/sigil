@@ -33,7 +33,7 @@ import fs from 'fs';
 import type { ArtifactKind } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding, ArtifactEdit } from '../types';
 import { getAllTargets } from '../../../../targets/index';
-import type { LexiconTerm, ProviderLexicon } from '../../../../targets/lexicon';
+import { LEXICON_TERMS, type LexiconTerm, type ProviderLexicon } from '../../../../targets/lexicon';
 import { splitFrontmatterBlock, extractOriginalBody } from '../frontmatter-patch';
 
 const WHOLE_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
@@ -57,7 +57,14 @@ function termsOf(lexicon: ProviderLexicon): Array<[LexiconTerm, string]> {
  * the catalog source is meant to be provider-neutral (the leak is the hardcoding itself).
  */
 function allLexiconTerms(): Array<[LexiconTerm, string]> {
-  return getAllTargets().flatMap(target => (target.lexicon ? termsOf(target.lexicon) : []));
+  // One entry per distinct literal: several providers or terms can share one (AGENTS.md is the
+  // conventions file on two targets and a rules location on one). The first term in LEXICON_TERMS
+  // order wins, so a finding and its fix are the same on every run.
+  const byTermOrder = getAllTargets()
+    .flatMap(target => (target.lexicon ? termsOf(target.lexicon) : []))
+    .sort(([a], [b]) => LEXICON_TERMS.indexOf(a) - LEXICON_TERMS.indexOf(b));
+  const seen = new Set<string>();
+  return byTermOrder.filter(([, value]) => !seen.has(value) && seen.add(value));
 }
 
 /** Escapes a literal string for safe use inside a `RegExp` constructor. */
@@ -79,7 +86,7 @@ function findingsForArtifact(
       filePath: artifact.filePath,
       // term='<name>' prefix is fix()'s stable marker — same pattern as redundant-default's
       // key='<name>', needed because one artifact can leak more than one term.
-      detail: `term='${term}' — body contains the literal '${value}' instead of {sigil:${term}}`,
+      detail: `term='${term}' value='${value}' — body contains the literal instead of {sigil:${term}}`,
     });
   }
   return findings;
@@ -116,9 +123,9 @@ function fix(
   if (!artifact) return undefined;
   const term = finding.detail.match(/^term='([^']+)'/)?.[1] as LexiconTerm | undefined;
   if (!term) return undefined;
-  const entry = allLexiconTerms().find(([t]) => t === term);
-  if (!entry) return undefined;
-  const [, value] = entry;
+  // The finding names the exact literal it found: a term's value differs per provider.
+  const value = finding.detail.match(/value='([^']*)'/)?.[1];
+  if (!value) return undefined;
 
   const raw = fs.readFileSync(finding.filePath, 'utf-8');
   const { bodyStart } = splitFrontmatterBlock(raw);

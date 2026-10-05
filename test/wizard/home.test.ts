@@ -16,6 +16,7 @@ import type { HomeActionId } from '../../dist-cli/wizard/home-menu';
 import { detectProjectContext } from '../../dist-cli/project-context';
 import type { ProjectContext } from '../../dist-cli/project-context';
 import { SigilError } from '../../dist-cli/errors';
+import { getAllTargets } from '../../dist-cli/targets/index';
 import { createRecorder, mockClack } from '../helpers/clack-mock';
 import { fakeTTY } from '../helpers/tty';
 import type { MockAnswer } from '../helpers/clack-mock';
@@ -91,8 +92,9 @@ describe('buildMenu', () => {
   });
 
   it('should keep "Set up this project" available until every tool is set up', () => {
-    assert.ok(values(context({ detectedTargets: ['claude'] })).includes('init'));
-    assert.ok(!values(context({ detectedTargets: ['claude', 'copilot'] })).includes('init'));
+    const all = getAllTargets().map(t => t.name);
+    assert.ok(values(context({ detectedTargets: all.slice(0, -1) })).includes('init'));
+    assert.ok(!values(context({ detectedTargets: all })).includes('init'));
   });
 
   it('should say what the recommended entry does as well as why it is first', () => {
@@ -101,8 +103,13 @@ describe('buildMenu', () => {
     assert.match(first?.hint ?? '', /Nothing is installed here yet/);
   });
 
-  it('should name the tool the set-up entry adds once another one is set up', () => {
-    const init = buildMenu(context({ detectedTargets: ['claude'] })).find(i => i.value === 'init');
+  it('should name the tool the set-up entry adds once it is the only one left', () => {
+    const allButCopilot = getAllTargets()
+      .map(t => t.name)
+      .filter(name => name !== 'copilot');
+    const init = buildMenu(context({ detectedTargets: allButCopilot })).find(
+      i => i.value === 'init',
+    );
     assert.equal(init?.label, 'Also set up for GitHub Copilot');
     assert.match(init?.hint ?? '', /Already set up for Claude Code/);
   });
@@ -433,9 +440,12 @@ describe('home menu with the real handlers', () => {
     });
   });
 
-  it('should add the missing tool without asking when one tool is already set up', async () => {
+  it('should add the missing tool without asking when it is the only one left', async () => {
     await withTempDirAsync(async dir => {
-      fs.mkdirSync(path.join(dir, '.claude'));
+      // Every tool but Copilot is set up: each one's project marker exists.
+      for (const target of getAllTargets().filter(t => t.name !== 'copilot')) {
+        fs.mkdirSync(path.join(dir, target.projectMarkers![0]!), { recursive: true });
+      }
       const restoreTTY = fakeTTY();
       const restore = mockClack(['init', 'quit']); // no tool question: only Copilot is left
       try {

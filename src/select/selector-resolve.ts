@@ -162,7 +162,7 @@ const skipOf = (
 
 /** Why a `via` kind is skipped when picked on its own: it travels inside other artifacts. */
 const carriedReason = (kind: string) =>
-  `a ${kind} is delivered inside the skills that use it for this target, not on its own`;
+  `a ${kind} reaches this target only inside the skills that use it; pick a skill that uses it`;
 
 /** Classifies one candidate as target-unsupported or platform-restricted, else undefined. */
 function classifySkippedArtifact(

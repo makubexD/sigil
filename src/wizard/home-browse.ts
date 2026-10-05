@@ -105,8 +105,9 @@ export const search: HomeHandler = async dir => {
 };
 
 /** "It also installs: a, b" for the helpers (rules, agents) a skill pulls in; empty when none. */
-function helpersNote(id: string, resolved: ResolvedCatalog): string {
-  const helpers = computeClosure([id], resolved).dependencies.map(d => d.artifact.id);
+function helpersNote(id: string, resolved: ResolvedCatalog, dir: string): string {
+  const target = getTarget(detectProjectTarget(dir));
+  const helpers = computeClosure([id], resolved, target).dependencies.map(d => d.artifact.id);
   return helpers.length > 0
     ? ` It also installs ${helpers.length} helper(s): ${helpers.join(', ')}.`
     : '';
@@ -137,7 +138,7 @@ async function detailsThenInstall(
   const guarded = await guardFolder(read(dir), 'install', { read, homeDir: os.homedir() });
   if (!guarded) return;
   const into = guarded.ctx.projectDir;
-  const message = `Install ${id} into ${into}?${helpersNote(id, resolved)}`;
+  const message = `Install ${id} into ${into}?${helpersNote(id, resolved, into)}`;
   const install = await confirm({ message, initialValue: false });
   if (!isCancel(install) && install) await installOne(id, into);
 }

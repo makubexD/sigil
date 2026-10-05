@@ -35,7 +35,7 @@ const CONFLICT_STATES = new Set<string>(['foreign', 'drifted', 'outdated']);
 
 /** Picks (and their helpers, when included) that meet a file already on disk that is not an untouched sigil install. */
 export function conflictsFor(s: AddWizardState): ArtifactInstallState[] {
-  const closure = computeClosure(previewSelection(s).ids, s.ctx.catalog);
+  const closure = computeClosure(previewSelection(s).ids, s.ctx.catalog, chosenTarget(s));
   const ids = [
     ...closure.primary.map(a => a.id),
     ...(s.includeDeps ? closure.dependencies.map(d => d.artifact.id) : []),

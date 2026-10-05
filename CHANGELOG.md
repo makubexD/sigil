@@ -223,6 +223,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `dist/registry.json` listed every target under an artifact's `platforms`, even targets that can't
+  take its kind (Copilot on hooks and settings). It now lists only targets that deliver the kind.
+- `sync --apply` for `provider-term-leak` looked a term's value up by the term alone, so a
+  `conventions-file` finding about `AGENTS.md` was matched against `CLAUDE.md` and never fixed. The
+  finding now records the literal it found, and a literal shared by several terms or providers is
+  reported once, as the first term in lexicon order.
+- For a target that carries a kind only inside skills (the open standard's rules), the wizard no
+  longer offers those as separate helpers to install, and `add` skips them with the reason.
 - `sigil status` read every config fragment under the project folder, so a server or setting
   installed in a home-directory file (`~/.claude.json`, `~/.claude/settings.json`,
   `~/.copilot/mcp-config.json`) showed as `missing` while it was in place. Each fragment is now read

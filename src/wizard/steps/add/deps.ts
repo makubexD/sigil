@@ -13,7 +13,9 @@ const VIA_INLINE_LIMIT = 2;
 /** True when at least one resolved id belongs to a kind with a `uses:` dependency closure. */
 function selectionHasClosure(s: AddWizardState): boolean {
   const { ids } = previewSelection(s);
-  return ids.some(id => hasUsesClosure(s.ctx.catalog.byId.get(id)?.kind ?? ''));
+  if (!ids.some(id => hasUsesClosure(s.ctx.catalog.byId.get(id)?.kind ?? ''))) return false;
+  // Nothing to ask when every helper is carried inside the skill for this tool.
+  return computeClosure(ids, s.ctx.catalog, chosenTarget(s)).dependencies.length > 0;
 }
 
 /** Renders one dependency line: `<kind>  <id>  — <title>  (via <skill(s)>)`. */
@@ -45,7 +47,7 @@ function buildDepsNoteBody(ct: ReturnType<typeof chosenTarget>, cp: ClosurePrevi
 /** Computes the closure preview and shows the "About dependencies" note for it. */
 function showDepsNote(s: AddWizardState): void {
   const ct = chosenTarget(s);
-  const cp: ClosurePreview = computeClosure(previewSelection(s).ids, s.ctx.catalog);
+  const cp: ClosurePreview = computeClosure(previewSelection(s).ids, s.ctx.catalog, ct);
   note(buildDepsNoteBody(ct, cp), 'About dependencies');
 }
 

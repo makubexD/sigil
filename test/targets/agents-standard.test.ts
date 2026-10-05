@@ -8,11 +8,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getTarget } from '../../dist-cli/targets/index';
 import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
+import { renderArtifact } from '../../dist-cli/targets/emit';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { CATALOG, PACKS } from '../helpers/install-scenario';
 import { runAdd } from '../../dist-cli/commands/add';
 import { resolveSelection } from '../../dist-cli/select/selector-resolve';
+import { computeClosure } from '../../dist-cli/select/closure';
 import { carriedKinds, installableKinds } from '../../dist-cli/targets/capabilities';
 
 const TARGET = 'agents-standard';
@@ -61,7 +63,20 @@ describe('agents-standard target', () => {
     const files = await getTarget(TARGET).scaffold!(withTools.id, catalog, { projectDir: '.' });
     const skill = Object.entries(files).find(([f]) => f.endsWith('/SKILL.md'))![1];
     const tools = (withTools.frontmatter.allowedTools as string[]).join(' ');
-    assert.match(skill, new RegExp(`^allowed-tools: ${tools.replace(/[()*]/g, '\\$&')}$`, 'm'));
+    // One space-separated string, quoted so a value starting with `*` or holding `:` stays valid YAML.
+    assert.ok(skill.split('\n').includes(`allowed-tools: "${tools}"`), skill.slice(0, 300));
+    assert.equal(parseFrontmatter(skill).data['allowed-tools'], tools);
+  });
+
+  it('should refuse a tool name the space-separated list cannot carry', async () => {
+    const catalog = await loadResolvedCatalog();
+    const base = catalog.artifacts.find(a => a.kind === 'skill')!;
+    const spaced = {
+      ...base,
+      frontmatter: { ...base.frontmatter, allowedTools: ['Read', 'Bash(git log *)'] },
+    };
+    const spec = getTarget(TARGET).emitSpecs!.find(s => s.kind === 'skill')!;
+    assert.throws(() => renderArtifact(spec, spaced, { catalog }), /Bash\(git log \*\)/);
   });
 
   it('should write repo-wide rules to a root AGENTS.md on a full build', async () => {
@@ -91,6 +106,17 @@ describe('agents-standard target', () => {
       [REPO_WIDE_RULE],
     );
     assert.match(result.skipped[0]!.reason, /inside the skills/);
+  });
+
+  it('should offer no separate helpers for rules the skill carries inside', async () => {
+    const catalog = await loadResolvedCatalog();
+    const forClaude = computeClosure([SKILL], catalog, getTarget('claude')).dependencies;
+    const forStandard = computeClosure([SKILL], catalog, getTarget(TARGET)).dependencies;
+    assert.ok(
+      forClaude.some(d => d.artifact.kind === 'rule'),
+      'Claude installs the rules',
+    );
+    assert.ok(!forStandard.some(d => d.artifact.kind === 'rule'), 'rules ride inside the skill');
   });
 
   it('should install the skill and record only it, with its rules inside', async () => {

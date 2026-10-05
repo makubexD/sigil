@@ -16,7 +16,8 @@ import fs from 'fs';
 import crypto from 'crypto';
 import type { ResolvedCatalog } from './types';
 import { artifactTargetsPlatform } from './select';
-import { getAllTargets } from './targets';
+import { getAllTargets, getTarget } from './targets';
+import { supportsKind } from './targets/capabilities';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -73,7 +74,14 @@ function resolveRegistryPlatforms(
   allPlatformNames: string[],
 ): string[] {
   const declared = artifact.frontmatter.platforms as string[] | undefined;
-  return declared ?? allPlatformNames.filter(name => artifactTargetsPlatform(artifact, name));
+  // Only the targets that deliver this kind at all (supportsKind): a platform can't take what it can't hold.
+  return (
+    declared ??
+    allPlatformNames.filter(
+      name =>
+        artifactTargetsPlatform(artifact, name) && supportsKind(getTarget(name), artifact.kind),
+    )
+  );
 }
 
 /** Sets the optional RegistryEntry fields (language/relatedArtifacts/uses) that may be absent. */

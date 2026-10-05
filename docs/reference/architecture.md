@@ -105,7 +105,9 @@ carrying content that never ships. It needs that root, so a catalog built in mem
    literal an author typed instead of the lexicon token. A provider never lists another provider's
    literals itself. Folders only your provider reads go in the target's `privateDirs`
    (`platform-path-leak` warns when a body names one). Citations for files no spec renders
-   (aggregates, merged config) go in its `aggregateDocs`. Nothing outside your folder and
+   (aggregates, merged config) go in its `aggregateDocs`. If your tool also loads another tool's folders (Copilot reads
+   `.claude/skills`), declare it in `alsoLoads` with the doc that says so; `sigil status` then notes
+   artifacts installed for both. Nothing outside your folder and
    `registerTarget()` lists providers: every cross-provider list is derived from `getAllTargets()`,
    and `test/targets/provider-registry.test.ts` fails if another module imports a provider folder.
    **Any hand-rolled aggregate that assembles an artifact's body without going through

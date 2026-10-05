@@ -3,7 +3,7 @@
  * These interfaces flow through Load → Validate → Resolve → Emit.
  */
 import type { TargetCapabilities } from './targets/capability-types';
-import type { KindEmitSpec, SourcedDocRef } from './targets/spec-types';
+import type { DocRef, KindEmitSpec, SourcedDocRef } from './targets/spec-types';
 import type { ProviderLexicon } from './targets/lexicon';
 
 // ─── Artifact kinds ──────────────────────────────────────────────────────────
@@ -465,6 +465,17 @@ export interface Target {
    * fragment an older install recorded there (src/commands/update-config-move.ts).
    */
   readonly retiredConfigDestinations?: readonly RetiredConfigDestination[];
+
+  /**
+   * Other targets whose files this tool also loads, per kind, with the doc that says so (Copilot
+   * reads `.claude/skills` and `.agents/skills`). `sigil status` notes an artifact installed for
+   * both, because the tool sees it twice (src/commands/status-overlaps.ts).
+   */
+  readonly alsoLoads?: readonly {
+    readonly kind: ArtifactKind;
+    readonly targets: readonly string[];
+    readonly doc: DocRef;
+  }[];
 
   /**
    * Directories created by `sigil init` for this target (relative to project root).

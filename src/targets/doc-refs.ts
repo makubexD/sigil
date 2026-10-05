@@ -53,7 +53,8 @@ export const COPILOT_AGENT_SKILLS_DOC: DocRef = {
   url: 'https://docs.github.com/en/copilot/how-tos/copilot-on-github/customize-copilot/customize-cloud-agent/add-skills',
   title: 'GitHub Copilot — Add skills to the coding agent',
   verifiedOn: '2026-10-03',
-  covers: '.github/skills/<name>/SKILL.md, name/description frontmatter, GitHub cloud agent side',
+  covers:
+    '.github/skills/<name>/SKILL.md (also reads .claude/skills, .agents/skills), name/description',
 };
 
 export const VSCODE_AGENT_SKILLS_DOC: DocRef = {

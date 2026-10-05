@@ -6,7 +6,8 @@
  * @module
  */
 import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
-import { getTarget, retiredConfigDestinationsOf } from '../targets';
+import { getAllTargets, getTarget, retiredConfigDestinationsOf } from '../targets';
+import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { requireManifest } from './shared/manifest';
 import { JSON_INDENT } from '../json-util';
@@ -189,4 +190,5 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
 
   printStatusTable(statuses);
   printStatusSummary(statuses);
+  for (const note of duplicateLoads(manifest.entries, getAllTargets())) console.log(`  ℹ  ${note}`);
 }

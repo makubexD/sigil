@@ -11,7 +11,7 @@ import { confirm, isCancel, log, select, text } from './prompts';
 import { cancel } from './frame';
 import { detectProjectTarget, resolveDefault } from '../cli-helpers';
 import { getTarget } from '../targets';
-import { supportsKind } from '../targets/capabilities';
+import { isInstallable } from '../targets/capabilities';
 import { loadCatalog } from '../load';
 import { resolveCatalog } from '../resolve';
 import { searchArtifacts } from '../query';
@@ -81,7 +81,7 @@ function usableResults(
   dir: string,
 ): ReturnType<typeof searchArtifacts> {
   const target = getTarget(detectProjectTarget(dir));
-  const usable = results.filter(r => supportsKind(target, r.artifact.kind));
+  const usable = results.filter(r => isInstallable(target, r.artifact.kind));
   const hidden = results.length - usable.length;
   if (hidden > 0) {
     log.info(

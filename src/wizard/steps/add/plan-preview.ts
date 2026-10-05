@@ -7,7 +7,7 @@
 import { resolveSelection, computeClosure } from '../../../select';
 import type { SelectionResult } from '../../../select';
 import type { ArtifactInstallState } from '../../../install-state';
-import { supportedKinds } from '../../../targets/capabilities';
+import { carriedKinds, installableKinds } from '../../../targets/capabilities';
 import { chosenTarget } from './state';
 import type { AddWizardState } from './state';
 
@@ -19,7 +19,9 @@ export function previewSelection(s: AddWizardState): SelectionResult {
     filters: { language: s.language },
     catalog: s.ctx.catalog,
     packs: s.ctx.packs,
-    ...(target ? { supportedKinds: supportedKinds(target) } : {}),
+    ...(target
+      ? { supportedKinds: installableKinds(target), carriedKinds: carriedKinds(target) }
+      : {}),
     ...(s.target ? { targetName: s.target } : {}),
   });
 }

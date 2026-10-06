@@ -67,7 +67,9 @@ it and stop); **source** (published on `nuget.org`/the org's trusted feed, autho
 - Fetch the latest stable version from `dotnet list package --outdated` or nuget.org.
 - Prefer the latest stable; avoid pre-release unless the user explicitly requests it.
 
-## Step 4 — Add through Central Package Management
+## Step 4 — Add the package
+
+### Central Package Management
 
 **If CPM is active** (preferred): add the version pin to `Directory.Packages.props`
 (`<PackageVersion Include="<package-id>" Version="<version>" />` inside `<ItemGroup>`), then add a
@@ -77,12 +79,14 @@ native; contentfiles; analyzers</IncludeAssets>` as children of that `<PackageRe
 
 **If CPM is not active:** add a pinned `<PackageReference Include="<package-id>" Version="<version>" />` directly to the target `.csproj` and recommend enabling CPM (see `cs-nuget`).
 
-## Step 5 — Restore and refresh lock file
+## Step 5 — Verify the install
+
+### Lock file
 
 `dotnet restore`, then if `packages.lock.json` exists, verify it was updated (`git diff
 packages.lock.json`).
 
-## Step 6 — Run the quality gate
+### Quality gate
 
 ```bash
 dotnet build -warnaserror --no-restore
@@ -92,7 +96,7 @@ dotnet test --no-build --no-restore
 If the gate fails, **undo the addition** (restore the original `Directory.Packages.props` and `.csproj`
 content) and report the failure.
 
-## Step 7 — Report
+## Step 6 — Report
 
 ```
 ## Add Package Report
@@ -107,7 +111,7 @@ Dev-only (PrivateAssets): <yes / no>
 - License: <MIT / Apache-2.0 / ⚠ flagged — detail>
 - Maintenance: <active / ⚠ last release: <date>>
 - Transitive additions: <N new packages>
-- BCL alternative: <none / ⚠ BCL can replace — recommendation>
+- Built-in alternative: <none / ⚠ BCL can replace — recommendation>
 
 ### Gate
 ✅ build passed, tests passed  /  ❌ <failure detail>

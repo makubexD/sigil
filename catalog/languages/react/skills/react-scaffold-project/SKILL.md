@@ -32,7 +32,9 @@ whenToUse: "Use when starting a brand-new React application from scratch. Fires 
 If the target directory already contains a `package.json` or `.git/`, stop and ask before
 overwriting — this skill is for a genuinely new app, not retrofitting an existing one.
 
-## Step 2 — Create via Vite, then restructure
+## Step 2 — Create the project structure
+
+Create via Vite, then restructure:
 
 ```bash
 npm create vite@latest <app-name> -- --template react-ts
@@ -50,7 +52,9 @@ src/
   main.tsx
 ```
 
-## Step 3 — Add testing dependencies
+## Step 3 — Configure tooling
+
+### Add testing dependencies
 
 ```bash
 npm install --save-dev vitest @testing-library/react @testing-library/user-event jsdom
@@ -65,7 +69,13 @@ test: {
 }
 ```
 
-## Step 4 — Starter test, ESLint, path alias
+### ESLint and path alias
+
+Confirm the Vite template's ESLint config includes `eslint-plugin-react-hooks`. Add the `@/*` path
+alias to `tsconfig.json`'s `paths` and mirror it in `vite.config.ts`'s `resolve.alias`, per
+`react-project-layout`.
+
+## Step 4 — Write a starter test and README
 
 ```tsx
 // src/App.test.tsx — smoke test confirming the app renders; replace once real features exist
@@ -78,17 +88,13 @@ test("renders without crashing", () => {
 });
 ```
 
-Confirm the Vite template's ESLint config includes `eslint-plugin-react-hooks`. Add the `@/*` path
-alias to `tsconfig.json`'s `paths` and mirror it in `vite.config.ts`'s `resolve.alias`, per
-`react-project-layout`.
-
-## Step 5 — `.gitignore` and `README.md`
+### `.gitignore` and `README.md`
 
 Verify `.gitignore` matches `react-git`'s standard additions (the Vite template's default is close
 but confirm `.env*` entries are present). Write a minimal `README.md`: app name, one-sentence
 description, dev-server command (`npm run dev`), and how to run tests (`npx vitest run`).
 
-## Step 6 — Verify
+## Step 5 — Verify
 
 ```bash
 npm install
@@ -98,7 +104,7 @@ npx vitest run
 npm run build
 ```
 
-## Step 7 — Report
+## Step 6 — Report
 
 ```
 ## Scaffold Report

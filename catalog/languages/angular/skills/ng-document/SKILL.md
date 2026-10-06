@@ -104,10 +104,11 @@ Run the project's lint/type command to verify the new docs compile and satisfy a
 (check `package.json` scripts; fallback `ng lint` / `npx eslint <file>` and `tsc --noEmit`).
 
 ```
-Documentation Report
-  Target: <file-or-module>
-  Doc comments added: <N>
-  Doc comments updated: <N>
-  Public symbols still undocumented: <N> (list them)
-  Lint / type check: ✅ passed / ❌ failed
+## Documentation Report
+
+Target: <file-or-module>
+Doc comments added: <N>
+Doc comments updated: <N>
+Still undocumented: <N> (list them)
+Lint / type check: ✅ passed / ❌ failed
 ```

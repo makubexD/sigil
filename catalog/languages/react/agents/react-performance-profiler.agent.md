@@ -33,13 +33,13 @@ may run read-only build-analysis tools, but you do not modify source files.
 Use the delegation message. Default: the whole project source (exclude `node_modules/`, `.next/`,
 `dist/`).
 
-## 2. Sweep exhaustively, not by intuition
+### Sweep exhaustively, not by intuition
 
 Check **every** component in scope for the anti-patterns below — do not limit the sweep to
 components that "look" heavy by name or location. A cheap-looking list-item component re-rendering
 unnecessarily 500 times is exactly the kind of finding a scope-limited sweep misses.
 
-## 3. Anti-patterns to detect
+## 2. Static analysis — complexity and anti-patterns
 
 **Unnecessary re-renders**
 - An inline object/array/function literal passed as a prop (`<Child style={{color:'red'}}/>`) —
@@ -72,9 +72,9 @@ unnecessarily 500 times is exactly the kind of finding a scope-limited sweep mis
 - A heavy component (chart library, rich text editor) included in the main bundle instead of code-split
   via `next/dynamic`/`React.lazy`.
 
-## 4. Run available profiling/analysis tools (read-only)
+## 3. Dynamic profiling (if runnable)
 
-If present:
+Run available profiling/analysis tools (read-only) if present:
 ```bash
 npm run build 2>&1 | tail -30              # Next.js/Vite build output includes bundle size per route/chunk
 npx vite-bundle-visualizer 2>&1             # if configured
@@ -83,7 +83,7 @@ npx vite-bundle-visualizer 2>&1             # if configured
 For a suspected re-render issue, note that React DevTools Profiler is the ground-truth tool and
 recommend a specific interaction to profile if static analysis alone can't confirm the cost.
 
-## 5. Output
+## 4. Output
 
 ```
 ## Performance Profile Report

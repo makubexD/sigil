@@ -57,18 +57,20 @@ runner to use before proceeding.
 Check the root `package.json` `"workspaces"` glob covers the new path (e.g. `"packages/*"`).
 **Do not overwrite any existing file** — if the target path already exists, stop and report.
 
-## Step 3 — Scaffold the package
+## Step 3 — Scaffold the project
 
 Create `package.json`, `tsconfig.json`, `src/index.ts` (and `src/cli.ts` for `--type=cli`) —
 see [`references/templates.md`](references/templates.md) for the worked examples, all keyed off the runner discovered in
 Step 1.
 
-## Step 4 — Scaffold the test file (unless `--type=test`)
+## Step 4 — Scaffold the tests
+
+Skip this step when `--type=test`.
 
 Create `test/index.test.ts` using the discovered runner's import/assertion style — see
 [`references/templates.md`](references/templates.md) for the Vitest and `node:test` shapes.
 
-## Step 5 — Add to workspace
+## Step 5 — Add to the solution or workspace
 
 Present the file list and whether a root `package.json` `"workspaces"` update is needed; wait for
 explicit confirmation before editing the root config. Then run `npm install`.
@@ -87,7 +89,7 @@ package in the workspace.
 Package:  <placement>/<name>/
 Type:     <lib / app / cli / test>
 Runner:   <discovered in Step 1>
-Workspace: <already covered / added to root package.json>
+Added to: <workspace already covered / root package.json updated>
 
 Files created:
   <placement>/<name>/package.json

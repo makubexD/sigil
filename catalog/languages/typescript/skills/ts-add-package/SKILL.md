@@ -75,18 +75,20 @@ stable release (avoid pre-release unless explicitly requested).
 `npm install <package-id>@<version>` (add `--save-dev` for `--dev`). If types aren't bundled and
 `@types/<package-id>` exists, add it too: `npm install @types/<package-id> --save-dev`.
 
-## Step 5 — Verify lockfile updated
+## Step 5 — Verify the install
+
+### Lock file
 
 `git diff package-lock.json | head -40` — an unchanged lockfile means the install didn't take.
 
-## Step 6 — Run the quality gate
+### Quality gate
 
 Discover the gate from `package.json` scripts (`check`/`validate`/`ci`/`prepublishOnly`) and run
 that. Only if none exists, fall back to the type checker, linter, and `scripts.test` separately —
 never hardcode a specific runner. If the gate fails, **undo** (`npm uninstall <package-id>`) and
 report the failure.
 
-## Step 7 — Report
+## Step 6 — Report
 
 ```
 ## Add Package Report

@@ -45,7 +45,7 @@ Discover the source root from `.sln`, `Directory.Build.props`, or `src/`.
 - Read `Directory.Build.props` for TFM (`.NET 8+` enables `SearchValues`, `FrozenDictionary`, etc.).
 - Identify the project type: CLI (startup cost), API server (latency/RPS), data pipeline (throughput), background service (CPU/memory).
 
-## 3. Static analysis — complexity and .NET anti-patterns
+## 3. Static analysis — complexity and anti-patterns
 
 **Async correctness (performance dimension)**
 - `.Result` / `.Wait()` / `.GetAwaiter().GetResult()` — blocks a thread; deadlock risk under any `SynchronizationContext`. Severity: Critical.
@@ -131,7 +131,7 @@ Project type: <CLI / API / data-pipeline / background-service / other>
 #### Medium
 ...
 
-#### Low / Informational
+#### Low
 ...
 
 ### Verdict

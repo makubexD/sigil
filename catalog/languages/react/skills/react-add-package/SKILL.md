@@ -67,7 +67,10 @@ installed React version); **license** (MIT/BSD/Apache typically fine, GPL/AGPL n
 **If not provided:** fetch the latest stable version (`npm view <package-name> version`); prefer
 latest stable, avoid pre-release unless explicitly requested.
 
-## Step 4 — Add via the project's package manager
+## Step 4 — Add the package
+
+Add via the project's package manager.
+
 
 ```bash
 npm install <package-name>@<version>                 # runtime dependency
@@ -81,13 +84,15 @@ yarn add <package-name>@<version>
 For a monorepo workspace, target the specific package (`npm install <pkg> --workspace=apps/web`) —
 never the root, unless it's genuinely shared tooling.
 
-## Step 5 — Verify the lock file updated
+## Step 5 — Verify the install
+
+### Lock file
 
 ```bash
 git diff package-lock.json   # or pnpm-lock.yaml / yarn.lock
 ```
 
-## Step 6 — Run the quality gate
+### Quality gate
 
 ```bash
 npm run lint && npx tsc --noEmit && npx vitest run && npm run build
@@ -96,7 +101,7 @@ npm run lint && npx tsc --noEmit && npx vitest run && npm run build
 If the gate fails, **undo the addition** (revert `package.json` and the lock file) and report the
 failure. Building is included deliberately — a bundler-incompatible package fails here, not in lint.
 
-## Step 7 — Report
+## Step 6 — Report
 
 ```
 ## Add Package Report

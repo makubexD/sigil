@@ -111,10 +111,11 @@ dotnet build --no-restore 2>&1 | grep "CS1591"
 ```
 
 ```
-Documentation Report
-  Target: <file-or-class>
-  Doc comments added: <N>
-  Doc comments updated: <N>
-  Public symbols still undocumented: <N> (list them)
-  Build: ✅ 0 CS1591 warnings / ❌ <N> CS1591 warnings remain
+## Documentation Report
+
+Target: <file-or-class>
+Doc comments added: <N>
+Doc comments updated: <N>
+Still undocumented: <N> (list them)
+Build: ✅ 0 CS1591 warnings / ❌ <N> CS1591 warnings remain
 ```

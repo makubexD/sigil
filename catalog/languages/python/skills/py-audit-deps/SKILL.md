@@ -27,12 +27,14 @@ whenToUse: "Use to check for known CVEs, outdated packages, and license issues i
 
 Read-only audit — reports findings, does not modify `pyproject.toml` or the lock file.
 
-## Step 1 — Discover the dependency set
+## Step 1 — Discover dependency manifest
 
 Locate `pyproject.toml` and the lock file (`uv.lock`/`poetry.lock`). List declared runtime
 dependencies from `[project.dependencies]` and dev dependencies from `[dependency-groups]`.
 
-## Step 2 — CVE scan
+## Step 2 — Run available tooling
+
+### CVE scan
 
 ```bash
 pip-audit 2>&1
@@ -45,14 +47,14 @@ If using `uv`:
 uv export --format requirements-txt --no-hashes | pip-audit -r - 2>&1
 ```
 
-## Step 3 — Outdated packages
+### Outdated packages
 
 ```bash
 uv pip list --outdated 2>&1   # or: pip list --outdated
 ```
 Flag packages more than 2 major versions behind, or with no release in 18+ months.
 
-## Step 4 — Unused dependencies
+### Unused dependencies
 
 ```bash
 deptry . 2>&1   # cross-references imports against declared dependencies
@@ -60,30 +62,32 @@ deptry . 2>&1   # cross-references imports against declared dependencies
 If `deptry` isn't available, cross-reference manually: for each declared dependency, `grep -rn
 "^import <pkg>\|^from <pkg>" src/` and flag any with zero matches.
 
-## Step 5 — License compliance
+## Step 3 — Manual review
+
+### License compliance
 
 For each direct dependency, check its declared license (via `pip show <pkg>` or the PyPI page).
 Flag any GPL/AGPL-licensed dependency for review if the project is proprietary/commercial, and flag
 any dependency with no declared license at all.
 
-## Step 6 — Report
+## Step 4 — Report
 
 ```
 ## Dependency Audit Report
 
-### CVEs
+### CVEs / Security vulnerabilities
 <pip-audit output, or "None found" / "pip-audit not installed — recommend installing it">
 
-### Outdated
+### Outdated packages
 - `<package>` — installed <version>, latest <version> [<N> major versions behind / stale since <date>]
 
-### Unused
+### Unused dependencies
 - `<package>` — declared but no import found
 
-### License Concerns
+### License compliance
 - `<package>` — <license>, flagged because <reason>
 
-### Verdict
+### Summary
 <One sentence: dependency set is healthy / N issues found, worst is <severity>.>
 ```
 

@@ -26,6 +26,13 @@ families:
   # ── Agents ──────────────────────────────────────────────────────────────────────────────────
   - id: api-compat-reviewer
     kind: agent
+    keys: [tools, relatedArtifacts]
+    sections:
+      - "Determine the public surface"
+      - "Diff against the previous release"
+      - "Classify each change"
+      - { heading: "Check deprecation discipline", optional: true }
+      - "Output"
     members:
       - angular/ng-api-compat-reviewer
       - csharp/cs-api-compat-reviewer
@@ -34,6 +41,14 @@ families:
       - typescript/ts-api-compat-reviewer
   - id: architecture-reviewer
     kind: agent
+    keys: [tools, relatedArtifacts]
+    sections:
+      - "Determine scope"
+      - { heading: "Discover architecture intent", optional: true }
+      - "Build the dependency graph"
+      - "Review dimensions"
+      - "Output"
+      - { heading: "Design mode", optional: true }
     members:
       - angular/ng-architecture-reviewer
       - csharp/cs-architecture-reviewer
@@ -42,6 +57,13 @@ families:
       - typescript/ts-architecture-reviewer
   - id: code-reviewer
     kind: agent
+    keys: [tools, relatedArtifacts]
+    sections:
+      - "Determine scope"
+      - "Discover conventions"
+      - "Review dimensions"
+      - { heading: "Run the quality gate (read-only)", optional: true }
+      - "Output"
     members:
       - angular/ng-code-reviewer
       - csharp/cs-code-reviewer
@@ -60,6 +82,13 @@ families:
       - typescript/ts-debugger
   - id: performance-profiler
     kind: agent
+    keys: [tools, relatedArtifacts]
+    sections:
+      - "Determine scope"
+      - { heading: "Discover context", optional: true }
+      - "Static analysis — complexity and anti-patterns"
+      - "Dynamic profiling (if runnable)"
+      - "Output"
     members:
       - angular/ng-performance-profiler
       - csharp/cs-performance-profiler
@@ -68,6 +97,13 @@ families:
       - typescript/ts-performance-profiler
   - id: refactor-specialist
     kind: agent
+    keys: [tools, relatedArtifacts]
+    sections:
+      - "Establish baseline"
+      - "Identify and plan the refactor"
+      - "Apply refactors — one step at a time"
+      - "Verify"
+      - "Output"
     members:
       - angular/ng-refactor-specialist
       - csharp/cs-refactor-specialist
@@ -76,6 +112,13 @@ families:
       - typescript/ts-refactor-specialist
   - id: security-auditor
     kind: agent
+    keys: [tools, relatedArtifacts]
+    sections:
+      - "Determine scope"
+      - "Discover conventions and security baseline"
+      - "Audit dimensions (sweep each systematically)"
+      - "Run available security tooling (read-only)"
+      - "Output"
     members:
       - angular/ng-security-auditor
       - csharp/cs-security-auditor
@@ -84,11 +127,13 @@ families:
       - typescript/ts-security-auditor
   - id: template-reviewer
     kind: agent
+    keys: [tools, relatedArtifacts]
     members: [angular/ng-template-reviewer]
 
   # ── Rules ───────────────────────────────────────────────────────────────────────────────────
   - id: async
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-async
       - csharp/cs-async
@@ -97,6 +142,7 @@ families:
       - typescript/ts-async
   - id: code-quality
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-code-quality
       - csharp/cs-code-quality
@@ -105,6 +151,7 @@ families:
       - typescript/ts-code-quality
   - id: conventions
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-conventions
       - csharp/cs-conventions
@@ -113,6 +160,7 @@ families:
       - typescript/ts-conventions
   - id: dependencies
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-dependencies
       - csharp/cs-dependencies
@@ -121,6 +169,7 @@ families:
       - typescript/ts-dependencies
   - id: documentation
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-documentation
       - csharp/cs-documentation
@@ -129,6 +178,7 @@ families:
       - typescript/ts-documentation
   - id: git
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-git
       - csharp/cs-git
@@ -137,6 +187,7 @@ families:
       - typescript/ts-git
   - id: logging
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-logging
       - csharp/cs-logging
@@ -146,6 +197,7 @@ families:
   # One concern under four names (NuGet, packaging, npm): the family ties them together.
   - id: package-manager
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - csharp/cs-nuget
       - python/py-packaging
@@ -153,6 +205,7 @@ families:
       - typescript/ts-npm
   - id: project-layout
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-project-layout
       - csharp/cs-project-layout
@@ -161,6 +214,7 @@ families:
       - typescript/ts-project-layout
   - id: security
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-security
       - csharp/cs-security
@@ -169,6 +223,7 @@ families:
       - typescript/ts-security
   - id: testing
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members:
       - angular/ng-testing
       - csharp/cs-testing
@@ -177,20 +232,32 @@ families:
       - typescript/ts-testing
   - id: components
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members: [angular/ng-components]
   - id: rxjs
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members: [angular/ng-rxjs]
   - id: signals
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members: [angular/ng-signals]
   - id: templates
     kind: rule
+    keys: [appliesTo, appliesToRationale]
     members: [angular/ng-templates]
 
   # ── Skills ──────────────────────────────────────────────────────────────────────────────────
   - id: add-package
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
+    sections:
+      - "Discover repo layout"
+      - "Vet the package"
+      - { heading: "Determine version", optional: true }
+      - "Add the package"
+      - "Verify the install"
+      - "Report"
     members:
       - angular/ng-add-package
       - csharp/cs-add-package
@@ -199,6 +266,12 @@ families:
       - typescript/ts-add-package
   - id: audit-deps
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
+    sections:
+      - "Discover dependency manifest"
+      - "Run available tooling"
+      - "Manual review"
+      - "Report"
     members:
       - angular/ng-audit-deps
       - csharp/cs-audit-deps
@@ -207,6 +280,13 @@ families:
       - typescript/ts-audit-deps
   - id: document
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
+    sections:
+      - "Resolve target"
+      - "Discover documentation style"
+      - "Read the target"
+      - "Write documentation"
+      - "Run and report"
     members:
       - angular/ng-document
       - csharp/cs-document
@@ -230,6 +310,7 @@ families:
       - typescript/ts-generate-tests
   - id: release
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
     members:
       - angular/ng-release
       - csharp/cs-release
@@ -238,6 +319,14 @@ families:
       - typescript/ts-release
   - id: sync-tests
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
+    sections:
+      - "Determine scope"
+      - { heading: "Discover the runner and layout", optional: true }
+      - "Add and update tests"
+      - "Detect orphaned tests"
+      - "Confirm before any deletion (guardrail)"
+      - "Run and report"
     members:
       - angular/ng-sync-tests
       - csharp/cs-sync-tests
@@ -247,6 +336,14 @@ families:
   # Create a new project in an empty directory.
   - id: scaffold-project
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
+    sections:
+      - "Confirm the target directory is empty"
+      - "Create the project structure"
+      - "Configure tooling"
+      - "Write a starter test and README"
+      - "Verify"
+      - "Report"
     members:
       - python/py-scaffold-project
       - react/react-scaffold-project
@@ -254,9 +351,19 @@ families:
   # a rename would leave the old installed skill loaded next to the new one.
   - id: add-project
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
+    sections:
+      - "Discover repo standards"
+      - "Determine placement"
+      - "Scaffold the project"
+      - "Scaffold the tests"
+      - "Add to the solution or workspace"
+      - "Build and test"
+      - "Report"
     members:
       - csharp/cs-scaffold-project
       - typescript/ts-scaffold-project
   - id: generate-component
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
     members: [angular/ng-generate-component]

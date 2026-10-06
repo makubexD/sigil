@@ -41,7 +41,7 @@ Read and summarize:
 - Total direct runtime dependencies (name + version).
 - Total direct dev/test dependencies (`PrivateAssets="all"` or in test projects).
 - Total transitive dependency count (from lock file if available).
-- Python version → **TFM** (Target Framework Moniker) and .NET SDK version.
+- Target framework → **TFM** (Target Framework Moniker) and .NET SDK version.
 
 ## Step 2 — Run available tooling
 
@@ -80,10 +80,10 @@ For each direct runtime dependency not already flagged by the tooling:
 5. **NuGet source mapping:** is `nuget.config` using package source mapping to prevent dependency
    confusion? Flag absence as Medium finding.
 
-## Step 4 — Output report
+## Step 4 — Report
 
 ```
-## NuGet Dependency Audit Report
+## Dependency Audit Report
 Manifest: <Directory.Packages.props / .csproj list>
 TFM: <target framework(s)>
 Direct runtime deps: <N>

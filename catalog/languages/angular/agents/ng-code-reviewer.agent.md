@@ -47,7 +47,7 @@ Use the delegation message to identify what to review:
 
 If the repository is not a git repo, review all source files matching `**/*.ts`, `**/*.html` in the current directory.
 
-## 2. Discover conventions and era
+## 2. Discover conventions
 
 Do **not** assume conventions. Discover them at runtime:
 - Read root `{sigil:conventions-file}` and any `{sigil:conventions-file}` files in subdirectories you visit.

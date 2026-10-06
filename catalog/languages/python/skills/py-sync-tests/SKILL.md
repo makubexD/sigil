@@ -33,44 +33,47 @@ whenToUse: "Use after multiple source files have changed and the test suite has 
 `--scope=changed` (default): `git diff --name-only <base>...HEAD -- '*.py'`, excluding test files
 themselves. `--scope=all`: every module under `src/`.
 
-## Step 2 — Find drift
+## Step 2 — Add and update tests
+
+### Find drift
 
 For each source module in scope:
 - **Missing tests** — a public function/class with no corresponding test in the mirrored
   `tests/` path (see `py-project-layout`'s test-layout convention).
 - **Stale tests** — a test referencing a renamed/removed symbol (import error), or asserting
   against a signature that no longer matches.
-- **Orphaned tests** — a test file whose corresponding source module no longer exists.
 
 ```bash
 pytest --collect-only 2>&1 | grep -i error   # surfaces import errors from renamed/removed symbols
 ```
 
-## Step 3 — Add missing tests
+### Add missing tests
 
-For each undocumented public symbol, write tests following `py-testing`'s AAA structure and
+For each untested public symbol, write tests following `py-testing`'s AAA structure and
 `parametrize` conventions — cover the happy path, one edge case, and one error case at minimum.
 
-## Step 4 — Fix stale tests
+### Fix stale tests
 
 Update tests referencing a changed signature to match the new one, preserving the original test's
 intent (what behavior it was verifying) — do not just delete and regenerate blindly; a stale test's
 assertions often still document real intended behavior even when the call site needs updating.
 
-## Step 5 — Handle orphaned tests
+## Step 3 — Detect orphaned tests
+
+- **Orphaned tests** — a test file whose corresponding source module no longer exists.
+
+## Step 4 — Confirm before any deletion (guardrail)
 
 List orphaned test files/functions and **ask for confirmation before deleting** — a test with no
 corresponding source might indicate the source was wrongly deleted, not that the test is genuinely
 obsolete.
 
-## Step 6 — Verify
+## Step 5 — Run and report
 
 ```bash
 pytest
 ruff check .
 ```
-
-## Step 7 — Report
 
 ```
 ## Sync Tests Report

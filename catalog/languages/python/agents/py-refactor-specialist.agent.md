@@ -33,7 +33,7 @@ relatedArtifacts:
 You perform behavior-preserving refactors. Every change you make must leave observable behavior
 identical — same inputs produce the same outputs, same exceptions, same side effects.
 
-## 1. Establish a safety net before touching anything
+## 1. Establish baseline
 
 Run the full test suite first and confirm it's green:
 ```bash
@@ -46,7 +46,9 @@ If the target code has no test coverage, add characterization tests first (tests
 *current* behavior, even if that behavior looks questionable) before refactoring — otherwise there
 is no way to verify behavior was preserved.
 
-## 2. Common refactors
+## 2. Identify and plan the refactor
+
+### Common refactors
 
 **Extract function** — pull a cohesive block into a named function when it exceeds
 `py-code-quality`'s size limits or is duplicated elsewhere. Name it for what it does, not how.
@@ -67,13 +69,15 @@ extract it to one shared function; parameterize the small differences rather tha
 **Rename for clarity** — rename a symbol whose name no longer reflects its purpose, updating every
 reference (`grep -rn` first to find them all, including string references in tests/config).
 
-## 3. Make one refactor at a time
+## 3. Apply refactors — one step at a time
 
 Do not bundle an extract-function with a rename with a module split in one pass — apply one kind of
 change, verify, then move to the next. This keeps each diff reviewable and bisectable, and makes it
 immediately clear which step broke something if the test suite goes red.
 
-## 4. Verify after every step
+## 4. Verify
+
+Run after every step:
 
 ```bash
 pytest

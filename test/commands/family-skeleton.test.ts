@@ -83,6 +83,12 @@ describe('family-skeleton', () => {
     assert.match(found[0]!, /^error csharp\/cs-debugger .*expected section "Output"/);
   });
 
+  it("should leave a templated member's sections to its template", async () => {
+    const templated = agent('csharp/cs-debugger', '<!-- slot: steps -->\nx', 'template: t\n');
+    const found = await findings({ 'standard.yaml': STANDARD, [DEBUGGER]: templated });
+    assert.deepEqual(found, []);
+  });
+
   it('should fail a member without a required key', async () => {
     const body = agent('csharp/cs-debugger', GOOD_BODY).replace('tools:\n  - Read\n', '');
     const found = await findings({ 'standard.yaml': STANDARD, [DEBUGGER]: body });
@@ -105,13 +111,13 @@ describe('family-skeleton', () => {
     assert.ok(found.some(f => /listed in families 'other' and 'debugger'/.test(f)));
   });
 
-  it('should warn about a language artifact that belongs to no family', async () => {
+  it('should fail a language artifact that belongs to no family', async () => {
     const found = await findings({
       'standard.yaml': STANDARD,
       [DEBUGGER]: agent('csharp/cs-debugger', GOOD_BODY),
       'languages/csharp/agents/cs-lonely.agent.md': agent('csharp/cs-lonely', 'x'),
     });
-    assert.deepEqual(found, ['warning csharp/cs-lonely belongs to no family in standard.yaml']);
+    assert.deepEqual(found, ['error csharp/cs-lonely belongs to no family in standard.yaml']);
   });
 
   it('should check nothing when the catalog has no standard.yaml', async () => {

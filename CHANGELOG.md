@@ -146,8 +146,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- The debugger agents and generate-tests skills each share one section skeleton in every language
-  (declared in `catalog/standard.yaml`). Debugger: Reproduce, Isolate, Fix, Verify, Output, with the
+- Every language agent and skill family now shares one section skeleton in every language, declared
+  in `catalog/standard.yaml`: the seven agent families and the add-package, audit-deps, document,
+  generate-tests, sync-tests, scaffold-project and add-project skills. Text was moved, not removed;
+  report labels were aligned and two copy errors fixed (`cs-audit-deps` "Python version → TFM";
+  "undocumented" for "untested" in `py-sync-tests` and `react-sync-tests`). scaffold-project is two
+  families: creating a new project (Python, React) and adding one to an existing solution (C#,
+  TypeScript, ids unchanged). Rule families require `appliesTo` and `appliesToRationale`; templated
+  members take their sections from the template. A language artifact in no family now fails
+  `sync --check`. The debugger agents and generate-tests skills each share one section skeleton in
+  every language. Debugger: Reproduce, Isolate, Fix, Verify, Output, with the
   same report labels. generate-tests: the Python and React skills become the same five-step workflow
   as the others; their pytest and Testing Library conventions move, unchanged, to
   `references/testing-conventions.md`, and they gain `allowedTools` and `argumentHint`. Installed

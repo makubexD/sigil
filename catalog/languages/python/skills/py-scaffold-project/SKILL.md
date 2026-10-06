@@ -32,7 +32,7 @@ whenToUse: "Use when starting a brand-new Python package from scratch. Fires for
 If the target directory already contains a `pyproject.toml` or `.git/`, stop and ask before
 overwriting — this skill is for a genuinely new package, not retrofitting an existing one.
 
-## Step 2 — Create the src-layout structure
+## Step 2 — Create the project structure
 
 ```
 <package-name>/
@@ -49,7 +49,9 @@ overwriting — this skill is for a genuinely new package, not retrofitting an e
 Use the snake_case form of the package name for the importable package directory
 (`sigil-metrics` → `src/sigil_metrics/`), matching `py-project-layout`'s src-layout convention.
 
-## Step 3 — Write `pyproject.toml`
+## Step 3 — Configure tooling
+
+### Write `pyproject.toml`
 
 ```toml
 [project]
@@ -76,6 +78,14 @@ strict = true
 testpaths = ["tests"]
 ```
 
+### Initialize the environment
+
+```bash
+cd <package-name>
+uv venv
+uv sync --group dev
+```
+
 ## Step 4 — Write a starter test and README
 
 ```python
@@ -87,21 +97,13 @@ def test_package_imports():
 Write `.gitignore` per `py-git`'s standard additions, and a minimal `README.md`: package name,
 one-sentence description, install command (`uv sync`), and how to run tests (`pytest`).
 
-## Step 5 — Initialize the environment
-
-```bash
-cd <package-name>
-uv venv
-uv sync --group dev
-```
-
-## Step 6 — Verify
+## Step 5 — Verify
 
 ```bash
 ruff check . && mypy . && pytest
 ```
 
-## Step 7 — Report
+## Step 6 — Report
 
 ```
 ## Scaffold Report

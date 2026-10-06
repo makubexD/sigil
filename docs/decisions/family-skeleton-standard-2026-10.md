@@ -59,8 +59,11 @@ skeleton.**
 ## Guards
 
 - `family-skeleton` (`sync --check`, error): a member missing from the catalog, of another kind, or
-  in two families; sections that drift from the skeleton; a missing required key. A language artifact
-  in no family is a warning.
+  in two families; sections that drift from the skeleton; a missing required key; a language artifact
+  in no family.
+- Rule families declare keys only (`appliesTo`, `appliesToRationale`): a rule's H2s are its
+  language-specific topics, not steps. Templated families (`release`, `code-quality`) take their
+  sections from the template, so members with `template:` are not compared.
 - `catalog-layout` (error, when `standard.yaml` exists): a language without a prefix or stack, a stack
   not declared, a name off its language's prefix, a stack file for an undeclared stack.
 - `catalog-symmetry` (warning) reads families from the data, honouring `absent`.

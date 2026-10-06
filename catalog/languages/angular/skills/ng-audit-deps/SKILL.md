@@ -71,7 +71,7 @@ For each direct runtime dependency the tools did not cover:
 5. **Types & ESM:** ships types and is ESM-compatible with the Angular build?
 6. **Security history:** CVEs in the past 12 months?
 
-## Step 4 — Output report
+## Step 4 — Report
 
 ```
 ## Dependency Audit Report
@@ -89,7 +89,7 @@ Lock file: <present / MISSING>
 ### Angular lockstep
 <@angular/* + CDK/Material version alignment; any incompatible peer ranges>
 
-### Unused / redundant dependencies
+### Unused dependencies
 <depcheck / knip output, or "not installed — manual review needed">
 
 ### License compliance

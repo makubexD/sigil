@@ -64,7 +64,10 @@ cover this? If yes, recommend it and stop); **type support** (`py.typed` marker 
 **If not provided:** fetch the latest stable version (`pip index versions <package-name>`); prefer
 the latest stable, avoid pre-release unless explicitly requested.
 
-## Step 4 — Add through the project's package manager
+## Step 4 — Add the package
+
+Add through the project's package manager.
+
 
 **uv (preferred if `uv.lock` present or no lock file exists yet):**
 ```bash
@@ -81,13 +84,15 @@ poetry add --group dev "<package-name>@<version>"     # --dev
 **plain pip + requirements.txt:** append the pinned line to `requirements.txt` (or
 `requirements-dev.txt` for `--dev`), then `pip install -r requirements.txt`.
 
-## Step 5 — Verify the lock file updated
+## Step 5 — Verify the install
+
+### Lock file
 
 ```bash
 git diff uv.lock  # or poetry.lock — confirm the new package + its transitive deps appear
 ```
 
-## Step 6 — Run the quality gate
+### Quality gate
 
 ```bash
 ruff check . && mypy . && pytest
@@ -96,7 +101,7 @@ ruff check . && mypy . && pytest
 If the gate fails, **undo the addition** (revert `pyproject.toml` and the lock file) and report the
 failure.
 
-## Step 7 — Report
+## Step 6 — Report
 
 ```
 ## Add Package Report
@@ -109,8 +114,8 @@ Dev-only: <yes / no>
 - CVEs: <none detected / ⚠ flagged — detail>
 - License: <MIT / Apache-2.0 / ⚠ flagged — detail>
 - Maintenance: <active / ⚠ last release: <date>>
-- Type support: <py.typed / types-<pkg> available / ⚠ untyped>
-- Stdlib alternative: <none / ⚠ stdlib can replace — recommendation>
+- Types: <py.typed / types-<pkg> available / ⚠ untyped>
+- Built-in alternative: <none / ⚠ stdlib can replace — recommendation>
 
 ### Gate
 ✅ lint, type-check, and tests passed  /  ❌ <failure detail>

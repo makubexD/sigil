@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1-M4 done, plus PRs #24-#28. M5 (family skeleton standard) in progress; then the end block (live checks, one release).
+Status: M1-M5 done (PRs #24-#35). Open: C3 (P2 templates + cosmetic sweep, content pass), then the end block (live checks, one release).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -69,7 +69,7 @@ Spec: `SPEC.md`
 - [x] C1 Declare every family and fit every member's structure
 - [x] C2 (P1) Confirmed defects: copy errors, false/double `extends`, `.jsx` gaps, rule globs
 - [ ] C3 (P2) Templates where shared text passes the threshold; cosmetic sweep
-- [ ] Phase 5 review
+- [x] Phase 5 review (code + docs drift, fixed in PR #33); audit fix PR #34; CI speed PR #35 (Windows test step ~67 s → ~34 s)
 
 ## End block: before the release (development first; nothing here is dropped)
 

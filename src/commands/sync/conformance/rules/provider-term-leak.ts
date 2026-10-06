@@ -35,6 +35,7 @@ import type { ConformanceRule, ConformanceFinding, ArtifactEdit } from '../types
 import { getAllTargets } from '../../../../targets/index';
 import { LEXICON_TERMS, type LexiconTerm, type ProviderLexicon } from '../../../../targets/lexicon';
 import { splitFrontmatterBlock, extractOriginalBody } from '../frontmatter-patch';
+import { shippedTexts } from '../../../../artifact-texts';
 
 const WHOLE_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'skill',
@@ -72,22 +73,24 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** Findings for one artifact's body against every known lexicon literal. */
+/** Findings for one artifact's body and reference files against every known lexicon literal. */
 function findingsForArtifact(
   artifact: Parameters<ConformanceRule['detect']>[0]['catalog']['artifacts'][number],
 ): ConformanceFinding[] {
   const findings: ConformanceFinding[] = [];
-  for (const [term, value] of allLexiconTerms()) {
-    if (!new RegExp(escapeRegExp(value)).test(artifact.body)) continue;
-    findings.push({
-      ruleId: 'provider-term-leak',
-      severity: 'error',
-      artifactId: artifact.id,
-      filePath: artifact.filePath,
-      // term='<name>' prefix is fix()'s stable marker — same pattern as redundant-default's
-      // key='<name>', needed because one artifact can leak more than one term.
-      detail: `term='${term}' value='${value}' — body contains the literal instead of {sigil:${term}}`,
-    });
+  for (const shipped of shippedTexts(artifact)) {
+    for (const [term, value] of allLexiconTerms()) {
+      if (!new RegExp(escapeRegExp(value)).test(shipped.text)) continue;
+      findings.push({
+        ruleId: 'provider-term-leak',
+        severity: 'error',
+        artifactId: artifact.id,
+        filePath: shipped.filePath,
+        // term='<name>' prefix is fix()'s stable marker — same pattern as redundant-default's
+        // key='<name>', needed because one artifact can leak more than one term.
+        detail: `term='${term}' value='${value}' — ${shipped.label} contains the literal instead of {sigil:${term}}`,
+      });
+    }
   }
   return findings;
 }
@@ -99,6 +102,13 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
     findings.push(...findingsForArtifact(artifact));
   }
   return findings;
+}
+
+/** The term and the exact literal a finding names (a term's value differs per provider). */
+function leakOf(detail: string): { term: LexiconTerm; value: string } | undefined {
+  const term = detail.match(/^term='([^']+)'/)?.[1] as LexiconTerm | undefined;
+  const value = detail.match(/value='([^']*)'/)?.[1];
+  return term && value ? { term, value } : undefined;
 }
 
 /**
@@ -121,16 +131,18 @@ function fix(
   if (!finding.artifactId || !finding.filePath) return undefined;
   const artifact = ctx.catalog.byId.get(finding.artifactId);
   if (!artifact) return undefined;
-  const term = finding.detail.match(/^term='([^']+)'/)?.[1] as LexiconTerm | undefined;
-  if (!term) return undefined;
-  // The finding names the exact literal it found: a term's value differs per provider.
-  const value = finding.detail.match(/value='([^']*)'/)?.[1];
-  if (!value) return undefined;
+  const leak = leakOf(finding.detail);
+  if (!leak) return undefined;
 
   const raw = fs.readFileSync(finding.filePath, 'utf-8');
+  const replace = (text: string) =>
+    text.replace(new RegExp(escapeRegExp(leak.value), 'g'), `{sigil:${leak.term}}`);
+  // A reference file is all prose: rewrite it whole, never give it a frontmatter block.
+  if (finding.filePath !== artifact.filePath) {
+    return { artifactId: artifact.id, filePath: finding.filePath, newContent: replace(raw) };
+  }
   const { bodyStart } = splitFrontmatterBlock(raw);
-  const currentBody = extractOriginalBody(raw, bodyStart);
-  const newBody = currentBody.replace(new RegExp(escapeRegExp(value), 'g'), `{sigil:${term}}`);
+  const newBody = replace(extractOriginalBody(raw, bodyStart));
   return { artifactId: artifact.id, filePath: artifact.filePath, newBody };
 }
 

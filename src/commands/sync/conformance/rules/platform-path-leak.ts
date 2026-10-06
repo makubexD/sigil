@@ -20,16 +20,21 @@ import type { Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding, EditorialTask } from '../types';
 import { getAllTargets } from '../../../../targets/index';
 import { KIND_REGISTRY } from '../../../../kinds';
+import { shippedTexts, type ShippedText } from '../../../../artifact-texts';
 
 type Artifact = Parameters<ConformanceRule['detect']>[0]['catalog']['artifacts'][number];
 
-/** The private folders (Target.privateDirs) of other providers that `artifact`'s body names. */
-function leakedDirs(artifact: Artifact, targets: readonly Target[]): Array<[Target, string]> {
+/** The private folders (Target.privateDirs) of other providers that `text` names. */
+function leakedDirs(
+  artifact: Artifact,
+  text: string,
+  targets: readonly Target[],
+): Array<[Target, string]> {
   return targets.flatMap(owner =>
     KIND_REGISTRY[artifact.kind].ownedBy.includes(owner.name)
       ? [] // a kind only this provider installs (hook, settings) may name its folders
       : (owner.privateDirs ?? [])
-          .filter(dir => artifact.body.includes(dir))
+          .filter(dir => text.includes(dir))
           .map((dir): [Target, string] => [owner, dir]),
   );
 }
@@ -40,22 +45,34 @@ function shipsTo(artifact: Artifact, target: Target): boolean {
   return owners.length === 0 || owners.includes(target.name);
 }
 
+/** One finding per other provider that receives `shipped`, which names `owner`'s folder `dir`. */
+function findingsFor(
+  artifact: Artifact,
+  shipped: ShippedText,
+  [owner, dir]: [Target, string],
+  targets: readonly Target[],
+): ConformanceFinding[] {
+  return targets
+    .filter(other => other.name !== owner.name && shipsTo(artifact, other))
+    .map(other => ({
+      ruleId: 'platform-path-leak',
+      severity: 'warning' as const,
+      artifactId: artifact.id,
+      filePath: shipped.filePath,
+      provider: other.name,
+      detail:
+        `${shipped.label} references ${dir} verbatim — ships unchanged into ` +
+        `${other.name}'s output where the path does not exist`,
+    }));
+}
+
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
   const targets = getAllTargets();
   return ctx.catalog.artifacts.flatMap(artifact =>
-    leakedDirs(artifact, targets).flatMap(([owner, dir]) =>
-      targets
-        .filter(other => other.name !== owner.name && shipsTo(artifact, other))
-        .map(other => ({
-          ruleId: 'platform-path-leak',
-          severity: 'warning' as const,
-          artifactId: artifact.id,
-          filePath: artifact.filePath,
-          provider: other.name,
-          detail:
-            `body references ${dir} verbatim — ships unchanged into ${other.name}'s output ` +
-            'where the path does not exist',
-        })),
+    shippedTexts(artifact).flatMap(shipped =>
+      leakedDirs(artifact, shipped.text, targets).flatMap(leak =>
+        findingsFor(artifact, shipped, leak, targets),
+      ),
     ),
   );
 }
@@ -75,13 +92,15 @@ function editorialTask(
 ): EditorialTask | undefined {
   if (!finding.artifactId || !finding.filePath) return undefined;
   const artifact = ctx.catalog.byId.get(finding.artifactId);
-  if (!artifact) return undefined;
+  // The editorial pass rewrites an artifact's body; a reference file stays report-only.
+  if (!artifact || finding.filePath !== artifact.filePath) return undefined;
   return {
     artifactId: finding.artifactId,
     filePath: finding.filePath,
     kind: artifact.kind,
     instruction: rewriteInstruction(
-      leakedDirs(artifact, getAllTargets())[0]?.[1] ?? 'the provider-specific folder',
+      leakedDirs(artifact, artifact.body, getAllTargets())[0]?.[1] ??
+        'the provider-specific folder',
     ),
     ownedFields: ['body'],
   };

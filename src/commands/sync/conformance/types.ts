@@ -43,6 +43,11 @@ export interface ArtifactEdit {
   readonly frontmatterPatch?: Record<string, unknown>;
   /** Full replacement body, when the fix must also change body content (e.g. strip a heading). */
   readonly newBody?: string;
+  /**
+   * Full replacement of a file with no frontmatter (a skill's reference file, `filePath`). Wins
+   * over `frontmatterPatch` / `newBody`, which only apply to an artifact's own file.
+   */
+  readonly newContent?: string;
 }
 
 /** What an `editorial` rule asks the model-backed pass to do for one finding. */

@@ -1,9 +1,10 @@
 /**
  * The one writer for whole-file kinds (skill, agent, rule, prompt, workflow) on every target and
  * channel. A file's path comes only from its spec's `outputPath`, and its content only from
- * `renderArtifact`; a skill's reference files land beside it under `references/`. Targets keep
- * only what is truly theirs: which artifacts go where (a plugin's pack, Copilot's repo-wide
- * rules) and their aggregate files (AGENTS.md, plugin.json). The FileMap is written to disk by
+ * `renderArtifact`; a skill's reference files land beside it under `references/`, through the same
+ * lexicon (`renderReference`). Targets keep only what is truly theirs: which artifacts go where (a
+ * plugin's pack, Copilot's repo-wide rules) and their aggregate files (AGENTS.md, plugin.json).
+ * The FileMap is written to disk by
  * `writeFilesSync` / `partitionFiles`, which contain every path (`resolveContained`).
  *
  * @module
@@ -17,7 +18,7 @@ import type {
   ScaffoldOptions,
 } from '../types';
 import type { EmitContext, KindEmitSpec } from './spec-types';
-import { renderArtifact } from './emit';
+import { renderArtifact, renderReference, REFERENCES_DIR } from './emit';
 
 /** The delivery channel a spec serves: `add` / `init` (scaffold) or a built plugin. */
 export type EmitChannel = 'scaffold' | 'plugin';
@@ -42,7 +43,7 @@ export function emitFile(
   files[filePath] = renderArtifact(spec, artifact, ctx);
   const dir = path.posix.dirname(filePath);
   for (const ref of artifact.references ?? []) {
-    files[path.posix.join(dir, 'references', ref.name)] = ref.content;
+    files[path.posix.join(dir, REFERENCES_DIR, ref.name)] = renderReference(spec, ref.content);
   }
 }
 

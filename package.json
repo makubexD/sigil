@@ -97,5 +97,12 @@
   },
   "config": {
     "claudeCodeVersion": "2.1.288"
+  },
+  "overrides": {
+    "gray-matter": {
+      "js-yaml": {
+        "argparse": "^2.0.1"
+      }
+    }
   }
 }

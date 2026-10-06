@@ -67,7 +67,7 @@ lines starting with `D` (deleted) or `R` (renamed) indicate source files that ma
 orphaned test files behind. Map each to its expected test path and flag existing matches as
 candidates. **Report only — make no deletions here.**
 
-## Step 5 — Confirm before any deletion (GUARDRAIL)
+## Step 5 — Confirm before any deletion (guardrail)
 
 If orphaned test files were found, present the list before touching any file:
 
@@ -83,13 +83,13 @@ Proceed with deletion? [y/N]
 **Stop and wait for explicit confirmation.** Only proceed on `y` or `yes`. If the user declines or
 does not respond, skip all deletions and record "orphans not removed — user declined" in the report.
 
-## Step 6 — Run suite and report
+## Step 6 — Run and report
 
 Run the test command discovered in Step 2 (the project's own `package.json` script, not a
 hardcoded runner invocation). Fix any failures introduced by the new or updated tests.
 
 ```
-## Sync Results
+## Sync Tests Report
 
 Scope: <changed / all>
 Files analyzed: <N>

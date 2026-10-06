@@ -82,10 +82,10 @@ issues, archived/deprecated on npm); transitive footprint (could a Node built-in
 types availability (bundled `.d.ts` or `@types/*` — missing types force `any` casts, flag as a
 risk); ESM/CJS compatibility with the project's module system; and CVEs in the past 12 months.
 
-## Step 4 — Output report
+## Step 4 — Report
 
 ```
-## npm Dependency Audit Report
+## Dependency Audit Report
 
 Manifest: package.json  <workspace member list if applicable>
 Node.js version: <from engines or .nvmrc>

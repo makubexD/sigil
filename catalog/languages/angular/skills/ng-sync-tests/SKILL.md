@@ -46,14 +46,14 @@ Exclude: deleted source files (handle separately in Step 4), existing `*.spec.ts
 
 Use Glob with `**/*.ts` (excluding `**/*.spec.ts`), excluding test/cache/generated directories.
 
-## Step 2 — Discover layout and era
+## Step 2 — Discover the runner and layout
 
 Inspect the repo — do **not** assume a fixed structure:
 - Confirm the spec convention by reading 2–3 existing specs — Angular co-locates `foo.ts` → `foo.spec.ts`; some projects mirror into `tests/`. Apply the in-use pattern consistently.
 - Detect the test runner (`package.json` scripts, `vitest.config.*`, `angular.json`, `karma.conf.js`, `jest.config.*`).
 - Detect the era/reactivity style so generated specs match (standalone+signals vs NgModule classic; signals vs RxJS).
 
-## Step 3 — Add and update specs
+## Step 3 — Add and update tests
 
 For each in-scope source file:
 
@@ -65,7 +65,7 @@ For each in-scope source file:
    - Extract test data to constants/builders; cover happy path + edge + error paths.
 3. **Spec exists:** read it alongside the source. Identify public members (methods, inputs, outputs) that lack tests. Add the missing tests following the same principles. Flag stale tests (whose source counterpart no longer exists) in the report — do not remove them here.
 
-## Step 4 — Detect orphaned specs
+## Step 4 — Detect orphaned tests
 
 Orphaned specs are spec files (or `describe`/`it` blocks within them) whose source counterpart was deleted or renamed:
 
@@ -92,16 +92,16 @@ These will be permanently deleted. Proceed? [y/N]
 
 **Stop and wait for explicit confirmation.** Only after receiving "y" or "yes" should you proceed with deletions. If the user says no, declines, or does not respond, skip all deletions and record "orphans not removed — user declined" in the final report.
 
-## Step 6 — Run suite and report
+## Step 6 — Run and report
 
 Discover the project's test command (check `package.json` scripts; fallback `vitest run` or `ng test --watch=false`). Run it. If any tests fail after sync, diagnose and fix before finishing.
 
 ```
-Sync Results
+## Sync Tests Report
   Scope:           <changed | all>
   Files analyzed:  <N>
-  Specs created:   <N>
-  Specs updated:   <N>
+  Tests created:   <N>
+  Tests updated:   <N>
   Orphans removed: <N>  (or "none" / "skipped — user declined")
 
 Suite: ✅ <N> passed  /  ❌ <N> failed

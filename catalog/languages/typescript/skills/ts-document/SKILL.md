@@ -113,9 +113,9 @@ import/type errors introduced by the edits. Emit:
 ## Documentation Report
 
 Target: <file>
-Symbols documented (added): <N>
-Symbols documented (updated): <N>
-Still undocumented: <N> (list if > 0)
+Doc comments added: <N>
+Doc comments updated: <N>
+Still undocumented: <N> (list them)
 Lint: ✅ passed  /  ❌ <error>  /  ⏭ not configured
 Type check: ✅ passed  /  ❌ <error>
 ```

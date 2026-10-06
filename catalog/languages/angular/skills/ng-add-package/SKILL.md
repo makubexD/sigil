@@ -28,14 +28,14 @@ whenToUse: "Run via `/ng-add-package <package>` when a new dependency is needed 
 
 **Target:** {sigil:arguments}  (package name, optional version, optional `--dev`)
 
-## Step 1 — Parse and inspect the project
+## Step 1 — Discover repo layout
 
 Parse `<package>`, optional `[version]`, and `--dev`. Read `package.json` and note:
 - The Angular major (`@angular/core`) and Node engines constraint.
 - Whether `<package>` (or an equivalent) is **already referenced** — if so, report and stop (don't duplicate).
 - Whether the project is an application or a publishable library (affects `dependencies` vs `peerDependencies`).
 
-## Step 2 — Vet before installing
+## Step 2 — Vet the package
 
 Gather evidence and decide whether to proceed:
 
@@ -56,7 +56,7 @@ Check each:
 
 If any check flags meaningful risk, **present the findings and confirm with the user before adding.**
 
-## Step 3 — Install
+## Step 3 — Add the package
 
 **Prefer `ng add` for Angular-aware packages** (Angular Material, CDK, NgRx, transloco, etc.) — it runs
 schematics that wire up providers, imports, and config:
@@ -79,20 +79,28 @@ npm install --save-dev @types/<package>    # if the package ships no bundled typ
 For a publishable library where the package is a host requirement, add it to `peerDependencies`
 (and usually `devDependencies` for local builds) rather than `dependencies`.
 
-## Step 4 — Verify, undo on failure, report
+## Step 4 — Verify the install
 
-- Confirm `package-lock.json` was updated and the package resolved.
-- Run the project's gate: `ng lint` + `tsc --noEmit` + `vitest run` (or discovered `npm run check`).
-  Run `npm audit` to surface any CVEs the install introduced.
-- **If the gate fails or the install broke the build, undo the change** (`npm uninstall <package>`, restore
-  `package.json`/lock) and report what went wrong rather than leaving the tree broken.
+### Lock file
+
+Confirm `package-lock.json` was updated and the package resolved.
+
+### Quality gate
+
+Run the project's gate: `ng lint` + `tsc --noEmit` + `vitest run` (or discovered `npm run check`).
+Run `npm audit` to surface any CVEs the install introduced.
+
+**If the gate fails or the install broke the build, undo the change** (`npm uninstall <package>`, restore
+`package.json`/lock) and report what went wrong rather than leaving the tree broken.
+
+## Step 5 — Report
 
 ```
-Add Package Report
+## Add Package Report
   Package:        <name>@<resolved-version>  (<dependencies | devDependencies | peerDependencies>)
   Installer:      <ng add (files modified) / npm install>
   Types:          <bundled / @types added / none>
-  Angular peer:   <compatible range / N/A>
+  Peer range:     <compatible range / N/A>
   Vetting:        <passed / flags: …>
   Gate:           ✅ lint  ✅ types  ✅ tests  ✅ audit  /  ❌ <which failed — change undone>
 ```

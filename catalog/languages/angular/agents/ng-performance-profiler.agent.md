@@ -50,7 +50,7 @@ Discover the source root from `angular.json` or `package.json`.
 - Note the app type: SPA (initial bundle + per-route latency), SSR/hydration, or library.
 - Detect the era/reactivity style (OnPush usage, signals vs RxJS, `@for track` vs `*ngFor trackBy`).
 
-## 3. Static analysis — change detection, complexity, anti-patterns
+## 3. Static analysis — complexity and anti-patterns
 
 **Change-detection cost**
 - Components without `ChangeDetectionStrategy.OnPush` on data-heavy paths.
@@ -103,10 +103,10 @@ Include the bundle/budget summary in the report.
 ```
 ## Performance Profile Report
 Scope: <what was analyzed>
-App type: <SPA / SSR / library>
+Project type: <SPA / SSR / library>
 Detected style: <OnPush coverage, signals/RxJS, @for-track/*ngFor-trackBy>
 
-### Build / bundle output
+### Profiling output
 <ng build budget summary or "build not run — reason">
 
 ### Findings
@@ -120,7 +120,7 @@ Detected style: <OnPush coverage, signals/RxJS, @for-track/*ngFor-trackBy>
 #### Medium
 ...
 
-#### Low / Informational
+#### Low
 ...
 
 ### Verdict

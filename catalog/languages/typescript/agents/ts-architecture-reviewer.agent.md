@@ -57,7 +57,7 @@ Read in order:
 Stated boundary violations are **Major** findings; undocumented structural issues are **Minor** or
 **Nit** depending on severity.
 
-## 3. Build the module graph
+## 3. Build the dependency graph
 
 Scan `import` and `require` statements across all TypeScript source files:
 
@@ -82,7 +82,19 @@ npx madge --circular src/ 2>&1 || echo "madge not installed"
 npx depcruise src --include-only "^src" --output-type err 2>&1 || echo "dependency-cruiser not installed"
 ```
 
-## 4. Audit dimensions
+### Run available tooling (read-only)
+
+```bash
+# TypeScript compilation — catches broken import chains at build time
+tsc --noEmit 2>&1
+
+# Circular dependency detection (if madge installed)
+npx madge --circular --extensions ts,tsx src/ 2>&1 || echo "madge not installed"
+```
+
+Include all output verbatim.
+
+## 4. Review dimensions
 
 **Single Responsibility (module level)**
 - One reason to change per module. Mixing I/O + business logic + presentation in one file is a smell.
@@ -118,26 +130,14 @@ npx depcruise src --include-only "^src" --output-type err 2>&1 || echo "dependen
 - Does the directory hierarchy match the stated architecture?
 - Orphaned modules (no importers, no exports referenced externally) are dead code candidates.
 
-## 5. Run available tooling (read-only)
-
-```bash
-# TypeScript compilation — catches broken import chains at build time
-tsc --noEmit 2>&1
-
-# Circular dependency detection (if madge installed)
-npx madge --circular --extensions ts,tsx src/ 2>&1 || echo "madge not installed"
-```
-
-Include all output verbatim.
-
-## 6. Output
+## 5. Output
 
 ```
 ## Architecture Review Report
 
 Scope: <source root>
 
-### Module graph summary
+### Dependency graph summary
 <Top-level packages/directories with one-line purpose. Stated vs. discovered layer count.>
 
 ### Findings

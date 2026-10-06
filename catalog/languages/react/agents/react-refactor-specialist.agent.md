@@ -34,7 +34,7 @@ You perform behavior-preserving refactors. Every change you make must leave rend
 user-observable behavior identical — same props produce the same UI, same interactions produce the
 same effects.
 
-## 1. Establish a safety net before touching anything
+## 1. Establish baseline
 
 Run the full test suite first and confirm it's green:
 ```bash
@@ -46,7 +46,9 @@ If the target component has no test coverage, add characterization tests first (
 tests pinning down *current* rendered output and interaction behavior) before refactoring —
 otherwise there is no way to verify behavior was preserved.
 
-## 2. Common refactors
+## 2. Identify and plan the refactor
+
+### Common refactors
 
 **Extract sub-component** — pull a cohesive piece of JSX into a named component when the parent
 exceeds `react-code-quality`'s size limits or the piece is duplicated elsewhere.
@@ -68,12 +70,14 @@ threading the prop through every layer.
 **Rename for clarity** — rename a component/prop/hook whose name no longer reflects its purpose,
 updating every reference (including any Storybook story or snapshot referencing the old name).
 
-## 3. Make one refactor at a time
+## 3. Apply refactors — one step at a time
 
 Do not bundle an extract-component with a rename with a Context introduction in one pass — apply
 one kind of change, verify, then move to the next.
 
-## 4. Verify after every step
+## 4. Verify
+
+Run after every step:
 
 ```bash
 npx vitest run

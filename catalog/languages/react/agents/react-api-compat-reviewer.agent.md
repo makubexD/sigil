@@ -40,7 +40,7 @@ equivalent) — exported components, their `Props` types, and exported hooks wit
 return shapes. An internal component not re-exported from the entry point is not part of the public
 surface even if technically reachable via a deep import.
 
-## 2. Compare against the previous release
+## 2. Diff against the previous release
 
 ```bash
 git log --oneline -- package.json | grep -i version
@@ -49,7 +49,7 @@ git diff <last-release-tag> HEAD -- 'src/index.ts' 'src/**/*.tsx'
 
 For each changed exported component/hook, classify the change.
 
-## 3. Classification tiers
+## 3. Classify each change
 
 **Breaking (major bump required)**
 - An exported component or hook removed, or renamed with no re-export alias.
@@ -78,29 +78,29 @@ For each changed exported component/hook, classify the change.
   identical props contract and rendered output.
 - A bug fix affecting only previously-broken/undefined behavior.
 
-## 4. Type-surface specifics
+### Type-surface specifics
 
 Check whether a prop type change is breaking for TypeScript consumers even if most runtime usage
 still works — narrowing `onClick?: () => void` to a version requiring an argument, or changing a
 generic component's type parameter constraints, breaks compilation for existing consumers even when
 the JavaScript behavior would have been fine.
 
-## 5. Output
+## 4. Output
 
 ```
 ## API Compatibility Report
 Comparing: <last release tag> → HEAD
 
-### Breaking Changes
+### Breaking changes
 - `<Component>`/`use<Hook>` — <what changed>. **Impact:** <who breaks and how>.
 
-### Behavioral Changes
+### Behavioral changes
 - `<Component>`/`use<Hook>` — <what changed>. **Impact:** <what a consumer might notice>.
 
-### Compatible Changes
+### Compatible changes
 - `<Component>`/`use<Hook>` — <what was added/changed safely>.
 
-### SemVer Recommendation
+### SemVer recommendation
 <major / minor / patch>, because <the highest-tier change found>.
 ```
 

@@ -25,12 +25,17 @@ whenToUse: "Use when a component or hook's exported symbols lack TSDoc, or exist
 
 **Target:** {sigil:arguments}
 
-## Step 1 — Discover the project's documentation convention
+## Step 1 — Resolve target
+
+If `{sigil:arguments}` is provided, use it as the target file or component. If empty, ask the user
+which component or hook to document before proceeding.
+
+## Step 2 — Discover documentation style
 
 Check existing components for TSDoc style and whether Storybook is configured (`.storybook/` present
 — stories are part of the documentation surface for shared components; see `react-documentation`).
 
-## Step 2 — Identify undocumented or stale exported symbols
+## Step 3 — Read the target
 
 For the target file, list every exported component, hook, and its `Props`/return type. For each:
 - **Missing TSDoc** — no `/** ... */` above the export.
@@ -38,7 +43,7 @@ For the target file, list every exported component, hook, and its `Props`/return
   return shape no longer matches the hook's actual return.
 - **Adequate** — skip; do not touch documentation that already matches the code.
 
-## Step 3 — Write TSDoc
+## Step 4 — Write documentation
 
 For each exported component, document what it renders and any non-obvious prop contract:
 
@@ -67,20 +72,18 @@ export function usePresence(roomId: string): PresenceState { ... }
 
 Add inline TSDoc on individual `Props` fields whose purpose isn't obvious from the name/type alone.
 
-## Step 4 — Update or add a Storybook story (shared components only)
+### Update or add a Storybook story (shared components only)
 
 If the component is a shared/design-system component with an existing story, verify it still
 matches the current props — update it if it references a removed/renamed prop. Do not create a new
 story for a one-off, page-specific component.
 
-## Step 5 — Verify
+## Step 5 — Run and report
 
 ```bash
 npx tsc --noEmit   # confirm the edit introduced no type errors
 ```
 Re-read each edited doc comment against the actual current props/return type.
-
-## Step 6 — Report
 
 ```
 ## Documentation Report

@@ -5,9 +5,10 @@
  * keys every member sets. This rule fails `sync --check` when:
  *   - the data is wrong: a member that is not in the catalog, of another kind, or in two families;
  *   - a member's sections drift from the skeleton (step numbering is ignored, optional sections may
- *     be left out; anything language-specific goes under an H3 inside a skeleton section);
+ *     be left out; anything language-specific goes under an H3 inside a skeleton section). A
+ *     member with a `template:` takes its sections from the template and is not compared;
  *   - a member lacks a required frontmatter key.
- * A language-namespace agent, rule or skill that belongs to no family is a warning.
+ * A language-namespace agent, rule or skill that belongs to no family is an error too.
  *
  * Author-only, like `catalog-layout`: a catalog without `standard.yaml`, or built in memory, is
  * skipped.
@@ -49,12 +50,8 @@ export function skeletonDrift(
   return missing ? `missing section "${missing.heading}"` : undefined;
 }
 
-function finding(
-  detail: string,
-  artifact?: Artifact,
-  severity: 'error' | 'warning' = 'error',
-): ConformanceFinding {
-  const base = { ruleId: RULE_ID, severity, detail };
+function finding(detail: string, artifact?: Artifact): ConformanceFinding {
+  const base = { ruleId: RULE_ID, severity: 'error' as const, detail };
   return artifact ? { ...base, artifactId: artifact.id, filePath: artifact.filePath } : base;
 }
 
@@ -66,7 +63,11 @@ function memberProblems(family: FamilyDef, artifact: Artifact): string[] {
   const problems = family.keys
     .filter(key => artifact.frontmatter[key] === undefined)
     .map(key => `family '${family.id}' requires the frontmatter key '${key}'`);
-  const drift = family.sections && skeletonDrift(family.sections, h2Headings(artifact.body));
+  // A templated member's body is slot content; its sections come from the template, which every
+  // member shares, so there is nothing per member to compare.
+  const templated = artifact.frontmatter.template !== undefined;
+  const drift =
+    family.sections && !templated && skeletonDrift(family.sections, h2Headings(artifact.body));
   if (drift) problems.push(`family '${family.id}': ${drift}`);
   return problems;
 }
@@ -96,7 +97,7 @@ function unassigned(artifacts: readonly Artifact[], seen: ReadonlyMap<string, st
   return artifacts
     .filter(a => FAMILY_KINDS.has(a.kind) && !a.id.startsWith(`${SHARED_NAMESPACE}/`))
     .filter(a => !seen.has(a.id))
-    .map(a => finding(`belongs to no family in ${STANDARD_FILE}`, a, 'warning'));
+    .map(a => finding(`belongs to no family in ${STANDARD_FILE}`, a));
 }
 
 /** Every finding for `standard` against the catalog's artifacts. */

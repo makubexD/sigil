@@ -49,7 +49,7 @@ Exclude: deleted source files (handled in Step 4), existing test files (`*Tests.
 Use Glob with `src/**/*.cs` (or the discovered source root). Exclude test projects, generated files,
 `bin/`, `obj/`, `*.g.cs`.
 
-## Step 2 — Discover layout
+## Step 2 — Discover the runner and layout
 
 Inspect the repo — do **not** assume a fixed directory structure:
 - Locate the solution root from `.sln` or `Directory.Build.props`.
@@ -109,13 +109,13 @@ These will be permanently deleted. Proceed? [y/N]
 with deletions. If the user says no, declines, or does not respond, skip all deletions and record
 "orphans not removed — user declined" in the final report.
 
-## Step 6 — Run suite and report
+## Step 6 — Run and report
 
 Discover the test command (check `build.ps1`, `Nuke`, `Cake`, `justfile`; fallback `dotnet test`).
 Run it. If any tests fail after sync, diagnose and fix before finishing.
 
 ```
-Sync Results
+## Sync Tests Report
   Scope:           <changed | all>
   Files analyzed:  <N>
   Tests created:   <N>

@@ -279,8 +279,8 @@ tags: [go, testing]
 and skill belongs to exactly one family. Add `go/go-style` to an existing family's `members` (or a
 new family), and give each new artifact the family's `sections` in order, if the family declares
 any. A family is matched by its member list, never by name, so `go-style` can join `conventions`.
-`sigil sync --check` fails (`family-skeleton`) on a member whose sections drift and warns about an
-artifact in no family. See
+`sigil sync --check` fails (`family-skeleton`) on a member whose sections drift and on an artifact
+in no family. See
 [family-skeleton-standard-2026-10.md](../decisions/family-skeleton-standard-2026-10.md).
 
 **Step 5 — register the pack** (`packs.yaml`):

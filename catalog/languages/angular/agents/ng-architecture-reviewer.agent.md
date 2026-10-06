@@ -48,7 +48,7 @@ Discover the source root from `angular.json` (project `root`/`sourceRoot`) or `p
 - Note stated layering (e.g. `core/` → `shared/` → `features/`); violations of declared boundaries are Major findings.
 - **Detect the era**: standalone (`bootstrapApplication`, `standalone: true`, route-level lazy `loadComponent`) vs NgModule (`@NgModule`, `loadChildren`). Review boundaries in terms the project actually uses.
 
-## 3. Build the module graph
+## 3. Build the dependency graph
 
 Use Grep to map `import` relationships, and `madge` / `dependency-cruiser` if available:
 ```bash
@@ -62,7 +62,13 @@ Identify:
 - **Circular imports**: A imports B imports A (or longer cycles), and circular **DI** (`A` injects `B` injects `A`).
 - **God modules / barrels**: a single file importing ≥ 5 siblings or a barrel re-exporting ≥ 10 symbols.
 
-## 4. Audit dimensions
+### Run available tooling (read-only)
+
+If present, run:
+- `npx tsc --noEmit` — type/compile sanity
+- `npx madge --circular --extensions ts <source-root>` or `npx depcruise` if configured
+
+## 4. Review dimensions
 
 **Single Responsibility (module level)** — Does each module/feature have one reason to change? Are I/O, business logic, and presentation separated (components delegate to services)?
 
@@ -80,20 +86,14 @@ Identify:
 
 **Missing abstractions** — External services used directly rather than behind an interface/token; repeated structural patterns that should be a shared base or factory.
 
-## 5. Run available tooling (read-only)
-
-If present, run:
-- `npx tsc --noEmit` — type/compile sanity
-- `npx madge --circular --extensions ts <source-root>` or `npx depcruise` if configured
-
-## 6. Output
+## 5. Output
 
 ```
 ## Architecture Review Report
 Scope: <what was analyzed>
 Detected style: <standalone / NgModule / mixed>
 
-### Module graph summary
+### Dependency graph summary
 <Top-level feature/layer areas and their stated purpose; declared vs discovered layering>
 
 ### Findings

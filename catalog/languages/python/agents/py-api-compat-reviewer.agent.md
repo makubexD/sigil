@@ -40,7 +40,7 @@ whatever `__all__` declares) — not every symbol defined anywhere in `src/`. Re
 `__init__.py` re-exports first; a symbol not re-exported there is internal even if technically
 importable via its submodule path (unless the project documents submodule imports as supported).
 
-## 2. Compare against the previous release
+## 2. Diff against the previous release
 
 ```bash
 git log --oneline -- pyproject.toml | grep -i version   # find the last version bump commit
@@ -49,7 +49,7 @@ git diff <last-release-tag> HEAD -- 'src/**/__init__.py' 'src/**/*.py'
 
 For each changed public symbol, classify the change.
 
-## 3. Classification tiers
+## 3. Classify each change
 
 **Breaking (major bump required)**
 - A public function/method removed, or its name changed with no re-export alias.
@@ -73,29 +73,29 @@ For each changed public symbol, classify the change.
 - An internal (non-`__all__`, underscore-prefixed) implementation change with no observable effect.
 - A bug fix that only affects previously-broken/undefined behavior.
 
-## 4. Type-surface specifics
+### Type-surface specifics
 
 Check whether the package ships `py.typed` and, if so, whether a type annotation change is itself
 breaking for type-checker-strict consumers even when the runtime behavior is unchanged (e.g.
 narrowing a parameter from `Sequence[int]` to `list[int]` is a breaking type-surface change even
 though most call sites still work at runtime).
 
-## 5. Output
+## 4. Output
 
 ```
 ## API Compatibility Report
 Comparing: <last release tag> → HEAD
 
-### Breaking Changes
+### Breaking changes
 - `module.symbol` — <what changed>. **Impact:** <who breaks and how>.
 
-### Behavioral Changes
+### Behavioral changes
 - `module.symbol` — <what changed>. **Impact:** <what a caller might notice>.
 
-### Compatible Changes
+### Compatible changes
 - `module.symbol` — <what was added/changed safely>.
 
-### SemVer Recommendation
+### SemVer recommendation
 <major / minor / patch>, because <the highest-tier change found>.
 ```
 

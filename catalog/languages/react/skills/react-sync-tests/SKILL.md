@@ -33,44 +33,47 @@ whenToUse: "Use after multiple components have changed and the test suite has dr
 `--scope=changed` (default): `git diff --name-only <base>...HEAD -- '*.tsx' '*.ts'`, excluding test
 files themselves. `--scope=all`: every component under `src/`/`app/`.
 
-## Step 2 — Find drift
+## Step 2 — Add and update tests
+
+### Find drift
 
 For each component/hook in scope:
 - **Missing tests** — an exported component/hook with no corresponding `.test.tsx` file.
 - **Stale tests** — a test referencing a renamed/removed prop (TypeScript error), or querying for
   UI text/roles that no longer exist in the rendered output.
-- **Orphaned tests** — a test file whose corresponding component no longer exists.
 
 ```bash
 npx tsc --noEmit 2>&1 | grep -i "test"   # surfaces type errors in test files from renamed props
 npx vitest run 2>&1 | grep -i "cannot find"
 ```
 
-## Step 3 — Add missing tests
+### Add missing tests
 
-For each undocumented exported component, write tests following `react-testing`'s query-by-role
+For each untested exported component, write tests following `react-testing`'s query-by-role
 convention — cover the default render, one interaction path, and one error/empty state at minimum.
 
-## Step 4 — Fix stale tests
+### Fix stale tests
 
 Update tests referencing a changed prop or rendered output to match the current component,
 preserving the original test's intent (what user behavior it was verifying) — do not delete and
 regenerate blindly.
 
-## Step 5 — Handle orphaned tests
+## Step 3 — Detect orphaned tests
+
+- **Orphaned tests** — a test file whose corresponding component no longer exists.
+
+## Step 4 — Confirm before any deletion (guardrail)
 
 List orphaned test files and **ask for confirmation before deleting** — a test with no
 corresponding component might indicate the component was wrongly deleted, not that the test is
 genuinely obsolete.
 
-## Step 6 — Verify
+## Step 5 — Run and report
 
 ```bash
 npx vitest run
 npx tsc --noEmit
 ```
-
-## Step 7 — Report
 
 ```
 ## Sync Tests Report

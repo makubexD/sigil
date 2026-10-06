@@ -52,7 +52,7 @@ Based on `--type`:
 
 Do not overwrite any existing file. If the target path already exists, **stop and report**.
 
-## Step 3 — Scaffold the source project
+## Step 3 — Scaffold the project
 
 Create `src/<name>/<name>.csproj` inheriting shared properties from `Directory.Build.props`:
 
@@ -86,7 +86,9 @@ For **console**, create `Program.cs` with `private static async Task<int> Main(s
 wiring `IHostBuilder` or a minimal DI root. For **web**, create a minimal ASP.NET Core `Program.cs`
 with `IHostBuilder`. Both replace the seed type file above rather than sitting alongside it.
 
-## Step 4 — Scaffold the test project (unless `--type=test`)
+## Step 4 — Scaffold the tests
+
+Skip this step when `--type=test`.
 
 Create `tests/<name>.Tests/<name>.Tests.csproj`:
 ```xml
@@ -124,7 +126,7 @@ public sealed class <PrimaryType>Tests
 }
 ```
 
-## Step 5 — Add to solution
+## Step 5 — Add to the solution or workspace
 
 Present what will be added before modifying the `.sln`:
 ```

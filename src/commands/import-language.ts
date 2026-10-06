@@ -13,30 +13,40 @@ import yaml from 'js-yaml';
 // Used by --create-language to scaffold a language.yaml when one is absent.
 export const LANGUAGE_DEFAULTS: Record<
   string,
-  { displayName: string; globs: string[]; icon: string }
+  { displayName: string; prefix: string; stack: string; globs: string[]; icon: string }
 > = {
   typescript: {
     displayName: 'TypeScript',
+    prefix: 'ts',
+    stack: 'node-ts',
     globs: ['**/*.ts', '**/*.tsx', '**/*.mts', '**/*.cts'],
     icon: '🔷',
   },
   angular: {
     displayName: 'Angular',
+    prefix: 'ng',
+    stack: 'node-ts',
     globs: ['**/*.ts', '**/*.html', '**/*.component.ts', '**/*.directive.ts'],
     icon: '🅰️',
   },
   csharp: {
     displayName: '.NET / C#',
+    prefix: 'cs',
+    stack: 'dotnet',
     globs: ['**/*.cs', '**/*.csproj', '**/*.sln', '**/*.razor', '**/*.cshtml'],
     icon: '⚙️',
   },
   python: {
     displayName: 'Python',
+    prefix: 'py',
+    stack: 'python',
     globs: ['**/*.py', '**/*.pyi'],
     icon: '🐍',
   },
   react: {
     displayName: 'React',
+    prefix: 'react',
+    stack: 'node-ts',
     globs: ['**/*.tsx', '**/*.jsx', '**/*.ts', '**/*.js'],
     icon: '⚛️',
   },
@@ -67,13 +77,19 @@ export function resolveDisplayName(
   return lang.charAt(0).toUpperCase() + lang.slice(1);
 }
 
-/** Renders the language.yaml body text for `maybeCreateLanguageYaml`. */
+/**
+ * Renders the language.yaml body text for `maybeCreateLanguageYaml`. Every language names its
+ * artifact `prefix` and its `stack` (catalog/standard.yaml); a language sigil doesn't know uses its
+ * own id for both, and `sync --check` says so if that stack is not declared yet.
+ */
 function renderLanguageYaml(lang: string, displayName: string): string {
   const defaults = LANGUAGE_DEFAULTS[lang];
   const globs = defaults?.globs ?? ['**/*'];
   const icon = defaults?.icon ?? '📁';
   return [
     `displayName: ${JSON.stringify(displayName)}`,
+    `prefix: ${defaults?.prefix ?? lang}`,
+    `stack: ${defaults?.stack ?? lang}`,
     `globs:`,
     ...globs.map(g => `  - "${g}"`),
     `icon: "${icon}"`,

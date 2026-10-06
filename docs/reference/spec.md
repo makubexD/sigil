@@ -398,7 +398,8 @@ reaches it inside skills, and a full build also writes repo-wide rules to a root
 | --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
 | `catalog/shared/`                                         | Cross-language artifacts, one subdirectory per kind: `skills/`, `agents/`, `rules/`, `prompts/`, `hooks/`, `settings/`, `mcps/`, `templates/` |
 | `catalog/languages/<lang>/`                               | Language-specific skills, rules, agents                                                                                                       |
-| `catalog/languages/<lang>/language.yaml`                  | Display name, file globs, icon                                                                                                                |
+| `catalog/languages/<lang>/language.yaml`                  | Display name, artifact-name `prefix`, `stack`, file globs, icon                                                                               |
+| `catalog/standard.yaml`                                   | The catalog standard as data: stacks and families (members, section skeleton, required keys); read by `sync --check` only                     |
 | `catalog/languages/<lang>/skills/<name>/SKILL.md`         | Skill entry point                                                                                                                             |
 | `catalog/languages/<lang>/skills/<name>/references/`      | Supplementary docs bundled with the skill                                                                                                     |
 | `catalog/shared/skills/<name>/SKILL.md`                   | Stack-agnostic (language-less) skill, plus `references/`                                                                                      |

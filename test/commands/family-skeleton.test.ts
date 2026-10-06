@@ -144,6 +144,23 @@ describe('h2Headings', () => {
     const body = '## Step 1 — Reproduce\n```md\n## not a heading\n```\n## 2) Fix\n### sub';
     assert.deepEqual(h2Headings(body).map(sectionKey), ['reproduce', 'fix']);
   });
+
+  it('should close a fence only with a bare run of the same character at least as long', () => {
+    const body = '````md\n```ts\n## inside\n```\n````\n~~~\n## tilde\n```\n~~~\n## After';
+    assert.deepEqual(h2Headings(body), ['After']);
+  });
+
+  it('should keep a trailing # that is part of the text, and drop a closing sequence', () => {
+    assert.deepEqual(h2Headings('## Use C#\n## Output ##'), ['Use C#', 'Output']);
+  });
+
+  it('should treat digits as a step number only when a separator follows', () => {
+    assert.deepEqual(['2FA setup', '404 handling', '3. Fix'].map(sectionKey), [
+      '2fa setup',
+      '404 handling',
+      'fix',
+    ]);
+  });
 });
 
 describe('parseCatalogStandard', () => {

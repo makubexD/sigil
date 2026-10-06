@@ -84,3 +84,13 @@ One skeleton fits all five languages for the weakest families (document, generat
 - generate-tests: one form (the workflow) for all five; py/react convention content moves to their
   reference or rule.
 - Outputs stay the files each AI officially supports; the neutral structure is rendered per target.
+
+## Built differently from the plan (2026-10-05)
+
+- No family alias map: families list their members explicitly, which covers one concern under
+  several names (package-manager) without aliases.
+- Templated members are not compared section by section; their template is their skeleton.
+- No new overlap threshold: templates keep the existing "three concrete duplicates" rule; structure
+  moved to `sections` in `standard.yaml` instead.
+- The glob check requires a leading `**/`; it does not derive globs from `language.yaml`.
+- Pack names were not checked or renamed: a pack name is a plugin name, and renaming one breaks installs.

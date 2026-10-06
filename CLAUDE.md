@@ -126,7 +126,8 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   authored and unmapped. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
 - **One family, one skeleton.** Every language agent, rule and skill belongs to exactly one family in
   `catalog/standard.yaml` (explicit members, optional ordered H2 `sections` and required `keys`, `absent` gaps), read
-  only through `src/catalog-standard.ts` and only by `sync --check` rules — never by consumer commands. Structure is
+  only through `src/catalog-standard.ts` by `sync --check` rules (and rewritten as text by `sigil move`) — never by
+  consumer commands. Structure is
   data there, not a template: `family-skeleton` fails `--check` when a member drifts. A `template:` holds shared prose
   only, added after measuring real overlap with at least three concrete duplicates (three ship:
   `mcp-note`, `code-quality`, `release-skill`). Never rename an id to fit a family; list it as a member. Each
@@ -138,7 +139,7 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   varies with a stack the task chooses → one shared skill with flat `references/stack-<stack>.md`. Tie →
   per-language. Group with `packs.yaml`, never topic folders; references stay one level deep. `catalog-layout`
   (`src/commands/sync/conformance/rules/catalog-layout.ts`) fails `sync --check` on placement and skill-folder
-  violations; it is author-only and adds nothing to `validateCatalog`. (see
+  violations, and on the vocabulary checks in `src/catalog-vocabulary.ts`; it is author-only and adds nothing to `validateCatalog`. (see
   `docs/decisions/catalog-layout-standard-2026-10.md`)
 - **Read catalog and import files only through `src/safe-read.ts`** (regular files, never a followed link, size cap,
   checked on the handle it reads from), and **parse frontmatter only through `src/frontmatter-parse.ts`** —

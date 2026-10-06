@@ -17,6 +17,7 @@ import { z } from 'zod';
 import { KEBAB_ID_RE, KEBAB_NAME_RE } from './schema/shared';
 import { SigilError } from './errors';
 import { readRegularFile } from './safe-read';
+import { sectionKey } from './markdown-headings';
 import type { ArtifactKind } from './types';
 
 /** The file's name, at the catalog root. */
@@ -79,15 +80,45 @@ export interface CatalogStandard {
 
 /** Parses standard.yaml's text; throws a SigilError naming `source` when it is malformed. */
 export function parseCatalogStandard(raw: string, source: string): CatalogStandard {
-  const result = StandardSchema.safeParse(yaml.load(raw, { schema: yaml.JSON_SCHEMA }) ?? {});
+  const result = StandardSchema.safeParse(parseYaml(raw, source) ?? {});
   if (!result.success) {
     const problems = result.error.issues.map(i => `${i.path.join('.') || '(root)'}: ${i.message}`);
     throw new SigilError(`${source} is invalid:\n  ${problems.join('\n  ')}`);
   }
-  return {
-    stacks: result.data.stacks,
-    families: result.data.families.map(toFamilyDef),
-  };
+  const standard = { stacks: result.data.stacks, families: result.data.families.map(toFamilyDef) };
+  const duplicates = duplicateProblems(standard.families);
+  if (duplicates.length > 0) {
+    throw new SigilError(`${source} is invalid:\n  ${duplicates.join('\n  ')}`);
+  }
+  return standard;
+}
+
+function parseYaml(raw: string, source: string): unknown {
+  try {
+    return yaml.load(raw, { schema: yaml.JSON_SCHEMA, filename: source });
+  } catch (err) {
+    throw new SigilError(`${source} is not valid YAML`, { cause: err });
+  }
+}
+
+/**
+ * Two families with one id, or a skeleton naming one section twice (after step numbers are
+ * dropped): the skeleton check matches sections in order, which needs each one to be distinct.
+ */
+function duplicateProblems(families: readonly FamilyDef[]): string[] {
+  const problems: string[] = [];
+  const ids = new Set<string>();
+  for (const family of families) {
+    if (ids.has(family.id)) problems.push(`family id '${family.id}' is declared twice`);
+    ids.add(family.id);
+    const keys = new Set<string>();
+    for (const section of family.sections ?? []) {
+      const key = sectionKey(section.heading);
+      if (keys.has(key)) problems.push(`family '${family.id}': section '${section.heading}' twice`);
+      keys.add(key);
+    }
+  }
+  return problems;
 }
 
 function toFamilyDef(f: z.infer<typeof FamilySchema>): FamilyDef {
@@ -118,15 +149,4 @@ function isLink(file: string): boolean {
   } catch {
     return false;
   }
-}
-
-/** The family each member id belongs to (the first, when data lists one twice). */
-export function familyByMember(standard: CatalogStandard): Map<string, FamilyDef> {
-  const byMember = new Map<string, FamilyDef>();
-  for (const family of standard.families) {
-    for (const member of family.members) {
-      if (!byMember.has(member)) byMember.set(member, family);
-    }
-  }
-  return byMember;
 }

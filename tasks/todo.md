@@ -60,7 +60,7 @@ Spec: `SPEC.md`
 
 - [x] T0 Plan commit
 - [x] A1 ADR "one family, one skeleton" + CLAUDE.md template-invariant amendment
-- [x] A2 Families as data (`catalog/standard.yaml`: kind, explicit members, ordered sections, required keys, aliases)
+- [x] A2 Families as data (`catalog/standard.yaml`: kind, explicit members, ordered sections, required keys, absent gaps)
 - [x] A3 One vocabulary as data (`language.yaml` `prefix` + `stack`; `catalog-layout` validates)
 - [x] A4 `family-skeleton` conformance check (divergent fixture fails)
 - [x] A5 `catalog-symmetry` reads families from data (fixes the package-manager blind spot)

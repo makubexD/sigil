@@ -35,10 +35,18 @@ carrying content that never ships. It needs that root, so a catalog built in mem
 The catalog standard itself is data: `catalog/standard.yaml` (read only through
 `src/catalog-standard.ts`) declares the stacks and the families. A family has a kind, explicit
 members, and optionally the H2 `sections` every member has in order and the `keys` every member
-sets. Three `sync --check` rules read it: `family-skeleton` (a member that drifts, or data naming a
-missing artifact), `catalog-layout` (each `language.yaml` `prefix` and `stack`, names off their
-prefix, stack files for undeclared stacks; `src/catalog-vocabulary.ts`) and `catalog-symmetry`
-(families from the data instead of from names). Consumer commands never read the file. See
+sets. Three `sync --check` rules read it:
+
+- `family-skeleton`: a member whose sections drift or that lacks a required key, data naming a
+  missing artifact or one of another kind, a member in two families, a language artifact in no
+  family;
+- `catalog-layout` (`src/catalog-vocabulary.ts`): each `language.yaml` `prefix` (unique) and
+  `stack` (declared), names off their prefix, stack files for undeclared stacks, a language rule
+  glob without a leading `**/`, a shared rule two rules of one language extend, a language
+  description that never names its language;
+- `catalog-symmetry`: families from the data instead of from names, `absent` as deliberate gaps.
+
+Consumer commands never read the file; `sigil move` renames a moved id in it. See
 [family-skeleton-standard-2026-10.md](../decisions/family-skeleton-standard-2026-10.md).
 
 ### Adding a platform target

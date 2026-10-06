@@ -4,7 +4,7 @@
  * Steps:
  *   1. Move the file(s) to the new path.
  *   2. Update the id field in the moved artifact's frontmatter.
- *   3. Rewrite all referrer files.
+ *   3. Rewrite all referrer files, and the member id in catalog/standard.yaml.
  *   4. Re-load and validate. Roll back everything on any violation.
  */
 import fs from 'fs';
@@ -15,6 +15,7 @@ import { checkSourceArtifact } from '../check-source';
 import { SKILL_FILENAME } from '../../paths';
 import type { MovePlan } from './plan';
 import { languagePatch } from './language';
+import { moveStandardMember } from './standard-member';
 
 export interface MoveResult {
   ok: boolean;
@@ -188,6 +189,9 @@ export function executeMove(options: ExecuteMoveOptions): MoveResult {
     moveFiles(plan, rollbackSteps, changed);
     updateMovedId(plan, rollbackSteps);
     rewriteReferrers(plan, catalog, rollbackSteps, changed);
+    const ids = { oldId: plan.oldId, newId: plan.newId };
+    const standard = moveStandardMember(catalogDir, ids, rollbackSteps);
+    if (standard) changed.push(standard);
 
     const violations = postMoveValidate(plan, targets, loadFn, catalogDir);
     if (violations.length > 0) {

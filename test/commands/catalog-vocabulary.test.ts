@@ -104,6 +104,46 @@ describe('catalog vocabulary (catalog-layout)', () => {
     ]);
   });
 
+  it('should not crash on a single-string appliesTo or extends (sync runs before validate)', async () => {
+    const scalar = rule('csharp/cs-p').replace(
+      '---\n\n',
+      'appliesTo: .gitignore\nextends: shared/base\n---\n\n',
+    );
+    const found = await layoutFindings({
+      'standard.yaml': STANDARD,
+      'languages/csharp/language.yaml': csharpYaml('prefix: cs\nstack: dotnet\n'),
+      'languages/csharp/rules/cs-p.rule.md': scalar,
+    });
+    assert.deepEqual(found, ["appliesTo '.gitignore' matches only at the root; start it with **/"]);
+  });
+
+  it('should match a language name as a word, not inside another word', async () => {
+    const reactive = rule('react/react-p').replace('A C# probe.', 'Keeps state reactive.');
+    const found = await layoutFindings({
+      'standard.yaml': 'stacks:\n  - id: node-ts\n    displayName: Node\n',
+      'languages/react/language.yaml': 'displayName: "React"\nprefix: react\nstack: node-ts\n',
+      'languages/react/rules/react-p.rule.md': reactive,
+    });
+    assert.deepEqual(found, ['description does not name its language (react, React)']);
+  });
+
+  it('should name standard.yaml when its YAML does not parse', () => {
+    assert.throws(() => parseCatalogStandard('families: [', 'the-file'), /the-file/);
+  });
+
+  it('should reject two families with one id, or a skeleton naming one section twice', () => {
+    const fam = (id: string, sections = '') =>
+      `  - id: ${id}\n    kind: rule\n    members: [a/b-${id}]\n${sections}`;
+    assert.throws(
+      () => parseCatalogStandard(`families:\n${fam('x')}${fam('x')}`, 's'),
+      /family id 'x'/,
+    );
+    assert.throws(
+      () => parseCatalogStandard(`families:\n${fam('y', '    sections: [A, "1. A"]\n')}`, 's'),
+      /section '1. A' twice/,
+    );
+  });
+
   it('should leave a catalog without standard.yaml to the older checks', async () => {
     const found = await layoutFindings({
       'languages/csharp/language.yaml': csharpYaml(''),
@@ -129,6 +169,26 @@ describe('catalog-symmetry from family data', () => {
     const packageManager = found.find(f => /family 'package-manager'/.test(f.detail));
     assert.ok(packageManager, found.map(f => f.detail).join('\n'));
     assert.match(packageManager.detail, /but not angular/);
+  });
+
+  it('should still report a gap when absent names a language that has a member', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
+    const standard = parseCatalogStandard(
+      'families:\n  - id: async\n    kind: rule\n' +
+        '    members: [csharp/cs-async, python/py-async]\n' +
+        '    absent:\n      python: x\n      react: x\n      angular: x\n',
+      'probe',
+    );
+    const languages = ['angular', 'csharp', 'python', 'react', 'typescript'];
+    const details = declaredFindings(standard, catalog, languages).map(f => f.detail);
+    assert.ok(
+      details.some(d => /but not typescript/.test(d)),
+      details.join('\n'),
+    );
+    assert.ok(
+      details.some(d => /absent lists python, which has a member/.test(d)),
+      details.join('\n'),
+    );
   });
 
   it('should treat a language the family marks absent as a deliberate gap', async () => {

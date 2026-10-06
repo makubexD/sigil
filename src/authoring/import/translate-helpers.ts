@@ -23,8 +23,8 @@ export function splitToolsString(raw: unknown): string[] {
  *
  * cs-generate-tests, language=csharp → ['csharp', 'generate', 'tests']
  */
-export function tagsFromSlug(slug: string, language: string): string[] {
-  const withoutPrefix = stripLanguagePrefix(slug, language);
+export function tagsFromSlug(slug: string, language: string, prefix?: string): string[] {
+  const withoutPrefix = stripLanguagePrefix(slug, prefix);
   const words = withoutPrefix.split('-').filter(Boolean);
   return [language, ...words];
 }

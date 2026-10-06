@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1-M5 done (PRs #24-#35). C3 done (PRs #37-#39). Skill anatomy done (PRs #40-#41). Language layers in progress (SPEC-language-layers.md). Then the end block (live checks, one release).
+Status: M1-M5 done (PRs #24-#35). C3 done (PRs #37-#39). Skill anatomy done (PRs #40-#41). Language layers done (PRs #42-#45). Then the end block (live checks, one release).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -84,7 +84,7 @@ Spec: `SPEC.md`
 - [x] S1 Relocation: stack parts in their home language, go/rust languages, layout checks, move renames parts (and fixes move's name:)
 - [x] S2 Generated stack index
 - [x] S3 Per-language allow-dev-tools, soft illustrations into parts, stack-leak warning
-- [ ] S4 Import routing + single prefix source
+- [x] S4 Import routing + single prefix source
 
 ## End block: before the release (development first; nothing here is dropped)
 

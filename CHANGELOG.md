@@ -184,6 +184,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `sigil import --shared` sends a skill's `stack-<x>.md` files to the stack's home language as
+  stack parts, so imported stack text never lands in `shared/`; the report shows where each went.
+  A `--language` import takes no stack files. Titles drop the language prefix read from its
+  `language.yaml`, so every language works, not only the five that were hard-coded.
+
 - The stack table in the `cli` and `wizard` skills is generated from their stack parts
   (`<!-- stack-index -->`), each row labelled by the part's own heading (`Go: cobra`). Installed
   copies of `shared/cli` and `shared/wizard` show an update: the table now has two columns.

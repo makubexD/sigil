@@ -87,6 +87,7 @@ function renderAndValidate(
     ...(item.references ?? []).flatMap(ref =>
       scanImportContent(ref.content, referencePath(item.destPath, ref.name)),
     ),
+    ...(item.stackParts ?? []).flatMap(part => scanImportContent(part.content, part.destPath)),
   ];
   return { content, violations: [...violations.map(v => v.problem), ...trustViolations] };
 }
@@ -111,6 +112,7 @@ function writeItemToDisk(item: ImportItem, content: string): void {
       file: referencePath(item.destPath, ref.name),
       content: ref.content,
     })),
+    ...(item.stackParts ?? []).map(part => ({ file: part.destPath, content: part.content })),
   ];
   writes.forEach(w => assertNoLinkAt(w.file));
   for (const w of writes) {

@@ -14,20 +14,20 @@ import { renderArtifactFile } from '../../dist-cli/authoring/import/plan';
 
 describe('slugToTitle', () => {
   it('strips cs- prefix and appends displayName', () => {
-    assert.equal(slugToTitle('cs-generate-tests', '.NET / C#'), 'Generate Tests (.NET / C#)');
+    assert.equal(slugToTitle('cs-generate-tests', '.NET / C#', 'cs'), 'Generate Tests (.NET / C#)');
   });
 
   it('strips ts- prefix', () => {
-    assert.equal(slugToTitle('ts-audit-deps', 'TypeScript'), 'Audit Deps (TypeScript)');
+    assert.equal(slugToTitle('ts-audit-deps', 'TypeScript', 'ts'), 'Audit Deps (TypeScript)');
   });
 
   it('strips ng- prefix and applies acronym map', () => {
-    assert.equal(slugToTitle('ng-rxjs', 'Angular'), 'RxJS (Angular)');
+    assert.equal(slugToTitle('ng-rxjs', 'Angular', 'ng'), 'RxJS (Angular)');
   });
 
   it('applies acronym map to API', () => {
     assert.equal(
-      slugToTitle('cs-api-compat-reviewer', '.NET / C#', 'csharp'),
+      slugToTitle('cs-api-compat-reviewer', '.NET / C#', 'cs'),
       'API Compat Reviewer (.NET / C#)',
     );
   });
@@ -37,14 +37,14 @@ describe('slugToTitle', () => {
   });
 
   it('single-word slug', () => {
-    assert.equal(slugToTitle('cs-release', '.NET / C#'), 'Release (.NET / C#)');
+    assert.equal(slugToTitle('cs-release', '.NET / C#', 'cs'), 'Release (.NET / C#)');
   });
 });
 
 // ─── translateFrontmatter: rule ───────────────────────────────────────────────
 
 describe('translateFrontmatter — rule', () => {
-  const opts = { language: 'csharp', displayName: '.NET / C#' };
+  const opts = { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' };
 
   it('maps paths → appliesTo', () => {
     const { frontmatter } = translateFrontmatter(
@@ -101,7 +101,7 @@ describe('translateFrontmatter — rule', () => {
 // ─── translateFrontmatter: agent ──────────────────────────────────────────────
 
 describe('translateFrontmatter — agent', () => {
-  const opts = { language: 'csharp', displayName: '.NET / C#' };
+  const opts = { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' };
 
   it('maps comma-string tools to array', () => {
     const { frontmatter } = translateFrontmatter(
@@ -160,7 +160,7 @@ describe('translateFrontmatter — agent', () => {
 // ─── translateFrontmatter: skill ─────────────────────────────────────────────
 
 describe('translateFrontmatter — skill', () => {
-  const opts = { language: 'csharp', displayName: '.NET / C#' };
+  const opts = { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' };
 
   it('maps allowed-tools (comma string) to allowedTools array', () => {
     const { frontmatter } = translateFrontmatter(
@@ -285,7 +285,7 @@ describe('renderArtifactFile', () => {
         description: 'Async correctness.',
         paths: ['**/*.cs'],
       },
-      { language: 'csharp', displayName: '.NET / C#' },
+      { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' },
     );
     const content = renderArtifactFile(frontmatter, '\nBody text.\n');
     const parsed = parse(content);
@@ -304,7 +304,7 @@ describe('renderArtifactFile', () => {
         'allowed-tools': 'Read, Write',
         'argument-hint': '[file-or-class] (optional)',
       },
-      { language: 'csharp', displayName: '.NET / C#' },
+      { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' },
     );
     const content = renderArtifactFile(frontmatter, '\nBody.\n');
     // gray-matter must parse without throwing ([ was previously unquoted → YAML parse error)
@@ -321,7 +321,7 @@ describe('renderArtifactFile', () => {
         description: 'x',
         paths: ['**/*.cs', '**/*.csproj'],
       },
-      { language: 'csharp', displayName: '.NET / C#' },
+      { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' },
     );
     const content = renderArtifactFile(frontmatter, '\nBody.\n');
     // gray-matter must parse without throwing (**/*.cs was previously unquoted → YAML alias error)
@@ -336,7 +336,7 @@ describe('renderArtifactFile', () => {
       {
         description: 'x',
       },
-      { language: 'csharp', displayName: '.NET / C#' },
+      { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' },
     );
     const content = renderArtifactFile(frontmatter, '\nBody.\n');
     const parsed = parse(content);
@@ -351,7 +351,7 @@ describe('renderArtifactFile', () => {
         description: 'x',
         'disable-model-invocation': true,
       },
-      { language: 'csharp', displayName: '.NET / C#' },
+      { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' },
     );
     const contentTrue = renderArtifactFile(fmTrue, '\n');
     const parsedTrue = parse(contentTrue);
@@ -363,7 +363,7 @@ describe('renderArtifactFile', () => {
       {
         description: 'x',
       },
-      { language: 'csharp', displayName: '.NET / C#' },
+      { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' },
     );
     const contentFalse = renderArtifactFile(fmFalse, '\n');
     const parsedFalse = parse(contentFalse);
@@ -378,7 +378,7 @@ describe('renderArtifactFile', () => {
         description: 'Generate tests.',
         when_to_use: 'Use after coding.',
       },
-      { language: 'csharp', displayName: '.NET / C#' },
+      { language: 'csharp', displayName: '.NET / C#', prefix: 'cs' },
     );
     const content = renderArtifactFile(frontmatter, 'Original body.\n');
     const parsed = matter(content);

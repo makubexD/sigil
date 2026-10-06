@@ -17,6 +17,8 @@ import type { DiscoveredFile } from './discover';
 import type { ReferenceFile } from '../../types';
 import type { CatalogFrontmatter } from './translate';
 import { namespaceDir } from '../../catalog-layout';
+import { loadCatalogStandard, type CatalogStandard } from '../../catalog-standard';
+import { routeStackFiles, type RoutedStackPart } from './stack-parts';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -39,6 +41,10 @@ export interface ImportItem {
   descriptionSynthesized?: boolean | undefined;
   /** A skill's references/*.md files, written beside its SKILL.md. */
   references?: ReferenceFile[] | undefined;
+  /** A shared skill's stack files, written as parts in each stack's home language (stack-parts.ts). */
+  stackParts?: RoutedStackPart[] | undefined;
+  /** Stack files left out, and why. */
+  skippedStackFiles?: Array<{ name: string; reason: string }> | undefined;
 }
 
 export interface ImportPlan {
@@ -146,8 +152,28 @@ export interface PlanOptions {
   language: string;
   /** Language display name for title generation (e.g. ".NET / C#"). */
   displayName: string;
+  /** The language's artifact-name prefix from its language.yaml; absent for shared. */
+  prefix?: string | undefined;
   /** Catalog root directory (for destination path computation). */
   catalogDir: string;
+  /** The catalog's standard.yaml, which routes a skill's stack files; absent routes nothing. */
+  standard?: CatalogStandard | undefined;
+}
+
+/** A skill's own references, its stack parts and the stack files left out, for `id`. */
+function referenceFields(file: DiscoveredFile, id: string, opts: PlanOptions) {
+  if (!file.references) return {};
+  const target = { namespace: opts.language, skillName: id.split('/').pop() ?? id };
+  const routing = routeStackFiles(
+    file.references,
+    { ...target, catalogDir: opts.catalogDir },
+    opts.standard,
+  );
+  return {
+    references: routing.references,
+    stackParts: routing.parts,
+    skippedStackFiles: routing.skipped,
+  };
 }
 
 /** Prepends the skill body prefix (e.g. "## When to Use" section), if any. */
@@ -160,6 +186,7 @@ function buildImportItem(file: DiscoveredFile, opts: PlanOptions): ImportItem {
   const t = translateFrontmatter(file.kind, file.slug, file.frontmatter, {
     language: opts.language,
     displayName: opts.displayName,
+    prefix: opts.prefix,
   });
   const destPath = computeDestinationPath(t.frontmatter.id, file.kind, opts.catalogDir);
 
@@ -172,7 +199,7 @@ function buildImportItem(file: DiscoveredFile, opts: PlanOptions): ImportItem {
     droppedFields: t.droppedFields,
     conflicts: fs.existsSync(destPath),
     descriptionSynthesized: t.descriptionSynthesized,
-    references: file.references,
+    ...referenceFields(file, t.frontmatter.id, opts),
   };
 }
 
@@ -183,7 +210,8 @@ function buildImportItem(file: DiscoveredFile, opts: PlanOptions): ImportItem {
  * @param opts        Language/catalog context
  */
 export function buildImportPlan(discovered: DiscoveredFile[], opts: PlanOptions): ImportPlan {
-  const items = discovered.map(file => buildImportItem(file, opts));
+  const standard = opts.standard ?? loadCatalogStandard(opts.catalogDir);
+  const items = discovered.map(file => buildImportItem(file, { ...opts, standard }));
   const droppedFieldsSummary: ImportPlan['droppedFieldsSummary'] = items
     .filter(item => item.droppedFields.length > 0)
     .map(item => ({ relativePath: item.relativePath, fields: item.droppedFields }));

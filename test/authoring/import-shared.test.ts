@@ -163,3 +163,75 @@ describe('sigil import --shared', () => {
     });
   });
 });
+
+/** A catalog with a standard: go's stack text lives in languages/go, and dotnet is undeclared. */
+function catalogWithStandard(root: string): string {
+  const dir = emptyCatalog(root);
+  fs.writeFileSync(
+    path.join(dir, 'standard.yaml'),
+    'stacks:\n  - id: go\n    displayName: Go\n    home: go\n',
+  );
+  const go = path.join(dir, 'languages', 'go');
+  fs.mkdirSync(go, { recursive: true });
+  fs.writeFileSync(
+    path.join(go, 'language.yaml'),
+    'displayName: "Go"\nprefix: go\nstack: go\nglobs:\n  - "**/*.go"\n',
+  );
+  return dir;
+}
+
+describe('sigil import: stack files go to their language', () => {
+  it("should write a shared skill's stack file as a part in the stack's home", async () => {
+    await withTempDirAsync(async root => {
+      const catalog = catalogWithStandard(root);
+      const src = writeSource(root);
+      fs.writeFileSync(path.join(src, 'skills/demo/references/stack-dotnet.md'), '# .NET\n');
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      const part = path.join(catalog, 'languages', 'go', 'stack-parts', 'demo.md');
+      assert.equal(fs.readFileSync(part, 'utf8'), '# Go\nUse cobra.\n');
+      const refs = path.join(catalog, 'shared', 'skills', 'demo', 'references');
+      assert.ok(!fs.existsSync(path.join(refs, 'stack-go.md')), 'no stack text in shared/');
+      assert.ok(
+        !fs.existsSync(path.join(refs, 'stack-dotnet.md')),
+        'undeclared stack not imported',
+      );
+      assert.match(out, /stack-go\.md\s+→\s+catalog\/languages\/go\/stack-parts\/demo\.md/);
+      assert.match(out, /stack-dotnet\.md: stack 'dotnet' is not declared in standard\.yaml/);
+      assert.match(out, /<!-- stack-index -->/);
+    });
+  });
+
+  it('should not import stack files into a language skill', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = catalogWithStandard(root);
+      const out = await captured(() =>
+        runImport(writeSource(root), importOpts(catalog, { language: 'go' })),
+      );
+      assert.ok(!fs.existsSync(path.join(catalog, 'languages', 'go', 'stack-parts')));
+      assert.ok(
+        !fs.existsSync(
+          path.join(catalog, 'languages', 'go', 'skills', 'demo', 'references', 'stack-go.md'),
+        ),
+      );
+      assert.match(out, /a language skill carries no stack files; import it with --shared/);
+    });
+  });
+});
+
+describe('sigil import: prefixes come from language.yaml', () => {
+  it("should strip a language's own prefix from the title, for any language", async () => {
+    await withTempDirAsync(async root => {
+      const catalog = catalogWithStandard(root);
+      const src = path.join(root, 'go-source');
+      const skill = path.join(src, 'skills', 'go-lint-fix', 'SKILL.md');
+      fs.mkdirSync(path.dirname(skill), { recursive: true });
+      fs.writeFileSync(
+        skill,
+        '---\nname: go-lint-fix\ndescription: Fix Go lint. Use for Go.\n---\n\nFix.\n',
+      );
+      await captured(() => runImport(src, importOpts(catalog, { language: 'go' })));
+      const written = path.join(catalog, 'languages', 'go', 'skills', 'go-lint-fix', 'SKILL.md');
+      assert.equal(matter(fs.readFileSync(written, 'utf8')).data.title, 'Lint Fix (Go)');
+    });
+  });
+});

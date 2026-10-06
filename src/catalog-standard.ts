@@ -2,7 +2,8 @@
  * The one reader of `catalog/standard.yaml`: the catalog standard as data
  * (docs/decisions/family-skeleton-standard-2026-10.md). It declares the stacks a skill may carry a
  * `references/stack-<id>.md` for, and the families: each family's kind, its explicit members, and
- * optionally the H2 sections every member has, in order, and the frontmatter keys every member sets.
+ * optionally the H2 sections every member has, in order, and the frontmatter keys every member sets;
+ * and the severity scale every report template grades findings on.
  *
  * Author-only: the `sync --check` rules read it (`family-skeleton`, `catalog-layout`,
  * `catalog-symmetry`); consumer commands and the wizard never do. A catalog without the file
@@ -50,6 +51,7 @@ const StackSchema = z.object({
 const StandardSchema = z.object({
   stacks: z.array(StackSchema).default([]),
   families: z.array(FamilySchema).default([]),
+  severities: z.array(z.string().min(1)).default([]),
 });
 
 /** One required H2 section of a family's skeleton. */
@@ -76,6 +78,8 @@ export interface StackDef {
 export interface CatalogStandard {
   readonly stacks: readonly StackDef[];
   readonly families: readonly FamilyDef[];
+  /** The tiers a report grades findings on, highest first; empty when the catalog sets none. */
+  readonly severities: readonly string[];
 }
 
 /** Parses standard.yaml's text; throws a SigilError naming `source` when it is malformed. */
@@ -85,7 +89,8 @@ export function parseCatalogStandard(raw: string, source: string): CatalogStanda
     const problems = result.error.issues.map(i => `${i.path.join('.') || '(root)'}: ${i.message}`);
     throw new SigilError(`${source} is invalid:\n  ${problems.join('\n  ')}`);
   }
-  const standard = { stacks: result.data.stacks, families: result.data.families.map(toFamilyDef) };
+  const { stacks, severities } = result.data;
+  const standard = { stacks, severities, families: result.data.families.map(toFamilyDef) };
   const duplicates = duplicateProblems(standard.families);
   if (duplicates.length > 0) {
     throw new SigilError(`${source} is invalid:\n  ${duplicates.join('\n  ')}`);

@@ -80,7 +80,21 @@ breaking for type-checker-strict consumers even when the runtime behavior is unc
 narrowing a parameter from `Sequence[int]` to `list[int]` is a breaking type-surface change even
 though most call sites still work at runtime).
 
-## 4. Output
+## 4. Check deprecation discipline
+
+For any public symbol, parameter, or behavior being removed in this release:
+- Did a prior release emit `warnings.warn("... use X instead", DeprecationWarning, stacklevel=2)` on
+  use, or mark it with `@typing_extensions.deprecated` (`@warnings.deprecated` on Python 3.13+) so
+  type checkers flag call sites?
+- Is the replacement and the removal version named in the docstring or changelog?
+
+```bash
+git grep -n -e 'DeprecationWarning' -e '@deprecated' <last-release-tag> -- '*.py'
+```
+
+Missing deprecation cycle on a removed symbol escalates to a **Breaking** finding.
+
+## 5. Output
 
 ```
 ## API Compatibility Report

@@ -127,6 +127,29 @@ describe('catalog vocabulary (catalog-layout)', () => {
     assert.deepEqual(found, ['description does not name its language (react, React)']);
   });
 
+  it('should hold report tier headings to the declared severities', async () => {
+    const template = (tiers: string[]) =>
+      rule('shared/p').replace(
+        '- **P.** x',
+        `\`\`\`\n${tiers.map(t => `#### ${t}`).join('\n')}\n\`\`\``,
+      );
+    const scale = `${STANDARD}severities: [Critical, High, Medium, Low]\n`;
+    const ok = await layoutFindings({
+      'standard.yaml': scale,
+      'shared/rules/p.rule.md': template(['Critical', 'High', 'Medium', 'Low', 'Examples']),
+    });
+    assert.deepEqual(ok, []);
+    const found = await layoutFindings({
+      'standard.yaml': scale,
+      'shared/rules/p.rule.md': template(['Major', 'Low / Informational', 'High / Medium / Low']),
+    });
+    assert.equal(found.length, 3, found.join('\n'));
+    assert.ok(
+      found.every(d => /not one severity of standard\.yaml/.test(d)),
+      found.join('\n'),
+    );
+  });
+
   it('should name standard.yaml when its YAML does not parse', () => {
     assert.throws(() => parseCatalogStandard('families: [', 'the-file'), /the-file/);
   });

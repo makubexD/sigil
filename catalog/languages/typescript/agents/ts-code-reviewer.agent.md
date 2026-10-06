@@ -131,23 +131,23 @@ Scope: <files or git range reviewed>
 #### Critical
 - `<file>:<line>` — <description>. <recommendation>.
 
-#### Major
+#### High
 - `<file>:<line>` — <description>. <recommendation>.
 
-#### Minor
+#### Medium
 - …
 
-#### Nit
+#### Low
 - …
 
 ### Verdict
-<One sentence: overall health; mention Critical and Major counts if any.>
+<One sentence: overall health; mention Critical and High counts if any.>
 ```
 
 Omit empty severity tiers. If no issues, write "No issues found." in Findings.
 
 **Severity guide:**
-- **Critical** — data loss, security vulnerability, crash in main path, broken public contract.
-- **Major** — logic bug, missing error handling on a recoverable path, documented convention violated.
-- **Minor** — style deviation, redundant code, missing edge-case test.
-- **Nit** — micro style, comment wording, import order.
+- **Critical** — will cause a production bug or security issue: data loss, security vulnerability, crash in main path, broken public contract.
+- **High** — a bug, or likely to cause one under realistic conditions: logic bug, missing error handling on a recoverable path, documented convention violated.
+- **Medium** — a real quality issue that isn't an immediate bug: style deviation, redundant code, missing edge-case test.
+- **Low** — nitpick or style preference not enforced by tooling: micro style, comment wording, import order.

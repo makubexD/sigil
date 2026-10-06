@@ -72,11 +72,37 @@ diff).
 - New interactive behavior added with no corresponding Testing Library test.
 - A test querying by `data-testid` where `getByRole`/`getByLabelText` would work (see `react-testing`).
 
-## 4. Output
+## 4. Run the quality gate (read-only)
+
+Discover the gate from `package.json` scripts (look for `check`, `lint`, `typecheck`, `test`). If
+found, run it and capture output. If not found, run the fallback gate — never with `--fix` or
+`--write`, and never with snapshot update flags (`-u`):
+
+```bash
+npx tsc --noEmit
+npx eslint . --ext .ts,.tsx
+npx vitest run        # or: npx jest --ci, whichever the project uses
+```
+
+The `eslint` run is where `eslint-plugin-react-hooks` (`rules-of-hooks`, `exhaustive-deps`) and
+`eslint-plugin-jsx-a11y` findings surface — cite them against the diff lines they hit rather than
+repeating them as separate manual findings. If `prettier` or `biome` is configured, run
+`prettier --check .` or `biome check .`; otherwise note "formatter not configured".
+
+Record exit codes and include any error output verbatim. A failing gate on a line the diff touched
+is at least a **High** finding.
+
+## 5. Output
 
 ```
 ## Code Review Report
 Scope: <what was reviewed>
+
+### Quality gate
+✅ tsc: passed  /  ❌ tsc: <error summary>
+✅ eslint: passed  /  ❌ eslint: N errors, M warnings
+✅ tests: N passed  /  ❌ tests: N failed
+✅ format: passed  /  ⏭ format: not configured  /  ❌ format: N files differ
 
 ### Findings
 

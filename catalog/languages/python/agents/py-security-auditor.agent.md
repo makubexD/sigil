@@ -123,7 +123,7 @@ Python version: <from pyproject.toml requires-python>
 #### Medium
 ...
 
-#### Low / Informational
+#### Low
 ...
 
 ### Verdict

@@ -104,7 +104,7 @@ git diff origin/main...HEAD -- "**/*.cs" "**/*.csproj"
 
 For every removed public member, verify:
 1. Was it marked `[Obsolete("Use X instead. This will be removed in vN.")]` in a previous release?
-2. If not, the removal is a surprise breaking change — flag as Critical.
+2. If not, the removal is a surprise breaking change — list it first under Breaking changes and say it had no deprecation cycle.
 3. If yes, the removal is expected — flag as informational (still a major bump).
 
 Check `AssemblyVersion` vs `FileVersion` / `InformationalVersion` in `.csproj` or `Directory.Build.props`
@@ -145,5 +145,6 @@ Rationale: <1–2 sentences summarizing the highest-severity category found>
 Omit sections with no findings.
 
 **Note:** enum additions that are not `[Flags]` can silently break callers using exhaustive `switch`
-expressions without a discard arm (`_`). Flag these as Minor even though they are technically
-source-compatible.
+expressions without a discard arm (`_`). List them under Compatible changes
+with a warning: a `switch` expression without a discard arm throws `SwitchExpressionException`
+for the new value.

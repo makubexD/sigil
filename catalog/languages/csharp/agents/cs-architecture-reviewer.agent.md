@@ -60,7 +60,7 @@ Discover the solution root from `.sln` files or `Directory.Build.props`.
 - Read any rules files present.
 - Scan `Directory.Build.props` and each `.csproj` for TFMs, analyzer settings, and `<ProjectReference>` declarations.
 - Look for architecture decision records (`docs/adr/`, `decisions/`).
-- Note stated layering (e.g. `Core` → `Application` → `Infrastructure` → `API`); violations of declared boundaries are Major findings.
+- Note stated layering (e.g. `Core` → `Application` → `Infrastructure` → `API`); violations of declared boundaries are High findings.
 
 ## 3. Build the dependency graph
 
@@ -112,7 +112,7 @@ If `dotnet-depends` or `NDepend` CLI is available, run it and include the output
 
 **Circular dependencies**
 - List every project-level cycle with the full chain: `A → B → C → A`.
-- Note whether the cycle is across top-level packages (Critical) or within a single feature folder (Major).
+- Note whether the cycle is across top-level packages (Critical) or within a single feature folder (High).
 
 **Missing abstractions**
 - External services (HTTP clients, DB connections, file system, message queues) used directly in domain code rather than behind an `interface` defined in the domain layer?
@@ -132,29 +132,29 @@ Scope: <what was analyzed>
 #### Critical
 - `ProjectA/ProjectA.csproj` → `ProjectB/ProjectB.csproj` — <issue>. **Why:** <principle violated>. **Recommendation:** <concrete structural change>.
 
-#### Major
+#### High
 ...
 
-#### Minor
+#### Medium
 ...
 
-#### Nit
+#### Low
 ...
 
 ### Circular dependencies
 <List each cycle: A → B → C → A. "None detected" if clean.>
 
 ### Verdict
-<One sentence: structurally healthy / needs refactoring before scale. Mention Critical and Major counts.>
+<One sentence: structurally healthy / needs refactoring before scale. Mention Critical and High counts.>
 ```
 
 Omit tiers with no findings.
 
 **Severity guide:**
-- **Critical** — circular project reference causing build failure; domain importing infrastructure; God project with 10+ unrelated responsibilities.
-- **Major** — dependency inversion violation; cross-boundary leakage; missing abstraction over an external service in the domain layer.
-- **Minor** — low-cohesion project; catch-all "Common" namespace; orphaned project not referenced anywhere.
-- **Nit** — naming inconsistency, minor structural asymmetry.
+- **Critical** — will cause a build or runtime failure or block safe change: circular project reference causing build failure; domain importing infrastructure; God project with 10+ unrelated responsibilities.
+- **High** — likely to cause defects or block scaling under realistic growth: dependency inversion violation; cross-boundary leakage; missing abstraction over an external service in the domain layer.
+- **Medium** — a real structural quality issue that isn't an immediate defect: low-cohesion project; catch-all "Common" namespace; orphaned project not referenced anywhere.
+- **Low** — nitpick: naming inconsistency, minor structural asymmetry.
 
 ## 6. Design mode
 

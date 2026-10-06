@@ -114,7 +114,7 @@ Angular / framework version: <from package.json>
 #### Medium
 ...
 
-#### Low / Informational
+#### Low
 ...
 
 ### Verdict

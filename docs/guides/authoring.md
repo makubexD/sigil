@@ -314,7 +314,8 @@ families:
 To join an existing family instead, add the id to its `members` and give the artifact the
 family's `sections` (H2 headings, in order) and `keys`. A family is matched by its member list,
 never by name. `sigil sync --check` fails (`family-skeleton`) on a member whose sections drift and
-on an artifact in no family. See
+on an artifact in no family. A report template grades findings with `#### ` headings taken from the
+standard's `severities` (Critical, High, Medium, Low); `catalog-layout` fails any other tier. See
 [family-skeleton-standard-2026-10.md](../decisions/family-skeleton-standard-2026-10.md).
 
 **Step 5 — register the pack** (`packs.yaml`):

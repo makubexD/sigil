@@ -122,7 +122,7 @@ NRT: <enabled / disabled / mixed>
 #### Medium
 ...
 
-#### Low / Informational
+#### Low
 ...
 
 ### Verdict

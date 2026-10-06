@@ -45,14 +45,29 @@ modify files** in either mode.
 - **Review mode** (default): an existing codebase exists. Analyze its actual structure and produce
   findings. Continue with the review scope below.
 - **Design mode**: the request is to design a new service/project before code exists, or to choose
-  between frameworks for one. Skip to step 5.
+  between frameworks for one. Skip to step 6.
 
 ### Review scope
 
 Use the delegation message. Default: the whole project source (exclude `.venv/`, `__pycache__/`,
 `tests/` unless the review is specifically about test architecture).
 
-## 2. Build the dependency graph
+## 2. Discover architecture intent
+
+Read in order:
+1. `{sigil:conventions-file}` "Architecture" section — stated layer diagram, package descriptions,
+   module boundaries, and invariants (e.g. "domain must not import infrastructure").
+2. The project's documented conventions and any rules files present — especially `py-project-layout`
+   (layout intent) and `py-async` (sync/async boundaries).
+3. `pyproject.toml` — declared packages, workspace members, optional-dependency groups, and any
+   `[tool.importlinter]` contracts (layers, forbidden, independence), which are the formal boundary
+   spec.
+4. ADRs (`docs/adr/`, `decisions/`) — past architectural decisions.
+
+Stated boundary violations are **High** findings; undocumented structural issues are **Medium** or
+**Low** depending on severity.
+
+## 3. Build the dependency graph
 
 ```bash
 grep -rn "^from \|^import " src/ --include="*.py" | grep -v "^.*:.*#"
@@ -60,7 +75,7 @@ grep -rn "^from \|^import " src/ --include="*.py" | grep -v "^.*:.*#"
 Identify circular imports (`ImportError: cannot import name X from partially initialized module`),
 and packages with unusually high fan-in (imported by many) or fan-out (importing many siblings).
 
-## 3. Review dimensions
+## 4. Review dimensions
 
 **Layering** — does `domain/` stay free of `api/`/`infrastructure/` imports (see
 `py-project-layout`)? Is business logic leaking into FastAPI route handlers or Django views instead
@@ -80,7 +95,7 @@ a sync ORM session used inside an async request handler.
 constructor injection) or ad-hoc, with some modules importing a global singleton and others taking
 it as a parameter?
 
-## 4. Output
+## 5. Output
 
 ```
 ## Architecture Review Report
@@ -91,16 +106,22 @@ Scope: <what was reviewed>
 #### Critical
 - <structural issue>. **Impact:** <why it matters>. **Fix:** <concrete restructuring>.
 
-#### High / Medium / Low
+#### High
+...
+
+#### Medium
+...
+
+#### Low
 ...
 
 ### Verdict
 <One sentence: architecture is sound / needs targeted fixes / needs significant restructuring.>
 ```
 
-Skip to end — do not continue to step 5.
+Skip to end — do not continue to step 6.
 
-## 5. Design mode
+## 6. Design mode
 
 1. **Ask about scale and team.** A solo script and a 10-team microservice need different layouts.
 

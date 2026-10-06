@@ -131,7 +131,41 @@ function descriptionProblems(
   return [`description does not name its language (${names.join(', ')})`];
 }
 
-/** An artifact's name off its language's prefix, root-only rule globs, undeclared stacks. */
+/** Words a report template uses as a severity tier; the standard's `severities` picks the allowed ones. */
+const TIER_WORDS = new Set([
+  'blocker',
+  'critical',
+  'severe',
+  'major',
+  'high',
+  'moderate',
+  'medium',
+  'minor',
+  'low',
+  'nit',
+  'trivial',
+  'info',
+  'informational',
+]);
+const SUBHEADING_RE = /^#{3,4}[ \t]+(.+?)[ \t]*$/gm;
+
+/**
+ * A report tier heading (`#### Major`, `#### Low / Informational`) that is not exactly one declared
+ * severity: agents that grade on different scales give a reader two reports that don't compare.
+ */
+function severityProblems(artifact: Artifact, standard: CatalogStandard): string[] {
+  if (standard.severities.length === 0) return [];
+  const allowed = new Set(standard.severities);
+  return [...artifact.body.matchAll(SUBHEADING_RE)].flatMap(([, text = '']) => {
+    const words = text.split('/').map(word => word.trim());
+    const isTier = words.every(word => allowed.has(word) || TIER_WORDS.has(word.toLowerCase()));
+    if (!isTier || (words.length === 1 && allowed.has(text))) return [];
+    const scale = standard.severities.join(', ');
+    return [`heading '${text}' is not one severity of ${STANDARD_FILE} (${scale})`];
+  });
+}
+
+/** An artifact's name off its language's prefix, root-only rule globs, undeclared stacks, tiers. */
 export function vocabularyProblems(
   artifact: Artifact,
   languages: ReadonlyMap<string, LanguageMetadata>,
@@ -142,5 +176,6 @@ export function vocabularyProblems(
     ...descriptionProblems(artifact, languages),
     ...globProblems(artifact, languages),
     ...stackFileProblems(artifact, standard),
+    ...severityProblems(artifact, standard),
   ];
 }

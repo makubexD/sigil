@@ -39,7 +39,19 @@ Check **every** component in scope for the anti-patterns below — do not limit 
 components that "look" heavy by name or location. A cheap-looking list-item component re-rendering
 unnecessarily 500 times is exactly the kind of finding a scope-limited sweep misses.
 
-## 2. Static analysis — complexity and anti-patterns
+## 2. Discover context
+
+Read in order:
+1. `{sigil:conventions-file}` for performance budgets — bundle-size limits, Core Web Vitals targets
+   (LCP, INP, CLS), or render-count expectations for key screens.
+2. `package.json` for the React version (concurrent features, the React Compiler), the framework
+   (Next.js, Vite, Remix), and any bundle tooling already configured (`size-limit`,
+   `@next/bundle-analyzer`, `rollup-plugin-visualizer`, `@welldone-software/why-did-you-render`).
+3. Identify the rendering model: client-only SPA (bundle size and re-renders dominate), SSR/RSC
+   (server waterfalls and hydration cost matter), or a shared component library (per-render
+   overhead and tree-shakeability matter).
+
+## 3. Static analysis — complexity and anti-patterns
 
 **Unnecessary re-renders**
 - An inline object/array/function literal passed as a prop (`<Child style={{color:'red'}}/>`) —
@@ -72,7 +84,7 @@ unnecessarily 500 times is exactly the kind of finding a scope-limited sweep mis
 - A heavy component (chart library, rich text editor) included in the main bundle instead of code-split
   via `next/dynamic`/`React.lazy`.
 
-## 3. Dynamic profiling (if runnable)
+## 4. Dynamic profiling (if runnable)
 
 Run available profiling/analysis tools (read-only) if present:
 ```bash
@@ -83,7 +95,7 @@ npx vite-bundle-visualizer 2>&1             # if configured
 For a suspected re-render issue, note that React DevTools Profiler is the ground-truth tool and
 recommend a specific interaction to profile if static analysis alone can't confirm the cost.
 
-## 4. Output
+## 5. Output
 
 ```
 ## Performance Profile Report

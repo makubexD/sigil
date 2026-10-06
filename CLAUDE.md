@@ -125,7 +125,8 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   time. Put dispatch-disambiguation in `description`. `declared-but-unemitted` fails `sync --check` if the field is
   authored and unmapped. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
 - **One family, one skeleton.** Every language agent, rule and skill belongs to exactly one family in
-  `catalog/standard.yaml` (explicit members, optional ordered H2 `sections` and required `keys`, `absent` gaps), read
+  `catalog/standard.yaml` (explicit members, optional ordered H2 `sections` and required `keys`, `absent` gaps, one
+  `severities` scale for report tier headings), read
   only through `src/catalog-standard.ts` by `sync --check` rules (and rewritten as text by `sigil move`) — never by
   consumer commands. Structure is
   data there, not a template: `family-skeleton` fails `--check` when a member drifts. A `template:` holds shared prose

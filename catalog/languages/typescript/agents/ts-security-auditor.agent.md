@@ -153,7 +153,7 @@ Node version: <from package.json engines or .nvmrc>
 #### Medium
 - …
 
-#### Low / Informational
+#### Low
 - …
 
 ### Verdict
@@ -166,4 +166,4 @@ Omit empty tiers. If no issues found, write "No issues found."
 - **Critical** — RCE, secret exposure, authentication bypass, injection with untrusted input in main path.
 - **High** — Timing attack on secret comparison, SSRF, unsafe deserialization, prototype pollution.
 - **Medium** — Missing TLS verification, `Math.random` for tokens, missing timeout.
-- **Low / Informational** — PII in logs, missing rate limit, broad exception swallow.
+- **Low** — PII in logs, missing rate limit, broad exception swallow.

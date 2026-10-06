@@ -9,9 +9,9 @@ import { glob, globSync } from 'tinyglobby';
 import yaml from 'js-yaml';
 import type { Artifact, LanguageMetadata, LoadedCatalog } from './types';
 import { ALL_KINDS, sourceGlob } from './kinds';
-import { loadReferences } from './load-references';
+import { loadReferences, stackPartsBySkill, type StackPart } from './load-references';
 import { readRegularFile } from './safe-read';
-import { LANGUAGES_DIR } from './catalog-layout';
+import { LANGUAGES_DIR, SHARED_NAMESPACE } from './catalog-layout';
 
 /** An artifact file larger than this is skipped (catalog artifacts are a few KiB). */
 const KIB = 1024;
@@ -82,8 +82,10 @@ export async function loadCatalog(catalogDir: string): Promise<LoadedCatalog> {
       followSymbolicLinks: false,
     })
   ).sort();
+  const { parts, skipped } = stackPartsBySkill(catalogDir, languages);
+  for (const s of skipped) skipWarnings.push(`[load] Skipping stack part ${s.path}: ${s.reason}`);
   const artifacts = filePaths
-    .map(filePath => parseArtifactFile(filePath, skipWarnings))
+    .map(filePath => parseArtifactFile(filePath, skipWarnings, parts))
     .filter((a): a is Artifact => a !== null);
 
   const byId = indexById(artifacts);
@@ -112,7 +114,7 @@ function buildArtifact(
   filePath: string,
   fm: Record<string, unknown>,
   body: string,
-  warnings: string[],
+  ctx: { warnings: string[]; parts: ReadonlyMap<string, StackPart[]> },
 ): Artifact {
   const artifact: Artifact = {
     id: fm.id as string,
@@ -121,15 +123,27 @@ function buildArtifact(
     frontmatter: fm,
     body,
   };
-  // For skills: also load sibling references/ directory
-  if (fm.kind === 'skill') {
-    artifact.references = loadReferences(path.dirname(filePath), warnings);
-  }
+  if (fm.kind === 'skill') artifact.references = skillReferences(artifact, ctx);
   return artifact;
 }
 
+/** A skill's sibling references/ files, plus a shared skill's stack parts. */
+function skillReferences(
+  skill: Artifact,
+  ctx: { warnings: string[]; parts: ReadonlyMap<string, StackPart[]> },
+) {
+  const skillDir = path.dirname(skill.filePath);
+  const shared = skill.id.startsWith(`${SHARED_NAMESPACE}/`);
+  const parts = shared ? (ctx.parts.get(path.basename(skillDir)) ?? []) : [];
+  return loadReferences(skillDir, ctx.warnings, parts);
+}
+
 /** Parses one artifact file; returns null and records a skip reason if it should be skipped. */
-function parseArtifactFile(filePath: string, skipWarnings: string[]): Artifact | null {
+function parseArtifactFile(
+  filePath: string,
+  skipWarnings: string[],
+  parts: ReadonlyMap<string, StackPart[]>,
+): Artifact | null {
   const read = readRegularFile(filePath, { maxBytes: MAX_ARTIFACT_BYTES });
   if ('reason' in read) {
     skipWarnings.push(`[load] Skipping ${filePath}: ${read.reason}`);
@@ -140,5 +154,5 @@ function parseArtifactFile(filePath: string, skipWarnings: string[]): Artifact |
   const fm = parsed.data as Record<string, unknown>;
   if (missingRequiredField(fm, filePath, skipWarnings)) return null;
 
-  return buildArtifact(filePath, fm, parsed.content.trim(), skipWarnings);
+  return buildArtifact(filePath, fm, parsed.content.trim(), { warnings: skipWarnings, parts });
 }

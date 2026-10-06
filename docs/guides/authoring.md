@@ -89,11 +89,11 @@ sigil build
 
 The catalog keeps one rule (see `docs/decisions/catalog-layout-standard-2026-10.md`):
 
-| The content…                                | Goes to                                                                                      |
-| ------------------------------------------- | -------------------------------------------------------------------------------------------- |
-| does not vary by language                   | `catalog/shared/<kindDir>/`, with no `language:`                                             |
-| varies with the project's own language      | `catalog/languages/<lang>/<kindDir>/`, one artifact per language (`template:` once measured) |
-| varies with a stack the task itself chooses | one shared **skill** with `references/stack-<stack>.md` files and a table in `SKILL.md`      |
+| The content…                                | Goes to                                                                                               |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| does not vary by language                   | `catalog/shared/<kindDir>/`, with no `language:`                                                      |
+| varies with the project's own language      | `catalog/languages/<lang>/<kindDir>/`, one artifact per language (`template:` once measured)          |
+| varies with a stack the task itself chooses | one neutral shared **skill** plus a stack part per stack in `languages/<home>/stack-parts/<skill>.md` |
 
 Agents and rules always take the per-language row: they can't load reference files on demand, and
 rules activate by path. When the last two rows both seem to fit, choose per-language. Group
@@ -102,9 +102,11 @@ artifacts with a pack in `packs.yaml`, never with a topic folder.
 ### Shared (stack-agnostic) skills
 
 A skill whose guidance applies across stacks omits `language:` and lives under
-`catalog/shared/skills/<name>/` (`sigil new skill --name <name>` with no `--language`). Put
-per-stack detail in the skill's own `references/` files (e.g. `references/stack-go.md`) and tell
-the model in `SKILL.md` when to read each one — the body loads only on invocation and each
+`catalog/shared/skills/<name>/` (`sigil new skill --name <name>` with no `--language`). Keep it
+language-neutral: per-stack detail goes in a stack part, `languages/<home>/stack-parts/<name>.md`,
+in the language `standard.yaml` names as that stack's `home` (go and rust have language folders for
+this). The loader ships each part as `references/stack-<stack>.md` beside `SKILL.md`, so link it by
+that path, and tell the model in `SKILL.md` when to read each one — the body loads only on invocation and each
 reference only when read. Only flat `references/*.md` files ship with a skill, and only regular
 files (not symbolic links) with kebab-case names (`stack-go.md`), up to 256 KiB each and 1 MiB per
 skill; anything else is skipped with a load warning. `validate` warns
@@ -116,8 +118,7 @@ links, and VS Code loads only the references `SKILL.md` references. `sync --chec
 (`reference-links`) flags a backtick-only mention and `sync --apply` links it. Shared skills belong to no language pack; install them by id
 (`sigil add skill:shared/<name>`) or through a non-language pack (`shared/feature` ships in
 `pack:spec-driven`, `shared/cli` and `shared/wizard` in `pack:cli-builder`). `shared/cli` and
-`shared/wizard` are the worked examples of per-stack
-references; `shared/feature` shows a stack-less skill with a single `references/examples.md`.
+`shared/wizard` are the worked examples of stack parts; `shared/feature` shows a stack-less skill with a single `references/examples.md`.
 
 ### Provider-neutral bodies: `{sigil:<term>}`
 

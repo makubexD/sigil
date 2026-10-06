@@ -14,8 +14,8 @@ import { writeArtifactFrontmatter } from '../frontmatter';
 import { checkSourceArtifact } from '../check-source';
 import { SKILL_FILENAME } from '../../paths';
 import type { MovePlan } from './plan';
-import { languagePatch } from './language';
-import { moveStandardMember } from './standard-member';
+import { identityPatch } from './language';
+import { moveNamedRecords } from './stack-parts';
 
 export interface MoveResult {
   ok: boolean;
@@ -61,7 +61,7 @@ function updateMovedId(plan: MovePlan, rollbackSteps: Array<() => void>): void {
     }
   });
 
-  writeArtifactFrontmatter(movedFilePath, { id: plan.newId, ...languagePatch(plan) });
+  writeArtifactFrontmatter(movedFilePath, identityPatch(plan));
 }
 
 /** Replaces the first occurrence of `oldId` with `newId` in an id array, in place. */
@@ -189,7 +189,7 @@ export function executeMove(options: ExecuteMoveOptions): MoveResult {
     moveFiles(plan, rollbackSteps, changed);
     updateMovedId(plan, rollbackSteps);
     rewriteReferrers(plan, catalog, rollbackSteps, changed);
-    moveStandardMember(catalogDir, plan, rollbackSteps, changed);
+    moveNamedRecords({ catalogDir, languages: catalog.languages, plan }, rollbackSteps, changed);
 
     const violations = postMoveValidate(plan, targets, loadFn, catalogDir);
     if (violations.length > 0) {

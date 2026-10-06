@@ -1,0 +1,8 @@
+displayName: "Go"
+prefix: go
+stack: go
+globs:
+  - "**/*.go"
+  - "**/go.mod"
+  - "**/go.sum"
+icon: "🐹"

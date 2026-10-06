@@ -1,6 +1,6 @@
 /**
- * The `language:` patch `sigil move` applies to the moved artifact, so the field always matches
- * the namespace the artifact lands in (catalog layout standard).
+ * The `language:` and `name:` patches `sigil move` applies to the moved artifact, so both always match
+ * the id the artifact lands at (catalog layout standard).
  *
  * @module
  */
@@ -17,4 +17,18 @@ export function languagePatch(plan: MovePlan): { language?: string | undefined }
   if (!('language' in schema.shape)) return {};
   const prefix = splitId(plan.newId, plan.artifact.kind)?.prefix;
   return { language: prefix && prefix !== SHARED_NAMESPACE ? prefix : undefined };
+}
+
+/**
+ * Keeps `name:` in step with the new id: a skill's or agent's name must equal the id's last segment
+ * (checkNameConsistency), so a rename that kept the old name would fail its own post-move check.
+ */
+export function namePatch(plan: MovePlan): { name?: string } {
+  if (plan.artifact.frontmatter.name === undefined) return {};
+  return { name: plan.newId.split('/').pop() ?? plan.newId };
+}
+
+/** Everything that names the moved artifact: its new id, plus the language and name patches. */
+export function identityPatch(plan: MovePlan): Record<string, unknown> {
+  return { id: plan.newId, ...languagePatch(plan), ...namePatch(plan) };
 }

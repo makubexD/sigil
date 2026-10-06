@@ -13,9 +13,7 @@ allowedTools:
 argumentHint: "<package-name>"
 uses:
   rules:
-    - python/py-packaging
     - python/py-project-layout
-    - python/py-testing
   agents: []
 tags:
   - python

@@ -140,8 +140,10 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `docs/decisions/family-skeleton-standard-2026-10.md`)
 - **Where an artifact goes is one rule**: no language variation → `shared/`; varies with the project's language →
   `languages/<lang>/` (the only option for a language-varying agent or rule — neither loads references on demand);
-  varies with a stack the task chooses → one shared skill with flat `references/stack-<stack>.md`. Tie →
-  per-language. Group with `packs.yaml`, never topic folders; references stay one level deep. `catalog-layout`
+  varies with a stack the task chooses → one neutral shared skill, its per-stack text in stack parts
+  (`languages/<home>/stack-parts/<skill>.md`, `home` per stack in `standard.yaml`) that the loader turns back into
+  `references/stack-<stack>.md` (`stackPartsBySkill` in `src/load-references.ts`, also what `import` must use;
+  `sigil move` renames them). `shared/` never holds stack text. Tie → per-language. Group with `packs.yaml`, never topic folders; references stay one level deep. `catalog-layout`
   (`src/commands/sync/conformance/rules/catalog-layout.ts`) fails `sync --check` on placement and skill-folder
   violations, and on the vocabulary checks in `src/catalog-vocabulary.ts`; it is author-only and adds nothing to `validateCatalog`. (see
   `docs/decisions/catalog-layout-standard-2026-10.md`)

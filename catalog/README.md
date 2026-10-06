@@ -12,7 +12,9 @@ standard, generated from the data `sigil sync --check` enforces
 - No language variation: `shared/`.
 - Varies with the project's language: `languages/<language>/`, prefixed with the language's
   `prefix` (`ts-`, `py-`, ...). Each language names its prefix and stack in `language.yaml`.
-- Varies with a stack the task chooses: one shared skill with `references/stack-<id>.md`.
+- Varies with a stack the task chooses: one neutral shared skill; each stack's text is a stack
+  part in the language that owns the stack (`languages/<home>/stack-parts/<skill>.md`), shipped
+  as the skill's `references/stack-<id>.md`. `shared/` never holds language-specific text.
 
 Grouping for installs lives in `packs.yaml`, never in folders.
 
@@ -92,6 +94,6 @@ and load rules and agents from the same families.
 
 ## Stacks, severities and bases
 
-- Stacks: `dotnet` (.NET), `go` (Go), `node-ts` (Node.js / TypeScript), `python` (Python), `rust` (Rust).
+- Stacks: `dotnet` (.NET, home `csharp`), `go` (Go, home `go`), `node-ts` (Node.js / TypeScript, home `typescript`), `python` (Python, home `python`), `rust` (Rust, home `rust`).
 - Report severities, highest first: Critical, High, Medium, Low.
 - Bases (shared rules other rules extend): `shared/clean-code`, `shared/git`.

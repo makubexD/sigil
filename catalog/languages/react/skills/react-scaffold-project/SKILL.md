@@ -13,9 +13,7 @@ allowedTools:
 argumentHint: "<app-name>"
 uses:
   rules:
-    - react/react-npm
     - react/react-project-layout
-    - react/react-testing
   agents: []
 tags:
   - react

@@ -20,8 +20,6 @@ allowedTools:
 argumentHint: "<name> [--type=lib|app|cli|test]"
 uses:
   rules:
-    - typescript/ts-conventions
-    - typescript/ts-npm
     - typescript/ts-project-layout
   agents:
     - typescript/ts-architecture-reviewer

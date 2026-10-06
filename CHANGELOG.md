@@ -178,6 +178,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `shared/` now holds only language-neutral text. The per-stack files of the `cli` and `wizard`
+  skills live in the language that owns each stack, `languages/<lang>/stack-parts/<skill>.md`
+  (`catalog/standard.yaml` names each stack's home; Go and Rust get language folders), and sigil
+  puts them back into the skill when it builds, so installed files are unchanged.
+- `sigil move` renames a skill's or agent's `name:` with its id (renaming one used to fail and roll
+  back), and a shared skill's stack parts with it.
+
 - Python and React `generate-tests` load their language's testing rule, like the other
   languages; their reference files moved into that rule and the skill, and `ts-scaffold-project`'s
   templates moved inline. Only `cli`, `wizard` and `feature` carry reference files now.

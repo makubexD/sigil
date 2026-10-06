@@ -15,8 +15,6 @@ allowedTools:
 argumentHint: "<name> [--type=lib|console|web|test]"
 uses:
   rules:
-    - csharp/cs-conventions
-    - csharp/cs-nuget
     - csharp/cs-project-layout
   agents:
     - csharp/cs-architecture-reviewer

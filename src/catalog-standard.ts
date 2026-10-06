@@ -64,6 +64,8 @@ const FamilySchema = z.object({
 const StackSchema = z.object({
   id: z.string().regex(KEBAB_NAME_RE, KEBAB),
   displayName: z.string().min(1),
+  /** The one language whose folder holds this stack's text (its stack parts). */
+  home: z.string().regex(KEBAB_NAME_RE, KEBAB).optional(),
 });
 
 const StandardSchema = z.object({
@@ -97,6 +99,7 @@ export interface FamilyDef {
 export interface StackDef {
   readonly id: string;
   readonly displayName: string;
+  readonly home?: string | undefined;
 }
 
 export interface CatalogStandard {

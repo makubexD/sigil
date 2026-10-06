@@ -15,8 +15,6 @@ allowedTools:
 argumentHint: "<name> [--type=lib|app]"
 uses:
   rules:
-    - python/py-conventions
-    - python/py-packaging
     - python/py-project-layout
   agents:
     - python/py-architecture-reviewer

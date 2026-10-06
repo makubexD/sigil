@@ -13,9 +13,7 @@ allowedTools:
 argumentHint: "<SolutionName> [--type=console|webapi|classlib]"
 uses:
   rules:
-    - csharp/cs-nuget
     - csharp/cs-project-layout
-    - csharp/cs-testing
   agents: []
 tags:
   - csharp

@@ -2,7 +2,7 @@
 id: typescript/ts-scaffold-project
 kind: skill
 title: "Scaffold Project (TypeScript)"
-description: "Scaffold a new package with the workspace's standards pre-wired — tsconfig, ESLint, ESM exports map, src/test layout, seed test — and add it to the workspace"
+description: "Scaffold a new package with the workspace's standards pre-wired — tsconfig, ESLint, ESM exports map, src/test layout, seed test — and add it to the workspace (TypeScript)"
 name: ts-scaffold-project
 language: typescript
 skillContext: fork

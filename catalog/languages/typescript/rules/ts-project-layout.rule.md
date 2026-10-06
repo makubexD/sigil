@@ -2,7 +2,7 @@
 id: typescript/ts-project-layout
 kind: rule
 title: Project Layout (TypeScript)
-description: Project layout — tsconfig as strictness control plane, ESM/CJS + exports map, workspaces, one concern per file
+description: "Project layout — tsconfig as strictness control plane, ESM/CJS + exports map, workspaces, one concern per file (TypeScript)"
 language: typescript
 appliesTo:
   - "**/tsconfig*.json"

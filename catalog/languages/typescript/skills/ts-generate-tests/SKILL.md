@@ -2,7 +2,7 @@
 id: typescript/ts-generate-tests
 kind: skill
 title: "Generate Tests (TypeScript)"
-description: "Generate a test suite for a source file or module, in whatever runner the project already uses"
+description: "Generate a test suite for a source file or module, in whatever runner the project already uses (TypeScript)"
 name: ts-generate-tests
 language: typescript
 whenToUse: >-

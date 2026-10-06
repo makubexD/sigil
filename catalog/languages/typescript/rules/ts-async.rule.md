@@ -2,7 +2,7 @@
 id: typescript/ts-async
 kind: rule
 title: Async (TypeScript)
-description: Promise and async/await correctness — floating promises, concurrent work, AbortController cancellation, rejection handling, event-loop blocking
+description: "Promise and async/await correctness — floating promises, concurrent work, AbortController cancellation, rejection handling, event-loop blocking (TypeScript)"
 language: typescript
 appliesTo:
   - "**/*.ts"

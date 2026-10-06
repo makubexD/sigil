@@ -18,7 +18,7 @@ import { withTempDirAsync } from '../helpers/temp-dir';
 const STANDARD = 'stacks:\n  - id: dotnet\n    displayName: .NET\n';
 const csharpYaml = (extra: string) => `displayName: "C#"\n${extra}globs:\n  - "**/*.cs"\n`;
 const rule = (id: string) =>
-  `---\nid: ${id}\nkind: rule\ntitle: P\ndescription: A probe.\n---\n\n- **P.** x\n`;
+  `---\nid: ${id}\nkind: rule\ntitle: P\ndescription: A C# probe.\n---\n\n- **P.** x\n`;
 
 /** The catalog-layout findings for a catalog made of `files` (catalog-relative path → content). */
 async function layoutFindings(files: Record<string, string>): Promise<string[]> {
@@ -67,6 +67,16 @@ describe('catalog vocabulary (catalog-layout)', () => {
       'languages/csharp/rules/dotnet-p.rule.md': rule('csharp/dotnet-p'),
     });
     assert.deepEqual(found, ["name 'dotnet-p' does not start with the csharp prefix 'cs-'"]);
+  });
+
+  it("should flag a language artifact whose description doesn't name its language", async () => {
+    const found = await layoutFindings({
+      'standard.yaml': STANDARD,
+      'languages/csharp/language.yaml': csharpYaml('prefix: cs\nstack: dotnet\n'),
+      'languages/csharp/rules/cs-p.rule.md': rule('csharp/cs-p').replace('A C# probe.', 'A probe.'),
+      'languages/csharp/rules/cs-q.rule.md': rule('csharp/cs-q'),
+    });
+    assert.deepEqual(found, ['description does not name its language (csharp, C#)']);
   });
 
   it('should flag a language rule glob that matches only at the repository root', async () => {

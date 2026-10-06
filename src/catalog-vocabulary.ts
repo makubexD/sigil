@@ -94,6 +94,28 @@ function globProblems(
     .map(glob => `appliesTo '${glob}' matches only at the root; start it with **/`);
 }
 
+/** The names a description may use for a language: its id and each part of its display name. */
+export function languageNames(lang: LanguageMetadata): string[] {
+  return [lang.id, ...lang.displayName.split('/').map(part => part.trim())].filter(Boolean);
+}
+
+/**
+ * A language artifact whose description never names its language competes with its siblings in
+ * a repository that installs two languages (`ts-generate-tests` against `py-generate-tests`): the
+ * description is what an AI dispatches on.
+ */
+function descriptionProblems(
+  artifact: Artifact,
+  languages: ReadonlyMap<string, LanguageMetadata>,
+): string[] {
+  const lang = languages.get(artifact.id.split('/')[0] ?? '');
+  if (!lang) return [];
+  const names = languageNames(lang);
+  const description = String(artifact.frontmatter.description ?? '').toLowerCase();
+  if (names.some(name => description.includes(name.toLowerCase()))) return [];
+  return [`description does not name its language (${names.join(', ')})`];
+}
+
 /** An artifact's name off its language's prefix, root-only rule globs, undeclared stacks. */
 export function vocabularyProblems(
   artifact: Artifact,
@@ -102,6 +124,7 @@ export function vocabularyProblems(
 ): string[] {
   return [
     ...prefixProblems(artifact, languages),
+    ...descriptionProblems(artifact, languages),
     ...globProblems(artifact, languages),
     ...stackFileProblems(artifact, standard),
   ];

@@ -253,6 +253,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Every language artifact's description now names its language. 28 didn't; `ts-generate-tests`
+  ("Generate a test suite … in whatever runner the project already uses") competed with
+  `py-generate-tests` in a repository with both installed, since an AI dispatches on the
+  description. `catalog-layout` now fails `sync --check` on a language description that names
+  neither the language id nor its display name.
 - Language rules now reach nested projects and JSX:
   - **Globs anchored at the root only** (`package.json`, `.gitignore`, `pyproject.toml`, `angular.json`, …) now start with `**/`. Before, a monorepo's nested projects never got those rules.
   - **React rules that matched only `.tsx`** now match `.jsx` too, including the required security rule.

@@ -2,7 +2,7 @@
 id: typescript/ts-testing
 kind: rule
 title: Testing (TypeScript)
-description: Test conventions — AAA pattern, builder helpers, parametrization, mocking, coverage
+description: "Test conventions — AAA pattern, builder helpers, parametrization, mocking, coverage (TypeScript)"
 language: typescript
 appliesTo:
   - "**/*.test.ts"

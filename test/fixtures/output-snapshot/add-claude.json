@@ -21,8 +21,8 @@
   ".claude/skills/cli/references/testing.md": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c",
   ".claude/skills/cs-generate-tests/SKILL.md": "bd68e663d6e237dd9c82129f2dc4a806b15e41669595ede574e5fec25c8f6f0f",
   ".claude/skills/shared-explain-diff/SKILL.md": "02800e7c98d7ad21040948a5e3b84f36aa6bdd2dd7daf075aa0c6732f82ad679",
-  ".claude/skills/ts-release/SKILL.md": "9b272361bbfb347a5fb039de4b3a8682727225f986c08123ce9d105925d2edaa",
+  ".claude/skills/ts-release/SKILL.md": "ab41c08cf142a7171b99fab25d670d58c85b6a4fbc9d5e16bd8fd8821f2835a3",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "0e31d2e522702275296ea29503c9d55dc897db6868d79b9b97cb86d23d539413",
+  ".sigil/manifest.json": "336ff419debcbec25494c99293b8432e05d23b9a7188dd41fe7cea1eb787d825",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

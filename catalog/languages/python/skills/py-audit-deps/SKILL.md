@@ -2,7 +2,7 @@
 id: python/py-audit-deps
 kind: skill
 title: "Audit Dependencies (Python)"
-description: "Audit PyPI dependencies — known CVEs (pip-audit), outdated versions, unmaintained packages, unused imports, and license compliance"
+description: "Audit PyPI dependencies — known CVEs (pip-audit), outdated versions, unmaintained packages, unused imports, and license compliance (Python)"
 name: py-audit-deps
 language: python
 allowedTools:

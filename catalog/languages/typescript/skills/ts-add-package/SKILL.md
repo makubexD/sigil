@@ -2,7 +2,7 @@
 id: typescript/ts-add-package
 kind: skill
 title: "Add Package (TypeScript)"
-description: "Vet and wire a new npm package — CVEs, types, license, ESM/CJS compatibility"
+description: "Vet and wire a new npm package — CVEs, types, license, ESM/CJS compatibility (TypeScript)"
 name: ts-add-package
 language: typescript
 allowedTools:

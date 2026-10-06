@@ -8,7 +8,7 @@ description: >-
   before a release. Makes no edits (Bash is read-only by instruction, not sandboxed); returns a
   Breaking/Behavioral/Compatible tiered report with a SemVer recommendation. Specializes in what
   callers see: exported types, the exports map, and runtime-behavioral contracts. Use before any
-  release that could affect downstream consumers.
+  release that could affect downstream consumers (TypeScript).
 name: ts-api-compat-reviewer
 language: typescript
 tools:

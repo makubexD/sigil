@@ -2,7 +2,7 @@
 id: python/py-add-package
 kind: skill
 title: "Add Package (Python)"
-description: "Vet and wire a new PyPI package via uv/pip — checks CVEs, maintenance, license, and py.typed before adding"
+description: "Vet and wire a new PyPI package via uv/pip — checks CVEs, maintenance, license, and py.typed before adding (Python)"
 name: py-add-package
 language: python
 allowedTools:

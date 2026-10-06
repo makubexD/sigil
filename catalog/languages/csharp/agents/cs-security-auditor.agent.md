@@ -7,7 +7,7 @@ description: >-
   report. Makes no edits (Bash is read-only by instruction, not sandboxed). Sweeps the entire
   codebase for threat-surface issues: hardcoded secrets, injection, unsafe deserialization, broken
   authn/authz, and NuGet CVEs. Use proactively before releases, when adding authentication or
-  external I/O, or when handling sensitive data.
+  external I/O, or when handling sensitive data (.NET / C#).
 name: cs-security-auditor
 language: csharp
 tools:

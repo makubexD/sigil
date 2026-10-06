@@ -2,7 +2,7 @@
 id: csharp/cs-sync-tests
 kind: skill
 title: "Sync Tests (.NET / C#)"
-description: "Sync the xUnit test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)"
+description: "Sync the xUnit test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion) (.NET / C#)"
 name: cs-sync-tests
 language: csharp
 allowedTools:

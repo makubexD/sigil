@@ -2,7 +2,7 @@
 id: csharp/cs-add-package
 kind: skill
 title: "Add Package (.NET / C#)"
-description: "Vet and wire a NuGet package through Central Package Management — checks CVEs, maintenance, transitive footprint, and license before adding"
+description: "Vet and wire a NuGet package through Central Package Management — checks CVEs, maintenance, transitive footprint, and license before adding (.NET / C#)"
 name: cs-add-package
 language: csharp
 allowedTools:

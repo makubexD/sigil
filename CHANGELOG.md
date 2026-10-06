@@ -260,6 +260,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `py-generate-tests` in a repository with both installed, since an AI dispatches on the
   description. `catalog-layout` now fails `sync --check` on a language description that names
   neither the language id nor its display name.
+- `npm audit --omit=dev` (a CI and release gate) failed on GHSA-hp3w-g68c-fv3c in `sprintf-js`. All
+  versions are affected, and the advisory came through `gray-matter` → `js-yaml@3` → `argparse@1`.
+  sigil never loads `argparse`, which only js-yaml's command-line script uses, so the code was not
+  reachable. A `package.json` override now gives that `js-yaml` `argparse@2`, which has no
+  `sprintf-js`. Parsing is unchanged.
 - Language rules now reach nested projects and JSX:
   - **Globs anchored at the root only** (`package.json`, `.gitignore`, `pyproject.toml`, `angular.json`, …) now start with `**/`. Before, a monorepo's nested projects never got those rules.
   - **React rules that matched only `.tsx`** now match `.jsx` too, including the required security rule.

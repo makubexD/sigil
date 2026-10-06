@@ -12,7 +12,7 @@ import { runConformance } from '../../dist-cli/commands/sync/conformance/detect'
 import { declaredFindings } from '../../dist-cli/commands/sync/conformance/rules/catalog-symmetry';
 import { loadCatalogStandard, parseCatalogStandard } from '../../dist-cli/catalog-standard';
 import { getAllTargets } from '../../dist-cli/targets/index';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { CATALOG_DIR, loadBundledCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 const STANDARD = 'stacks:\n  - id: dotnet\n    displayName: .NET\n';
@@ -176,7 +176,7 @@ describe('catalog vocabulary (catalog-layout)', () => {
   });
 
   it('should give every bundled language a prefix and a declared stack', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const stacks = new Set(loadCatalogStandard(CATALOG_DIR)!.stacks.map(s => s.id));
     for (const lang of catalog.languages.values()) {
       assert.ok(lang.prefix, `${lang.id} has no prefix`);
@@ -187,7 +187,7 @@ describe('catalog vocabulary (catalog-layout)', () => {
 
 describe('catalog-symmetry from family data', () => {
   it('should see one concern under several names as one family', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const standard = parseCatalogStandard(
       'families:\n  - id: package-manager\n    kind: rule\n' +
         '    members: [csharp/cs-nuget, python/py-packaging, react/react-npm, typescript/ts-npm]\n',
@@ -200,7 +200,7 @@ describe('catalog-symmetry from family data', () => {
   });
 
   it('should find every family complete in the bundled catalog', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const found = runConformance(catalog, getAllTargets(), { ruleId: 'catalog-symmetry' });
     assert.deepEqual(
       found.map(f => f.detail),
@@ -209,7 +209,7 @@ describe('catalog-symmetry from family data', () => {
   });
 
   it('should still report a gap when absent names a language that has a member', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const standard = parseCatalogStandard(
       'families:\n  - id: async\n    kind: rule\n' +
         '    members: [csharp/cs-async, python/py-async]\n' +
@@ -229,7 +229,7 @@ describe('catalog-symmetry from family data', () => {
   });
 
   it('should treat a language the family marks absent as a deliberate gap', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const standard = parseCatalogStandard(
       'families:\n  - id: package-manager\n    kind: rule\n' +
         '    members: [csharp/cs-nuget, python/py-packaging, react/react-npm, typescript/ts-npm]\n' +

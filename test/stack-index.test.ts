@@ -13,7 +13,7 @@ import { loadCatalog } from '../dist-cli/load';
 import { resolveCatalog } from '../dist-cli/resolve';
 import { runConformance } from '../dist-cli/commands/sync/conformance/detect';
 import { getAllTargets } from '../dist-cli/targets/index';
-import { CATALOG_DIR } from './helpers/catalog';
+import { loadBundledCatalog } from './helpers/catalog';
 import { withTempDirAsync } from './helpers/temp-dir';
 
 const REFS = [
@@ -38,7 +38,7 @@ describe('fillStackIndex', () => {
   });
 
   it('should give the bundled cli and wizard a row for every stack', async () => {
-    const resolved = resolveCatalog(await loadCatalog(CATALOG_DIR));
+    const resolved = resolveCatalog(await loadBundledCatalog());
     for (const id of ['shared/cli', 'shared/wizard']) {
       const body = resolved.byId.get(id)!.resolvedBody ?? '';
       for (const stack of ['dotnet', 'go', 'node-ts', 'python', 'rust']) {

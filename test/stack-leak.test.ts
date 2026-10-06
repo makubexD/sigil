@@ -10,7 +10,7 @@ import path from 'node:path';
 import { loadCatalog } from '../dist-cli/load';
 import { runConformance } from '../dist-cli/commands/sync/conformance/detect';
 import { getAllTargets } from '../dist-cli/targets/index';
-import { CATALOG_DIR } from './helpers/catalog';
+import { loadBundledCatalog } from './helpers/catalog';
 import { withTempDirAsync } from './helpers/temp-dir';
 
 const RULE = 'stack-leak';
@@ -60,7 +60,7 @@ describe('stack-leak', () => {
   });
 
   it('should find nothing in the bundled catalog', async () => {
-    const found = runConformance(await loadCatalog(CATALOG_DIR), getAllTargets(), {
+    const found = runConformance(await loadBundledCatalog(), getAllTargets(), {
       ruleId: RULE,
     });
     assert.deepEqual(

@@ -3,14 +3,14 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { computeClosure } from '../../dist-cli/select/index';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 
 describe('computeClosure', () => {
   it('identifies the primary artifact and its dependency closure', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     const { primary, dependencies } = computeClosure(['csharp/cs-generate-tests'], resolved);
@@ -35,7 +35,7 @@ describe('computeClosure', () => {
   });
 
   it('excludes directly-selected artifacts from the dependency list', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     // Selecting the rule AND the skill — the rule is a direct pick, not a dependency
@@ -51,7 +51,7 @@ describe('computeClosure', () => {
   });
 
   it('returns empty dependencies when selection contains no skills', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     const { primary, dependencies } = computeClosure(['shared/code-reviewer'], resolved);
@@ -61,7 +61,7 @@ describe('computeClosure', () => {
   });
 
   it('returns empty dependencies when all closure artifacts are already primary picks', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     // Selecting skill + all its deps directly → no computed dependencies

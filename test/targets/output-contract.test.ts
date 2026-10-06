@@ -3,12 +3,12 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { checkOutputContract } from '../../dist-cli/targets/output-contract';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 
 const VERSION = '0.1.0';
 const PACKS = [
@@ -34,7 +34,7 @@ const PACKS = [
 
 describe('checkOutputContract — green paths (existing output passes)', () => {
   it('Claude full compile output satisfies all contracts', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -47,7 +47,7 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
   });
 
   it('Copilot full compile output satisfies all contracts', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -60,7 +60,7 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
   });
 
   it('Claude scaffold of prompt (command) satisfies all contracts', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
@@ -73,7 +73,7 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
   });
 
   it('Copilot scaffold of prompt file satisfies all contracts', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
@@ -86,7 +86,7 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
   });
 
   it('Copilot scaffold of skill satisfies all contracts', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.scaffold!('csharp/cs-generate-tests', resolved, {
@@ -104,7 +104,7 @@ describe('checkOutputContract — green paths (existing output passes)', () => {
     // Regression: argument-hint is a valid Claude SKILL.md field (shows autocomplete hint
     // in the Claude UI) and must NOT be in the forbidden list. Previously, this caused every
     // TS skill scaffold to fail with "forbidden frontmatter key present: 'argument-hint'".
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     // ts-generate-tests carries argumentHint → emits argument-hint: in SKILL.md

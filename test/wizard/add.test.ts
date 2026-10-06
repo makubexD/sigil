@@ -12,11 +12,11 @@ import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'path';
 import os from 'os';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { CONFIG_KINDS } from '../../dist-cli/select/index';
 import type { ResolvedCatalog } from '../../dist-cli/types';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 // Ensure @clack/prompts is loaded into require.cache before beforeEach accesses it.
 import '../../dist-cli/wizard/index';
 import { bridgePrompts } from '../helpers/clack-mock';
@@ -65,7 +65,7 @@ describe('O — Wizard: config-scope for mcp', () => {
   let pickerMod: { exports: Record<string, unknown> };
 
   beforeEach(async () => {
-    const cat = await loadCatalog(CATALOG_DIR);
+    const cat = await loadBundledCatalog();
     resolvedCatalog = resolveCatalog(cat) as ResolvedCatalog;
     const clackKey = require.resolve('@clack/prompts');
     clackMod = require.cache[clackKey] as { exports: Record<string, unknown> };
@@ -775,7 +775,7 @@ describe('R — back-navigation fix', () => {
   let pickerMod: { exports: Record<string, unknown> };
 
   beforeEach(async () => {
-    const cat = await loadCatalog(CATALOG_DIR);
+    const cat = await loadBundledCatalog();
     resolvedCatalog = resolveCatalog(cat) as ResolvedCatalog;
     const clackKey = require.resolve('@clack/prompts');
     clackMod = require.cache[clackKey] as { exports: Record<string, unknown> };

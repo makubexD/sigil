@@ -6,18 +6,18 @@ import assert from 'node:assert/strict';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
-import { loadCatalog } from '../dist-cli/load';
+
 import { resolveCatalog } from '../dist-cli/resolve';
 import { computeInstallStates } from '../dist-cli/install-state';
 import { loadManifest, saveManifest, sha256, MANIFEST_VERSION } from '../dist-cli/manifest/index';
 import { ClaudeCodeTarget } from '../dist-cli/targets/claude-code';
-import { CATALOG_DIR } from './helpers/catalog';
+import { loadBundledCatalog } from './helpers/catalog';
 
 describe('P — computeInstallStates', () => {
   let resolvedCatalog: ReturnType<typeof resolveCatalog>;
 
   beforeEach(async () => {
-    const cat = await loadCatalog(CATALOG_DIR);
+    const cat = await loadBundledCatalog();
     resolvedCatalog = resolveCatalog(cat);
   });
 

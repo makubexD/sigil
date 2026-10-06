@@ -3,9 +3,9 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../dist-cli/load';
+
 import { resolveCatalog } from '../dist-cli/resolve';
-import { CATALOG_DIR } from './helpers/catalog';
+import { loadBundledCatalog } from './helpers/catalog';
 import type { Artifact, LoadedCatalog } from '../dist-cli/types';
 
 const TEMPLATE_FRONTMATTER = {
@@ -30,7 +30,7 @@ function makeCatalog(artifacts: Artifact[]): LoadedCatalog {
 
 describe('Resolve phase', () => {
   it('flattens extends chains for rules', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     // Only *-code-quality extends shared/clean-code (one family, one skeleton ADR).
@@ -50,7 +50,7 @@ describe('Resolve phase', () => {
   });
 
   it('expands uses.rules for skills', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     const skill = resolved.byId.get('csharp/cs-generate-tests');
@@ -60,7 +60,7 @@ describe('Resolve phase', () => {
   });
 
   it('expands uses.agents for skills', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     const skill = resolved.byId.get('csharp/cs-generate-tests');

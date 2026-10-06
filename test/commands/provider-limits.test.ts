@@ -12,7 +12,7 @@ import { loadCatalog } from '../../dist-cli/load';
 import { runConformance } from '../../dist-cli/commands/sync/conformance/detect';
 import { getAllTargets } from '../../dist-cli/targets/index';
 import { allProviderSpecs } from '../../dist-cli/targets/all-emit-specs';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 const RULE = 'provider-limits';
@@ -65,7 +65,7 @@ const head = (finding: string) => finding.split(' ').slice(0, 2).join(' ');
 
 describe('provider-limits', () => {
   it('should find no error in the bundled catalog', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const errors = runConformance(catalog, getAllTargets(), { ruleId: RULE }).filter(
       f => f.severity === 'error',
     );

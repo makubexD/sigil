@@ -3,15 +3,15 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
-import { loadResolvedCatalog } from '../helpers/catalog';
+import { loadResolvedCatalog, loadBundledCatalog } from '../helpers/catalog';
 import { COPILOT_RULE_SPEC } from '../../dist-cli/targets/copilot/spec/rule';
 import { COPILOT_SKILL_SPEC } from '../../dist-cli/targets/copilot/spec/skill';
 import { renderArtifact } from '../../dist-cli/targets/emit';
 import type { ResolvedArtifact } from '../../dist-cli/types';
-import { CATALOG_DIR } from '../helpers/catalog';
+
 import { makeRule, makeSkill } from '../helpers/fixtures';
 
 /** A rule's .instructions.md, as compile and add write it. */
@@ -48,7 +48,7 @@ const PACKS = [
 
 describe('Copilot target', () => {
   it('emits copilot-instructions.md from shared rules', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -113,7 +113,7 @@ describe('Copilot target', () => {
   });
 
   it('emits language-specific instructions with applyTo globs', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -126,7 +126,7 @@ describe('Copilot target', () => {
   });
 
   it('emits skills as native Agent Skills (open standard)', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -163,7 +163,7 @@ describe('Copilot target', () => {
   });
 
   it('emits AGENTS.md with all agents', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -177,7 +177,7 @@ describe('Copilot target', () => {
     // Regression test: whenToUse used to be silently dropped for Copilot — present in neither
     // frontmatter (Copilot's SKILL.md carries only name/description) nor body. See
     // copilot/spec/skill.ts's whenToUseSection.
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -203,7 +203,7 @@ describe('Copilot target', () => {
   });
 
   it('scaffold: agent emits .agent.md with required description frontmatter', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.scaffold!('shared/code-reviewer', resolved, { projectDir: '/fake' });
@@ -224,7 +224,7 @@ describe('Copilot target', () => {
 
 describe('Copilot scaffold: prompt with args', () => {
   it('emits ${input:name} substitution in body', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });
@@ -238,7 +238,7 @@ describe('Copilot scaffold: prompt with args', () => {
   });
 
   it('regression: .github/prompts/ contains only standalone prompts (not skills)', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });

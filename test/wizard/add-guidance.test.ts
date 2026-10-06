@@ -5,7 +5,7 @@
  */
 import { describe, it, before } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { getAllTargets } from '../../dist-cli/targets';
 import { artifactLanguage, hasLanguageChoice, buildLanguageOptions } from '../../dist-cli/select';
@@ -17,7 +17,7 @@ import { overwriteStep } from '../../dist-cli/wizard/steps/add/overwrite';
 import { previewSelection, conflictsFor } from '../../dist-cli/wizard/steps/add/plan-preview';
 import type { ArtifactInstallState } from '../../dist-cli/install-state';
 import type { ResolvedCatalog } from '../../dist-cli/types';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 import { createRecorder, mockClack } from '../helpers/clack-mock';
 import type { MockAnswer } from '../helpers/clack-mock';
 import '../../dist-cli/wizard/index';
@@ -25,7 +25,7 @@ import '../../dist-cli/wizard/index';
 let catalog: ResolvedCatalog;
 
 before(async () => {
-  catalog = resolveCatalog(await loadCatalog(CATALOG_DIR)) as ResolvedCatalog;
+  catalog = resolveCatalog(await loadBundledCatalog()) as ResolvedCatalog;
 });
 
 function state(over: Partial<AddWizardState> = {}): AddWizardState {

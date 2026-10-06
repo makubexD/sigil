@@ -4,12 +4,12 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../dist-cli/load';
-import { CATALOG_DIR } from './helpers/catalog';
+
+import { loadBundledCatalog } from './helpers/catalog';
 
 describe('Load phase', () => {
   it('loads all expected artifacts', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
 
     // Languages
     assert.ok(catalog.languages.has('csharp'), 'csharp language loaded');
@@ -52,7 +52,7 @@ describe('Load phase', () => {
   });
 
   it('loads skill reference files', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     // shared/cli carries references/ (its family, stack-skill, declares them)
     const skill = catalog.byId.get('shared/cli');
     assert.ok(skill, 'skill exists');
@@ -62,7 +62,7 @@ describe('Load phase', () => {
 
   it('should return artifacts in source-path order, whatever order the glob library walks in', async () => {
     // Arrange
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
 
     // Act
     const paths = catalog.artifacts.map(a => a.filePath);

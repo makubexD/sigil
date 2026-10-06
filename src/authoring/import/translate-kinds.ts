@@ -19,13 +19,13 @@ function buildRuleFrontmatter(
   return {
     id: `${language}/${slug}`,
     kind: 'rule',
-    title: slugToTitle(slug, displayName, language),
+    title: slugToTitle(slug, displayName, opts.prefix),
     description,
     language,
     appliesTo,
     severity: 'recommended',
     extends: [],
-    tags: tagsFromSlug(slug, language),
+    tags: tagsFromSlug(slug, language, opts.prefix),
   };
 }
 
@@ -70,11 +70,11 @@ function buildAgentFrontmatter(
     id: `${language}/${slug}`,
     kind: 'agent',
     name,
-    title: slugToTitle(slug, displayName, language),
+    title: slugToTitle(slug, displayName, opts.prefix),
     description,
     language,
     tools: tools.length > 0 ? tools : undefined,
-    tags: tagsFromSlug(slug, language),
+    tags: tagsFromSlug(slug, language, opts.prefix),
   };
 }
 
@@ -179,12 +179,12 @@ function buildSkillFrontmatter(
     id: `${language}/${slug}`,
     kind: 'skill',
     name: slug,
-    title: slugToTitle(slug, displayName, language),
+    title: slugToTitle(slug, displayName, opts.prefix),
     description,
     language,
     ...(whenToUse ? { whenToUse } : {}),
     uses: { rules: [], agents: [] },
-    tags: tagsFromSlug(slug, language),
+    tags: tagsFromSlug(slug, language, opts.prefix),
     ...optionalSkillFields(toolFields),
   };
 }

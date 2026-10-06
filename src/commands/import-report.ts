@@ -13,6 +13,7 @@ import { normPath, basenameOfId } from '../paths';
 import { CLI_LABEL_COL_WIDTH } from '../cli-helpers';
 import { renderArtifactFile } from '../authoring/import';
 import { stripLanguagePrefix } from '../authoring/import/translate';
+import { STACK_INDEX_MARKER } from '../stack-index';
 import type { ImportPlan, ImportItem } from '../authoring/import/plan';
 
 /**
@@ -24,10 +25,8 @@ import type { ImportPlan, ImportItem } from '../authoring/import/plan';
 function groupArtifactsByTopic(catalog: LoadedCatalog): Map<string, LoadedCatalog['artifacts']> {
   const byTopic = new Map<string, LoadedCatalog['artifacts']>();
   for (const a of catalog.artifacts) {
-    const topic = stripLanguagePrefix(
-      String(a.frontmatter.name ?? basenameOfId(a.id)),
-      String(a.frontmatter.language ?? ''),
-    );
+    const prefix = catalog.languages.get(String(a.frontmatter.language ?? ''))?.prefix;
+    const topic = stripLanguagePrefix(String(a.frontmatter.name ?? basenameOfId(a.id)), prefix);
     const group = byTopic.get(topic) ?? [];
     byTopic.set(topic, group);
     group.push(a);
@@ -45,9 +44,10 @@ export function computeOverlapLines(
   lang: string,
 ): string[] {
   const byTopic = groupArtifactsByTopic(catalog);
+  const prefix = catalog.languages.get(lang)?.prefix;
   const overlapLines: string[] = [];
   for (const item of plan.items) {
-    const topic = stripLanguagePrefix(basenameOfId(item.frontmatter.id), lang);
+    const topic = stripLanguagePrefix(basenameOfId(item.frontmatter.id), prefix);
     const matches = (byTopic.get(topic) ?? []).filter(
       a => (a.frontmatter.language as string | undefined) !== lang,
     );
@@ -119,6 +119,23 @@ function printCoverageItem(
   if (dryRun) printDryRunPreview(item, catalog, targets);
   if (item.droppedFields.length > 0) {
     console.log(`    dropped source fields: ${item.droppedFields.join(', ')}`);
+  }
+  printStackRouting(item, catalogDir);
+}
+
+/** Where a skill's stack files went (their home language's stack parts), and which stayed out. */
+function printStackRouting(item: ImportItem, catalogDir: string): void {
+  for (const part of item.stackParts ?? []) {
+    const rel = normPath(path.relative(catalogDir, part.destPath));
+    console.log(`    references/${part.name}  →  catalog/${rel}`);
+  }
+  for (const s of item.skippedStackFiles ?? []) {
+    console.log(`    ⚠ not imported: references/${s.name}: ${s.reason}`);
+  }
+  if ((item.stackParts ?? []).length > 0) {
+    console.log(
+      `    List the stack files with ${STACK_INDEX_MARKER} in SKILL.md, not hand-written links.`,
+    );
   }
 }
 

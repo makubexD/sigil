@@ -16,6 +16,8 @@ export interface TranslateOptions {
   language: string;
   /** Language display name for title generation (e.g. ".NET / C#", "TypeScript", "Angular"). */
   displayName: string;
+  /** The language's artifact-name prefix from its language.yaml (`cs`, `ts`), stripped from titles. */
+  prefix?: string | undefined;
 }
 
 export interface CatalogFrontmatter {
@@ -60,19 +62,6 @@ export interface TranslateResult {
 // ─── Slug to Title ────────────────────────────────────────────────────────────
 
 /**
- * Canonical prefix per catalog language key.
- * Used by stripLanguagePrefix to detect and remove the language-specific kebab prefix.
- * When a new language is added its canonical prefix should be registered here.
- */
-const LANGUAGE_PREFIXES: Record<string, string> = {
-  csharp: 'cs',
-  typescript: 'ts',
-  angular: 'ng',
-  python: 'py',
-  react: 'react',
-};
-
-/**
  * Acronym/casing overrides for common technical terms produced by slug-splitting.
  * Prevents slugToTitle from lowercasing well-known initialisms.
  */
@@ -99,8 +88,7 @@ const ACRONYM_MAP: Record<string, string> = {
  *   py-linting,        python  → linting
  *   something,         csharp  → something  (no prefix — returned as-is, with a warning)
  */
-export function stripLanguagePrefix(slug: string, language: string): string {
-  const prefix = LANGUAGE_PREFIXES[language];
+export function stripLanguagePrefix(slug: string, prefix: string | undefined): string {
   if (prefix && slug.startsWith(`${prefix}-`)) {
     return slug.slice(prefix.length + 1);
   }
@@ -120,10 +108,8 @@ export function stripLanguagePrefix(slug: string, language: string): string {
  *   ng-rxjs,           angular, "Angular"   → "RxJS (Angular)"
  *   ts-audit-deps,     typescript, "TypeScript" → "Audit Deps (TypeScript)"
  */
-export function slugToTitle(slug: string, displayName: string, language?: string): string {
-  const withoutPrefix = language
-    ? stripLanguagePrefix(slug, language)
-    : slug.replace(/^(cs|ng|ts|py)-/, '');
+export function slugToTitle(slug: string, displayName: string, prefix?: string): string {
+  const withoutPrefix = stripLanguagePrefix(slug, prefix);
   const words = withoutPrefix
     .split('-')
     .map(w => ACRONYM_MAP[w.toLowerCase()] ?? w.charAt(0).toUpperCase() + w.slice(1));

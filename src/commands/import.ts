@@ -8,7 +8,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
-import { loadCatalog } from '../load';
+import { loadCatalog, loadLanguages } from '../load';
 import { getAllTargets } from '../targets';
 import { SigilError } from '../errors';
 import { normPath } from '../paths';
@@ -18,7 +18,7 @@ import {
   languageYamlPath,
   executeImport,
 } from '../authoring/import';
-import { resolveDisplayName, maybeCreateLanguageYaml } from './import-language';
+import { resolveDisplayName, maybeCreateLanguageYaml, defaultPrefix } from './import-language';
 import { computeOverlapLines, printCoverageReport } from './import-report';
 import { SHARED_NAMESPACE } from '../catalog-layout';
 import { KEBAB_NAME_RE } from '../schema/shared';
@@ -67,8 +67,15 @@ function resolveNamespace(opts: ImportOptions): string {
   return lang;
 }
 
+/** The namespace an import writes to, its display name, and its artifact-name prefix. */
+interface LanguageMeta {
+  lang: string;
+  displayName: string;
+  prefix?: string | undefined;
+}
+
 /** Ensures the target language.yaml exists (when --create-language was passed) and resolves its display name. */
-function resolveLanguageMeta(opts: ImportOptions): { lang: string; displayName: string } {
+function resolveLanguageMeta(opts: ImportOptions): LanguageMeta {
   const lang = resolveNamespace(opts);
   if (lang === SHARED_NAMESPACE) return { lang, displayName: '' };
   const yamlPath = languageYamlPath(lang, opts.catalogDir);
@@ -76,7 +83,9 @@ function resolveLanguageMeta(opts: ImportOptions): { lang: string; displayName: 
   if (opts.createLanguage && !opts.dryRun) {
     maybeCreateLanguageYaml(lang, yamlPath, opts.displayName, displayName);
   }
-  return { lang, displayName };
+  // The prefix lives only in language.yaml (a language being created gets its default).
+  const prefix = loadLanguages(opts.catalogDir).get(lang)?.prefix ?? defaultPrefix(lang);
+  return { lang, displayName, prefix };
 }
 
 /** Prints the synthesized-description warning and cross-language overlap lines, if any. */
@@ -136,8 +145,7 @@ function printImportResults(result: ReturnType<typeof executeImport>, catalogDir
 /** Discovers source files and builds the import plan; returns null when nothing was found. */
 function discoverAndPlan(
   absSourceDir: string,
-  lang: string,
-  displayName: string,
+  meta: LanguageMeta,
   opts: ImportOptions,
 ): ReturnType<typeof buildImportPlan> | null {
   console.log(`\nDiscovering artifacts in: ${absSourceDir}`);
@@ -147,7 +155,13 @@ function discoverAndPlan(
     console.log('\nNothing to import.');
     return null;
   }
-  return buildImportPlan(discovered, { language: lang, displayName, catalogDir: opts.catalogDir });
+  const { lang, displayName, prefix } = meta;
+  return buildImportPlan(discovered, {
+    language: lang,
+    displayName,
+    prefix,
+    catalogDir: opts.catalogDir,
+  });
 }
 
 /** Warns about existing conflicts that will be skipped when neither --yes nor --overwrite is set. */
@@ -183,8 +197,9 @@ export async function runImport(sourceDir: string, opts: ImportOptions): Promise
     throw new SigilError(`Source directory not found: ${absSourceDir}`);
   }
 
-  const { lang, displayName } = resolveLanguageMeta(opts);
-  const plan = discoverAndPlan(absSourceDir, lang, displayName, opts);
+  const meta = resolveLanguageMeta(opts);
+  const { lang } = meta;
+  const plan = discoverAndPlan(absSourceDir, meta, opts);
   if (!plan) return;
 
   // Load catalog early (needed for overlap report + dry-run validation)

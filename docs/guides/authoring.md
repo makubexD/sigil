@@ -226,7 +226,12 @@ join a family there, or `sigil sync --check` fails. A skill comes over with its 
 `references/*.md` files, under the same rules the catalog loads them by, and every file is
 trust-scanned (an error-level finding blocks the whole skill). Anything else a skill folder
 carries (`assets/`, `scripts/`, nested `references/stacks/`) is listed as not imported: flatten
-per-stack folders into `references/stack-<x>.md` first.
+per-stack folders into `references/stack-<x>.md` first. When the catalog has a `standard.yaml`,
+`--shared` sends each `stack-<x>.md` to its stack's home language as a stack part
+(`languages/<home>/stack-parts/<skill>.md`), so no stack text lands in `shared/`; a stack the
+standard doesn't declare is listed as not imported. Replace the skill's hand-written stack table
+with `<!-- stack-index -->`. A `--language` import takes no stack files. Titles drop the language's
+own `prefix`, read from its `language.yaml`.
 
 Source→catalog field mapping: rule `paths` → `appliesTo`; agent `tools` (comma string) →
 `tools[]`; skill `allowed-tools` → `allowedTools`; `argument-hint` → `argumentHint`;

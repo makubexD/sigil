@@ -77,6 +77,11 @@ export function resolveDisplayName(
   return lang.charAt(0).toUpperCase() + lang.slice(1);
 }
 
+/** The prefix a language.yaml written by `--create-language` gets: the known one, or the id. */
+export function defaultPrefix(lang: string): string {
+  return LANGUAGE_DEFAULTS[lang]?.prefix ?? lang;
+}
+
 /**
  * Renders the language.yaml body text for `maybeCreateLanguageYaml`. Every language names its
  * artifact `prefix` and its `stack` (catalog/standard.yaml); a language sigil doesn't know uses its
@@ -88,7 +93,7 @@ function renderLanguageYaml(lang: string, displayName: string): string {
   const icon = defaults?.icon ?? '📁';
   return [
     `displayName: ${JSON.stringify(displayName)}`,
-    `prefix: ${defaults?.prefix ?? lang}`,
+    `prefix: ${defaultPrefix(lang)}`,
     `stack: ${defaults?.stack ?? lang}`,
     `globs:`,
     ...globs.map(g => `  - "${g}"`),

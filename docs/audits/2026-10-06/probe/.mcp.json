@@ -1,0 +1,9 @@
+{
+  "mcpServers": {
+    "sigil-env-probe": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"],
+      "env": { "SIGIL_PROBE": "${SIGIL_PROBE_VALUE}" }
+    }
+  }
+}

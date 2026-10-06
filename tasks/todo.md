@@ -80,7 +80,7 @@ the frozen install, `sync --check` and the CI validators. Everything below runs 
 **1. Live, E2E and integration checks**
 
 - [ ] V1 Copilot reference-loading check on a licensed machine (user): relax or keep the link rule, and record the result in the ADR (probe in `docs/audits/2026-10-03/`)
-- [ ] F4 Confirm live that VS Code and Copilot CLI expand `${NAME}` in `.mcp.json` (documented by GitHub's MCP JSON reference; not a blocker — a different answer is one `EnvSyntax` value). Also confirm a server without `tools` gets all its tools in Copilot CLI (`--tools` defaults to `*`)
+- [ ] F4 Confirm live that VS Code and Copilot CLI expand `${NAME}` in `.mcp.json` (documented by GitHub's MCP JSON reference; not a blocker — a different answer is one `EnvSyntax` value). Also confirm a server without `tools` gets all its tools in Copilot CLI (`--tools` defaults to `*`) (probe in `docs/audits/2026-10-06/`)
 - [ ] Install the `cli-builder` plugin once in Claude Code to confirm the auditor runs with `cli` preloaded
 
 **2. Output-changing decisions (each needs a go)**

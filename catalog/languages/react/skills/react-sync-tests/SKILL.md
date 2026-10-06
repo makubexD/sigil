@@ -2,7 +2,7 @@
 id: react/react-sync-tests
 kind: skill
 title: "Sync Tests (React)"
-description: "Sync the Testing Library suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)"
+description: "Sync the Testing Library suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion) (React)"
 name: react-sync-tests
 language: react
 allowedTools:

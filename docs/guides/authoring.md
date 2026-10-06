@@ -18,8 +18,9 @@ and delegates review to the shared code-reviewer agent.
 
 Naming convention: artifacts in a language namespace carry that language's short prefix in their
 name (`cs-` for C#, `py-`, `ts-`, `ng-`, `react-`), so `csharp/cs-generate-tests`, not
-`csharp/generate-tests`. `sigil new` uses the `--name` exactly as you type it and `validate` does not
-enforce the prefix, so include it yourself. Shared artifacts (`shared/...`) have no prefix and no
+`csharp/generate-tests`. The prefix is the `prefix:` in the language's `language.yaml`. `sigil new`
+uses the `--name` exactly as you type it, and `sigil sync --check` (`catalog-layout`) fails a name
+that doesn't start with the prefix, so include it yourself. Shared artifacts (`shared/...`) have no prefix and no
 `language:`. `--language` must name a registered language (a `languages/<lang>/language.yaml`);
 `sigil new` refuses any other, and `sigil check` flags a language folder without one.
 
@@ -37,7 +38,7 @@ id: csharp/cs-integration-testing
 kind: skill
 name: cs-integration-testing
 title: Write Integration Tests for .NET
-description: Generate integration tests with WebApplicationFactory or TestContainers.
+description: Generate .NET integration tests with WebApplicationFactory or TestContainers.
 whenToUse: >-
   Use when writing integration tests with WebApplicationFactory or TestContainers — this is
   the field that actually drives dispatch (skills have no appliesTo/paths — they load by
@@ -45,7 +46,7 @@ whenToUse: >-
 language: csharp
 uses:
   rules:
-    - csharp/cs-conventions      # inherits clean-code baseline automatically
+    - csharp/cs-code-quality     # brings the clean-code baseline (it extends shared/clean-code)
   agents:
     - shared/code-reviewer
 tags: [csharp, testing, integration]
@@ -59,7 +60,21 @@ When asked to write integration tests:
 3. …
 ```
 
-**Validate and build:**
+**Put it in a family** (`catalog/standard.yaml`). Every language agent, rule and skill belongs to
+exactly one family; a skill with no siblings in other languages is a family of one. A language
+description must also name its language (".NET" above):
+
+```yaml
+families:
+  - id: integration-testing
+    kind: skill
+    members: [csharp/cs-integration-testing]
+```
+
+When the skill joins an existing family instead, add its id to that family's `members` and give
+it the family's `sections` (its H2 headings, in order) and `keys`.
+
+**Validate, check and build:**
 
 ```bash
 sigil validate
@@ -144,35 +159,39 @@ rejects an id that isn't a skill, or a skill whose `name` isn't its id's last se
 
 ## Add a rule that extends the shared baseline (DRY)
 
-**Goal:** add a `typescript/ts-style` rule that gets the clean-code bullets for free.
+**Goal:** add a `shared/secure-defaults` rule that gets the clean-code bullets for free.
 
 ```bash
-sigil new rule --language typescript --name ts-style
-# → creates catalog/languages/typescript/rules/ts-style.rule.md
+sigil new rule --name secure-defaults
+# → creates catalog/shared/rules/secure-defaults.rule.md
 ```
 
 **Edit:**
 
 ```yaml
 ---
-id: typescript/ts-style
+id: shared/secure-defaults
 kind: rule
-title: TypeScript Style
-language: typescript
+title: Secure Defaults
 appliesTo:
-  - '**/*.ts'
-  - '**/*.tsx'
+  - '**/*'
+appliesToRationale: Applies to every file; these defaults hold in any language.
 severity: recommended
 extends:
   - shared/clean-code # DRY: baseline bullets prepended at build time
 ---
-- Prefer `type` over `interface` for object shapes unless declaration merging is needed.
-- Use `unknown` instead of `any`; narrow with type guards.
-- Annotate all exported function return types explicitly.
+- Never log secrets, tokens or connection strings.
+- Validate every external input at the boundary.
 ```
 
-The resolver emits the clean-code body + ts-style body oldest-first. You never copy the baseline
-bullets into the TypeScript file. How `extends` and `uses` work is in the
+The resolver emits the clean-code body + secure-defaults body oldest-first. You never copy the
+baseline bullets into the new file.
+
+**One base per language.** A language rule extends a shared rule from exactly one of its rules:
+`shared/clean-code` reaches each language through its `*-code-quality`. `sigil sync --check`
+(`catalog-layout`) fails when two rules of one language extend the same shared rule, because that
+language would load it twice. Language rule globs start with `**/` (a root-only glob never reaches
+a monorepo's nested projects), and every language rule sets `appliesToRationale`. How `extends` and `uses` work is in the
 [spec](../reference/spec.md#reuse-mechanisms).
 
 ---
@@ -197,7 +216,10 @@ sigil import path/to/.ClaudeTools --shared --yes
 ```
 
 Pass exactly one of `--language` and `--shared`. A new language needs `--create-language` (or an
-existing `language.yaml`); without it the items are refused. A skill comes over with its flat
+existing `language.yaml`); without it the items are refused. `--create-language` writes the
+language's `prefix` and `stack` too (a built-in language's known values, otherwise the language id
+for both; declare a new stack in `catalog/standard.yaml`). Imported language artifacts must then
+join a family there, or `sigil sync --check` fails. A skill comes over with its flat
 `references/*.md` files, under the same rules the catalog loads them by, and every file is
 trust-scanned (an error-level finding blocks the whole skill). Anything else a skill folder
 carries (`assets/`, `scripts/`, nested `references/stacks/`) is listed as not imported: flatten
@@ -244,9 +266,10 @@ title: Go Style
 language: go
 appliesTo:
   - '**/*.go'
+appliesToRationale: Go source only; this is Go style.
 severity: recommended
 extends:
-  - shared/clean-code
+  - shared/clean-code # Go's one rule extending it, so the baseline loads once
 ---
 - Follow standard Go formatting (`gofmt`); never submit unformatted code.
 - Return errors as values; avoid panic except in init code.
@@ -276,11 +299,22 @@ tags: [go, testing]
 ```
 
 **Step 4 — put each artifact in its family** (`catalog/standard.yaml`). Every language agent, rule
-and skill belongs to exactly one family. Add `go/go-style` to an existing family's `members` (or a
-new family), and give each new artifact the family's `sections` in order, if the family declares
-any. A family is matched by its member list, never by name, so `go-style` can join `conventions`.
-`sigil sync --check` fails (`family-skeleton`) on a member whose sections drift and on an artifact
-in no family. See
+and skill belongs to exactly one family. Here both are new families of one member:
+
+```yaml
+families:
+  - id: style
+    kind: rule
+    members: [go/go-style]
+  - id: table-tests
+    kind: skill
+    members: [go/go-table-tests]
+```
+
+To join an existing family instead, add the id to its `members` and give the artifact the
+family's `sections` (H2 headings, in order) and `keys`. A family is matched by its member list,
+never by name. `sigil sync --check` fails (`family-skeleton`) on a member whose sections drift and
+on an artifact in no family. See
 [family-skeleton-standard-2026-10.md](../decisions/family-skeleton-standard-2026-10.md).
 
 **Step 5 — register the pack** (`packs.yaml`):
@@ -315,9 +349,11 @@ No changes to `src/` required.
 
 ## Authoring against a template
 
-Templatize a same-kind family only after measured body overlap, and fill that template's slots
-instead of copying a sibling
-([template-extraction evidence](../decisions/template-extraction-evidence-2026-08.md)).
+A family's structure lives in `catalog/standard.yaml` (its `sections`), not in a template.
+Templatize a same-kind family's shared prose only after measured body overlap, and fill that
+template's slots instead of copying a sibling
+([template-extraction evidence](../decisions/template-extraction-evidence-2026-08.md),
+[family-skeleton standard](../decisions/family-skeleton-standard-2026-10.md)).
 `typescript/ts-release` opts into the shipped `shared/templates/release-skill` template and supplies
 only slot content (`catalog/languages/typescript/skills/ts-release/SKILL.md`):
 
@@ -384,6 +420,7 @@ sigil move typescript/ts-old typescript/ts-release --dry-run
 sigil import path/to/.ClaudeFoo --language foo --dry-run
 ```
 
+`move` also renames the artifact's id in `catalog/standard.yaml` (as text, so comments survive).
 `patch` has no alias — consumer `sigil update` is a different command. `version` is not patchable.
 There is no generic `--set-<field>`: list fields have their own `--add` / `--remove` / `--set`
 flags, rule severity is `--severity` (not `--set-severity`), and each target's `authoringFields`

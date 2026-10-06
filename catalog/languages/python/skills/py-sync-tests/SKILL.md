@@ -2,7 +2,7 @@
 id: python/py-sync-tests
 kind: skill
 title: "Sync Tests (Python)"
-description: "Sync the pytest suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)"
+description: "Sync the pytest suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion) (Python)"
 name: py-sync-tests
 language: python
 allowedTools:

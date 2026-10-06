@@ -2,7 +2,7 @@
 id: angular/ng-testing
 kind: rule
 title: Testing (Angular)
-description: Vitest + TestBed conventions — AAA pattern, builder helpers, it.each, coverage
+description: "Vitest + TestBed conventions — AAA pattern, builder helpers, it.each, coverage (Angular)"
 language: angular
 appliesTo:
   - "**/*.spec.ts"

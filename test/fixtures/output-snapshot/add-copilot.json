@@ -21,8 +21,8 @@
   ".github/skills/cli/references/stack-rust.md": "30c62dc0116bf1345d714f2c59c23bcc2a646ee241200614554444d6778d1d58",
   ".github/skills/cli/references/testing.md": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c",
   ".github/skills/cs-generate-tests/SKILL.md": "3a4e2aae3b445a3816215ec1c7f678dafacad540b4db692ae6bb68786743c799",
-  ".github/skills/ts-release/SKILL.md": "a1e1f9438333bed7d66678c25abfe8a54ad068d387b3a85396315f6ee664a2ee",
+  ".github/skills/ts-release/SKILL.md": "23a7da6fb0ffdfdc60c8b85e0c67c328e85c6c924d44ef4b62c8f3736ce84384",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "dce21e0d245d506bf2e2da82cd136c55c602a314aa4041ba6245842f484d7378",
+  ".sigil/manifest.json": "82bc75acbad2a5231e726f7a247772bceb092a6e5e27d41fafd3b1e5071bb7fb",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

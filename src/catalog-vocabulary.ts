@@ -9,8 +9,18 @@
 import type { Artifact, LanguageMetadata } from './types';
 import type { CatalogStandard } from './catalog-standard';
 import { STANDARD_FILE } from './catalog-standard';
+import { SHARED_NAMESPACE } from './catalog-layout';
 
 const STACK_FILE_ID_RE = /^stack-(.+)\.md$/;
+
+/**
+ * A frontmatter list as strings. `sync` runs before `validate`, so a single string where a list
+ * belongs is read as a one-item list, and anything else as none, instead of crashing the check.
+ */
+function stringList(value: unknown): string[] {
+  if (typeof value === 'string') return [value];
+  return Array.isArray(value) ? value.filter((v): v is string => typeof v === 'string') : [];
+}
 
 /**
  * A shared rule extended by two rules of one language is prepended to both, so that language loads
@@ -19,9 +29,9 @@ const STACK_FILE_ID_RE = /^stack-(.+)\.md$/;
 export function doubleExtendsProblems(artifacts: readonly Artifact[]): string[] {
   const extenders = new Map<string, string[]>();
   for (const artifact of artifacts) {
-    if (artifact.kind !== 'rule') continue;
     const language = artifact.id.split('/')[0] ?? '';
-    for (const base of (artifact.frontmatter.extends as string[] | undefined) ?? []) {
+    if (artifact.kind !== 'rule' || language === SHARED_NAMESPACE) continue;
+    for (const base of stringList(artifact.frontmatter.extends)) {
       const key = `${language}\u0000${base}`;
       extenders.set(key, [...(extenders.get(key) ?? []), artifact.id]);
     }
@@ -88,10 +98,37 @@ function globProblems(
 ): string[] {
   const namespace = artifact.id.split('/')[0] ?? '';
   if (artifact.kind !== 'rule' || !languages.has(namespace)) return [];
-  const globs = (artifact.frontmatter.appliesTo as string[] | undefined) ?? [];
-  return globs
+  return stringList(artifact.frontmatter.appliesTo)
     .filter(glob => !glob.startsWith('**/'))
     .map(glob => `appliesTo '${glob}' matches only at the root; start it with **/`);
+}
+
+/** Whether `text` has `name` as a whole word, in any case: React is not in "reactive". */
+function namesWord(text: string, name: string): boolean {
+  const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  return new RegExp(`(?<![A-Za-z0-9])${escaped}(?![A-Za-z0-9])`, 'i').test(text);
+}
+
+/** The names a description may use for a language: its id and each part of its display name. */
+export function languageNames(lang: LanguageMetadata): string[] {
+  return [lang.id, ...lang.displayName.split('/').map(part => part.trim())].filter(Boolean);
+}
+
+/**
+ * A language artifact whose description never names its language competes with its siblings in
+ * a repository that installs two languages (`ts-generate-tests` against `py-generate-tests`): the
+ * description is what an AI dispatches on.
+ */
+function descriptionProblems(
+  artifact: Artifact,
+  languages: ReadonlyMap<string, LanguageMetadata>,
+): string[] {
+  const lang = languages.get(artifact.id.split('/')[0] ?? '');
+  if (!lang) return [];
+  const names = languageNames(lang);
+  const description = String(artifact.frontmatter.description ?? '');
+  if (names.some(name => namesWord(description, name))) return [];
+  return [`description does not name its language (${names.join(', ')})`];
 }
 
 /** An artifact's name off its language's prefix, root-only rule globs, undeclared stacks. */
@@ -102,6 +139,7 @@ export function vocabularyProblems(
 ): string[] {
   return [
     ...prefixProblems(artifact, languages),
+    ...descriptionProblems(artifact, languages),
     ...globProblems(artifact, languages),
     ...stackFileProblems(artifact, standard),
   ];

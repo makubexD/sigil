@@ -2,7 +2,7 @@
 id: react/react-release
 kind: skill
 title: "Release Preparation (React)"
-description: "Prepare an npm release for a shared component library — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification"
+description: "Prepare an npm release for a shared component library — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification (React)"
 name: react-release
 language: react
 allowedTools:

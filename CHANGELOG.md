@@ -19,7 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The catalog standard as data: `catalog/standard.yaml` declares every family (explicit members,
   optionally an ordered section skeleton and required frontmatter keys) and the stacks. A new
   `family-skeleton` check fails `sigil sync --check` when a family member's sections drift from the
-  skeleton or the data names a missing artifact. Each `language.yaml` now names its artifact
+  skeleton, the data names a missing artifact, or a language artifact belongs to no family. Each
+  `language.yaml` now names its artifact
   `prefix` and its `stack`, and `catalog-layout` checks both. `catalog-symmetry` reads families from
   the data, so it now sees that the package-manager rules (NuGet, packaging, npm) have no Angular
   member. Author-only: consumer commands and the wizard are unchanged.
@@ -153,14 +154,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   "undocumented" for "untested" in `py-sync-tests` and `react-sync-tests`). scaffold-project is two
   families: creating a new project (Python, React) and adding one to an existing solution (C#,
   TypeScript, ids unchanged). Rule families require `appliesTo` and `appliesToRationale`; templated
-  members take their sections from the template. A language artifact in no family now fails
-  `sync --check`. The debugger agents and generate-tests skills each share one section skeleton in
-  every language. Debugger: Reproduce, Isolate, Fix, Verify, Output, with the
-  same report labels. generate-tests: the Python and React skills become the same five-step workflow
-  as the others; their pytest and Testing Library conventions move, unchanged, to
-  `references/testing-conventions.md`, and they gain `allowedTools` and `argumentHint`. Installed
-  copies show "update available". The output snapshot now refuses to drop a path or an artifact id
-  unless `SIGIL_SNAPSHOT_ALLOW_REMOVAL=1` is set.
+  members take their sections from the template. Example skeletons:
+  - **Debugger:** Reproduce, Isolate, Fix, Verify and Output, with the same report labels in every language.
+  - **generate-tests:** the Python and React skills become the same five-step workflow as the others. Their pytest and Testing Library conventions move, unchanged, to `references/testing-conventions.md`, and they gain `allowedTools` and `argumentHint`.
+
+  Installed copies show "update available".
+- Contributors: the output snapshot now refuses to drop a path or an artifact id unless
+  `SIGIL_SNAPSHOT_ALLOW_REMOVAL=1` is set. `sigil move` now renames the moved id in
+  `catalog/standard.yaml`, and `sigil import --create-language` writes the new language's `prefix`
+  and `stack`.
 - Copilot skills now write `allowed-tools` as the Agent Skills spec's space-separated string, the
   form GitHub's docs show, instead of a comma-separated list. Claude Code keeps its list, which its
   docs accept. Installed Copilot skills that declare `allowed-tools` show "update available". A tool
@@ -253,6 +255,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Every language artifact's description now names its language. 28 didn't; `ts-generate-tests`
+  ("Generate a test suite … in whatever runner the project already uses") competed with
+  `py-generate-tests` in a repository with both installed, since an AI dispatches on the
+  description. `catalog-layout` now fails `sync --check` on a language description that names
+  neither the language id nor its display name.
 - `npm audit --omit=dev` (a CI and release gate) failed on GHSA-hp3w-g68c-fv3c in `sprintf-js`. All
   versions are affected, and the advisory came through `gray-matter` → `js-yaml@3` → `argparse@1`.
   sigil never loads `argparse`, which only js-yaml's command-line script uses, so the code was not

@@ -2,7 +2,7 @@
 id: typescript/ts-audit-deps
 kind: skill
 title: "Audit Dependencies (TypeScript)"
-description: "Audit npm dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance"
+description: "Audit npm dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance (TypeScript)"
 name: ts-audit-deps
 language: typescript
 allowedTools:

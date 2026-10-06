@@ -2,7 +2,7 @@
 id: python/py-release
 kind: skill
 title: "Release Preparation (Python)"
-description: "Prepare a PyPI release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification"
+description: "Prepare a PyPI release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification (Python)"
 name: py-release
 language: python
 allowedTools:

@@ -2,7 +2,7 @@
 id: angular/ng-rxjs
 kind: rule
 title: RxJS (Angular)
-description: RxJS conventions — subscription teardown, flattening operators, error handling, multicast
+description: "RxJS conventions — subscription teardown, flattening operators, error handling, multicast (Angular)"
 language: angular
 appliesTo:
   - "**/*.ts"

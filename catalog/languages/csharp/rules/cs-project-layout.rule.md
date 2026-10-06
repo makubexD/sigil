@@ -2,7 +2,7 @@
 id: csharp/cs-project-layout
 kind: rule
 title: Project Layout (.NET / C#)
-description: Solution/project structure, Directory.Build.props, .editorconfig as analyzer control plane
+description: "Solution/project structure, Directory.Build.props, .editorconfig as analyzer control plane (.NET / C#)"
 language: csharp
 appliesTo:
   - "**/*.csproj"

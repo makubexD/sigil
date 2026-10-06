@@ -74,7 +74,10 @@ catalog root (`src/catalog-layout.ts`). Grouping lives only in `packs.yaml`; the
   Examples: prompts, `shared/feature`, a generic reviewer for languages with no namespace.
 - **(b) Content that varies with the project's own language** goes in `languages/<lang>/`, one
   artifact per language, deduplicated with `template:` once overlap is measured (three or more real
-  duplicates). This is the only option for agents and rules: neither can load reference files on
+  duplicates). _Extended 2026-10-05 by
+  [family-skeleton-standard-2026-10.md](family-skeleton-standard-2026-10.md): the language versions
+  form a family with one section skeleton declared in `catalog/standard.yaml`; a template still
+  holds shared prose only._ This is the only option for agents and rules: neither can load reference files on
   demand, and rules activate by path.
 - **(c) Content that varies with a stack the task chooses** becomes one shared **skill** plus flat
   `references/stack-<stack>.md` files and a detection table in `SKILL.md`. The stack may differ

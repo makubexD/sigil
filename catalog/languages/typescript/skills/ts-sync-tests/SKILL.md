@@ -2,7 +2,7 @@
 id: typescript/ts-sync-tests
 kind: skill
 title: "Sync Tests (TypeScript)"
-description: "Sync the test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion)"
+description: "Sync the test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion) (TypeScript)"
 name: ts-sync-tests
 language: typescript
 whenToUse: >-

@@ -2,7 +2,7 @@
 id: csharp/cs-audit-deps
 kind: skill
 title: "Audit NuGet Dependencies (.NET / C#)"
-description: "Audit NuGet dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance"
+description: "Audit NuGet dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance (.NET / C#)"
 name: cs-audit-deps
 language: csharp
 allowedTools:

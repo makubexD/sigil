@@ -157,7 +157,8 @@ program
   .description(
     'Report (default) / --check (CI gate) / --apply (write) drift between catalog artifacts ' +
       'and the template they declare via template:, PLUS conformance against the current ' +
-      'provider standard (src/targets/doc-refs.ts + KindEmitSpecs). Scope template drift to one ' +
+      'provider standard (src/targets/doc-refs.ts + KindEmitSpecs) and the catalog standard ' +
+      '(catalog/standard.yaml: families, stacks). Scope template drift to one ' +
       'template id, or omit for all; scope conformance with --rule/--kind/--language/--provider.',
   )
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))

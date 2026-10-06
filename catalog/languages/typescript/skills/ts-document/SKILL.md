@@ -2,7 +2,7 @@
 id: typescript/ts-document
 kind: skill
 title: "Document (TypeScript)"
-description: "Generate or update TSDoc on exported symbols following the project's documented documentation style"
+description: "Generate or update TSDoc on exported symbols following the project's documented documentation style (TypeScript)"
 name: ts-document
 language: typescript
 allowedTools:

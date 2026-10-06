@@ -2,7 +2,7 @@
 id: typescript/ts-release
 kind: skill
 title: "Release Preparation (TypeScript)"
-description: "Prepare a release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification"
+description: "Prepare a release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification (TypeScript)"
 name: ts-release
 language: typescript
 allowedTools:

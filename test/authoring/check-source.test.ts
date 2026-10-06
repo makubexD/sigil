@@ -3,14 +3,14 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { checkSourceArtifact } from '../../dist-cli/authoring/check-source';
 import { getAllTargets } from '../../dist-cli/targets';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 
 describe('E3 — checkSourceArtifact', () => {
   it('existing valid artifact → no violations', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const skill = catalog.byId.get('csharp/cs-generate-tests');
     assert.ok(skill, 'csharp/cs-generate-tests must exist in catalog');
     const targets = getAllTargets();
@@ -23,7 +23,7 @@ describe('E3 — checkSourceArtifact', () => {
   });
 
   it('id mismatch → violation', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const real = catalog.byId.get('csharp/cs-generate-tests');
     assert.ok(real, 'csharp/cs-generate-tests must exist');
     // id name segment ('wrong-id') doesn't match the frontmatter name ('cs-generate-tests')
@@ -38,7 +38,7 @@ describe('E3 — checkSourceArtifact', () => {
   });
 
   it('unknown platforms → violation', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const real = catalog.byId.get('shared/clean-code');
     assert.ok(real, 'shared/clean-code must exist');
     const synthetic = {
@@ -54,7 +54,7 @@ describe('E3 — checkSourceArtifact', () => {
   });
 
   it('kebab-case violation → violation', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const real = catalog.byId.get('csharp/cs-generate-tests');
     assert.ok(real, 'csharp/cs-generate-tests must exist');
     // name 'Not_Kebab' is not kebab-case; id name must also match, so keep them in sync
@@ -74,7 +74,7 @@ describe('E3 — checkSourceArtifact', () => {
   it('duplicate id at same path → no violation (overwrite scenario, Windows path separator)', async () => {
     // Regression: on Windows, catalog.byId stores forward-slash paths but destPath
     // uses backslashes. The duplicate-id check must normalize before comparing.
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const real = catalog.byId.get('csharp/cs-async');
     assert.ok(real, 'csharp/cs-async must exist (imported artifact)');
     // Simulate the overwrite scenario: artifact.filePath uses backslashes (Windows path.join)

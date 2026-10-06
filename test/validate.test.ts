@@ -5,13 +5,13 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../dist-cli/load';
+
 import { validateCatalog } from '../dist-cli/validate';
-import { CATALOG_DIR } from './helpers/catalog';
+import { loadBundledCatalog } from './helpers/catalog';
 
 describe('Validate phase', () => {
   it('passes with no errors on the seeded catalog', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const result = validateCatalog(catalog);
 
     if (!result.valid) {
@@ -23,7 +23,7 @@ describe('Validate phase', () => {
   });
 
   it('reports an error for a dangling extends reference', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
 
     // Inject a fake artifact with a bad extends reference
     const fakeRule = {
@@ -53,7 +53,7 @@ describe('Validate phase', () => {
   });
 
   it('detects cycles in extends', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
 
     const ruleA = {
       id: 'test/cycle-a',
@@ -117,7 +117,7 @@ describe('Validate phase', () => {
   }
 
   it('warns on no-op appliesTo without appliesToRationale', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const fakeRule = makeUnscopedRule('test/unscoped-no-rationale');
     catalog.artifacts.push(fakeRule);
     catalog.byId.set(fakeRule.id, fakeRule);
@@ -130,7 +130,7 @@ describe('Validate phase', () => {
   });
 
   it('suppresses the no-op appliesTo warning when appliesToRationale is set', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const fakeRule = makeUnscopedRule('test/unscoped-with-rationale', 'Deliberately universal.');
     catalog.artifacts.push(fakeRule);
     catalog.byId.set(fakeRule.id, fakeRule);
@@ -145,7 +145,7 @@ describe('Validate phase', () => {
   it('still warns when appliesToRationale is whitespace-only', async () => {
     // A bare '' would fail the zod schema's `min(1)` before reaching this check at all —
     // whitespace-only passes the schema's length check but is still not a real rationale.
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const fakeRule = makeUnscopedRule('test/unscoped-blank-rationale', '   ');
     catalog.artifacts.push(fakeRule);
     catalog.byId.set(fakeRule.id, fakeRule);
@@ -177,7 +177,7 @@ describe('Validate phase', () => {
   }
 
   it('warns when two rules extend the same ancestor with identical appliesTo', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const ruleA = makeExtendingRule('test/dup-scope-a', 'shared/clean-code', ['**/*.ts']);
     const ruleB = makeExtendingRule('test/dup-scope-b', 'shared/clean-code', ['**/*.ts']);
     catalog.artifacts.push(ruleA, ruleB);
@@ -192,7 +192,7 @@ describe('Validate phase', () => {
   });
 
   it('does not warn when two rules extend the same ancestor with different appliesTo', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const ruleA = makeExtendingRule('test/diff-scope-a', 'shared/clean-code', ['**/*.ts']);
     const ruleB = makeExtendingRule('test/diff-scope-b', 'shared/clean-code', ['**/*.py']);
     catalog.artifacts.push(ruleA, ruleB);
@@ -209,7 +209,7 @@ describe('Validate phase', () => {
   });
 
   it('warns on a skill body with an un-framed hardcoded runner import', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const fakeSkill = {
       id: 'test/fake-skill-hardcoded-runner',
       kind: 'skill' as const,
@@ -235,7 +235,7 @@ describe('Validate phase', () => {
   });
 
   it('does not warn when the runner import is framed as an example', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const fakeSkill = {
       id: 'test/fake-skill-framed-runner',
       kind: 'skill' as const,
@@ -265,7 +265,7 @@ describe('Validate phase', () => {
   // 2026-08-22 audit F22: id/name are interpolated directly into output file paths with no
   // separate containment check, so schema-level rejection is the primary defense.
   it('rejects a skill whose name is not kebab-case (path-traversal guard, F22)', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
 
     const fakeSkill = {
       id: 'test/fake-path-traversal-skill',
@@ -293,7 +293,7 @@ describe('Validate phase', () => {
   });
 
   it('rejects an id containing ".." (path-traversal guard, F22)', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
 
     const fakeRule = {
       id: '../escaped/rule',

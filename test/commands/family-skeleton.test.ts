@@ -13,7 +13,7 @@ import { skeletonDrift } from '../../dist-cli/commands/sync/conformance/rules/fa
 import { parseCatalogStandard } from '../../dist-cli/catalog-standard';
 import { h2Headings, sectionKey } from '../../dist-cli/markdown-headings';
 import { getAllTargets } from '../../dist-cli/targets/index';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 const RULE = 'family-skeleton';
@@ -59,7 +59,7 @@ const DEBUGGER = 'languages/csharp/agents/cs-debugger.agent.md';
 
 describe('family-skeleton', () => {
   it('should find no errors in the bundled catalog', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const errors = runConformance(catalog, getAllTargets(), { ruleId: RULE }).filter(
       f => f.severity === 'error',
     );

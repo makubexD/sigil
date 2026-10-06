@@ -4,7 +4,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { resolveCatalog } from '../../dist-cli/resolve';
 import {
   groupArtifactsByLanguage,
@@ -15,13 +15,13 @@ import {
   KIND_ORDER,
 } from '../../dist-cli/select/index';
 import type { ResolvedArtifact } from '../../dist-cli/types';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 
 // ─── groupArtifactsByLanguage ─────────────────────────────────────────────────
 
 describe('groupArtifactsByLanguage', () => {
   it('buckets artifacts under their language, undefined-language under "shared"', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     const groups = groupArtifactsByLanguage(resolved.artifacts);
@@ -52,7 +52,7 @@ describe('groupArtifactsByLanguage', () => {
   });
 
   it('"shared" group is sorted last', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     const groups = groupArtifactsByLanguage(resolved.artifacts);
@@ -62,7 +62,7 @@ describe('groupArtifactsByLanguage', () => {
   });
 
   it('within each group, artifacts are sorted by kind then id', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     const groups = groupArtifactsByLanguage(resolved.artifacts);
@@ -84,7 +84,7 @@ describe('groupArtifactsByLanguage', () => {
   });
 
   it('single-language filter includes that language + "shared", excludes others', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
 
     const groups = groupArtifactsByLanguage(resolved.artifacts, 'csharp');
@@ -110,7 +110,7 @@ describe('partitionConfigKinds', () => {
   });
 
   it('splits artifacts into config and rest partitions correctly', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const { config, rest } = partitionConfigKinds(resolved.artifacts);
 
@@ -144,7 +144,7 @@ describe('partitionConfigKinds', () => {
   });
 
   it("groupArtifactsByLanguage on rest partition holds only that language's config kinds", async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const { rest } = partitionConfigKinds(resolved.artifacts);
     const groups = groupArtifactsByLanguage(rest);
@@ -192,7 +192,7 @@ describe('partitionConfigKinds', () => {
 
 describe('availableKinds', () => {
   it('returns present kinds in KIND_ORDER', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const kinds = availableKinds(resolved.artifacts);
     // Must be a subset of KIND_ORDER — skill comes before agent, etc.
@@ -206,7 +206,7 @@ describe('availableKinds', () => {
   });
 
   it('excludes kinds not present in the artifact list', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     // Skills only
     const skillsOnly = resolved.artifacts.filter(a => a.kind === 'skill');
@@ -223,14 +223,14 @@ describe('availableKinds', () => {
 
 describe('buildLanguageOptions (array-based)', () => {
   it('returns [] when no language-tagged artifacts', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const sharedOnly = resolved.artifacts.filter(a => !a.frontmatter.language);
     assert.deepEqual(buildLanguageOptions(sharedOnly), []);
   });
 
   it('includes All languages option + one per language with count', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const opts = buildLanguageOptions(resolved.artifacts);
     assert.ok(opts.length >= 2, 'at least All + 1 language');
@@ -242,7 +242,7 @@ describe('buildLanguageOptions (array-based)', () => {
   });
 
   it('counts reflect the passed subset, not the whole catalog', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     // Only csharp artifacts
     const csharpOnly = resolved.artifacts.filter(a => a.frontmatter.language === 'csharp');

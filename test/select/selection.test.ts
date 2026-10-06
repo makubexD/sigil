@@ -4,7 +4,7 @@
  */
 import { describe, it, beforeEach } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { resolveCatalog } from '../../dist-cli/resolve';
 import {
   resolveSelection,
@@ -13,7 +13,7 @@ import {
   artifactLanguage,
   isAgnostic,
 } from '../../dist-cli/select/index';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 import type { ResolvedCatalog } from '../../dist-cli/types';
 
 const PACKS_CURATED = [
@@ -46,7 +46,7 @@ describe('R — resolveSelection / language helpers', () => {
   let resolvedCatalog: ResolvedCatalog;
 
   beforeEach(async () => {
-    const cat = await loadCatalog(CATALOG_DIR);
+    const cat = await loadBundledCatalog();
     resolvedCatalog = resolveCatalog(cat) as ResolvedCatalog;
   });
 

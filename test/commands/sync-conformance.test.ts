@@ -21,8 +21,8 @@ import type {
 import { getAllTargets } from '../../dist-cli/targets/index';
 import { channelFromNativeKinds } from '../../dist-cli/targets/capabilities';
 import type { Artifact, LoadedCatalog, Target } from '../../dist-cli/types';
-import { loadCatalog } from '../../dist-cli/load';
-import { CATALOG_DIR } from '../helpers/catalog';
+
+import { loadBundledCatalog } from '../helpers/catalog';
 import { redundantDefaultRule } from '../../dist-cli/commands/sync/conformance/rules/redundant-default';
 
 function makeCatalog(artifacts: Artifact[]): LoadedCatalog {
@@ -457,7 +457,7 @@ describe('conformance rule: declared-but-unemitted', () => {
     // Loading the actual catalog here (not just registered targets, like provider-kind-coverage's
     // guard) is required because the bug was in *catalog content* versus *spec coverage*, not in
     // target registration.
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const findings = runConformance(catalog, [], { ruleId: 'declared-but-unemitted' });
     assert.equal(findings.length, 0);
   });

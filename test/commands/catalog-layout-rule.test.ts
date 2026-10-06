@@ -11,7 +11,7 @@ import path from 'node:path';
 import { loadCatalog } from '../../dist-cli/load';
 import { runConformance } from '../../dist-cli/commands/sync/conformance/detect';
 import { getAllTargets } from '../../dist-cli/targets/index';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 const RULE = 'catalog-layout';
@@ -48,7 +48,7 @@ function expectOne(found: string[], pattern: RegExp): void {
 
 describe('catalog-layout', () => {
   it('should find nothing wrong in the bundled catalog', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     assert.deepEqual(runConformance(catalog, getAllTargets(), { ruleId: RULE }), []);
   });
 

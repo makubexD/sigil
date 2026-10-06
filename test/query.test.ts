@@ -3,22 +3,22 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../dist-cli/load';
+
 import { resolveCatalog } from '../dist-cli/resolve';
 import { searchArtifacts, getArtifactDetail, formatDetailText } from '../dist-cli/query/index';
 import { getAllTargets } from '../dist-cli/targets';
-import { CATALOG_DIR } from './helpers/catalog';
+import { loadBundledCatalog } from './helpers/catalog';
 
 describe('F1 — searchArtifacts', () => {
   it('returns empty array for blank query', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const results = searchArtifacts(resolved, '');
     assert.deepEqual(results, []);
   });
 
   it('finds artifacts by title keyword', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     // Search for "generate" which matches cs-generate-tests, ng-generate-tests, ts-generate-tests etc.
     const results = searchArtifacts(resolved, 'generate');
@@ -28,7 +28,7 @@ describe('F1 — searchArtifacts', () => {
   });
 
   it('exact id match scores highest (score=8)', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const results = searchArtifacts(resolved, 'shared/code-reviewer');
     assert.ok(results.length > 0, 'got results');
@@ -37,7 +37,7 @@ describe('F1 — searchArtifacts', () => {
   });
 
   it('filters by kind', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const results = searchArtifacts(resolved, 'style', { kind: 'rule' });
     assert.ok(results.length > 0, 'got results');
@@ -48,7 +48,7 @@ describe('F1 — searchArtifacts', () => {
   });
 
   it('filters by tag substring', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const results = searchArtifacts(resolved, 'test', { tag: 'csharp' });
     assert.ok(
@@ -61,7 +61,7 @@ describe('F1 — searchArtifacts', () => {
   });
 
   it('same-score results sorted alphabetically by id', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const results = searchArtifacts(resolved, 'testing');
     for (let i = 1; i < results.length; i++) {
@@ -77,7 +77,7 @@ describe('F1 — searchArtifacts', () => {
   });
 
   it('returns no results when no artifact matches', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const results = searchArtifacts(resolved, 'zzznomatch999');
     assert.deepEqual(results, []);
@@ -86,7 +86,7 @@ describe('F1 — searchArtifacts', () => {
 
 describe('F2 — getArtifactDetail', () => {
   it('includes reverse dependents for python/py-code-reviewer', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const targets = getAllTargets();
     const artifact = resolved.byId.get('python/py-code-reviewer')!;
@@ -99,7 +99,7 @@ describe('F2 — getArtifactDetail', () => {
   });
 
   it('emits to both platforms when platforms field is absent', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const targets = getAllTargets();
     const artifact = resolved.byId.get('shared/code-reviewer')!;
@@ -110,7 +110,7 @@ describe('F2 — getArtifactDetail', () => {
   });
 
   it('resolvedRules populated for skill detail', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const targets = getAllTargets();
     const skill = resolved.byId.get('csharp/cs-generate-tests')!;
@@ -120,7 +120,7 @@ describe('F2 — getArtifactDetail', () => {
   });
 
   it('formatDetailText produces output containing id and title', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const targets = getAllTargets();
     const artifact = resolved.byId.get('shared/code-reviewer')!;
@@ -139,7 +139,7 @@ describe('F2 — getArtifactDetail', () => {
   });
 
   it('formatDetailText lists reverse dependents', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const targets = getAllTargets();
     const artifact = resolved.byId.get('python/py-code-reviewer')!;

@@ -5,7 +5,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { validateCatalog } from '../../dist-cli/validate';
 import { AgentSchema } from '../../dist-cli/schema';
 import { renderArtifact } from '../../dist-cli/targets/emit';
@@ -14,7 +14,7 @@ import { COPILOT_AGENT_SPEC } from '../../dist-cli/targets/copilot/spec/agent';
 import type { ResolvedArtifact } from '../../dist-cli/types';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 import { withTempDir } from '../helpers/temp-dir';
 
 const CLI = path.resolve(__dirname, '../../dist-cli/cli.js');
@@ -47,7 +47,7 @@ describe('agent claude.skills preload', () => {
   });
 
   it('validate rejects an unknown or non-skill id', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const agent = makeAgent({
       id: 'test/preloader',
       name: 'preloader',
@@ -69,7 +69,7 @@ describe('agent claude.skills preload', () => {
   });
 
   it('validate rejects a preloaded skill whose name is not its id segment', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const skill = catalog.byId.get('shared/cli')!;
     skill.frontmatter.name = 'cli-guide';
     const agent = makeAgent({ id: 'test/preloader', claude: { skills: ['shared/cli'] } });

@@ -12,10 +12,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { executeImport } from '../../dist-cli/authoring/import/execute';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { getAllTargets } from '../../dist-cli/targets';
 import { withTempDir } from '../helpers/temp-dir';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 import type { ImportItem } from '../../dist-cli/authoring/import/plan';
 
 function makeItem(destPath: string, body: string, idSuffix: string): ImportItem {
@@ -40,7 +40,7 @@ function makeItem(destPath: string, body: string, idSuffix: string): ImportItem 
 
 describe('executeImport — trust scan on write (F30)', () => {
   it('blocks an import whose body carries an error-level secret finding', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const targets = getAllTargets();
     withTempDir(dir => {
       const destPath = path.join(dir, 'secret.rule.md');
@@ -59,7 +59,7 @@ describe('executeImport — trust scan on write (F30)', () => {
   });
 
   it('writes a clean import with no trust findings', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const targets = getAllTargets();
     withTempDir(dir => {
       const destPath = path.join(dir, 'clean.rule.md');

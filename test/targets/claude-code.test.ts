@@ -3,11 +3,11 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { loadCatalog } from '../../dist-cli/load';
+
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { CLAUDE_PROMPT_SPEC } from '../../dist-cli/targets/claude-code/spec/prompt';
-import { CATALOG_DIR } from '../helpers/catalog';
+import { loadBundledCatalog } from '../helpers/catalog';
 
 const VERSION = '0.1.0';
 const PACKS = [
@@ -33,7 +33,7 @@ const PACKS = [
 
 describe('Claude Code target', () => {
   it('emits marketplace.json with all packs (flat top-level schema)', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -49,7 +49,7 @@ describe('Claude Code target', () => {
   });
 
   it('emits plugin.json with correct version for each pack', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -60,7 +60,7 @@ describe('Claude Code target', () => {
   });
 
   it('emits a SKILL.md with the rule body inlined', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -80,7 +80,7 @@ describe('Claude Code target', () => {
   });
 
   it('emits the language-specific code-reviewer agent into the dotnet pack', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
@@ -92,7 +92,7 @@ describe('Claude Code target', () => {
   });
 
   it('scaffold: writes skill + closure into .claude/', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.scaffold!('csharp/cs-generate-tests', resolved, {
@@ -105,7 +105,7 @@ describe('Claude Code target', () => {
   });
 
   it('scaffold: rule with appliesTo has paths: frontmatter regardless of language', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.scaffold!('csharp/cs-generate-tests', resolved, {
@@ -135,7 +135,7 @@ describe('Claude Code target', () => {
 
 describe('Claude scaffold: prompt with args', () => {
   it('emits description, argument-hint, arguments frontmatter and $name body', async () => {
-    const catalog = await loadCatalog(CATALOG_DIR);
+    const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new ClaudeCodeTarget();
     const files = await target.scaffold!('shared/explain-diff', resolved, { projectDir: '/fake' });

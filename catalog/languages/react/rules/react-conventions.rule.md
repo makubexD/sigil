@@ -25,3 +25,14 @@ appliesToRationale: Scoped to component files (.tsx/.jsx) because these hooks an
 - **Avoid prop drilling beyond two levels.** Use Context or a state library (Zustand, Jotai) when data flows more than two component levels down.
 - **Key props on lists.** Always provide a stable, unique `key` on list items — never the array index unless the list is static and unordered.
 - **`data-testid` over CSS class selectors in tests.** Use `data-testid="submit-button"` for test targeting; CSS classes and element structure change more often.
+- **Naming.** Follow the table below. The `use` prefix on hooks is not cosmetic — the Rules of Hooks lint relies on it.
+
+| Symbol | Style | Example |
+|---|---|---|
+| Components (function and file) | `PascalCase` | `UserCard`, `UserCard.tsx` |
+| Custom hooks | `use` + `PascalCase` | `useUserData`, `useDebounce` |
+| Props interfaces | `Props` or `<Component>Props` | `Props`, `UserCardProps` |
+| Event-handler props / handlers | `on<Event>` / `handle<Event>` | `onSelect`, `handleSubmit` |
+| Functions, variables | `camelCase` | `formatDate`, `selectedRows` |
+| Boolean props and state | `is`/`has`/`should` prefix | `isOpen`, `hasError` |
+| Module-level constants | `UPPER_SNAKE` | `MAX_RETRY_COUNT` |

@@ -94,6 +94,9 @@ Re-read each edited doc comment against the actual current props/return type.
 ### Skipped (already adequate)
 - `Component`/`useHook`
 
+### Still undocumented: <N>
+- `Component`/`useHook` — <why it was left (e.g. intent unclear from the code)>
+
 ### Verification
 Type check: clean
 ```

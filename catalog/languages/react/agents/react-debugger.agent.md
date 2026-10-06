@@ -96,3 +96,7 @@ npm run build   # if the bug involved a type or bundling issue
 ### Verification
 <test(s) that now pass; confirmation the full suite (and build, if relevant) is still green>
 ```
+
+If the fix was **proposed** rather than applied, append:
+
+> **Action required:** apply the proposed change above, then re-run the verification commands.

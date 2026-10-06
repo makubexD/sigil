@@ -118,6 +118,24 @@ packs:
       security, and testing patterns for Angular applications.
       Skill deps are auto-resolved by the wizard's deps step.
 
+  - name: python-tooling
+    displayName: Python Tooling
+    languages: [python]
+    description: >
+      Full Python tooling suite — all py- skills, agents, and rules.
+      Skills include scaffolding, testing, documentation, dependency management,
+      security auditing, and release preparation.
+      Skill deps are auto-resolved by the wizard's deps step.
+
+  - name: react-tooling
+    displayName: React Tooling
+    languages: [react]
+    description: >
+      Full React tooling suite — all react- skills, agents, and rules.
+      Skills include scaffolding, testing, documentation, dependency management,
+      security auditing, and release preparation.
+      Skill deps are auto-resolved by the wizard's deps step.
+
   - name: spec-driven
     displayName: Spec-Driven Development
     description: >

@@ -22,6 +22,11 @@ tags:
   - react
   - refactoring
 relatedArtifacts:
+  - id: react/react-debugger
+    relation: complements
+    reason: >-
+      react-debugger makes behavior-changing fixes; this agent makes
+      behavior-preserving structural changes
   - id: react/react-code-reviewer
     relation: see-also
     reason: react-code-reviewer flags issues; react-refactor-specialist applies the structural fix

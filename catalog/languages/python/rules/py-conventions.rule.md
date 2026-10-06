@@ -23,3 +23,13 @@ appliesToRationale: Scoped to Python source because these PEP 8 and idiom rules 
 - **Raise specific exceptions.** Raise `ValueError`, `TypeError`, or a custom subclass — not bare `Exception` or `BaseException`.
 - **No bare `except`.** Always specify the exception type(s): `except (ValueError, KeyError)`. Bare `except` swallows `KeyboardInterrupt` and `SystemExit`.
 - **Prefer `logging` over `print`.** Use the `logging` module for any output that is not user-facing. Configure a logger per module: `logger = logging.getLogger(__name__)`.
+- **PEP 8 naming.** Follow the table below; `ruff`'s `N` (pep8-naming) rules enforce it.
+
+| Symbol | Style | Example |
+|---|---|---|
+| Functions, methods, variables, parameters | `snake_case` | `parse_ics`, `daily_cap_hours` |
+| Classes, exceptions, `Protocol`s, type aliases | `PascalCase` | `CalendarEvent`, `ParseError` |
+| Module-level constants | `UPPER_SNAKE` | `MAX_RETRY_COUNT`, `DEFAULT_TIMEZONE` |
+| Modules and packages | short `snake_case` | `calendar_parser.py`, `reporting/` |
+| Internal (non-public) names | leading `_` | `_to_utc`, `self._cache` |
+| Type variables | `T` or short `PascalCase` | `T`, `KT`, `T_co` |

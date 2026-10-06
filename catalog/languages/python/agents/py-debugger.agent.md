@@ -92,3 +92,7 @@ pytest --tb=short
 ### Verification
 <test(s) that now pass; confirmation the full suite is still green>
 ```
+
+If the fix was **proposed** rather than applied, append:
+
+> **Action required:** apply the proposed change above, then re-run the verification commands.

@@ -1,7 +1,7 @@
 ---
 id: csharp/cs-nuget
 kind: rule
-title: Nuget (.NET / C#)
+title: NuGet (.NET / C#)
 description: "NuGet hygiene — Central Package Management, lock files, source mapping, signing, SourceLink (.NET / C#)"
 language: csharp
 appliesTo:

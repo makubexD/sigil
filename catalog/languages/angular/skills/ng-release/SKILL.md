@@ -42,7 +42,7 @@ For a publishable library, also confirm the package builds: `ng build <lib>` (ng
 1. Read the current version from `package.json` (`"version"`).
 2. Read recent commits (Step 4) and suggest a bump:
    - Any `feat:` commit → minor bump (0.X.0).
-   - Only `fix:` / `refactor:` / `chore:` commits → patch bump (0.0.X).
+   - Only `fix:` / `refactor:` / `chore:` / `perf:` commits → patch bump (0.0.X).
    - Breaking change (`BREAKING CHANGE:` in a commit body, or a Breaking finding from `ng-api-compat-reviewer`) → major bump (X.0.0).
 
 <!-- slot: changelog-format -->
@@ -67,7 +67,7 @@ Group commits by type and produce a changelog section:
 - <summary of refactor: commits>
 
 ### Other
-- <chore, docs, ci, test commits>
+- <perf, chore, docs, ci, test commits>
 ```
 
 <!-- slot: checklist-and-next-steps -->

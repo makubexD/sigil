@@ -117,8 +117,10 @@ Run `npm audit` to surface any CVEs the install introduced.
 ## Add Package Report
   Package:        <name>@<resolved-version>  (<dependencies | devDependencies | peerDependencies>)
   Installer:      <ng add (files modified) / npm install>
+  CVEs:           <none detected / ⚠ flagged — detail>
+  License:        <MIT / Apache-2.0 / ⚠ flagged — detail>
+  Maintenance:    <active / ⚠ last release: <date>>
   Types:          <bundled / @types added / none>
   Peer range:     <compatible range / N/A>
-  Vetting:        <passed / flags: …>
   Gate:           ✅ lint  ✅ types  ✅ tests  ✅ audit  /  ❌ <which failed — change undone>
 ```

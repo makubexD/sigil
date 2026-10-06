@@ -1,7 +1,7 @@
 ---
 id: typescript/ts-npm
 kind: rule
-title: Npm (TypeScript)
+title: npm (TypeScript)
 description: "npm supply-chain hygiene — lockfile integrity, vulnerability scanning, lifecycle-script risk, .npmrc token hygiene, publishing (TypeScript)"
 language: typescript
 appliesTo:

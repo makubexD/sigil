@@ -98,6 +98,9 @@ intent inaccurately is worse than no docstring.
 ### Skipped (already adequate)
 - `module.symbol`
 
+### Still undocumented: <N>
+- `module.symbol` — <why it was left (e.g. intent unclear from the code)>
+
 ### Verification
 Lint: clean
 ```

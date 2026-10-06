@@ -22,6 +22,11 @@ tags:
   - python
   - refactoring
 relatedArtifacts:
+  - id: python/py-debugger
+    relation: complements
+    reason: >-
+      py-debugger makes behavior-changing fixes; this agent makes
+      behavior-preserving structural changes
   - id: python/py-code-reviewer
     relation: see-also
     reason: py-code-reviewer flags issues; py-refactor-specialist applies the structural fix

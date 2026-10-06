@@ -93,8 +93,21 @@ dependency with no declared license at all.
 ### License compliance
 - `<package>` — <license>, flagged because <reason>
 
+### Manual findings
+
+#### High
+- `<package>` — <issue>. **Recommendation:** <action>.
+
+#### Medium
+...
+
+#### Low
+...
+
 ### Summary
-<One sentence: dependency set is healthy / N issues found, worst is <severity>.>
+<N> critical/high issues requiring immediate action.
+<N> medium issues recommended before next release.
+<N> low/informational notes.
 ```
 
-Omit sections with no findings.
+Omit sections and tiers with no findings.

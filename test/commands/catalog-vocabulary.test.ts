@@ -188,10 +188,24 @@ describe('catalog vocabulary (catalog-layout)', () => {
 describe('catalog-symmetry from family data', () => {
   it('should see one concern under several names as one family', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
+    const standard = parseCatalogStandard(
+      'families:\n  - id: package-manager\n    kind: rule\n' +
+        '    members: [csharp/cs-nuget, python/py-packaging, react/react-npm, typescript/ts-npm]\n',
+      'probe',
+    );
+    const languages = ['angular', 'csharp', 'python', 'react', 'typescript'];
+    const details = declaredFindings(standard, catalog, languages).map(f => f.detail);
+    assert.equal(details.length, 1, details.join('\n'));
+    assert.match(details[0]!, /family 'package-manager'.*but not angular/);
+  });
+
+  it('should find every family complete in the bundled catalog', async () => {
+    const catalog = await loadCatalog(CATALOG_DIR);
     const found = runConformance(catalog, getAllTargets(), { ruleId: 'catalog-symmetry' });
-    const packageManager = found.find(f => /family 'package-manager'/.test(f.detail));
-    assert.ok(packageManager, found.map(f => f.detail).join('\n'));
-    assert.match(packageManager.detail, /but not angular/);
+    assert.deepEqual(
+      found.map(f => f.detail),
+      [],
+    );
   });
 
   it('should still report a gap when absent names a language that has a member', async () => {

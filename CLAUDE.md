@@ -144,6 +144,10 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
 - **Read catalog and import files only through `src/safe-read.ts`** (regular files, never a followed link, size cap,
   checked on the handle it reads from), and **parse frontmatter only through `src/frontmatter-parse.ts`** —
   gray-matter caches and shares parsed objects, so ESLint forbids importing it anywhere else in `src/`.
+- **`requireValidCatalog` reuses the last validated catalog while no file under the catalog changed**
+  (`src/catalog-cache.ts`: an `lstat` fingerprint of path, mode, size, mtime and file id; every caller gets its own
+  `structuredClone`; an invalid catalog is never kept). A new consumer path that needs a valid catalog goes through it;
+  authoring commands that edit and re-read files keep calling `loadCatalog` directly.
 - **A provider's documented size limits are data on its `KindEmitSpec.limits`**, checked by the one generic
   `provider-limits` rule against the rendered file; never hard-code a provider's limit in a rule. `packs.yaml` is
   read only through `parsePacksConfig` (`src/packs-config.ts`): pack names become folder names and must be

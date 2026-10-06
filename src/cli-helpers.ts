@@ -13,6 +13,7 @@ import { parsePacksConfig } from './packs-config';
 import type { Command } from 'commander';
 import { loadCatalog } from './load';
 import { validateCatalog } from './validate';
+import { cachedValidCatalog } from './catalog-cache';
 import { getAllTargets, defaultTargetName } from './targets';
 import { detectedTargetsIn } from './project-context';
 import type { FileMap, PacksConfig, Target } from './types';
@@ -78,12 +79,21 @@ export function describePathDefaults(root: Command): void {
  * Load the catalog and throw a SigilError if it fails schema/reference validation.
  * Shared by `loadAndValidate` (catalog + packs) and by commands that need a valid
  * catalog but have no `--packs` flag of their own (delete/edit/patch/retarget/move/new).
+ * Reuses the last validated catalog while no file under `catalogDir` changed (catalog-cache.ts).
  */
 export async function requireValidCatalog(
   catalogDir: string,
 ): Promise<Awaited<ReturnType<typeof loadCatalog>>> {
-  const catalog = await loadCatalog(catalogDir);
+  const catalog = await cachedValidCatalog(catalogDir, loadValidCatalog);
   for (const warning of catalog.skipWarnings) console.warn(warning);
+  return catalog;
+}
+
+/** Loads the catalog from disk and validates it; throws a SigilError when it is invalid. */
+export async function loadValidCatalog(
+  catalogDir: string,
+): Promise<Awaited<ReturnType<typeof loadCatalog>>> {
+  const catalog = await loadCatalog(catalogDir);
   const result = validateCatalog(catalog);
 
   if (!result.valid) {

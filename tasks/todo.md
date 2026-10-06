@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1-M5 done (PRs #24-#35). C3 done (PRs #37-#38). Open: the end block (live checks, one release).
+Status: M1-M5 done (PRs #24-#35). C3 done (PRs #37-#39). Skill anatomy in progress (SPEC-skill-anatomy.md). Then the end block (live checks, one release).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -71,6 +71,13 @@ Spec: `SPEC.md`
 - [x] C3a Every optional-section gap filled (sections now required); one severity scale as data, checked
 - [x] C3b Template threshold measured (none passes); family gaps filled (7 new artifacts, 2 packs); sibling parity sweep
 - [x] Phase 5 review (code + docs drift, fixed in PR #33); audit fix PR #34; CI speed PR #35 (Windows test step ~67 s → ~34 s)
+
+## Skill anatomy (SPEC-skill-anatomy.md, approved 2026-10-06)
+
+- [x] PR1 Reference files get the lexicon, the output contract, the trust scan and the leak checks
+- [ ] PR2 Anatomy as data: reference roles per family, shared-pair families, exact keys, `uses` parity, generated catalog/README.md
+- [ ] PR3 One content release: generate-tests uses `*-testing` (references folded), ts-scaffold-project inline, cli stack-file skeleton, titles, report blocks, ng-release API-compat step, skillContext
+- [ ] Probe Copilot double rule delivery (inline + .instructions.md), with V1/F4
 
 ## End block: before the release (development first; nothing here is dropped)
 

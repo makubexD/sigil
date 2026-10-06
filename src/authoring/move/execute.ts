@@ -189,9 +189,7 @@ export function executeMove(options: ExecuteMoveOptions): MoveResult {
     moveFiles(plan, rollbackSteps, changed);
     updateMovedId(plan, rollbackSteps);
     rewriteReferrers(plan, catalog, rollbackSteps, changed);
-    const ids = { oldId: plan.oldId, newId: plan.newId };
-    const standard = moveStandardMember(catalogDir, ids, rollbackSteps);
-    if (standard) changed.push(standard);
+    moveStandardMember(catalogDir, plan, rollbackSteps, changed);
 
     const violations = postMoveValidate(plan, targets, loadFn, catalogDir);
     if (violations.length > 0) {

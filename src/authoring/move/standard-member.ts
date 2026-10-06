@@ -20,13 +20,15 @@ export function renameStandardMember(text: string, oldId: string, newId: string)
 }
 
 /**
- * Renames `oldId` to `newId` in `<catalogDir>/standard.yaml`, recording a rollback step first.
- * Returns the file path when it changed, or undefined when there is no file or no mention.
+ * Renames `oldId` to `newId` in `<catalogDir>/standard.yaml`, recording a rollback step first and
+ * adding the file to `changed`. Returns the file path when it changed, or undefined when there is
+ * no file or no mention.
  */
 export function moveStandardMember(
   catalogDir: string,
-  ids: { oldId: string; newId: string },
+  ids: { readonly oldId: string; readonly newId: string },
   rollbackSteps: Array<() => void>,
+  changed: string[] = [],
 ): string | undefined {
   const file = path.join(catalogDir, STANDARD_FILE);
   if (!fs.existsSync(file)) return undefined;
@@ -36,5 +38,6 @@ export function moveStandardMember(
   if (next === read.content) return undefined;
   rollbackSteps.push(() => fs.writeFileSync(file, read.content, 'utf-8'));
   fs.writeFileSync(file, next, 'utf-8');
+  changed.push(file);
   return file;
 }

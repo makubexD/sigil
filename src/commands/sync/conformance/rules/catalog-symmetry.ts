@@ -93,12 +93,20 @@ function asymmetryFinding(
   fam: string,
   presentIn: Set<string>,
   fullLanguages: readonly string[],
-  minPresent = MIN_LANGUAGES_TO_COMPARE,
 ): ConformanceFinding | null {
-  if (presentIn.size < minPresent || presentIn.size === fullLanguages.length) {
-    return null;
-  }
-  const missingFrom = fullLanguages.filter(l => !presentIn.has(l));
+  if (presentIn.size < MIN_LANGUAGES_TO_COMPARE) return null;
+  return gapFinding(kind, fam, presentIn, fullLanguages);
+}
+
+/** The gap finding for a family present in `presentIn` of `languages`, or null when it is in all. */
+function gapFinding(
+  kind: ArtifactKind,
+  fam: string,
+  presentIn: Set<string>,
+  languages: readonly string[],
+): ConformanceFinding | null {
+  const missingFrom = languages.filter(l => !presentIn.has(l));
+  if (missingFrom.length === 0) return null;
   return {
     ruleId: 'catalog-symmetry',
     severity: 'warning',
@@ -146,14 +154,26 @@ function familyFindings(
   fullLanguages: readonly string[],
 ): ConformanceFinding[] {
   const memberLanguages = new Set(family.members.map(id => id.split('/')[0] ?? ''));
-  const isAbsent = (lang: string) => Object.hasOwn(family.absent, lang);
-  const expected = fullLanguages.filter(lang => !isAbsent(lang));
+  const expected = fullLanguages.filter(lang => !Object.hasOwn(family.absent, lang));
   const presentIn = new Set(expected.filter(lang => memberLanguages.has(lang)));
   // A one-member family with no `absent` entries is a language-specific artifact; any other family
   // is compared even when only one non-absent language has a member.
   const singleton = family.members.length === 1 && Object.keys(family.absent).length === 0;
-  const gap = asymmetryFinding(family.kind, family.id, presentIn, expected, singleton ? 2 : 1);
-  const stale = Object.keys(family.absent)
+  const gap =
+    singleton || presentIn.size === 0
+      ? null
+      : gapFinding(family.kind, family.id, presentIn, expected);
+  const stale = staleAbsentFindings(family, memberLanguages, catalog);
+  return gap ? [gap, ...stale] : stale;
+}
+
+/** `absent` entries for a language that has a member, or for something that is not a language. */
+function staleAbsentFindings(
+  family: FamilyDef,
+  memberLanguages: ReadonlySet<string>,
+  catalog: ConformanceContext['catalog'],
+): ConformanceFinding[] {
+  return Object.keys(family.absent)
     .filter(lang => memberLanguages.has(lang) || !catalog.languages.has(lang))
     .map(lang => ({
       ruleId: 'catalog-symmetry',
@@ -162,7 +182,6 @@ function familyFindings(
         `${family.kind} family '${family.id}': absent lists ${lang}, which ` +
         (memberLanguages.has(lang) ? 'has a member' : 'is not a language'),
     }));
-  return gap ? [gap, ...stale] : stale;
 }
 
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {

@@ -9,7 +9,8 @@
  *     `references/*.md`), a reference SKILL.md never mentions, a stack file not named
  *     `stack-<stack>.md`;
  *   - vocabulary, when the catalog has `standard.yaml` (catalog-vocabulary.ts): a language without
- *     a prefix or stack, a stack not declared there, a name off its language's prefix.
+ *     a prefix or stack, a stack not declared there, a name off its language's prefix, a language
+ *     rule glob that matches only at the root, a shared rule two rules of one language extend.
  *
  * Author-only: `validateCatalog`, which gates consumer commands, is untouched. Reads paths relative
  * to the catalog root and never follows a symbolic link; a catalog built in memory has no root and
@@ -23,7 +24,11 @@ import type { ConformanceRule, ConformanceFinding } from '../types';
 import { positionProblems } from '../../../../catalog-layout';
 import { readReferences, skillFolderExtras } from '../../../../load-references';
 import { loadCatalogStandard } from '../../../../catalog-standard';
-import { languageProblems, vocabularyProblems } from '../../../../catalog-vocabulary';
+import {
+  doubleExtendsProblems,
+  languageProblems,
+  vocabularyProblems,
+} from '../../../../catalog-vocabulary';
 
 const STACK_FILE_RE = /^stack-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
@@ -87,8 +92,13 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
       ...(standard ? vocabularyProblems(artifact, catalog.languages, standard) : []),
     ].map(detail => layoutError(detail, artifact)),
   );
-  const languageFindings = standard ? languageProblems(catalog.languages, standard) : [];
-  return [...languageFindings.map(detail => layoutError(detail)), ...artifactFindings];
+  const catalogWide = standard
+    ? [
+        ...languageProblems(catalog.languages, standard),
+        ...doubleExtendsProblems(catalog.artifacts),
+      ]
+    : [];
+  return [...catalogWide.map(detail => layoutError(detail)), ...artifactFindings];
 }
 
 export const catalogLayoutRule: ConformanceRule = {

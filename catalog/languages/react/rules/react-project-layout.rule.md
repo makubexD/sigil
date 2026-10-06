@@ -6,7 +6,8 @@ description: React project structure — feature-based folders, Next.js App Rout
 language: react
 appliesTo:
   - "**/*.tsx"
-  - package.json
+  - "**/*.jsx"
+  - "**/package.json"
 tags:
   - react
   - project-layout

@@ -69,6 +69,31 @@ describe('catalog vocabulary (catalog-layout)', () => {
     assert.deepEqual(found, ["name 'dotnet-p' does not start with the csharp prefix 'cs-'"]);
   });
 
+  it('should flag a language rule glob that matches only at the repository root', async () => {
+    const anchored = rule('csharp/cs-p').replace('---\n\n', 'appliesTo:\n  - .gitignore\n---\n\n');
+    const found = await layoutFindings({
+      'standard.yaml': STANDARD,
+      'languages/csharp/language.yaml': csharpYaml('prefix: cs\nstack: dotnet\n'),
+      'languages/csharp/rules/cs-p.rule.md': anchored,
+    });
+    assert.deepEqual(found, ["appliesTo '.gitignore' matches only at the root; start it with **/"]);
+  });
+
+  it('should flag a shared rule that two rules of one language extend (it loads twice)', async () => {
+    const extending = (id: string) =>
+      rule(id).replace('---\n\n', 'extends:\n  - shared/base\n---\n\n');
+    const found = await layoutFindings({
+      'standard.yaml': STANDARD,
+      'languages/csharp/language.yaml': csharpYaml('prefix: cs\nstack: dotnet\n'),
+      'shared/rules/base.rule.md': rule('shared/base'),
+      'languages/csharp/rules/cs-a.rule.md': extending('csharp/cs-a'),
+      'languages/csharp/rules/cs-b.rule.md': extending('csharp/cs-b'),
+    });
+    assert.deepEqual(found, [
+      'shared/base is extended by csharp/cs-a and csharp/cs-b, so csharp loads it twice; keep one',
+    ]);
+  });
+
   it('should leave a catalog without standard.yaml to the older checks', async () => {
     const found = await layoutFindings({
       'languages/csharp/language.yaml': csharpYaml(''),

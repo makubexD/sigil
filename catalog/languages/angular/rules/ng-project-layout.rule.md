@@ -5,7 +5,7 @@ title: Project Layout (Angular)
 description: Angular workspace & project structure, angular.json build targets, standalone-first feature folders, environment and path-alias configuration
 language: angular
 appliesTo:
-  - "angular.json"
+  - "**/angular.json"
   - "**/tsconfig*.json"
   - "**/*.workspace.json"
   - "**/environment*.ts"

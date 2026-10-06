@@ -6,8 +6,6 @@ description: Angular/TypeScript conventions — typing, naming, file structure, 
 language: angular
 appliesTo:
   - "**/*.ts"
-extends:
-  - shared/clean-code
 tags:
   - angular
   - conventions

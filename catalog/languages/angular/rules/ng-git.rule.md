@@ -7,8 +7,8 @@ language: angular
 appliesTo:
   - "**/*.ts"
   - "**/*.html"
-  - angular.json
-  - .gitignore
+  - "**/angular.json"
+  - "**/.gitignore"
 appliesToRationale: Scoped to Angular source and templates, angular.json and .gitignore — the shared/git baseline it extends is repeated in every language's git rule, so "**/*" loaded it on every file of every stack (a .py file got the TypeScript git rule) and twice beside another language's (2026-09-27 live-prompt campaign).
 extends:
   - shared/git

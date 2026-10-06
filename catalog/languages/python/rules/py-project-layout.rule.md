@@ -6,7 +6,7 @@ description: Python project structure — src layout, pyproject.toml as the sing
 language: python
 appliesTo:
   - "**/*.py"
-  - pyproject.toml
+  - "**/pyproject.toml"
 tags:
   - python
   - project-layout

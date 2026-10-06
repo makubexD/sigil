@@ -33,16 +33,20 @@ describe('Resolve phase', () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
 
-    const csRule = resolved.byId.get('csharp/cs-conventions');
-    assert.ok(csRule, 'csharp/cs-conventions resolved');
+    // Only *-code-quality extends shared/clean-code (one family, one skeleton ADR).
+    const csRule = resolved.byId.get('csharp/cs-code-quality');
+    assert.ok(csRule, 'csharp/cs-code-quality resolved');
 
     // resolvedBody should contain BOTH the parent (shared/clean-code) body
-    // AND the csharp/cs-conventions body
+    // AND the csharp/cs-code-quality body
     assert.ok(
       csRule.resolvedBody?.includes('Clear names'),
       'inherited clean-code guidance present',
     );
-    assert.ok(csRule.resolvedBody?.includes('Nullable Reference Types'), 'own guidance present');
+    assert.ok(
+      csRule.resolvedBody?.includes('Max 20 lines per method body'),
+      'own guidance present',
+    );
   });
 
   it('expands uses.rules for skills', async () => {

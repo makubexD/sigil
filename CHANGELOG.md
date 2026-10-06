@@ -253,6 +253,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Language rules now reach nested projects and JSX:
+  - **Globs anchored at the root only** (`package.json`, `.gitignore`, `pyproject.toml`, `angular.json`, …) now start with `**/`. Before, a monorepo's nested projects never got those rules.
+  - **React rules that matched only `.tsx`** now match `.jsx` too, including the required security rule.
+  - **clean-code loaded twice.** Angular and C# loaded the clean-code baseline twice (through conventions and code-quality); only code-quality extends it now.
+  - **False claim.** The Python and React conventions said they extended clean-code, and they didn't; that wording is fixed.
+
+  `catalog-layout` now fails `sync --check` on a root-only language-rule glob and on a shared rule that two rules of one language extend.
 - `dist/registry.json` listed every target under an artifact's `platforms`, even targets that can't
   take its kind (Copilot on hooks and settings). It now lists only targets that deliver the kind.
 - `sync --apply` for `provider-term-leak` looked a term's value up by the term alone, so a

@@ -2,7 +2,7 @@
 id: python/py-conventions
 kind: rule
 title: Python Style
-description: Python-specific style rules. Extends the shared clean-code baseline with PEP 8, type hints, modern Python idioms, and project tooling conventions.
+description: Python-specific style rules — PEP 8, type hints, modern Python idioms, and project tooling conventions (the clean-code baseline arrives through py-code-quality).
 language: python
 appliesTo:
   - "**/*.py"

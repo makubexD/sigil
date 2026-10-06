@@ -6,6 +6,7 @@ description: React component documentation — TSDoc for exported components/hoo
 language: react
 appliesTo:
   - "**/*.tsx"
+  - "**/*.jsx"
 tags:
   - react
   - documentation

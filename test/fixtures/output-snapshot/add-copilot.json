@@ -2,7 +2,7 @@
   ".claude/settings.json": "9f1395a16aad569f6ddde5cca5372baf3fc60c9069f726e1bfc533bd3c52acca",
   ".github/agents/cli-auditor.agent.md": "403e8bde0972f0617726f0b51dba5fb26bcc6b24eeef354456728d2c1adb0887",
   ".github/agents/cs-code-reviewer.agent.md": "2f51f4de96fa1ed9fa4d85dd721e20cbb61eb8c3ebb4074f6bc27034d3747b67",
-  ".github/instructions/angular-ng-conventions.instructions.md": "8d07ed6d5349b5d8be4004cacc0e3b50c85f14b1a8687e200e11846f37eebec5",
+  ".github/instructions/angular-ng-conventions.instructions.md": "64f30789ca1545f27130c473519d99cc4115e3b6ec8d6c521ad5560a707a1cf8",
   ".github/instructions/csharp-cs-testing.instructions.md": "eb3e6206f4483ce758d47d6021bd98bc98cc2d764188ba58a2824511a4a23fff",
   ".github/instructions/shared-cli-rules.instructions.md": "6dccc1093e31533bd406a68c588cecbed1b68b8e7f60b2c4f14973ad783418f0",
   ".github/instructions/typescript-ts-conventions.instructions.md": "96d5f46762400c088b3100f6968b3bd96cbbadd49fecb897f4af101072f3fa5b",
@@ -23,6 +23,6 @@
   ".github/skills/cs-generate-tests/SKILL.md": "3a4e2aae3b445a3816215ec1c7f678dafacad540b4db692ae6bb68786743c799",
   ".github/skills/ts-release/SKILL.md": "a1e1f9438333bed7d66678c25abfe8a54ad068d387b3a85396315f6ee664a2ee",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "2d6de84cf4184f56ff79e89517c26eca55d078e379692ca497e31a8d71a63663",
+  ".sigil/manifest.json": "dce21e0d245d506bf2e2da82cd136c55c602a314aa4041ba6245842f484d7378",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

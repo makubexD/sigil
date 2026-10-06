@@ -7,8 +7,6 @@ language: csharp
 appliesTo:
   - "**/*.cs"
   - "**/*.csproj"
-extends:
-  - shared/clean-code
 tags:
   - csharp
   - conventions

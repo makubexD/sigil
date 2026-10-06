@@ -5,7 +5,7 @@ title: Dependencies (Angular)
 description: Angular/Node dependency management — pinning, vetting, Angular lockstep, dev/runtime separation, removing unused
 language: angular
 appliesTo:
-  - package.json
+  - "**/package.json"
   - "**/*.ts"
 tags:
   - angular

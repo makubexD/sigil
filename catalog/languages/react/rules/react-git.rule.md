@@ -8,7 +8,8 @@ extends:
   - shared/git
 appliesTo:
   - "**/*.tsx"
-  - .gitignore
+  - "**/*.jsx"
+  - "**/.gitignore"
 tags:
   - react
   - git

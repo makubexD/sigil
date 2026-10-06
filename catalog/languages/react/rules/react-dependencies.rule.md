@@ -5,8 +5,9 @@ title: Dependencies (React)
 description: React dependency management — bundle-size awareness, peer-dependency ranges, vet before adding, remove unused
 language: react
 appliesTo:
-  - package.json
+  - "**/package.json"
   - "**/*.tsx"
+  - "**/*.jsx"
 tags:
   - react
   - dependencies

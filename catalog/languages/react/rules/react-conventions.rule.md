@@ -2,7 +2,7 @@
 id: react/react-conventions
 kind: rule
 title: React Component Style
-description: React-specific style and architecture rules. Extends the shared clean-code baseline with hooks conventions, component composition patterns, and TypeScript integration.
+description: React-specific style and architecture rules — hooks conventions, component composition patterns, and TypeScript integration (the clean-code baseline arrives through react-code-quality).
 language: react
 appliesTo:
   - "**/*.tsx"

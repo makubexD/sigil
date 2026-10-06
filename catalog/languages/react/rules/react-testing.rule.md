@@ -6,8 +6,11 @@ description: React Testing Library conventions — query by role/testid, user-ev
 language: react
 appliesTo:
   - "**/*.test.tsx"
+  - "**/*.test.jsx"
   - "**/*.spec.tsx"
+  - "**/*.spec.jsx"
   - "**/__tests__/**/*.tsx"
+  - "**/__tests__/**/*.jsx"
 tags:
   - react
   - testing

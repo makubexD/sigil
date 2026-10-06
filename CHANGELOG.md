@@ -147,6 +147,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Faster wizard and test suite: a session re-validates the catalog only when one of its files
+  changed. Each wizard action used to load and validate every catalog file again (one test walk did
+  it 129 times, now once); the change check only reads file metadata, and each caller still gets its
+  own copy.
 - Every language agent and skill family now shares one section skeleton in every language, declared
   in `catalog/standard.yaml`: the seven agent families and the add-package, audit-deps, document,
   generate-tests, sync-tests, scaffold-project and add-project skills. Text was moved, not removed;

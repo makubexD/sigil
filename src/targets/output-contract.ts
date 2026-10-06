@@ -17,6 +17,10 @@
 import { parseFrontmatter } from '../frontmatter-parse';
 import type { FileMap, ContractEntry, OutputViolation } from '../types';
 import type { KindEmitSpec } from './spec-types';
+import { REFERENCES_DIR } from './emit';
+
+/** A reference file beside any emitted SKILL.md (`<skill dir>/references/<name>.md`). */
+const REFERENCE_PATH = new RegExp(`/${REFERENCES_DIR}/[^/]+\\.md$`);
 
 /**
  * Derives ContractEntry[] from one or more KindEmitSpecs — the emitter↔contract duplication this
@@ -29,9 +33,12 @@ import type { KindEmitSpec } from './spec-types';
  * `requiredKeys` = every FieldMapping with `required: true`'s `to`. `forbiddenKeys`/`bodyForbids`
  * pass through from the spec. `match` is the spec's own `pathPattern` (see spec-types.ts for why
  * that can't be derived from `outputPath`, which is a function of a specific artifact).
+ *
+ * A skill spec also yields one entry for the reference files beside its SKILL.md: they carry the
+ * body's forbidden patterns (an untranslated token, another provider's literal) and no keys.
  */
 export function deriveContracts(specs: readonly KindEmitSpec[]): ContractEntry[] {
-  return specs.map(spec => ({
+  const entries: ContractEntry[] = specs.map(spec => ({
     match: spec.pathPattern,
     label: spec.variant ? `${spec.kind} (${spec.variant})` : spec.kind,
     contract: {
@@ -40,6 +47,10 @@ export function deriveContracts(specs: readonly KindEmitSpec[]): ContractEntry[]
       bodyForbids: [...spec.bodyForbids],
     },
   }));
+  const skill = specs.find(spec => spec.kind === 'skill');
+  if (!skill) return entries;
+  const reference = { match: REFERENCE_PATH, label: 'skill reference' };
+  return [...entries, { ...reference, contract: { bodyForbids: [...skill.bodyForbids] } }];
 }
 
 /** Parses frontmatter safely — gray-matter handles files with and without `---`. */

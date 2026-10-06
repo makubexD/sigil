@@ -15,6 +15,10 @@ import type { ArtifactEdit, ConformanceContext, ConformanceFinding } from './typ
 
 /** Applies one ArtifactEdit's frontmatter patch and/or body replacement, writing the file once. */
 function writeArtifactEdit(edit: ArtifactEdit): void {
+  if (edit.newContent !== undefined) {
+    fs.writeFileSync(edit.filePath, edit.newContent, 'utf-8');
+    return;
+  }
   const raw = fs.readFileSync(edit.filePath, 'utf-8');
   const { frontmatterLines, bodyStart } = splitFrontmatterBlock(raw);
   const newFrontmatter = edit.frontmatterPatch

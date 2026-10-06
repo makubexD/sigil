@@ -281,6 +281,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A skill's reference files now get the same per-tool translation as its SKILL.md: a
+  `{sigil:<term>}` token in a reference resolves to each tool's own text, and the output check, the
+  trust scan, `provider-term-leak` (with its `--apply` fix) and `platform-path-leak` read reference
+  files too. Before, references were copied unchanged and only SKILL.md was checked. No catalog
+  reference uses a token today, so output is unchanged.
 - Every language artifact's description now names its language. 28 didn't; `ts-generate-tests`
   ("Generate a test suite … in whatever runner the project already uses") competed with
   `py-generate-tests` in a repository with both installed, since an AI dispatches on the

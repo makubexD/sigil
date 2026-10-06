@@ -110,7 +110,9 @@ Consumer commands never read the file; `sigil move` renames a moved id in it. Se
    (`src/targets/lexicon.ts`) with a `{value, doc}` entry for every term in `LEXICON_TERMS`. Wire it
    onto every `KindEmitSpec`'s `lexicon:` field — `renderArtifact()` (`src/targets/emit.ts`) applies
    it unconditionally, so a body written once (`Read {sigil:conventions-file}...`) resolves to each
-   provider's own literal (`CLAUDE.md` / `AGENTS.md`) at render time. This is what keeps catalog
+   provider's own literal (`CLAUDE.md` / `AGENTS.md`) at render time. A skill's reference files get
+   the same lexicon (`renderReference`) and are checked by a reference entry `deriveContracts`
+   adds for every skill spec. This is what keeps catalog
    _bodies_ provider-neutral the same way `FieldMapping` already keeps _frontmatter_ neutral — see
    `src/targets/lexicon.ts` and
    [`docs/decisions/provider-neutral-body-lexicon-2026-08.md`](../decisions/provider-neutral-body-lexicon-2026-08.md).

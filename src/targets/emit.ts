@@ -61,6 +61,18 @@ function renderSections(
     .map(line => applyLexicon(line, spec.lexicon));
 }
 
+/** The folder beside a skill's SKILL.md that holds its reference files, on every target. */
+export const REFERENCES_DIR = 'references';
+
+/**
+ * Renders one of a skill's reference files for `spec`'s provider. A reference ships next to the
+ * SKILL.md it belongs to, so it gets the body's lexicon: a `{sigil:<term>}` token in a reference
+ * reads correctly on every target, the same as in the body.
+ */
+export function renderReference(spec: KindEmitSpec, content: string): string {
+  return applyLexicon(content, spec.lexicon);
+}
+
 /**
  * Renders one artifact through its KindEmitSpec: frontmatter block, `before` sections, the
  * artifact's own body (`resolvedBody ?? body` — see resolve.ts for what populates resolvedBody),

@@ -76,6 +76,7 @@ commander's `.version('1.4.0')` prints only `1.4.0`; pass the full string instea
 
 ## Tests
 
+Node has no in-process runner for `parseArgs` or commander, so test the real process:
 `node --test` with `child_process.spawnSync(process.execPath, [entry, ...args], { env })`
 gives `status`, `stdout`, `stderr` for real-process contract tests. Pass `input: ''` to close
 stdin for non-interactive tests. On Windows, spawn `process.execPath` with the script

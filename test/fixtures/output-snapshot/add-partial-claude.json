@@ -2,15 +2,15 @@
   ".claude/skills/cli/SKILL.md": "3723287f00aec402149db494e341b9b39558fc4ff7152faef049b5a83149f7b6",
   ".claude/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
   ".claude/skills/cli/references/auditor.md": "129d3771e8f16c5d5209d7f914dc90934b559a6ffc019728c6f4fdee6f376581",
-  ".claude/skills/cli/references/contract.md": "288e89d220a79f217e4a36200ec2e8767715d5fc6ba20d8b8341cb1267b2c739",
+  ".claude/skills/cli/references/contract.md": "02bc9d742a5f0575578ec2b2fa07a3a64ff435e1ac3265ddbe13cb74a8b6616f",
   ".claude/skills/cli/references/findings.md": "291ec65e34f07d993d5b86daaa11c8a539f6bdfd7a5dfd376b39cbdad5cb752c",
   ".claude/skills/cli/references/grammar.md": "a4553bf6847fd966de7d179e226e9b5296f63991e551b5c7e8c3c50ac5accc0b",
   ".claude/skills/cli/references/migration.md": "7e7ac8d585017536eb7ea4046c8f57fd2c196dfd08d5ba5f751296299a3eb172",
   ".claude/skills/cli/references/stack-dotnet.md": "33bd586deb35428443ab0ed1eef233a8626612873f5a9a17a1e48a9ff772c8be",
   ".claude/skills/cli/references/stack-go.md": "d5dd1e86e093cd07b5a858c482bd0779c32991600ab8cdc8974492953f7115fe",
-  ".claude/skills/cli/references/stack-node-ts.md": "367e85c2eef89708735ad253da9f8abb695162565d1dbacaf19735307c939640",
+  ".claude/skills/cli/references/stack-node-ts.md": "9df283d945c690208192a047cdeab0909d8d1969b03193876403a0bf73a62daf",
   ".claude/skills/cli/references/stack-python.md": "a371e8a559bc63f0f4fa705d9b3d7e317a71dd0004973212d78b6139a9ffc1c3",
   ".claude/skills/cli/references/stack-rust.md": "caec8e889d44cad66c61e383ef105edac99facb5b97abf6f0d0af302110a6943",
-  ".claude/skills/cli/references/testing.md": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c",
-  ".sigil/manifest.json": "988cca9a72210e4ea68b5d677d0286f59bd0019dceaaae55b540ca796a2be02c"
+  ".claude/skills/cli/references/testing.md": "d42c4e985555244ee508e439616e0acc62c3dd806bc2db4abde742b83db64eb4",
+  ".sigil/manifest.json": "b732cbef7180f17774ec7d88edb316fe1e28fe77ec1d1f2d2ef7234e21d371d0"
 }

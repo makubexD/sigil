@@ -68,7 +68,6 @@ commands you touched.
 
 Use the repository's existing test runner. Spawn the same way users do (the package's bin
 or `python -m app`), not by importing the command function, and on Windows remember that
-`.cmd` shims and path separators differ. Where an ecosystem has an in-process runner
-(click's `CliRunner`, cobra's `SetArgs`, clap's `try_parse_from`, System.CommandLine's
-`Parse`), its stack file names it for fast tests; keep a few real-process tests on top of them.
-Node has none, so its stack file uses real-process tests only.
+`.cmd` shims and path separators differ. Where an ecosystem has an in-process runner, its stack
+file names it for fast tests; keep a few real-process tests on top of them. A stack without one
+uses real-process tests only, and its stack file says so.

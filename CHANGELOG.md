@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Dev-tool permissions per language: `ts-`, `react-`, `ng-`, `cs-` and `py-allow-dev-tools`
+  allow each language's own build, test, lint and format commands (`dotnet test`, `pytest`,
+  `ng test`, ...). Each starter pack carries its language's; `essentials` carries none.
+- `stack-leak` (`sigil sync --check`, warning): neutral `shared/` text that names one stack's
+  library or tool (`stacks[].terms` in `catalog/standard.yaml`) belongs in that stack's part.
+
 - One artifact anatomy, written as data and shown in a generated `catalog/README.md`. In
   `catalog/standard.yaml` every agent, rule and skill (shared ones too) belongs to a family that
   fixes its sections, exact frontmatter keys, title and the reference files it carries by role
@@ -312,6 +318,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `renderCapabilityMatrix()` so the generated file and its staleness test agree.
 
 ### Fixed
+
+- `shared/allow-dev-tools` allowed npm commands only, yet shipped in the .NET and Python starter
+  packs. It is deprecated (superseded by the per-language settings); `sigil prune` names the
+  replacement for an existing install.
 
 - A skill's reference files now get the same per-tool translation as its SKILL.md: a
   `{sigil:<term>}` token in a reference resolves to each tool's own text, and the output check, the

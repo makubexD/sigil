@@ -1,8 +1,8 @@
 # Architecture: a flow engine, a prompter port, thin adapters
 
-Prompt libraries draw one question well. Most of them don't do navigation across questions:
-@clack/prompts, questionary, inquire, and Spectre.Console have no "back" between prompts,
-and huh has it only inside one form. So the navigation belongs to a small engine the project
+Prompt libraries draw one question well. Most of them don't do navigation across questions: the
+library of every stack lacks "back" between prompts, or has it only inside one form (each stack
+file says which). So the navigation belongs to a small engine the project
 owns, and the library is an adapter behind an interface. That split also makes the whole wizard
 testable without a terminal.
 

@@ -332,14 +332,16 @@ describe('O — Wizard: config-scope for mcp', () => {
         `"Config — agnostic" group must contain mcp artifacts; got: ${agnosticValues.join(', ')}`,
       );
 
-      // No group other than "Config — agnostic" and navigation/back groups should contain config kinds
+      // A language group holds only that language's own config artifacts (its settings), never an
+      // agnostic one: those all sit in "Config — agnostic".
       for (const [groupKey, items] of Object.entries(capturedOptions)) {
         if (groupKey === 'Config — agnostic' || groupKey === '⬆ Navigation') continue;
         for (const item of items as Array<{ value: string }>) {
-          const kind = item.value.split(':')[0];
+          const [kind, id] = item.value.split(':');
+          if (!CONFIG_KINDS.has(kind!)) continue;
           assert.ok(
-            !CONFIG_KINDS.has(kind!),
-            `Group "${groupKey}" must not contain config artifact "${item.value}"`,
+            id!.startsWith(`${groupKey}/`),
+            `Group "${groupKey}" must not contain another namespace's config artifact "${item.value}"`,
           );
         }
       }

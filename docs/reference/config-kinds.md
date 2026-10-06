@@ -157,9 +157,9 @@ On every later run, when the backup already exists, the writer keeps that pristi
   entries in the kind sub-menu (MCPs · Hooks · Settings, each with counts). Selecting one opens a
   flat picker that skips language and deps steps entirely — goes straight to overwrite → scope.
 - **`Pick specific items` → All types (cross-kind path):** config kinds appear under a dedicated
-  `"Config — agnostic"` group at the top of the grouped picker, above all language groups. The
-  `shared` language group contains only genuine shared-code artifacts (agents, rules), never config
-  kinds.
+  `"Config — agnostic"` group at the top of the grouped picker, above all language groups, when
+  they name no language. A language's own config artifact (`csharp/cs-allow-dev-tools`) sits in
+  that language's group and follows the language filter like any artifact of that language.
 
 `partitionConfigKinds()` (`src/select/grouping.ts`) is the pure helper that splits
 `{ config, rest }`. Callers are `src/wizard/steps/add/cross-kind-picker.ts` and

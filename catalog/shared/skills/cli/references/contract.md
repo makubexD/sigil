@@ -35,8 +35,8 @@ Output must be consumable by `jq`, `grep`, `awk`, `cut`, `xargs`, and scripts:
 Decide color per stream, in this order:
 
 1. `--no-color` or `--color never|always|auto` if the CLI has it;
-2. `FORCE_COLOR` set: `0` or `false` disables, anything else enables (the Node/supports-color
-   convention; force-color.org treats any non-empty value as on, so say which one you follow);
+2. `FORCE_COLOR` set: `0` or `false` disables, anything else enables (the common convention;
+   force-color.org treats any non-empty value as on, so say which one you follow);
 3. `NO_COLOR` set and non-empty disables;
 4. `TERM=dumb` disables;
 5. otherwise color only when that stream is a terminal.
@@ -86,7 +86,7 @@ Read the existing contract from help, docs, and tests and keep it. When none exi
 | 2 | usage error: unknown command or option, bad value, missing argument, or a missing `--yes` when no terminal can be prompted |
 | 130 | interrupted (Ctrl-C) |
 
-Code 2 usage error follows bash builtins, argparse, click, and clap. Add
+Code 2 for a usage error follows bash builtins and the common parsers of every stack. Add
 more codes only for a distinction scripts actually branch on, and document every code in
 top-level help.
 

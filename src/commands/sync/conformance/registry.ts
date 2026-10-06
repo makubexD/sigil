@@ -24,6 +24,7 @@ import { catalogLayoutRule } from './rules/catalog-layout';
 import { referenceLinksRule } from './rules/reference-links';
 import { providerLimitsRule } from './rules/provider-limits';
 import { familySkeletonRule } from './rules/family-skeleton';
+import { stackLeakRule } from './rules/stack-leak';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -44,4 +45,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   referenceLinksRule,
   providerLimitsRule,
   familySkeletonRule,
+  stackLeakRule,
 ];

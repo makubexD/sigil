@@ -66,6 +66,8 @@ const StackSchema = z.object({
   displayName: z.string().min(1),
   /** The one language whose folder holds this stack's text (its stack parts). */
   home: z.string().regex(KEBAB_NAME_RE, KEBAB).optional(),
+  /** Library and tool names of this stack that neutral shared text must not name (stack-leak). */
+  terms: z.array(z.string().min(1)).optional(),
 });
 
 const StandardSchema = z.object({
@@ -100,6 +102,7 @@ export interface StackDef {
   readonly id: string;
   readonly displayName: string;
   readonly home?: string | undefined;
+  readonly terms?: readonly string[] | undefined;
 }
 
 export interface CatalogStandard {

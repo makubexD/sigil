@@ -5,7 +5,7 @@ title: NPM (React)
 description: React/frontend npm mechanics — lockfile discipline, npm audit, semver ranges, monorepo workspace considerations
 language: react
 appliesTo:
-  - package.json
+  - "**/package.json"
 tags:
   - react
   - npm

@@ -7,6 +7,7 @@ language: react
 severity: required
 appliesTo:
   - "**/*.tsx"
+  - "**/*.jsx"
 tags:
   - react
   - security

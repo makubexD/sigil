@@ -12,6 +12,28 @@ import { STANDARD_FILE } from './catalog-standard';
 
 const STACK_FILE_ID_RE = /^stack-(.+)\.md$/;
 
+/**
+ * A shared rule extended by two rules of one language is prepended to both, so that language loads
+ * it twice (the clean-code baseline came through both `*-conventions` and `*-code-quality`).
+ */
+export function doubleExtendsProblems(artifacts: readonly Artifact[]): string[] {
+  const extenders = new Map<string, string[]>();
+  for (const artifact of artifacts) {
+    if (artifact.kind !== 'rule') continue;
+    const language = artifact.id.split('/')[0] ?? '';
+    for (const base of (artifact.frontmatter.extends as string[] | undefined) ?? []) {
+      const key = `${language}\u0000${base}`;
+      extenders.set(key, [...(extenders.get(key) ?? []), artifact.id]);
+    }
+  }
+  return [...extenders.entries()]
+    .filter(([, ids]) => ids.length > 1)
+    .map(([key, ids]) => {
+      const [language, base] = key.split('\u0000');
+      return `${base} is extended by ${ids.sort().join(' and ')}, so ${language} loads it twice; keep one`;
+    });
+}
+
 /** Problems with the languages themselves: a missing prefix or stack, an unknown stack, a shared prefix. */
 export function languageProblems(
   languages: ReadonlyMap<string, LanguageMetadata>,
@@ -55,11 +77,32 @@ function stackFileProblems(artifact: Artifact, standard: CatalogStandard): strin
   });
 }
 
-/** An artifact's name off its language's prefix, and stack files for undeclared stacks. */
+/**
+ * A language rule glob that does not start with a double-star segment matches only at the repository
+ * root, so a nested project in a monorepo (`apps/web/package.json`) never gets the rule. The
+ * double-star form matches the root too.
+ */
+function globProblems(
+  artifact: Artifact,
+  languages: ReadonlyMap<string, LanguageMetadata>,
+): string[] {
+  const namespace = artifact.id.split('/')[0] ?? '';
+  if (artifact.kind !== 'rule' || !languages.has(namespace)) return [];
+  const globs = (artifact.frontmatter.appliesTo as string[] | undefined) ?? [];
+  return globs
+    .filter(glob => !glob.startsWith('**/'))
+    .map(glob => `appliesTo '${glob}' matches only at the root; start it with **/`);
+}
+
+/** An artifact's name off its language's prefix, root-only rule globs, undeclared stacks. */
 export function vocabularyProblems(
   artifact: Artifact,
   languages: ReadonlyMap<string, LanguageMetadata>,
   standard: CatalogStandard,
 ): string[] {
-  return [...prefixProblems(artifact, languages), ...stackFileProblems(artifact, standard)];
+  return [
+    ...prefixProblems(artifact, languages),
+    ...globProblems(artifact, languages),
+    ...stackFileProblems(artifact, standard),
+  ];
 }

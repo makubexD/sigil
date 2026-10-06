@@ -8,7 +8,7 @@ extends:
   - shared/git
 appliesTo:
   - "**/*.py"
-  - .gitignore
+  - "**/.gitignore"
 tags:
   - python
   - git

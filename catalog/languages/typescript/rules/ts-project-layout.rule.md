@@ -5,10 +5,10 @@ title: Project Layout (TypeScript)
 description: Project layout — tsconfig as strictness control plane, ESM/CJS + exports map, workspaces, one concern per file
 language: typescript
 appliesTo:
-  - tsconfig*.json
-  - package.json
-  - eslint.config.*
-  - "*.code-workspace"
+  - "**/tsconfig*.json"
+  - "**/package.json"
+  - "**/eslint.config.*"
+  - "**/*.code-workspace"
 tags:
   - typescript
   - project

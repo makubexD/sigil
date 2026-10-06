@@ -5,7 +5,7 @@ title: Packaging (Python)
 description: Python packaging mechanics — pyproject.toml build backend, PyPI publishing, uv/pip-audit, version single-sourcing
 language: python
 appliesTo:
-  - pyproject.toml
+  - "**/pyproject.toml"
 tags:
   - python
   - packaging

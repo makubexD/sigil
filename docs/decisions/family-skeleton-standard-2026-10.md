@@ -65,7 +65,10 @@ skeleton.**
   language-specific topics, not steps. Templated families (`release`, `code-quality`) take their
   sections from the template, so members with `template:` are not compared.
 - `catalog-layout` (error, when `standard.yaml` exists): a language without a prefix or stack, a stack
-  not declared, a name off its language's prefix, a stack file for an undeclared stack.
+  not declared, a name off its language's prefix, a stack file for an undeclared stack, a language
+  rule glob without a leading double-star segment (it matches only at the repository root, so a
+  monorepo's nested projects never get the rule), and a shared rule that two rules of one language
+  extend (that language loads it twice). Only `*-code-quality` extends `shared/clean-code`.
 - `catalog-symmetry` (warning) reads families from the data, honouring `absent`.
 
 ## Rejected

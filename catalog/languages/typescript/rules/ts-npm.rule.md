@@ -5,9 +5,9 @@ title: Npm (TypeScript)
 description: npm supply-chain hygiene — lockfile integrity, vulnerability scanning, lifecycle-script risk, .npmrc token hygiene, publishing
 language: typescript
 appliesTo:
-  - package.json
-  - package-lock.json
-  - .npmrc
+  - "**/package.json"
+  - "**/package-lock.json"
+  - "**/.npmrc"
 tags:
   - typescript
   - npm

@@ -5,7 +5,7 @@ title: Dependencies (TypeScript)
 description: TypeScript dependency management — Node built-ins first, lockfile, dep categories, vet before adding, remove unused
 language: typescript
 appliesTo:
-  - package.json
+  - "**/package.json"
   - "**/*.ts"
   - "**/*.tsx"
 tags:

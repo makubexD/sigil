@@ -5,8 +5,8 @@ title: Dependencies (Python)
 description: Python dependency management — stdlib-first, lock files, dependency groups, vet before adding, remove unused
 language: python
 appliesTo:
-  - pyproject.toml
-  - requirements*.txt
+  - "**/pyproject.toml"
+  - "**/requirements*.txt"
 tags:
   - python
   - dependencies

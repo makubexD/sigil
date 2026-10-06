@@ -124,14 +124,15 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `description` plus `whenToUse`; agents dispatch on `description` alone. `whenToUse:` on an agent is unread at build
   time. Put dispatch-disambiguation in `description`. `declared-but-unemitted` fails `sync --check` if the field is
   authored and unmapped. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
-- **A same-kind, same-topic "family" of artifacts across language namespaces is not automatically a templatization
-  candidate**. Templatize only after measuring real body overlap, with at least three concrete duplicates. Three
-  templates ship in `catalog/shared/templates/`: `mcp-note` (the four `shared/*.mcp.md` files, from
-  `docs/decisions/template-extraction-evidence-2026-08.md`, which left `hook`/`settings` hand-authored for lack of three
-  examples) plus `code-quality` and `release-skill` (added after the 2026-08-20 audit measured their overlap).
-  `catalog-symmetry`
-  (`src/commands/sync/conformance/rules/catalog-symmetry.ts`) catches a family missing from one language namespace
-  without assuming the bodies are duplicates. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
+- **One family, one skeleton.** Every language agent, rule and skill belongs to exactly one family in
+  `catalog/standard.yaml` (explicit members, optional ordered H2 `sections` and required `keys`, `absent` gaps), read
+  only through `src/catalog-standard.ts` and only by `sync --check` rules — never by consumer commands. Structure is
+  data there, not a template: `family-skeleton` fails `--check` when a member drifts. A `template:` holds shared prose
+  only, added after measuring real overlap with at least three concrete duplicates (three ship:
+  `mcp-note`, `code-quality`, `release-skill`). Never rename an id to fit a family; list it as a member. Each
+  `language.yaml` names its `prefix` and `stack`; stacks are declared once in `standard.yaml` (`catalog-layout`
+  checks both). `catalog-symmetry` reads families from the data. (see
+  `docs/decisions/family-skeleton-standard-2026-10.md`)
 - **Where an artifact goes is one rule**: no language variation → `shared/`; varies with the project's language →
   `languages/<lang>/` (the only option for a language-varying agent or rule — neither loads references on demand);
   varies with a stack the task chooses → one shared skill with flat `references/stack-<stack>.md`. Tie →

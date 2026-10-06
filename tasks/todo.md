@@ -58,12 +58,12 @@ Spec: `SPEC.md`
 
 ## Milestone 5: family skeleton standard, structure first (spec: `SPEC-family-standard.md`)
 
-- [ ] T0 Plan commit
-- [ ] A1 ADR "one family, one skeleton" + CLAUDE.md template-invariant amendment
-- [ ] A2 Families as data (`families.yaml`: kind, explicit members, ordered sections, required keys, aliases)
-- [ ] A3 One vocabulary as data (`language.yaml` `prefix` + `stack`; `catalog-layout` validates)
-- [ ] A4 `family-skeleton` conformance check (divergent fixture fails)
-- [ ] A5 `catalog-symmetry` reads families from data (fixes the package-manager blind spot)
+- [x] T0 Plan commit
+- [x] A1 ADR "one family, one skeleton" + CLAUDE.md template-invariant amendment
+- [x] A2 Families as data (`catalog/standard.yaml`: kind, explicit members, ordered sections, required keys, aliases)
+- [x] A3 One vocabulary as data (`language.yaml` `prefix` + `stack`; `catalog-layout` validates)
+- [x] A4 `family-skeleton` conformance check (divergent fixture fails)
+- [x] A5 `catalog-symmetry` reads families from data (fixes the package-manager blind spot)
 - [ ] A6 (P1) Per-language descriptions name their language
 - [ ] S1 Pilot: debugger + generate-tests families, all three targets
 - [ ] C1 Declare every family and fit every member's structure

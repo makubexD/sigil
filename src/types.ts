@@ -52,6 +52,8 @@ export interface LanguageMetadata {
   displayName: string; // e.g. ".NET / C#"
   globs: string[]; // canonical file globs, e.g. ["**/*.cs", "**/*.csproj"]
   icon?: string; // optional emoji or icon name
+  prefix?: string; // the artifact-name prefix, e.g. "cs" for cs-release (checked by catalog-layout)
+  stack?: string; // the stack id in catalog/standard.yaml, e.g. "dotnet"
 }
 
 // ─── Loaded catalog ───────────────────────────────────────────────────────────

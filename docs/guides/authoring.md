@@ -225,6 +225,8 @@ content-refinement follow-up checklist. `--display-name` overrides the generated
 ```yaml
 name: go
 displayName: Go
+prefix: go # every artifact name in this language starts with go-
+stack: go # a stack declared in catalog/standard.yaml
 icon: 🐹
 globs:
   - '**/*.go'
@@ -273,7 +275,15 @@ tags: [go, testing]
 …instructions…
 ```
 
-**Step 4 — register the pack** (`packs.yaml`):
+**Step 4 — put each artifact in its family** (`catalog/standard.yaml`). Every language agent, rule
+and skill belongs to exactly one family. Add `go/go-style` to an existing family's `members` (or a
+new family), and give each new artifact the family's `sections` in order, if the family declares
+any. A family is matched by its member list, never by name, so `go-style` can join `conventions`.
+`sigil sync --check` fails (`family-skeleton`) on a member whose sections drift and warns about an
+artifact in no family. See
+[family-skeleton-standard-2026-10.md](../decisions/family-skeleton-standard-2026-10.md).
+
+**Step 5 — register the pack** (`packs.yaml`):
 
 ```yaml
 - name: go-pack
@@ -289,7 +299,7 @@ and agents (`uses:`) are resolved for you, so you do not list them. The older `l
 `name` becomes a Claude plugin of the same name; see
 [consuming.md](consuming.md#install-a-pack-as-a-claude-plugin).
 
-**Step 5 — validate and build:**
+**Step 6 — validate and build:**
 
 ```bash
 sigil validate

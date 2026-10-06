@@ -1,4 +1,6 @@
 displayName: "React"
+prefix: react
+stack: node-ts
 globs:
   - "**/*.tsx"
   - "**/*.jsx"

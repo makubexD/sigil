@@ -1,4 +1,6 @@
 displayName: "Python"
+prefix: py
+stack: python
 globs:
   - "**/*.py"
   - "**/*.pyi"

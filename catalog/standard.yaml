@@ -1,0 +1,253 @@
+# The catalog standard as data (docs/decisions/family-skeleton-standard-2026-10.md).
+#
+# stacks:   the ecosystems a shared skill may carry `references/stack-<id>.md` for. A language
+#           names its stack in its language.yaml (`stack:`); go and rust are stacks with no language.
+# families: every language agent, rule and skill belongs to exactly one family. A family lists its
+#           members explicitly (ids never change to fit a name), and may declare `sections` (the H2
+#           skeleton every member has, in order; step numbers are ignored) and `keys` (frontmatter
+#           every member sets). `absent` records why a language has no member.
+#
+# Checked by `sigil sync --check` (family-skeleton, catalog-layout, catalog-symmetry). Author-only:
+# consumer commands never read this file.
+
+stacks:
+  - id: dotnet
+    displayName: .NET
+  - id: go
+    displayName: Go
+  - id: node-ts
+    displayName: Node.js / TypeScript
+  - id: python
+    displayName: Python
+  - id: rust
+    displayName: Rust
+
+families:
+  # ── Agents ──────────────────────────────────────────────────────────────────────────────────
+  - id: api-compat-reviewer
+    kind: agent
+    members:
+      - angular/ng-api-compat-reviewer
+      - csharp/cs-api-compat-reviewer
+      - python/py-api-compat-reviewer
+      - react/react-api-compat-reviewer
+      - typescript/ts-api-compat-reviewer
+  - id: architecture-reviewer
+    kind: agent
+    members:
+      - angular/ng-architecture-reviewer
+      - csharp/cs-architecture-reviewer
+      - python/py-architecture-reviewer
+      - react/react-architecture-reviewer
+      - typescript/ts-architecture-reviewer
+  - id: code-reviewer
+    kind: agent
+    members:
+      - angular/ng-code-reviewer
+      - csharp/cs-code-reviewer
+      - python/py-code-reviewer
+      - react/react-code-reviewer
+      - typescript/ts-code-reviewer
+  - id: debugger
+    kind: agent
+    members:
+      - angular/ng-debugger
+      - csharp/cs-debugger
+      - python/py-debugger
+      - react/react-debugger
+      - typescript/ts-debugger
+  - id: performance-profiler
+    kind: agent
+    members:
+      - angular/ng-performance-profiler
+      - csharp/cs-performance-profiler
+      - python/py-performance-profiler
+      - react/react-performance-profiler
+      - typescript/ts-performance-profiler
+  - id: refactor-specialist
+    kind: agent
+    members:
+      - angular/ng-refactor-specialist
+      - csharp/cs-refactor-specialist
+      - python/py-refactor-specialist
+      - react/react-refactor-specialist
+      - typescript/ts-refactor-specialist
+  - id: security-auditor
+    kind: agent
+    members:
+      - angular/ng-security-auditor
+      - csharp/cs-security-auditor
+      - python/py-security-auditor
+      - react/react-security-auditor
+      - typescript/ts-security-auditor
+  - id: template-reviewer
+    kind: agent
+    members: [angular/ng-template-reviewer]
+
+  # ── Rules ───────────────────────────────────────────────────────────────────────────────────
+  - id: async
+    kind: rule
+    members:
+      - angular/ng-async
+      - csharp/cs-async
+      - python/py-async
+      - react/react-async
+      - typescript/ts-async
+  - id: code-quality
+    kind: rule
+    members:
+      - angular/ng-code-quality
+      - csharp/cs-code-quality
+      - python/py-code-quality
+      - react/react-code-quality
+      - typescript/ts-code-quality
+  - id: conventions
+    kind: rule
+    members:
+      - angular/ng-conventions
+      - csharp/cs-conventions
+      - python/py-conventions
+      - react/react-conventions
+      - typescript/ts-conventions
+  - id: dependencies
+    kind: rule
+    members:
+      - angular/ng-dependencies
+      - csharp/cs-dependencies
+      - python/py-dependencies
+      - react/react-dependencies
+      - typescript/ts-dependencies
+  - id: documentation
+    kind: rule
+    members:
+      - angular/ng-documentation
+      - csharp/cs-documentation
+      - python/py-documentation
+      - react/react-documentation
+      - typescript/ts-documentation
+  - id: git
+    kind: rule
+    members:
+      - angular/ng-git
+      - csharp/cs-git
+      - python/py-git
+      - react/react-git
+      - typescript/ts-git
+  - id: logging
+    kind: rule
+    members:
+      - angular/ng-logging
+      - csharp/cs-logging
+      - python/py-logging
+      - react/react-logging
+      - typescript/ts-logging
+  # One concern under four names (NuGet, packaging, npm): the family ties them together.
+  - id: package-manager
+    kind: rule
+    members:
+      - csharp/cs-nuget
+      - python/py-packaging
+      - react/react-npm
+      - typescript/ts-npm
+  - id: project-layout
+    kind: rule
+    members:
+      - angular/ng-project-layout
+      - csharp/cs-project-layout
+      - python/py-project-layout
+      - react/react-project-layout
+      - typescript/ts-project-layout
+  - id: security
+    kind: rule
+    members:
+      - angular/ng-security
+      - csharp/cs-security
+      - python/py-security
+      - react/react-security
+      - typescript/ts-security
+  - id: testing
+    kind: rule
+    members:
+      - angular/ng-testing
+      - csharp/cs-testing
+      - python/py-testing
+      - react/react-testing
+      - typescript/ts-testing
+  - id: components
+    kind: rule
+    members: [angular/ng-components]
+  - id: rxjs
+    kind: rule
+    members: [angular/ng-rxjs]
+  - id: signals
+    kind: rule
+    members: [angular/ng-signals]
+  - id: templates
+    kind: rule
+    members: [angular/ng-templates]
+
+  # ── Skills ──────────────────────────────────────────────────────────────────────────────────
+  - id: add-package
+    kind: skill
+    members:
+      - angular/ng-add-package
+      - csharp/cs-add-package
+      - python/py-add-package
+      - react/react-add-package
+      - typescript/ts-add-package
+  - id: audit-deps
+    kind: skill
+    members:
+      - angular/ng-audit-deps
+      - csharp/cs-audit-deps
+      - python/py-audit-deps
+      - react/react-audit-deps
+      - typescript/ts-audit-deps
+  - id: document
+    kind: skill
+    members:
+      - angular/ng-document
+      - csharp/cs-document
+      - python/py-document
+      - react/react-document
+      - typescript/ts-document
+  - id: generate-tests
+    kind: skill
+    members:
+      - angular/ng-generate-tests
+      - csharp/cs-generate-tests
+      - python/py-generate-tests
+      - react/react-generate-tests
+      - typescript/ts-generate-tests
+  - id: release
+    kind: skill
+    members:
+      - angular/ng-release
+      - csharp/cs-release
+      - python/py-release
+      - react/react-release
+      - typescript/ts-release
+  - id: sync-tests
+    kind: skill
+    members:
+      - angular/ng-sync-tests
+      - csharp/cs-sync-tests
+      - python/py-sync-tests
+      - react/react-sync-tests
+      - typescript/ts-sync-tests
+  # Create a new project in an empty directory.
+  - id: scaffold-project
+    kind: skill
+    members:
+      - python/py-scaffold-project
+      - react/react-scaffold-project
+  # Add a project to an existing solution or workspace. Members keep their scaffold-project ids;
+  # a rename would leave the old installed skill loaded next to the new one.
+  - id: add-project
+    kind: skill
+    members:
+      - csharp/cs-scaffold-project
+      - typescript/ts-scaffold-project
+  - id: generate-component
+    kind: skill
+    members: [angular/ng-generate-component]

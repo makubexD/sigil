@@ -1,4 +1,6 @@
 displayName: "TypeScript"
+prefix: ts
+stack: node-ts
 globs:
   - "**/*.ts"
   - "**/*.tsx"

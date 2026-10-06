@@ -9,6 +9,10 @@
  * whether a gap should be filled, or is a deliberate language-specific artifact, is an editorial
  * call the audit register makes per-family, not something a mechanical fix can decide.
  *
+ * When the catalog has `standard.yaml`, families come from its data (declaredFindings) instead of
+ * from names, and a family's `absent` entries are deliberate gaps; name-guessing stays for a
+ * catalog without one.
+ *
  * "Fully-built" is derived live (>= FULL_NAMESPACE_MIN_ARTIFACTS artifacts for that language),
  * never a hand-listed language set — so python/react stay excluded today but silently join the
  * comparison the day they're built out, with no rule edit required.
@@ -17,6 +21,7 @@
  */
 import type { ConformanceRule, ConformanceFinding, ConformanceContext } from '../types';
 import type { ArtifactKind } from '../../../../types';
+import { loadCatalogStandard, type CatalogStandard } from '../../../../catalog-standard';
 
 const FULL_NAMESPACE_MIN_ARTIFACTS = 15;
 const MIN_LANGUAGES_TO_COMPARE = 2;
@@ -113,9 +118,36 @@ function asymmetryFindings(
   return findings.sort((a, b) => a.detail.localeCompare(b.detail));
 }
 
+/**
+ * Families from `catalog/standard.yaml`: membership is data, so one concern under different names
+ * (`cs-nuget`, `py-packaging`, `ts-npm`) is one family, and `absent` records a deliberate gap.
+ */
+export function declaredFindings(
+  standard: CatalogStandard,
+  catalog: ConformanceContext['catalog'],
+  fullLanguages: readonly string[],
+): ConformanceFinding[] {
+  const findings = standard.families
+    .filter(family => SYMMETRY_KINDS.includes(family.kind))
+    .map(family => {
+      const presentIn = new Set(
+        family.members
+          .map(id => catalog.byId.get(id)?.frontmatter.language as string | undefined)
+          .filter((lang): lang is string => lang !== undefined && fullLanguages.includes(lang)),
+      );
+      const expected = fullLanguages.filter(lang => !(lang in family.absent));
+      return asymmetryFinding(family.kind, family.id, presentIn, expected);
+    });
+  return findings
+    .filter((f): f is ConformanceFinding => f !== null)
+    .sort((a, b) => a.detail.localeCompare(b.detail));
+}
+
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
   const fullLanguages = fullyBuiltLanguages(ctx.catalog.artifacts);
   if (fullLanguages.length < MIN_LANGUAGES_TO_COMPARE) return [];
+  const standard = ctx.catalog.root ? loadCatalogStandard(ctx.catalog.root) : undefined;
+  if (standard) return declaredFindings(standard, ctx.catalog, fullLanguages);
   const families = groupFamilies(ctx.catalog.artifacts, fullLanguages);
   return asymmetryFindings(families, fullLanguages);
 }

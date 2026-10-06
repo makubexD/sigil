@@ -16,6 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- One severity scale for every report: `catalog/standard.yaml` declares `severities` (Critical, High,
+  Medium, Low), and `catalog-layout` fails `sigil sync --check` on a report tier heading off that
+  scale. The C#, Angular and TypeScript code and architecture reviewers and the Angular template
+  reviewer moved from Critical/Major/Minor/Nit; the security auditors' "Low / Informational" is now
+  "Low".
+- Every family member now has its family's full skeleton, so every section is required. New
+  sections: deprecation discipline (Python, React API-compat reviewers), architecture intent (Python,
+  React architecture reviewers), a read-only quality gate (Python, React code reviewers, with a
+  Quality gate block in the report), context discovery (Python, React performance profilers), runner
+  and layout discovery (Python, React sync-tests), design mode (Angular, TypeScript architecture
+  reviewers), and version selection that respects the project's Angular major (`ng-add-package`).
+
 - The catalog standard as data: `catalog/standard.yaml` declares every family (explicit members,
   optionally an ordered section skeleton and required frontmatter keys) and the stacks. A new
   `family-skeleton` check fails `sigil sync --check` when a family member's sections drift from the

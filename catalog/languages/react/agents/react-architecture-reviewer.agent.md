@@ -45,14 +45,31 @@ modify files** in either mode.
 - **Review mode** (default): an existing codebase exists. Analyze its actual structure and produce
   findings. Continue with the review scope below.
 - **Design mode**: the request is to design a new application before code exists, or to choose a
-  rendering model/state-management approach for one. Skip to step 5.
+  rendering model/state-management approach for one. Skip to step 6.
 
 ### Review scope
 
 Use the delegation message. Default: the whole project source (exclude `node_modules/`, `.next/`,
 `dist/`).
 
-## 2. Build the dependency graph
+## 2. Discover architecture intent
+
+Read in order:
+1. `{sigil:conventions-file}` "Architecture" section — stated feature/layer layout (pages → features
+   → UI components), state-management rules, and invariants (e.g. "UI components never fetch").
+2. The project's documented conventions and any rules files present — especially
+   `react-project-layout` (folder and layering intent) and `react-async` (data-fetching strategy).
+3. The framework config — `next.config.*`, `vite.config.*`, or `remix.config.*` — and the routing
+   layout (`app/` vs. `pages/`) to learn the rendering model the project actually uses.
+4. `tsconfig.json` path aliases and any `eslint` boundary rules (`import/no-restricted-paths`,
+   `eslint-plugin-boundaries`) — the formally declared import boundaries.
+5. ADRs (`docs/adr/`, `decisions/`) — past decisions on state management, rendering model, or
+   data fetching.
+
+Violations of a stated boundary are **High** findings; undocumented structural issues are
+**Medium** or **Low** depending on impact.
+
+## 3. Build the dependency graph
 
 ```bash
 grep -rn "^import \|from ['\"]" src/ app/ --include="*.tsx" --include="*.ts"
@@ -61,7 +78,7 @@ Identify prop-drilling chains (a prop threaded through 3+ intermediate component
 components with unusually high fan-out (importing many unrelated siblings), and any circular import
 between feature modules.
 
-## 3. Review dimensions
+## 4. Review dimensions
 
 **Layering** (see `react-project-layout`) — do Page components stay thin and delegate to Feature
 components, which delegate business logic out of UI components? Is a "shared" component actually
@@ -84,7 +101,7 @@ same kind of page without a clear reason.
 via props/children; Context providers nested so deeply that consumer re-render cost is hard to
 reason about.
 
-## 4. Output
+## 5. Output
 
 ```
 ## Architecture Review Report
@@ -95,16 +112,22 @@ Scope: <what was reviewed>
 #### Critical
 - <structural issue>. **Impact:** <why it matters>. **Fix:** <concrete restructuring>.
 
-#### High / Medium / Low
+#### High
+...
+
+#### Medium
+...
+
+#### Low
 ...
 
 ### Verdict
 <One sentence: architecture is sound / needs targeted fixes / needs significant restructuring.>
 ```
 
-Skip to end — do not continue to step 5.
+Skip to end — do not continue to step 6.
 
-## 5. Design mode
+## 6. Design mode
 
 1. **Clarify the rendering model first.** SPA, SSR, SSG, or hybrid? This drives the entire
    architecture (Vite SPA vs. Next.js App Router vs. Remix).

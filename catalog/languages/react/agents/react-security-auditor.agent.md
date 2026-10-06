@@ -110,7 +110,7 @@ Framework: <Next.js App Router / Vite SPA / other, with version>
 #### Medium
 ...
 
-#### Low / Informational
+#### Low
 ...
 
 ### Verdict

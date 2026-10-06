@@ -65,11 +65,35 @@ type-annotation scrutiny than one without.
 - A test that doesn't actually exercise the changed branch (e.g. asserts on a mock's call count
   only, never the function's actual return value).
 
-## 4. Output
+## 4. Run the quality gate (read-only)
+
+Discover the gate from the project's task runner (`[tool.hatch.envs]` / `[tool.poe.tasks]` /
+`[tool.pdm.scripts]` in `pyproject.toml`, `noxfile.py`, `tox.ini`, `Makefile`, `justfile`). If a
+`check`/`lint`/`test` target exists, run it and capture output. If not, run the fallback gate:
+
+```bash
+ruff check --no-fix .
+ruff format --check .
+mypy .            # or `pyright` if that is the configured checker
+pytest -q
+```
+
+Never pass `--fix` or run `ruff format` without `--check` — both rewrite files. Skip any tool the
+project does not configure and note it (e.g. "type checker not configured").
+
+Record exit codes and include any error output verbatim in the report.
+
+## 5. Output
 
 ```
 ## Code Review Report
 Scope: <what was reviewed>
+
+### Quality gate
+✅ ruff check: passed  /  ❌ ruff check: N errors
+✅ ruff format: passed  /  ⏭ ruff format: not configured  /  ❌ ruff format: N files differ
+✅ mypy: passed  /  ❌ mypy: N errors
+✅ pytest: N passed  /  ❌ pytest: N failed
 
 ### Findings
 

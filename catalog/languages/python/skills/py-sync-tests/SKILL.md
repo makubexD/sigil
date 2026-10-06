@@ -33,7 +33,15 @@ whenToUse: "Use after multiple source files have changed and the test suite has 
 `--scope=changed` (default): `git diff --name-only <base>...HEAD -- '*.py'`, excluding test files
 themselves. `--scope=all`: every module under `src/`.
 
-## Step 2 — Add and update tests
+## Step 2 — Discover the runner and layout
+
+Never assume a layout — read `[tool.pytest.ini_options]` in `pyproject.toml` (or `pytest.ini` /
+`setup.cfg`) for `testpaths`, `python_files` and plugins such as `pytest-asyncio`, plus any
+`conftest.py`. Read 2–3 existing test files to confirm the mirroring pattern (`tests/` tree vs.
+co-located `test_*.py`), fixture style and import style; apply them consistently to every module
+in scope.
+
+## Step 3 — Add and update tests
 
 ### Find drift
 
@@ -58,17 +66,17 @@ Update tests referencing a changed signature to match the new one, preserving th
 intent (what behavior it was verifying) — do not just delete and regenerate blindly; a stale test's
 assertions often still document real intended behavior even when the call site needs updating.
 
-## Step 3 — Detect orphaned tests
+## Step 4 — Detect orphaned tests
 
 - **Orphaned tests** — a test file whose corresponding source module no longer exists.
 
-## Step 4 — Confirm before any deletion (guardrail)
+## Step 5 — Confirm before any deletion (guardrail)
 
 List orphaned test files/functions and **ask for confirmation before deleting** — a test with no
 corresponding source might indicate the source was wrongly deleted, not that the test is genuinely
 obsolete.
 
-## Step 5 — Run and report
+## Step 6 — Run and report
 
 ```bash
 pytest

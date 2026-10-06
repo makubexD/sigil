@@ -85,7 +85,24 @@ still works — narrowing `onClick?: () => void` to a version requiring an argum
 generic component's type parameter constraints, breaks compilation for existing consumers even when
 the JavaScript behavior would have been fine.
 
-## 4. Output
+## 4. Check deprecation discipline
+
+For any component, prop, or hook being removed or renamed in this release:
+- Was it marked `@deprecated` in its JSDoc (on the component, the `Props` field, or the hook) in a
+  prior release, so consumers' editors and `eslint`'s deprecation rules flagged it?
+- Did the deprecated path emit a development-only `console.warn` (guarded by
+  `process.env.NODE_ENV !== 'production'`) naming the replacement?
+- Is a migration path documented — the replacement prop/hook in the JSDoc, the changelog, or a
+  re-export alias kept for one release?
+
+```bash
+git grep -n '@deprecated' <last-release-tag> -- 'src/**/*.ts' 'src/**/*.tsx'
+```
+
+A removed symbol with no prior deprecation cycle escalates to a **Breaking** finding even if the
+SemVer bump is already major.
+
+## 5. Output
 
 ```
 ## API Compatibility Report

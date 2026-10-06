@@ -6,6 +6,8 @@
 #           members explicitly (ids never change to fit a name), and may declare `sections` (the H2
 #           skeleton every member has, in order; step numbers are ignored) and `keys` (frontmatter
 #           every member sets). `absent` records why a language has no member.
+# severities: the one scale every report template grades findings on, highest first. A tier heading
+#           (`#### Major`, `#### Low / Informational`) off this scale fails catalog-layout.
 #
 # Checked by `sigil sync --check` (family-skeleton, catalog-layout, catalog-symmetry). Author-only:
 # consumer commands never read this file.
@@ -22,6 +24,8 @@ stacks:
   - id: rust
     displayName: Rust
 
+severities: [Critical, High, Medium, Low]
+
 families:
   # ── Agents ──────────────────────────────────────────────────────────────────────────────────
   - id: api-compat-reviewer
@@ -31,7 +35,7 @@ families:
       - "Determine the public surface"
       - "Diff against the previous release"
       - "Classify each change"
-      - { heading: "Check deprecation discipline", optional: true }
+      - "Check deprecation discipline"
       - "Output"
     members:
       - angular/ng-api-compat-reviewer
@@ -44,11 +48,11 @@ families:
     keys: [tools, relatedArtifacts]
     sections:
       - "Determine scope"
-      - { heading: "Discover architecture intent", optional: true }
+      - "Discover architecture intent"
       - "Build the dependency graph"
       - "Review dimensions"
       - "Output"
-      - { heading: "Design mode", optional: true }
+      - "Design mode"
     members:
       - angular/ng-architecture-reviewer
       - csharp/cs-architecture-reviewer
@@ -62,7 +66,7 @@ families:
       - "Determine scope"
       - "Discover conventions"
       - "Review dimensions"
-      - { heading: "Run the quality gate (read-only)", optional: true }
+      - "Run the quality gate (read-only)"
       - "Output"
     members:
       - angular/ng-code-reviewer
@@ -85,7 +89,7 @@ families:
     keys: [tools, relatedArtifacts]
     sections:
       - "Determine scope"
-      - { heading: "Discover context", optional: true }
+      - "Discover context"
       - "Static analysis — complexity and anti-patterns"
       - "Dynamic profiling (if runnable)"
       - "Output"
@@ -254,7 +258,7 @@ families:
     sections:
       - "Discover repo layout"
       - "Vet the package"
-      - { heading: "Determine version", optional: true }
+      - "Determine version"
       - "Add the package"
       - "Verify the install"
       - "Report"
@@ -322,7 +326,7 @@ families:
     keys: [allowedTools, argumentHint, whenToUse]
     sections:
       - "Determine scope"
-      - { heading: "Discover the runner and layout", optional: true }
+      - "Discover the runner and layout"
       - "Add and update tests"
       - "Detect orphaned tests"
       - "Confirm before any deletion (guardrail)"

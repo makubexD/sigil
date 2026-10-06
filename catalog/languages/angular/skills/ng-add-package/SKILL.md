@@ -56,13 +56,31 @@ Check each:
 
 If any check flags meaningful risk, **present the findings and confirm with the user before adding.**
 
-## Step 3 — Add the package
+## Step 3 — Determine version
+
+**If `[version]` was provided:** use it exactly, after confirming its `peerDependencies` range includes
+the project's Angular major (`npm view <package>@<version> peerDependencies`).
+
+**If not provided:** pick the newest stable release whose `@angular/core` peer range covers the
+project's Angular major — not simply `latest`. Angular-aware packages usually track Angular majors, so
+`latest` may already require a newer Angular than the project runs:
+
+```bash
+npm view <package> dist-tags 2>&1                           # latest, next, and any vNN-lts tags
+npm view <package>@<candidate> peerDependencies 2>&1        # check the @angular/core range
+```
+
+Avoid pre-release (`next`, `-rc`) unless explicitly requested. If no release supports the project's
+Angular major, report that and stop. Never upgrade Angular as a side effect of adding a package; that
+is a separate `ng update @angular/core @angular/cli` migration the user chooses to run.
+
+## Step 4 — Add the package
 
 **Prefer `ng add` for Angular-aware packages** (Angular Material, CDK, NgRx, transloco, etc.) — it runs
 schematics that wire up providers, imports, and config:
 
 ```bash
-ng add <package>   # ⚠️ schematics MODIFY project files
+ng add <package>[@version]   # ⚠️ schematics MODIFY project files
 ```
 
 > **Warn the user that `ng add` modifies files** (app config, providers, styles). Review the changes it
@@ -79,7 +97,7 @@ npm install --save-dev @types/<package>    # if the package ships no bundled typ
 For a publishable library where the package is a host requirement, add it to `peerDependencies`
 (and usually `devDependencies` for local builds) rather than `dependencies`.
 
-## Step 4 — Verify the install
+## Step 5 — Verify the install
 
 ### Lock file
 
@@ -93,7 +111,7 @@ Run `npm audit` to surface any CVEs the install introduced.
 **If the gate fails or the install broke the build, undo the change** (`npm uninstall <package>`, restore
 `package.json`/lock) and report what went wrong rather than leaving the tree broken.
 
-## Step 5 — Report
+## Step 6 — Report
 
 ```
 ## Add Package Report

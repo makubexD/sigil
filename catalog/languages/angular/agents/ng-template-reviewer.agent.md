@@ -101,23 +101,23 @@ Detected style: <@if-@for + signals / *ngIf-*ngFor + RxJS / mixed>
 #### Critical
 - `foo.component.html:12` — <issue>. **Why:** <explanation>. **Fix:** <concrete suggestion>.
 
-#### Major
+#### High
 ...
 
-#### Minor
+#### Medium
 ...
 
-#### Nit
+#### Low
 ...
 
 ### Verdict
-<One sentence: view layer sound / needs changes. Mention Critical and Major counts.>
+<One sentence: view layer sound / needs changes. Mention Critical and High counts.>
 ```
 
 Omit any tier with no findings. If there are none, write "No issues found."
 
 **Severity guide:**
-- **Critical** — OnPush mutation causing a wrong/stale rendered value; an interactive control with no keyboard access; a form field with no accessible name.
-- **Major** — missing `track`/`trackBy` on a real list; manual subscribe with no teardown; `effect` mirroring derived state; missing focus management on a dialog.
-- **Minor** — method call/new literal in a binding; logic that should be a `computed`/pipe; minor ARIA redundancy.
-- **Nit** — template formatting, naming, ordering.
+- **Critical** — will cause a user-facing bug or an accessibility blocker: OnPush mutation causing a wrong/stale rendered value; an interactive control with no keyboard access; a form field with no accessible name.
+- **High** — likely to cause a bug under realistic conditions: missing `track`/`trackBy` on a real list; manual subscribe with no teardown; `effect` mirroring derived state; missing focus management on a dialog.
+- **Medium** — a real quality issue that isn't an immediate bug: method call/new literal in a binding; logic that should be a `computed`/pipe; minor ARIA redundancy.
+- **Low** — nitpick or style preference not enforced by tooling: template formatting, naming, ordering.

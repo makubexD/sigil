@@ -33,7 +33,16 @@ whenToUse: "Use after multiple components have changed and the test suite has dr
 `--scope=changed` (default): `git diff --name-only <base>...HEAD -- '*.tsx' '*.ts'`, excluding test
 files themselves. `--scope=all`: every component under `src/`/`app/`.
 
-## Step 2 — Add and update tests
+## Step 2 — Discover the runner and layout
+
+Never assume a runner — read `package.json` `scripts.test` and `devDependencies` for Vitest or
+Jest, `@testing-library/react`, `@testing-library/user-event`, and `jsdom`/`happy-dom`, plus the
+runner's config and setup file (`vitest.config.*`/`jest.config.*`, the `setupFiles` entry that
+imports `@testing-library/jest-dom`). Read 2–3 existing component tests to confirm the layout
+(co-located `Component.test.tsx` vs. `__tests__/`), the query style, and any shared render helper
+that wraps providers; apply all of them consistently to every file in scope.
+
+## Step 3 — Add and update tests
 
 ### Find drift
 
@@ -58,17 +67,17 @@ Update tests referencing a changed prop or rendered output to match the current 
 preserving the original test's intent (what user behavior it was verifying) — do not delete and
 regenerate blindly.
 
-## Step 3 — Detect orphaned tests
+## Step 4 — Detect orphaned tests
 
 - **Orphaned tests** — a test file whose corresponding component no longer exists.
 
-## Step 4 — Confirm before any deletion (guardrail)
+## Step 5 — Confirm before any deletion (guardrail)
 
 List orphaned test files and **ask for confirmation before deleting** — a test with no
 corresponding component might indicate the component was wrongly deleted, not that the test is
 genuinely obsolete.
 
-## Step 5 — Run and report
+## Step 6 — Run and report
 
 ```bash
 npx vitest run

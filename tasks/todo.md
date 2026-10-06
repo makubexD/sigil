@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1-M5 done (PRs #24-#35). Open: C3 (P2 templates + cosmetic sweep, content pass), then the end block (live checks, one release).
+Status: M1-M5 done (PRs #24-#35). C3a done (sections, severity scale). Open: C3b (P2 templates + cosmetic sweep), then the end block (live checks, one release).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -68,7 +68,8 @@ Spec: `SPEC.md`
 - [x] S1 Pilot: debugger + generate-tests families, all three targets
 - [x] C1 Declare every family and fit every member's structure
 - [x] C2 (P1) Confirmed defects: copy errors, false/double `extends`, `.jsx` gaps, rule globs
-- [ ] C3 (P2) Templates where shared text passes the threshold; cosmetic sweep
+- [x] C3a Every optional-section gap filled (sections now required); one severity scale as data, checked
+- [ ] C3b (P2) Templates where shared text passes the threshold; cosmetic sweep
 - [x] Phase 5 review (code + docs drift, fixed in PR #33); audit fix PR #34; CI speed PR #35 (Windows test step ~67 s → ~34 s)
 
 ## End block: before the release (development first; nothing here is dropped)

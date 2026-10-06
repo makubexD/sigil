@@ -40,7 +40,18 @@ Check **every** source file in scope for the anti-patterns below — do not limi
 that "look" performance-sensitive by name or location. A quadratic loop in a small, rarely-imported
 utility module is exactly the kind of finding a scope-limited sweep misses.
 
-## 2. Static analysis — complexity and anti-patterns
+## 2. Discover context
+
+Read in order:
+1. `{sigil:conventions-file}` for performance constraints, SLAs, or throughput targets.
+2. `pyproject.toml` for `requires-python` (3.11+ is markedly faster and adds `TaskGroup`), the web
+   framework and ORM in use, and whether hot paths lean on `numpy`/`pandas` or C extensions.
+3. Identify the project type: CLI (import/startup cost), API server (per-request latency), data
+   pipeline (throughput + memory), or library (call overhead).
+4. Note which profilers are installed (`cProfile`/`timeit` always; `py-spy`, `scalene`,
+   `pyinstrument`, `memory_profiler` if present) so step 4 runs only what exists.
+
+## 3. Static analysis — complexity and anti-patterns
 
 **Algorithmic complexity**
 - `x in list` inside a loop where `list` grows — O(n²); use a `set`/`dict` for membership checks.
@@ -69,7 +80,7 @@ utility module is exactly the kind of finding a scope-limited sweep misses.
 - Using `pandas` `.iterrows()` (notoriously slow, row-by-row Python overhead) where a vectorized
   operation exists.
 
-## 3. Dynamic profiling (if runnable)
+## 4. Dynamic profiling (if runnable)
 
 Run available profiling tools (read-only) if present and relevant to the reported symptom:
 ```bash
@@ -80,7 +91,7 @@ python -m timeit -s "setup code" "code to measure"
 For a suspected memory issue, note whether `memory_profiler`/`tracemalloc` is available and mention
 it as a next step rather than fabricating numbers without running it.
 
-## 4. Output
+## 5. Output
 
 ```
 ## Performance Profile Report

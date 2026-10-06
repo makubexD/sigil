@@ -98,23 +98,23 @@ Scope: <what was reviewed>
 #### Critical
 - `File.cs:42` — <issue>. **Why:** <explanation>. **Fix:** <concrete suggestion>.
 
-#### Major
+#### High
 ...
 
-#### Minor
+#### Medium
 ...
 
-#### Nit
+#### Low
 ...
 
 ### Verdict
-<One sentence: safe to merge / needs changes before merge. Mention Critical and Major counts.>
+<One sentence: safe to merge / needs changes before merge. Mention Critical and High counts.>
 ```
 
 Omit any tier with no findings. If there are no findings at all, write "No issues found."
 
 **Severity guide:**
-- **Critical** — data loss, security vulnerability, crash in a main path, broken public contract.
-- **Major** — logic bug, missing error handling on a recoverable path, documented convention violated.
-- **Minor** — style deviation, redundant code, a missing edge-case test.
-- **Nit** — micro style, comment wording, `using` order.
+- **Critical** — will cause a production bug or security issue: data loss, security vulnerability, crash in a main path, broken public contract.
+- **High** — a bug, or likely to cause one under realistic conditions: logic bug, missing error handling on a recoverable path, documented convention violated.
+- **Medium** — a real quality issue that isn't an immediate bug: style deviation, redundant code, a missing edge-case test.
+- **Low** — nitpick or style preference not enforced by tooling: micro style, comment wording, `using` order.

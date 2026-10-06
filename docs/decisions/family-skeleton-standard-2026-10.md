@@ -44,6 +44,12 @@ skeleton.**
     be `optional`; language-specific material goes under an H3 inside a skeleton section.
   - `keys`: frontmatter every member sets.
   - `absent`: a language with no member, and why.
+- **One severity scale.** `standard.yaml` declares `severities` (Critical, High, Medium, Low, the
+  scale the security auditors already used); every report template grades findings on it, so two
+  agents' reports compare. The content pass moved the code and architecture reviewers off
+  Critical/Major/Minor/Nit.
+- **A section is optional only while a member lacks it.** The content pass filled every gap, so every
+  skeleton section is now required; `optional` stays in the format for a new family's first members.
 - **Structure before content.** Skeletons and checks come first; member text may stay rough until a
   content pass fills it.
 - **Who picks the variant decides delivery**, unchanged from the layout standard: the project's
@@ -68,7 +74,9 @@ skeleton.**
   not declared, a name off its language's prefix, a stack file for an undeclared stack, a language
   rule glob without a leading double-star segment (it matches only at the repository root, so a
   monorepo's nested projects never get the rule), and a shared rule that two rules of one language
-  extend (that language loads it twice), and a language description that never names its language.
+  extend (that language loads it twice), a language description that never names its language, and
+  a report tier heading (`#### Major`, `#### Low / Informational`) that is not exactly one declared
+  severity.
   Only `*-code-quality` extends `shared/clean-code`.
 - `catalog-symmetry` (warning) reads families from the data, honouring `absent`.
 

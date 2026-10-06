@@ -46,6 +46,19 @@ describe('sigil move — layout', () => {
     });
   });
 
+  it("should rename an agent's name: with its id", async () => {
+    await withTempDirAsync(async root => {
+      const catalogDir = path.join(root, 'catalog');
+      const agent =
+        '---\nid: shared/probe\nkind: agent\nname: probe\ntitle: P\n' +
+        'description: Use to probe.\ntools:\n  - Read\n---\n\nProbe.\n';
+      write(catalogDir, 'shared/agents/probe.agent.md', agent);
+      await move(catalogDir, 'shared/probe', 'shared/renamed');
+      const moved = matter.read(path.join(catalogDir, 'shared', 'agents', 'renamed.agent.md')).data;
+      assert.equal(moved.name, 'renamed');
+    });
+  });
+
   it('should drop language: when an artifact moves to shared/', async () => {
     await withTempDirAsync(async root => {
       const catalogDir = path.join(root, 'catalog');

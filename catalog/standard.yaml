@@ -1,7 +1,8 @@
 # The catalog standard as data (docs/decisions/family-skeleton-standard-2026-10.md).
 #
-# stacks:   the ecosystems a shared skill may carry `references/stack-<id>.md` for. A language
-#           names its stack in its language.yaml (`stack:`); go and rust are stacks with no language.
+# stacks:   the ecosystems a shared skill has stack parts for. A language names its stack in its
+#           language.yaml (`stack:`); `home` is the one language whose folder holds the stack's
+#           text (languages/<home>/stack-parts/<skill>.md): shared/ holds only neutral text.
 # families: every agent, rule and skill belongs to exactly one family (shared ones too). A family lists its
 #           members explicitly (ids never change to fit a name), and may declare `sections` (the H2
 #           skeleton every member has, in order; step numbers are ignored) and `keys` (frontmatter
@@ -21,14 +22,19 @@
 stacks:
   - id: dotnet
     displayName: .NET
+    home: csharp
   - id: go
     displayName: Go
+    home: go
   - id: node-ts
     displayName: Node.js / TypeScript
+    home: typescript
   - id: python
     displayName: Python
+    home: python
   - id: rust
     displayName: Rust
+    home: rust
 
 severities: [Critical, High, Medium, Low]
 

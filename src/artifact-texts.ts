@@ -27,7 +27,7 @@ export function shippedTexts(artifact: Artifact): ShippedText[] {
     ...(artifact.references ?? []).map(ref => ({
       label: `references/${ref.name}`,
       text: ref.content,
-      filePath: path.join(refsDir, ref.name),
+      filePath: ref.sourcePath ?? path.join(refsDir, ref.name),
       isReference: true,
     })),
   ];

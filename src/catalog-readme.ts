@@ -77,7 +77,9 @@ const INTRO = [
   '- No language variation: `shared/`.',
   "- Varies with the project's language: `languages/<language>/`, prefixed with the language's",
   '  `prefix` (`ts-`, `py-`, ...). Each language names its prefix and stack in `language.yaml`.',
-  '- Varies with a stack the task chooses: one shared skill with `references/stack-<id>.md`.',
+  "- Varies with a stack the task chooses: one neutral shared skill; each stack's text is a stack",
+  '  part in the language that owns the stack (`languages/<home>/stack-parts/<skill>.md`), shipped',
+  "  as the skill's `references/stack-<id>.md`. `shared/` never holds language-specific text.",
   '',
   'Grouping for installs lives in `packs.yaml`, never in folders.',
   '',
@@ -111,7 +113,9 @@ const SKILL_ANATOMY = [
 
 /** The whole page for `standard`. */
 export function renderCatalogReadme(standard: CatalogStandard): string {
-  const stacks = standard.stacks.map(s => `\`${s.id}\` (${s.displayName})`).join(', ');
+  const stacks = standard.stacks
+    .map(s => `\`${s.id}\` (${s.displayName}${s.home ? `, home \`${s.home}\`` : ''})`)
+    .join(', ');
   return [
     ...INTRO,
     ...kindsTable(),

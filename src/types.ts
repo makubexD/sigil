@@ -26,6 +26,11 @@ export type ArtifactKind =
 export interface ReferenceFile {
   name: string; // filename, e.g. "assertions.md"
   content: string; // raw file content
+  /**
+   * The source file it was read from: the skill's own `references/<name>`, or for a stack part
+   * `languages/<lang>/stack-parts/<skill>.md` (load-references.ts). Checks report this path.
+   */
+  sourcePath?: string;
 }
 
 /**

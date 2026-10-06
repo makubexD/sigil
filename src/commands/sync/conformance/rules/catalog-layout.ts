@@ -10,7 +10,9 @@
  *     `stack-<stack>.md`;
  *   - vocabulary, when the catalog has `standard.yaml` (catalog-vocabulary.ts): a language without
  *     a prefix or stack, a stack not declared there, a name off its language's prefix, a language
- *     rule glob that matches only at the root, a shared rule two rules of one language extend.
+ *     rule glob that matches only at the root, a shared rule two rules of one language extend;
+ *   - stack parts (stack-parts-layout.ts): stack text in a shared skill instead of a part, a part
+ *     naming no shared skill or sitting outside its stack's `home`, a `home` without that stack.
  *
  * Author-only: `validateCatalog`, which gates consumer commands, is untouched. Reads paths relative
  * to the catalog root and never follows a symbolic link; a catalog built in memory has no root and
@@ -23,12 +25,13 @@ import type { Artifact } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
 import { positionProblems } from '../../../../catalog-layout';
 import { readReferences, skillFolderExtras } from '../../../../load-references';
-import { loadCatalogStandard } from '../../../../catalog-standard';
+import { loadCatalogStandard, type CatalogStandard } from '../../../../catalog-standard';
 import {
   doubleExtendsProblems,
   languageProblems,
   vocabularyProblems,
 } from '../../../../catalog-vocabulary';
+import { sharedStackFileProblems, stackPartProblems } from '../../../../stack-parts-layout';
 
 const STACK_FILE_RE = /^stack-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
@@ -81,6 +84,19 @@ const layoutError = (detail: string, artifact?: Artifact): ConformanceFinding =>
       }
     : { ruleId: 'catalog-layout', severity: 'error', detail };
 
+/** Problems that belong to no one artifact: languages, double extends, stack parts. */
+function catalogWideProblems(
+  catalog: Parameters<ConformanceRule['detect']>[0]['catalog'],
+  root: string,
+  standard: CatalogStandard,
+): string[] {
+  return [
+    ...languageProblems(catalog.languages, standard),
+    ...doubleExtendsProblems(catalog.artifacts),
+    ...stackPartProblems(root, catalog.languages, catalog.artifacts, standard),
+  ];
+}
+
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
   const { catalog } = ctx;
   if (!catalog.root) return [];
@@ -90,14 +106,10 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
     [
       ...problemsFor(artifact, root, catalog.languages),
       ...(standard ? vocabularyProblems(artifact, catalog.languages, standard) : []),
+      ...(standard ? sharedStackFileProblems(artifact, standard) : []),
     ].map(detail => layoutError(detail, artifact)),
   );
-  const catalogWide = standard
-    ? [
-        ...languageProblems(catalog.languages, standard),
-        ...doubleExtendsProblems(catalog.artifacts),
-      ]
-    : [];
+  const catalogWide = standard ? catalogWideProblems(catalog, root, standard) : [];
   return [...catalogWide.map(detail => layoutError(detail)), ...artifactFindings];
 }
 

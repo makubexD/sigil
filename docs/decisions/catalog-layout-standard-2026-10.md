@@ -79,15 +79,20 @@ catalog root (`src/catalog-layout.ts`). Grouping lives only in `packs.yaml`; the
   form a family with one section skeleton declared in `catalog/standard.yaml`; a template still
   holds shared prose only._ This is the only option for agents and rules: neither can load reference files on
   demand, and rules activate by path.
-- **(c) Content that varies with a stack the task chooses** becomes one shared **skill** plus flat
-  `references/stack-<stack>.md` files and a detection table in `SKILL.md`. The stack may differ
-  from the repository's language, or not be a catalog language at all. Stack files carry
-  task-specific guidance only; general style stays in the installed language rules. `shared/cli`
-  and `shared/wizard` qualify: they build CLIs in stacks that include Go and Rust.
+- **(c) Content that varies with a stack the task chooses** becomes one shared **skill** whose
+  neutral steps and references live in `shared/`, plus one **stack part** per stack in the language
+  that owns it: `languages/<home>/stack-parts/<skill>.md`, where `home` is the stack's `home` in
+  `standard.yaml` (node-ts → typescript; react and angular reach it through their `stack: node-ts`).
+  The loader puts each part back into the skill as `references/stack-<stack>.md`, so every target
+  ships the same files at the same paths. The stack may differ from the repository's language, so
+  every part ships (the task, not the project, picks the one to read). `shared/cli` and
+  `shared/wizard` qualify; go and rust are language folders that so far hold only parts.
+  _Revised 2026-10-06: the stack files used to sit in the shared skill's own `references/`, which
+  put language-specific text (26% of `shared/`) in the language-neutral namespace._
 - **Tie-break:** when (b) and (c) both seem to fit, choose (b).
 
-**Stack names** are ecosystem names (`node-ts`, `dotnet`, `go`), kept separate from language ids
-and not registered anywhere.
+**Stack names** are ecosystem names (`node-ts`, `dotnet`, `go`), kept separate from language ids;
+`standard.yaml` declares each one and its `home` language.
 
 **References stay flat and one level deep**, as the Agent Skills guidance says. The nested
 `references/stacks/` of the planned "Phase 1c" in `distribution-channels-2026-09.md` is dropped.

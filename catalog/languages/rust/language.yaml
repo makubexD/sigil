@@ -1,0 +1,8 @@
+displayName: "Rust"
+prefix: rs
+stack: rust
+globs:
+  - "**/*.rs"
+  - "**/Cargo.toml"
+  - "**/Cargo.lock"
+icon: "🦀"

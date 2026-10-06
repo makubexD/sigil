@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1-M5 done (PRs #24-#35). C3 done (PRs #37-#39). Skill anatomy in progress (SPEC-skill-anatomy.md). Then the end block (live checks, one release).
+Status: M1-M5 done (PRs #24-#35). C3 done (PRs #37-#39). Skill anatomy done (PRs #40-#41). Language layers in progress (SPEC-language-layers.md). Then the end block (live checks, one release).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -78,6 +78,13 @@ Spec: `SPEC.md`
 - [x] PR2+3 (one PR) Anatomy as data: reference roles per family, shared-pair families, exact keys, `uses` parity, generated catalog/README.md
       plus the content it demanded: generate-tests uses `*-testing` (references folded), ts-scaffold-project inline, stack-file skeletons, titles, `uses` parity, skillContext; `update` installs new dependencies. ng-release already folds API compat into its gate (left as is)
 - [ ] Probe Copilot double rule delivery (inline + .instructions.md), with V1/F4
+
+## Language layers (SPEC-language-layers.md, approved 2026-10-06)
+
+- [x] S1 Relocation: stack parts in their home language, go/rust languages, layout checks, move renames parts (and fixes move's name:)
+- [ ] S2 Generated stack index
+- [ ] S3 Per-language allow-dev-tools, soft illustrations into parts, stack-leak warning
+- [ ] S4 Import routing + single prefix source
 
 ## End block: before the release (development first; nothing here is dropped)
 

@@ -249,8 +249,9 @@ steps:
 
 These three kinds do not write whole files. They merge a fragment into a user-owned JSON file
 (`.claude/settings.json`, `.mcp.json`, and the Copilot/VS Code MCP files) and are usually language-agnostic
-(each schema still accepts an optional `language`, though not on an artifact under `shared/`). Source files are `*.hook.md`, `*.settings.md`, and `*.mcp.md` (shipped under
-`catalog/shared/hooks/`, `settings/`, `mcps/`). The kind-specific fields:
+(each schema still accepts an optional `language`, though not on an artifact under `shared/`). Source files are `*.hook.md`, `*.settings.md`, and `*.mcp.md`
+(under `catalog/shared/hooks/`, `settings/`, `mcps/`, or a language folder for a language's own,
+such as `catalog/languages/csharp/settings/cs-allow-dev-tools.settings.md`). The kind-specific fields:
 
 | Kind       | Fields (beyond the shared set)                                                                                                                                                                |
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

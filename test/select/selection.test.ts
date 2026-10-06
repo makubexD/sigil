@@ -130,13 +130,14 @@ describe('R — resolveSelection / language helpers', () => {
       catalog: resolvedCatalog,
       packs: PACKS_CURATED,
     });
-    // All config kinds must survive the react language filter
-    const configIds = resolvedCatalog.artifacts
-      .filter(a => CONFIG_KINDS.has(a.kind))
-      .map(a => a.id);
-    for (const id of configIds) {
-      assert.ok(ids.includes(id), `${id} must survive the react language filter (agnostic)`);
+    // Every agnostic config kind survives the react filter; a language's own config artifact
+    // survives only its language's filter.
+    const configs = resolvedCatalog.artifacts.filter(a => CONFIG_KINDS.has(a.kind));
+    for (const a of configs.filter(a => isAgnostic(a))) {
+      assert.ok(ids.includes(a.id), `${a.id} must survive the react language filter (agnostic)`);
     }
+    assert.ok(ids.includes('react/react-allow-dev-tools'), 'react keeps its own settings');
+    assert.ok(!ids.includes('csharp/cs-allow-dev-tools'), 'react drops the C# settings');
     // Shared agnostic artifacts (no language tag) must also survive, EXCEPT any base rule that
     // is inlined by exactly one surviving react-owned rule under this filter (see
     // dropInlinedBaseRules) — react/react-code-quality extends shared/clean-code and
@@ -175,15 +176,13 @@ describe('R — resolveSelection / language helpers', () => {
     assert.equal(isAgnostic({ frontmatter: { language: 'python' } }), false);
   });
 
-  it('every config-kind artifact in the catalog is language-agnostic', () => {
+  it('every shared config-kind artifact is language-agnostic, and a language one sits in its language', () => {
     const configArtifacts = resolvedCatalog.artifacts.filter(a => CONFIG_KINDS.has(a.kind));
     assert.ok(configArtifacts.length > 0, 'catalog must have at least one config artifact');
     for (const a of configArtifacts) {
-      assert.equal(
-        isAgnostic(a),
-        true,
-        `${a.id} (${a.kind}) is a config kind and must be language-agnostic`,
-      );
+      const namespace = a.id.split('/')[0];
+      const language = a.frontmatter.language as string | undefined;
+      assert.equal(language ?? 'shared', namespace, `${a.id} (${a.kind}): language vs folder`);
     }
   });
 });

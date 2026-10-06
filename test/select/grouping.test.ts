@@ -122,13 +122,18 @@ describe('partitionConfigKinds', () => {
       );
     }
 
-    // rest partition must contain no config kinds
-    for (const a of rest) {
-      assert.ok(
-        !CONFIG_KINDS.has(a.kind),
-        `rest partition artifact ${a.id} must not be a config kind (got ${a.kind})`,
-      );
+    // config holds only language-agnostic config kinds; a language's own settings go to rest,
+    // grouped with the rest of that language (shared/ holds only language-neutral content)
+    for (const a of config) {
+      assert.equal(a.frontmatter.language, undefined, `${a.id} in the agnostic config group`);
     }
+    for (const a of rest.filter(a => CONFIG_KINDS.has(a.kind))) {
+      assert.ok(a.frontmatter.language, `${a.id} is a config kind with no language`);
+    }
+    assert.ok(
+      rest.some(a => a.id === 'csharp/cs-allow-dev-tools'),
+      'a language settings artifact groups with its language',
+    );
 
     // Union must cover the whole catalog (no artifact lost or duplicated)
     assert.equal(
@@ -138,17 +143,18 @@ describe('partitionConfigKinds', () => {
     );
   });
 
-  it('groupArtifactsByLanguage on rest partition never contains config kinds', async () => {
+  it("groupArtifactsByLanguage on rest partition holds only that language's config kinds", async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
     const resolved = resolveCatalog(catalog);
     const { rest } = partitionConfigKinds(resolved.artifacts);
     const groups = groupArtifactsByLanguage(rest);
 
     for (const [groupKey, arts] of Object.entries(groups)) {
-      for (const a of arts) {
-        assert.ok(
-          !CONFIG_KINDS.has(a.kind),
-          `Language group "${groupKey}" must not contain config artifact ${a.id} (kind=${a.kind})`,
+      for (const a of arts.filter(a => CONFIG_KINDS.has(a.kind))) {
+        assert.equal(
+          a.frontmatter.language,
+          groupKey,
+          `Language group "${groupKey}" holds config artifact ${a.id} of another language`,
         );
       }
     }

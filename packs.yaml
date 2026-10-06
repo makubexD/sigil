@@ -16,12 +16,11 @@ packs:
     description: >
       Core productivity tools that work with any programming language.
       Includes the Filesystem MCP for file access, config-file protection,
-      common dev-tool permissions, and two utility commands (explain a diff,
-      author a new catalog artifact).
+      and two utility commands (explain a diff, author a new catalog artifact).
+      Dev-tool permissions are per language: each starter pack carries its own.
     artifacts:
       - shared/filesystem
       - shared/protect-config
-      - shared/allow-dev-tools
       - shared/explain-diff
       - shared/author-artifact
 
@@ -36,7 +35,7 @@ packs:
       - csharp/cs-generate-tests
       - shared/filesystem
       - shared/protect-config
-      - shared/allow-dev-tools
+      - csharp/cs-allow-dev-tools
 
   - name: python-starter
     displayName: Python Starter
@@ -49,7 +48,7 @@ packs:
       - python/py-generate-tests
       - shared/filesystem
       - shared/protect-config
-      - shared/allow-dev-tools
+      - python/py-allow-dev-tools
 
   - name: react-starter
     displayName: React Starter
@@ -62,7 +61,7 @@ packs:
       - react/react-generate-tests
       - shared/filesystem
       - shared/protect-config
-      - shared/allow-dev-tools
+      - react/react-allow-dev-tools
 
   - name: dotnet-tooling
     displayName: .NET / C# Tooling
@@ -85,7 +84,7 @@ packs:
       - typescript/ts-release
       - shared/filesystem
       - shared/protect-config
-      - shared/allow-dev-tools
+      - typescript/ts-allow-dev-tools
 
   - name: typescript-tooling
     displayName: TypeScript Tooling
@@ -107,7 +106,7 @@ packs:
       - angular/ng-generate-component
       - shared/filesystem
       - shared/protect-config
-      - shared/allow-dev-tools
+      - angular/ng-allow-dev-tools
 
   - name: angular-tooling
     displayName: Angular Tooling

@@ -12,6 +12,12 @@ permissions:
     - "Bash(npx eslint *)"
     - "Bash(npx prettier *)"
 tags: [permissions, developer-experience, shared]
+deprecated:
+  since: "0.2.0"
+  reason: >-
+    It allowed npm commands only, yet shipped to .NET and Python projects too; each language has
+    its own allow-dev-tools now.
+  supersededBy: typescript/ts-allow-dev-tools
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 ---

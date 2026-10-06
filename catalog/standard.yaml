@@ -3,6 +3,8 @@
 # stacks:   the ecosystems a shared skill has stack parts for. A language names its stack in its
 #           language.yaml (`stack:`); `home` is the one language whose folder holds the stack's
 #           text (languages/<home>/stack-parts/<skill>.md): shared/ holds only neutral text.
+#           `terms` are the stack's own libraries and tools; neutral shared text naming one
+#           warns (stack-leak).
 # families: every agent, rule and skill belongs to exactly one family (shared ones too). A family lists its
 #           members explicitly (ids never change to fit a name), and may declare `sections` (the H2
 #           skeleton every member has, in order; step numbers are ignored) and `keys` (frontmatter
@@ -23,18 +25,23 @@ stacks:
   - id: dotnet
     displayName: .NET
     home: csharp
+    terms: [System.CommandLine, Spectre.Console]
   - id: go
     displayName: Go
     home: go
+    terms: [cobra, pflag, charmbracelet/huh]
   - id: node-ts
     displayName: Node.js / TypeScript
     home: typescript
+    terms: [commander, parseArgs, "@clack/prompts"]
   - id: python
     displayName: Python
     home: python
+    terms: [argparse, typer, questionary, CliRunner]
   - id: rust
     displayName: Rust
     home: rust
+    terms: [clap, inquire]
 
 severities: [Critical, High, Medium, Low]
 

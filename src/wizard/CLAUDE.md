@@ -228,9 +228,10 @@ step with its own internal loop because the original never gave that transition 
 with its artifact count (Skills, Agents, Rules, Commands, Workflows, Hooks, Settings, MCPs).
 
 - **"All types" (`crossKindPicker` step):** cross-kind grouped picker. `Config — agnostic` group
-  always appears first (mcp/hook/settings, language-agnostic). Code artifacts follow in language
+  always appears first (mcp/hook/settings with no `language`; `partitionConfigKinds`). Everything
+  else, including a language's own settings (`csharp/cs-allow-dev-tools`), follows in language
   groups. Language is an optional, skippable refinement shown only when ≥2 languages are present.
-  Config kinds are never touched by the language filter. Goes through deps → overwrite → scope.
+  Agnostic config kinds are never touched by the language filter. Goes through deps → overwrite → scope.
 - **Specific kind (`kindPicker` step):**
   - **Config kinds (mcp/hook/settings):** flat `pickArtifacts` (single group); **skips language and
     deps steps**; proceeds directly to overwrite → scope (where the blast-radius warning fires if

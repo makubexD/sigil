@@ -205,15 +205,20 @@ for (const target of TARGETS) {
       });
     }
 
-    it('should find nothing to prune', async () => {
+    it('should prune nothing and name the replacement of a deprecated install', async () => {
       await withTempDirAsync(async dir => {
         restoreFrozen(dir, target);
-        const before = loadManifest(dir).entries.length;
+        const entries = loadManifest(dir).entries;
+        const before = entries.length;
+        // settings are a Claude-only kind, so only the Claude install has the deprecated one
+        const hasDeprecated = entries.some(e => e.id === 'shared/allow-dev-tools');
         const report = await captureJson<{ orphaned: unknown[]; deprecated: unknown[] }>(() =>
           runPrune({ ...options(dir, target), apply: true, yes: true, force: false, json: true }),
         );
         assert.deepEqual(report.orphaned, []);
-        assert.deepEqual(report.deprecated, []);
+        const deprecated = JSON.stringify(report.deprecated);
+        assert.equal(/shared\/allow-dev-tools/.test(deprecated), hasDeprecated, deprecated);
+        if (hasDeprecated) assert.match(deprecated, /typescript\/ts-allow-dev-tools/);
         assert.equal(loadManifest(dir).entries.length, before);
       });
     });

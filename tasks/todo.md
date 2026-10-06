@@ -83,7 +83,7 @@ Spec: `SPEC.md`
 
 - [x] S1 Relocation: stack parts in their home language, go/rust languages, layout checks, move renames parts (and fixes move's name:)
 - [x] S2 Generated stack index
-- [ ] S3 Per-language allow-dev-tools, soft illustrations into parts, stack-leak warning
+- [x] S3 Per-language allow-dev-tools, soft illustrations into parts, stack-leak warning
 - [ ] S4 Import routing + single prefix source
 
 ## End block: before the release (development first; nothing here is dropped)

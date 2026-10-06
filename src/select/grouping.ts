@@ -7,7 +7,7 @@
  * partitionConfigKinds     — split config kinds (hook/settings/mcp) from code artifacts
  */
 import type { ResolvedArtifact, ArtifactKind } from '../types';
-import { KIND_ORDER, CONFIG_KINDS, artifactLanguage } from './selection';
+import { KIND_ORDER, CONFIG_KINDS, artifactLanguage, isAgnostic } from './selection';
 
 /** `KIND_ORDER` as a lookup table, built once at module scope (KIND_ORDER is frozen at import time). */
 const KIND_INDEX: Record<string, number> = Object.fromEntries(KIND_ORDER.map((k, i) => [k, i]));
@@ -129,9 +129,10 @@ export function groupArtifactsByLanguage(
 /**
  * Split an artifact array into config-kind artifacts and everything else.
  *
- * Config kinds (hook / settings / mcp) are language-agnostic: they always
+ * Language-agnostic config kinds (hook / settings / mcp with no `language`) always
  * appear in the wizard's "Config — agnostic" group regardless of any language
- * filter, and must not be mixed into the language-bucketed groups.
+ * filter. A language's own config artifact (`typescript/ts-allow-dev-tools`) goes
+ * to `rest`, grouped with the rest of that language.
  *
  * `config` is sorted by KIND_ORDER then id.
  * `rest` preserves the input order.
@@ -140,7 +141,8 @@ export function partitionConfigKinds(artifacts: ResolvedArtifact[]): {
   config: ResolvedArtifact[];
   rest: ResolvedArtifact[];
 } {
-  const config = artifacts.filter(a => CONFIG_KINDS.has(a.kind)).sort(compareByKindThenId);
-  const rest = artifacts.filter(a => !CONFIG_KINDS.has(a.kind));
+  const agnosticConfig = (a: ResolvedArtifact) => CONFIG_KINDS.has(a.kind) && isAgnostic(a);
+  const config = artifacts.filter(agnosticConfig).sort(compareByKindThenId);
+  const rest = artifacts.filter(a => !agnosticConfig(a));
   return { config, rest };
 }

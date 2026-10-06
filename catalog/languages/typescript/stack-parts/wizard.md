@@ -85,6 +85,9 @@ never prompt don't pay for loading the library.
 ## Pitfalls
 
 - A prompt without `output: process.stderr` writes to stdout and corrupts piped payloads.
+- @clack/prompts decides colour from stdout, not from the stream it writes to: an accepted
+  exception to per-stream colour (the contract), since prompts run only when stderr is a terminal.
+  Say so in the report.
 - `process.exit()` inside a cancel handler skips cleanup and the engine's exit code; return `CANCEL` instead.
 - Don't use `p.group` for the flow: it can't go back or branch on validation. Use it only for a
   fixed, back-free sub-form, if ever.

@@ -76,8 +76,8 @@ Never exit 0 after a cancel or a failure. A cancel is not success.
 - Decide colour per stream in this order: a `--color`/`--no-color` flag if the CLI has one, then
   `FORCE_COLOR` (`0` or `false` disables, anything else enables), then `NO_COLOR` (non-empty disables), then `TERM=dumb` (disables), then whether the
   stream is a terminal. Your own text follows this. A prompt library that decides from a different
-  stream (clack decides from stdout) is an accepted, documented exception, since prompts run only
-  when stderr is a terminal anyway; say so in the report instead of ticking per-stream colour.
+  stream is an accepted exception when its stack file documents it, since prompts run only when
+  stderr is a terminal anyway; say so in the report instead of ticking per-stream colour.
 - Meaning never rests on colour or symbols alone: an error still says `error:`, and a selected item is
   still marked in plain text.
 - Every step works with the keyboard only, and arrow keys have a typed alternative where the library

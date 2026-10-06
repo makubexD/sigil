@@ -1,7 +1,7 @@
 ---
 id: csharp/cs-scaffold-project
 kind: skill
-title: "Scaffold Project (.NET / C#)"
+title: "Add Project (.NET / C#)"
 description: "Scaffold a new .NET project with the solution's standards pre-wired — NRT, analyzers, CPM, file-scoped namespaces, correct src/tests layout — and add it to the .sln"
 name: cs-scaffold-project
 language: csharp
@@ -15,8 +15,9 @@ allowedTools:
 argumentHint: "<name> [--type=lib|console|web|test]"
 uses:
   rules:
-    - csharp/cs-project-layout
     - csharp/cs-conventions
+    - csharp/cs-nuget
+    - csharp/cs-project-layout
   agents:
     - csharp/cs-architecture-reviewer
 tags:

@@ -15,6 +15,12 @@ tags:
 appliesToRationale: Scoped to test files and conftest.py because these pytest conventions apply only to test code, not production source.
 ---
 
+## Layout
+
+Mirror the source tree under `tests/` (`src/myapp/services/user_service.py` →
+`tests/services/test_user_service.py`) and name each file `test_<module>.py`. Put fixtures shared
+across files in `conftest.py` — pytest discovers it automatically, so never import from it.
+
 ## Arrange-Act-Assert
 
 Structure every test in three clear sections — a blank line between each is enough, comments are
@@ -56,7 +62,28 @@ def test_user_repository_saves(db_session):
 ```
 
 Prefer `yield`-style fixtures over `return` when teardown is needed — the code after `yield` runs
-even if the test fails.
+even if the test fails. Request a fixture by naming it as a test (or fixture) argument; pytest
+wires the graph.
+
+Pick the narrowest scope that works: `function` (the default) for mutable state, `class` or
+`module` for setup shared by one class or file, `session` only for expensive shared state (a DB
+engine, a server process). A wider scope shares state across tests, so it must be read-only or
+reset between them.
+
+- **Factory fixtures** — when one test needs several instances, return a builder:
+
+  ```python
+  @pytest.fixture
+  def make_user():
+      def _make(name: str = "Ada", role: str = "user") -> User:
+          return User(id=uuid4(), name=name, role=role)
+      return _make
+  ```
+
+- **`autouse=True`** — runs for every test in its scope without being requested; keep it for
+  cross-cutting reset (rolling back a session), never for arrangement a reader needs to see.
+- **`tmp_path` / `tmp_path_factory`** — built-in function- and session-scoped temporary
+  directories; use them instead of writing to the working tree or hand-rolling cleanup.
 
 ## `parametrize` Over Copy-Pasted Test Functions
 
@@ -87,18 +114,41 @@ def test_fetch_user_calls_client(mocker):
     mock_client.get.assert_called_once_with("/users/u1")
 ```
 
+For environment and module-level settings, use the built-in `monkeypatch` fixture
+(`monkeypatch.setenv("API_KEY", "test-key")`, `monkeypatch.setattr("myapp.config.TIMEOUT", 5)`) —
+it restores the original after the test. Freeze the clock (`freezegun`, or an injected clock)
+rather than asserting against `datetime.now()`.
+
 ## Async Tests
 
 Mark async test functions with `@pytest.mark.asyncio` (or configure `asyncio_mode = "auto"` in
 `[tool.pytest.ini_options]` to avoid the per-test marker). Use `pytest-asyncio`'s async fixtures for
 setup that itself needs `await`.
 
+## Expected Exceptions
+
+Assert a raise with `pytest.raises` as a context manager, and pin the message with `match=` (a
+regex) so the test fails on the wrong error, not only the wrong type:
+
+```python
+def test_get_user_raises_not_found_when_missing(user_service):
+    with pytest.raises(UserNotFoundError, match="42"):
+        user_service.get_user(42)
+```
+
 ## Test Naming and Isolation
 
 Name tests `test_<unit>_<condition>_<expected_outcome>` — the name alone should describe the
 scenario without opening the file. Each test must be independent and order-agnostic; a test that
 only passes when run after another test has a hidden shared-state bug — usually a module-level
-mutable default or an un-torn-down fixture.
+mutable default or an un-torn-down fixture. Order-agnostic tests also run in parallel under
+`pytest-xdist` (`pytest -n auto`).
+
+## What Not to Test
+
+- Third-party library internals (SQLAlchemy query building, FastAPI routing).
+- Private functions — exercise them through the public interface.
+- Trivial properties and `__repr__` implementations.
 
 ## Coverage Floor
 

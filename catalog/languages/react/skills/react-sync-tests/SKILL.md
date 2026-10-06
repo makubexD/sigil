@@ -16,7 +16,8 @@ argumentHint: "[--scope=changed|all] (default: changed)"
 uses:
   rules:
     - react/react-testing
-  agents: []
+  agents:
+    - react/react-code-reviewer
 tags:
   - react
   - testing

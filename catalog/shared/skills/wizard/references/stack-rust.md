@@ -18,7 +18,9 @@ already uses dialoguer or cliclack, keep it and write the same adapter.
 Consequences: the engine owns back; map both `OperationCanceled` and `OperationInterrupted`
 to `CANCEL` (exit 130), as references/contract.md requires for Ctrl-C and Esc. Check for a terminal before prompting instead of relying on `NotTTY`.
 
-## Adapter sketch (partial: text and select; the other kinds follow the same shape)
+## Adapter sketch
+
+This sketch is partial: text and select; the other kinds follow the same shape.
 
 ```rust
 fn ask(step: &Step, initial: Option<&str>) -> Result<Answer, InquireError> {

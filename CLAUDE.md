@@ -124,16 +124,19 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `description` plus `whenToUse`; agents dispatch on `description` alone. `whenToUse:` on an agent is unread at build
   time. Put dispatch-disambiguation in `description`. `declared-but-unemitted` fails `sync --check` if the field is
   authored and unmapped. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
-- **One family, one skeleton.** Every language agent, rule and skill belongs to exactly one family in
-  `catalog/standard.yaml` (explicit members, optional ordered H2 `sections` and required `keys`, `absent` gaps, one
-  `severities` scale for report tier headings), read
+- **One family, one skeleton.** Every agent, rule and skill (shared ones too, except the `bases` other rules
+  extend) belongs to exactly one family in `catalog/standard.yaml` (explicit members, optional ordered H2 `sections`,
+  the exact `keys`, a `title`, the `references` members carry by role, `absent` gaps, one `severities` scale for
+  report tier headings). Members also load rules and agents from the same families (`uses`). A skill is `SKILL.md`
+  only unless its family declares references; a skill's `stack-<id>.md` files share one H2 skeleton. The data is read
   only through `src/catalog-standard.ts` by `sync --check` rules (and rewritten as text by `sigil move`) — never by
   consumer commands. Structure is
   data there, not a template: `family-skeleton` fails `--check` when a member drifts. A `template:` holds shared prose
   only, added after measuring real overlap with at least three concrete duplicates (three ship:
   `mcp-note`, `code-quality`, `release-skill`). Never rename an id to fit a family; list it as a member. Each
   `language.yaml` names its `prefix` and `stack`; stacks are declared once in `standard.yaml` (`catalog-layout`
-  checks both). `catalog-symmetry` reads families from the data. (see
+  checks both). `catalog-symmetry` reads families from the data. `catalog/README.md` is generated from it by
+  `npm run build` (`src/catalog-readme.ts`); `test/catalog-readme.test.ts` fails when it is stale. (see
   `docs/decisions/family-skeleton-standard-2026-10.md`)
 - **Where an artifact goes is one rule**: no language variation → `shared/`; varies with the project's language →
   `languages/<lang>/` (the only option for a language-varying agent or rule — neither loads references on demand);

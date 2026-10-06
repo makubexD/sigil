@@ -2,10 +2,16 @@
 #
 # stacks:   the ecosystems a shared skill may carry `references/stack-<id>.md` for. A language
 #           names its stack in its language.yaml (`stack:`); go and rust are stacks with no language.
-# families: every language agent, rule and skill belongs to exactly one family. A family lists its
+# families: every agent, rule and skill belongs to exactly one family (shared ones too). A family lists its
 #           members explicitly (ids never change to fit a name), and may declare `sections` (the H2
 #           skeleton every member has, in order; step numbers are ignored) and `keys` (frontmatter
-#           every member sets). `absent` records why a language has no member.
+#           every member sets, exactly). `absent` records why a language has no member. `title`
+#           makes a language member's title `<title> (<language displayName>)`. `references`
+#           lists the reference files members carry, by role (core: detail read on demand,
+#           brief: an agent's hand-off, examples); `stacks: true` wants one stack-<id>.md per
+#           declared stack, all with one H2 skeleton. No `references` = SKILL.md only.
+#           Members load rules and agents from the same families (`uses`).
+# bases:    shared rules other rules extend; a base belongs to no family.
 # severities: the one scale every report template grades findings on, highest first. A tier heading
 #           (`#### Major`, `#### Low / Informational`) off this scale fails catalog-layout.
 #
@@ -26,9 +32,12 @@ stacks:
 
 severities: [Critical, High, Medium, Low]
 
+bases: [shared/clean-code, shared/git]
+
 families:
   # ── Agents ──────────────────────────────────────────────────────────────────────────────────
   - id: api-compat-reviewer
+    title: API Compatibility Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
     sections:
@@ -44,6 +53,7 @@ families:
       - react/react-api-compat-reviewer
       - typescript/ts-api-compat-reviewer
   - id: architecture-reviewer
+    title: Architecture Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
     sections:
@@ -60,6 +70,7 @@ families:
       - react/react-architecture-reviewer
       - typescript/ts-architecture-reviewer
   - id: code-reviewer
+    title: Code Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
     sections:
@@ -75,8 +86,9 @@ families:
       - react/react-code-reviewer
       - typescript/ts-code-reviewer
   - id: debugger
+    title: Debugger
     kind: agent
-    keys: [tools]
+    keys: [tools, relatedArtifacts]
     sections: [Reproduce, Isolate, Fix, Verify, Output]
     members:
       - angular/ng-debugger
@@ -85,6 +97,7 @@ families:
       - react/react-debugger
       - typescript/ts-debugger
   - id: performance-profiler
+    title: Performance Profiler
     kind: agent
     keys: [tools, relatedArtifacts]
     sections:
@@ -100,6 +113,7 @@ families:
       - react/react-performance-profiler
       - typescript/ts-performance-profiler
   - id: refactor-specialist
+    title: Refactor Specialist
     kind: agent
     keys: [tools, relatedArtifacts]
     sections:
@@ -115,6 +129,7 @@ families:
       - react/react-refactor-specialist
       - typescript/ts-refactor-specialist
   - id: security-auditor
+    title: Security Auditor
     kind: agent
     keys: [tools, relatedArtifacts]
     sections:
@@ -130,12 +145,14 @@ families:
       - react/react-security-auditor
       - typescript/ts-security-auditor
   - id: template-reviewer
+    title: Template Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
     members: [angular/ng-template-reviewer]
 
   # ── Rules ───────────────────────────────────────────────────────────────────────────────────
   - id: async
+    title: Async
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -145,6 +162,7 @@ families:
       - react/react-async
       - typescript/ts-async
   - id: code-quality
+    title: Code Quality
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -154,6 +172,7 @@ families:
       - react/react-code-quality
       - typescript/ts-code-quality
   - id: conventions
+    title: Conventions
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -163,6 +182,7 @@ families:
       - react/react-conventions
       - typescript/ts-conventions
   - id: dependencies
+    title: Dependencies
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -172,6 +192,7 @@ families:
       - react/react-dependencies
       - typescript/ts-dependencies
   - id: documentation
+    title: Documentation
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -181,6 +202,7 @@ families:
       - react/react-documentation
       - typescript/ts-documentation
   - id: git
+    title: Git
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -190,6 +212,7 @@ families:
       - react/react-git
       - typescript/ts-git
   - id: logging
+    title: Logging
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -209,6 +232,7 @@ families:
       - react/react-npm
       - typescript/ts-npm
   - id: project-layout
+    title: Project Layout
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -218,8 +242,9 @@ families:
       - react/react-project-layout
       - typescript/ts-project-layout
   - id: security
+    title: Security
     kind: rule
-    keys: [appliesTo, appliesToRationale]
+    keys: [appliesTo, appliesToRationale, severity]
     members:
       - angular/ng-security
       - csharp/cs-security
@@ -227,6 +252,7 @@ families:
       - react/react-security
       - typescript/ts-security
   - id: testing
+    title: Testing
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
@@ -236,24 +262,29 @@ families:
       - react/react-testing
       - typescript/ts-testing
   - id: components
+    title: Components
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members: [angular/ng-components]
   - id: rxjs
+    title: RxJS
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members: [angular/ng-rxjs]
   - id: signals
+    title: Signals
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members: [angular/ng-signals]
   - id: templates
+    title: Templates
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members: [angular/ng-templates]
 
   # ── Skills ──────────────────────────────────────────────────────────────────────────────────
   - id: add-package
+    title: Add Package
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
     sections:
@@ -270,8 +301,9 @@ families:
       - react/react-add-package
       - typescript/ts-add-package
   - id: audit-deps
+    title: Audit Dependencies
     kind: skill
-    keys: [allowedTools, argumentHint, whenToUse]
+    keys: [allowedTools, argumentHint, whenToUse, skillContext]
     sections:
       - "Discover dependency manifest"
       - "Run available tooling"
@@ -284,6 +316,7 @@ families:
       - react/react-audit-deps
       - typescript/ts-audit-deps
   - id: document
+    title: Document
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
     sections:
@@ -299,6 +332,7 @@ families:
       - react/react-document
       - typescript/ts-document
   - id: generate-tests
+    title: Generate Tests
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
     sections:
@@ -314,8 +348,9 @@ families:
       - react/react-generate-tests
       - typescript/ts-generate-tests
   - id: release
+    title: Release Preparation
     kind: skill
-    keys: [allowedTools, argumentHint, whenToUse]
+    keys: [allowedTools, argumentHint, whenToUse, disableModelInvocation]
     members:
       - angular/ng-release
       - csharp/cs-release
@@ -323,6 +358,7 @@ families:
       - react/react-release
       - typescript/ts-release
   - id: sync-tests
+    title: Sync Tests
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
     sections:
@@ -341,6 +377,7 @@ families:
   # Create a new project in an empty directory. Members added after the split are named after the
   # family (`<prefix>-new-project`); py and react keep their scaffold-project ids.
   - id: new-project
+    title: New Project
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
     sections:
@@ -360,6 +397,7 @@ families:
   # a rename would leave the old installed skill loaded next to the new one. Later members are named
   # after the family (`<prefix>-add-project`).
   - id: add-project
+    title: Add Project
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
     sections:
@@ -377,6 +415,49 @@ families:
       - react/react-add-project
       - typescript/ts-scaffold-project
   - id: generate-component
+    title: Generate Component
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
     members: [angular/ng-generate-component]
+
+  # ── Shared ──────────────────────────────────────────────────────────────────────────────────
+  # Design skills whose stack the task chooses: steps in SKILL.md, detail and one file per stack
+  # in references/ (docs/decisions/catalog-layout-standard-2026-10.md, case c).
+  - id: stack-skill
+    kind: skill
+    keys: [whenToUse, relatedArtifacts]
+    sections:
+      - Decide the engagement
+      - design
+      - build
+      - audit
+      - refactor
+      - Stacks
+      - Gates
+    references:
+      stacks: true
+      files: { architecture: core, auditor: brief, contract: core, findings: core, testing: core }
+      members:
+        shared/cli: { grammar: core, migration: core }
+        shared/wizard: { flow: core, readiness: core }
+    members: [shared/cli, shared/wizard]
+  # Each audits one stack-skill design; its brief is that skill's references/auditor.md.
+  - id: skill-auditor
+    kind: agent
+    keys: [tools, relatedArtifacts, claude]
+    members: [shared/cli-auditor, shared/wizard-auditor]
+  - id: skill-rules
+    kind: rule
+    keys: [appliesTo, appliesToRationale]
+    members: [shared/cli-rules, shared/wizard-rules]
+  # A reviewer for languages with no namespace (layout standard, case a).
+  - id: generic-code-reviewer
+    kind: agent
+    keys: [tools, relatedArtifacts, claude]
+    members: [shared/code-reviewer]
+  - id: feature
+    kind: skill
+    keys: [argumentHint, whenToUse, disableModelInvocation]
+    references:
+      files: { examples: examples }
+    members: [shared/feature]

@@ -344,7 +344,9 @@ is neither overwritten nor reported by `update`.
 When a newer sigil does change a file you also edited, `update` skips that file and says
 `drifted — run with --force to overwrite`. `--force` then replaces your version with the catalog's.
 `--dry-run` shows what would be written or skipped (`⊘ ... drifted — would skip without --force`).
-`update` also takes ids (`sigil update csharp/cs-testing`) to limit it to one artifact.
+`update` also takes ids (`sigil update csharp/cs-testing`) to limit it to one artifact. When an
+updated skill now loads a rule or agent you don't have, `update` installs it too, the way `add` would;
+a dependency the catalog dropped stays until you remove it (`sigil prune` reports it).
 
 To throw away your edits and reset a file right now, reinstall it with `--overwrite`:
 
@@ -441,8 +443,7 @@ Files written:
 
 ```
 .github/skills/py-generate-tests/SKILL.md
-.github/skills/py-generate-tests/references/fixtures.md
-.github/instructions/python-py-conventions.instructions.md   ← applyTo: "**/*.py"
+.github/instructions/python-py-testing.instructions.md   ← applyTo: the rule's test-file globs
 .github/agents/code-reviewer.agent.md
 ```
 

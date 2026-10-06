@@ -2,8 +2,9 @@
  * The one reader of `catalog/standard.yaml`: the catalog standard as data
  * (docs/decisions/family-skeleton-standard-2026-10.md). It declares the stacks a skill may carry a
  * `references/stack-<id>.md` for, and the families: each family's kind, its explicit members, and
- * optionally the H2 sections every member has, in order, and the frontmatter keys every member sets;
- * and the severity scale every report template grades findings on.
+ * optionally the H2 sections every member has, in order, the frontmatter keys every member sets,
+ * the title every language member takes and the reference files every member carries; the shared
+ * rules other rules extend (`bases`); and the severity scale every report template grades on.
  *
  * Author-only: the `sync --check` rules read it (`family-skeleton`, `catalog-layout`,
  * `catalog-symmetry`); consumer commands and the wizard never do. A catalog without the file
@@ -33,14 +34,31 @@ const SectionSchema = z.union([
   z.object({ heading: z.string().min(1), optional: z.boolean().default(false) }),
 ]);
 
+/** Why a skill carries a reference file: detail read on demand, an agent's brief, or examples. */
+const ReferenceRoleSchema = z.enum(['core', 'brief', 'examples']);
+const ReferenceFilesSchema = z.record(z.string().regex(KEBAB_NAME_RE, KEBAB), ReferenceRoleSchema);
+
+const ReferencesSchema = z.object({
+  /** One `stack-<id>.md` for every stack the standard declares. */
+  stacks: z.boolean().default(false),
+  /** Reference files (name without `.md` → role) every member carries. */
+  files: ReferenceFilesSchema.default({}),
+  /** Reference files one member carries beyond `files`. */
+  members: z.record(z.string(), ReferenceFilesSchema).default({}),
+});
+
 const FamilySchema = z.object({
   id: z.string().regex(KEBAB_NAME_RE, KEBAB),
+  /** A language member's title is `<title> (<language displayName>)`. */
+  title: z.string().min(1).optional(),
   kind: z.enum(['agent', 'rule', 'skill']),
   members: z.array(z.string().regex(KEBAB_ID_RE, 'must be an artifact id')).min(1),
   sections: z.array(SectionSchema).optional(),
   keys: z.array(z.string().min(1)).optional(),
   /** Language id → why this family has no member there (silences `catalog-symmetry`). */
   absent: z.record(z.string(), z.string().min(1)).optional(),
+  /** The reference files members carry; absent means `SKILL.md` only. */
+  references: ReferencesSchema.optional(),
 });
 
 const StackSchema = z.object({
@@ -52,6 +70,7 @@ const StandardSchema = z.object({
   stacks: z.array(StackSchema).default([]),
   families: z.array(FamilySchema).default([]),
   severities: z.array(z.string().min(1)).default([]),
+  bases: z.array(z.string().regex(KEBAB_ID_RE, 'must be an artifact id')).default([]),
 });
 
 /** One required H2 section of a family's skeleton. */
@@ -60,14 +79,19 @@ export interface SkeletonSection {
   readonly optional: boolean;
 }
 
+export type ReferenceRole = z.infer<typeof ReferenceRoleSchema>;
+export type FamilyReferences = Readonly<z.infer<typeof ReferencesSchema>>;
+
 export interface FamilyDef {
   readonly id: string;
+  readonly title?: string;
   readonly kind: Extract<ArtifactKind, 'agent' | 'rule' | 'skill'>;
   readonly members: readonly string[];
   /** Absent: the family declares no section skeleton (only membership and keys). */
   readonly sections?: readonly SkeletonSection[];
   readonly keys: readonly string[];
   readonly absent: Readonly<Record<string, string>>;
+  readonly references?: FamilyReferences;
 }
 
 export interface StackDef {
@@ -80,6 +104,8 @@ export interface CatalogStandard {
   readonly families: readonly FamilyDef[];
   /** The tiers a report grades findings on, highest first; empty when the catalog sets none. */
   readonly severities: readonly string[];
+  /** Shared rules other rules extend (`shared/clean-code`): bases, not family members. */
+  readonly bases: readonly string[];
 }
 
 /** Parses standard.yaml's text; throws a SigilError naming `source` when it is malformed. */
@@ -89,8 +115,8 @@ export function parseCatalogStandard(raw: string, source: string): CatalogStanda
     const problems = result.error.issues.map(i => `${i.path.join('.') || '(root)'}: ${i.message}`);
     throw new SigilError(`${source} is invalid:\n  ${problems.join('\n  ')}`);
   }
-  const { stacks, severities } = result.data;
-  const standard = { stacks, severities, families: result.data.families.map(toFamilyDef) };
+  const { stacks, severities, bases } = result.data;
+  const standard = { stacks, severities, bases, families: result.data.families.map(toFamilyDef) };
   const duplicates = duplicateProblems(standard.families);
   if (duplicates.length > 0) {
     throw new SigilError(`${source} is invalid:\n  ${duplicates.join('\n  ')}`);
@@ -128,7 +154,12 @@ function duplicateProblems(families: readonly FamilyDef[]): string[] {
 
 function toFamilyDef(f: z.infer<typeof FamilySchema>): FamilyDef {
   const base = { id: f.id, kind: f.kind, members: f.members, keys: f.keys ?? [] };
-  const family = { ...base, absent: f.absent ?? {} };
+  const family = {
+    ...base,
+    absent: f.absent ?? {},
+    ...(f.title ? { title: f.title } : {}),
+    ...(f.references ? { references: f.references } : {}),
+  };
   if (!f.sections) return family;
   const sections = f.sections.map(s =>
     typeof s === 'string' ? { heading: s, optional: false } : s,

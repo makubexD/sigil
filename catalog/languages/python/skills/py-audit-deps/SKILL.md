@@ -14,12 +14,16 @@ argumentHint: "(no arguments)"
 uses:
   rules:
     - python/py-dependencies
-  agents: []
+    - python/py-packaging
+    - python/py-security
+  agents:
+    - python/py-security-auditor
 tags:
   - python
   - audit
   - dependencies
   - security
+skillContext: fork
 whenToUse: "Use to check for known CVEs, outdated packages, and license issues in a Python project's dependencies. Fires for \"are there any known CVEs\", \"audit dependencies\", \"check for vulnerable packages\", or before a release."
 ---
 

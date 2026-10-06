@@ -15,8 +15,9 @@ allowedTools:
 argumentHint: "<name> [--type=app|lib]"
 uses:
   rules:
-    - angular/ng-project-layout
     - angular/ng-conventions
+    - angular/ng-npm
+    - angular/ng-project-layout
   agents:
     - angular/ng-architecture-reviewer
 tags:

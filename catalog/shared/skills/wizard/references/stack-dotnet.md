@@ -24,7 +24,9 @@ Consequences: create **one** `IAnsiConsole` that writes to stderr and give it to
 rather than using the static `AnsiConsole` (which writes to stdout); own back in the engine;
 turn Ctrl-C into a cancelled token so it becomes `CANCEL` and exit 130.
 
-## Adapter sketch (partial: text and select; add `step.Hint` as a caption the same way)
+## Adapter sketch
+
+This sketch is partial: text and select; add `step.Hint` as a caption the same way.
 
 ```csharp
 public sealed class SpectrePrompter(IAnsiConsole console, CancellationToken token) : IPrompter

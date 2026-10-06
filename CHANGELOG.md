@@ -16,6 +16,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- One artifact anatomy, written as data and shown in a generated `catalog/README.md`. In
+  `catalog/standard.yaml` every agent, rule and skill (shared ones too) belongs to a family that
+  fixes its sections, exact frontmatter keys, title and the reference files it carries by role
+  (core, brief, examples, one per stack). `sigil sync --check` fails on drift, including stack
+  files of one skill with different headings and family members that load rules from different
+  families.
+- `sigil update` installs a rule or agent that an updated skill now loads and the project lacks,
+  recorded as a dependency the way `add` records it, so an updated project matches a fresh install.
+
 - Every language now has every family. New skills: `ng-new-project`, `cs-new-project` and
   `ts-new-project` create a project in an empty directory; `ng-add-project`, `py-add-project` and
   `react-add-project` add one to an existing workspace. New rule: `ng-npm` (Angular's package-manager
@@ -168,6 +177,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   command.
 
 ### Changed
+
+- Python and React `generate-tests` load their language's testing rule, like the other
+  languages; their reference files moved into that rule and the skill, and `ts-scaffold-project`'s
+  templates moved inline. Only `cli`, `wizard` and `feature` carry reference files now.
+- Skills in one family load the same kinds of rules and agents (for example every `audit-deps` loads
+  the dependency, package-manager and security rules and the security auditor). Every `audit-deps`
+  runs in its own context; `ts-scaffold-project` no longer does, because it stops to ask you.
+- Titles follow their family: "New Project (Python)" and "Add Project (C#)" instead of two
+  different skills both called "Scaffold Project", plus "Conventions (Python)", "Generate Tests
+  (React)", "Audit Dependencies (.NET / C#)".
+- The `cli` and `wizard` stack files each share one heading skeleton; Go and Rust gained the
+  missing Choosing, Version and Packaging sections.
 
 - Faster wizard and test suite: a session re-validates the catalog only when one of its files
   changed. Each wizard action used to load and validate every catalog file again (one test walk did

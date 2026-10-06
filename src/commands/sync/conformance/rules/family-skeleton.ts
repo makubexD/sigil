@@ -7,15 +7,16 @@
  *   - a member's sections drift from the skeleton (step numbering is ignored, optional sections may
  *     be left out; anything language-specific goes under an H3 inside a skeleton section). A
  *     member with a `template:` takes its sections from the template and is not compared;
- *   - a member lacks a required frontmatter key.
- * A language-namespace agent, rule or skill that belongs to no family is an error too.
+ *   - a member lacks a required frontmatter key, or drifts from the anatomy in family-anatomy.ts
+ *     (exact keys, title, reference files, stack-file skeleton, `uses` families).
+ * An agent, rule or skill that belongs to no family, and is not a declared base, is an error too.
  *
  * Author-only, like `catalog-layout`: a catalog without `standard.yaml`, or built in memory, is
  * skipped.
  *
  * @module
  */
-import type { Artifact } from '../../../../types';
+import type { Artifact, LanguageMetadata, LoadedCatalog } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
 import {
   loadCatalogStandard,
@@ -25,7 +26,13 @@ import {
   type SkeletonSection,
 } from '../../../../catalog-standard';
 import { h2Headings, sectionKey } from '../../../../markdown-headings';
-import { SHARED_NAMESPACE } from '../../../../catalog-layout';
+import {
+  keyProblems,
+  referenceProblems,
+  stackSkeletonProblems,
+  titleProblems,
+  usesProblems,
+} from './family-anatomy';
 
 const RULE_ID = 'family-skeleton';
 const FAMILY_KINDS = new Set(['agent', 'rule', 'skill']);
@@ -55,14 +62,23 @@ function finding(detail: string, artifact?: Artifact): ConformanceFinding {
   return artifact ? { ...base, artifactId: artifact.id, filePath: artifact.filePath } : base;
 }
 
-/** Problems with one member: its kind, its keys, its sections. */
-function memberProblems(family: FamilyDef, artifact: Artifact): string[] {
+/** What the member checks read: the standard and the catalog's languages. */
+interface StandardContext {
+  readonly standard: CatalogStandard;
+  readonly languages: ReadonlyMap<string, LanguageMetadata>;
+}
+
+/** Problems with one member: its kind, keys, title, sections and reference files. */
+function memberProblems(family: FamilyDef, artifact: Artifact, ctx: StandardContext): string[] {
   if (artifact.kind !== family.kind) {
     return [`is a ${artifact.kind}, but family '${family.id}' is a ${family.kind} family`];
   }
-  const problems = family.keys
-    .filter(key => artifact.frontmatter[key] === undefined)
-    .map(key => `family '${family.id}' requires the frontmatter key '${key}'`);
+  const problems = [
+    ...keyProblems(family, artifact),
+    ...titleProblems(family, artifact, ctx.languages),
+    ...referenceProblems(family, artifact, ctx.standard),
+    ...stackSkeletonProblems(artifact),
+  ];
   // A templated member's body is slot content; its sections come from the template, which every
   // member shares, so there is nothing per member to compare.
   const templated = artifact.frontmatter.template !== undefined;
@@ -77,6 +93,7 @@ function familyFindings(
   family: FamilyDef,
   byId: ReadonlyMap<string, Artifact>,
   seen: Map<string, string>,
+  ctx: StandardContext,
 ): ConformanceFinding[] {
   return family.members.flatMap(id => {
     const artifact = byId.get(id);
@@ -88,27 +105,46 @@ function familyFindings(
     if (first) {
       return [finding(`is listed in families '${first}' and '${family.id}'`, artifact)];
     }
-    return memberProblems(family, artifact).map(detail => finding(detail, artifact));
+    return memberProblems(family, artifact, ctx).map(detail => finding(detail, artifact));
   });
 }
 
-/** Language-namespace agents, rules and skills that no family lists. */
-function unassigned(artifacts: readonly Artifact[], seen: ReadonlyMap<string, string>) {
+/** Members of each family that load rules or agents from other families than their siblings. */
+function usesFindings(
+  standard: CatalogStandard,
+  byId: ReadonlyMap<string, Artifact>,
+): ConformanceFinding[] {
+  const familyOf = new Map(standard.families.flatMap(f => f.members.map(id => [id, f.id])));
+  return standard.families.flatMap(family => {
+    const members = family.members.flatMap(id => byId.get(id) ?? []);
+    return usesProblems(family, members, familyOf).map(p => finding(p.detail, p.artifact));
+  });
+}
+
+/** Agents, rules and skills that no family lists and that are not a declared base. */
+function unassigned(
+  artifacts: readonly Artifact[],
+  seen: ReadonlyMap<string, string>,
+  bases: readonly string[],
+) {
   return artifacts
-    .filter(a => FAMILY_KINDS.has(a.kind) && !a.id.startsWith(`${SHARED_NAMESPACE}/`))
-    .filter(a => !seen.has(a.id))
+    .filter(a => FAMILY_KINDS.has(a.kind) && !seen.has(a.id) && !bases.includes(a.id))
     .map(a => finding(`belongs to no family in ${STANDARD_FILE}`, a));
 }
 
-/** Every finding for `standard` against the catalog's artifacts. */
+/** Every finding for `standard` against `catalog`. */
 export function standardFindings(
   standard: CatalogStandard,
-  artifacts: readonly Artifact[],
-  byId: ReadonlyMap<string, Artifact>,
+  catalog: Pick<LoadedCatalog, 'artifacts' | 'byId' | 'languages'>,
 ): ConformanceFinding[] {
   const seen = new Map<string, string>();
-  const found = standard.families.flatMap(family => familyFindings(family, byId, seen));
-  return [...found, ...unassigned(artifacts, seen)];
+  const ctx = { standard, languages: catalog.languages };
+  const found = standard.families.flatMap(f => familyFindings(f, catalog.byId, seen, ctx));
+  return [
+    ...found,
+    ...usesFindings(standard, catalog.byId),
+    ...unassigned(catalog.artifacts, seen, standard.bases),
+  ];
 }
 
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
@@ -116,7 +152,7 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
   if (!catalog.root) return [];
   const standard = loadCatalogStandard(catalog.root);
   if (!standard) return [];
-  return standardFindings(standard, catalog.artifacts, catalog.byId);
+  return standardFindings(standard, catalog);
 }
 
 export const familySkeletonRule: ConformanceRule = {

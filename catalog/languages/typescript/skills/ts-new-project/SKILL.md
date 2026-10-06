@@ -13,8 +13,9 @@ allowedTools:
 argumentHint: "<package-name> [--runner=node|vitest]"
 uses:
   rules:
-    - typescript/ts-project-layout
     - typescript/ts-npm
+    - typescript/ts-project-layout
+    - typescript/ts-testing
   agents: []
 tags:
   - typescript

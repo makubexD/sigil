@@ -312,9 +312,12 @@ families:
 ```
 
 To join an existing family instead, add the id to its `members` and give the artifact the
-family's `sections` (H2 headings, in order) and `keys`. A family is matched by its member list,
-never by name. `sigil sync --check` fails (`family-skeleton`) on a member whose sections drift and
-on an artifact in no family. A report template grades findings with `#### ` headings taken from the
+family's `sections` (H2 headings, in order), exactly its `keys`, its `title` with your language
+(`Generate Tests (Go)`), the same kinds of `uses` (rules and agents from the same families as its
+siblings) and only the reference files the family declares (none means `SKILL.md` only). A family
+is matched by its member list, never by name. `sigil sync --check` fails (`family-skeleton`) on any
+drift and on an artifact in no family; shared artifacts belong to families too, except the `bases`
+other rules extend. `npm run build` regenerates `catalog/README.md` from `standard.yaml`. A report template grades findings with `#### ` headings taken from the
 standard's `severities` (Critical, High, Medium, Low); `catalog-layout` fails any other tier. See
 [family-skeleton-standard-2026-10.md](../decisions/family-skeleton-standard-2026-10.md).
 

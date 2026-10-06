@@ -15,6 +15,7 @@ argumentHint: "<package> [version] [--dev]"
 uses:
   rules:
     - angular/ng-dependencies
+    - angular/ng-npm
   agents: []
 tags:
   - angular

@@ -42,7 +42,7 @@ packs:
     displayName: Python Starter
     description: >
       Complete setup for Python development.
-      Includes the py-generate-tests skill (plus its Python conventions rule and the
+      Includes the py-generate-tests skill (plus its Python testing rule and the
       py-code-reviewer agent as automatically resolved deps), the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
     artifacts:
@@ -55,7 +55,7 @@ packs:
     displayName: React Starter
     description: >
       Complete setup for React development.
-      Includes the react-generate-tests skill (plus its React conventions rule and the
+      Includes the react-generate-tests skill (plus its React testing rule and the
       react-code-reviewer agent as automatically resolved deps), the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
     artifacts:

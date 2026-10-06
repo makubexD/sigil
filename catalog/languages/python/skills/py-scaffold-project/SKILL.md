@@ -1,7 +1,7 @@
 ---
 id: python/py-scaffold-project
 kind: skill
-title: "Scaffold Project (Python)"
+title: "New Project (Python)"
 description: "Scaffold a new Python package in an empty directory with src layout, pyproject.toml, uv-managed venv, ruff/mypy config, and a starter test"
 name: py-scaffold-project
 language: python
@@ -13,8 +13,9 @@ allowedTools:
 argumentHint: "<package-name>"
 uses:
   rules:
-    - python/py-project-layout
     - python/py-packaging
+    - python/py-project-layout
+    - python/py-testing
   agents: []
 tags:
   - python

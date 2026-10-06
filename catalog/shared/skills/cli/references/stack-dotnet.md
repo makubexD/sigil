@@ -9,6 +9,14 @@ package version in the project first; the notes below follow the current docs (2
 `SetAction`, `Parse(...).Invoke()`). For a beta-era project (`SetHandler`,
 `InvocationContext`), map the same ideas and say the details are unverified.
 
+## Choosing
+
+- **System.CommandLine** (Microsoft, used by the `dotnet` CLI): nested commands, typed
+  options and arguments, generated help, suggestions, and completion. The notes below cover it.
+- If the project already uses another parser (for example Spectre.Console.Cli), keep it and
+  map the same ideas: declarations feed help, usage errors exit 2, payload stays on stdout.
+  Say which details you could not verify for that library.
+
 ## Wiring the grammar
 
 - `RootCommand` for the binary, `Command` per noun with `Subcommands` for verbs,
@@ -20,7 +28,7 @@ package version in the project first; the notes below follow the current docs (2
 - Options accept `--name value` and `--name:value`/`--name=value`; `--` ends options.
   Options are case-sensitive; keep them lowercase-hyphenated.
 
-## Exit codes and usage-error output
+## Exit codes and streams
 
 - `rootCommand.Parse(args).Invoke()` returns the action's `int`. On parse errors the built-in
   parse-error action runs instead of your action and returns 1. It writes the error messages to
@@ -43,16 +51,16 @@ package version in the project first; the notes below follow the current docs (2
 - `--help` together with an invalid token: confirm with a test that help still exits 0, as the
   grammar requires; if the parse reports errors first, handle the help option before mapping to 2.
 
-## Version
-
-The built-in `--version` prints the bare informational version (`1.4.0`). The grammar wants
-`<name> <version>`: replace the version option's action to print both.
-
-## Streams
+### Streams
 
 Payload to `Console.Out`, diagnostics to `Console.Error`. Decide color with the contract's
 precedence (`references/contract.md`) for your own coloring; check `Console.IsOutputRedirected`
 / `IsErrorRedirected` per stream.
+
+## Version
+
+The built-in `--version` prints the bare informational version (`1.4.0`). The grammar wants
+`<name> <version>`: replace the version option's action to print both.
 
 ## Tests
 

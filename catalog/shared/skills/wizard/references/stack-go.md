@@ -20,7 +20,7 @@ huh is the one library with native back, but only between fields of the same for
 field list is fixed when it's built ([`Group.WithHideFunc`](https://pkg.go.dev/charm.land/huh/v2#Group.WithHideFunc) can hide whole groups, but validation after an edit is
 not re-run across groups).
 
-## Two ways to use it, pick one
+### Two ways to use it, pick one
 
 1. **One field per form, driven by the engine (default).** The adapter builds a one-field form for
    each `ask`, adds a `← Back` option to selects, and maps `ErrUserAborted` to `CANCEL`. The behaviour
@@ -30,7 +30,9 @@ not re-run across groups).
    form with native shift+tab back; the engine runs segments and handles branching between them. Use
    this only when the segments are truly static.
 
-## Adapter sketch (option 1; partial: an input step, the other kinds follow the same shape)
+## Adapter sketch
+
+This sketches option 1 and is partial: an input step; the other kinds follow the same shape.
 
 ```go
 func (a HuhPrompter) Ask(step Step, initial any) (any, error) {

@@ -22,6 +22,7 @@ import { isAtRetiredDestination, moveRetiredFragments } from './update-config-mo
 import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
+import { installNewDependencies } from './update-deps';
 
 export { isFileDrifted } from './update-wholefile';
 
@@ -228,9 +229,8 @@ async function applyUpdate(
     opts: { ...opts, installedIds },
   });
 
-  if (!opts.dryRun) {
-    saveManifest(opts.projectDir, manifest);
-  }
+  if (!opts.dryRun) saveManifest(opts.projectDir, manifest);
   printUpdateSummary(opts, totals.updatedCount, totals.skippedDrift, totals.orphanedCount);
+  await installNewDependencies({ entries, resolved, target, installedIds }, opts);
   return totals;
 }

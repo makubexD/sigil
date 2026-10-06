@@ -16,6 +16,7 @@ template: shared/templates/release-skill
 uses:
   rules:
     - angular/ng-conventions
+    - angular/ng-npm
   agents: []
 tags:
   - angular

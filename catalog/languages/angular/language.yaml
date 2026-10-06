@@ -1,4 +1,6 @@
 displayName: "Angular"
+prefix: ng
+stack: node-ts
 globs:
   - "**/*.ts"
   - "**/*.html"

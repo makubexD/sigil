@@ -32,6 +32,15 @@ live under any path. `loadCatalog` records that root on `LoadedCatalog.root`. Th
 conformance rule fails `sigil sync --check` (CI) on an artifact placed off this layout or a skill folder
 carrying content that never ships. It needs that root, so a catalog built in memory is not checked.
 
+The catalog standard itself is data: `catalog/standard.yaml` (read only through
+`src/catalog-standard.ts`) declares the stacks and the families. A family has a kind, explicit
+members, and optionally the H2 `sections` every member has in order and the `keys` every member
+sets. Three `sync --check` rules read it: `family-skeleton` (a member that drifts, or data naming a
+missing artifact), `catalog-layout` (each `language.yaml` `prefix` and `stack`, names off their
+prefix, stack files for undeclared stacks; `src/catalog-vocabulary.ts`) and `catalog-symmetry`
+(families from the data instead of from names). Consumer commands never read the file. See
+[family-skeleton-standard-2026-10.md](../decisions/family-skeleton-standard-2026-10.md).
+
 ### Adding a platform target
 
 1. Create `src/targets/<platform>/index.ts` implementing the `Target` interface. The snippet is

@@ -23,6 +23,7 @@ import { toolRestrictionCoverageRule } from './rules/tool-restriction-coverage';
 import { catalogLayoutRule } from './rules/catalog-layout';
 import { referenceLinksRule } from './rules/reference-links';
 import { providerLimitsRule } from './rules/provider-limits';
+import { familySkeletonRule } from './rules/family-skeleton';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -42,4 +43,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   catalogLayoutRule,
   referenceLinksRule,
   providerLimitsRule,
+  familySkeletonRule,
 ];

@@ -1,0 +1,132 @@
+/**
+ * The one reader of `catalog/standard.yaml`: the catalog standard as data
+ * (docs/decisions/family-skeleton-standard-2026-10.md). It declares the stacks a skill may carry a
+ * `references/stack-<id>.md` for, and the families: each family's kind, its explicit members, and
+ * optionally the H2 sections every member has, in order, and the frontmatter keys every member sets.
+ *
+ * Author-only: the `sync --check` rules read it (`family-skeleton`, `catalog-layout`,
+ * `catalog-symmetry`); consumer commands and the wizard never do. A catalog without the file
+ * (a custom `--catalog-dir`) is simply not checked against a standard.
+ *
+ * @module
+ */
+import fs from 'node:fs';
+import path from 'node:path';
+import yaml from 'js-yaml';
+import { z } from 'zod';
+import { KEBAB_ID_RE, KEBAB_NAME_RE } from './schema/shared';
+import { SigilError } from './errors';
+import { readRegularFile } from './safe-read';
+import type { ArtifactKind } from './types';
+
+/** The file's name, at the catalog root. */
+export const STANDARD_FILE = 'standard.yaml';
+
+const KIB = 1024;
+const MAX_STANDARD_KIB = 256;
+const KEBAB = 'must be kebab-case (lowercase letters, digits, -)';
+
+const SectionSchema = z.union([
+  z.string().min(1),
+  z.object({ heading: z.string().min(1), optional: z.boolean().default(false) }),
+]);
+
+const FamilySchema = z.object({
+  id: z.string().regex(KEBAB_NAME_RE, KEBAB),
+  kind: z.enum(['agent', 'rule', 'skill']),
+  members: z.array(z.string().regex(KEBAB_ID_RE, 'must be an artifact id')).min(1),
+  sections: z.array(SectionSchema).optional(),
+  keys: z.array(z.string().min(1)).optional(),
+  /** Language id → why this family has no member there (silences `catalog-symmetry`). */
+  absent: z.record(z.string(), z.string().min(1)).optional(),
+});
+
+const StackSchema = z.object({
+  id: z.string().regex(KEBAB_NAME_RE, KEBAB),
+  displayName: z.string().min(1),
+});
+
+const StandardSchema = z.object({
+  stacks: z.array(StackSchema).default([]),
+  families: z.array(FamilySchema).default([]),
+});
+
+/** One required H2 section of a family's skeleton. */
+export interface SkeletonSection {
+  readonly heading: string;
+  readonly optional: boolean;
+}
+
+export interface FamilyDef {
+  readonly id: string;
+  readonly kind: Extract<ArtifactKind, 'agent' | 'rule' | 'skill'>;
+  readonly members: readonly string[];
+  /** Absent: the family declares no section skeleton (only membership and keys). */
+  readonly sections?: readonly SkeletonSection[];
+  readonly keys: readonly string[];
+  readonly absent: Readonly<Record<string, string>>;
+}
+
+export interface StackDef {
+  readonly id: string;
+  readonly displayName: string;
+}
+
+export interface CatalogStandard {
+  readonly stacks: readonly StackDef[];
+  readonly families: readonly FamilyDef[];
+}
+
+/** Parses standard.yaml's text; throws a SigilError naming `source` when it is malformed. */
+export function parseCatalogStandard(raw: string, source: string): CatalogStandard {
+  const result = StandardSchema.safeParse(yaml.load(raw, { schema: yaml.JSON_SCHEMA }) ?? {});
+  if (!result.success) {
+    const problems = result.error.issues.map(i => `${i.path.join('.') || '(root)'}: ${i.message}`);
+    throw new SigilError(`${source} is invalid:\n  ${problems.join('\n  ')}`);
+  }
+  return {
+    stacks: result.data.stacks,
+    families: result.data.families.map(toFamilyDef),
+  };
+}
+
+function toFamilyDef(f: z.infer<typeof FamilySchema>): FamilyDef {
+  const base = { id: f.id, kind: f.kind, members: f.members, keys: f.keys ?? [] };
+  const family = { ...base, absent: f.absent ?? {} };
+  if (!f.sections) return family;
+  const sections = f.sections.map(s =>
+    typeof s === 'string' ? { heading: s, optional: false } : s,
+  );
+  return { ...family, sections };
+}
+
+/**
+ * Reads `<catalogRoot>/standard.yaml`; undefined when the catalog has none. A file that exists but
+ * is a link, oversized or malformed throws, so a broken standard never passes silently.
+ */
+export function loadCatalogStandard(catalogRoot: string): CatalogStandard | undefined {
+  const file = path.join(catalogRoot, STANDARD_FILE);
+  if (!fs.existsSync(file) && !isLink(file)) return undefined;
+  const read = readRegularFile(file, { maxBytes: MAX_STANDARD_KIB * KIB });
+  if ('reason' in read) throw new SigilError(`${file}: ${read.reason}`);
+  return parseCatalogStandard(read.content, file);
+}
+
+function isLink(file: string): boolean {
+  try {
+    return fs.lstatSync(file).isSymbolicLink();
+  } catch {
+    return false;
+  }
+}
+
+/** The family each member id belongs to (the first, when data lists one twice). */
+export function familyByMember(standard: CatalogStandard): Map<string, FamilyDef> {
+  const byMember = new Map<string, FamilyDef>();
+  for (const family of standard.families) {
+    for (const member of family.members) {
+      if (!byMember.has(member)) byMember.set(member, family);
+    }
+  }
+  return byMember;
+}

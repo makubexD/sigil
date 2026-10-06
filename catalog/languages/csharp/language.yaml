@@ -1,4 +1,6 @@
 displayName: ".NET / C#"
+prefix: cs
+stack: dotnet
 globs:
   - "**/*.cs"
   - "**/*.csproj"

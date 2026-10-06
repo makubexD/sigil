@@ -7,7 +7,9 @@
  *     kind's folder, a skill folder named differently from the skill (catalog-layout.ts);
  *   - skill folders: content that never ships (anything besides SKILL.md and flat
  *     `references/*.md`), a reference SKILL.md never mentions, a stack file not named
- *     `stack-<stack>.md`.
+ *     `stack-<stack>.md`;
+ *   - vocabulary, when the catalog has `standard.yaml` (catalog-vocabulary.ts): a language without
+ *     a prefix or stack, a stack not declared there, a name off its language's prefix.
  *
  * Author-only: `validateCatalog`, which gates consumer commands, is untouched. Reads paths relative
  * to the catalog root and never follows a symbolic link; a catalog built in memory has no root and
@@ -20,6 +22,8 @@ import type { Artifact } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
 import { positionProblems } from '../../../../catalog-layout';
 import { readReferences, skillFolderExtras } from '../../../../load-references';
+import { loadCatalogStandard } from '../../../../catalog-standard';
+import { languageProblems, vocabularyProblems } from '../../../../catalog-vocabulary';
 
 const STACK_FILE_RE = /^stack-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
@@ -61,19 +65,30 @@ function problemsFor(artifact: Artifact, root: string, languages: Map<string, un
   ];
 }
 
+const layoutError = (detail: string, artifact?: Artifact): ConformanceFinding =>
+  artifact
+    ? {
+        ruleId: 'catalog-layout',
+        severity: 'error',
+        artifactId: artifact.id,
+        filePath: artifact.filePath,
+        detail,
+      }
+    : { ruleId: 'catalog-layout', severity: 'error', detail };
+
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
   const { catalog } = ctx;
   if (!catalog.root) return [];
   const root = catalog.root;
-  return catalog.artifacts.flatMap(artifact =>
-    problemsFor(artifact, root, catalog.languages).map(detail => ({
-      ruleId: 'catalog-layout',
-      severity: 'error' as const,
-      artifactId: artifact.id,
-      filePath: artifact.filePath,
-      detail,
-    })),
+  const standard = loadCatalogStandard(root);
+  const artifactFindings = catalog.artifacts.flatMap(artifact =>
+    [
+      ...problemsFor(artifact, root, catalog.languages),
+      ...(standard ? vocabularyProblems(artifact, catalog.languages, standard) : []),
+    ].map(detail => layoutError(detail, artifact)),
   );
+  const languageFindings = standard ? languageProblems(catalog.languages, standard) : [];
+  return [...languageFindings.map(detail => layoutError(detail)), ...artifactFindings];
 }
 
 export const catalogLayoutRule: ConformanceRule = {

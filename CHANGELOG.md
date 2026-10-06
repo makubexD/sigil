@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- The catalog standard as data: `catalog/standard.yaml` declares every family (explicit members,
+  optionally an ordered section skeleton and required frontmatter keys) and the stacks. A new
+  `family-skeleton` check fails `sigil sync --check` when a family member's sections drift from the
+  skeleton or the data names a missing artifact. Each `language.yaml` now names its artifact
+  `prefix` and its `stack`, and `catalog-layout` checks both. `catalog-symmetry` reads families from
+  the data, so it now sees that the package-manager rules (NuGet, packaging, npm) have no Angular
+  member. Author-only: consumer commands and the wizard are unchanged.
 - `sigil status` notes an artifact that a tool loads twice: GitHub Copilot reads skills from
   `.claude/skills` and `.agents/skills` as well as `.github/skills`, so a skill installed for Copilot
   and for Claude Code or the open standard shows up twice in Copilot. The overlap is data on the target

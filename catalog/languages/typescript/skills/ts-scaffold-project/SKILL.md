@@ -7,10 +7,10 @@ name: ts-scaffold-project
 language: typescript
 skillContext: fork
 whenToUse: >-
-  Use when adding a new package to an existing monorepo or initializing a new standalone
-  package — "scaffold a new package", "create a new lib/app/cli", "bootstrap a package for X".
-  Pass the package name and optional type. Never overwrites existing files; confirms before
-  editing the root workspace config.
+  Use when adding a new package to an existing workspace or monorepo — "scaffold a new package",
+  "create a new lib/app/cli", "bootstrap a package for X". Pass the package name and optional
+  type. Never overwrites existing files; confirms before editing the root workspace config. For
+  an empty directory with no workspace, use ts-new-project instead.
 allowedTools:
   - Read
   - Write

@@ -21,6 +21,11 @@ tags:
   - python
   - performance
 relatedArtifacts:
+  - id: python/py-code-reviewer
+    relation: complements
+    reason: >-
+      py-code-reviewer surfaces obvious inline smells; this agent profiles
+      runtime behavior and systemic patterns
   - id: python/py-refactor-specialist
     relation: complements
     reason: py-performance-profiler diagnoses hot paths; py-refactor-specialist can apply the fix

@@ -59,8 +59,13 @@ skeleton.**
   stacks are declared once in `standard.yaml` (go and rust are stacks with no language).
 - **Templates hold shared prose, not structure.** A family's skeleton lives in `standard.yaml`; a
   `template:` is added only where members repeat real prose, so a template is never a list of headings.
-- **scaffold-project is two families**: create a new project (python, react) and add a project to an
-  existing solution or workspace (`add-project`: csharp, typescript). Members keep their ids.
+  Measured after the content pass (2026-10-06): no family without a template repeats a block of prose
+  in three or more members; what recurs is one-line fragments (`**Target:** {sigil:arguments}`, a
+  verdict line), so no new template was added.
+- **scaffold-project is two families**: `new-project` (create a project in an empty directory) and
+  `add-project` (add one to an existing solution or workspace). Existing members keep their
+  `scaffold-project` ids; members added later are named after their family (`ts-new-project`,
+  `py-add-project`). Every language has both, and each member's `whenToUse` names its sibling.
 
 ## Guards
 

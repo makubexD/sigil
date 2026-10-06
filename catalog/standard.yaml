@@ -203,6 +203,7 @@ families:
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members:
+      - angular/ng-npm
       - csharp/cs-nuget
       - python/py-packaging
       - react/react-npm
@@ -337,8 +338,9 @@ families:
       - python/py-sync-tests
       - react/react-sync-tests
       - typescript/ts-sync-tests
-  # Create a new project in an empty directory.
-  - id: scaffold-project
+  # Create a new project in an empty directory. Members added after the split are named after the
+  # family (`<prefix>-new-project`); py and react keep their scaffold-project ids.
+  - id: new-project
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
     sections:
@@ -349,10 +351,14 @@ families:
       - "Verify"
       - "Report"
     members:
+      - angular/ng-new-project
+      - csharp/cs-new-project
       - python/py-scaffold-project
       - react/react-scaffold-project
+      - typescript/ts-new-project
   # Add a project to an existing solution or workspace. Members keep their scaffold-project ids;
-  # a rename would leave the old installed skill loaded next to the new one.
+  # a rename would leave the old installed skill loaded next to the new one. Later members are named
+  # after the family (`<prefix>-add-project`).
   - id: add-project
     kind: skill
     keys: [allowedTools, argumentHint, whenToUse]
@@ -365,7 +371,10 @@ families:
       - "Build and test"
       - "Report"
     members:
+      - angular/ng-add-project
       - csharp/cs-scaffold-project
+      - python/py-add-project
+      - react/react-add-project
       - typescript/ts-scaffold-project
   - id: generate-component
     kind: skill

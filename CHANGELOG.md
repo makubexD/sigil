@@ -16,6 +16,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Every language now has every family. New skills: `ng-new-project`, `cs-new-project` and
+  `ts-new-project` create a project in an empty directory; `ng-add-project`, `py-add-project` and
+  `react-add-project` add one to an existing workspace. New rule: `ng-npm` (Angular's package-manager
+  rule: `ng update`, peer ranges, `npm ci`, audit gate, ng-packagr publishing). `ts-scaffold-project`
+  is now for existing workspaces only, and each scaffold skill names its sibling.
+- New packs `python-tooling` and `react-tooling`, like the other languages' tooling packs.
+- Sibling parity: members of a family now carry what their siblings do — naming tables (Python and
+  React conventions), graded manual findings (Python and React audit-deps), "Still undocumented"
+  (Python and React document), an algorithmic-complexity dimension (React profiler), and more.
+
 - One severity scale for every report: `catalog/standard.yaml` declares `severities` (Critical, High,
   Medium, Low), and `catalog-layout` fails `sigil sync --check` on a report tier heading off that
   scale. The C#, Angular and TypeScript code and architecture reviewers and the Angular template

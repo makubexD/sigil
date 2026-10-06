@@ -114,6 +114,7 @@ Dev-only: <yes / no>
 - CVEs: <none detected / ⚠ flagged — detail>
 - Bundle size: <N kB gzipped / ⚠ flagged as significant>
 - License: <MIT / Apache-2.0 / ⚠ flagged — detail>
+- Maintenance: <active / ⚠ last release: <date>>
 - Types: <bundled / @types available / ⚠ untyped>
 - Peer range: <compatible / ⚠ mismatch — detail>
 

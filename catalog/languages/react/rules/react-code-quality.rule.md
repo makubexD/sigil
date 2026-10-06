@@ -55,7 +55,8 @@ components directly (rather than composing them via props/children) is a couplin
 - **Detect:** `react-architecture-reviewer` maps the component/import graph and flags deep drilling
   and cycles.
 - **Fix:** `react-refactor-specialist` extracts shared state into Context or a store, or restructures
-  the tree to pass data through composition.
+  the tree to pass data through composition. For an import cycle, it extracts the shared type, hook,
+  or constant into a third module both sides can import without a cycle.
 
 <!-- slot: perf-profiler-ref -->
 react-performance-profiler

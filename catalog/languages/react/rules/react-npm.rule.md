@@ -1,7 +1,7 @@
 ---
 id: react/react-npm
 kind: rule
-title: NPM (React)
+title: npm (React)
 description: React/frontend npm mechanics — lockfile discipline, npm audit, semver ranges, monorepo workspace considerations
 language: react
 appliesTo:

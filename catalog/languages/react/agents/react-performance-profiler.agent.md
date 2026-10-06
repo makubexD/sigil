@@ -20,6 +20,11 @@ tags:
   - react
   - performance
 relatedArtifacts:
+  - id: react/react-code-reviewer
+    relation: complements
+    reason: >-
+      react-code-reviewer surfaces obvious inline smells; this agent profiles
+      runtime behavior and systemic patterns
   - id: react/react-refactor-specialist
     relation: complements
     reason: react-performance-profiler diagnoses hot paths; react-refactor-specialist can apply the fix
@@ -66,6 +71,13 @@ Read in order:
   with no `useMemo`, when the profiler would show it as a hot path.
 - `useCallback`/`useMemo` applied to a trivial computation with no measured benefit — flag as a
   finding too; needless memoization adds complexity and a dependency-array bug surface for no gain.
+
+**Algorithmic complexity**
+- Nested `.map`/`.filter`/`.find` over the same or related arrays during render or in a selector —
+  O(n²) or worse; build a `Map`/`Set` lookup once instead.
+- `Array.includes`/`indexOf` membership checks inside a loop instead of a `Set`.
+- Sorting or re-deriving a large collection inside a loop or per list item instead of once per
+  render (or once per data change with `useMemo`).
 
 **Waterfall data fetching**
 - Sequential `await`s for independent queries inside a Server Component instead of concurrent

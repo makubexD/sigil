@@ -2,7 +2,7 @@
 id: python/py-scaffold-project
 kind: skill
 title: "Scaffold Project (Python)"
-description: "Scaffold a new Python package with src layout, pyproject.toml, uv-managed venv, ruff/mypy config, and a starter test"
+description: "Scaffold a new Python package in an empty directory with src layout, pyproject.toml, uv-managed venv, ruff/mypy config, and a starter test"
 name: py-scaffold-project
 language: python
 allowedTools:
@@ -20,7 +20,7 @@ tags:
   - python
   - scaffold
   - new-project
-whenToUse: "Use when starting a brand-new Python package from scratch. Fires for \"scaffold a new Python package\", \"create a new Python project\", or \"set up a Python package called X\". Not for adding a feature to an existing project."
+whenToUse: "Use when starting a brand-new Python package from scratch. Fires for \"scaffold a new Python package\", \"create a new Python project\", or \"set up a Python package called X\". Not for adding a package to an existing repo or monorepo (use py-add-project) or a feature to an existing project."
 ---
 
 # Scaffold Project

@@ -31,7 +31,12 @@ import {
   languageProblems,
   vocabularyProblems,
 } from '../../../../catalog-vocabulary';
-import { sharedStackFileProblems, stackPartProblems } from '../../../../stack-parts-layout';
+import {
+  sharedStackFileProblems,
+  stackIndexProblems,
+  stackPartProblems,
+} from '../../../../stack-parts-layout';
+import { isStackFile, STACK_INDEX_MARKER } from '../../../../stack-index';
 
 const STACK_FILE_RE = /^stack-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
@@ -48,9 +53,11 @@ function unshippedEntries(skillDir: string): string[] {
 
 /** Loaded references SKILL.md never names, and stack files named off the stack-<stack>.md shape. */
 function referenceProblems(skill: Artifact): string[] {
+  const indexed = skill.body.includes(STACK_INDEX_MARKER);
   return (skill.references ?? []).flatMap(ref => {
     const problems: string[] = [];
-    if (!skill.body.includes(`references/${ref.name}`)) {
+    const listed = indexed && isStackFile(ref.name);
+    if (!listed && !skill.body.includes(`references/${ref.name}`)) {
       problems.push(`references/${ref.name} is never mentioned in SKILL.md, so it may never load`);
     }
     // Any name starting "stack" is treated as meant for a stack file, so "stackgo.md" or
@@ -107,6 +114,7 @@ function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFindi
       ...problemsFor(artifact, root, catalog.languages),
       ...(standard ? vocabularyProblems(artifact, catalog.languages, standard) : []),
       ...(standard ? sharedStackFileProblems(artifact, standard) : []),
+      ...stackIndexProblems(artifact),
     ].map(detail => layoutError(detail, artifact)),
   );
   const catalogWide = standard ? catalogWideProblems(catalog, root, standard) : [];

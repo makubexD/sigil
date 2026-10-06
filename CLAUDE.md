@@ -143,7 +143,8 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   varies with a stack the task chooses → one neutral shared skill, its per-stack text in stack parts
   (`languages/<home>/stack-parts/<skill>.md`, `home` per stack in `standard.yaml`) that the loader turns back into
   `references/stack-<stack>.md` (`stackPartsBySkill` in `src/load-references.ts`, also what `import` must use;
-  `sigil move` renames them). `shared/` never holds stack text. Tie → per-language. Group with `packs.yaml`, never topic folders; references stay one level deep. `catalog-layout`
+  `sigil move` renames them). `shared/` never holds stack text; `SKILL.md` lists the parts with `<!-- stack-index -->`,
+  which resolve fills from each part's H1 (`src/stack-index.ts`). Tie → per-language. Group with `packs.yaml`, never topic folders; references stay one level deep. `catalog-layout`
   (`src/commands/sync/conformance/rules/catalog-layout.ts`) fails `sync --check` on placement and skill-folder
   violations, and on the vocabulary checks in `src/catalog-vocabulary.ts`; it is author-only and adds nothing to `validateCatalog`. (see
   `docs/decisions/catalog-layout-standard-2026-10.md`)

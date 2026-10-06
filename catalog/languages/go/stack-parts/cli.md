@@ -1,4 +1,4 @@
-# Go (cobra)
+# Go: cobra
 
 Sources: [cobra user guide](https://github.com/spf13/cobra/blob/main/site/content/user_guide.md) ·
 [command.go](https://github.com/spf13/cobra/blob/main/command.go) ·

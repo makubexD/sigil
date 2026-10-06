@@ -13,6 +13,7 @@ import type { CatalogStandard } from './catalog-standard';
 import { STANDARD_FILE } from './catalog-standard';
 import { LANGUAGES_DIR, SHARED_NAMESPACE } from './catalog-layout';
 import { STACK_PARTS_DIR, stackPartsBySkill, type StackPart } from './load-references';
+import { isStackFile, STACK_INDEX_MARKER } from './stack-index';
 
 const STACK_FILE_RE = /^stack-(.+)\.md$/;
 
@@ -33,6 +34,24 @@ export function sharedStackFileProblems(skill: Artifact, standard: CatalogStanda
       `references/${ref.name}: stack text lives in ${partPath(home, skillName)}, not ${SHARED_NAMESPACE}/`,
     ];
   });
+}
+
+/**
+ * A skill with stack parts lists them through the generated table (stack-index.ts): exactly one
+ * marker, and no hand-written `references/stack-…` link that the table would duplicate.
+ */
+export function stackIndexProblems(skill: Artifact): string[] {
+  const parts = (skill.references ?? []).filter(
+    ref =>
+      isStackFile(ref.name) && ref.sourcePath?.includes(`${path.sep}${STACK_PARTS_DIR}${path.sep}`),
+  );
+  if (parts.length === 0) return [];
+  const markers = skill.body.split(STACK_INDEX_MARKER).length - 1;
+  const handWritten = /references\/stack-[a-z0-9-]+\.md/.test(skill.body);
+  if (markers === 1 && !handWritten) return [];
+  return [
+    `a skill with stack parts lists them with ${STACK_INDEX_MARKER} (generated), not hand-written links`,
+  ];
 }
 
 /** A stack whose `home` is not a language with that stack. */

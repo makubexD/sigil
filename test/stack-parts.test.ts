@@ -24,8 +24,7 @@ const STANDARD =
   '  - id: python\n    displayName: Python\n    home: python\n';
 const SKILL =
   '---\nid: shared/probe\nkind: skill\nname: probe\ntitle: P\ndescription: A probe.\n---\n\n' +
-  'Read [core](references/core.md), [d](references/stack-dotnet.md), ' +
-  '[p](references/stack-python.md).\n';
+  'Read [core](references/core.md).\n\n<!-- stack-index -->\n';
 
 const BASE: Record<string, string> = {
   'standard.yaml': STANDARD,

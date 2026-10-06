@@ -1,4 +1,4 @@
-# .NET (System.CommandLine)
+# .NET: System.CommandLine
 
 Sources: [System.CommandLine overview](https://learn.microsoft.com/dotnet/standard/commandline/) ·
 [How to parse and invoke](https://learn.microsoft.com/dotnet/standard/commandline/how-to-parse-and-invoke) ·

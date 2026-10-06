@@ -18,6 +18,7 @@
  */
 import type { Artifact, LoadedCatalog, ResolvedArtifact, ResolvedCatalog } from './types';
 import { composeArtifactAgainstTemplate } from './templates';
+import { fillStackIndex } from './stack-index';
 
 /** Composes an artifact's own body against its `template:`, if any — step (1) above. */
 function ownEffectiveBody(
@@ -159,13 +160,18 @@ function resolveSkill(
     .map(id => ruleCache.get(id))
     .filter((r): r is ResolvedArtifact => r !== undefined);
 
-  const own = ownEffectiveBody(artifact, catalog);
-
   return {
     ...artifact,
-    ...(own.templateId ? { resolvedBody: own.body } : {}),
-    ...templateFields(own),
+    ...skillBodyFields(artifact, catalog),
     resolvedRules,
     resolvedAgentIds: [...agentIds],
   };
+}
+
+/** A skill's body: composed against its template, with its stack table filled in (stack-index.ts). */
+function skillBodyFields(artifact: Artifact, catalog: LoadedCatalog) {
+  const own = ownEffectiveBody(artifact, catalog);
+  const body = fillStackIndex(own.body, artifact.references);
+  const changed = own.templateId || body !== artifact.body;
+  return { ...(changed ? { resolvedBody: body } : {}), ...templateFields(own) };
 }

@@ -116,13 +116,7 @@ Never apply a breaking change without an explicit yes on its finding id.
 
 ## Stacks
 
-| Stack | File |
-|---|---|
-| Node.js / TypeScript (`node:util` parseArgs, commander) | [`references/stack-node-ts.md`](references/stack-node-ts.md) |
-| Python (argparse, click, typer) | [`references/stack-python.md`](references/stack-python.md) |
-| Go (cobra) | [`references/stack-go.md`](references/stack-go.md) |
-| Rust (clap) | [`references/stack-rust.md`](references/stack-rust.md) |
-| .NET (System.CommandLine) | [`references/stack-dotnet.md`](references/stack-dotnet.md) |
+<!-- stack-index -->
 
 Stack files map the rules to the parser's features and list its pitfalls; they do not
 override the grammar or the contract. When a stack's default differs from the contract

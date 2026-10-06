@@ -82,7 +82,7 @@ Spec: `SPEC.md`
 ## Language layers (SPEC-language-layers.md, approved 2026-10-06)
 
 - [x] S1 Relocation: stack parts in their home language, go/rust languages, layout checks, move renames parts (and fixes move's name:)
-- [ ] S2 Generated stack index
+- [x] S2 Generated stack index
 - [ ] S3 Per-language allow-dev-tools, soft illustrations into parts, stack-leak warning
 - [ ] S4 Import routing + single prefix source
 

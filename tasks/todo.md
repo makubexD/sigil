@@ -75,8 +75,8 @@ Spec: `SPEC.md`
 ## Skill anatomy (SPEC-skill-anatomy.md, approved 2026-10-06)
 
 - [x] PR1 Reference files get the lexicon, the output contract, the trust scan and the leak checks
-- [ ] PR2 Anatomy as data: reference roles per family, shared-pair families, exact keys, `uses` parity, generated catalog/README.md
-- [ ] PR3 One content release: generate-tests uses `*-testing` (references folded), ts-scaffold-project inline, cli stack-file skeleton, titles, report blocks, ng-release API-compat step, skillContext
+- [x] PR2+3 (one PR) Anatomy as data: reference roles per family, shared-pair families, exact keys, `uses` parity, generated catalog/README.md
+      plus the content it demanded: generate-tests uses `*-testing` (references folded), ts-scaffold-project inline, stack-file skeletons, titles, `uses` parity, skillContext; `update` installs new dependencies. ng-release already folds API compat into its gate (left as is)
 - [ ] Probe Copilot double rule delivery (inline + .instructions.md), with V1/F4
 
 ## End block: before the release (development first; nothing here is dropped)

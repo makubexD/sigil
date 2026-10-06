@@ -14,6 +14,7 @@ argumentHint: "(no arguments)"
 uses:
   rules:
     - angular/ng-dependencies
+    - angular/ng-npm
     - angular/ng-security
   agents:
     - angular/ng-security-auditor
@@ -22,6 +23,7 @@ tags:
   - audit
   - dependencies
   - security
+skillContext: fork
 whenToUse: "Run via `/ng-audit-deps` before a release or as a periodic maintenance check — e.g. \"audit my dependencies\", \"are any packages out of date or vulnerable\". Produces a read-only report covering CVEs, outdated versions, Angular lockstep, and license compliance; makes no changes."
 ---
 

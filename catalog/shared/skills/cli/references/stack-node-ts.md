@@ -11,7 +11,9 @@ Sources: [node:util parseArgs](https://nodejs.org/api/util.html#utilparseargscon
 - **commander**: nested commands, generated help, suggestions. Needs configuration to follow
   the exit-code contract (below).
 
-## parseArgs wiring
+## Wiring the grammar
+
+### parseArgs
 
 Parse in two passes: global options first, then the command's own options against its
 declaration.
@@ -41,7 +43,7 @@ const { values, positionals } = parseArgs({
 - It has no notion of subcommands or help: resolve the command path yourself, and render
   help from your declarations (never a separate string).
 
-## commander pitfalls
+### commander pitfalls
 
 - Usage errors (unknown option, missing argument, excess arguments, unknown command) call
   `program.error()`, which exits **1** by default. To follow the contract, call
@@ -59,18 +61,18 @@ const { values, positionals } = parseArgs({
 - `.allowUnknownOption()` and `.allowExcessArguments()` weaken the contract; don't use them.
 - Use `parseAsync` when actions are async, or rejections escape the exit-code mapping.
 
-## Version
-
-`parseArgs` has no built-in `--version`; handle it yourself and print `<name> <version>`.
-commander's `.version('1.4.0')` prints only `1.4.0`; pass the full string instead
-(`.version('app 1.4.0')`) or print it in your own option handler.
-
-## Output and color
+## Exit codes and streams
 
 `process.stdout.isTTY` and `process.stderr.isTTY` give the terminal check per stream; apply
 the color order from `references/contract.md`. Write payload with
 `process.stdout.write`, and set `process.exitCode` rather than calling `process.exit()`
 so pending writes to a pipe flush.
+
+## Version
+
+`parseArgs` has no built-in `--version`; handle it yourself and print `<name> <version>`.
+commander's `.version('1.4.0')` prints only `1.4.0`; pass the full string instead
+(`.version('app 1.4.0')`) or print it in your own option handler.
 
 ## Tests
 

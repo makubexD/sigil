@@ -16,6 +16,7 @@ template: shared/templates/release-skill
 uses:
   rules:
     - typescript/ts-conventions
+    - typescript/ts-npm
   agents: []
 tags:
   - typescript

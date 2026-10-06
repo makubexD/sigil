@@ -1,7 +1,7 @@
 ---
 id: react/react-conventions
 kind: rule
-title: React Component Style
+title: "Conventions (React)"
 description: React-specific style and architecture rules — hooks conventions, component composition patterns, and TypeScript integration (the clean-code baseline arrives through react-code-quality).
 language: react
 appliesTo:

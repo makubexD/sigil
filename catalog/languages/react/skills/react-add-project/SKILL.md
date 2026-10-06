@@ -15,8 +15,9 @@ allowedTools:
 argumentHint: "<name> [--type=app|lib]"
 uses:
   rules:
-    - react/react-project-layout
+    - react/react-conventions
     - react/react-npm
+    - react/react-project-layout
   agents:
     - react/react-architecture-reviewer
 tags:

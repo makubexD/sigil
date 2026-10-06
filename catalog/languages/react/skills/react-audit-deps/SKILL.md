@@ -15,12 +15,15 @@ uses:
   rules:
     - react/react-dependencies
     - react/react-npm
-  agents: []
+    - react/react-security
+  agents:
+    - react/react-security-auditor
 tags:
   - react
   - audit
   - dependencies
   - security
+skillContext: fork
 whenToUse: "Use to check for known CVEs, outdated packages, and bundle-size outliers in a React project's npm dependencies. Fires for \"are there any known CVEs\", \"audit dependencies\", \"check for vulnerable packages\", or before a release."
 ---
 

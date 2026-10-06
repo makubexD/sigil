@@ -14,7 +14,8 @@ argumentHint: "<file-or-component>"
 uses:
   rules:
     - react/react-documentation
-  agents: []
+  agents:
+    - react/react-code-reviewer
 tags:
   - react
   - documentation

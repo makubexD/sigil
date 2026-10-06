@@ -2,12 +2,12 @@
 id: python/py-generate-tests
 kind: skill
 name: py-generate-tests
-title: Write pytest Tests for Python
+title: "Generate Tests (Python)"
 description: Use when adding or reviewing unit and integration tests in a Python project. Covers project layout, fixtures, parametrize, mocking, and async test patterns.
 language: python
 uses:
   rules:
-    - python/py-conventions
+    - python/py-testing
   agents:
     - python/py-code-reviewer
 tags:
@@ -50,9 +50,33 @@ error paths that need coverage.
 
 ## Step 4 — Write tests
 
-Follow [the project's pytest conventions](references/testing-conventions.md): layout, fixtures
-(scopes in [the fixture cheat-sheet](references/fixtures.md)), Arrange / Act / Assert, parametrize,
-mocking, async tests and expected exceptions. Create the containing directory if it does not exist.
+Follow the pytest conventions in `py-testing` (layout, fixtures and scopes, Arrange / Act / Assert,
+parametrize, mocking, async tests, expected exceptions), adapted to what Step 2 found in the repo.
+
+- Write to the mirrored path (`src/myapp/services/user_service.py` →
+  `tests/services/test_user_service.py`); create the containing directory if it does not exist.
+- Give each public subject from Step 3 a happy-path test, then one test (or `parametrize` case) per
+  branch, edge case and error path.
+- Mock only the boundaries Step 3 identified; reuse fixtures from an existing `conftest.py` before
+  adding new ones, and add a new fixture to `conftest.py` only when a second test file needs it.
+- Skip private helpers, trivial properties and third-party internals.
+
+```python
+# Example — mirror the fixture and assertion style Step 2 found.
+@pytest.fixture
+def user_service(user_repo: FakeUserRepository) -> UserService:
+    return UserService(repo=user_repo)
+
+def test_get_user_returns_user_when_found(user_service, user_repo):
+    # Arrange
+    user_repo.add(User(id=42, name="Alice"))
+
+    # Act
+    result = user_service.get_user(42)
+
+    # Assert
+    assert result.name == "Alice"
+```
 
 ## Step 5 — Run and report
 

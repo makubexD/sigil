@@ -1,7 +1,7 @@
 ---
 id: react/react-scaffold-project
 kind: skill
-title: "Scaffold Project (React)"
+title: "New Project (React)"
 description: "Scaffold a new React application in an empty directory with Vite, TypeScript, feature-based layout, ESLint/Vitest config, and a starter test"
 name: react-scaffold-project
 language: react
@@ -13,8 +13,9 @@ allowedTools:
 argumentHint: "<app-name>"
 uses:
   rules:
-    - react/react-project-layout
     - react/react-npm
+    - react/react-project-layout
+    - react/react-testing
   agents: []
 tags:
   - react

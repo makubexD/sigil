@@ -1,7 +1,7 @@
 ---
 id: csharp/cs-audit-deps
 kind: skill
-title: "Audit NuGet Dependencies (.NET / C#)"
+title: "Audit Dependencies (.NET / C#)"
 description: "Audit NuGet dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance (.NET / C#)"
 name: cs-audit-deps
 language: csharp
@@ -14,6 +14,7 @@ argumentHint: "(no arguments)"
 uses:
   rules:
     - csharp/cs-dependencies
+    - csharp/cs-nuget
     - csharp/cs-security
   agents:
     - csharp/cs-security-auditor
@@ -22,6 +23,7 @@ tags:
   - audit
   - dependencies
   - security
+skillContext: fork
 whenToUse: "Run via `/cs-audit-deps` before a release or as a periodic maintenance check — e.g. \"audit my NuGet dependencies\", \"check for known CVEs in my packages\". Produces a read-only report; no dependency changes are made. Complements cs-security-auditor, which handles code-level vulnerabilities rather than dependency CVEs."
 ---
 

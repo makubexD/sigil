@@ -2,12 +2,12 @@
 id: react/react-generate-tests
 kind: skill
 name: react-generate-tests
-title: Write React Component Tests
+title: "Generate Tests (React)"
 description: Use when adding or reviewing tests for React components. Covers React Testing Library, user-event, async queries, mocking, and accessibility assertions.
 language: react
 uses:
   rules:
-    - react/react-conventions
+    - react/react-testing
   agents:
     - react/react-code-reviewer
 tags:
@@ -50,10 +50,52 @@ boundaries), and the states to cover: loading, empty, error and success, plus ac
 
 ## Step 4 — Write tests
 
-Follow [the project's component-testing conventions](references/testing-conventions.md): what to
-test, file layout, querying the DOM (see [the query reference](references/testing-library.md)), user
-interactions, async queries, mocking API calls, accessibility assertions and provider wrapping.
-Create the containing directory if it does not exist.
+Follow the conventions in `react-testing` (layout, query priority and variants, `user-event`,
+async queries, mocking boundaries, accessibility assertions, provider wrapping), adapted to what
+Step 2 found. Create the containing directory if it does not exist.
+
+- Write one test per user-visible behavior from Step 3: each interaction, and each of the loading,
+  empty, error and success states. Assert what the user sees, never internal state or handlers.
+- Render through the project's `renderWithProviders` when the component needs context; add one to
+  the test utilities only if none exists.
+
+```tsx
+// Example shown with Vitest — use jest.fn() / jest.mock under Jest (Step 2 determines this).
+import { render, screen } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
+import { UserForm, UserList } from "./Users";
+
+describe("Users", () => {
+  it("calls onSave with the entered name when the form is submitted", async () => {
+    const user = userEvent.setup();
+    const onSave = vi.fn();
+    render(<UserForm onSave={onSave} />);
+
+    await user.type(screen.getByLabelText("Name"), "Bob");
+    await user.click(screen.getByRole("button", { name: /save/i }));
+
+    expect(onSave).toHaveBeenCalledWith({ name: "Bob" });
+  });
+
+  it("shows the loading state, then the list", async () => {
+    render(<UserList />);
+    expect(screen.getByText(/loading/i)).toBeInTheDocument();
+    expect(await screen.findAllByRole("listitem")).toHaveLength(3);
+  });
+});
+```
+
+### Cheat-sheet
+
+- **Roles:** `button`, `link`, `textbox` (input, textarea), `checkbox`, `combobox` (select, custom
+  dropdown), `listitem`, `heading` (`{ level: 2 }`), `alert` (error messages), `dialog`, `img`
+  (`{ name: <alt text> }`).
+- **`jest-dom` matchers:** `toBeInTheDocument`, `toBeVisible`, `toBeDisabled`, `toBeChecked`,
+  `toHaveValue`, `toHaveTextContent`, `toHaveAttribute`, `toHaveClass`, `toHaveFocus` (each with
+  `.not`).
+- **`user-event` actions** (after `const user = userEvent.setup()`): `click`, `type`, `clear`,
+  `selectOptions`, `keyboard("{Enter}")`, `hover`, `tab` (moves focus to the next focusable
+  element) — all awaited.
 
 ## Step 5 — Run and report
 

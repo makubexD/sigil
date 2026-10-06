@@ -13,6 +13,7 @@ allowedTools:
 argumentHint: "<app-name>"
 uses:
   rules:
+    - angular/ng-npm
     - angular/ng-project-layout
     - angular/ng-testing
   agents: []

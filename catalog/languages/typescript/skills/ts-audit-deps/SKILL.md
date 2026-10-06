@@ -20,6 +20,7 @@ whenToUse: >-
 uses:
   rules:
     - typescript/ts-dependencies
+    - typescript/ts-npm
     - typescript/ts-security
   agents:
     - typescript/ts-security-auditor

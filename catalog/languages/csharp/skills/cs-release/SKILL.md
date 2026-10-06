@@ -16,6 +16,7 @@ template: shared/templates/release-skill
 uses:
   rules:
     - csharp/cs-conventions
+    - csharp/cs-nuget
   agents: []
 tags:
   - csharp

@@ -1,7 +1,7 @@
 ---
 id: python/py-conventions
 kind: rule
-title: Python Style
+title: "Conventions (Python)"
 description: Python-specific style rules — PEP 8, type hints, modern Python idioms, and project tooling conventions (the clean-code baseline arrives through py-code-quality).
 language: python
 appliesTo:

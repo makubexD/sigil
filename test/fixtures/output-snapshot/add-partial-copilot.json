@@ -6,11 +6,11 @@
   ".github/skills/cli/references/findings.md": "291ec65e34f07d993d5b86daaa11c8a539f6bdfd7a5dfd376b39cbdad5cb752c",
   ".github/skills/cli/references/grammar.md": "a4553bf6847fd966de7d179e226e9b5296f63991e551b5c7e8c3c50ac5accc0b",
   ".github/skills/cli/references/migration.md": "7e7ac8d585017536eb7ea4046c8f57fd2c196dfd08d5ba5f751296299a3eb172",
-  ".github/skills/cli/references/stack-dotnet.md": "8b356303fba3f1f55d2a2e43250e119ebc5a29b776f9d65f038812f3e7a1ef78",
-  ".github/skills/cli/references/stack-go.md": "7fe42acdb25a4134520031b12e64b8e72b60c50dd31c7f52d9bd8fff8523bd90",
-  ".github/skills/cli/references/stack-node-ts.md": "e867dc1be61cdec48106bbffcd09975725a3a0c376b25c0a2447d20ed98a485f",
-  ".github/skills/cli/references/stack-python.md": "746e19b1ccdc765492c7ccfd7e7843e5647f8431698bf4764f984bcc0c954cbd",
-  ".github/skills/cli/references/stack-rust.md": "30c62dc0116bf1345d714f2c59c23bcc2a646ee241200614554444d6778d1d58",
+  ".github/skills/cli/references/stack-dotnet.md": "b76c6b7cbd4a9b720c9856df62fc9b9ddc8488e98686a71364a1c51a06e7b3a1",
+  ".github/skills/cli/references/stack-go.md": "3d49ea084f9ef491bfa18ab55591ae6b8dfa1c1ea1afc4fda9fab0d83f51c5aa",
+  ".github/skills/cli/references/stack-node-ts.md": "250f1a4ebebc3c50abed6187f757cbff4fb83c7637bf90d8b7165cbade6fa92d",
+  ".github/skills/cli/references/stack-python.md": "18c241f7a8828a8052d1a43b9305a197392cd8c28009b13fb23b991976e371c5",
+  ".github/skills/cli/references/stack-rust.md": "f93ebc2264e1d6e5693e8ef28ef3f1a6ca0a24c79fa556b281e80a7bceaf9b0d",
   ".github/skills/cli/references/testing.md": "742eb8a3d6c510b8c14e7489bc69e38a8df70623e2ba2f223136b86ead07bd5c",
-  ".sigil/manifest.json": "734edcf90e6a2b9b1ca07be137b9ed33511378fc401127c9bc4fd7ec1b34277d"
+  ".sigil/manifest.json": "01c2182226924d2921fd062922ab278b29fb39df07aefc126349a4501e8ea757"
 }

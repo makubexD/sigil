@@ -3,6 +3,15 @@
 Sources: [clap docs](https://docs.rs/clap/latest/clap/) ·
 [clap::Error::exit_code](https://docs.rs/clap/latest/clap/error/struct.Error.html#method.exit_code)
 
+## Choosing
+
+- **clap derive API** (`features = ["derive"]`): the grammar is a set of annotated structs and
+  enums, so declarations, help, and parsing stay in one place. The default choice; the notes
+  below use it.
+- **clap builder API** (`Command::new`, `Arg::new`): the same parser built at runtime. Use it
+  when the command tree is generated or must be assembled dynamically; every point below
+  applies to it too.
+
 ## Wiring the grammar
 
 - Derive API: `#[derive(Parser)]` for the root, `#[derive(Subcommand)]` enums for noun groups
@@ -10,12 +19,11 @@ Sources: [clap docs](https://docs.rs/clap/latest/clap/) ·
 - Doc comments become help text; `#[arg(long, default_value = "staging")]` shows the default;
   `value_parser` / `ValueEnum` restrict values; `ArgAction::SetTrue` for booleans and
   `ArgAction::Append` for repeated options; `conflicts_with` for exclusive options.
-- `#[command(version)]` adds `--version`, printing `<name> <version>` as the grammar wants; `global = true` on an arg makes it valid at every
-  level.
+- `global = true` on an arg makes it valid at every level.
 - Suggestions for mistyped subcommands and options are built in.
 - Completion: the `clap_complete` crate generates scripts from the same `Command`.
 
-## Exit codes
+## Exit codes and streams
 
 - `Cli::parse()` on error prints and exits: `Error::exit_code()` is **2** for errors that
   print to stderr and **0** for help and version (which print to stdout). This matches the
@@ -28,7 +36,7 @@ Sources: [clap docs](https://docs.rs/clap/latest/clap/) ·
   `error: ...` to stderr and `std::process::exit(1)`. A `main` returning `Err` prints the
   Debug form and exits 1; implement a readable message rather than relying on that.
 
-## Streams and color
+### Streams and color
 
 Payload with `println!` / a locked `stdout`, diagnostics with `eprintln!`. clap colors its
 own help and errors when the stream is a terminal (`ColorChoice::Auto`). Its detection
@@ -37,6 +45,12 @@ own help and errors when the stream is a terminal (`ColorChoice::Auto`). Its det
 precedence (`references/contract.md`), then pass it as `ColorChoice::Always`/`Never` to clap
 (`#[command(color = ...)]` or `Command::color`) and to your own output.
 
+## Version
+
+`#[command(version)]` adds `--version`, printing `<name> <version>` as the grammar wants. Both
+values come from `Cargo.toml` (`CARGO_PKG_NAME` / `CARGO_PKG_VERSION` at compile time), so
+bump the version there only.
+
 ## Tests
 
 - Parsing: `Cli::try_parse_from(["app", "release", "deploy", "1.4.0"])` returns a `Result`,
@@ -44,3 +58,9 @@ precedence (`references/contract.md`), then pass it as `ColorChoice::Always`/`Ne
 - Real process: the `assert_cmd` crate runs the built binary and asserts on
   `.code(2)`, `.stdout(...)`, `.stderr(...)`; pair with `predicates`.
 - `Command::debug_assert()` in a unit test catches declaration mistakes early.
+
+## Packaging
+
+Users install from crates.io with `cargo install <crate>` (the `[[bin]]` name is the command
+name). Ship prebuilt release binaries per target as well, for example with cargo-dist, which
+builds them in CI and generates installers.

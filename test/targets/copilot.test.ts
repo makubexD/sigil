@@ -146,13 +146,13 @@ describe('Copilot target', () => {
     assert.ok(!skillMd.includes('paths:'), 'no paths: in SKILL.md');
 
     // Supporting files (references) must be written alongside SKILL.md for skills that have them.
-    // Use react/react-generate-tests which has references/testing-library.md
-    const reactSkillMd = files['.github/skills/react-generate-tests/SKILL.md'];
-    assert.ok(reactSkillMd, '.github/skills/react-generate-tests/SKILL.md emitted');
-    const reactRef = files['.github/skills/react-generate-tests/references/testing-library.md'];
+    // Use shared/cli, whose family declares references (references/grammar.md)
+    const cliSkillMd = files['.github/skills/cli/SKILL.md'];
+    assert.ok(cliSkillMd, '.github/skills/cli/SKILL.md emitted');
+    const cliRef = files['.github/skills/cli/references/grammar.md'];
     assert.ok(
-      reactRef,
-      'references/testing-library.md emitted alongside SKILL.md (bug-fix: was silently dropped)',
+      cliRef,
+      'references/grammar.md emitted alongside SKILL.md (bug-fix: was silently dropped)',
     );
 
     // No prompt file should be emitted for a skill

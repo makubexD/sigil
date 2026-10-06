@@ -53,11 +53,11 @@ describe('Load phase', () => {
 
   it('loads skill reference files', async () => {
     const catalog = await loadCatalog(CATALOG_DIR);
-    // react/react-generate-tests has a references/ directory with testing-library.md
-    const skill = catalog.byId.get('react/react-generate-tests');
+    // shared/cli carries references/ (its family, stack-skill, declares them)
+    const skill = catalog.byId.get('shared/cli');
     assert.ok(skill, 'skill exists');
     assert.ok(skill.references && skill.references.length > 0, 'skill has references');
-    assert.ok(skill.references!.some(ref => ref.name === 'testing-library.md'));
+    assert.ok(skill.references!.some(ref => ref.name === 'grammar.md'));
   });
 
   it('should return artifacts in source-path order, whatever order the glob library walks in', async () => {

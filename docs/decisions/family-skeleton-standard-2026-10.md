@@ -67,6 +67,35 @@ skeleton.**
   `scaffold-project` ids; members added later are named after their family (`ts-new-project`,
   `py-add-project`). Every language has both, and each member's `whenToUse` names its sibling.
 
+## Artifact anatomy (2026-10-06)
+
+The catalog still read as two standards to a person browsing it: `shared/skills/cli` carries twelve
+reference files, `languages/angular/skills/ng-add-package` only `SKILL.md`.
+
+- **Evidence.** Every official source (agentskills.io, Anthropic's skill best practices, Claude
+  Code, VS Code/Copilot, Cursor) requires only `SKILL.md` and recommends `references/` when a skill
+  outgrows about 500 lines or holds variants read one at a time. `cli` and `wizard` inlined would be
+  1134 and 1267 lines and read one of five stack files per run; three language skills
+  (`py-generate-tests`, `react-generate-tests`, `ts-scaffold-project`) carried references by
+  accident (an import lineage), and the shared artifacts were in no family.
+- **Decision: shape follows content, declared as data.** A family's `references` lists the files its
+  members carry, by role (`core`, `brief`, `examples`; `stacks: true` for one `stack-<id>.md` per
+  declared stack). No `references` means `SKILL.md` only. A skill's stack files share one H2
+  skeleton. Members set exactly the family's `keys`, take its `title` (`<title> (<language>)`) and
+  load rules and agents from the same families. Shared artifacts join families too (`stack-skill`,
+  `skill-auditor`, `skill-rules`, `generic-code-reviewer`, `feature`); `shared/clean-code` and
+  `shared/git` are `bases`. `catalog/README.md` is generated from the data.
+- **Applied.** The three accidental reference sets folded into the language testing rules and the
+  skills (generate-tests now loads `*-testing`, as its siblings did). `skillContext: fork` goes on
+  every audit-deps skill (a report, never a question mid-run) and off `ts-scaffold-project` (it
+  waits for the user's confirmation, which a forked context cannot give). `update` installs a
+  dependency an updated artifact gained, recorded as a dependent, so an updated project equals a
+  fresh install.
+- **Recorded, not changed.** Every stack file ships to every target: the task picks the CLI's stack,
+  which can differ from the repository's language. `cli` and `wizard` stay shared (66-68% of each is
+  language-neutral; go and rust have no namespace). Step-heading numbering, H1s and frontmatter key
+  order stay as they are: changing them rewrites installed files for no reader benefit.
+
 ## Guards
 
 - `family-skeleton` (`sync --check`, error): a member missing from the catalog, of another kind, or
@@ -82,6 +111,10 @@ skeleton.**
   extend (that language loads it twice), a language description that never names its language, and
   a report tier heading (`#### Major`, `#### Low / Informational`) that is not exactly one declared
   severity.
+- `family-skeleton` also fails a member that sets a key its family does not declare, a language
+  member with another title, a reference file its family does not declare (or a declared one it
+  lacks), stack files of one skill with different H2s, members whose `uses` come from different
+  families, and an agent, rule or skill in no family that is not a base.
   Only `*-code-quality` extends `shared/clean-code`.
 - `catalog-symmetry` (warning) reads families from the data, honouring `absent`.
 

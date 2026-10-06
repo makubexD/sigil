@@ -16,7 +16,9 @@ Sources: [argparse](https://docs.python.org/3/library/argparse.html) ·
   supports Click-specific extensions, so the click-only fixes below don't carry over. Check the
   installed version first; its own section says what applies.
 
-## argparse
+## Wiring the grammar
+
+### argparse
 
 - `parser.error()` and every invalid argument list print usage plus the message to stderr and
   exit **2**. The code matches the contract, but the line reads `PROG: error: msg`, not
@@ -39,7 +41,7 @@ Sources: [argparse](https://docs.python.org/3/library/argparse.html) ·
   `formatter_class=argparse.ArgumentDefaultsHelpFormatter`.
 - Operational failures: print `error: ...` to `sys.stderr` and `sys.exit(1)`.
 
-## click
+### click
 
 - Exit codes: `UsageError` and `BadParameter` exit **2** (and a help page shown because of
   bad input also returns 2); a `ClickException` exits with its `exit_code`, **1** by default;
@@ -68,7 +70,7 @@ Sources: [argparse](https://docs.python.org/3/library/argparse.html) ·
 - Color: `click.echo` strips ANSI codes when the stream is not a terminal; still honor
   `NO_COLOR` / `FORCE_COLOR` yourself (for example via `click.style` only when enabled).
 
-## typer
+### typer
 
 - `raise typer.Exit(code=1)` for operational failures; `typer.BadParameter` for bad input
   (exit 2); `typer.Abort()` prints "Aborted!" and exits 1.
@@ -79,6 +81,22 @@ Sources: [argparse](https://docs.python.org/3/library/argparse.html) ·
 - Sub-apps (`app.add_typer(users_app, name="users")`) give the noun-verb tree.
 - Rich tracebacks can be verbose; keep them behind `--verbose` or disable
   `pretty_exceptions_enable` for end users.
+
+## Exit codes and streams
+
+- argparse already exits 2 on usage errors; click and typer need the `main()` mapping above
+  (usage error → 2, operational failure → 1, Ctrl-C → 130, `app` with no arguments → help on
+  stdout and 0).
+- Payload to `sys.stdout` (`print`, or `click.echo`), diagnostics and prompts to `sys.stderr`
+  (`print(..., file=sys.stderr)`, or `click.echo(..., err=True)`). Decide color once with the
+  contract's precedence (`references/contract.md`) and pass it to the library.
+
+## Version
+
+`--version`: argparse's `action="version"` prints whatever `version=` holds, so set it to
+`"%(prog)s 1.4.0"`. click's `@click.version_option` prints `%(prog)s, version %(version)s`; pass
+`message="%(prog)s %(version)s"`. typer has no built-in; add an eager `--version` callback that
+prints `<name> <version>`.
 
 ## Tests
 
@@ -92,13 +110,6 @@ Sources: [argparse](https://docs.python.org/3/library/argparse.html) ·
 - argparse: call `main(argv)` and catch `SystemExit` to read the code, and add a few
   real-process tests with `subprocess.run([sys.executable, "-m", "app", ...],
   capture_output=True, text=True)`.
-
-## Version
-
-`--version`: argparse's `action="version"` prints whatever `version=` holds, so set it to
-`"%(prog)s 1.4.0"`. click's `@click.version_option` prints `%(prog)s, version %(version)s`; pass
-`message="%(prog)s %(version)s"`. typer has no built-in; add an eager `--version` callback that
-prints `<name> <version>`.
 
 ## Packaging
 

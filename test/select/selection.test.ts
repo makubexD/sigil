@@ -114,8 +114,8 @@ describe('R — resolveSelection / language helpers', () => {
     const cp = computeClosure(ids, resolvedCatalog);
     const depIds = cp.dependencies.map(d => d.artifact.id);
     assert.ok(
-      depIds.includes('react/react-conventions'),
-      'react-starter closure must include react/react-conventions (via skill uses.rules)',
+      depIds.includes('react/react-testing'),
+      'react-starter closure must include react/react-testing (via skill uses.rules)',
     );
     assert.ok(
       depIds.includes('react/react-code-reviewer'),

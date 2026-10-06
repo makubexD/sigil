@@ -16,7 +16,8 @@ argumentHint: "[--scope=changed|all] (default: changed)"
 uses:
   rules:
     - python/py-testing
-  agents: []
+  agents:
+    - python/py-code-reviewer
 tags:
   - python
   - testing

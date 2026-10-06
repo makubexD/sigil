@@ -52,7 +52,7 @@
   },
   "scripts": {
     "clean": "node -e \"const fs=require('fs');fs.rmSync('dist-cli',{recursive:true,force:true});fs.rmSync('test-compiled',{recursive:true,force:true})\"",
-    "build": "npm run clean && cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js && node dist-cli/targets/emit-capability-doc.js",
+    "build": "npm run clean && cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json && node dist-cli/schema/emit.js && node dist-cli/targets/emit-capability-doc.js && node dist-cli/emit-catalog-readme.js",
     "build:watch": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc -p tsconfig.build.json --watch",
     "build:test": "tsc -p tsconfig.test.json",
     "pretest": "npm run build && npm run build:test",

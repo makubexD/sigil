@@ -14,7 +14,8 @@ argumentHint: "<file-or-module>"
 uses:
   rules:
     - python/py-documentation
-  agents: []
+  agents:
+    - python/py-code-reviewer
 tags:
   - python
   - documentation

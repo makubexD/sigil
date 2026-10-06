@@ -114,13 +114,7 @@ against the evidence before presenting it. Present the report and stop the turn.
 
 ## Stacks
 
-| Stack | Library | File |
-|---|---|---|
-| Node.js / TypeScript | @clack/prompts | [`references/stack-node-ts.md`](references/stack-node-ts.md) |
-| Python | questionary (prompt_toolkit) | [`references/stack-python.md`](references/stack-python.md) |
-| Go | huh | [`references/stack-go.md`](references/stack-go.md) |
-| Rust | inquire | [`references/stack-rust.md`](references/stack-rust.md) |
-| .NET | Spectre.Console | [`references/stack-dotnet.md`](references/stack-dotnet.md) |
+<!-- stack-index -->
 
 Stack files map the architecture onto a library and list its pitfalls; they never override
 the contract. Where a library's default breaks the contract (prompts on stdout, cancel exiting 0),

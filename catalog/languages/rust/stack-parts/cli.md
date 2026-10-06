@@ -1,4 +1,4 @@
-# Rust (clap)
+# Rust: clap
 
 Sources: [clap docs](https://docs.rs/clap/latest/clap/) ·
 [clap::Error::exit_code](https://docs.rs/clap/latest/clap/error/struct.Error.html#method.exit_code)

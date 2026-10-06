@@ -1,4 +1,4 @@
-# Python: questionary (on prompt_toolkit)
+# Python: questionary (prompt_toolkit)
 
 Recommended library: [questionary](https://questionary.readthedocs.io/) (checked against 2.1),
 which is built on [prompt_toolkit](https://python-prompt-toolkit.readthedocs.io/). Use

@@ -105,8 +105,10 @@ A skill whose guidance applies across stacks omits `language:` and lives under
 `catalog/shared/skills/<name>/` (`sigil new skill --name <name>` with no `--language`). Keep it
 language-neutral: per-stack detail goes in a stack part, `languages/<home>/stack-parts/<name>.md`,
 in the language `standard.yaml` names as that stack's `home` (go and rust have language folders for
-this). The loader ships each part as `references/stack-<stack>.md` beside `SKILL.md`, so link it by
-that path, and tell the model in `SKILL.md` when to read each one — the body loads only on invocation and each
+this). The loader ships each part as `references/stack-<stack>.md` beside `SKILL.md`. Don't link
+the parts by hand: put `<!-- stack-index -->` where the stack table goes, and the build fills it
+with one row per part, labelled by the part's H1 (`# Go: cobra`). Tell the model in `SKILL.md`
+when to read a stack file — the body loads only on invocation and each
 reference only when read. Only flat `references/*.md` files ship with a skill, and only regular
 files (not symbolic links) with kebab-case names (`stack-go.md`), up to 256 KiB each and 1 MiB per
 skill; anything else is skipped with a load warning. `validate` warns

@@ -178,6 +178,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The stack table in the `cli` and `wizard` skills is generated from their stack parts
+  (`<!-- stack-index -->`), each row labelled by the part's own heading (`Go: cobra`). Installed
+  copies of `shared/cli` and `shared/wizard` show an update: the table now has two columns.
+
 - `shared/` now holds only language-neutral text. The per-stack files of the `cli` and `wizard`
   skills live in the language that owns each stack, `languages/<lang>/stack-parts/<skill>.md`
   (`catalog/standard.yaml` names each stack's home; Go and Rust get language folders), and sigil

@@ -1,4 +1,4 @@
-# Go: charmbracelet/huh
+# Go: huh (charmbracelet)
 
 Recommended library: [huh](https://pkg.go.dev/charm.land/huh/v2) (module `charm.land/huh/v2`,
 checked against v2.0.x; v1 is `github.com/charmbracelet/huh`). If the project already uses

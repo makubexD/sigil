@@ -1,4 +1,4 @@
-# Python
+# Python: argparse, click, typer
 
 Sources: [argparse](https://docs.python.org/3/library/argparse.html) ·
 [click exceptions and exit codes](https://click.palletsprojects.com/en/stable/exceptions/) ·

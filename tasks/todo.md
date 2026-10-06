@@ -65,7 +65,7 @@ Spec: `SPEC.md`
 - [x] A4 `family-skeleton` conformance check (divergent fixture fails)
 - [x] A5 `catalog-symmetry` reads families from data (fixes the package-manager blind spot)
 - [ ] A6 (P1) Per-language descriptions name their language
-- [ ] S1 Pilot: debugger + generate-tests families, all three targets
+- [x] S1 Pilot: debugger + generate-tests families, all three targets
 - [ ] C1 Declare every family and fit every member's structure
 - [ ] C2 (P1) Confirmed defects: copy errors, false/double `extends`, `.jsx` gaps, rule globs
 - [ ] C3 (P2) Templates where shared text passes the threshold; cosmetic sweep

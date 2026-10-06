@@ -37,7 +37,7 @@ whenToUse: "Run via `/ng-generate-tests [file]` when a source file lacks a spec 
 1. Discover source files that lack a corresponding `*.spec.ts` (using the mirroring logic in Step 2).
 2. List the top candidates with a one-line description of each, and ask the user to choose before proceeding.
 
-## Step 2 — Discover layout and era
+## Step 2 — Discover the runner and layout
 
 Inspect the repo — do **not** assume a fixed structure:
 - Angular specs are conventionally **co-located** with their source (`foo.component.ts` → `foo.component.spec.ts`). Confirm by reading 2–3 existing specs; if the project instead mirrors into a `tests/` tree, follow that.

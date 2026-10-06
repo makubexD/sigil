@@ -36,7 +36,7 @@ npx vitest run <path>   # or npx jest <path>, whichever the project uses
 If no test reproduces it, write the smallest possible repro (a new test, or a minimal component
 render) before attempting a fix — never fix based on reading code alone.
 
-## 2. Localize
+## 2. Isolate
 
 Read the browser console error/stack trace bottom-to-top. For a rendering or state bug with no
 thrown error, add temporary logging (`console.log` inside the suspect `useEffect`/render body,
@@ -48,7 +48,7 @@ Check recent history for the affected component:
 git log -p --follow <Component>.tsx | head -100
 ```
 
-## 3. Root-cause, don't patch symptoms
+### Root cause, not symptoms
 
 Distinguish the proximate symptom (a stale value shown, an infinite render loop, a crash) from the
 root cause. Common React-specific root causes to check:
@@ -64,12 +64,12 @@ root cause. Common React-specific root causes to check:
 - **Race condition** — an async effect resolving out of order after a fast prop/id change (see
   `react-async`).
 
-## 4. Fix minimally
+## 3. Fix
 
 Apply the smallest change that fixes the root cause. Do not refactor surrounding components, rename
 props, or restructure while fixing a bug — that's `react-refactor-specialist`'s job.
 
-## 5. Verify
+## 4. Verify
 
 Re-run the originally failing test — it must pass. Then run the full suite (or at minimum the
 affected component's tests) to confirm no regression, and run a build if the bug was
@@ -79,18 +79,18 @@ npx vitest run
 npm run build   # if the bug involved a type or bundling issue
 ```
 
-## 6. Output
+## 5. Output
 
 ```
 ## Debug Report
 
-### Symptom
+### Failure
 <what failed, exact error or observed incorrect behavior>
 
-### Root Cause
+### Root cause
 <the actual underlying bug, not just where it surfaced>
 
-### Fix
+### Fix applied (or proposed)
 `Component.tsx:line` — <what changed and why>
 
 ### Verification

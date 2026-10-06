@@ -208,7 +208,9 @@ JavaScript in `test-compiled/`, not your TypeScript. Set breakpoints there. Stac
 for the bundled catalog and compares the hashes with `test/fixtures/output-snapshot/`. A refactor must
 leave it green. When you change emitted content on purpose, run `npm run snapshot:update`, check that
 only the files you meant to change moved (`git diff test/fixtures/output-snapshot/`), and commit the
-new baseline with the change.
+new baseline with the change. The update refuses to drop an emitted path or an artifact id
+(`ids.json`), because a removal breaks existing installs; when one is really intended, set
+`SIGIL_SNAPSHOT_ALLOW_REMOVAL=1` as well.
 
 **Existing installs:** `test/fixtures/installs/master-8882c86/` is a project an older sigil set up, and
 `test/commands/install-migration.test.ts` checks that `status`, `update` and `prune` still treat it

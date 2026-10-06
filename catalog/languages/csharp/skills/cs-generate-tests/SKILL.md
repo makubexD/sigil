@@ -37,7 +37,7 @@ whenToUse: "Run via `/cs-generate-tests [file]` when a source file lacks tests o
 1. Discover source files that lack corresponding test files (using the mirroring logic in Step 2).
 2. List the top candidates with a one-line description of each, and ask the user to choose before proceeding.
 
-## Step 2 — Discover layout
+## Step 2 — Discover the runner and layout
 
 Inspect the repo — do **not** assume a fixed directory structure:
 - Locate the solution root: look for `.sln` or `Directory.Build.props`.

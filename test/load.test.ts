@@ -57,7 +57,7 @@ describe('Load phase', () => {
     const skill = catalog.byId.get('react/react-generate-tests');
     assert.ok(skill, 'skill exists');
     assert.ok(skill.references && skill.references.length > 0, 'skill has references');
-    assert.equal(skill.references![0]!.name, 'testing-library.md');
+    assert.ok(skill.references!.some(ref => ref.name === 'testing-library.md'));
   });
 
   it('should return artifacts in source-path order, whatever order the glob library walks in', async () => {

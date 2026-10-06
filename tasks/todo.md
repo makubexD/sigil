@@ -1,6 +1,6 @@
 # Catalog standard: task list
 
-Status: M1-M4 done, plus hardening (PR #24), the agents-standard target (PR #25) and the status duplicate-load note (PR #26). Next: the end block (live checks, decisions, one release).
+Status: M1-M4 done, plus PRs #24-#28. M5 (family skeleton standard) in progress; then the end block (live checks, one release).
 
 Plan: `C:\Users\kiefer.fernandez\.claude\plans\let-s-execute-the-idea-ethereal-backus.md`
 Spec: `SPEC.md`
@@ -55,6 +55,21 @@ Spec: `SPEC.md`
 - [x] One portable MCP builder for Claude and Copilot (PR #24)
 - [x] New target `agents-standard`: Agent Skills in `.agents/skills` + AGENTS.md, CLI and wizard (PR #25)
 - [x] `sigil status` notes skills Copilot loads twice (PR #26)
+
+## Milestone 5: family skeleton standard, structure first (spec: `SPEC-family-standard.md`)
+
+- [ ] T0 Plan commit
+- [ ] A1 ADR "one family, one skeleton" + CLAUDE.md template-invariant amendment
+- [ ] A2 Families as data (`families.yaml`: kind, explicit members, ordered sections, required keys, aliases)
+- [ ] A3 One vocabulary as data (`language.yaml` `prefix` + `stack`; `catalog-layout` validates)
+- [ ] A4 `family-skeleton` conformance check (divergent fixture fails)
+- [ ] A5 `catalog-symmetry` reads families from data (fixes the package-manager blind spot)
+- [ ] A6 (P1) Per-language descriptions name their language
+- [ ] S1 Pilot: debugger + generate-tests families, all three targets
+- [ ] C1 Declare every family and fit every member's structure
+- [ ] C2 (P1) Confirmed defects: copy errors, false/double `extends`, `.jsx` gaps, rule globs
+- [ ] C3 (P2) Templates where shared text passes the threshold; cosmetic sweep
+- [ ] Phase 5 review
 
 ## End block: before the release (development first; nothing here is dropped)
 

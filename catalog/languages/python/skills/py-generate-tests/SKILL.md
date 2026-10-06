@@ -16,95 +16,54 @@ tags:
   - pytest
   - mocking
 whenToUse: "Use when adding, updating, or reviewing tests in a Python project — e.g. \"write tests for this service\", \"add pytest fixtures\", \"review my test coverage\". Covers project layout, fixtures, parametrize, mocking, and async test patterns."
+allowedTools:
+  - Read
+  - Write
+  - Edit
+  - Bash
+  - Glob
+  - Grep
+argumentHint: "[file-or-module] (optional)"
 ---
 
-# Writing pytest Tests for Python
+# Generate Tests (Python)
 
-When asked to add, update, or review tests in a Python project, follow these conventions.
+**Target:** {sigil:arguments}
 
-## Project Layout
+## Step 1 — Resolve target
 
-Mirror `src/`'s structure under `tests/` (`src/myapp/services/user_service.py` →
-`tests/services/test_user_service.py`), test files named `test_<module>.py`, and shared fixtures in
-`conftest.py` (pytest discovers it automatically). Name tests
-`test_<subject>_<condition>_<expected_outcome>` — the same convention as xUnit but snake_case.
+If `{sigil:arguments}` is provided, use it as the target module or package. If empty, find source
+modules under `src/` (or the package root in `pyproject.toml`) that have no matching
+`tests/**/test_<module>.py`; present the top candidates and ask the user to choose before proceeding.
 
-## Fixtures
+## Step 2 — Discover the runner and layout
 
-```python
-# conftest.py
-@pytest.fixture
-def user_repo() -> FakeUserRepository:
-    return FakeUserRepository()
+Read what the project uses rather than assuming: `[tool.pytest.ini_options]` in `pyproject.toml`,
+`pytest.ini` or `setup.cfg`, an existing `conftest.py`, and 2–3 existing test files for the real
+layout, fixture style and assertion idioms.
 
-@pytest.fixture
-def user_service(user_repo: FakeUserRepository) -> UserService:
-    return UserService(repo=user_repo)
+## Step 3 — Read the target
+
+Identify every public function, class and method (the test subjects), the external dependencies
+(network, filesystem, clock, environment — the mock boundaries), and the branches, edge cases and
+error paths that need coverage.
+
+## Step 4 — Write tests
+
+Follow [the project's pytest conventions](references/testing-conventions.md): layout, fixtures
+(scopes in [the fixture cheat-sheet](references/fixtures.md)), Arrange / Act / Assert, parametrize,
+mocking, async tests and expected exceptions. Create the containing directory if it does not exist.
+
+## Step 5 — Run and report
+
+Run the discovered test command for the new file (`pytest <path> -q`, or the project's own script).
+Fix any failures before finishing. Then emit:
+
 ```
+## Test Generation Report
 
-Inject fixtures as function arguments — pytest wires them automatically. Use `scope="session"` only
-for expensive shared state (DB setup, network). See [`references/fixtures.md`](references/fixtures.md) for scope options and
-teardown patterns.
-
-## Arrange / Act / Assert
-
-```python
-def test_get_user_returns_user_when_found(user_service, user_repo):
-    # Arrange
-    user_repo.add(User(id=42, name="Alice"))
-
-    # Act
-    result = user_service.get_user(42)
-
-    # Assert
-    assert result.id == 42
-    assert result.name == "Alice"
+Target: <source module>
+Tests written to: <test file>
+Tests written: <N>
+Result: ✅ <N> passed  /  ❌ <detail>
 ```
-
-## Parametrize
-
-```python
-@pytest.mark.parametrize("email,expected", [
-    ("alice@example.com", True),
-    ("not-an-email", False),
-    ("", False),
-    (None, False),
-])
-def test_validate_email(email: str | None, expected: bool):
-    assert validate_email(email) == expected
-```
-
-## Mocking with `pytest-mock` / `unittest.mock`
-
-```python
-def test_save_user_calls_repository(user_service, mocker):
-    mock_save = mocker.patch.object(user_service.repo, "save")
-    user_service.save(User(id=1, name="Bob"))
-    mock_save.assert_called_once()
-```
-
-## Async Tests
-
-Install `pytest-asyncio` and set `asyncio_mode = "auto"` under `[tool.pytest.ini_options]` in
-`pyproject.toml`, then write `async def` tests directly:
-```python
-async def test_fetch_user_async(user_service):
-    result = await user_service.get_user_async(42)
-    assert result is not None
-```
-
-## Expected Exceptions
-
-```python
-import pytest
-
-def test_get_user_raises_not_found_when_missing(user_service):
-    with pytest.raises(UserNotFoundError, match="42"):
-        user_service.get_user(42)
-```
-
-## What NOT to test
-
-- Third-party library internals (SQLAlchemy queries, FastAPI routing).
-- Private functions — test them through the public interface.
-- Trivial properties or `__repr__` implementations.

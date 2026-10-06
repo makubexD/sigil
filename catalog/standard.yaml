@@ -50,6 +50,8 @@ families:
       - typescript/ts-code-reviewer
   - id: debugger
     kind: agent
+    keys: [tools]
+    sections: [Reproduce, Isolate, Fix, Verify, Output]
     members:
       - angular/ng-debugger
       - csharp/cs-debugger
@@ -213,6 +215,13 @@ families:
       - typescript/ts-document
   - id: generate-tests
     kind: skill
+    keys: [allowedTools, argumentHint, whenToUse]
+    sections:
+      - Resolve target
+      - Discover the runner and layout
+      - Read the target
+      - Write tests
+      - Run and report
     members:
       - angular/ng-generate-tests
       - csharp/cs-generate-tests

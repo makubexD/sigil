@@ -146,6 +146,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The debugger agents and generate-tests skills each share one section skeleton in every language
+  (declared in `catalog/standard.yaml`). Debugger: Reproduce, Isolate, Fix, Verify, Output, with the
+  same report labels. generate-tests: the Python and React skills become the same five-step workflow
+  as the others; their pytest and Testing Library conventions move, unchanged, to
+  `references/testing-conventions.md`, and they gain `allowedTools` and `argumentHint`. Installed
+  copies show "update available". The output snapshot now refuses to drop a path or an artifact id
+  unless `SIGIL_SNAPSHOT_ALLOW_REMOVAL=1` is set.
 - Copilot skills now write `allowed-tools` as the Agent Skills spec's space-separated string, the
   form GitHub's docs show, instead of a comma-separated list. Claude Code keeps its list, which its
   docs accept. Installed Copilot skills that declare `allowed-tools` show "update available". A tool

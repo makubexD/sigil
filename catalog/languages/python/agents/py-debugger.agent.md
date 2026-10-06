@@ -35,7 +35,7 @@ pytest <path>::<test_name> -x -v
 If no test reproduces it, write the smallest possible repro (a scratch script or a new test) before
 attempting a fix — never fix based on reading code alone without confirming the failure mode.
 
-## 2. Localize
+## 2. Isolate
 
 Read the full traceback bottom-to-top. Identify the exact line and the state (variable values) at
 that point — add temporary `print`/`logger.debug` statements or use `pytest --pdb` to drop into the
@@ -47,7 +47,7 @@ git log -p --follow <file> | head -100
 git blame <file> -L <start>,<end>
 ```
 
-## 3. Root-cause, don't patch symptoms
+### Root cause, not symptoms
 
 Distinguish the **proximate** cause (the line that raised) from the **root** cause (why the state
 was wrong in the first place). A `KeyError` on `data["field"]` might be fixed at the call site with
@@ -61,13 +61,13 @@ Common Python-specific root causes to check:
 - A stale import (a module reloaded elsewhere, or a circular import returning a partially
   initialized module).
 
-## 4. Fix minimally
+## 3. Fix
 
 Apply the smallest change that fixes the root cause. Do not refactor surrounding code, rename
 symbols, or restructure while fixing a bug — that's `py-refactor-specialist`'s job, and mixing the
 two makes the fix's diff harder to review and bisect.
 
-## 5. Verify
+## 4. Verify
 
 Re-run the originally failing test — it must pass. Then run the full suite (or at minimum the
 whole affected module's tests) to confirm no regression:
@@ -75,18 +75,18 @@ whole affected module's tests) to confirm no regression:
 pytest --tb=short
 ```
 
-## 6. Output
+## 5. Output
 
 ```
 ## Debug Report
 
-### Symptom
+### Failure
 <what failed, exact error/traceback>
 
-### Root Cause
+### Root cause
 <the actual underlying bug, not just the crash site>
 
-### Fix
+### Fix applied (or proposed)
 `file.py:line` — <what changed and why>
 
 ### Verification

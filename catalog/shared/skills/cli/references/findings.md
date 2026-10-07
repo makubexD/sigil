@@ -36,7 +36,8 @@ a report is shown, ids never change: later turns, fixes, and approvals quote the
 new finding takes the next free number.
 
 Every finding needs evidence a reader can open: a file and line, a help line, a test, or a
-command with its actual output. Drop a finding you cannot point at.
+command with its actual output. Drop a finding you cannot point at. Cite a line number only
+from a numbered read of that one file, and check that the line says what you claim.
 
 ## Report: audit (also the first turn of refactor)
 

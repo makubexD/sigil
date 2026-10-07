@@ -1,9 +1,9 @@
 {
-  ".claude/skills/cli/SKILL.md": "3723287f00aec402149db494e341b9b39558fc4ff7152faef049b5a83149f7b6",
+  ".claude/skills/cli/SKILL.md": "069a30d709fb0eeb9a50ce70c8f16ef8ca4b32d3f9ffb268f5b1a5c76c587ebb",
   ".claude/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
   ".claude/skills/cli/references/auditor.md": "465959572a2b35404c7ed6aead162c194a85a42bfedb470ee144eb51cad3fd95",
   ".claude/skills/cli/references/contract.md": "02bc9d742a5f0575578ec2b2fa07a3a64ff435e1ac3265ddbe13cb74a8b6616f",
-  ".claude/skills/cli/references/findings.md": "291ec65e34f07d993d5b86daaa11c8a539f6bdfd7a5dfd376b39cbdad5cb752c",
+  ".claude/skills/cli/references/findings.md": "89f29869ac702e86a1707c336b498800f8dd2d77bcf4ce7cf8db9332ecc703dc",
   ".claude/skills/cli/references/grammar.md": "a4553bf6847fd966de7d179e226e9b5296f63991e551b5c7e8c3c50ac5accc0b",
   ".claude/skills/cli/references/migration.md": "7e7ac8d585017536eb7ea4046c8f57fd2c196dfd08d5ba5f751296299a3eb172",
   ".claude/skills/cli/references/stack-dotnet.md": "33bd586deb35428443ab0ed1eef233a8626612873f5a9a17a1e48a9ff772c8be",
@@ -12,5 +12,5 @@
   ".claude/skills/cli/references/stack-python.md": "a371e8a559bc63f0f4fa705d9b3d7e317a71dd0004973212d78b6139a9ffc1c3",
   ".claude/skills/cli/references/stack-rust.md": "caec8e889d44cad66c61e383ef105edac99facb5b97abf6f0d0af302110a6943",
   ".claude/skills/cli/references/testing.md": "d42c4e985555244ee508e439616e0acc62c3dd806bc2db4abde742b83db64eb4",
-  ".sigil/manifest.json": "3d590f1e722d98c0cb2ecfd7cebcbcb6236e9ca868a096618c8d4e8e8e6fa7b0"
+  ".sigil/manifest.json": "c00a2d8c39a17e9618c9c96c3a25937a5bbdbb5d85998fdd678fc14df327d7c5"
 }

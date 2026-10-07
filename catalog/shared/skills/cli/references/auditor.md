@@ -47,7 +47,8 @@ Before running anything:
 
 When a command is safe, record stdout, stderr, and exit code separately. Feed stdin from an
 empty pipe (not the null device, which Windows reports as a terminal), and unset
-`NO_COLOR` and `FORCE_COLOR` so you see the defaults.
+`NO_COLOR` and `FORCE_COLOR` so you see the defaults. Capture output in memory or in files under
+a fresh temporary directory, never inside the project: an audit leaves the tree as it found it.
 
 Record a default only when help, code, or a test states it. Unknown stays unknown.
 

@@ -25,3 +25,13 @@ Run on 2026-09-24. Each scenario used a fresh agent on a copy of its fixture; gr
 | W4 refactor                   | PASS   | A 3-test characterization run before the first edit; WIZ-1..15 implemented; 35/35 tests pass (grader); clack is imported by one file (grader). **It surfaced a contract hole:** in a directory with an existing project, a piped `init` ran `env add staging` from defaults alone. Fixed in contract.md: without a terminal, `init` acts only with an explicit `--no-input` (D7).                                        |
 
 Also fixed after the re-run: Ctrl-C during the last command still exits 130 (W2 had exited 0).
+
+## Re-run 2026-10-07 (catalog build, `dist/claude/plugins/cli-builder/skills/wizard`)
+
+Fresh general-purpose agent (Opus 5.5), run directory `sigil-v1-probe/w3`, graded against key.md.
+
+| Scenario | Result       | Notes                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W3 audit | PASS (11/11) | Every seeded defect found with evidence, none invented. The extra findings are real: WIZ-11 (colour) and WIZ-12 (no engine or tests). It ran the readiness scan, which notes that `launch.mjs` runs `main` when imported. Probes ran in a temp directory with HOME and the related variables redirected; the fixture was unchanged (sha256). Back navigation (WD3) is folded into WIZ-10 rather than reported on its own. |
+
+Metrics: 75.0k tokens, 8 tool calls, 72 s.

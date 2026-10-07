@@ -55,6 +55,9 @@ jobs:
       - name: Check template drift + catalog conformance + provider-doc staleness
         run: node dist-cli/cli.js sync --check
 
+      - name: Check skill eval coverage
+        run: npm run evals:check
+
       # `test:built` skips the rebuild that `npm test` (pretest) would repeat right after the Build step.
       # Coverage is not enforced anywhere, and instrumenting every test process cost 13-16 s per job.
       # `npm test` on a developer machine still prints it.

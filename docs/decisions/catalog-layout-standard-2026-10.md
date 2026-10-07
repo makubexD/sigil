@@ -35,7 +35,7 @@ Installs are usually one language (packs, `--language`).
 - Bundles are manifests that list artifacts: awesome-copilot `plugin.json`, sigil's `packs.yaml`.
 - Claude Code's skill listing has a context budget, so many near-identical skills cost dispatch accuracy.
 
-**The originals** (`_Others/cli-skill`, `_Others/wizard-skill`, design records and evals only):
+**The originals** (formerly `_Others/cli-skill` and `_Others/wizard-skill`; their evals now live in `test/evals/`):
 
 - They chose the stack at run time.
 - The migration kept 56 of 57 coverage phrases.

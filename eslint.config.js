@@ -112,6 +112,8 @@ module.exports = tseslint.config(
       'schema/**',
       'test-compiled/**',
       'test/*.js',
+      // Skill eval fixtures: planted-flaw sample projects, never run (test/evals/README.md)
+      'test/evals/*/fixture*/**',
       'eslint.config.js',
     ],
   },

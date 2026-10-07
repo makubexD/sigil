@@ -60,6 +60,7 @@
     "test:built": "npm run build:test && node scripts/run-tests.cjs",
     "snapshot:update": "npm run build && npm run build:test && cross-env SIGIL_SNAPSHOT_UPDATE=1 node --test test-compiled/targets/output-snapshot.test.js",
     "validate": "node dist-cli/cli.js validate",
+    "evals:check": "node scripts/check-skill-evals.mjs",
     "catalog:build": "node dist-cli/cli.js build",
     "validate:claude-plugins": "node scripts/validate-claude-plugins.cjs",
     "sigil": "node dist-cli/cli.js",
@@ -70,7 +71,7 @@
     "format:check": "prettier --check .",
     "check-doc-comments": "node scripts/check-doc-comments.cjs",
     "check": "npm run lint && npm run format:check && npm run check-doc-comments && npm test",
-    "ci:local": "npm audit --omit=dev &&npm run lint && npm run format:check && npm run build && npm run validate && node dist-cli/cli.js sync --check && npm run test:built && npm run catalog:build && npm run validate:claude-plugins && node dist-cli/cli.js --version && node dist-cli/cli.js list"
+    "ci:local": "npm audit --omit=dev &&npm run lint && npm run format:check && npm run build && npm run validate && node dist-cli/cli.js sync --check && npm run evals:check && npm run test:built && npm run catalog:build && npm run validate:claude-plugins && node dist-cli/cli.js --version && node dist-cli/cli.js list"
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",

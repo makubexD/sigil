@@ -28,3 +28,15 @@ spawn another), which is the skill's documented fallback.
 
 Not verified: Copilot CLI and Grok are not installed here, so no run in those harnesses.
 Only Windows; no real-terminal prompt or Ctrl-C paths.
+
+## Re-run 2026-10-07 (catalog build, `dist/claude/plugins/cli-builder/skills/cli`)
+
+Fresh general-purpose agent (Opus 5.5), run directory `sigil-v1-probe/s1`, graded against key.md.
+
+| Scenario | Result       | Notes                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| -------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| S1 audit | pass (11/12) | D1, D2, D4–D12 found with evidence; ci.sh and README named as callers; approval block holds 8 BREAKING and 2 COMPATIBILITY findings; fixture unchanged (sha256). D3 is partial: it added a `release` group but kept `deploy` top-level as the daily verb, which grammar.md allows ("a few top-level verbs for the primary workflow"). The key and the skill disagree on D3. It rated D5, D9 and D11 BREAKING instead of UX, and gave a stream or exit-code change as the reason. It caught `deploy --help` running the action. |
+
+Metrics: 72.6k tokens, 5 tool calls, 73 s.
+
+Improvement found: to record output, the audit wrote `o.txt` and `e.txt` into the project and then deleted them. The cli `references/auditor.md` has no rule saying to run probes in a temporary directory; the wizard auditor has one (steps 2–3).

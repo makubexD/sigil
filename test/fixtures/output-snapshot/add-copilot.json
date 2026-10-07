@@ -10,7 +10,7 @@
   ".github/prompts/shared-explain-diff.prompt.md": "cb069c425ec23b81fbf039c9b66fee78a892ecd8fa7673b219757c62eb02b380",
   ".github/skills/cli/SKILL.md": "f07ff70beeb1ee6dbad53738eea5c967e980f89b3187cc69cc4a9168cc40ca79",
   ".github/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
-  ".github/skills/cli/references/auditor.md": "129d3771e8f16c5d5209d7f914dc90934b559a6ffc019728c6f4fdee6f376581",
+  ".github/skills/cli/references/auditor.md": "465959572a2b35404c7ed6aead162c194a85a42bfedb470ee144eb51cad3fd95",
   ".github/skills/cli/references/contract.md": "02bc9d742a5f0575578ec2b2fa07a3a64ff435e1ac3265ddbe13cb74a8b6616f",
   ".github/skills/cli/references/findings.md": "291ec65e34f07d993d5b86daaa11c8a539f6bdfd7a5dfd376b39cbdad5cb752c",
   ".github/skills/cli/references/grammar.md": "a4553bf6847fd966de7d179e226e9b5296f63991e551b5c7e8c3c50ac5accc0b",
@@ -24,6 +24,6 @@
   ".github/skills/cs-generate-tests/SKILL.md": "3a4e2aae3b445a3816215ec1c7f678dafacad540b4db692ae6bb68786743c799",
   ".github/skills/ts-release/SKILL.md": "1c9ec0641f746b0ead3e6105538d511a871610c7be178edd80ea51678335d05f",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "cdaa0dba11783df5d390ad3d04b19bf864a314b6071570b90fc8f9b84b5c168f",
+  ".sigil/manifest.json": "cd02c5d3c8b0af39f910f4504094736274e973093a019a3e3d16a64f37d0985c",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

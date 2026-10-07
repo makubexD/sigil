@@ -1,7 +1,7 @@
 {
   ".github/skills/cli/SKILL.md": "f07ff70beeb1ee6dbad53738eea5c967e980f89b3187cc69cc4a9168cc40ca79",
   ".github/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
-  ".github/skills/cli/references/auditor.md": "129d3771e8f16c5d5209d7f914dc90934b559a6ffc019728c6f4fdee6f376581",
+  ".github/skills/cli/references/auditor.md": "465959572a2b35404c7ed6aead162c194a85a42bfedb470ee144eb51cad3fd95",
   ".github/skills/cli/references/contract.md": "02bc9d742a5f0575578ec2b2fa07a3a64ff435e1ac3265ddbe13cb74a8b6616f",
   ".github/skills/cli/references/findings.md": "291ec65e34f07d993d5b86daaa11c8a539f6bdfd7a5dfd376b39cbdad5cb752c",
   ".github/skills/cli/references/grammar.md": "a4553bf6847fd966de7d179e226e9b5296f63991e551b5c7e8c3c50ac5accc0b",
@@ -12,5 +12,5 @@
   ".github/skills/cli/references/stack-python.md": "a371e8a559bc63f0f4fa705d9b3d7e317a71dd0004973212d78b6139a9ffc1c3",
   ".github/skills/cli/references/stack-rust.md": "caec8e889d44cad66c61e383ef105edac99facb5b97abf6f0d0af302110a6943",
   ".github/skills/cli/references/testing.md": "d42c4e985555244ee508e439616e0acc62c3dd806bc2db4abde742b83db64eb4",
-  ".sigil/manifest.json": "c1e85c7c91515c87cfd1bc559d76b02d5c29744f8bcecfcee008529456cad4cb"
+  ".sigil/manifest.json": "fe772aaf1cf479f2aa36466052c1d2eed1b8023d5fd7a6b5b9f920eb951d3680"
 }

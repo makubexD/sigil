@@ -35,3 +35,21 @@ Fresh general-purpose agent (Opus 5.5), run directory `sigil-v1-probe/w3`, grade
 | W3 audit | PASS (11/11) | Every seeded defect found with evidence, none invented. The extra findings are real: WIZ-11 (colour) and WIZ-12 (no engine or tests). It ran the readiness scan, which notes that `launch.mjs` runs `main` when imported. Probes ran in a temp directory with HOME and the related variables redirected; the fixture was unchanged (sha256). Back navigation (WD3) is folded into WIZ-10 rather than reported on its own. |
 
 Metrics: 75.0k tokens, 8 tool calls, 72 s.
+
+## Full re-run 2026-10-07 (remaining scenarios)
+
+Same setup as above: one fresh agent per scenario, run in parallel. The grader re-ran every test suite.
+
+| Scenario    | Result         | Notes                                                                                                                                                                                                                                                                                                                                                                         |
+| ----------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| W1 design   | pass (content) | Readiness first; `launch init` and how newcomers find it; a branching tree; a step table with flags, validators and hints; back, review, the equivalent commands, exit 130 and no partial state; exit 2 without a terminal, plus `--no-input`. **Defect:** every line number it cited was wrong (`commands.mjs:546` in a 105-line file), so a reader can't open its evidence. |
+| W2 build    | **partial**    | The engine, flow and run step were written before their tests, so the scripted tests passed on their first run. It then broke the engine on purpose twice, and both breaks were caught. The entry-point and adapter tests did fail first. Everything else passes: 22/22 (grader); piped `init` exits 2 with empty stdout and no files (grader); clack imported by one file.   |
+| W4 refactor | PASS           | Characterization tests before the first edit; every slice failed its test first; WIZ-1..12 named; 33/33 (grader); the key's piped reproduction now exits 2 with nothing written (grader); `init --help` exits 0.                                                                                                                                                              |
+| W6 stack    | PASS           | questionary has no back, so the engine owns the history; `unsafe_ask` with KeyboardInterrupt maps to 130; a scripted prompter; CliRunner without a terminal exits 2; official docs linked.                                                                                                                                                                                    |
+
+Metrics (tokens / tool calls / seconds):
+
+- W1: 78.3k / 5 / 83
+- W2: 111.0k / 30 / 289
+- W4: 118.1k / 32 / 349
+- W6: 70.8k / 4 / 52

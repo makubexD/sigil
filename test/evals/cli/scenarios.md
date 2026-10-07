@@ -18,6 +18,8 @@ Preamble for every prompt:
   deprecation path. Node 22 is available; use `node --test`."
 - **S4 build:** "Build a new CLI `todo` in `<DIR>` with Node 22 and zero dependencies: add, list,
   complete and remove tasks, and list tags. Include tests (`node --test`)."
+  The skill stops for grammar approval first (build step 1): approve the proposed grammar,
+  then grade the build.
 - **S5 stack:** "This project uses Python click. How do I make usage errors and operational
   failures follow the right exit codes, keep errors on stderr, and test that?"
 - **S7 narrow:** "In `<DIR>`, rename `shipit users show-all` to `shipit users list`.

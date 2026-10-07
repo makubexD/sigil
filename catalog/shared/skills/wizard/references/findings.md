@@ -29,7 +29,8 @@ Change:   ask everything first; save only after the review (references/contract.
 ```
 
 Every finding needs evidence a reader can open: a file and line, a help line, a test, or a
-command with its actual output. Drop a finding you cannot point at.
+command with its actual output. Drop a finding you cannot point at. Cite a line number only
+from a numbered read of that one file, and check that the line says what you claim.
 
 ## Report: audit (also the first turn of refactor)
 

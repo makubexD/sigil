@@ -86,7 +86,8 @@ new group matches them.
    the guidance is unverified for that stack.
 3. Build in the slices from [`references/architecture.md`](references/architecture.md). For each slice: write the contract
    test from [`references/testing.md`](references/testing.md), run it and see it fail for the expected reason,
-   implement, and run the whole suite.
+   implement, and run the whole suite. One slice at a time: never write a slice's code before
+   its test has failed.
 4. Generate help (and completion, if the stack supports it) from the declarations.
 5. Finish with the validation list and the command reference from [`references/findings.md`](references/findings.md).
    If a fresh-context reviewer is available (the `cli-auditor` agent, a subagent, or a second
@@ -105,7 +106,7 @@ against the evidence before presenting it. Present the report and stop the turn.
 1. Run `audit` and stop at its approval block. Wait for the user's answer.
 2. Write characterization tests for the current surface ([`references/testing.md`](references/testing.md)) and run
    them green against the unchanged code before the first edit.
-3. Implement the approved ids one at a time, following [`references/migration.md`](references/migration.md). Leave
+3. Implement the approved ids one at a time (never several ids in one rewrite), following [`references/migration.md`](references/migration.md). Leave
    unapproved `BREAKING` and `COMPATIBILITY` items untouched. For `MAINTAINABILITY` items,
    use [`references/architecture.md`](references/architecture.md).
 4. After each id: update the affected expectations (naming the id), migrate in-repo callers,
@@ -120,7 +121,9 @@ Never apply a breaking change without an explicit yes on its finding id.
 
 Stack files map the rules to the parser's features and list its pitfalls; they do not
 override the grammar or the contract. When a stack's default differs from the contract
-(for example an exit code), say so and configure the parser to follow the contract.
+(for example an exit code), say so and configure the parser to follow the contract. A
+question about one stack, with no project to change, cites the stack file's source links for
+every library fact so the reader can check them against their version.
 
 ## Gates
 

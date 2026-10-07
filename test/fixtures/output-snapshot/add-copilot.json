@@ -8,11 +8,11 @@
   ".github/instructions/typescript-ts-conventions.instructions.md": "96d5f46762400c088b3100f6968b3bd96cbbadd49fecb897f4af101072f3fa5b",
   ".github/instructions/typescript-ts-npm.instructions.md": "5434f8224a4ef0d95ffebc37f1b77b52a7878392b977d26d5159f896854fc2ec",
   ".github/prompts/shared-explain-diff.prompt.md": "cb069c425ec23b81fbf039c9b66fee78a892ecd8fa7673b219757c62eb02b380",
-  ".github/skills/cli/SKILL.md": "f07ff70beeb1ee6dbad53738eea5c967e980f89b3187cc69cc4a9168cc40ca79",
+  ".github/skills/cli/SKILL.md": "87340a65b132a2563fdd2aedd01d6e9608643a45491f4780d0a3d3e068d21d17",
   ".github/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
   ".github/skills/cli/references/auditor.md": "465959572a2b35404c7ed6aead162c194a85a42bfedb470ee144eb51cad3fd95",
   ".github/skills/cli/references/contract.md": "02bc9d742a5f0575578ec2b2fa07a3a64ff435e1ac3265ddbe13cb74a8b6616f",
-  ".github/skills/cli/references/findings.md": "291ec65e34f07d993d5b86daaa11c8a539f6bdfd7a5dfd376b39cbdad5cb752c",
+  ".github/skills/cli/references/findings.md": "89f29869ac702e86a1707c336b498800f8dd2d77bcf4ce7cf8db9332ecc703dc",
   ".github/skills/cli/references/grammar.md": "a4553bf6847fd966de7d179e226e9b5296f63991e551b5c7e8c3c50ac5accc0b",
   ".github/skills/cli/references/migration.md": "7e7ac8d585017536eb7ea4046c8f57fd2c196dfd08d5ba5f751296299a3eb172",
   ".github/skills/cli/references/stack-dotnet.md": "33bd586deb35428443ab0ed1eef233a8626612873f5a9a17a1e48a9ff772c8be",
@@ -24,6 +24,6 @@
   ".github/skills/cs-generate-tests/SKILL.md": "3a4e2aae3b445a3816215ec1c7f678dafacad540b4db692ae6bb68786743c799",
   ".github/skills/ts-release/SKILL.md": "1c9ec0641f746b0ead3e6105538d511a871610c7be178edd80ea51678335d05f",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "cd02c5d3c8b0af39f910f4504094736274e973093a019a3e3d16a64f37d0985c",
+  ".sigil/manifest.json": "948b40ccb6c8c2109be959ffe6753254ccc3acd5e401999f7b96aa1af65f7de3",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

@@ -81,7 +81,8 @@ minimal CLI described there). Only `build` and `refactor` carry them out.
    prompt library if it has one; otherwise the stack file's. If no stack file matches, map
    [`references/architecture.md`](references/architecture.md) to the stack yourself and say that guidance is unverified.
 3. Build in this order, each slice test-first ([`references/testing.md`](references/testing.md)): write the test, run it
-   and see it fail for the expected reason, implement, run the whole suite.
+   and see it fail for the expected reason, implement, run the whole suite. One slice at a time:
+   never write a slice's code before its test has failed.
    1. the terminal check and `--help` for the entry point (no-terminal → exit 2 naming flags);
    2. the engine with a scripted prompter: steps, skip given flags, back, cancel, validation;
    3. the flow: steps from the table, `plan`, and `format`, plus the parity test against the parser;

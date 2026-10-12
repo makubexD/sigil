@@ -54,9 +54,11 @@ Reference an environment variable anywhere in `server` with the neutral token `{
 (`src/targets/env-reference.ts`). Each target writes the syntax of the file it merges into:
 `${NAME}` in every file sigil writes today: Claude Code documents it for `.mcp.json`, and GitHub's
 MCP JSON reference (the format Copilot CLI's MCP page points to) lists it as "Claude Code syntax"
-beside `$VAR` and `${VAR:-default}`. VS Code describes the portable format as shared across
-compatible tools without a syntax of its own; live check F4 confirms it, and a different answer would
-be one `EnvSyntax` value, not new logic. Copilot CLI passes a local server only `PATH` from the
+beside `$VAR` and `${VAR:-default}`. Live check F4 (docs/audits/2026-10-06) found Copilot CLI
+expands it, but VS Code Copilot Chat 1.125.1 passes `${NAME}` (and `${env:NAME}`) in `.mcp.json`
+through as text; only its deprecated `.vscode/mcp.json` expands `${env:NAME}`. sigil keeps writing
+the portable file, and `add` prints the target's `mcpEnvCaveat` (data on the target) for every
+installed server that reads an environment variable. Copilot CLI passes a local server only `PATH` from the
 environment, so a server lists every variable it reads under `env` (as `shared/ado` does).
 Never write one tool's syntax in the catalog. Pin every `npx` package to an exact
 version (`@scope/pkg@1.2.3`); a test fails on a floating one.

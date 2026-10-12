@@ -462,6 +462,12 @@ export interface Target {
   readonly aggregateDocs?: readonly SourcedDocRef[];
 
   /**
+   * A known reader of this target's MCP file that does not expand environment-variable
+   * references. `add` prints it when an installed server uses `{sigil:env:NAME}`.
+   */
+  readonly mcpEnvCaveat?: string;
+
+  /**
    * Folders only this provider reads (`.claude/`). `platform-path-leak` flags a body naming one,
    * since it ships unchanged to every other provider. Leave out folders other tools share.
    */

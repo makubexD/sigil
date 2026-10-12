@@ -81,3 +81,31 @@ describe('catalog MCP sources', () => {
     }
   });
 });
+
+describe('MCP env caveat on add', () => {
+  it('should warn exactly when the target has a caveat and the server reads env vars', async () => {
+    const { getAllTargets } = await import('../../dist-cli/targets/index');
+    const { warnMcpEnvCaveat } = await import('../../dist-cli/commands/add/execute-config');
+    const { envTokenNames } = await import('../../dist-cli/targets/env-reference');
+    const { loadResolvedCatalog } = await import('../helpers/catalog');
+    const resolved = await loadResolvedCatalog();
+    const mcps = resolved.artifacts.filter(a => a.kind === 'mcp');
+    assert.ok(mcps.length > 0);
+    const original = console.warn;
+    try {
+      for (const target of getAllTargets()) {
+        for (const artifact of mcps) {
+          const lines: string[] = [];
+          console.warn = (msg: string) => void lines.push(msg);
+          warnMcpEnvCaveat(artifact.id, artifact, target);
+          const names = envTokenNames(artifact.frontmatter.server);
+          const expected = Boolean(target.mcpEnvCaveat) && names.length > 0;
+          assert.equal(lines.length, expected ? 1 : 0, `${target.name} ${artifact.id}`);
+          for (const n of expected ? names : []) assert.ok(lines[0]?.includes(n));
+        }
+      }
+    } finally {
+      console.warn = original;
+    }
+  });
+});

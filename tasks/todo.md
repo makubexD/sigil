@@ -96,7 +96,7 @@ the frozen install, `sync --check` and the CI validators. Everything below runs 
 
 - [x] V1 Copilot reference-loading check on a licensed machine (user): relax or keep the link rule, and record the result in the ADR (probe in `docs/audits/2026-10-03/`) — done 2026-10-12: both products load references on demand; link rule kept as a style rule (ADR)
 - [x] F4 Confirm live that VS Code and Copilot CLI expand `${NAME}` in `.mcp.json` (documented by GitHub's MCP JSON reference; not a blocker — a different answer is one `EnvSyntax` value). Also confirm a server without `tools` gets all its tools in Copilot CLI (`--tools` defaults to `*`) (probe in `docs/audits/2026-10-06/`) — done 2026-10-12: CLI expands `${NAME}` and offers all tools; **VS Code 1.125.1 does not expand `${NAME}` (or `${env:NAME}`) in `.mcp.json`**, only `${env:NAME}` in `.vscode/mcp.json`
-- [ ] Fix Copilot MCP env syntax for VS Code (needs the user's go: output-changing)
+- [x] Fix Copilot MCP env syntax for VS Code — no syntax change possible (VS Code doesn't expand `.mcp.json`); `add` now warns via `Target.mcpEnvCaveat`, documented in config-kinds.md
 - [x] Install the `cli-builder` plugin once in Claude Code to confirm the auditor runs with `cli` preloaded — confirmed 2026-10-12 (Claude Code 2.1.296, `--plugin-dir dist/claude/plugins/cli-builder`; the subagent quoted the skill's headings without tool calls)
 
 **2. Output-changing decisions (each needs a go)**

@@ -93,6 +93,10 @@ export class CopilotTarget implements Target {
   readonly emitSpecs: readonly KindEmitSpec[] = COPILOT_EMIT_SPECS;
   readonly lexicon: ProviderLexicon = COPILOT_LEXICON;
   readonly aggregateDocs: readonly SourcedDocRef[] = COPILOT_AGGREGATE_DOCS;
+  /** Probed on VS Code 1.125.1 (docs/audits/2026-10-06): `${NAME}` reaches the server as text. */
+  readonly mcpEnvCaveat =
+    'VS Code Copilot Chat does not expand ${NAME} in .mcp.json; it passes the text as is ' +
+    '(Copilot CLI expands it). For VS Code, replace it with the value in your copy of the file.';
   readonly retiredConfigDestinations: readonly RetiredConfigDestination[] =
     COPILOT_RETIRED_MCP_DESTINATIONS;
   /** Copilot reads project skills from .github/skills, .claude/skills and .agents/skills. */

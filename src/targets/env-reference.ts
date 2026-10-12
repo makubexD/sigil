@@ -37,6 +37,18 @@ function expandString(value: string, syntax: EnvSyntax): string {
   });
 }
 
+/** The distinct `{sigil:env:NAME}` names in `value`'s strings, at any depth, in first-seen order. */
+export function envTokenNames(value: unknown): string[] {
+  const names = new Set<string>();
+  const visit = (v: unknown): void => {
+    if (typeof v === 'string') for (const m of v.matchAll(ENV_TOKEN_RE)) names.add(m[1] as string);
+    else if (Array.isArray(v)) v.forEach(visit);
+    else if (v !== null && typeof v === 'object') Object.values(v).forEach(visit);
+  };
+  visit(value);
+  return [...names];
+}
+
 /** Expands every `{sigil:env:NAME}` token in `value`'s strings, at any depth; other values pass. */
 export function expandEnvTokens<T>(value: T, syntax: EnvSyntax): T {
   if (typeof value === 'string') return expandString(value, syntax) as T;

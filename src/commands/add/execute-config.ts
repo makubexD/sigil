@@ -12,8 +12,15 @@ import { replaceMerge, serialize } from '../../config-merge';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../../config-utils';
 import { previousOpFor, upsertConfigEntry } from '../../manifest';
 import { pkg } from '../../cli-helpers';
-import type { ConfigMergeOp, ConfigRoot, ResolvedCatalog, Target } from '../../types';
+import type {
+  ConfigMergeOp,
+  ConfigRoot,
+  ResolvedArtifact,
+  ResolvedCatalog,
+  Target,
+} from '../../types';
 import type { Manifest, ManifestEntry } from '../../manifest';
+import { envTokenNames } from '../../targets/env-reference';
 import type { AddPlan } from './plan';
 
 export interface ConfigInstallOutcome {
@@ -148,11 +155,25 @@ async function installOneConfigArtifact(
   const artifact = ctx.resolved.byId.get(id);
   if (!artifact) return NOTHING_WRITTEN;
   try {
-    return await scaffoldAndApplyConfig(id, artifact, ctx);
+    const result = await scaffoldAndApplyConfig(id, artifact, ctx);
+    if (result.written > 0) warnMcpEnvCaveat(id, artifact, ctx.target);
+    return result;
   } catch (err) {
     console.error(`✗ Failed to install config artifact '${id}': ${(err as Error).message}`);
     return NOTHING_WRITTEN;
   }
+}
+
+/** Prints the target's {@link Target.mcpEnvCaveat} for a server that reads environment variables. */
+export function warnMcpEnvCaveat(
+  id: string,
+  artifact: Pick<ResolvedArtifact, 'kind' | 'frontmatter'>,
+  target: Target,
+): void {
+  if (!target.mcpEnvCaveat || artifact.kind !== 'mcp') return;
+  const names = envTokenNames(artifact.frontmatter.server);
+  if (names.length === 0) return;
+  console.warn(`  ⚠  ${id} reads ${names.join(', ')} from the environment. ${target.mcpEnvCaveat}`);
 }
 
 /** Warns that the target does not support config-kind installs, for each unsupported id. */

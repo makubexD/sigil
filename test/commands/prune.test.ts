@@ -111,7 +111,7 @@ describe('sigil prune --apply', () => {
       );
 
       assert.equal(result.status, 0);
-      assert.match(result.stdout, /Pruned 1 orphaned artifact/);
+      assert.match(result.stdout, /Pruned 1 artifact/);
       assert.ok(!fs.existsSync(ghostFile), 'orphaned file should be deleted');
 
       const manifest = JSON.parse(fs.readFileSync(path.join(dir, '.sigil/manifest.json'), 'utf-8'));

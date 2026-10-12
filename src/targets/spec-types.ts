@@ -69,6 +69,13 @@ export interface BodySectionSpec {
   readonly position: 'before' | 'after';
   /** Returns the section's lines, or `[]` to omit it entirely for this artifact/context. */
   readonly render: (artifact: ResolvedArtifact, ctx: EmitContext) => string[];
+  /**
+   * The dependency kind this section copies into the file (a skill's used rules). `add` and the
+   * dependency closure then skip installing those dependencies as files of their own: the
+   * provider would load the same text twice (docs/audits/2026-10-12). Read it only through
+   * `inlinesDependency` / `isInstallableDependency` (capabilities.ts).
+   */
+  readonly inlines?: ArtifactKind;
 }
 
 /** The full declarative emission contract for one (provider, kind[, variant]) pair. */

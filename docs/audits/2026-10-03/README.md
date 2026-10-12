@@ -16,8 +16,10 @@ The skill tells the model never to guess, so a codeword in the answer means that
 
 1. `git pull`, then open the folder `docs/audits/2026-10-03/probe` **as its own workspace** in
    VS Code (File → Open Folder). The skill lives at `.github/skills/probe-refs/`.
-2. Open Copilot Chat and switch the mode to **Ask** (Ask can't open files on its own, so only what
-   the skill loader loads reaches the model).
+2. Open Copilot Chat and switch the mode to **Ask**. Since VS Code 1.125 Ask mode has read and
+   search tools, and with every tool turned off VS Code still keeps a skill-scoped read. So a
+   codeword shows the file was _reachable_, not that the loader pushed it; read the tool calls in
+   the reply too.
 3. Send: `What are the probe codewords?`
 4. Optional, if Copilot CLI is installed: in that folder run
    `copilot -p "What are the probe codewords?"`.

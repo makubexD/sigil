@@ -126,6 +126,10 @@ for (const target of TARGETS) {
         await add(fresh, target, FULL_SELECTION);
         restoreFrozen(old, target);
         await update(old, target);
+        // Rules a Copilot skill now inlines were installed as files too; prune removes the copies.
+        await captureJson(() =>
+          runPrune({ ...options(old, target), apply: true, yes: true, force: false, json: true }),
+        );
         assert.deepEqual(treeDiff(hashTree(fresh), hashTree(old)), []);
       });
     });
@@ -205,21 +209,32 @@ for (const target of TARGETS) {
       });
     }
 
-    it('should prune nothing and name the replacement of a deprecated install', async () => {
+    it('should prune only inlined copies and name the replacement of a deprecated install', async () => {
       await withTempDirAsync(async dir => {
         restoreFrozen(dir, target);
         const entries = loadManifest(dir).entries;
         const before = entries.length;
         // settings are a Claude-only kind, so only the Claude install has the deprecated one
         const hasDeprecated = entries.some(e => e.id === 'shared/allow-dev-tools');
-        const report = await captureJson<{ orphaned: unknown[]; deprecated: unknown[] }>(() =>
+        const report = await captureJson<{
+          orphaned: unknown[];
+          inlined: { id: string }[];
+          deprecated: unknown[];
+        }>(() =>
           runPrune({ ...options(dir, target), apply: true, yes: true, force: false, json: true }),
         );
         assert.deepEqual(report.orphaned, []);
+        const inlined = report.inlined.map(e => e.id).sort();
+        // Copilot's skill spec inlines used rules (docs/audits/2026-10-12); Claude's scaffold doesn't.
+        const expectInlined =
+          target === 'copilot'
+            ? ['csharp/cs-testing', 'shared/cli-rules', 'typescript/ts-conventions']
+            : [];
+        assert.deepEqual(inlined, expectInlined);
         const deprecated = JSON.stringify(report.deprecated);
         assert.equal(/shared\/allow-dev-tools/.test(deprecated), hasDeprecated, deprecated);
         if (hasDeprecated) assert.match(deprecated, /typescript\/ts-allow-dev-tools/);
-        assert.equal(loadManifest(dir).entries.length, before);
+        assert.equal(loadManifest(dir).entries.length, before - expectInlined.length);
       });
     });
   });

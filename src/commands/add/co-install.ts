@@ -14,7 +14,7 @@ import type { PlanCtx } from './plan-context';
 
 export function coInstallSetFor(ctx: PlanCtx, pickedIds: readonly string[]): Set<string> {
   const deps = ctx.inputs.includeDeps
-    ? computeClosure([...pickedIds], ctx.resolved).dependencies.map(d => d.artifact.id)
+    ? computeClosure([...pickedIds], ctx.resolved, ctx.target).dependencies.map(d => d.artifact.id)
     : [];
   const installed = loadManifest(ctx.opts.projectDir)
     .entries.filter(e => e.target === ctx.targetName)

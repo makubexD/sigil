@@ -19,6 +19,7 @@ import type {
 } from '../types';
 import type { EmitContext, KindEmitSpec } from './spec-types';
 import { renderArtifact, renderReference, REFERENCES_DIR } from './emit';
+import { inlinesDependency } from './capabilities';
 
 /** The delivery channel a spec serves: `add` / `init` (scaffold) or a built plugin. */
 export type EmitChannel = 'scaffold' | 'plugin';
@@ -71,9 +72,12 @@ export function scaffoldArtifact(input: ScaffoldInput, files: FileMap = {}): Fil
     ...(artifact.resolvedAgentIds ?? []).flatMap(id => catalog.byId.get(id) ?? []),
   ];
   // A dependency whose kind this target can't write is skipped, as resolveSelection skips a
-  // top-level pick: the skill still installs.
+  // top-level pick: the skill still installs. So is one the skill's spec already inlines.
   const depOptions = { ...options, includeDeps: false };
-  for (const dep of deps.filter(d => specFor(specs, d.kind, 'scaffold'))) {
+  const installable = deps.filter(
+    d => specFor(specs, d.kind, 'scaffold') && !inlinesDependency(spec, d.kind),
+  );
+  for (const dep of installable) {
     scaffoldArtifact({ ...input, artifact: dep, options: depOptions }, files);
   }
   return files;

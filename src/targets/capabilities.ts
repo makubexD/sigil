@@ -12,6 +12,7 @@
 import type { ArtifactKind, Target } from '../types';
 import { ALL_KINDS, isArtifactKind } from '../kinds';
 import type { ChannelCapabilities, ChannelId, KindSupport } from './capability-types';
+import type { KindEmitSpec } from './spec-types';
 
 /** Anything carrying a capability table — a Target, or an adapter passing its own table directly. */
 export type CapabilityHolder = Pick<Target, 'capabilities'>;
@@ -58,6 +59,25 @@ export function carriedKinds(target: CapabilityHolder): ArtifactKind[] {
 /** True when `target` can install `kind` on its own (see installableKinds). */
 export function isInstallable(target: CapabilityHolder, kind: string): boolean {
   return isArtifactKind(kind) && kindSupport(target, kind, 'scaffold')?.mode === 'native';
+}
+
+/** A target as the dependency closure sees it: its capabilities and, when it has them, its specs. */
+export type DependencyHolder = CapabilityHolder & Partial<Pick<Target, 'emitSpecs'>>;
+
+/** True when `spec` copies dependencies of `kind` into its own file (BodySectionSpec.inlines). */
+export function inlinesDependency(spec: KindEmitSpec, kind: string): boolean {
+  return spec.body.some(section => section.inlines === kind);
+}
+
+/**
+ * True when `target` installs a `uses:` dependency of `kind` as its own file: the kind is
+ * installable and no scaffold spec already copies it into the artifact that uses it.
+ */
+export function isInstallableDependency(target: DependencyHolder, kind: string): boolean {
+  const scaffoldSpecs = (target.emitSpecs ?? []).filter(
+    s => s.variant === undefined || s.variant === 'scaffold',
+  );
+  return isInstallable(target, kind) && !scaffoldSpecs.some(s => inlinesDependency(s, kind));
 }
 
 /** True when `target` delivers `kind` on `channel`. Accepts raw strings from frontmatter. */

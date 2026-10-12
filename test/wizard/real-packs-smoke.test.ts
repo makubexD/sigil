@@ -3,6 +3,7 @@
  * error, something recorded, and every dependency a skill declares (`uses:`) installed with it.
  * Adding or changing a pack can't silently break the "Recommended" path a newcomer takes.
  */
+import { isInstallableDependency } from '../../dist-cli/targets/capabilities';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
@@ -90,7 +91,11 @@ describe('every real pack installs through the wizard', async () => {
           assert.deepEqual(missing, [], `${pack.name} for ${target} left members out`);
           for (const id of installed) {
             const uses = (byId.get(id)?.frontmatter as SkillUses | undefined)?.uses;
-            for (const dep of [...(uses?.rules ?? []), ...(uses?.agents ?? [])]) {
+            // A rule the target's skill spec inlines is delivered inside SKILL.md, not installed.
+            const rules = isInstallableDependency(getTarget(target), 'rule')
+              ? (uses?.rules ?? [])
+              : [];
+            for (const dep of [...rules, ...(uses?.agents ?? [])]) {
               assert.ok(installed.has(dep), `${id} needs ${dep}, which was not installed`);
             }
           }

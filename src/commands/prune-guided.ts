@@ -11,20 +11,21 @@ import type { requireManifest } from './shared/manifest';
 import type { ApplyPruneCtx } from './prune-apply';
 import { applyPrune } from './prune-apply';
 import type { PruneCandidates, PruneOptions } from './prune';
+import { removableEntries } from './prune-apply';
 
 /** Only a terminal is asked, only for a plain preview, and only when something would be removed. */
 export function shouldOfferApply(opts: PruneOptions, candidates: PruneCandidates): boolean {
-  return isInteractiveTTY() && !opts.apply && !opts.json && candidates.orphaned.length > 0;
+  return isInteractiveTTY() && !opts.apply && !opts.json && removableEntries(candidates).length > 0;
 }
 
-/** Asks whether to remove the orphaned artifacts just previewed; declining changes nothing. */
+/** Asks whether to remove the artifacts just previewed; declining changes nothing. */
 export async function offerApply(
   manifest: ReturnType<typeof requireManifest>,
   candidates: PruneCandidates,
   ctx: ApplyPruneCtx,
 ): Promise<void> {
   const ok = await confirm({
-    message: `Remove the ${candidates.orphaned.length} orphaned artifact(s) listed above now?`,
+    message: `Remove the ${removableEntries(candidates).length} artifact(s) listed above now?`,
     initialValue: false,
   });
   if (isCancel(ok) || !ok) {

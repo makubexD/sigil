@@ -96,6 +96,7 @@ export const boundarySection: BodySectionSpec = {
 export const codingGuidelinesSection: BodySectionSpec = {
   id: 'codingGuidelines',
   position: 'after',
+  inlines: 'rule',
   render: (artifact: ResolvedArtifact) => {
     const rules = artifact.resolvedRules ?? [];
     if (rules.length === 0) return [];

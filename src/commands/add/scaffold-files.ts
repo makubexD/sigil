@@ -6,7 +6,7 @@
  * @module
  */
 import { hasUsesClosure } from '../../kinds';
-import { isInstallable } from '../../targets/capabilities';
+import { isInstallableDependency } from '../../targets/capabilities';
 import { currentTemplateOf as templateOf } from '../../manifest/template-of';
 import type { ResolvedCatalog, Target } from '../../types';
 import type { AddPlan } from './plan';
@@ -93,7 +93,7 @@ function buildDependencyMap(
   return depMap;
 }
 
-/** `depMap` without the dependencies `target` can't install on their own (isInstallable). */
+/** `depMap` without the dependencies `target` can't install on their own (isInstallableDependency). */
 function installableOnly(
   depMap: Map<string, string[]>,
   resolved: ResolvedCatalog,
@@ -102,7 +102,7 @@ function installableOnly(
   return new Map(
     [...depMap].filter(([id]) => {
       const kind = resolved.byId.get(id)?.kind;
-      return kind !== undefined && isInstallable(target, kind);
+      return kind !== undefined && isInstallableDependency(target, kind);
     }),
   );
 }

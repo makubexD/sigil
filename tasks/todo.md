@@ -77,7 +77,8 @@ Spec: `SPEC.md`
 - [x] PR1 Reference files get the lexicon, the output contract, the trust scan and the leak checks
 - [x] PR2+3 (one PR) Anatomy as data: reference roles per family, shared-pair families, exact keys, `uses` parity, generated catalog/README.md
       plus the content it demanded: generate-tests uses `*-testing` (references folded), ts-scaffold-project inline, stack-file skeletons, titles, `uses` parity, skillContext; `update` installs new dependencies. ng-release already folds API compat into its gate (left as is)
-- [ ] Probe Copilot double rule delivery (inline + .instructions.md), with V1/F4
+- [x] Probe Copilot double rule delivery (inline + .instructions.md), with V1/F4 — run 2026-10-12 (`docs/audits/2026-10-12/`): CLI delivers only the skill copy for narrow globs; VS Code reads both copies. Fix pending a decision (below)
+- [x] Fix Copilot double rule delivery centrally — 2026-10-12: `BodySectionSpec.inlines` + `isInstallableDependency` (add, closure, wizard, update deps); `sigil prune` removes copies from older installs, `update` points there
 
 ## Language layers (SPEC-language-layers.md, approved 2026-10-06)
 
@@ -93,9 +94,10 @@ the frozen install, `sync --check` and the CI validators. Everything below runs 
 
 **1. Live, E2E and integration checks**
 
-- [ ] V1 Copilot reference-loading check on a licensed machine (user): relax or keep the link rule, and record the result in the ADR (probe in `docs/audits/2026-10-03/`)
-- [ ] F4 Confirm live that VS Code and Copilot CLI expand `${NAME}` in `.mcp.json` (documented by GitHub's MCP JSON reference; not a blocker — a different answer is one `EnvSyntax` value). Also confirm a server without `tools` gets all its tools in Copilot CLI (`--tools` defaults to `*`) (probe in `docs/audits/2026-10-06/`)
-- [ ] Install the `cli-builder` plugin once in Claude Code to confirm the auditor runs with `cli` preloaded
+- [x] V1 Copilot reference-loading check on a licensed machine (user): relax or keep the link rule, and record the result in the ADR (probe in `docs/audits/2026-10-03/`) — done 2026-10-12: both products load references on demand; link rule kept as a style rule (ADR)
+- [x] F4 Confirm live that VS Code and Copilot CLI expand `${NAME}` in `.mcp.json` (documented by GitHub's MCP JSON reference; not a blocker — a different answer is one `EnvSyntax` value). Also confirm a server without `tools` gets all its tools in Copilot CLI (`--tools` defaults to `*`) (probe in `docs/audits/2026-10-06/`) — done 2026-10-12: CLI expands `${NAME}` and offers all tools; **VS Code 1.125.1 does not expand `${NAME}` (or `${env:NAME}`) in `.mcp.json`**, only `${env:NAME}` in `.vscode/mcp.json`
+- [ ] Fix Copilot MCP env syntax for VS Code (needs the user's go: output-changing)
+- [x] Install the `cli-builder` plugin once in Claude Code to confirm the auditor runs with `cli` preloaded — confirmed 2026-10-12 (Claude Code 2.1.296, `--plugin-dir dist/claude/plugins/cli-builder`; the subagent quoted the skill's headings without tool calls)
 
 **2. Output-changing decisions (each needs a go)**
 

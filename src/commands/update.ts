@@ -19,6 +19,7 @@ import type { ResolvedCatalog, Target } from '../types';
 import { SigilError } from '../errors';
 import { applyConfigEntry, isConfigEntry } from './update-config';
 import { isAtRetiredDestination, moveRetiredFragments } from './update-config-move';
+import { inlinedDependencies } from './shared/inlined-deps';
 import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
@@ -71,6 +72,16 @@ function printUpdateSummary(
   } else {
     console.log('\nDry run complete. No files were written.');
   }
+  console.log('');
+}
+
+/** Points at `sigil prune` when an installed dependency is now carried inline by its parent. */
+function printInlinedNotice(manifest: Manifest, target: Target, resolved: ResolvedCatalog): void {
+  const entries = manifest.entries.filter(e => e.target === target.name);
+  const ids = inlinedDependencies(entries, target, resolved).map(e => e.id);
+  if (ids.length === 0) return;
+  console.log(`  ${ids.length} installed artifact(s) are now inlined in the skill that uses them`);
+  console.log(`  and load twice: ${ids.join(', ')}. Run sigil prune to remove the copies.`);
   console.log('');
 }
 
@@ -232,5 +243,6 @@ async function applyUpdate(
   if (!opts.dryRun) saveManifest(opts.projectDir, manifest);
   printUpdateSummary(opts, totals.updatedCount, totals.skippedDrift, totals.orphanedCount);
   await installNewDependencies({ entries, resolved, target, installedIds }, opts);
+  printInlinedNotice(manifest, target, resolved);
   return totals;
 }

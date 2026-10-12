@@ -14,11 +14,14 @@
  * @module
  */
 import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
+import { getTarget } from '../targets/index';
+import { inlinedDependencies } from './shared/inlined-deps';
 import { requireManifest } from './shared/manifest';
 import type { ManifestEntry } from '../manifest';
+import type { LoadedCatalog } from '../types';
 import type { Deprecated } from '../schema/index';
 import { JSON_INDENT } from '../json-util';
-import { applyPrune } from './prune-apply';
+import { applyPrune, removableEntries } from './prune-apply';
 import type { ApplyPruneCtx } from './prune-apply';
 import { offerApply, shouldOfferApply } from './prune-guided';
 
@@ -35,30 +38,32 @@ export interface PruneOptions {
 
 export interface PruneCandidates {
   orphaned: ManifestEntry[];
+  /** Dependencies installed as files that every installed parent now carries inline. */
+  inlined: ManifestEntry[];
   deprecated: { entry: ManifestEntry; info: Deprecated }[];
 }
 
-/** Splits one target's manifest entries into orphaned (id gone from catalog) and deprecated
- * (id present but the catalog artifact itself carries `deprecated:`). An entry can't be both —
- * `deprecated:` implies it's still a live artifact, `orphaned` means it no longer resolves. */
+/** Splits one target's manifest entries into orphaned (id gone from catalog), inlined (see
+ * shared/inlined-deps.ts) and deprecated (id present but the catalog artifact itself carries
+ * `deprecated:`). Orphaned excludes the other two — `deprecated:` implies it's still a live
+ * artifact, `orphaned` means it no longer resolves. */
 function findCandidates(
   manifest: { entries: ManifestEntry[] },
   targetName: string,
-  catalogIds: Set<string>,
+  catalog: LoadedCatalog,
   deprecatedById: Map<string, Deprecated>,
 ): PruneCandidates {
-  const orphaned: ManifestEntry[] = [];
+  const catalogIds = new Set(catalog.byId.keys());
+  const own = manifest.entries.filter(e => e.target === targetName);
+  const live = own.filter(e => catalogIds.has(e.id));
+  const orphaned = own.filter(e => !catalogIds.has(e.id));
+  const inlined = inlinedDependencies(live, getTarget(targetName), catalog);
   const deprecated: { entry: ManifestEntry; info: Deprecated }[] = [];
-  for (const entry of manifest.entries) {
-    if (entry.target !== targetName) continue;
-    if (!catalogIds.has(entry.id)) {
-      orphaned.push(entry);
-      continue;
-    }
+  for (const entry of live) {
     const info = deprecatedById.get(entry.id);
     if (info) deprecated.push({ entry, info });
   }
-  return { orphaned, deprecated };
+  return { orphaned, inlined, deprecated };
 }
 
 /** Renders the JSON report for both `--apply` and preview modes. */
@@ -68,6 +73,7 @@ function printJsonReport(candidates: PruneCandidates, applied: boolean): void {
       {
         applied,
         orphaned: candidates.orphaned.map(e => ({ id: e.id, files: e.files.map(f => f.path) })),
+        inlined: candidates.inlined.map(e => ({ id: e.id, files: e.files.map(f => f.path) })),
         deprecated: candidates.deprecated.map(({ entry, info }) => ({
           id: entry.id,
           since: info.since,
@@ -88,6 +94,15 @@ function printOrphanedSection(orphaned: ManifestEntry[]): void {
   console.log('');
 }
 
+function printInlinedSection(inlined: ManifestEntry[]): void {
+  if (inlined.length === 0) return;
+  console.log(
+    `${inlined.length} artifact(s) also carried inline by the skill that uses them (loaded twice):`,
+  );
+  for (const e of inlined) console.log(`  ✗  ${e.id}  (in ${e.dependentOf.join(', ')})`);
+  console.log('');
+}
+
 function printDeprecatedSection(deprecated: PruneCandidates['deprecated']): void {
   if (deprecated.length === 0) return;
   console.log(`${deprecated.length} deprecated artifact(s) still installed:`);
@@ -99,28 +114,30 @@ function printDeprecatedSection(deprecated: PruneCandidates['deprecated']): void
 }
 
 /** The trailing "what to do next" line — differs slightly when there's nothing to --apply. */
-function nextStepsLine(hasOrphaned: boolean, askingNow: boolean): string {
+function nextStepsLine(hasRemovable: boolean, askingNow: boolean): string {
   const deprecatedNote =
     'Deprecated-but-still-in-catalog artifacts are reported only — remove them yourself ' +
     'with `sigil uninstall` if you want to.';
   // A terminal is asked right after the preview, so "run --apply" would repeat the question.
-  if (hasOrphaned && askingNow) return `(${deprecatedNote})`;
-  return hasOrphaned
-    ? `Run \`sigil prune --apply\` to remove the orphaned artifact(s).\n(${deprecatedNote})`
+  if (hasRemovable && askingNow) return `(${deprecatedNote})`;
+  return hasRemovable
+    ? `Run \`sigil prune --apply\` to remove the artifact(s) listed above.\n(${deprecatedNote})`
     : deprecatedNote;
 }
 
 /** Prints the preview report (bare `sigil prune`, no `--apply`). */
 function printPreview(candidates: PruneCandidates, askingNow: boolean): void {
-  const { orphaned, deprecated } = candidates;
-  if (orphaned.length === 0 && deprecated.length === 0) {
-    console.log('\n✓ Nothing to prune — no orphaned or deprecated artifacts installed.\n');
+  const { orphaned, inlined, deprecated } = candidates;
+  const removable = removableEntries(candidates).length;
+  if (removable === 0 && deprecated.length === 0) {
+    console.log('\n✓ Nothing to prune — no orphaned, inlined or deprecated artifacts installed.\n');
     return;
   }
   console.log('');
   printOrphanedSection(orphaned);
+  printInlinedSection(inlined);
   printDeprecatedSection(deprecated);
-  console.log(nextStepsLine(orphaned.length > 0, askingNow));
+  console.log(nextStepsLine(removable > 0, askingNow));
   console.log('');
 }
 
@@ -141,14 +158,13 @@ export async function runPrune(opts: PruneOptions): Promise<void> {
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
 
   const manifest = requireManifest(opts.projectDir);
-  const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
   const deprecatedById = new Map(
     rawCatalog.artifacts
       .filter(a => a.frontmatter.deprecated)
       .map(a => [a.id, a.frontmatter.deprecated as Deprecated]),
   );
 
-  const candidates = findCandidates(manifest, targetName, catalogIds, deprecatedById);
+  const candidates = findCandidates(manifest, targetName, rawCatalog, deprecatedById);
 
   const ctx = { targetName, opts, printJsonReport };
   if (opts.apply) await applyPrune(manifest, candidates, ctx);

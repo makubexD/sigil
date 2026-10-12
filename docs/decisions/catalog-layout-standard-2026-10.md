@@ -191,10 +191,15 @@ and recommends Markdown links. The catalog's skills mention references as backti
 that counts is checked in VS Code (task V1). The result decides what the `catalog-layout` rule treats
 as "mentioned" and whether skills switch to links.
 
-_Result: pending_ (probe and instructions: `docs/audits/2026-10-03/`). Meanwhile the catalog follows
-the documented recommendation: skills link each reference (`reference-links`, with a mechanical
-`sync --apply` fix), and `catalog-layout` flags a reference `SKILL.md` never names. If V1 shows
-backtick paths load too, `reference-links` can drop to a warning for imported skills.
+_Result (2026-10-12, VS Code 1.125.1 and Copilot CLI 1.0.95; `docs/audits/2026-10-03/results.md`):_
+neither product pushes reference files into context. Both load them on demand through the agent,
+and VS Code read the backtick-path, linked and unnamed files alike (it keeps a skill-scoped read
+even with every tool off). How `SKILL.md` names a reference therefore does not decide whether it
+loads.
+
+_Decision:_ `reference-links` and the `catalog-layout` "mentioned" check stay as **style rules**:
+a named, linked reference is what tells the agent the file exists and when to read it. They are
+not a loading requirement, so `reference-links` may drop to a warning for imported skills.
 
 ## Appendix: provider baseline, re-verified 2026-10-03
 

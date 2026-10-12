@@ -37,7 +37,7 @@ describe('shared skill scaffold (shared/cli)', () => {
     assert.match(agent ?? '', /^skills:\n {2}- cli$/m, 'auditor preloads its skill');
   });
 
-  it('copilot: skill + references + applyTo instructions + auditor agent', async () => {
+  it('copilot: skill (rule inlined, no separate instructions file) + references + auditor agent', async () => {
     const files = await new CopilotTarget().scaffold!(
       'shared/cli',
       await loadResolvedCatalog(),
@@ -46,8 +46,13 @@ describe('shared skill scaffold (shared/cli)', () => {
 
     assert.ok('.github/skills/cli/SKILL.md' in files, 'skill scaffolded');
     assert.ok('.github/skills/cli/references/auditor.md' in files, 'reference scaffolded');
-    const rule = files['.github/instructions/shared-cli-rules.instructions.md'];
-    assert.ok(rule?.includes('applyTo:'), 'instructions are path-scoped');
+    // The skill inlines the rule, so a second copy as instructions would load twice
+    // (docs/audits/2026-10-12).
+    assert.ok(
+      !('.github/instructions/shared-cli-rules.instructions.md' in files),
+      'rule not duplicated',
+    );
+    assert.match(files['.github/skills/cli/SKILL.md'] ?? '', /## Coding guidelines to apply/);
     assert.ok('.github/agents/cli-auditor.agent.md' in files, 'auditor agent scaffolded');
   });
 

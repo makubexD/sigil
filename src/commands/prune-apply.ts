@@ -63,15 +63,20 @@ function deleteWholeFiles(
   }
 }
 
-/** Prompts to confirm removing the orphaned entries (skipped when --yes). */
-async function confirmApply(orphanedIds: string[], opts: PruneOptions): Promise<boolean> {
-  if (orphanedIds.length === 0) return true;
+/** Everything `--apply` removes: orphaned and inlined entries. */
+export function removableEntries(candidates: PruneCandidates): ManifestEntry[] {
+  return [...candidates.orphaned, ...candidates.inlined];
+}
+
+/** Prompts to confirm removing the removable entries (skipped when --yes). */
+async function confirmApply(removableIds: string[], opts: PruneOptions): Promise<boolean> {
+  if (removableIds.length === 0) return true;
   if (!opts.yes && !isInteractiveTTY()) {
     throw new SigilError('stdin/stdout is not interactive. Re-run with --yes to confirm.');
   }
   if (opts.yes) return true;
   const ok = await confirm({
-    message: `Remove ${orphanedIds.length} orphaned artifact(s): ${orphanedIds.join(', ')}?`,
+    message: `Remove ${removableIds.length} artifact(s): ${removableIds.join(', ')}?`,
     initialValue: false,
   });
   if (isCancel(ok) || !ok) {
@@ -111,20 +116,20 @@ function writeRemoval(
   return configRemovedCount;
 }
 
-/** Removes every orphaned entry's files + config merges. Mirrors runUninstall's apply path. */
+/** Removes every removable entry's files + config merges. Mirrors runUninstall's apply path. */
 function performRemoval(
   manifest: ReturnType<typeof requireManifest>,
-  orphanedIds: string[],
+  removableIds: string[],
   targetName: string,
   opts: PruneOptions,
 ): ApplyOutcome {
-  const { pathsToDelete, removedEntries } = removeEntries(manifest, orphanedIds, targetName);
+  const { pathsToDelete, removedEntries } = removeEntries(manifest, removableIds, targetName);
   const driftedPaths = findDriftedPaths(pathsToDelete, removedEntries, opts.projectDir);
   const computed = { pathsToDelete, driftedPaths, removedEntries };
   const configRemovedCount = writeRemoval(manifest, computed, opts);
   const driftedKept = opts.force ? 0 : driftedPaths.length;
   return {
-    removedCount: orphanedIds.length,
+    removedCount: removableIds.length,
     pathsDeleted: pathsToDelete.length - driftedKept,
     configRemovedCount,
     driftedKept,
@@ -134,7 +139,7 @@ function performRemoval(
 /** Prints the post-apply summary line + the deprecated-still-installed reminder. */
 function printApplySummary(outcome: ApplyOutcome, deprecatedCount: number): void {
   console.log(
-    `\n✓ Pruned ${outcome.removedCount} orphaned artifact(s)` +
+    `\n✓ Pruned ${outcome.removedCount} artifact(s)` +
       `  (${outcome.pathsDeleted} file(s) removed` +
       (outcome.configRemovedCount > 0
         ? `, ${outcome.configRemovedCount} JSON merge(s) reversed`
@@ -166,17 +171,17 @@ export async function applyPrune(
   ctx: ApplyPruneCtx,
 ): Promise<void> {
   const { targetName, opts, printJsonReport } = ctx;
-  const orphanedIds = candidates.orphaned.map(e => e.id);
-  if (orphanedIds.length === 0) {
+  const removableIds = removableEntries(candidates).map(e => e.id);
+  if (removableIds.length === 0) {
     if (opts.json) printJsonReport(candidates, true);
-    else console.log('\n✓ Nothing to prune — no orphaned artifacts installed.\n');
+    else console.log('\n✓ Nothing to prune — no orphaned or inlined artifacts installed.\n');
     return;
   }
 
-  const proceed = await confirmApply(orphanedIds, opts);
+  const proceed = await confirmApply(removableIds, opts);
   if (!proceed) return;
 
-  const outcome = performRemoval(manifest, orphanedIds, targetName, opts);
+  const outcome = performRemoval(manifest, removableIds, targetName, opts);
 
   if (opts.json) printJsonReport(candidates, true);
   else printApplySummary(outcome, candidates.deprecated.length);

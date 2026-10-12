@@ -442,10 +442,15 @@ sigil add skill:python/py-generate-tests --target copilot
 Files written:
 
 ```
-.github/skills/py-generate-tests/SKILL.md
-.github/instructions/python-py-testing.instructions.md   ← applyTo: the rule's test-file globs
+.github/skills/py-generate-tests/SKILL.md               ← carries python/py-testing inline
 .github/agents/code-reviewer.agent.md
 ```
+
+The skill's rules are copied into `SKILL.md` under "Coding guidelines to apply", so `add` does not
+also write them as `.instructions.md`: both Copilot products would load the text twice
+(`docs/audits/2026-10-12/`). Add a rule on its own (`sigil add rule:<id>`) to get the always-on
+`applyTo` copy. An install made before this change keeps the extra files; `sigil update` names
+them and `sigil prune --apply` removes them.
 
 What Copilot targets receive, by kind:
 

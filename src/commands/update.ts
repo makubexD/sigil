@@ -24,7 +24,8 @@ import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
 import { installNewDependencies } from './update-deps';
-import { warnMcpEnvCaveat } from './add/execute-config';
+import { warnMcpEnvCaveats } from './add/execute-config';
+import type { WrittenConfig } from './add/execute-config';
 
 export { isFileDrifted } from './update-wholefile';
 
@@ -111,6 +112,8 @@ interface UpdateRunCtx {
   resolved: ResolvedCatalog;
   target: Target;
   opts: UpdateOptions;
+  /** Config artifacts this run wrote, for the one MCP env warning at the end. */
+  written: WrittenConfig[];
 }
 
 /** Brings a config-kind entry (hook/settings/mcp) up to date. */
@@ -129,7 +132,7 @@ async function updateConfigOutcome(
   const skipped = moved.skipped + applied.skipped;
   const pending = wrote && !!opts.dryRun;
   const artifact = ctx.resolved.byId.get(entry.id);
-  if (wrote && !opts.dryRun && artifact) warnMcpEnvCaveat(entry.id, artifact, ctx.target);
+  if (wrote && !opts.dryRun && artifact) ctx.written.push({ id: entry.id, artifact });
   return { updated: wrote, pending, skippedDriftCount: skipped, orphaned: false };
 }
 
@@ -239,12 +242,10 @@ async function applyUpdate(
   const { resolved, target, manifest, entries, catalogIds, installedIds } = setup;
 
   console.log('');
-  const totals = await updateAllEntries(entries, {
-    catalogIds,
-    resolved,
-    target,
-    opts: { ...opts, installedIds },
-  });
+  const written: WrittenConfig[] = [];
+  const run = { catalogIds, resolved, target, opts: { ...opts, installedIds }, written };
+  const totals = await updateAllEntries(entries, run);
+  warnMcpEnvCaveats(written, target);
 
   if (!opts.dryRun) saveManifest(opts.projectDir, manifest);
   printUpdateSummary(opts, totals.updatedCount, totals.skippedDrift, totals.orphanedCount);

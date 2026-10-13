@@ -185,7 +185,7 @@ async function uninstallIds(
   const decision = await confirmUninstall(ids, targetName, driftedPaths, opts);
   if (!decision) return;
   const effective = { ...opts, force: decision.force };
-  if (guided) logEquivalentUninstall(ids, decision.force, opts.target);
+  if (guided) logEquivalentUninstall(ids, decision.force, { ...opts, target: targetName });
   finishUninstall(ids, manifest, { pathsToDelete, driftedPaths, configEntries }, effective);
 }
 

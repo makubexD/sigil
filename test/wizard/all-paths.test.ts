@@ -57,7 +57,8 @@ const WINDOWS: WindowSize[] = [
   { columns: 230, rows: 50 },
 ];
 
-const INERT_COMMAND = /^(sigil|npm run \S+ --)( [A-Za-z0-9:/_.,@=-]+)*$/;
+/** Every word is inert in PowerShell, cmd and bash: plain, or a double-quoted path free of `$`, a backtick, `"`, `%`, `!`. */
+const INERT_COMMAND = /^(sigil|npm run \S+ --)( (?:[A-Za-z0-9:/_.,@=-]+|"[^"$`%!]*"))*$/;
 const MANY = 22;
 
 /** An installed rule with a deliberately long id, recorded in the manifest with its file on disk. */

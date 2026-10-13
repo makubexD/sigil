@@ -7,7 +7,8 @@
  */
 import { isCancel, log, select } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
-import { printRepeatCommand } from '../wizard/command-strings';
+import { locationFlags, printRepeatCommand } from '../wizard/command-strings';
+import type { CommandLocation } from './uninstall-confirm';
 import { detectProjectTarget } from '../cli-helpers';
 import { isInteractiveTTY } from '../wizard';
 import { pickInstalled } from '../wizard/installed-picker';
@@ -74,8 +75,10 @@ function nothingToApply({ pendingCount, skippedDrift, orphanedCount }: UpdateRun
   return true;
 }
 
-function equivalentCommand(ids: string[], force: boolean): string {
-  return ['sigil update', ...ids, force ? '--force' : '', '--yes'].filter(Boolean).join(' ');
+/** The command that repeats a guided update: the ids, `--force` when chosen, the target and folder. */
+export function equivalentUpdate(ids: string[], force: boolean, where: CommandLocation): string {
+  const parts = ['sigil update', ...ids, '--yes', force ? '--force' : ''];
+  return [...parts, ...locationFlags(where)].filter(Boolean).join(' ');
 }
 
 export async function runGuidedUpdate(
@@ -94,6 +97,6 @@ export async function runGuidedUpdate(
   const chosen = choice === 'pick' ? await pickIds(opts) : ids;
   if (!chosen) return;
   const force = opts.force || choice === 'force';
-  printRepeatCommand('Equivalent command:', equivalentCommand(chosen, force));
+  printRepeatCommand('Equivalent command:', equivalentUpdate(chosen, force, opts));
   await apply(chosen, { ...opts, force, dryRun: false, yes: true });
 }

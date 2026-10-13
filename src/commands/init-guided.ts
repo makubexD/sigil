@@ -5,7 +5,7 @@
  */
 import { isCancel, select } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
-import { printRepeatCommand } from '../wizard/command-strings';
+import { locationFlags, printRepeatCommand } from '../wizard/command-strings';
 import { SigilError } from '../errors';
 import { getAllTargets } from '../targets';
 import { detectedTargetsIn } from '../project-context';
@@ -35,6 +35,11 @@ export function initTargetOptions(found: readonly string[]): InitTargetOption[] 
   return options.sort((a, b) => isNew(a) - isNew(b));
 }
 
+/** The command that repeats the guided target choice for the same project folder. */
+export function equivalentInit(target: string, projectDir: string): string {
+  return ['sigil init', ...locationFlags({ target, projectDir })].join(' ');
+}
+
 /**
  * No `--target` was given. In a terminal, ask; anywhere else, fail and list the valid names.
  * Returns the chosen target name, or null when the user cancels.
@@ -53,7 +58,7 @@ export async function chooseInitTarget(
   const sole = opts.only?.length === 1 ? opts.only[0] : undefined;
   const answer = sole ?? (await askTarget(found, opts.only));
   if (answer === null) return null;
-  printRepeatCommand('Equivalent command:', `sigil init --target ${answer}`);
+  printRepeatCommand('Equivalent command:', equivalentInit(answer, projectDir));
   return answer;
 }
 

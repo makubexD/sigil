@@ -135,9 +135,17 @@ describe('runUninstall without ids', () => {
 
     it('should log an equivalent command that can be pasted into a script, after confirming', async () => {
       const keep = await removeEdited([['a/one'], 'keep', true]);
-      assert.ok(keep.messages.includes('   sigil uninstall a/one --yes --target claude'));
+      assert.ok(
+        keep.messages.some(m =>
+          m.startsWith('   sigil uninstall a/one --yes --target claude --project-dir '),
+        ),
+      );
       const del = await removeEdited([['a/one'], 'delete', true]);
-      assert.ok(del.messages.includes('   sigil uninstall a/one --yes --force --target claude'));
+      assert.ok(
+        del.messages.some(m =>
+          m.startsWith('   sigil uninstall a/one --yes --force --target claude --project-dir '),
+        ),
+      );
       const declined = await removeEdited([['a/one'], 'keep', false]);
       assert.deepEqual(
         declined.messages.filter(m => m.trim().startsWith('sigil uninstall')),

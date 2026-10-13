@@ -324,6 +324,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- The `Equivalent command:` that guided `prune`, `init`, `uninstall` and `update` print now repeats
+  what ran: `--force`, `--target`, and `--project-dir` when the project is not the current folder.
+  The guided prune with `--force` names the edited files it would delete before asking.
 - GitHub Copilot loaded a rule twice when a skill used it: once inlined in the skill's `SKILL.md` and
   once as the rule's own `.instructions.md`. `add` no longer writes the rule file on Copilot, and
   `sigil prune --apply` removes the copies earlier installs wrote. The manifest now records which

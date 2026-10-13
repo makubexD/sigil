@@ -241,15 +241,20 @@ program
   .command('prune')
   .description(
     "Report (default) / --apply (write) cleanup of a project's manifest: removes orphaned " +
-      'artifacts (no longer in the bundled catalog) and reports deprecated-but-installed ones.',
+      'artifacts (no longer in the bundled catalog) and dependency copies a skill already carries ' +
+      'inline; reports deprecated ones and inline copies you may have picked.',
   )
   .option('--project-dir <dir>', 'Consumer project root', process.cwd())
   .option('--target <name>', 'Target platform (auto-detected if omitted)')
   .option('--catalog-dir <dir>', 'Path to catalog/', resolveDefault('catalog'))
   .option('--packs <file>', 'Path to packs.yaml', resolveDefault('packs.yaml'))
-  .option('--apply', 'Remove orphaned artifacts (preview-only without this flag)', false)
+  .option(
+    '--apply',
+    'Remove orphaned and inlined artifacts (preview-only without this flag)',
+    false,
+  )
   .option('--yes', 'Skip confirmation prompt', false)
-  .option('--force', 'Remove even drifted (user-modified) orphaned files', false)
+  .option('--force', 'Remove even drifted (user-modified) files of the pruned artifacts', false)
   .option('--json', 'Output as JSON', false)
   .action(lazy(async () => (await import('./commands/prune')).runPrune));
 // ─── uninstall ────────────────────────────────────────────────────────────────
@@ -399,7 +404,7 @@ const HELP_LAYOUT: Readonly<Record<string, { group: string; summary: string }>> 
   status: { group: START, summary: 'Show health of installed artifacts' },
   update: { group: START, summary: 'Refresh installed artifacts' },
   uninstall: { group: START, summary: 'Remove installed artifacts' },
-  prune: { group: START, summary: 'Clean up orphaned manifest entries' },
+  prune: { group: START, summary: 'Clean up orphaned and duplicate installs' },
   list: { group: BROWSE, summary: 'List catalog artifacts' },
   search: { group: BROWSE, summary: 'Search the catalog by keyword' },
   get: { group: BROWSE, summary: 'Show one artifact in detail' },

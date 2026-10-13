@@ -1,6 +1,7 @@
 /**
  * `sigil prune` — cleanup command for a consumer project's manifest: removes orphaned entries
- * (ids no longer in the bundled catalog) and reports deprecated-but-installed ones. Preview by
+ * (ids no longer in the bundled catalog) and dependency copies every installed parent already
+ * carries inline; reports deprecated-but-installed ones and inline copies that may have been picked. Preview by
  * default, like `sigil sync` — bare `sigil prune` reports and writes nothing; `--apply` writes.
  *
  * Reuses the same plumbing `sigil uninstall` (uninstall.ts) already established: `removeEntries`

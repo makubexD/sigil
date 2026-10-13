@@ -17,6 +17,7 @@ holds the raw material behind it.
 | `2026-08-26` | 7     | Hardened dispatch probe, python/react coverage gap                                        |
 | `2026-09-27` | -     | Live-prompt campaign against real Claude Code and Copilot CLI (not a numbered round)      |
 | `2026-10-03` | -     | Probe: does Copilot load a skill reference named by backticks, a link, or not at all (V1) |
+| `2026-10-13` | -     | Pre-release audit of `master`: cli/wizard auditors, code review, evals S1 and W3          |
 
 ## What is in a folder
 

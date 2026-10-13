@@ -324,6 +324,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A guided command's `Equivalent command:` now quotes a project folder for the shell it is printed
+  for, so a path holding `$`, a backtick, `%`, `!` or `'` pastes as the same folder. On Windows the
+  current folder in another letter case no longer prints `--project-dir`.
 - `sigil update` repeats the VS Code warning about `${NAME}` in `.mcp.json` when it rewrites a server
   that reads environment variables, and its "now inlined" notice goes to stderr.
 - The `Equivalent command:` that guided `prune`, `init`, `uninstall` and `update` print now repeats

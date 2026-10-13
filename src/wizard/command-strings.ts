@@ -27,13 +27,45 @@ export interface EquivalentCommandOptions {
   hasConfigKinds?: boolean | undefined;
 }
 
-/** A path every shell takes as one plain word; anything else is double-quoted, which PowerShell, cmd
- * and bash all read literally unless it holds a dollar sign, a backtick, `"`, `%` or `!`. */
+/** A path every shell takes as one plain word. */
 const PLAIN_PATH = /^[\w./:-]+$/;
+/** Characters some shell reads inside double quotes; PowerShell also takes the curly ones as `'`. */
+const SHELL_SPECIAL = /[$`"%!'‘’‚‛]/;
+/** What cmd expands even inside double quotes; outside them a `^` makes each one literal. */
+const CMD_SPECIAL = /([%!])/;
+
+/** cmd: quote the plain stretches and put each `%` / `!` outside the quotes behind a `^`. */
+function cmdQuote(dir: string): string {
+  return dir
+    .split(CMD_SPECIAL)
+    .filter(part => part !== '')
+    .map(part => (CMD_SPECIAL.test(part) ? `^${part}` : `"${part}"`))
+    .join('');
+}
+
+/**
+ * `dir` as one word that `shell` reads back unchanged. A plain path stays bare and a path with only
+ * spaces gets double quotes, which every shell reads literally. Otherwise bash and PowerShell get
+ * single quotes (nothing is expanded inside them) and cmd gets {@link cmdQuote}.
+ */
+export function quotePath(dir: string, shell: Shell): string {
+  if (PLAIN_PATH.test(dir)) return dir;
+  if (!SHELL_SPECIAL.test(dir)) return `"${dir}"`;
+  if (shell === 'cmd') return cmdQuote(dir);
+  if (shell === 'powershell') return `'${dir.replace(/['‘’‚‛]/g, quote => quote + quote)}'`;
+  return `'${dir.replace(/'/g, `'"'"'`)}'`;
+}
+
+/** True when `dir` is the current folder; Windows paths ignore case. */
+function isCurrentFolder(dir: string): boolean {
+  const cwd = process.cwd();
+  return process.platform === 'win32' ? dir.toLowerCase() === cwd.toLowerCase() : dir === cwd;
+}
 
 /**
  * `--target` and `--project-dir` for a guided command's equivalent, so it runs against the same
- * project from anywhere. The folder is left out when it is the current one.
+ * project from anywhere. The folder is left out when it is the current one, and quoted for the
+ * shell the user is probably in.
  */
 export function locationFlags(where: {
   target?: string | undefined;
@@ -41,8 +73,8 @@ export function locationFlags(where: {
 }): string[] {
   const flags = where.target ? [`--target ${where.target}`] : [];
   const dir = where.projectDir === undefined ? undefined : path.resolve(where.projectDir);
-  if (dir !== undefined && dir !== process.cwd()) {
-    flags.push(`--project-dir ${PLAIN_PATH.test(dir) ? dir : `"${dir}"`}`);
+  if (dir !== undefined && !isCurrentFolder(dir)) {
+    flags.push(`--project-dir ${quotePath(dir, detectShell())}`);
   }
   return flags;
 }
@@ -122,8 +154,8 @@ const SPARE_COLUMN = 1;
  * selection would copy it and `│` is an error in every shell; leading spaces are harmless in all of them.
  */
 const COMMAND_INDENT = 3;
-/** A word is a run of non-space characters, or a double-quoted stretch (a path with spaces) kept whole. */
-const WORD = /(?:"[^"]*"|\S)+/g;
+/** A word is a run of non-space characters, or a quoted stretch (a path with spaces) kept whole. */
+const WORD = /(?:"[^"]*"|'[^']*'|\S)+/g;
 
 /**
  * `cmd` as lines that fit `width`, for a command too long for one. It breaks only between words

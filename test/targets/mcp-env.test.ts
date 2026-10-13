@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { expandEnvTokens } from '../../dist-cli/targets/env-reference';
+import { getAllTargets } from '../../dist-cli/targets';
 import matter from 'gray-matter';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { CATALOG, add } from '../helpers/install-scenario';
@@ -106,6 +107,16 @@ describe('MCP env caveat on add', () => {
       }
     } finally {
       console.warn = original;
+    }
+  });
+});
+
+describe('mcpEnvCaveat wording', () => {
+  it('should never tell the user to write the value into the file', () => {
+    for (const target of getAllTargets()) {
+      if (!target.mcpEnvCaveat) continue;
+      assert.doesNotMatch(target.mcpEnvCaveat, /replace it with the value/i, target.name);
+      assert.match(target.mcpEnvCaveat, /secret/i, target.name);
     }
   });
 });

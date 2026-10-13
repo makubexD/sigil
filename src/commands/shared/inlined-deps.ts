@@ -60,3 +60,22 @@ export function inlinedDependencies(
     unconfirmed: inlined.filter(e => e.picked === undefined),
   };
 }
+
+/**
+ * The lines `update` prints when installed dependencies are now inlined, or none. `sigil prune`
+ * removes the `removable` copies and keeps the `unconfirmed` ones, so the notice says so.
+ */
+export function inlinedNotice(removable: string[], unconfirmed: string[]): string[] {
+  const ids = [...removable, ...unconfirmed];
+  if (ids.length === 0) return [];
+  const lines = [
+    `  ${ids.length} installed artifact(s) are now inlined in the skill that uses them`,
+    `  and load twice: ${ids.join(', ')}. Run \`sigil prune\` to review the copies.`,
+  ];
+  if (unconfirmed.length > 0) {
+    lines.push(
+      `  ${unconfirmed.length} of them may be your own pick, so prune leaves them kept; remove those with \`sigil uninstall\`.`,
+    );
+  }
+  return lines;
+}

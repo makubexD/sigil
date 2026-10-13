@@ -324,6 +324,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- A guided `sigil update`'s `Equivalent command:` now names `--target` when the tool was detected,
+  so the command updates the same tool when pasted elsewhere.
+- `sigil add` and `sigil update` name each MCP server that reads environment variables, then print
+  the tool's warning about them once, not once per server.
+- `sigil update`'s notice about inlined copies now says that copies which may be your own pick are
+  kept by `sigil prune`, and how to remove them.
 - A guided command's `Equivalent command:` now quotes a project folder for the shell it is printed
   for, so a path holding `$`, a backtick, `%`, `!` or `'` pastes as the same folder. On Windows the
   current folder in another letter case no longer prints `--project-dir`.

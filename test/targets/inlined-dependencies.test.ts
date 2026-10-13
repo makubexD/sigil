@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import { getAllTargets } from '../../dist-cli/targets/index';
 import { computeClosure } from '../../dist-cli/select/index';
 import { isInstallableDependency } from '../../dist-cli/targets/capabilities';
-import { inlinedDependencies } from '../../dist-cli/commands/shared/inlined-deps';
+import { inlinedDependencies, inlinedNotice } from '../../dist-cli/commands/shared/inlined-deps';
 import { getTarget } from '../../dist-cli/targets/index';
 import { loadResolvedCatalog } from '../helpers/catalog';
 
@@ -93,5 +93,21 @@ describe('inlinedDependencies (prune / update)', () => {
     const resolved = await loadResolvedCatalog();
     const entries = [entry(SKILL, 'skill', [], true), entry(RULE, 'rule', [SKILL], false)];
     assert.deepEqual(ids(inlinedDependencies(entries, getTarget('claude'), resolved)), NONE);
+  });
+});
+
+describe('inlinedNotice', () => {
+  it('should say nothing when no copy is inlined', () => {
+    assert.deepEqual(inlinedNotice([], []), []);
+  });
+
+  it('should say prune keeps the copies it cannot confirm', () => {
+    const text = inlinedNotice(['a/one'], ['b/two']).join(' ');
+    assert.match(text, /a\/one, b\/two/);
+    assert.match(text, /1 .*kept/i, text);
+  });
+
+  it('should not mention kept copies when every copy is removable', () => {
+    assert.doesNotMatch(inlinedNotice(['a/one'], []).join(' '), /kept/i);
   });
 });

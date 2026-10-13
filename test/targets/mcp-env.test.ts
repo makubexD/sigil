@@ -9,7 +9,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { expandEnvTokens } from '../../dist-cli/targets/env-reference';
-import { getAllTargets } from '../../dist-cli/targets';
+import { getAllTargets, getTarget } from '../../dist-cli/targets';
 import matter from 'gray-matter';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { CATALOG, add, update } from '../helpers/install-scenario';
@@ -86,7 +86,7 @@ describe('catalog MCP sources', () => {
 describe('MCP env caveat on add', () => {
   it('should warn exactly when the target has a caveat and the server reads env vars', async () => {
     const { getAllTargets } = await import('../../dist-cli/targets/index');
-    const { warnMcpEnvCaveat } = await import('../../dist-cli/commands/add/execute-config');
+    const { warnMcpEnvCaveats } = await import('../../dist-cli/commands/add/execute-config');
     const { envTokenNames } = await import('../../dist-cli/targets/env-reference');
     const { loadResolvedCatalog } = await import('../helpers/catalog');
     const resolved = await loadResolvedCatalog();
@@ -98,16 +98,48 @@ describe('MCP env caveat on add', () => {
         for (const artifact of mcps) {
           const lines: string[] = [];
           console.warn = (msg: string) => void lines.push(msg);
-          warnMcpEnvCaveat(artifact.id, artifact, target);
+          warnMcpEnvCaveats([{ id: artifact.id, artifact }], target);
           const names = envTokenNames(artifact.frontmatter.server);
           const expected = Boolean(target.mcpEnvCaveat) && names.length > 0;
-          assert.equal(lines.length, expected ? 1 : 0, `${target.name} ${artifact.id}`);
-          for (const n of expected ? names : []) assert.ok(lines[0]?.includes(n));
+          assert.equal(lines.length > 0, expected, `${target.name} ${artifact.id}`);
+          for (const n of expected ? names : []) assert.ok(lines.join('\n').includes(n));
         }
       }
     } finally {
       console.warn = original;
     }
+  });
+
+  it('should explain the caveat once however many servers read env vars', async () => {
+    // Arrange
+    const { warnMcpEnvCaveats } = await import('../../dist-cli/commands/add/execute-config');
+    const { loadResolvedCatalog } = await import('../helpers/catalog');
+    const resolved = await loadResolvedCatalog();
+    const ado = resolved.byId.get('shared/ado');
+    assert.ok(ado);
+    const target = getTarget('copilot');
+    assert.ok(target.mcpEnvCaveat);
+    const lines: string[] = [];
+    const original = console.warn;
+    console.warn = (msg: string) => void lines.push(msg);
+
+    // Act
+    try {
+      warnMcpEnvCaveats(
+        [
+          { id: 'shared/ado', artifact: ado },
+          { id: 'shared/ado-copy', artifact: ado },
+        ],
+        target,
+      );
+    } finally {
+      console.warn = original;
+    }
+
+    // Assert
+    const text = lines.join('\n');
+    assert.equal(text.split(target.mcpEnvCaveat).length - 1, 1, text);
+    assert.ok(text.includes('shared/ado-copy'), text);
   });
 });
 

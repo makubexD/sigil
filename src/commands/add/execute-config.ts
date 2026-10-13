@@ -156,7 +156,6 @@ async function installOneConfigArtifact(
   if (!artifact) return NOTHING_WRITTEN;
   try {
     const result = await scaffoldAndApplyConfig(id, artifact, ctx);
-    if (result.written > 0) warnMcpEnvCaveat(id, artifact, ctx.target);
     return result;
   } catch (err) {
     console.error(`✗ Failed to install config artifact '${id}': ${(err as Error).message}`);
@@ -164,16 +163,26 @@ async function installOneConfigArtifact(
   }
 }
 
-/** Prints the target's {@link Target.mcpEnvCaveat} for a server that reads environment variables. */
-export function warnMcpEnvCaveat(
-  id: string,
-  artifact: Pick<ResolvedArtifact, 'kind' | 'frontmatter'>,
-  target: Target,
-): void {
-  if (!target.mcpEnvCaveat || artifact.kind !== 'mcp') return;
-  const names = envTokenNames(artifact.frontmatter.server);
-  if (names.length === 0) return;
-  console.warn(`  ⚠  ${id} reads ${names.join(', ')} from the environment. ${target.mcpEnvCaveat}`);
+/** A config artifact that was just written, for {@link warnMcpEnvCaveats}. */
+export interface WrittenConfig {
+  id: string;
+  artifact: Pick<ResolvedArtifact, 'kind' | 'frontmatter'>;
+}
+
+/**
+ * Names each written MCP server that reads environment variables, then prints the target's
+ * {@link Target.mcpEnvCaveat} once for all of them.
+ */
+export function warnMcpEnvCaveats(written: WrittenConfig[], target: Target): void {
+  if (!target.mcpEnvCaveat) return;
+  let warned = false;
+  for (const { id, artifact } of written) {
+    const names = artifact.kind === 'mcp' ? envTokenNames(artifact.frontmatter.server) : [];
+    if (names.length === 0) continue;
+    console.warn(`  ⚠  ${id} reads ${names.join(', ')} from the environment.`);
+    warned = true;
+  }
+  if (warned) console.warn(`     ${target.mcpEnvCaveat}`);
 }
 
 /** Warns that the target does not support config-kind installs, for each unsupported id. */
@@ -198,12 +207,16 @@ async function installAllConfigArtifacts(
   let configWrittenCount = 0;
   let manifestDirty = false;
   const merged: string[] = [];
+  const written: WrittenConfig[] = [];
   for (const id of configIds) {
     const result = await installOneConfigArtifact(id, ctx);
+    const artifact = ctx.resolved.byId.get(id);
+    if (result.written > 0 && artifact) written.push({ id, artifact });
     configWrittenCount += result.written;
     merged.push(...result.merged);
     if (result.upserted) manifestDirty = true;
   }
+  warnMcpEnvCaveats(written, ctx.target);
   return { configWrittenCount, manifestDirty, merged };
 }
 

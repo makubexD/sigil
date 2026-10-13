@@ -108,5 +108,6 @@ the frozen install, `sync --check` and the CI validators. Everything below runs 
 
 **3. Release and close-out**
 
+- [ ] Fresh full audit of `master` before the release: `cli-auditor`, `wizard-auditor` and the skill evals (last full run 2026-10-07; PRs #49-#51 merged since). Record results under `docs/audits/`
 - [ ] ⚠ Release minor (one release covering M1-M4 and the work after; includes the breaking ADO env vars). Needs: the npm package name (`sigil` was unpublished by someone else in 2024; maybe a scoped name) and the first manual publish from the owner's npm account
 - [ ] Phase 6 close-out

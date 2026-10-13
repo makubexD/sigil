@@ -19,7 +19,7 @@ import type { ResolvedCatalog, Target } from '../types';
 import { SigilError } from '../errors';
 import { applyConfigEntry, isConfigEntry } from './update-config';
 import { isAtRetiredDestination, moveRetiredFragments } from './update-config-move';
-import { inlinedDependencies } from './shared/inlined-deps';
+import { inlinedDependencies, inlinedNotice } from './shared/inlined-deps';
 import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
@@ -81,12 +81,12 @@ function printUpdateSummary(
 function printInlinedNotice(manifest: Manifest, target: Target, resolved: ResolvedCatalog): void {
   const entries = manifest.entries.filter(e => e.target === target.name);
   const { removable, unconfirmed } = inlinedDependencies(entries, target, resolved);
-  const ids = [...removable, ...unconfirmed].map(e => e.id);
-  if (ids.length === 0) return;
-  console.error(
-    `  ${ids.length} installed artifact(s) are now inlined in the skill that uses them`,
+  const lines = inlinedNotice(
+    removable.map(e => e.id),
+    unconfirmed.map(e => e.id),
   );
-  console.error(`  and load twice: ${ids.join(', ')}. Run \`sigil prune\` to review the copies.`);
+  if (lines.length === 0) return;
+  for (const line of lines) console.error(line);
   console.error('');
 }
 

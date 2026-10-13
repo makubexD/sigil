@@ -47,7 +47,10 @@ function recordAsDependencies(
   const viaOf = new Map(missing.map(dep => [dep.id, [...dep.via]]));
   const isNew = (e: { id: string; target: string }) => e.target === target.name && viaOf.has(e.id);
   const added = manifest.entries.filter(isNew);
-  for (const entry of added) entry.dependentOf = viaOf.get(entry.id)!;
+  for (const entry of added) {
+    entry.dependentOf = viaOf.get(entry.id)!;
+    entry.picked = false;
+  }
   const rest = manifest.entries.filter(entry => !isNew(entry));
   const firstConfig = rest.findIndex(entry => entry.target === target.name && isConfigEntry(entry));
   const at = firstConfig === -1 ? rest.length : firstConfig;

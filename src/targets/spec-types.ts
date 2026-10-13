@@ -75,7 +75,7 @@ export interface BodySectionSpec {
    * provider would load the same text twice (docs/audits/2026-10-12). Read it only through
    * `inlinesDependency` / `isInstallableDependency` (capabilities.ts).
    */
-  readonly inlines?: ArtifactKind;
+  readonly inlines?: 'rule';
 }
 
 /** The full declarative emission contract for one (provider, kind[, variant]) pair. */

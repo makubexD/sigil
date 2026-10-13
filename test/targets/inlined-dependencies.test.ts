@@ -45,7 +45,7 @@ describe('inlined dependencies', () => {
 });
 
 describe('inlinedDependencies (prune / update)', () => {
-  const entry = (id: string, kind: string, dependentOf: string[]) =>
+  const entry = (id: string, kind: string, dependentOf: string[], picked?: boolean) =>
     ({
       id,
       kind,
@@ -54,25 +54,44 @@ describe('inlinedDependencies (prune / update)', () => {
       dependentOf,
       sigilVersion: '0',
       installedAt: '',
+      ...(picked === undefined ? {} : { picked }),
     }) as never;
+  const NONE = { removable: [], unconfirmed: [] };
+  const ids = (found: { removable: { id: string }[]; unconfirmed: { id: string }[] }) => ({
+    removable: found.removable.map(e => e.id),
+    unconfirmed: found.unconfirmed.map(e => e.id),
+  });
 
-  it('flags a rule its installed parent still inlines', async () => {
+  it('removes a rule installed only for a parent that still inlines it', async () => {
+    const resolved = await loadResolvedCatalog();
+    const entries = [entry(SKILL, 'skill', [], true), entry(RULE, 'rule', [SKILL], false)];
+    const found = inlinedDependencies(entries, getTarget('copilot'), resolved);
+    assert.deepEqual(ids(found), { removable: [RULE], unconfirmed: [] });
+  });
+
+  it('keeps a rule the user picked, even when a skill also inlines it', async () => {
+    const resolved = await loadResolvedCatalog();
+    const entries = [entry(SKILL, 'skill', [], true), entry(RULE, 'rule', [SKILL], true)];
+    assert.deepEqual(ids(inlinedDependencies(entries, getTarget('copilot'), resolved)), NONE);
+  });
+
+  it('only reports a rule from a manifest that predates the picked field', async () => {
     const resolved = await loadResolvedCatalog();
     const entries = [entry(SKILL, 'skill', []), entry(RULE, 'rule', [SKILL])];
-    const ids = inlinedDependencies(entries, getTarget('copilot'), resolved).map(e => e.id);
-    assert.deepEqual(ids, [RULE]);
+    const found = inlinedDependencies(entries, getTarget('copilot'), resolved);
+    assert.deepEqual(ids(found), { removable: [], unconfirmed: [RULE] });
   });
 
   it('keeps a rule whose parent no longer lists it in uses.rules', async () => {
     const resolved = await loadResolvedCatalog();
     const other = 'shared/clean-code';
-    const entries = [entry(SKILL, 'skill', []), entry(other, 'rule', [SKILL])];
-    assert.deepEqual(inlinedDependencies(entries, getTarget('copilot'), resolved), []);
+    const entries = [entry(SKILL, 'skill', [], true), entry(other, 'rule', [SKILL], false)];
+    assert.deepEqual(ids(inlinedDependencies(entries, getTarget('copilot'), resolved)), NONE);
   });
 
   it('keeps every rule on a target that installs rules as files', async () => {
     const resolved = await loadResolvedCatalog();
-    const entries = [entry(SKILL, 'skill', []), entry(RULE, 'rule', [SKILL])];
-    assert.deepEqual(inlinedDependencies(entries, getTarget('claude'), resolved), []);
+    const entries = [entry(SKILL, 'skill', [], true), entry(RULE, 'rule', [SKILL], false)];
+    assert.deepEqual(ids(inlinedDependencies(entries, getTarget('claude'), resolved)), NONE);
   });
 });

@@ -78,10 +78,11 @@ function printUpdateSummary(
 /** Points at `sigil prune` when an installed dependency is now carried inline by its parent. */
 function printInlinedNotice(manifest: Manifest, target: Target, resolved: ResolvedCatalog): void {
   const entries = manifest.entries.filter(e => e.target === target.name);
-  const ids = inlinedDependencies(entries, target, resolved).map(e => e.id);
+  const { removable, unconfirmed } = inlinedDependencies(entries, target, resolved);
+  const ids = [...removable, ...unconfirmed].map(e => e.id);
   if (ids.length === 0) return;
   console.log(`  ${ids.length} installed artifact(s) are now inlined in the skill that uses them`);
-  console.log(`  and load twice: ${ids.join(', ')}. Run sigil prune to remove the copies.`);
+  console.log(`  and load twice: ${ids.join(', ')}. Run sigil prune to review the copies.`);
   console.log('');
 }
 

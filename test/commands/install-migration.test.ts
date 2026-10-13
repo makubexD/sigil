@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runStatus } from '../../dist-cli/commands/status';
 import { runPrune } from '../../dist-cli/commands/prune';
+import { runUninstall } from '../../dist-cli/commands/uninstall';
 import { canonicalize } from '../../dist-cli/config-merge';
 import { loadManifest, saveManifest, sha256 } from '../../dist-cli/manifest';
 import { withTempDirAsync } from '../helpers/temp-dir';
@@ -66,6 +67,13 @@ function markRecordedHashStale(dir: string, relPath: string): void {
   const file = manifest.entries.flatMap(e => e.files).find(f => f.path === relPath);
   assert.ok(file, `${relPath} is not in the frozen manifest`);
   file.sha256 = STALE_HASH;
+  saveManifest(dir, manifest);
+}
+
+/** Drops the `picked` field from every manifest entry in `dir`. */
+function stripPicked(dir: string): void {
+  const manifest = loadManifest(dir);
+  for (const entry of manifest.entries) delete entry.picked;
   saveManifest(dir, manifest);
 }
 
@@ -126,10 +134,24 @@ for (const target of TARGETS) {
         await add(fresh, target, FULL_SELECTION);
         restoreFrozen(old, target);
         await update(old, target);
-        // Rules a Copilot skill now inlines were installed as files too; prune removes the copies.
-        await captureJson(() =>
-          runPrune({ ...options(old, target), apply: true, yes: true, force: false, json: true }),
+        // Rules a Copilot skill now inlines were installed as files too. This manifest predates
+        // `picked`, so prune only reports the copies; the user removes them as its hint says.
+        const report = await captureJson<{ inlinedUnconfirmed: { id: string }[] }>(() =>
+          runPrune({ ...options(old, target), apply: false, yes: false, force: false, json: true }),
         );
+        const copies = report.inlinedUnconfirmed.map(e => e.id);
+        if (copies.length > 0) {
+          await runUninstall(copies, {
+            projectDir: old,
+            target,
+            yes: true,
+            force: false,
+            dryRun: false,
+          });
+        }
+        // The fresh manifest records `picked`; the old one can't know it for every entry.
+        stripPicked(fresh);
+        stripPicked(old);
         assert.deepEqual(treeDiff(hashTree(fresh), hashTree(old)), []);
       });
     });
@@ -209,7 +231,7 @@ for (const target of TARGETS) {
       });
     }
 
-    it('should prune only inlined copies and name the replacement of a deprecated install', async () => {
+    it('should report, not remove, inlined copies an old manifest cannot attribute', async () => {
       await withTempDirAsync(async dir => {
         restoreFrozen(dir, target);
         const entries = loadManifest(dir).entries;
@@ -219,22 +241,25 @@ for (const target of TARGETS) {
         const report = await captureJson<{
           orphaned: unknown[];
           inlined: { id: string }[];
+          inlinedUnconfirmed: { id: string }[];
           deprecated: unknown[];
         }>(() =>
           runPrune({ ...options(dir, target), apply: true, yes: true, force: false, json: true }),
         );
         assert.deepEqual(report.orphaned, []);
-        const inlined = report.inlined.map(e => e.id).sort();
-        // Copilot's skill spec inlines used rules (docs/audits/2026-10-12); Claude's scaffold doesn't.
-        const expectInlined =
+        // The frozen manifest predates `picked`, so it can't tell an explicit pick from a pure
+        // dependency: prune lists the copies Copilot's skill spec inlines and keeps them.
+        assert.deepEqual(report.inlined, []);
+        const unconfirmed = report.inlinedUnconfirmed.map(e => e.id).sort();
+        const expectUnconfirmed =
           target === 'copilot'
             ? ['csharp/cs-testing', 'shared/cli-rules', 'typescript/ts-conventions']
             : [];
-        assert.deepEqual(inlined, expectInlined);
+        assert.deepEqual(unconfirmed, expectUnconfirmed);
         const deprecated = JSON.stringify(report.deprecated);
         assert.equal(/shared\/allow-dev-tools/.test(deprecated), hasDeprecated, deprecated);
         if (hasDeprecated) assert.match(deprecated, /typescript\/ts-allow-dev-tools/);
-        assert.equal(loadManifest(dir).entries.length, before - expectInlined.length);
+        assert.equal(loadManifest(dir).entries.length, before);
       });
     });
   });

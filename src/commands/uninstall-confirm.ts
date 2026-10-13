@@ -6,7 +6,7 @@
  */
 import { confirm, isCancel, log, note, select } from '../wizard/prompts';
 import { cancel } from '../wizard/frame';
-import { printRepeatCommand } from '../wizard/command-strings';
+import { locationFlags, printRepeatCommand } from '../wizard/command-strings';
 import { isInteractiveTTY } from '../wizard';
 import { SigilError } from '../errors';
 
@@ -99,19 +99,23 @@ export async function confirmUninstall(
   return (await promptUninstallConfirmation(ids, targetName)) ? { force } : null;
 }
 
+/** Where a guided command ran: the target and the project folder its equivalent must name. */
+export interface CommandLocation {
+  target?: string | undefined;
+  projectDir?: string | undefined;
+}
+
 /** The command that repeats a guided removal in a script: it carries what was confirmed and chosen. */
-function equivalentUninstall(ids: string[], force: boolean, target?: string): string {
-  const parts = [
-    'sigil uninstall',
-    ...ids,
-    '--yes',
-    force ? '--force' : '',
-    target ? `--target ${target}` : '',
-  ];
-  return parts.filter(Boolean).join(' ');
+export function equivalentUninstall(ids: string[], force: boolean, where: CommandLocation): string {
+  const parts = ['sigil uninstall', ...ids, '--yes', force ? '--force' : ''];
+  return [...parts, ...locationFlags(where)].filter(Boolean).join(' ');
 }
 
 /** Logs the command that repeats a guided removal; call it only after the user confirmed. */
-export function logEquivalentUninstall(ids: string[], force: boolean, target?: string): void {
-  printRepeatCommand('Equivalent command:', equivalentUninstall(ids, force, target));
+export function logEquivalentUninstall(
+  ids: string[],
+  force: boolean,
+  where: CommandLocation,
+): void {
+  printRepeatCommand('Equivalent command:', equivalentUninstall(ids, force, where));
 }

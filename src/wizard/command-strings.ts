@@ -3,6 +3,7 @@
  *
  * These are pure functions (or thin console wrappers) with no I/O side effects.
  */
+import path from 'path';
 import pc from 'picocolors';
 import { copyableLine } from './frame';
 import { SHELLS, detectShell, withLauncher } from '../invocation';
@@ -24,6 +25,26 @@ export interface EquivalentCommandOptions {
   /** True when the install includes at least one mcp/hook/settings artifact. When set,
    *  --scope is always emitted (even for the 'project' default) to pin the destination. */
   hasConfigKinds?: boolean | undefined;
+}
+
+/** A path every shell takes as one plain word; anything else is double-quoted, which PowerShell, cmd
+ * and bash all read literally unless it holds a dollar sign, a backtick, `"`, `%` or `!`. */
+const PLAIN_PATH = /^[\w./:-]+$/;
+
+/**
+ * `--target` and `--project-dir` for a guided command's equivalent, so it runs against the same
+ * project from anywhere. The folder is left out when it is the current one.
+ */
+export function locationFlags(where: {
+  target?: string | undefined;
+  projectDir?: string | undefined;
+}): string[] {
+  const flags = where.target ? [`--target ${where.target}`] : [];
+  const dir = where.projectDir === undefined ? undefined : path.resolve(where.projectDir);
+  if (dir !== undefined && dir !== process.cwd()) {
+    flags.push(`--project-dir ${PLAIN_PATH.test(dir) ? dir : `"${dir}"`}`);
+  }
+  return flags;
 }
 
 /** Builds the `--scope <value>` flag, pinning it whenever config kinds are involved. */

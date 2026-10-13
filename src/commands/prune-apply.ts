@@ -116,6 +116,18 @@ function writeRemoval(
   return configRemovedCount;
 }
 
+/** The edited files an apply would delete with `--force`, computed on a copy of the manifest. */
+export function editedFilesToDelete(
+  manifest: ReturnType<typeof requireManifest>,
+  candidates: PruneCandidates,
+  ctx: { targetName: string; projectDir: string },
+): string[] {
+  const ids = removableEntries(candidates).map(e => e.id);
+  const copy = structuredClone(manifest);
+  const { pathsToDelete, removedEntries } = removeEntries(copy, ids, ctx.targetName);
+  return findDriftedPaths(pathsToDelete, removedEntries, ctx.projectDir);
+}
+
 /** Removes every removable entry's files + config merges. Mirrors runUninstall's apply path. */
 function performRemoval(
   manifest: ReturnType<typeof requireManifest>,

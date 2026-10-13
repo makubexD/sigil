@@ -53,3 +53,11 @@ Metrics (tokens / tool calls / seconds):
 - W2: 111.0k / 30 / 289
 - W4: 118.1k / 32 / 349
 - W6: 70.8k / 4 / 52
+
+## Pre-release re-run 2026-10-13 (`docs/audits/2026-10-13`)
+
+The skill and auditor were unchanged since 2026-10-07, so this run confirms there is no regression.
+
+| Scenario | Result | Notes                                                                                                                                          |
+| -------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| W3 audit | pass   | 11/11 with evidence, 0 invented, 3 real extras; readiness scan included; no edits, fixture sha256 unchanged; 78.0k tokens, 8 tool calls, 78 s. |

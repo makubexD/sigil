@@ -384,18 +384,20 @@ sigil prune
 ```
 
 ```
-✓ Nothing to prune — no orphaned or deprecated artifacts installed.
+✓ Nothing to prune — no orphaned, inlined or deprecated artifacts installed.
 ```
 
 `prune` handles artifacts that no longer exist in the catalog (for example after you upgrade sigil
-and the catalog dropped one). It only previews until you add `--apply`. When something is orphaned,
+and the catalog dropped one), and dependency files a skill already carries inline (loaded twice).
+An inline copy from an install older than sigil's record of your picks is only reported, since you
+may have picked it; remove it with `sigil uninstall <id>` if you did not. It only previews until you add `--apply`. When something is orphaned,
 the preview looks like this:
 
 ```
 1 orphaned artifact(s) — no longer in the bundled catalog:
   ✗  csharp/gone-rule
 
-Run `sigil prune --apply` to remove the orphaned artifact(s).
+Run `sigil prune --apply` to remove the artifact(s) listed above.
 ```
 
 `sigil prune --apply --yes` then removes the entry and its files (still protecting files you edited

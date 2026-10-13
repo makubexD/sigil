@@ -1,6 +1,7 @@
 /**
  * `sigil prune` — cleanup command for a consumer project's manifest: removes orphaned entries
- * (ids no longer in the bundled catalog) and reports deprecated-but-installed ones. Preview by
+ * (ids no longer in the bundled catalog) and dependency copies every installed parent already
+ * carries inline; reports deprecated-but-installed ones and inline copies that may have been picked. Preview by
  * default, like `sigil sync` — bare `sigil prune` reports and writes nothing; `--apply` writes.
  *
  * Reuses the same plumbing `sigil uninstall` (uninstall.ts) already established: `removeEntries`
@@ -40,7 +41,20 @@ export interface PruneCandidates {
   orphaned: ManifestEntry[];
   /** Dependencies installed as files that every installed parent now carries inline. */
   inlined: ManifestEntry[];
+  /** Inlined copies from a manifest too old to say they weren't picked: reported, never removed. */
+  inlinedUnconfirmed: ManifestEntry[];
   deprecated: { entry: ManifestEntry; info: Deprecated }[];
+}
+
+/** The entries whose catalog artifact carries `deprecated:`, with that info. */
+function deprecatedEntries(
+  live: ManifestEntry[],
+  deprecatedById: Map<string, Deprecated>,
+): PruneCandidates['deprecated'] {
+  return live.flatMap(entry => {
+    const info = deprecatedById.get(entry.id);
+    return info ? [{ entry, info }] : [];
+  });
 }
 
 /** Splits one target's manifest entries into orphaned (id gone from catalog), inlined (see
@@ -58,12 +72,18 @@ function findCandidates(
   const live = own.filter(e => catalogIds.has(e.id));
   const orphaned = own.filter(e => !catalogIds.has(e.id));
   const inlined = inlinedDependencies(live, getTarget(targetName), catalog);
-  const deprecated: { entry: ManifestEntry; info: Deprecated }[] = [];
-  for (const entry of live) {
-    const info = deprecatedById.get(entry.id);
-    if (info) deprecated.push({ entry, info });
-  }
-  return { orphaned, inlined, deprecated };
+  const deprecated = deprecatedEntries(live, deprecatedById);
+  return {
+    orphaned,
+    inlined: inlined.removable,
+    inlinedUnconfirmed: inlined.unconfirmed,
+    deprecated,
+  };
+}
+
+/** One entry's id and installed paths, as the JSON report lists it. */
+function entryFiles(e: ManifestEntry): { id: string; files: string[] } {
+  return { id: e.id, files: e.files.map(f => f.path) };
 }
 
 /** Renders the JSON report for both `--apply` and preview modes. */
@@ -72,8 +92,9 @@ function printJsonReport(candidates: PruneCandidates, applied: boolean): void {
     JSON.stringify(
       {
         applied,
-        orphaned: candidates.orphaned.map(e => ({ id: e.id, files: e.files.map(f => f.path) })),
-        inlined: candidates.inlined.map(e => ({ id: e.id, files: e.files.map(f => f.path) })),
+        orphaned: candidates.orphaned.map(entryFiles),
+        inlined: candidates.inlined.map(entryFiles),
+        inlinedUnconfirmed: candidates.inlinedUnconfirmed.map(entryFiles),
         deprecated: candidates.deprecated.map(({ entry, info }) => ({
           id: entry.id,
           since: info.since,
@@ -103,6 +124,16 @@ function printInlinedSection(inlined: ManifestEntry[]): void {
   console.log('');
 }
 
+function printUnconfirmedSection(unconfirmed: ManifestEntry[]): void {
+  if (unconfirmed.length === 0) return;
+  console.log(
+    `${unconfirmed.length} artifact(s) also carried inline, kept because this install predates ` +
+      'sigil recording your picks — remove one yourself with `sigil uninstall <id>` if you did not pick it:',
+  );
+  for (const e of unconfirmed) console.log(`  !  ${e.id}  (in ${e.dependentOf.join(', ')})`);
+  console.log('');
+}
+
 function printDeprecatedSection(deprecated: PruneCandidates['deprecated']): void {
   if (deprecated.length === 0) return;
   console.log(`${deprecated.length} deprecated artifact(s) still installed:`);
@@ -127,15 +158,16 @@ function nextStepsLine(hasRemovable: boolean, askingNow: boolean): string {
 
 /** Prints the preview report (bare `sigil prune`, no `--apply`). */
 function printPreview(candidates: PruneCandidates, askingNow: boolean): void {
-  const { orphaned, inlined, deprecated } = candidates;
+  const { orphaned, inlined, inlinedUnconfirmed, deprecated } = candidates;
   const removable = removableEntries(candidates).length;
-  if (removable === 0 && deprecated.length === 0) {
+  if (removable === 0 && deprecated.length === 0 && inlinedUnconfirmed.length === 0) {
     console.log('\n✓ Nothing to prune — no orphaned, inlined or deprecated artifacts installed.\n');
     return;
   }
   console.log('');
   printOrphanedSection(orphaned);
   printInlinedSection(inlined);
+  printUnconfirmedSection(inlinedUnconfirmed);
   printDeprecatedSection(deprecated);
   console.log(nextStepsLine(removable > 0, askingNow));
   console.log('');

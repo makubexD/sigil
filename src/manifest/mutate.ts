@@ -38,6 +38,8 @@ interface EntryInput {
   kind: string;
   relPaths: string[];
   dependentOf: string[];
+  /** Whether the user picked this artifact (false: installed only as a dependency). */
+  picked: boolean;
   /** The template this artifact composed against, and its revision, at scaffold time. */
   template?: { id: string; revision: number } | undefined;
 }
@@ -54,6 +56,8 @@ function refreshExistingEntry(
   existing.installedAt = ctx.now;
   existing.template = input.template;
   mergeDependentOf(existing.dependentOf, input.dependentOf);
+  // A pick is never downgraded; a legacy entry (no field) stays unknown on a dependency upsert.
+  if (input.picked) existing.picked = true;
 }
 
 /** Builds a brand-new whole-file manifest entry for an id that isn't recorded yet. */
@@ -69,6 +73,7 @@ function buildNewEntry(
     sigilVersion: ctx.sigilVersion,
     files,
     dependentOf: input.dependentOf,
+    picked: input.picked,
     installedAt: ctx.now,
     template: input.template,
   };
@@ -118,6 +123,7 @@ function upsertPrimaryEntries(ctx: UpsertContext, options: UpsertEntriesOptions)
       kind: info.kind,
       relPaths: info.relPaths,
       dependentOf: [],
+      picked: true,
       template: info.template,
     });
   }
@@ -134,6 +140,7 @@ function upsertDependencyEntries(ctx: UpsertContext, options: UpsertEntriesOptio
       relPaths: info.relPaths,
       template: info.template,
       dependentOf: parents,
+      picked: false,
     });
   }
 }

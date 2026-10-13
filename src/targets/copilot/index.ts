@@ -96,7 +96,8 @@ export class CopilotTarget implements Target {
   /** Probed on VS Code 1.125.1 (docs/audits/2026-10-06): `${NAME}` reaches the server as text. */
   readonly mcpEnvCaveat =
     'VS Code Copilot Chat does not expand ${NAME} in .mcp.json; it passes the text as is ' +
-    '(Copilot CLI expands it). For VS Code, replace it with the value in your copy of the file.';
+    '(Copilot CLI expands it), so a server that needs that value will not get it there. Do not ' +
+    'write a secret into the file to work around it: the file is usually committed.';
   readonly retiredConfigDestinations: readonly RetiredConfigDestination[] =
     COPILOT_RETIRED_MCP_DESTINATIONS;
   /** Copilot reads project skills from .github/skills, .claude/skills and .agents/skills. */

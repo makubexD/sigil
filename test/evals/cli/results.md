@@ -67,3 +67,11 @@ Fixes made after this run:
 - **cli and wizard SKILL, build:** one slice at a time, and never write a slice's code before its test has failed (S3, W2).
 - **cli SKILL, refactor:** never several ids in one rewrite (S3).
 - **findings.md (cli and wizard):** cite a line only from a numbered read of that one file (W1).
+
+## Pre-release re-run 2026-10-13 (`docs/audits/2026-10-13`)
+
+The skill and auditor were unchanged since 2026-10-07, so this run confirms there is no regression.
+
+| Scenario | Result | Notes                                                                                                                                        |
+| -------- | ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| S1 audit | pass   | 12/12 with evidence, 0 invented, BREAKING held in the approval block; no edits, fixture sha256 unchanged; 79.7k tokens, 13 tool calls, 86 s. |

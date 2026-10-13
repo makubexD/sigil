@@ -7,9 +7,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runPrune } from '../../dist-cli/commands/prune';
+import { shouldOfferApply } from '../../dist-cli/commands/prune-guided';
 import { loadManifest, saveManifest, sha256 } from '../../dist-cli/manifest';
 import type { ManifestEntry } from '../../dist-cli/manifest/types';
-import { mockClack } from '../helpers/clack-mock';
+import { createRecorder, mockClack } from '../helpers/clack-mock';
 import type { MockAnswer } from '../helpers/clack-mock';
 import { fakeTTY } from '../helpers/tty';
 import { withTempDirAsync } from '../helpers/temp-dir';
@@ -34,7 +35,7 @@ function projectWithOrphan(dir: string): void {
   saveManifest(dir, { manifestVersion: 2, entries: [orphan] });
 }
 
-function options(dir: string, extra: { apply?: boolean; json?: boolean } = {}) {
+function options(dir: string, extra: { apply?: boolean; json?: boolean; force?: boolean } = {}) {
   return {
     projectDir: dir,
     target: 'claude',
@@ -52,9 +53,10 @@ async function inTerminal(
   dir: string,
   answers: MockAnswer[],
   extra: Parameters<typeof options>[1] = {},
+  recorder = createRecorder(),
 ): Promise<void> {
   const restoreTTY = fakeTTY();
-  const restore = mockClack(answers);
+  const restore = mockClack(answers, recorder);
   try {
     await runPrune(options(dir, extra));
   } finally {
@@ -101,6 +103,31 @@ describe('runPrune in a terminal', () => {
     });
   });
 
+  it('should name the edited files --force will delete before asking', async () => {
+    await withTempDirAsync(async dir => {
+      projectWithOrphan(dir);
+      fs.writeFileSync(path.join(dir, ORPHAN_FILE), 'edited by hand\n');
+      const rec = createRecorder();
+      await inTerminal(dir, [false], { force: true }, rec);
+      assert.ok(
+        rec.logs.some(l => l.startsWith('warn:') && l.includes(ORPHAN_FILE)),
+        rec.logs.join('\n'),
+      );
+      assert.equal(fs.existsSync(path.join(dir, ORPHAN_FILE)), true);
+    });
+  });
+
+  it('should not warn about edited files without --force', async () => {
+    await withTempDirAsync(async dir => {
+      projectWithOrphan(dir);
+      fs.writeFileSync(path.join(dir, ORPHAN_FILE), 'edited by hand\n');
+      const rec = createRecorder();
+      await inTerminal(dir, [true], {}, rec);
+      assert.ok(!rec.logs.some(l => l.includes(ORPHAN_FILE)), rec.logs.join('\n'));
+      assert.equal(fs.existsSync(path.join(dir, ORPHAN_FILE)), true);
+    });
+  });
+
   it('should stay a read-only preview for --json', async () => {
     await withTempDirAsync(async dir => {
       projectWithOrphan(dir);
@@ -143,5 +170,37 @@ describe('runPrune preview wording', () => {
 
   it('should still tell a script how to apply it', async () => {
     assert.match(await previewText([], false), /sigil prune --apply/);
+  });
+});
+
+describe('shouldOfferApply', () => {
+  const INLINED_ONLY = {
+    orphaned: [],
+    inlined: [{ id: 'shared/clean-code' } as ManifestEntry],
+    inlinedUnconfirmed: [],
+    deprecated: [],
+  };
+  const UNCONFIRMED_ONLY = {
+    ...INLINED_ONLY,
+    inlined: [],
+    inlinedUnconfirmed: INLINED_ONLY.inlined,
+  };
+
+  it('should offer to apply when only inlined copies would be removed', () => {
+    const restoreTTY = fakeTTY();
+    try {
+      assert.equal(shouldOfferApply(options('.'), INLINED_ONLY), true);
+    } finally {
+      restoreTTY();
+    }
+  });
+
+  it('should not offer to apply when the inlined copies are only reported', () => {
+    const restoreTTY = fakeTTY();
+    try {
+      assert.equal(shouldOfferApply(options('.'), UNCONFIRMED_ONLY), false);
+    } finally {
+      restoreTTY();
+    }
   });
 });

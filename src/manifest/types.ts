@@ -47,6 +47,12 @@ export interface ManifestEntry {
   configFiles?: ManifestConfigMerge[];
   /** IDs of primary picks that pulled this in via `uses:`. Empty for direct picks. */
   dependentOf: string[];
+  /**
+   * True when the user picked this artifact, false when it was installed only as a dependency.
+   * Absent on entries recorded before this field existed (additive — no MANIFEST_VERSION bump):
+   * an empty `dependentOf` alone can't say, because a later `uses:` parent appends to it.
+   */
+  picked?: boolean | undefined;
   installedAt: string; // ISO timestamp (stamped by CLI layer)
   /**
    * The `template:` this artifact composed against at install/update time, and that template's

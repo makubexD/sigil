@@ -324,6 +324,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sigil update` repeats the VS Code warning about `${NAME}` in `.mcp.json` when it rewrites a server
+  that reads environment variables, and its "now inlined" notice goes to stderr.
+- The `Equivalent command:` that guided `prune`, `init`, `uninstall` and `update` print now repeats
+  what ran: `--force`, `--target`, and `--project-dir` when the project is not the current folder.
+  The guided prune with `--force` names the edited files it would delete before asking.
+- GitHub Copilot loaded a rule twice when a skill used it: once inlined in the skill's `SKILL.md` and
+  once as the rule's own `.instructions.md`. `add` no longer writes the rule file on Copilot, and
+  `sigil prune --apply` removes the copies earlier installs wrote. The manifest now records which
+  artifacts you picked (`picked`), so `prune` removes only copies installed as a dependency. An
+  install from before this change cannot tell, so `prune` lists its copies as
+  `inlinedUnconfirmed` in `--json` and keeps them: remove one with `sigil uninstall <id>` if you
+  did not pick it.
 - `shared/allow-dev-tools` allowed npm commands only, yet shipped in the .NET and Python starter
   packs. It is deprecated (superseded by the per-language settings); `sigil prune` names the
   replacement for an existing install.

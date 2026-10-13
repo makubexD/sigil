@@ -303,19 +303,20 @@ Options:
 Usage: sigil prune [options]
 
 Report (default) / --apply (write) cleanup of a project's manifest: removes
-orphaned artifacts (no longer in the bundled catalog) and reports
-deprecated-but-installed ones.
+orphaned artifacts (no longer in the bundled catalog) and dependency copies a
+skill already carries inline; reports deprecated ones and inline copies you may
+have picked.
 
 Options:
   --project-dir <dir>  Consumer project root (default: <cwd>)
   --target <name>      Target platform (auto-detected if omitted)
   --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
-  --apply              Remove orphaned artifacts (preview-only without this
-                       flag) (default: false)
+  --apply              Remove orphaned and inlined artifacts (preview-only
+                       without this flag) (default: false)
   --yes                Skip confirmation prompt (default: false)
-  --force              Remove even drifted (user-modified) orphaned files
-                       (default: false)
+  --force              Remove even drifted (user-modified) files of the pruned
+                       artifacts (default: false)
   --json               Output as JSON (default: false)
   -h, --help           display help for command
 ```

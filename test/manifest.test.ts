@@ -121,9 +121,61 @@ describe('H — Manifest (manifest.ts)', () => {
       const primaryEntry = manifest.entries.find((e: any) => e.id === 'csharp/cs-generate-tests');
       assert.ok(primaryEntry, 'primary entry recorded');
       assert.deepEqual(primaryEntry.dependentOf, [], 'primary has empty dependentOf');
+      assert.equal(primaryEntry.picked, true, 'primary recorded as picked');
+      assert.equal(depEntry.picked, false, 'dependency recorded as not picked');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
+  });
+
+  it('upsertEntries keeps an explicit pick picked once a skill also depends on it', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    const filesByArtifact = new Map<string, { relPaths: string[]; kind: string }>([
+      ['csharp/cs-generate-tests', { relPaths: [], kind: 'skill' }],
+      ['shared/clean-code', { relPaths: [], kind: 'rule' }],
+    ]);
+    const base = {
+      target: 'copilot',
+      filesByArtifact,
+      projectDir: '/fake',
+      sigilVersion: '0',
+      now: '',
+    };
+    const install = (primaryIds: string[], depMap: Map<string, string[]>) =>
+      upsertEntries(manifest as any, { ...base, primaryIds, depMap });
+
+    install(['shared/clean-code'], new Map());
+    install(
+      ['csharp/cs-generate-tests'],
+      new Map([['shared/clean-code', ['csharp/cs-generate-tests']]]),
+    );
+    const rule = manifest.entries.find((e: any) => e.id === 'shared/clean-code');
+    assert.equal(rule.picked, true);
+    assert.deepEqual(rule.dependentOf, ['csharp/cs-generate-tests']);
+  });
+
+  it('upsertEntries marks a dependency picked when the user later picks it', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    const filesByArtifact = new Map<string, { relPaths: string[]; kind: string }>([
+      ['csharp/cs-generate-tests', { relPaths: [], kind: 'skill' }],
+      ['shared/clean-code', { relPaths: [], kind: 'rule' }],
+    ]);
+    const base = {
+      target: 'copilot',
+      filesByArtifact,
+      projectDir: '/fake',
+      sigilVersion: '0',
+      now: '',
+    };
+    const install = (primaryIds: string[], depMap: Map<string, string[]>) =>
+      upsertEntries(manifest as any, { ...base, primaryIds, depMap });
+
+    install(
+      ['csharp/cs-generate-tests'],
+      new Map([['shared/clean-code', ['csharp/cs-generate-tests']]]),
+    );
+    install(['shared/clean-code'], new Map());
+    assert.equal(manifest.entries.find((e: any) => e.id === 'shared/clean-code').picked, true);
   });
 
   it('computeStatus: up-to-date when on-disk hash matches recorded hash', () => {

@@ -10,7 +10,8 @@ import { locationFlags, quotePath, wrapCommand } from '../../dist-cli/wizard/com
 import { equivalentPrune } from '../../dist-cli/commands/prune-guided';
 import { equivalentInit } from '../../dist-cli/commands/init-guided';
 import { equivalentUninstall } from '../../dist-cli/commands/uninstall-confirm';
-import { equivalentUpdate } from '../../dist-cli/commands/update-guided';
+import { equivalentUpdate, updateLocation } from '../../dist-cli/commands/update-guided';
+import { detectProjectTarget } from '../../dist-cli/cli-helpers';
 
 const HERE = process.cwd();
 const ELSEWHERE = path.join(HERE, 'my project');
@@ -112,5 +113,16 @@ describe('guided equivalent commands', () => {
       projectDir: ELSEWHERE,
     });
     assert.equal(cmd, `sigil update shared/git --yes --target claude ${QUOTED_ELSEWHERE}`);
+  });
+});
+
+describe('updateLocation', () => {
+  it('should name the detected target when none was given', () => {
+    const where = updateLocation({ projectDir: HERE });
+    assert.equal(where.target, detectProjectTarget(HERE));
+  });
+
+  it('should keep a target that was given', () => {
+    assert.equal(updateLocation({ projectDir: HERE, target: 'copilot' }).target, 'copilot');
   });
 });

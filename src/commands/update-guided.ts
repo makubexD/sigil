@@ -55,8 +55,8 @@ async function askChoice(canPick: boolean, editedFiles: number): Promise<Choice>
 
 /** Ids to update after the user picks "choose which": null when they cancel. */
 async function pickIds(opts: UpdateOptions): Promise<string[] | null> {
-  const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
-  const entries = requireManifest(opts.projectDir).entries.filter(e => e.target === targetName);
+  const { target } = updateLocation(opts);
+  const entries = requireManifest(opts.projectDir).entries.filter(e => e.target === target);
   const message = 'Which artifacts do you want to update?';
   return pickInstalled({ entries, projectDir: opts.projectDir, message });
 }
@@ -81,6 +81,14 @@ export function equivalentUpdate(ids: string[], force: boolean, where: CommandLo
   return [...parts, ...locationFlags(where)].filter(Boolean).join(' ');
 }
 
+/** Where a guided update runs: the folder, and the target, detected when none was given. */
+export function updateLocation(
+  opts: Pick<UpdateOptions, 'projectDir' | 'target'>,
+): CommandLocation {
+  const target = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
+  return { target, projectDir: opts.projectDir };
+}
+
 export async function runGuidedUpdate(
   ids: string[],
   opts: UpdateOptions,
@@ -97,6 +105,6 @@ export async function runGuidedUpdate(
   const chosen = choice === 'pick' ? await pickIds(opts) : ids;
   if (!chosen) return;
   const force = opts.force || choice === 'force';
-  printRepeatCommand('Equivalent command:', equivalentUpdate(chosen, force, opts));
+  printRepeatCommand('Equivalent command:', equivalentUpdate(chosen, force, updateLocation(opts)));
   await apply(chosen, { ...opts, force, dryRun: false, yes: true });
 }

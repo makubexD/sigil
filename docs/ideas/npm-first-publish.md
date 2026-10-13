@@ -6,6 +6,12 @@ Publish sigil to npm so `npx sigil` and `npm install -g sigil` work without a cl
 the existing tag-triggered Trusted Publishing workflow for later releases. Output: a public
 package whose `bin` is `sigil`; no per-target output.
 
+## Release scope
+
+The first publish is one minor release covering milestones M1-M4 and everything merged after them
+(through PR #55), including the breaking ADO env-var change in `CHANGELOG.md`. Its gate, a full
+audit of `master`, passed on 2026-10-13 ([audit](../audits/2026-10-13/README.md)).
+
 ## Evidence
 
 - `package.json:2` name `sigil`; `:27` `bin` -> `./dist-cli/cli.js`; `:40` `files` includes

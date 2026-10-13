@@ -12,7 +12,7 @@ import { expandEnvTokens } from '../../dist-cli/targets/env-reference';
 import { getAllTargets } from '../../dist-cli/targets';
 import matter from 'gray-matter';
 import { withTempDirAsync } from '../helpers/temp-dir';
-import { CATALOG, add } from '../helpers/install-scenario';
+import { CATALOG, add, update } from '../helpers/install-scenario';
 
 const SYNTAX = { format: (name: string) => `<${name}>` } as const;
 
@@ -118,5 +118,31 @@ describe('mcpEnvCaveat wording', () => {
       assert.doesNotMatch(target.mcpEnvCaveat, /replace it with the value/i, target.name);
       assert.match(target.mcpEnvCaveat, /secret/i, target.name);
     }
+  });
+});
+
+describe('update and the MCP env caveat', () => {
+  it('should repeat the caveat when update rewrites a server that reads env vars', async () => {
+    await withTempDirAsync(async dir => {
+      // Arrange
+      await add(dir, 'copilot', ['mcp:shared/ado']);
+      fs.rmSync(path.join(dir, '.mcp.json'));
+      const lines: string[] = [];
+      const original = console.warn;
+      console.warn = (msg: string) => void lines.push(msg);
+
+      // Act
+      try {
+        await update(dir, 'copilot');
+      } finally {
+        console.warn = original;
+      }
+
+      // Assert
+      assert.ok(
+        lines.some(l => l.includes('ado reads')),
+        lines.join('\n'),
+      );
+    });
   });
 });

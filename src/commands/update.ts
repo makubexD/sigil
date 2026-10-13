@@ -24,6 +24,7 @@ import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
 import { installNewDependencies } from './update-deps';
+import { warnMcpEnvCaveat } from './add/execute-config';
 
 export { isFileDrifted } from './update-wholefile';
 
@@ -81,9 +82,11 @@ function printInlinedNotice(manifest: Manifest, target: Target, resolved: Resolv
   const { removable, unconfirmed } = inlinedDependencies(entries, target, resolved);
   const ids = [...removable, ...unconfirmed].map(e => e.id);
   if (ids.length === 0) return;
-  console.log(`  ${ids.length} installed artifact(s) are now inlined in the skill that uses them`);
-  console.log(`  and load twice: ${ids.join(', ')}. Run sigil prune to review the copies.`);
-  console.log('');
+  console.error(
+    `  ${ids.length} installed artifact(s) are now inlined in the skill that uses them`,
+  );
+  console.error(`  and load twice: ${ids.join(', ')}. Run \`sigil prune\` to review the copies.`);
+  console.error('');
 }
 
 /** Prints the "nothing to update" message when the entry filter matched zero entries. */
@@ -125,6 +128,8 @@ async function updateConfigOutcome(
   const wrote = moved.wrote || applied.wrote;
   const skipped = moved.skipped + applied.skipped;
   const pending = wrote && !!opts.dryRun;
+  const artifact = ctx.resolved.byId.get(entry.id);
+  if (wrote && !opts.dryRun && artifact) warnMcpEnvCaveat(entry.id, artifact, ctx.target);
   return { updated: wrote, pending, skippedDriftCount: skipped, orphaned: false };
 }
 

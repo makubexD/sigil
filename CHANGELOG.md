@@ -324,6 +324,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sigil update` repeats the VS Code warning about `${NAME}` in `.mcp.json` when it rewrites a server
+  that reads environment variables, and its "now inlined" notice goes to stderr.
 - The `Equivalent command:` that guided `prune`, `init`, `uninstall` and `update` print now repeats
   what ran: `--force`, `--target`, and `--project-dir` when the project is not the current folder.
   The guided prune with `--force` names the edited files it would delete before asking.

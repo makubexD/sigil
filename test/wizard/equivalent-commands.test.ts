@@ -6,7 +6,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'node:path';
-import { locationFlags } from '../../dist-cli/wizard/command-strings';
+import { locationFlags, quotePath, wrapCommand } from '../../dist-cli/wizard/command-strings';
 import { equivalentPrune } from '../../dist-cli/commands/prune-guided';
 import { equivalentInit } from '../../dist-cli/commands/init-guided';
 import { equivalentUninstall } from '../../dist-cli/commands/uninstall-confirm';
@@ -33,6 +33,49 @@ describe('locationFlags', () => {
   it('should quote a project folder elsewhere', () => {
     assert.deepEqual(locationFlags({ projectDir: ELSEWHERE }), [QUOTED_ELSEWHERE]);
   });
+});
+
+describe('quotePath', () => {
+  const CASES = [
+    ['posix', '/home/u/a$b', `'/home/u/a$b'`],
+    ['posix', `/home/u/it's`, `'/home/u/it'"'"'s'`],
+    ['posix', '/home/u/a`b!c', "'/home/u/a`b!c'"],
+    ['powershell', String.raw`C:\a$env b`, String.raw`'C:\a$env b'`],
+    ['powershell', String.raw`C:\it's`, String.raw`'C:\it''s'`],
+    ['powershell', String.raw`C:\a` + '`b', String.raw`'C:\a` + "`b'"],
+    ['cmd', String.raw`C:\x\%TEMP%y`, String.raw`"C:\x\"^%"TEMP"^%"y"`],
+    ['cmd', String.raw`C:\a!b`, String.raw`"C:\a"^!"b"`],
+  ] as const;
+  for (const [shell, dir, expected] of CASES) {
+    it(`should keep ${dir} literal in ${shell}`, () => {
+      assert.equal(quotePath(dir, shell), expected);
+    });
+  }
+
+  it('should double-quote a path with only spaces in every shell', () => {
+    for (const shell of ['posix', 'powershell', 'cmd'] as const) {
+      assert.equal(quotePath('/a b', shell), '"/a b"');
+    }
+  });
+
+  it('should keep a quoted path whole when a command wraps', () => {
+    const quoted = quotePath(`/x/it's a b`, 'posix');
+    const lines = wrapCommand(`sigil prune --project-dir ${quoted}`, 20, 'posix');
+    assert.ok(
+      lines.some(line => line.includes(quoted)),
+      lines.join('\n'),
+    );
+  });
+});
+
+describe('locationFlags on Windows', () => {
+  it(
+    'should treat the current folder in another case as the current folder',
+    { skip: process.platform !== 'win32' },
+    () => {
+      assert.deepEqual(locationFlags({ projectDir: HERE.toUpperCase() }), []);
+    },
+  );
 });
 
 describe('guided equivalent commands', () => {

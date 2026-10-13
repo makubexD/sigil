@@ -125,5 +125,12 @@ reference files, `languages/angular/skills/ng-add-package` only `SKILL.md`.
   every language until the engine learns to trim.
 - **A template for every family.** Most families share structure, not prose; heading-only templates
   would add indirection without removing duplication.
+- **A family alias map.** Families list their members explicitly, which already covers one concern
+  under several names (package-manager).
+- **Comparing templated members section by section.** Their template is their skeleton.
+- **Renaming packs to fit families.** A pack name is a plugin name; renaming one breaks installs.
+- **Churn with no reader value** (cut from the anatomy pass, 2026-10-06): renumbering step headings
+  (the skeleton check ignores numbers), moving H1s, frontmatter key order, a trailing-period rule,
+  and single-member families for base rules. Each would rewrite installed files.
 - **Renaming ids to match families** (package-manager, add-project). A renamed rule or skill leaves
   the old installed file loaded next to the new one; membership as data needs no rename.

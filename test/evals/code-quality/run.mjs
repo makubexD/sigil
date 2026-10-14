@@ -151,6 +151,11 @@ function claude(dir, task) {
   });
 }
 
+/** `runs/<records file name without .jsonl>/`: one `<task>-<run>/` folder of source per run. */
+function archiveDir() {
+  return out.replace(/\.jsonl$/, '');
+}
+
 async function one(task, run) {
   const dir = prepare(task, run);
   const meta = await claude(dir, task);
@@ -176,8 +181,12 @@ async function one(task, run) {
   // The run directory is a local path (user name included): printed, never recorded.
   const record = { ...JSON.parse(measured.stdout.trim().split(/\r?\n/).pop()), ...meta };
   appendFileSync(out, `${JSON.stringify(record)}\n`);
+  // Keep the produced source next to the records, for the judge and for later reading.
+  if (existsSync(join(dir, 'src'))) {
+    cpSync(join(dir, 'src'), join(archiveDir(), `${task}-${run}`), { recursive: true });
+  }
   console.log(
-    `${arm} ${task}#${run}: tests ${record.pass}/${record.pass + record.fail}, loc ${record.loc}, inflation ${record.inflation} (${dir})`,
+    `${arm} ${task}#${run}: tests ${record.pass}/${record.pass + record.fail}, loc ${record.loc}, declarations ${record.declarations}, inflation ${record.inflation} (${dir})`,
   );
 }
 

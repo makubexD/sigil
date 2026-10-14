@@ -33,3 +33,5 @@ docs/audits/2026-10-14/evidence/
 
 # Skill eval fixtures: planted-flaw sample projects, deliberately unidiomatic
 test/evals/*/fixture*/
+# Eval run records and archived agent-written source, kept as produced
+test/evals/*/runs/

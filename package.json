@@ -61,6 +61,7 @@
     "snapshot:update": "npm run build && npm run build:test && cross-env SIGIL_SNAPSHOT_UPDATE=1 node --test test-compiled/targets/output-snapshot.test.js",
     "validate": "node dist-cli/cli.js validate",
     "evals:check": "node scripts/check-skill-evals.mjs",
+    "rule-load": "node scripts/rule-load.cjs",
     "catalog:build": "node dist-cli/cli.js build",
     "validate:claude-plugins": "node scripts/validate-claude-plugins.cjs",
     "sigil": "node dist-cli/cli.js",

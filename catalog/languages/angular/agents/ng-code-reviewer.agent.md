@@ -62,7 +62,7 @@ For each changed or in-scope file, audit all applicable dimensions:
 
 **Correctness / logic** — Does the code do what it claims? Edge cases handled (empty arrays, `null`/`undefined`, zero, boundary values)?
 
-**Error handling** — Errors caught at the right level? Re-thrown with `{ cause }`? No empty `catch {}`, no silent `catchError(() => EMPTY)`?
+**Error handling** — Errors caught at the right level? Handled, or re-thrown with `{ cause }`? Log and continue only at a top-level boundary (global `ErrorHandler`, event handler). No empty `catch {}`, no silent `catchError(() => EMPTY)`?
 
 **Security** — Secrets in `environment.ts`/bundle/logs? `bypassSecurityTrust*` on untrusted input? Unsanitized `[innerHTML]`? URL/param built from user input without encoding/allowlist? (Surface here; deep audit → `ng-security-auditor`.)
 

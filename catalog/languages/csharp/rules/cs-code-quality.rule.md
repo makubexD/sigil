@@ -67,8 +67,8 @@ Chain exceptions with cause context using `throw new SpecificException("context"
 result — a typed `T?`, a `(T Value, string? Error)` tuple, or a small immutable `record` — with the
 contract documented; reserve exceptions for truly exceptional cases.
 
-Never swallow silently: catch the **narrowest** exception type possible; at every `catch` boundary
-either log with context or re-throw (preserving the inner exception). The anti-pattern to avoid:
+Never swallow silently: catch the **narrowest** exception type possible; re-throw with bare `throw;`
+(keeps the stack) or wrap with the original as `innerException`. The anti-pattern to avoid:
 `catch (Exception) { }` (or bare `catch { }`).
 
 Use `when` clauses to filter exceptions without unwrapping the stack: `catch (HttpException ex) when (ex.StatusCode == 404)`.

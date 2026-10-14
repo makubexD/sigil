@@ -4,16 +4,17 @@ kind: template
 title: "Language Code-Quality Rule"
 description: >-
   Shared skeleton for a language's `*-code-quality` rule: the SEARCH FIRST protocol and the
-  DRY/KISS/YAGNI triad are identical across languages (confirmed via body-shingle overlap analysis,
+  KISS/YAGNI pair are identical across languages (confirmed via body-shingle overlap analysis,
   docs/audits/2026-08-20/analysis/lane-d-duplication.json — the highest cross-language overlap in
-  the catalog, ~0.33-0.44). Structure limits, SOLID elaboration, layering, coupling, and design
+  the catalog, ~0.33-0.44). The duplication doctrine lives once, in the shared/clean-code base
+  every member extends (docs/audits/2026-10-14). Structure limits, SOLID elaboration, layering, coupling, and design
   patterns stay per-language slots because each language's idiom (exceptions vs cause chains,
   DI container vs constructor injection, project refs vs module imports) differs enough that
   forcing them into template prose would lose real information — see docs/decisions/
   catalog-quality-audit-2026-08.md's "what was and wasn't templatized" section.
 appliesToKind:
   - rule
-revision: 1
+revision: 2
 slots:
   - key: structure-limits
     required: true
@@ -75,8 +76,7 @@ is sufficient, ask before proceeding.
 ## Circular Dependencies and Coupling
 <!-- slot: coupling -->
 
-## DRY / KISS / YAGNI
-- **DRY**: Every piece of knowledge has a single, authoritative representation. Duplication is a bug.
+## KISS / YAGNI
 - **KISS**: The simplest solution that works is the correct one. Add complexity only when required.
 - **YAGNI**: Do not implement functionality until it is actually needed. Speculative generality adds debt.
 - **No premature optimization**: write the clear solution first; profile with `<!-- slot: perf-profiler-ref -->`
@@ -86,4 +86,8 @@ is sufficient, ask before proceeding.
 <!-- slot: design-patterns -->
 
 ## Error Handling
+Every catch either handles the error (recovers, or returns a typed error result) or rethrows it with
+the original attached as the cause. Log and continue only at a top-level boundary (request handler,
+command entry point, job runner, UI event handler), where the error stops travelling.
+
 <!-- slot: error-handling -->

@@ -61,7 +61,7 @@ For each changed or in-scope file, audit all applicable dimensions:
 
 **Async correctness** — `.Result`/`.Wait()`/`async void` usage? `CancellationToken` accepted and forwarded? `ConfigureAwait(false)` in library code? Sequential awaits on independent tasks?
 
-**Error handling** — Exceptions caught at the right level? Every `throw` preserves `innerException`? No silent swallows (`catch (Exception) { }` or bare `catch { }`)?
+**Error handling** — Exceptions caught at the right level? Every `throw` preserves `innerException`? Log and continue only at a top-level boundary (middleware, `Main`, background-service loop). No silent swallows (`catch (Exception) { }` or bare `catch { }`)?
 
 **Security** — Secrets hardcoded or logged? Unsanitized input passed to SQL, shell, `XmlReader`, or `eval`? Unsafe deserialization (`BinaryFormatter`, `TypeNameHandling.All`)? TLS verification disabled?
 

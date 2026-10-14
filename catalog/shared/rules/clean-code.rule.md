@@ -19,7 +19,7 @@ tags:
 - **No dead code.** Delete commented-out code; use version control to recover it if needed. Dead code obscures the live logic.
 - **Avoid magic numbers and strings.** Replace bare literals with named constants or enums so the meaning is clear at the call site.
 - **Handle errors explicitly.** Never silently swallow exceptions or return null to signal an error. Make failure visible and actionable.
-- **Keep it DRY but not over-abstracted.** Duplication is worse than a bad abstraction; over-abstraction is worse than mild duplication. Extract when you have three concrete examples of the same pattern.
+- **Duplicated knowledge, not duplicated text.** A wrong abstraction costs more than duplication. Tolerate a second copy of similar code; extract on the third, and only when the copies change for the same reason. Duplicated *knowledge* (a business rule, a constant, a schema) is a bug at the second copy: give it one home.
 - **Fail fast.** Validate inputs at the boundary (function entry, API surface, config load). Do not let invalid state propagate deep into the system.
 - **Consistent formatting.** Use the project's formatter/linter. Never debate formatting in code review — automate it.
-- **Legacy code is not a precedent.** New or changed code follows these rules even when the code around it does not. Never copy an existing violation for consistency; if a rule needs something the project lacks (a logger, a config value), add the smallest correct version of it.
+- **Legacy code is not a precedent.** New or changed code follows these rules even when the code around it does not. Never copy an existing violation for consistency. If a rule needs something the project lacks, such as logging or configuration, say so in your summary instead of adding infrastructure the task did not ask for.

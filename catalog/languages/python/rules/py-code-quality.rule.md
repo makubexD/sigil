@@ -70,7 +70,6 @@ traceback as `__cause__` for full diagnostic context. For recoverable paths, ret
 result (an `Optional[T]`, a small `dataclass`, or a `Result`-style union) with the contract
 documented in the docstring; reserve `raise` for truly exceptional cases.
 
-Never swallow silently: catch the **narrowest** exception type possible; at every `except` boundary
-either log with context or re-raise (`raise` bare inside `except` to preserve the traceback, or
-`raise NewError(...) from err` to add context). The anti-pattern to avoid: `except Exception: pass`
+Never swallow silently: catch the **narrowest** exception type possible; re-raise with a bare
+`raise` inside `except` (preserves the traceback) or `raise NewError(...) from err` to add context. The anti-pattern to avoid: `except Exception: pass`
 or a bare `except:` (which also catches `KeyboardInterrupt`/`SystemExit`).

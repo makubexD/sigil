@@ -68,7 +68,8 @@ For each changed file, evaluate:
 
 **Error handling**
 - Every `await` in a `try` block or forwarded via the returned `Promise`.
-- No empty `catch {}` or `catch` that only logs without rethrowing or returning a typed error.
+- No empty `catch {}`. Each `catch` handles the error (recovers or returns a typed error) or
+  rethrows with `cause`; log and continue only at a top-level boundary (request handler, CLI entry).
 - `throw new Error("context", { cause: originalErr })` — cause chain preserved.
 
 **Security**

@@ -327,6 +327,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Code-quality doctrine no longer contradicts itself (docs/audits/2026-10-14), and the
+  `code-quality` template is now at revision 2 (`sigil update` applies it):
+  - `shared/clean-code` owns one duplication rule: a wrong abstraction costs more than
+    duplication; extract on the third copy; duplicated knowledge is a bug at the second.
+  - It no longer tells agents to add a logger or other infrastructure a task did not ask for.
+  - Every `*-code-quality` rule and `*-code-reviewer` agent now agree on `catch`: handle or
+    rethrow with the cause; log and continue only at a top-level boundary.
+  - `test/catalog-doctrine.test.ts` keeps retired wording out of every artifact.
 - A guided `sigil update`'s `Equivalent command:` now names `--target` when the tool was detected,
   so the command updates the same tool when pasted elsewhere.
 - `sigil add` and `sigil update` name each MCP server that reads environment variables, then print

@@ -52,6 +52,8 @@ diff).
 **Async correctness** (see `react-async`)
 - Raw `fetch` in `useEffect` with no cleanup/abort guard against out-of-order responses.
 - Unhandled rejection in an async event handler.
+- A `catch` that neither handles the error (shows it, recovers) nor rethrows it with `cause`;
+  log and continue only at a top-level boundary (an event handler, an Error Boundary).
 
 **Accessibility**
 - Interactive elements missing an accessible name (`aria-label`, associated `<label>`).

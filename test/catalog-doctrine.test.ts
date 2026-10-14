@@ -28,6 +28,10 @@ const RETIRED: readonly Retired[] = [
     pattern: /duplication is (a bug|worse than)/i,
     why: 'one duplication doctrine lives in shared/clean-code: a wrong abstraction costs more than duplication',
   },
+  {
+    pattern: /add the smallest correct version|\(a logger/i,
+    why: 'licenses infrastructure the task did not ask for; say what is missing instead',
+  },
 ];
 
 const CANONICAL: readonly Canonical[] = [

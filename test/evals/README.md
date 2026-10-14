@@ -3,10 +3,11 @@
 Behavioral evals for the `cli` and `wizard` catalog skills, moved here from `_Others/cli-skill` and
 `_Others/wizard-skill`. Nothing here is compiled or run by `npm test`, and `test/` is not published.
 
-| Folder    | Contents                                                                                                                   |
-| --------- | -------------------------------------------------------------------------------------------------------------------------- |
-| `cli/`    | `scenarios.md` (S1–S7), `key.md` (answer key; `fixture/shipit.mjs` has 12 planted defects), `results.md`, `coverage.md`    |
-| `wizard/` | `scenarios.md` (W1–W6), `key.md` (`fixture-flawed/` has 11 planted defects), `results.md`, `coverage.md`, clean `fixture/` |
+| Folder          | Contents                                                                                                                                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `cli/`          | `scenarios.md` (S1–S7), `key.md` (answer key; `fixture/shipit.mjs` has 12 planted defects), `results.md`, `coverage.md`                                                      |
+| `wizard/`       | `scenarios.md` (W1–W6), `key.md` (`fixture-flawed/` has 11 planted defects), `results.md`, `coverage.md`, clean `fixture/`                                                   |
+| `code-quality/` | Rules, not a skill: six coding tasks with hidden tests, arms with and without sigil's TypeScript rules, inflation and a sign test (`run.mjs`, `measure.mjs`; see its README) |
 
 ## Mechanical check (CI)
 

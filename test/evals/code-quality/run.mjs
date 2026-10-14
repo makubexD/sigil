@@ -16,6 +16,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  realpathSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -72,7 +73,9 @@ const PROMPTS = prompts();
 function prepare(task, run) {
   const root = join(tmpdir(), 'sigil-cq-eval');
   mkdirSync(root, { recursive: true });
-  const dir = mkdtempSync(join(root, `${arm}-${task}-${run}-`));
+  // Long canonical path: on Windows tmpdir() can be an 8.3 short name (KIEFER~1.FER), which the
+  // agent's permission check treats as a different, suspicious location and blocks every write.
+  const dir = realpathSync.native(mkdtempSync(join(root, `${arm}-${task}-${run}-`)));
   cpSync(join(here, 'fixture'), dir, { recursive: true });
   const start = join(here, 'fixture-start', task);
   if (existsSync(start)) cpSync(start, dir, { recursive: true });
@@ -125,21 +128,25 @@ function claude(dir, task) {
     child.stdout.on('data', chunk => (stdout += chunk));
     child.on('close', () => {
       writeFileSync(join(dir, 'claude-output.json'), stdout);
+      let json;
       try {
-        const json = JSON.parse(stdout);
-        resolvePromise({
-          costUsd: json.total_cost_usd ?? null,
-          turns: json.num_turns ?? null,
-          durationMs: json.duration_ms ?? null,
-        });
+        json = JSON.parse(stdout);
       } catch {
-        resolvePromise({
-          costUsd: null,
-          turns: null,
-          durationMs: null,
-          claudeError: stdout.slice(0, 200),
-        });
+        resolvePromise({ error: `unparseable output: ${stdout.slice(0, 200)}` });
+        return;
       }
+      // An API error (usage limit, outage) is not a result: the run never worked on the task.
+      if (json.is_error || json.terminal_reason === 'api_error' || !json.num_turns) {
+        resolvePromise({
+          error: `${json.terminal_reason ?? 'error'}: ${String(json.result ?? '').slice(0, 160)}`,
+        });
+        return;
+      }
+      resolvePromise({
+        costUsd: json.total_cost_usd ?? null,
+        turns: json.num_turns,
+        durationMs: json.duration_ms ?? null,
+      });
     });
   });
 }
@@ -147,6 +154,7 @@ function claude(dir, task) {
 async function one(task, run) {
   const dir = prepare(task, run);
   const meta = await claude(dir, task);
+  if (meta.error) throw new Error(`invalid run, not recorded (re-run it): ${meta.error}`);
   const measured = spawnSync(
     process.execPath,
     [

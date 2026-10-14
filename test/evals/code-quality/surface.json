@@ -1,0 +1,52 @@
+{
+  "T1": {
+    "files": ["src/orders.ts"],
+    "values": { "src/orders.ts": ["summarizeOrders"] },
+    "types": { "src/orders.ts": ["Order"] },
+    "options": [
+      {
+        "file": "src/orders.ts",
+        "fn": "summarizeOrders",
+        "param": 1,
+        "allowed": ["retries", "baseDelayMs"]
+      }
+    ]
+  },
+  "T2": {
+    "files": ["src/csv.ts"],
+    "values": { "src/csv.ts": ["parseCsv"] },
+    "types": { "src/csv.ts": [] },
+    "options": []
+  },
+  "T3": {
+    "files": ["src/money.ts"],
+    "values": { "src/money.ts": ["splitCents", "formatCents"] },
+    "types": { "src/money.ts": [] },
+    "options": []
+  },
+  "T4": {
+    "files": ["src/rate-limit.ts"],
+    "values": { "src/rate-limit.ts": ["createRateLimiter"] },
+    "types": { "src/rate-limit.ts": [] },
+    "options": [
+      {
+        "file": "src/rate-limit.ts",
+        "fn": "createRateLimiter",
+        "param": 0,
+        "allowed": ["limit", "windowMs", "now"]
+      }
+    ]
+  },
+  "T5": {
+    "files": ["src/lru.ts"],
+    "values": { "src/lru.ts": ["createLruCache"] },
+    "types": { "src/lru.ts": [] },
+    "options": []
+  },
+  "T6": {
+    "files": ["src/duration.ts"],
+    "values": { "src/duration.ts": ["parseDuration"] },
+    "types": { "src/duration.ts": [] },
+    "options": []
+  }
+}

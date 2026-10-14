@@ -16,6 +16,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `npm run rule-load` (maintainers): the rule bytes an agent receives with one source file per
+  language, counting a base rule inlined through `extends` once, the way `add` installs it.
+  Catalog PRs report its before/after numbers.
 - Dev-tool permissions per language: `ts-`, `react-`, `ng-`, `cs-` and `py-allow-dev-tools`
   allow each language's own build, test, lint and format commands (`dotnet test`, `pytest`,
   `ng test`, ...). Each starter pack carries its language's; `essentials` carries none.

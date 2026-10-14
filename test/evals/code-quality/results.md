@@ -19,5 +19,29 @@ dropped, unless correctness is the gap.
 
 ## Runs
 
-| Date | Comparison | Commits | Model | Result |
-| ---- | ---------- | ------- | ----- | ------ |
+| Date       | Comparison                                  | Commits   | Model             | Result                                                                                                                                                 |
+| ---------- | ------------------------------------------- | --------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-10-14 | B0: `none` vs `current` (`runs/b0-*.jsonl`) | `b6fbbe4` | `claude-opus-5-5` | **H1 false.** Hidden tests 18/18 in both arms. Inflation 0 in every run of both arms: 18 ties, 0 decided pairs. Cost $4.17 vs $10.14, turns 158 vs 237 |
+
+B0 setup: the user-level instruction file was loaded in both arms (README, known confound). Two
+earlier attempts were discarded before any result was read: one ran in an 8.3 short temp path that
+blocked every write, one hit the usage limit (API errors); both are fixed in `run.mjs`.
+
+**Consequence under the registered rule:** H1 is false, so H2 and H3 as written (surface inflation)
+have nothing to measure. PR4 and PR5 are not accepted on this hypothesis.
+
+### Exploratory (not registered; may motivate a new hypothesis, never gate one)
+
+The registered metric counts only the public surface. The rules' effect shows up inside the file:
+
+- Source lines: `current` larger in 13 of 17 decided pairs (one-sided sign test p = 0.025).
+  T1: 53–84 lines without rules, 113–115 with them; T3 (the bug fix): 8 vs 14 in every run.
+- Top-level declarations (functions, constants, types) across the 18 runs: 62 without rules, 156
+  with them; more in 13 pairs, fewer in none.
+- T1 run 1 with rules: 9 helper functions, 2 internal types and 3 named constants around the same
+  logic the no-rules run wrote with one helper. This matches the senior panel's reading of
+  "split into smaller units before proceeding" (structure limits) and the unconditional
+  named-constant rule: decomposition to satisfy a count, not a responsibility.
+
+These numbers come from the data that suggested them, so they cannot confirm anything. Testing
+them needs a hypothesis registered first and fresh runs.

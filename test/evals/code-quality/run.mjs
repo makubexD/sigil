@@ -173,10 +173,11 @@ async function one(task, run) {
     ],
     { encoding: 'utf8' },
   );
-  const record = { ...JSON.parse(measured.stdout.trim().split(/\r?\n/).pop()), ...meta, dir };
+  // The run directory is a local path (user name included): printed, never recorded.
+  const record = { ...JSON.parse(measured.stdout.trim().split(/\r?\n/).pop()), ...meta };
   appendFileSync(out, `${JSON.stringify(record)}\n`);
   console.log(
-    `${arm} ${task}#${run}: tests ${record.pass}/${record.pass + record.fail}, loc ${record.loc}, inflation ${record.inflation}`,
+    `${arm} ${task}#${run}: tests ${record.pass}/${record.pass + record.fail}, loc ${record.loc}, inflation ${record.inflation} (${dir})`,
   );
 }
 

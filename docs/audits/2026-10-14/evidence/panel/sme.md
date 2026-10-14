@@ -1,0 +1,3 @@
+SME: G6 misattributed (npm/layout don't match .ts; ts-git does). Claude path rules load once per session on first matching read (~11k tokens/session); Copilot CLI lazy index, VS Code attaches full. Exact dup ~9% (extends prepend). G4 -> P0. G9 -> first. G8 lower (helps reviewers, unproven for generators).
+MISSED: rule ordering unverified; NO "scope to the request" line (cheapest lever); description collision lint; imperative density -> severity tiers.
+Eval: routing (30 prompts, 20% negatives, CI) + behavioural 6 TS tasks w/ hidden tests & requested-surface list, arms none/full/trimmed x3 = 54 runs; objective metrics (tests, LOC, inflation=exported symbols beyond surface, tsc/lint) + blind 2-axis judge different model; paired sign test, preregistered; 2 held-out tasks.

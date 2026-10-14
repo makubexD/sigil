@@ -1,0 +1,5 @@
+SENIOR: G1 worse than stated (clean-code sentence self-contradicts AND inverts Metz). Wording: wrong abstraction costs more than duplication; extract on 3rd copy only if same reason to change; duplicated KNOWLEDGE is a bug at 2nd copy.
+G2 wording: Simplicity/scale dimension (unrequested code/options, single-impl abstractions, O(n^2)/per-item I/O, unbounded memory, names needing comments).
+G3 ladder; drop "ask before proceeding". G4 pattern only with 2nd variant today. G5 -> DEFECT: limits are signals not gates; never extract only to hit count (pilot RetryPolicy/toPolicy). G6-G12 agree; G7/G8 low impact.
+MISSED (verified by me): M1 clean-code legacy bullet "add smallest version of it (a logger)" licenses infra -> pilot Logger. M2 SOLID DI unconditional -> inject at I/O boundaries only. M3 reviewer vs rule contradiction on log-only catch. M4 "no hardcoded numeric limits" -> config for constants; amend. M5 tests coverage-shaped not bug-shaped. M6 naming thin (domain role, predicates, units). M7 no scale counterweight to "no premature optimization". M8 magic numbers exemption 0/1/-1.
+Top5: G1; G5+M2; M1+G3; G2+M7; M5+M3.

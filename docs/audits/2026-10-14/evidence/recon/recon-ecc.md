@@ -1,0 +1,3 @@
+ECC v2.2.3: 311 skills (2.96MB, median 188 lines), 122 rules (common always-on 564 lines + 21 langs path-scoped, "extends common"), 71 agents, 97 legacy commands, 27 hooks (stop-format-typecheck, console-log, config-protection), hook_profile.
+Good: coding-style KISS/DRY/YAGNI + checklist (<50 lines fn, nesting<=4); search-first decision matrix; coding-standards "shared floor" w/ early-return pairs; review severity BLOCK/WARN table; 100 skills Anti-Patterns sections; runtime hooks format/typecheck at Stop.
+Weak: >100 non-code skills; duplication rule vs skill; contradictions (universal immutability CRITICAL; reviewer MUST BE USED); 33/311 when-not; 13 refs; validators structural only; no CI behavioural evals.

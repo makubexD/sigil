@@ -32,10 +32,18 @@ const RETIRED: readonly Retired[] = [
     pattern: /add the smallest correct version|\(a logger/i,
     why: 'licenses infrastructure the task did not ask for; say what is missing instead',
   },
+  {
+    pattern: /either log with context or re-?(throw|raise)/i,
+    why: 'log-and-continue is allowed only at a top-level boundary; reviewers flag it elsewhere',
+  },
 ];
+
+const TOP_LEVEL_CATCH = 'log and continue only at a top-level boundary';
 
 const CANONICAL: readonly Canonical[] = [
   { family: 'code-quality', phrase: 'a wrong abstraction costs more than duplication' },
+  { family: 'code-quality', phrase: TOP_LEVEL_CATCH },
+  { family: 'code-reviewer', phrase: TOP_LEVEL_CATCH },
 ];
 
 function flatten(text: string): string {

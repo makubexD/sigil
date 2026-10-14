@@ -86,4 +86,8 @@ is sufficient, ask before proceeding.
 <!-- slot: design-patterns -->
 
 ## Error Handling
+Every catch either handles the error (recovers, or returns a typed error result) or rethrows it with
+the original attached as the cause. Log and continue only at a top-level boundary (request handler,
+command entry point, job runner, UI event handler), where the error stops travelling.
+
 <!-- slot: error-handling -->

@@ -60,8 +60,8 @@ Chain exceptions with cause context using `throw new Error("context", { cause: o
 (preserves the cause chain and stack for the full trace). For recoverable paths, return an explicit
 result — a typed `T | undefined`, a discriminated union `{ ok: true; value: T } | { ok: false; error: string }`,
 or a small frozen object — with the contract documented in TSDoc; reserve `throw` for truly exceptional
-cases. Never swallow silently: catch the **narrowest** type possible (`e instanceof SpecificError`);
-at every `catch` boundary either log with context or re-throw with `cause`.
+cases. Never swallow silently: catch the **narrowest** type possible (`e instanceof SpecificError`)
+and rethrow anything else unchanged.
 
 ```typescript
 // Correct — cause preserved, narrowest catch

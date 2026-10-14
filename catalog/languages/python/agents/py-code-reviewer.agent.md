@@ -44,7 +44,9 @@ type-annotation scrutiny than one without.
 
 **Correctness**
 - Off-by-one errors, incorrect boundary conditions, mutable default arguments (`def f(x=[])`).
-- Exception handling: bare `except:`, `except Exception: pass`, swallowed errors.
+- Exception handling: bare `except:`, `except Exception: pass`, swallowed errors. Each `except`
+  handles the error or re-raises (`raise ... from err`); log and continue only at a top-level
+  boundary (request handler, CLI `main`, worker loop).
 - Type mismatches mypy/pyright would catch if strict mode were enabled but isn't.
 
 **Async correctness** (if applicable — see `py-async`)

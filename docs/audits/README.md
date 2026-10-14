@@ -17,7 +17,10 @@ holds the raw material behind it.
 | `2026-08-26` | 7     | Hardened dispatch probe, python/react coverage gap                                        |
 | `2026-09-27` | -     | Live-prompt campaign against real Claude Code and Copilot CLI (not a numbered round)      |
 | `2026-10-03` | -     | Probe: does Copilot load a skill reference named by backticks, a link, or not at all (V1) |
+| `2026-10-06` | -     | Probe: do Copilot's MCP files expand environment variables (F4)                           |
+| `2026-10-12` | -     | Probe: does Copilot deliver a skill's rule twice                                          |
 | `2026-10-13` | -     | Pre-release audit of `master`: cli/wizard auditors, code review, evals S1 and W3          |
+| `2026-10-14` | -     | Benchmark of four agent-guidance repos and the catalog code-quality plan                  |
 
 ## What is in a folder
 
@@ -33,6 +36,9 @@ holds the raw material behind it.
   `fixtures/` and `results/` (inputs and per-run output).
 - `2026-10-03/` has `probe/` (a portable test project) and `results.md` (filled in by whoever runs
   it): the V1 check of whether Copilot loads a reference named only in backticks.
+- `2026-10-14/` has `README.md` (repo taxonomy, measurements, pilot, panel, corrections),
+  `results.md` (each planned item and its status), and `evidence/` (raw recon summaries, panel
+  positions, pilot task and outputs, and the throwaway measurement scripts, kept byte-for-byte).
 
 ## Reading the IDs
 

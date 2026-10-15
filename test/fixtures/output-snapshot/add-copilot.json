@@ -1,7 +1,7 @@
 {
   ".claude/settings.json": "9f1395a16aad569f6ddde5cca5372baf3fc60c9069f726e1bfc533bd3c52acca",
   ".github/agents/cli-auditor.agent.md": "403e8bde0972f0617726f0b51dba5fb26bcc6b24eeef354456728d2c1adb0887",
-  ".github/agents/cs-code-reviewer.agent.md": "fb8bb9bb41928aea6b444927d12df55559754ba83bcd384d49258ab566ab68e0",
+  ".github/agents/cs-code-reviewer.agent.md": "174b3a723250e435fab5a93f37373cc3927638d2e57325c68cd351d27d9e1a8a",
   ".github/instructions/angular-ng-conventions.instructions.md": "64f30789ca1545f27130c473519d99cc4115e3b6ec8d6c521ad5560a707a1cf8",
   ".github/prompts/shared-explain-diff.prompt.md": "cb069c425ec23b81fbf039c9b66fee78a892ecd8fa7673b219757c62eb02b380",
   ".github/skills/cli/SKILL.md": "87340a65b132a2563fdd2aedd01d6e9608643a45491f4780d0a3d3e068d21d17",
@@ -20,6 +20,6 @@
   ".github/skills/cs-generate-tests/SKILL.md": "3a4e2aae3b445a3816215ec1c7f678dafacad540b4db692ae6bb68786743c799",
   ".github/skills/ts-release/SKILL.md": "1c9ec0641f746b0ead3e6105538d511a871610c7be178edd80ea51678335d05f",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "ca843a61a5cb004b1d0c92ea4865e035b2a828ac939cb844bf880c9e684dd35d",
+  ".sigil/manifest.json": "4a5c7d48a3aadee607e05ddf278a270a6c096f1edb4b4698f3d41000bf73172d",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

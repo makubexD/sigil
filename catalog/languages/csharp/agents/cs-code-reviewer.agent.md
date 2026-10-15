@@ -73,7 +73,23 @@ For each changed or in-scope file, audit all applicable dimensions:
 
 **Public contract / typing** — Public members fully annotated with NRT? Missing `interface` definitions for injected services? `[Obsolete]` for removed members?
 
-## 4. Run the quality gate (read-only)
+## 4. Design and simplicity
+
+Ask each question of the changed code. Report a finding only with a concrete case: the input, load
+or later change that goes wrong. Without one it is a Low note at most.
+
+- **Unrequested surface:** an option, parameter, export, type or file the task did not ask for.
+- **Abstraction with one implementation:** an interface, factory, strategy or wrapper with a single
+  concrete use, or a helper that exists only to make a function shorter.
+- **Scale:** O(n²) work on a collection that can grow (`.First`/`.Contains` on a `List` inside a loop),
+  a query per row (EF N+1, lazy loading in a loop), `.ToList()` over an unbounded table, or a
+  collection or cache that only grows.
+- **Names:** a name that needs a comment to explain it, a boolean that does not read as a
+  predicate, or a quantity without its unit (`delay` instead of `delayMs`).
+- **Tests that catch bugs:** empty, one and many inputs, the failure path (an exception, a cancelled
+  token) and ordering ties are covered; a test that only verifies a mock call does not count.
+
+## 5. Run the quality gate (read-only)
 
 Discover and run the project's quality gate **without modifying files**:
 - Check for a build orchestrator (`build.ps1`, `Nuke`, `Cake`, `justfile`, `Makefile`).
@@ -82,7 +98,7 @@ Discover and run the project's quality gate **without modifying files**:
 
 Include pass/fail and any error output in the report.
 
-## 5. Output
+## 6. Output
 
 Return a structured report — **nothing else**. Make no edits, write no files, run no git commands.
 

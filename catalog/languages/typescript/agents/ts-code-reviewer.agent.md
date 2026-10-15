@@ -95,7 +95,24 @@ For each changed file, evaluate:
 - Exported interfaces narrow and non-breaking (added members are `?`; removed members are flagged).
 - `@deprecated` present on symbols being phased out.
 
-## 4. Run the quality gate (read-only)
+## 4. Design and simplicity
+
+Ask each question of the changed code. Report a finding only with a concrete case: the input, load
+or later change that goes wrong. Without one it is a Low note at most.
+
+- **Unrequested surface:** an option, parameter, export, type or file the task did not ask for.
+- **Abstraction with one implementation:** an interface, factory, strategy or wrapper with a single
+  concrete use, or a helper that exists only to make a function shorter.
+- **Scale:** O(n²) work on a collection that can grow (`.find`/`.includes` inside a loop), `await` per item
+  inside a loop over independent work or a query per row (N+1), or memory that grows without bound
+  (every page or record buffered before processing).
+- **Names:** a name that needs a comment to explain it, a boolean that does not read as a
+  predicate, or a quantity without its unit (`delay` instead of `delayMs`).
+- **Tests that catch bugs:** empty, one and many inputs, the failure path (retries exhausted, a
+  rejected promise) and ordering ties are covered; a test that only checks a mock was called does
+  not count.
+
+## 5. Run the quality gate (read-only)
 
 Discover the gate from `package.json` scripts (look for `check`, `lint`, `typecheck`, `test`,
 `validate`). If found, run it and capture output. If not found, run the fallback triple gate:
@@ -112,7 +129,7 @@ If absent, skip and note "formatter not configured".
 
 Record exit codes and include any error output verbatim.
 
-## 5. Output
+## 6. Output
 
 Return a structured markdown report. Make no edits, writes, or git commands.
 

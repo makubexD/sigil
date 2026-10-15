@@ -1,6 +1,6 @@
 {
   ".claude/agents/cli-auditor.md": "81f62783ac8899a6c5be33f7f336f4c4ad5a14e12af4f5bd5ba93fc230ebf6b8",
-  ".claude/agents/cs-code-reviewer.md": "dc1ab2d9167d627a2163e5e402eb1f9de3c1b7ad972d8ecc0dfb84d2027dc00c",
+  ".claude/agents/cs-code-reviewer.md": "f3a51ad3826f9bda8fd43d7479ea8622868ba788e1d7c6db827c994dfa5b931a",
   ".claude/rules/angular-ng-conventions.md": "7a64baadc9a1d11b86977f788024e2c5ce69458bc6bbad0aa8168b694d357522",
   ".claude/rules/csharp-cs-testing.md": "658766f1519c89385663e047ad706f2f06aa24a6db532f29c353610e9dc5542e",
   ".claude/rules/shared-cli-rules.md": "43f0cb82e2d4aa43fb3b0a6394fa11eceb8a193b13590b7c7260326f13d9478c",
@@ -24,6 +24,6 @@
   ".claude/skills/shared-explain-diff/SKILL.md": "02800e7c98d7ad21040948a5e3b84f36aa6bdd2dd7daf075aa0c6732f82ad679",
   ".claude/skills/ts-release/SKILL.md": "ab41c08cf142a7171b99fab25d670d58c85b6a4fbc9d5e16bd8fd8821f2835a3",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "5a71db4a97f9217b1d262135abe4a01bd5cfa11f3560368c3c85e0a9fa6c19a1",
+  ".sigil/manifest.json": "a86784e9ea57fdb6bbf73d07a05ae1e789b9689dd407f227bcfa26a165b43197",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

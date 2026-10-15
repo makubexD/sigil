@@ -44,6 +44,8 @@ const CANONICAL: readonly Canonical[] = [
   { family: 'code-quality', phrase: 'a wrong abstraction costs more than duplication' },
   { family: 'code-quality', phrase: TOP_LEVEL_CATCH },
   { family: 'code-reviewer', phrase: TOP_LEVEL_CATCH },
+  { family: 'code-reviewer', phrase: 'report a finding only with a concrete case' },
+  { family: 'code-reviewer', phrase: 'abstraction with one implementation' },
 ];
 
 function flatten(text: string): string {

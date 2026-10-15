@@ -187,6 +187,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Every `*-code-reviewer` agent has a "Design and simplicity" step (docs/audits/2026-10-14), with
+  checks in each language's idiom:
+  - surface the task did not ask for, and abstractions with one implementation;
+  - O(n²) work, per-item I/O and memory that only grows;
+  - names that need a comment;
+  - tests that would not catch a bug.
+
+  A finding needs a concrete case; without one it is a Low note at most. `catalog/standard.yaml`
+  adds the step to the code-reviewer family, so `sigil sync --check` requires it in every member.
+
 - `sigil import --shared` sends a skill's `stack-<x>.md` files to the stack's home language as
   stack parts, so imported stack text never lands in `shared/`; the report shows where each went.
   A `--language` import takes no stack files. Titles drop the language prefix read from its

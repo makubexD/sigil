@@ -74,7 +74,22 @@ diff).
 - New interactive behavior added with no corresponding Testing Library test.
 - A test querying by `data-testid` where `getByRole`/`getByLabelText` would work (see `react-testing`).
 
-## 4. Run the quality gate (read-only)
+## 4. Design and simplicity
+
+Ask each question of the changed code. Report a finding only with a concrete case: the input, load
+or later change that goes wrong. Without one it is a Low note at most.
+
+- **Unrequested surface:** an option, parameter, export, type or file the task did not ask for.
+- **Abstraction with one implementation:** an interface, factory, strategy or wrapper with a single
+  concrete use, or a helper that exists only to make a function shorter.
+- **Scale:** O(n²) work in render over a list that can grow, one fetch per list item instead of one
+  request, state that copies the whole list on every keystroke, or a store that only grows.
+- **Names:** a name that needs a comment to explain it, a boolean that does not read as a
+  predicate, or a quantity without its unit (`delay` instead of `delayMs`).
+- **Tests that catch bugs:** empty, one and many items, the error and loading states, and ordering
+  ties are covered; a test that only checks a mock was called does not count.
+
+## 5. Run the quality gate (read-only)
 
 Discover the gate from `package.json` scripts (look for `check`, `lint`, `typecheck`, `test`). If
 found, run it and capture output. If not found, run the fallback gate — never with `--fix` or
@@ -94,7 +109,7 @@ repeating them as separate manual findings. If `prettier` or `biome` is configur
 Record exit codes and include any error output verbatim. A failing gate on a line the diff touched
 is at least a **High** finding.
 
-## 5. Output
+## 6. Output
 
 ```
 ## Code Review Report

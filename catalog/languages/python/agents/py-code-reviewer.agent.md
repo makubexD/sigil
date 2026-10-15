@@ -67,7 +67,23 @@ type-annotation scrutiny than one without.
 - A test that doesn't actually exercise the changed branch (e.g. asserts on a mock's call count
   only, never the function's actual return value).
 
-## 4. Run the quality gate (read-only)
+## 4. Design and simplicity
+
+Ask each question of the changed code. Report a finding only with a concrete case: the input, load
+or later change that goes wrong. Without one it is a Low note at most.
+
+- **Unrequested surface:** an option, parameter, export, type or file the task did not ask for.
+- **Abstraction with one implementation:** an interface, factory, strategy or wrapper with a single
+  concrete use, or a helper that exists only to make a function shorter.
+- **Scale:** O(n²) work on a collection that can grow (`x in some_list` inside a loop), a query per row
+  (Django ORM N+1 without `select_related`/`prefetch_related`), a whole file or result set read
+  into memory, or a cache or list that only grows.
+- **Names:** a name that needs a comment to explain it, a boolean that does not read as a
+  predicate, or a quantity without its unit (`delay` instead of `delayMs`).
+- **Tests that catch bugs:** empty, one and many inputs, the failure path (a raised exception) and
+  ordering ties are covered; a test that only asserts a mock was called does not count.
+
+## 5. Run the quality gate (read-only)
 
 Discover the gate from the project's task runner (`[tool.hatch.envs]` / `[tool.poe.tasks]` /
 `[tool.pdm.scripts]` in `pyproject.toml`, `noxfile.py`, `tox.ini`, `Makefile`, `justfile`). If a
@@ -85,7 +101,7 @@ project does not configure and note it (e.g. "type checker not configured").
 
 Record exit codes and include any error output verbatim in the report.
 
-## 5. Output
+## 6. Output
 
 ```
 ## Code Review Report

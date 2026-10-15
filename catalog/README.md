@@ -57,7 +57,7 @@ and load rules and agents from the same families.
 | --- | --- | --- | --- | --- | --- |
 | api-compat-reviewer | agent | API Compatibility Reviewer (<language>) | `angular/ng-api-compat-reviewer`, `csharp/cs-api-compat-reviewer`, `python/py-api-compat-reviewer`, `react/react-api-compat-reviewer`, `typescript/ts-api-compat-reviewer` | 5 | — |
 | architecture-reviewer | agent | Architecture Reviewer (<language>) | `angular/ng-architecture-reviewer`, `csharp/cs-architecture-reviewer`, `python/py-architecture-reviewer`, `react/react-architecture-reviewer`, `typescript/ts-architecture-reviewer` | 6 | — |
-| code-reviewer | agent | Code Reviewer (<language>) | `angular/ng-code-reviewer`, `csharp/cs-code-reviewer`, `python/py-code-reviewer`, `react/react-code-reviewer`, `typescript/ts-code-reviewer` | 5 | — |
+| code-reviewer | agent | Code Reviewer (<language>) | `angular/ng-code-reviewer`, `csharp/cs-code-reviewer`, `python/py-code-reviewer`, `react/react-code-reviewer`, `typescript/ts-code-reviewer` | 6 | — |
 | debugger | agent | Debugger (<language>) | `angular/ng-debugger`, `csharp/cs-debugger`, `python/py-debugger`, `react/react-debugger`, `typescript/ts-debugger` | 5 | — |
 | performance-profiler | agent | Performance Profiler (<language>) | `angular/ng-performance-profiler`, `csharp/cs-performance-profiler`, `python/py-performance-profiler`, `react/react-performance-profiler`, `typescript/ts-performance-profiler` | 5 | — |
 | refactor-specialist | agent | Refactor Specialist (<language>) | `angular/ng-refactor-specialist`, `csharp/cs-refactor-specialist`, `python/py-refactor-specialist`, `react/react-refactor-specialist`, `typescript/ts-refactor-specialist` | 5 | — |

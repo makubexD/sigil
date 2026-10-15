@@ -74,7 +74,23 @@ For each changed or in-scope file, audit all applicable dimensions:
 
 **Public contract / typing** — Public methods fully annotated? Implicit `any`? Component `@Input`/`@Output`/signal `input()`/`output()` documented?
 
-## 4. Run the quality gate (read-only)
+## 4. Design and simplicity
+
+Ask each question of the changed code. Report a finding only with a concrete case: the input, load
+or later change that goes wrong. Without one it is a Low note at most.
+
+- **Unrequested surface:** an option, parameter, export, type or file the task did not ask for.
+- **Abstraction with one implementation:** an interface, factory, strategy or wrapper with a single
+  concrete use, or a helper that exists only to make a function shorter.
+- **Scale:** O(n²) work on a list that can grow (`.find` inside a loop or a template `@for`), one HTTP
+  call per item instead of a batch, a subscription or `effect` created per item, or a cache or
+  signal array that only grows.
+- **Names:** a name that needs a comment to explain it, a boolean that does not read as a
+  predicate, or a quantity without its unit (`delay` instead of `delayMs`).
+- **Tests that catch bugs:** empty, one and many items, the error path (a failing `HttpClient` call)
+  and ordering ties are covered; a test that only checks a spy was called does not count.
+
+## 5. Run the quality gate (read-only)
 
 Discover and run the project's quality gate **without modifying files**:
 - Prefer discovered `package.json` scripts (`check`, `lint`, `test`, `build`).
@@ -87,7 +103,7 @@ Discover and run the project's quality gate **without modifying files**:
 
 Include pass/fail and any error output in the report.
 
-## 5. Output
+## 6. Output
 
 Return a structured report — **nothing else**. Make no edits, write no files, run no git commands.
 

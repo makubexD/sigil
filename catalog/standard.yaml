@@ -90,6 +90,7 @@ families:
       - "Determine scope"
       - "Discover conventions"
       - "Review dimensions"
+      - "Design and simplicity"
       - "Run the quality gate (read-only)"
       - "Output"
     members:

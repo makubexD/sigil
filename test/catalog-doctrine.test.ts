@@ -36,6 +36,14 @@ const RETIRED: readonly Retired[] = [
     pattern: /either log with context or re-?(throw|raise)/i,
     why: 'log-and-continue is allowed only at a top-level boundary; reviewers flag it elsewhere',
   },
+  {
+    pattern: /split into smaller units before proceeding/i,
+    why: 'size limits are review signals, not gates; splitting to meet a count fragments code',
+  },
+  {
+    pattern: /use strategy for interchangeable algorithms/i,
+    why: 'a pattern earns its place with a second concrete variant, not by being listed',
+  },
 ];
 
 const TOP_LEVEL_CATCH = 'log and continue only at a top-level boundary';
@@ -44,6 +52,9 @@ const CANONICAL: readonly Canonical[] = [
   { family: 'code-quality', phrase: 'a wrong abstraction costs more than duplication' },
   { family: 'code-quality', phrase: TOP_LEVEL_CATCH },
   { family: 'code-reviewer', phrase: TOP_LEVEL_CATCH },
+  { family: 'code-quality', phrase: 'review signals, not gates' },
+  { family: 'code-quality', phrase: 'inject only what crosses an i/o boundary' },
+  { family: 'code-quality', phrase: 'second concrete variant exists today' },
 ];
 
 function flatten(text: string): string {

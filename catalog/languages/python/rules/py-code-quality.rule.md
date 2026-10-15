@@ -30,8 +30,8 @@ extract a collaborator or split into smaller, single-responsibility modules/clas
   correctness — do not narrow an overridden method's accepted input or widen its raised exceptions.
 - **Interface Segregation**: Prefer small `Protocol`s over one wide interface. A caller should not
   depend on methods it does not use.
-- **Dependency Inversion**: Depend on abstractions (`Protocol`, an injected callable), not concrete
-  classes. Pass dependencies through `__init__` or a function parameter; do not instantiate a
+- **Dependency Inversion**: Depend on abstractions (`Protocol`, an injected callable) for I/O
+  collaborators, not concrete classes. Pass dependencies through `__init__` or a function parameter; do not instantiate a
   collaborator deep inside business logic.
 
 <!-- slot: layering -->
@@ -58,9 +58,7 @@ siblings, or that itself imports from more than 5 siblings, is a coupling smell.
 py-performance-profiler
 
 <!-- slot: design-patterns -->
-Use Strategy for interchangeable algorithms (pass a callable or a `Protocol` implementation),
-Factory functions for object creation, and Adapter for wrapping a third-party interface behind your
-own. Avoid Singleton (module-level mutable global state hides dependencies and obstructs testing)
+Avoid Singleton (module-level mutable global state hides dependencies and obstructs testing)
 and Service Locator (a global registry obscures which dependencies a function actually needs —
 prefer explicit constructor/parameter injection).
 

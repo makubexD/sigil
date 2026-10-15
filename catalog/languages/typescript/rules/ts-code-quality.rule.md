@@ -18,7 +18,7 @@ appliesToRationale: Structural size limits and the search-first protocol apply t
 ---
 <!-- slot: structure-limits -->
 Max 20 lines per function body (40 lines for config/builder functions). Max 4 parameters per function
-or method signature. If either limit is exceeded, split into smaller units before proceeding.
+or method signature.
 
 A module beyond ~200 lines or a class beyond ~7 public methods is a **God Object** candidate —
 extract a collaborator or split into smaller, single-responsibility units.
@@ -28,15 +28,15 @@ extract a collaborator or split into smaller, single-responsibility units.
 - **Open/Closed**: Extend behavior through composition, not modification.
 - **Liskov Substitution**: Subtypes must be substitutable for their base types without altering correctness.
 - **Interface Segregation**: Prefer narrow, focused interfaces over wide, general-purpose ones.
-- **Dependency Inversion**: Depend on abstractions, not concretions. Inject dependencies.
+- **Dependency Inversion**: Domain logic does not depend on I/O details; pass them in.
 
 <!-- slot: layering -->
 Keep business logic out of I/O, transport, and presentation boundaries — CLI handlers, route
 controllers, and middleware should delegate to domain functions, not contain logic themselves. A change
 to the delivery mechanism must not require changes to the domain.
 
-**No hardcoded configuration.** Environment-specific values (URLs, timeouts, feature flags, service
-addresses, numeric limits) belong in config or environment variables — never as bare literals in logic.
+**No hardcoded configuration.** Values that differ per environment (URLs, timeouts, feature flags,
+service addresses) belong in config or environment variables; a fixed domain constant stays in code.
 See `ts-security` for the stronger invariant on credentials.
 
 <!-- slot: coupling -->
@@ -51,9 +51,7 @@ that exports ≥ 10 symbols or imports from ≥ 5 sibling modules is a coupling 
 ts-performance-profiler
 
 <!-- slot: design-patterns -->
-Use Strategy for interchangeable algorithms, Factory for object creation, Adapter for interface
-translation, and Builder for complex object construction. Avoid Singleton (hides dependencies,
-obstructs testing) and Service Locator (obscures dependencies, inverts control in the wrong direction).
+Avoid Singleton and Service Locator: both hide dependencies (see `ts-conventions`).
 
 <!-- slot: error-handling -->
 Chain exceptions with cause context using `throw new Error("context", { cause: originalErr })`

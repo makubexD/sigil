@@ -4,7 +4,7 @@ kind: template
 title: "Language Code-Quality Rule"
 description: >-
   Shared skeleton for a language's `*-code-quality` rule: the SEARCH FIRST protocol and the
-  KISS/YAGNI pair are identical across languages (confirmed via body-shingle overlap analysis,
+  YAGNI note are identical across languages (confirmed via body-shingle overlap analysis,
   docs/audits/2026-08-20/analysis/lane-d-duplication.json — the highest cross-language overlap in
   the catalog, ~0.33-0.44). The duplication doctrine lives once, in the shared/clean-code base
   every member extends (docs/audits/2026-10-14). Structure limits, SOLID elaboration, layering, coupling, and design
@@ -14,7 +14,7 @@ description: >-
   catalog-quality-audit-2026-08.md's "what was and wasn't templatized" section.
 appliesToKind:
   - rule
-revision: 2
+revision: 3
 slots:
   - key: structure-limits
     required: true
@@ -67,8 +67,12 @@ is sufficient, ask before proceeding.
 ## Code Structure Limits
 <!-- slot: structure-limits -->
 
+These limits are review signals, not gates: split by responsibility, never only to meet a count.
+
 ## SOLID Principles
 <!-- slot: solid-principles -->
+
+Inject only what crosses an I/O boundary (clock, network, files, randomness); call pure code directly.
 
 ## Layering
 <!-- slot: layering -->
@@ -76,13 +80,16 @@ is sufficient, ask before proceeding.
 ## Circular Dependencies and Coupling
 <!-- slot: coupling -->
 
-## KISS / YAGNI
-- **KISS**: The simplest solution that works is the correct one. Add complexity only when required.
+## YAGNI
 - **YAGNI**: Do not implement functionality until it is actually needed. Speculative generality adds debt.
 - **No premature optimization**: write the clear solution first; profile with `<!-- slot: perf-profiler-ref -->`
   before optimizing. Optimize only measured hot paths — complexity bought without evidence is debt.
+  Picking a data structure for a stated input size is not premature optimization.
 
 ## Design Patterns
+Introduce a pattern only when a second concrete variant exists today; otherwise write the plain
+function.
+
 <!-- slot: design-patterns -->
 
 ## Error Handling

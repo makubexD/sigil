@@ -187,6 +187,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `*-code-quality` rules no longer push agents to fragment code (docs/audits/2026-10-14; measured in
+  test/evals/code-quality). Size limits are review signals, not gates, and the "split into smaller
+  units before proceeding" instruction is gone. Dependencies are injected only where code meets I/O.
+  A pattern needs a second concrete variant before it is introduced; the generic Strategy/Factory
+  list is gone. Fixed domain constants stay in code, not config. Choosing a data structure for a
+  stated input size is no longer counted as premature optimization. The `code-quality` template is
+  at revision 3; rule size per language is unchanged or smaller.
+
 - `sigil import --shared` sends a skill's `stack-<x>.md` files to the stack's home language as
   stack parts, so imported stack text never lands in `shared/`; the report shows where each went.
   A `--language` import takes no stack files. Titles drop the language prefix read from its

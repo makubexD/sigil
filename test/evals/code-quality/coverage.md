@@ -12,3 +12,6 @@ invalidate the baseline is visible.
 | Missing infrastructure is reported, not added  | rule:typescript/ts-code-quality   | say so in your summary                          |
 | Catch: handle or rethrow; log only at the edge | rule:typescript/ts-code-quality   | log and continue only at a top-level boundary   |
 | Reviewer checks the same catch rule            | agent:typescript/ts-code-reviewer | log and continue only at a top-level boundary   |
+| Size limits are signals, not gates             | rule:typescript/ts-code-quality   | review signals, not gates                       |
+| Inject only at I/O boundaries                  | rule:typescript/ts-code-quality   | inject only what crosses an i/o boundary        |
+| Pattern needs a second variant                 | rule:typescript/ts-code-quality   | second concrete variant exists today            |

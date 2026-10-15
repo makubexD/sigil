@@ -17,7 +17,7 @@ appliesToRationale: Scoped to C# source because these structural and SOLID princ
 ---
 <!-- slot: structure-limits -->
 Max 20 lines per method body (40 lines for factory / builder methods). Max 4 parameters per method
-or constructor signature. If either limit is exceeded, split into smaller units before proceeding.
+or constructor signature.
 
 A class beyond ~200 lines or ~7 public members is a **God Object** candidate — extract a collaborator
 or split into smaller, single-responsibility classes. Constructor injection is the signal: if a
@@ -30,7 +30,7 @@ constructor requires more than 4 collaborators, the class is doing too much.
   correctness. Overriding a method must not weaken preconditions or strengthen postconditions.
 - **Interface Segregation**: Prefer narrow, focused interfaces over wide, general-purpose ones.
   A caller should not depend on members it does not use.
-- **Dependency Inversion**: Depend on abstractions (`interface`, `abstract class`), not concretions.
+- **Dependency Inversion**: Depend on abstractions (`interface`, `abstract class`) for I/O and infrastructure, not concretions.
   Inject dependencies through constructors; never `new` up a service inside a domain class.
 
 <!-- slot: layering -->
@@ -39,8 +39,8 @@ handlers, and console commands should delegate to domain/application services, n
 A change to the delivery mechanism (HTTP → gRPC, Console → GUI) must not require changes to the
 domain.
 
-**No hardcoded configuration.** Environment-specific values (connection strings, URLs, timeouts,
-feature flags, numeric limits) belong in `IConfiguration`, environment variables, or `IOptions<T>`
+**No hardcoded configuration.** Values that differ per environment (connection strings, URLs, timeouts,
+feature flags) belong in `IConfiguration`, environment variables, or `IOptions<T>`
 — never as bare literals in logic. See `cs-security` for the stronger invariant on credentials.
 
 <!-- slot: coupling -->
@@ -56,8 +56,7 @@ within a project are also a smell. Prefer narrow public interfaces; a class that
 cs-performance-profiler
 
 <!-- slot: design-patterns -->
-Use Strategy for interchangeable algorithms, Factory for object creation, Adapter for interface
-translation, and Builder for complex object construction. Avoid Singleton (hides dependencies,
+Avoid Singleton (hides dependencies,
 obstructs testing) and Service Locator (obscures dependencies, inverts control in the wrong
 direction — prefer constructor injection via the DI container).
 

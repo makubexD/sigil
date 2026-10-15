@@ -53,3 +53,10 @@ not a real defect is **invented**.
 | 7   | Catch that logs and continues below the top level, silently truncating the result                                                                  | `catch` in the page loop          |
 
 Gate for PR6: the candidate finds at least baseline + 2 of the 7, with no invented findings.
+
+R1 protocol (fixed 2026-10-15, before any R1 run): `review.mjs` runs each arm 3 times on the same
+model; the baseline arm installs from the commit before the change, the candidate from the change.
+Each reply is graded by hand against the table above. A defect counts once per run however often it
+is named. The gate compares the **mean found per run** (candidate ≥ baseline + 2) and requires
+**zero invented findings across all candidate runs**. Graded counts and the quoted line that earned
+each point go in `results.md`.

@@ -2,7 +2,7 @@
 //
 //   node run.mjs --arm current --sigil <sigil checkout> --out runs/b0.jsonl
 //                [--tasks T1,T2,...] [--runs 3] [--first-run 1] [--parallel 3]
-//                [--model claude-opus-5-5] [--install rules|none]
+//                [--model claude-opus-5-5] [--install rules|none] [--drop <rule-file>,...]
 //
 // Each run: a fresh copy of fixture/ (plus fixture-start/<task>/) under the OS temp dir, the arm's
 // install (`sigil add kind:rule --language typescript --target claude` from the given checkout, or
@@ -17,6 +17,7 @@ import {
   mkdtempSync,
   readFileSync,
   realpathSync,
+  rmSync,
   writeFileSync,
 } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -40,6 +41,7 @@ const firstRun = Number(flag('first-run', 1));
 const parallel = Number(flag('parallel', 3));
 const model = flag('model', 'claude-opus-5-5');
 const install = flag('install', 'rules');
+const drop = flag('drop', '').split(',').filter(Boolean);
 if (!arm || !out || (install !== 'none' && !sigil)) {
   console.error('usage: node run.mjs --arm <name> --out <file.jsonl> [--sigil <checkout>] [...]');
   process.exit(2);
@@ -97,6 +99,12 @@ function prepare(task, run) {
       { encoding: 'utf8' },
     );
     if (add.status !== 0) throw new Error(`sigil add failed: ${add.stderr}`);
+    // Ablation: remove named installed rule files (e.g. typescript-ts-conventions) before the run.
+    for (const name of drop) {
+      const file = join(dir, '.claude', 'rules', `${name}.md`);
+      if (!existsSync(file)) throw new Error(`--drop ${name}: ${file} was not installed`);
+      rmSync(file);
+    }
   }
   return dir;
 }

@@ -42,6 +42,29 @@ A candidate is accepted when all of these hold against its baseline:
 
 Lines of code, inflation and cost are reported, not gated.
 
+## Round 3 hypotheses: ablation (registered 2026-10-15, after round 2 and before any round-3 run)
+
+Round 2 showed that wording added to the same rule set does not undo the fragmentation B0 measured
+(62 declarations without rules, about 156 with them). Round 3 asks which rule drives it, by
+installing the full TypeScript rule set and removing one rule file (`run.mjs --drop`):
+
+| Arm | Removed                                                    | Why it is a suspect                                                                |
+| --- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| A1  | `typescript-ts-code-quality` (inlines `shared/clean-code`) | 20-line and 4-parameter limits, named constants                                    |
+| A2  | `typescript-ts-conventions`                                | `as const` objects, readonly value objects, factory functions, exhaustive switches |
+| A3  | `typescript-ts-documentation`                              | documentation on every export, which may favour more, smaller named units          |
+| A4  | `typescript-ts-async`                                      | accept and propagate `AbortSignal`, timeouts, concurrency helpers                  |
+
+Each arm: 18 fresh runs (T1–T6 × 3), same model, compared with B1 (`runs/b1-current.jsonl`).
+
+- **H5k (k = 1..4)**: arm Ak has fewer top-level `declarations` than B1. One-sided sign test with a
+  Bonferroni threshold for four tests: **p ≤ 0.0125**, with at least 10 decided pairs.
+- A rule whose arm passes H5k is named a **driver**; the fix that follows edits that rule and goes
+  through round-2 acceptance (all four criteria) as its own candidate.
+- Correctness per arm is reported: an arm that loses hidden tests shows the rule matters for
+  correctness, which weighs against removing it.
+- If no arm passes, no single rule drives fragmentation and the round closes with no catalog change.
+
 ## Runs
 
 | Date       | Comparison                                               | Commits                                                   | Model             | Result                                                                                                                                                                                                                                                                                                                    |

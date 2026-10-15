@@ -12,3 +12,6 @@ invalidate the baseline is visible.
 | Missing infrastructure is reported, not added  | rule:typescript/ts-code-quality   | say so in your summary                          |
 | Catch: handle or rethrow; log only at the edge | rule:typescript/ts-code-quality   | log and continue only at a top-level boundary   |
 | Reviewer checks the same catch rule            | agent:typescript/ts-code-reviewer | log and continue only at a top-level boundary   |
+| Scope first: only what the task asks           | rule:typescript/ts-code-quality   | write only what the task asks for               |
+| Does it need to exist (first rung)             | rule:typescript/ts-code-quality   | does it need to exist?                          |
+| Smallest is not incomplete                     | rule:typescript/ts-code-quality   | smallest is not incomplete                      |

@@ -3,8 +3,8 @@ id: shared/templates/code-quality
 kind: template
 title: "Language Code-Quality Rule"
 description: >-
-  Shared skeleton for a language's `*-code-quality` rule: the SEARCH FIRST protocol and the
-  KISS/YAGNI pair are identical across languages (confirmed via body-shingle overlap analysis,
+  Shared skeleton for a language's `*-code-quality` rule: the Scope First ladder and the
+  optimization note are identical across languages (confirmed via body-shingle overlap analysis,
   docs/audits/2026-08-20/analysis/lane-d-duplication.json — the highest cross-language overlap in
   the catalog, ~0.33-0.44). The duplication doctrine lives once, in the shared/clean-code base
   every member extends (docs/audits/2026-10-14). Structure limits, SOLID elaboration, layering, coupling, and design
@@ -14,7 +14,7 @@ description: >-
   catalog-quality-audit-2026-08.md's "what was and wasn't templatized" section.
 appliesToKind:
   - rule
-revision: 2
+revision: 3
 slots:
   - key: structure-limits
     required: true
@@ -58,11 +58,18 @@ docs:
     covers: "SOLID principle definitions this template's ## SOLID Principles slot elaborates per language."
 tags: [shared, rule, template, code-quality]
 ---
-## SEARCH FIRST Protocol
-Before creating any class, function, method, or module, search the codebase for similar patterns.
-If 80%+ overlap with the same concern exists, extend the existing code — do not create a new one.
-If less than 80% overlap or a genuinely different concern, create new. If uncertain whether overlap
-is sufficient, ask before proceeding.
+## Scope First
+Write only what the task asks for. Before adding a function, type, option, file or dependency,
+take the first step that fits:
+
+1. **Does it need to exist?** Skip features, options and layers nobody asked for; name them in
+   one line of your summary.
+2. **The standard library** does it? Use it.
+3. **An installed dependency** does it? Use it; never add one for a few lines.
+4. **This codebase** does it (80%+ same concern)? Extend that code.
+5. Otherwise write the smallest version that fully meets the requirement, with tests.
+
+Smallest is not incomplete: validation, error handling and implied edge cases are part of it.
 
 ## Code Structure Limits
 <!-- slot: structure-limits -->
@@ -76,11 +83,9 @@ is sufficient, ask before proceeding.
 ## Circular Dependencies and Coupling
 <!-- slot: coupling -->
 
-## KISS / YAGNI
-- **KISS**: The simplest solution that works is the correct one. Add complexity only when required.
-- **YAGNI**: Do not implement functionality until it is actually needed. Speculative generality adds debt.
-- **No premature optimization**: write the clear solution first; profile with `<!-- slot: perf-profiler-ref -->`
-  before optimizing. Optimize only measured hot paths — complexity bought without evidence is debt.
+## Optimization
+Optimize only hot paths measured with `<!-- slot: perf-profiler-ref -->`: complexity bought
+without evidence is debt.
 
 ## Design Patterns
 <!-- slot: design-patterns -->

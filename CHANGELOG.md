@@ -187,6 +187,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Every `*-code-quality` rule opens with a "Scope First" ladder in place of the old SEARCH FIRST
+  protocol: write only what the task asks; does it need to exist, then the standard library, an
+  installed dependency, existing code, and only then the smallest complete new version. It no
+  longer tells the agent to stop and ask when unsure about reuse. The `code-quality` template is at
+  revision 3; rule size per language is unchanged or smaller.
+
 - `sigil import --shared` sends a skill's `stack-<x>.md` files to the stack's home language as
   stack parts, so imported stack text never lands in `shared/`; the report shows where each went.
   A `--language` import takes no stack files. Titles drop the language prefix read from its

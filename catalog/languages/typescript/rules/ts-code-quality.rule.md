@@ -14,7 +14,7 @@ tags:
   - typescript
   - code
   - quality
-appliesToRationale: Structural size limits and the search-first protocol apply to TypeScript source; scoped narrower than the shared/clean-code base it extends, which has no language to restrict to.
+appliesToRationale: Structural size limits and the scope-first ladder apply to TypeScript source; scoped narrower than the shared/clean-code base it extends, which has no language to restrict to.
 ---
 <!-- slot: structure-limits -->
 Max 20 lines per function body (40 lines for config/builder functions). Max 4 parameters per function

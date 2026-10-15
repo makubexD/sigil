@@ -2,6 +2,7 @@
 //
 //   node measure.mjs run <dir> --task T1 --arm current --run 1 [--out runs/b0.jsonl] [--sha X] [--model Y]
 //   node measure.mjs compare <baseline.jsonl> <candidate.jsonl> [--arm-a X] [--arm-b Y]
+//                            [--metric inflation|declarations|loc]
 //
 // `run` copies the task's hidden tests into <dir>/hidden-test/, runs them with Node, and records
 // the hidden-test result, source lines, and inflation: files, value exports and option fields
@@ -93,8 +94,10 @@ function surfaceReport(dir, task, files) {
   const extraExports = [];
   const extraTypes = [];
   const exportsByFile = new Map();
+  let declarations = 0;
   for (const file of files) {
     const source = program.getSourceFile(file);
+    declarations += source ? countDeclarations(source) : 0;
     const moduleSymbol = source && checker.getSymbolAtLocation(source);
     const exported = moduleSymbol ? checker.getExportsOfModule(moduleSymbol) : [];
     exportsByFile.set(rel(file), exported);
@@ -125,7 +128,24 @@ function surfaceReport(dir, task, files) {
       if (!allowed.includes(prop.name)) extraOptions.push(`${fn}.${prop.name}`);
     }
   }
-  return { extraFiles, extraExports, extraTypes, extraOptions };
+  return { extraFiles, extraExports, extraTypes, extraOptions, declarations };
+}
+
+/** Top-level declarations: functions, classes, interfaces, type aliases, enums, and variables. */
+function countDeclarations(source) {
+  let count = 0;
+  for (const statement of source.statements) {
+    if (ts.isVariableStatement(statement)) count += statement.declarationList.declarations.length;
+    else if (
+      ts.isFunctionDeclaration(statement) ||
+      ts.isClassDeclaration(statement) ||
+      ts.isInterfaceDeclaration(statement) ||
+      ts.isTypeAliasDeclaration(statement) ||
+      ts.isEnumDeclaration(statement)
+    )
+      count++;
+  }
+  return count;
 }
 
 function run(args) {
@@ -176,6 +196,8 @@ function readRuns(file, arm) {
 function compare(args) {
   const a = readRuns(args[0], flag(args, 'arm-a'));
   const b = readRuns(args[1], flag(args, 'arm-b'));
+  // Lower is better for every metric: inflation (surface), declarations (fragmentation), loc.
+  const metric = flag(args, 'metric', 'inflation');
   const key = r => `${r.task}#${r.run}`;
   const byKey = new Map(a.map(r => [key(r), r]));
   const tally = {
@@ -193,8 +215,8 @@ function compare(args) {
     const ra = byKey.get(key(rb));
     if (!ra) continue;
     tally.pairs++;
-    if (rb.inflation < ra.inflation) tally.wins++;
-    else if (rb.inflation > ra.inflation) tally.losses++;
+    if (rb[metric] < ra[metric]) tally.wins++;
+    else if (rb[metric] > ra[metric]) tally.losses++;
     else tally.ties++;
     tally.testsA += ra.testsOk ? 1 : 0;
     tally.testsB += rb.testsOk ? 1 : 0;
@@ -203,13 +225,13 @@ function compare(args) {
       tally.heldOutTestsB += rb.testsOk ? 1 : 0;
     }
     rows.push(
-      `${key(rb).padEnd(6)} inflation ${ra.inflation} -> ${rb.inflation}  loc ${ra.loc} -> ${rb.loc}  tests ${ra.testsOk ? 'ok' : 'FAIL'} -> ${rb.testsOk ? 'ok' : 'FAIL'}`,
+      `${key(rb).padEnd(6)} inflation ${ra.inflation} -> ${rb.inflation}  declarations ${ra.declarations ?? '?'} -> ${rb.declarations ?? '?'}  loc ${ra.loc} -> ${rb.loc}  tests ${ra.testsOk ? 'ok' : 'FAIL'} -> ${rb.testsOk ? 'ok' : 'FAIL'}`,
     );
   }
   const decided = tally.wins + tally.losses;
   console.log(rows.sort().join('\n'));
   console.log(
-    `\npairs ${tally.pairs}: candidate less inflation ${tally.wins}, more ${tally.losses}, ties ${tally.ties}` +
+    `\npairs ${tally.pairs}: candidate lower ${metric} ${tally.wins}, higher ${tally.losses}, ties ${tally.ties}` +
       `\none-sided sign test p = ${decided ? signTestP(tally.wins, decided).toPrecision(3) : 'n/a'} over ${decided} decided pairs` +
       `\nhidden tests ok: baseline ${tally.testsA}/${tally.pairs}, candidate ${tally.testsB}/${tally.pairs}` +
       ` (held out: ${tally.heldOutTestsA} -> ${tally.heldOutTestsB})`,

@@ -17,6 +17,31 @@ more rigorous but larger, with unrequested options and types.
 If H1 is false (no measurable inflation in `current`), PR4 and PR5 have nothing to fix and are
 dropped, unless correctness is the gap.
 
+## Round 2 hypotheses (registered 2026-10-14, after B0 and before any round-2 run)
+
+B0 refuted H1 and showed, exploratorily, that the rules fragment the code (more top-level
+declarations and lines at the same correctness). Round 2 tests that effect on **fresh runs only**:
+B0's data suggested the hypotheses and is not used to confirm them.
+
+- **Baseline B1**: 18 fresh `current` runs at the commit under change, same model as B0.
+- **Primary metric**: `declarations` (top-level functions, classes, interfaces, type aliases, enums
+  and variables in `src/`, via the TypeScript AST); lower is better.
+- **H2b (PR4, scope first)** and **H3b (PR5, guards)**: the candidate has fewer declarations than
+  its baseline (B1 for PR4; the merged PR4 result, or B1 if PR4 is rejected, for PR5).
+
+A candidate is accepted when all of these hold against its baseline:
+
+1. **Fragmentation drops**: one-sided sign test on `declarations` over the decided pairs, p ≤ 0.05,
+   with at least 10 decided pairs.
+2. **Correctness holds**: hidden tests pass in at least as many runs, and no held-out task (T5, T6)
+   loses a passing run.
+3. **Readability holds**: the blind judge (`judge.mjs`, `claude-sonnet-5-5`, X/Y order randomised)
+   does not prefer the baseline on readability at p ≤ 0.05 (one-sided sign test). Shorter code the
+   judge finds harder to read is a rejection, not a win.
+4. **Bytes do not grow**: `npm run rule-load` for TypeScript is not above the baseline's.
+
+Lines of code, inflation and cost are reported, not gated.
+
 ## Runs
 
 | Date       | Comparison                                  | Commits   | Model             | Result                                                                                                                                                 |

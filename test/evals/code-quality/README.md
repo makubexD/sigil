@@ -13,9 +13,10 @@ project before the agent starts. Background and the plan it gates: `docs/audits/
 | `fixture-hidden/` | Hidden tests per task, copied in only after the agent finishes                                        |
 | `fixture-review/` | The project R1 reviews                                                                                |
 | `run.mjs`         | Runs one arm headless and appends records                                                             |
-| `measure.mjs`     | Measures one run (`run`) and compares two arms (`compare`)                                            |
+| `measure.mjs`     | Measures one run (`run`) and compares two arms (`compare`, `--metric`)                                |
+| `judge.mjs`       | Blind readability and minimalism judge over two arms' archived source                                 |
 | `results.md`      | Hypotheses written before any run, then one dated row per comparison                                  |
-| `runs/*.jsonl`    | Raw records, one line per run                                                                         |
+| `runs/*.jsonl`    | Raw records, one line per run; `runs/<file>/<task>-<run>/` holds that run's `src/`                    |
 | `coverage.md`     | The doctrine phrases the hypotheses depend on (`npm run evals:check`)                                 |
 
 ## Arms
@@ -35,15 +36,20 @@ project before the agent starts. Background and the plan it gates: `docs/audits/
    Each run copies the fixture into the OS temp dir, installs the arm, and runs
    `claude -p "<prompt>"` with `--setting-sources project`, `--permission-mode acceptEdits`, Bash
    limited to `node` and `npm test`, and the same `--model` for every arm. Then it measures the run.
-3. Compare: `node measure.mjs compare runs/<baseline>.jsonl runs/<candidate>.jsonl` (`--arm-a` and
-   `--arm-b` pick arms out of a shared file).
-4. Add a dated row to `results.md` with the arms, commits, model, and the compare output.
+3. Compare: `node measure.mjs compare runs/<baseline>.jsonl runs/<candidate>.jsonl --metric <m>`
+   (`inflation`, `declarations` or `loc`; `--arm-a` and `--arm-b` pick arms out of a shared file).
+4. Judge: `node judge.mjs runs/<baseline>.jsonl runs/<candidate>.jsonl --out runs/judge-<name>.jsonl`.
+   Never read T5/T6 sources while editing catalog text; the judge reads them, you read its scores.
+5. Add a dated row to `results.md` with the arms, commits, model, and the compare and judge output.
 
 **Known confound:** `--setting-sources project` drops user settings, hooks and plugins, but the
 user-level instruction file still loads. It is the same file in every arm, so it is constant noise,
 not a bias. Record its presence in `results.md`. Runs cost real money (`costUsd` in each record).
 
 ## Acceptance (written before the first run; do not change after seeing results)
+
+Round 2 (fragmentation, after B0) has its own registered rules in `results.md`, which replace
+criterion 2 below with `declarations` and add a readability guard. Round 1's rules, kept as written:
 
 A candidate catalog change is accepted when, against the current baseline on the same model:
 

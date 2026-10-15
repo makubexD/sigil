@@ -114,6 +114,8 @@ module.exports = tseslint.config(
       'test/*.js',
       // Skill eval fixtures: planted-flaw sample projects, never run (test/evals/README.md)
       'test/evals/*/fixture*/**',
+      // Eval run archives: agent-written source, recorded as produced (test/evals/code-quality)
+      'test/evals/*/runs/**',
       'eslint.config.js',
     ],
   },

@@ -9,6 +9,7 @@
  * @module
  */
 import { resolveCatalog } from '../../resolve';
+import { loadOverlays, withOverlays } from '../../overlays';
 import { getTarget } from '../../targets';
 import { CONFIG_KINDS, type SkippedArtifact } from '../../select';
 import { SigilError } from '../../errors';
@@ -73,7 +74,7 @@ function splitCommaFlag(raw: string | undefined): string[] | undefined {
 /** Builds the plan context, resolving inputs/target; returns null when the wizard was cancelled. */
 async function buildPlanCtx(selectors: string[], opts: AddOpts): Promise<PlanCtx | null> {
   const { catalog, packsConfig } = await loadAndValidate(opts.catalogDir, opts.packs);
-  const resolved = resolveCatalog(catalog);
+  const resolved = withOverlays(resolveCatalog(catalog), loadOverlays(opts.projectDir));
 
   const inputs = await resolveInputs(selectors, opts, resolved, packsConfig.packs);
   if (!inputs) return null;

@@ -10,6 +10,7 @@
  * @module
  */
 import { resolveCatalog } from '../resolve';
+import { loadOverlays, withOverlays } from '../overlays';
 import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets';
 import { saveManifest } from '../manifest';
@@ -209,7 +210,7 @@ async function prepareUpdateRun(
   opts: UpdateOptions,
 ): Promise<UpdateRunSetup | undefined> {
   const { catalog: rawCatalog } = await loadAndValidate(opts.catalogDir, opts.packs);
-  const resolved = resolveCatalog(rawCatalog);
+  const resolved = withOverlays(resolveCatalog(rawCatalog), loadOverlays(opts.projectDir));
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
   const target = getTarget(targetName);
   assertTargetSupportsUpdate(target, targetName);

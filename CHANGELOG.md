@@ -193,6 +193,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   code into more pieces at the same correctness (`test/evals/code-quality`). The God Object
   thresholds stay. The `code-quality` template is at revision 3 (`sigil update` applies it).
 
+- `shared/clean-code` asks for names that state a domain role, booleans that read as predicates
+  and quantities that carry their unit (`timeoutMs`), and for a `shortcut:` comment on a
+  simplification or unhandled case left on purpose, also named in the summary.
+
 - `sigil import --shared` sends a skill's `stack-<x>.md` files to the stack's home language as
   stack parts, so imported stack text never lands in `shared/`; the report shows where each went.
   A `--language` import takes no stack files. Titles drop the language prefix read from its

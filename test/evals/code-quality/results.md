@@ -186,6 +186,15 @@ D2 is the next baseline. Exploratory (not registered): named literal constants r
 functions fell, so the unconditional named-constant line may now carry the decomposition; and the
 held-out T6 went up in every run (18 → 26), which a fresh baseline should watch.
 
+**Named-constant line: not a candidate (checked 2026-10-16 from existing counts, no new runs).**
+The round 5 lead does not survive a look at the arms already run. The magic-number line reaches
+TypeScript only through `ts-code-quality`, which inlines `clean-code`, so A1 ran without it. Named
+literal constants per task, B1 / A1 / D2: T1 11 / 8 / 9, T2 12 / 12 / 13, T6 0 / 1 / 16, and none
+in T3–T5. Without the line, A1 named as many constants in T1 and T2 as the arms with it. D2's whole
+rise is T6 (16 of its 26 T6 declarations), and the line is identical in B1 and D2, so the line
+cannot explain it. Round 6 was not registered. T6 sources stay unread; the next baseline run
+re-measures T6.
+
 **Round 2 reading.** Neither wording change moved fragmentation measurably. B0 put the gap between
 no rules and the current rules at 62 vs 156 top-level declarations, and prose added on top of the
 same rule set barely shifts it. Exploratory (not a registered result): the hard limits themselves

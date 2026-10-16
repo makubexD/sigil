@@ -18,5 +18,13 @@
 
 ## Runs
 
-| Date | Probe | Commit | Model | Result |
-| ---- | ----- | ------ | ----- | ------ |
+| Date       | Probe                | Commit                                  | Model             | Result                                                                                                                                                                                                                                                   |
+| ---------- | -------------------- | --------------------------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-16 | D0 (`runs/d0.jsonl`) | `0d850a6` (catalog as master `d285808`) | `claude-opus-5-5` | **H8 holds.** 24 of 24 runs picked the expected agent; no prompt misdispatched, no built-in agent picked, every run called a subagent. P3 and P4 read files first (1 to 3 tool calls); the rest dispatched straight away. PR7 adds no "Not for …" clause |
+
+**Reading.** On these eight requests the descriptions already separate the TypeScript agents,
+including the generic `code-reviewer` (whose description defers to a language reviewer) from
+`ts-code-reviewer`. Limits: the prompts were written by someone who had read the descriptions, so
+each leans on a distinguishing phrase; the suffix asks for a subagent; and one language, one model.
+A request phrased against the grain (a per-file security check, a "slow and wrong" bug) is not
+covered. The probe stays as the check to run before any future description clause.

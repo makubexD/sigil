@@ -1,6 +1,6 @@
 # Consumer overlays (2026-10)
 
-Status: proposed; spike pending (below). Owner put overlays in scope for the 2026-10-14 benchmark
+Status: spike done, go for v1 (see Spike result). Owner put overlays in scope for the 2026-10-14 benchmark
 (docs/audits/2026-10-14); this records the design and the decision gate, not shipped code.
 
 ## The need
@@ -66,3 +66,48 @@ kind only, path narrowing only. It must answer:
 **Go** if 1 holds, 2 needs no invariant exception and stays under ~300 lines with tests, and 3
 passes. Otherwise **no-go**: document "use a project instruction file" as the supported way and
 close the item.
+
+## Spike result (2026-10-16): go, with a smaller model
+
+Branch `spike/overlay-claude-rule-paths` (`7970474`, never merged): `src/overlays.ts` plus one line
+each in `add` (`commands/add/plan.ts`) and `update` (`commands/update.ts`). The consumer writes
+`.sigil/overlays.yaml`:
+
+```yaml
+rules:
+  typescript/ts-code-quality:
+    scope: [src, packages/api]
+```
+
+and each catalog glob `G` of that rule becomes `<prefix>/G`. The overlay is applied to a copy of the
+resolved catalog (`appliesTo` narrowed) before the target renders, not to the rendered file.
+
+1. **Subset check: holds, by construction.** All 106 distinct rule globs in the catalog start with
+   `**/`, and `<literal prefix>/**/T` matches a subset of `**/T`. So the check is on the prefix
+   only (no glob syntax, not absolute, no `.`/`..`/empty segment), never on the file system. A
+   catalog glob without the `**/` lead is refused, so the guarantee never depends on the glob.
+2. **Size and invariants: about 90 lines plus 2 wiring lines, no exception.** The overlay is read
+   from the project directory (never `PKG_ROOT`); no config JSON is merged, so `serialize()` and
+   `replaceMerge` are not involved; the manifest hash is read from the written file, so drift
+   classification is unchanged; `partitionFiles` sees an ordinary `FileMap`. Every path that
+   renders for a project (the add wizard's install states included) receives the catalog `add`
+   or `update` built, so the two call sites cover them. `status`, `uninstall` and `prune` need no
+   change: they never render.
+3. **Re-apply across a catalog change: passes.** In a temp project: `add` wrote the narrowed
+   `paths:`; `status` read `up to date`; a catalog edit to the same rule, then `update`, carried
+   the body change with the narrowing kept, and `status` read `up to date` again; editing the
+   overlay to `[lib]` and running `update` rewrote the scope; a `../x` prefix was refused with the
+   reason; `uninstall` removed the file with no overlay code.
+
+**What the spike changed in the model.** No manifest field, no fragment recording and no template
+revision binding are needed: the overlay file is the record, and the hash is taken after it, so
+an overlaid file is `intact`. Deleting the overlay and running `update` widens the rule back.
+
+**Open before shipping:** Copilot (the same `appliesTo` reaches `applyTo:`, but a `**/*` rule lands
+in `copilot-instructions.md` today, not tested); an invalid overlay currently fails the whole
+`update`, which should name the overlay and skip only that rule; tests and docs
+(`docs/guides/consuming.md`). The CTO dissent stands as a scope limit: v1 is path narrowing for
+rules only.
+
+**Decision: go** for v1 as above, as its own PR after the code-quality work, with the spike's
+tests ported first (RED) and the two open items fixed.

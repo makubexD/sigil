@@ -16,10 +16,6 @@ tags:
 appliesToRationale: Scoped to Python source because these structural and SOLID principles govern function/class design, which only exists in .py files.
 ---
 <!-- slot: structure-limits -->
-Max 20 lines per function body (40 lines for a factory/builder function or a `pytest` fixture with
-setup/teardown). Max 4 parameters per function or method signature — beyond that, accept a
-`dataclass`/`TypedDict` bundling the related arguments instead.
-
 A module beyond ~300 lines or a class beyond ~7 public methods is a **God Object** candidate —
 extract a collaborator or split into smaller, single-responsibility modules/classes.
 

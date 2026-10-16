@@ -59,7 +59,7 @@ Discover conventions (check `{sigil:conventions-file}`, any rules files present,
 
 Use the delegation message to determine what to refactor. If not specific, scan for the highest-value targets:
 
-**Extract Method** — method body > 20 lines, or a named comment-block (`// Step 1: build header`) that identifies a distinct step. Ensures private method captures intent, reducing the parent to a composition of named operations.
+**Extract Method** — a named comment-block (`// Step 1: build header`) that identifies a distinct step. Ensures private method captures intent, reducing the parent to a composition of named operations.
 
 **Extract Class/Record** — a class with > 3 unrelated responsibilities, or a file > 200 lines mixing concerns. Produces two focused types.
 

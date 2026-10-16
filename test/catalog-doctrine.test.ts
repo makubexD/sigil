@@ -36,6 +36,11 @@ const RETIRED: readonly Retired[] = [
     pattern: /either log with context or re-?(throw|raise)/i,
     why: 'log-and-continue is allowed only at a top-level boundary; reviewers flag it elsewhere',
   },
+  {
+    pattern:
+      /max \d+ (lines|parameters|props)|body (>|exceeds) ?\d+ lines|split into smaller units before proceeding|single-purpose functions/i,
+    why: 'prose that says when to split a function makes agents split more (test/evals/code-quality, rounds 3-4)',
+  },
 ];
 
 const TOP_LEVEL_CATCH = 'log and continue only at a top-level boundary';

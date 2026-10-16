@@ -187,6 +187,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Code-quality rules no longer tell agents when to split a function: the line and parameter limits
+  and the "small, single-purpose functions" line are gone, and the refactor specialists' Extract
+  Function no longer fires on a line count. Measured on TypeScript, that guidance made agents split
+  code into more pieces at the same correctness (`test/evals/code-quality`). The God Object
+  thresholds stay. The `code-quality` template is at revision 3 (`sigil update` applies it).
+
 - `sigil import --shared` sends a skill's `stack-<x>.md` files to the stack's home language as
   stack parts, so imported stack text never lands in `shared/`; the report shows where each went.
   A `--language` import takes no stack files. Titles drop the language prefix read from its

@@ -43,10 +43,7 @@ describe('Resolve phase', () => {
       csRule.resolvedBody?.includes('Clear names'),
       'inherited clean-code guidance present',
     );
-    assert.ok(
-      csRule.resolvedBody?.includes('Max 20 lines per method body'),
-      'own guidance present',
-    );
+    assert.ok(csRule.resolvedBody?.includes('God Object'), 'own guidance present');
   });
 
   it('expands uses.rules for skills', async () => {

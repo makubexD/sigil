@@ -17,9 +17,6 @@ tags:
 appliesToRationale: Structural size limits and the search-first protocol apply to TypeScript source; scoped narrower than the shared/clean-code base it extends, which has no language to restrict to.
 ---
 <!-- slot: structure-limits -->
-Max 20 lines per function body (40 lines for config/builder functions). Max 4 parameters per function
-or method signature. If either limit is exceeded, split into smaller units before proceeding.
-
 A module beyond ~200 lines or a class beyond ~7 public methods is a **God Object** candidate —
 extract a collaborator or split into smaller, single-responsibility units.
 

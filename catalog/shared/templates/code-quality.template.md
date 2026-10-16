@@ -14,13 +14,14 @@ description: >-
   catalog-quality-audit-2026-08.md's "what was and wasn't templatized" section.
 appliesToKind:
   - rule
-revision: 2
+revision: 3
 slots:
   - key: structure-limits
     required: true
     description: >-
-      The per-language size-limit paragraph: max lines per function/method, max parameters, and
-      the "God Object" candidate threshold with a language-specific example of what triggers it.
+      The per-language "God Object" candidate threshold with a language-specific example of what
+      triggers it. No function-size or parameter-count rule: prose that says when to split a
+      function makes agents split more (test/evals/code-quality, rounds 3 and 4).
   - key: solid-principles
     required: true
     description: >-

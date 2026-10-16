@@ -16,9 +16,6 @@ tags:
 appliesToRationale: Scoped to C# source because these structural and SOLID principles govern class/method design, which only exists in .cs files.
 ---
 <!-- slot: structure-limits -->
-Max 20 lines per method body (40 lines for factory / builder methods). Max 4 parameters per method
-or constructor signature. If either limit is exceeded, split into smaller units before proceeding.
-
 A class beyond ~200 lines or ~7 public members is a **God Object** candidate — extract a collaborator
 or split into smaller, single-responsibility classes. Constructor injection is the signal: if a
 constructor requires more than 4 collaborators, the class is doing too much.

@@ -57,7 +57,7 @@ Discover conventions from `{sigil:conventions-file}`, any rules files present, a
 
 Highest-value targets:
 
-- **Extract Function** — body exceeds 20 lines, or a named comment block signals a step that should
+- **Extract Function** — a named comment block signals a step that should
   be its own function.
 - **Extract Module** — more than 3 unrelated responsibilities in one file, or file exceeds ~300 lines
   mixing concerns. Create a new file; update imports everywhere.

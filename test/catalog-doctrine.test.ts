@@ -48,6 +48,9 @@ const TOP_LEVEL_CATCH = 'log and continue only at a top-level boundary';
 const CANONICAL: readonly Canonical[] = [
   { family: 'code-quality', phrase: 'a wrong abstraction costs more than duplication' },
   { family: 'code-quality', phrase: TOP_LEVEL_CATCH },
+  { family: 'code-quality', phrase: 'a boolean reads as a predicate' },
+  { family: 'code-quality', phrase: 'a quantity carries its unit' },
+  { family: 'code-quality', phrase: 'mark it with a `shortcut:` comment' },
   { family: 'code-reviewer', phrase: TOP_LEVEL_CATCH },
 ];
 

@@ -28,14 +28,20 @@ import yaml from 'js-yaml';
 import { readRegularFile } from './safe-read';
 import { SigilError } from './errors';
 import type { SelectionResult } from './select';
-import type { ResolvedCatalog } from './types';
+import type { ResolvedArtifact, ResolvedCatalog } from './types';
 
 /** Relative to the project directory; forward slashes, so messages read the same on every OS. */
 export const OVERLAYS_FILE = '.sigil/overlays.yaml';
 
 const KIB = 1024;
 const MAX_OVERLAYS_KIB = 64;
+const ROOT_KEY = 'rules';
 const GLOB_SYNTAX = /[*?[\]{}!]/;
+/**
+ * One directory name: letters, digits, `. _ - + @`, and single spaces inside it. Nothing a glob,
+ * a list separator (Copilot joins globs with `,`) or an escape (`\`) could read as more than a name.
+ */
+const DIRECTORY_NAME = /^[\p{L}\p{N}._@+-]+(?: [\p{L}\p{N}._@+-]+)*$/u;
 const NARROWABLE_LEAD = '**/';
 
 const printWarning = (message: string) => console.warn(`  ⚠  ${message}`);
@@ -46,49 +52,61 @@ export interface ProjectOverlays {
   refused: ReadonlyMap<string, string>;
 }
 
-/** A resolved catalog with overlays applied, and the ids whose overlay was refused. */
+/** A resolved catalog with overlays applied, and the entries it could not apply. */
 export interface OverlaidCatalog {
   resolved: ResolvedCatalog;
+  /** Rules whose entry was refused: skipped, never installed wider than the project asked. */
   refused: ReadonlyMap<string, string>;
+  /** Entries that name no catalog rule: reported, and otherwise change nothing. */
+  ignored: ReadonlyMap<string, string>;
 }
 
 /** Why `prefix` cannot narrow a scope, or undefined when it can. */
 function prefixProblem(prefix: string): string | undefined {
   if (GLOB_SYNTAX.test(prefix)) return 'has glob syntax; name a directory';
   if (path.posix.isAbsolute(prefix) || /^[A-Za-z]:/.test(prefix)) return 'is absolute';
-  if (prefix.split('/').some(s => s === '' || s === '.' || s === '..'))
-    return 'is not a plain relative path';
+  const segments = prefix.split('/');
+  if (segments.some(s => s === '.' || s === '..' || !DIRECTORY_NAME.test(s)))
+    return 'is not a plain relative path (names of letters, digits, spaces and . _ - + @, joined by /)';
   return undefined;
 }
 
-/** Why one entry cannot be applied, or undefined when its scope is a list of valid prefixes. */
-function entryProblem(entry: unknown): string | undefined {
+/** The entry's directories without a trailing slash, or why the entry cannot be applied. */
+function entryScope(entry: unknown): { scope: string[] } | { problem: string } {
   const scope = (entry as { scope?: unknown } | null)?.scope;
   if (!Array.isArray(scope) || scope.length === 0 || !scope.every(s => typeof s === 'string'))
-    return 'scope must be a non-empty list of directories';
-  for (const prefix of scope as string[]) {
-    const problem = prefixProblem(prefix);
-    if (problem) return `scope '${prefix}' ${problem}`;
+    return { problem: 'scope must be a non-empty list of directories' };
+  const dirs = (scope as string[]).map(dir => (dir.length > 1 ? dir.replace(/\/+$/, '') : dir));
+  for (const [i, dir] of dirs.entries()) {
+    const problem = prefixProblem(dir);
+    if (problem) return { problem: `scope '${String(scope[i])}' ${problem}` };
   }
-  return undefined;
+  return { scope: dirs };
 }
 
 function isMapping(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** The file's `rules:` mapping; throws when the text is not YAML or not that shape. */
-function rulesMapping(text: string): Record<string, unknown> {
-  let data: unknown;
+/** The YAML in `text`; throws a SigilError naming the file when it does not parse. */
+function loadYaml(text: string): unknown {
   try {
-    data = yaml.load(text);
+    return yaml.load(text);
   } catch (err) {
     throw new SigilError(`${OVERLAYS_FILE}: ${(err as Error).message}`, { cause: err });
   }
-  const rules = data == null ? {} : isMapping(data) ? (data.rules ?? {}) : undefined;
+}
+
+/** The file's `rules:` mapping; throws when the text is not YAML or not that shape. */
+function rulesMapping(text: string): Record<string, unknown> {
+  const data = loadYaml(text) ?? {};
+  const unknown = isMapping(data) ? Object.keys(data).find(key => key !== ROOT_KEY) : undefined;
+  if (unknown !== undefined)
+    throw new SigilError(`${OVERLAYS_FILE}: unknown key '${unknown}'; expected '${ROOT_KEY}:'`);
+  const rules = isMapping(data) ? (data[ROOT_KEY] ?? {}) : undefined;
   if (!isMapping(rules)) {
     throw new SigilError(
-      `${OVERLAYS_FILE}: expected 'rules:' mapping rule ids to { scope: [...] }`,
+      `${OVERLAYS_FILE}: expected '${ROOT_KEY}:' mapping rule ids to { scope: [...] }`,
     );
   }
   return rules;
@@ -99,9 +117,9 @@ export function parseOverlays(text: string): ProjectOverlays {
   const scopes = new Map<string, readonly string[]>();
   const refused = new Map<string, string>();
   for (const [id, entry] of Object.entries(rulesMapping(text))) {
-    const problem = entryProblem(entry);
-    if (problem) refused.set(id, problem);
-    else scopes.set(id, (entry as { scope: string[] }).scope);
+    const result = entryScope(entry);
+    if ('problem' in result) refused.set(id, result.problem);
+    else scopes.set(id, result.scope);
   }
   return { scopes, refused };
 }
@@ -140,40 +158,69 @@ function narrow(
   return { globs: prefixes.flatMap(p => globs.map(g => `${p}/${g}`)) };
 }
 
-/** Each overlaid id's narrowed globs, and every refused id with its reason. */
+/** Each overlaid rule's narrowed globs; every other entry refused (a rule) or ignored (no rule). */
 function narrowAll(resolved: ResolvedCatalog, overlays: ProjectOverlays) {
-  const refused = new Map(overlays.refused);
   const narrowed = new Map<string, string[]>();
+  const refused = new Map<string, string>();
+  const ignored = new Map<string, string>();
+  const reject = (id: string, reason: string) =>
+    (resolved.byId.get(id)?.kind === 'rule' ? refused : ignored).set(id, reason);
+  for (const [id, reason] of overlays.refused) reject(id, reason);
   for (const [id, prefixes] of overlays.scopes) {
     const result = narrow(resolved, id, prefixes);
-    if ('problem' in result) refused.set(id, result.problem);
+    if ('problem' in result) reject(id, result.problem);
     else narrowed.set(id, result.globs);
   }
-  return { narrowed, refused };
+  return { narrowed, refused, ignored };
 }
 
-/** A copy of `resolved` with each overlaid rule's `appliesTo` narrowed; the input is unchanged. */
+/** `artifact` with the rules it loads (`uses:`) pointing at their overlaid copies, refused ones dropped. */
+function rewire(
+  artifact: ResolvedArtifact,
+  rules: ReadonlyMap<string, ResolvedArtifact>,
+  refused: ReadonlyMap<string, string>,
+): ResolvedArtifact {
+  if (!artifact.resolvedRules) return artifact;
+  const resolvedRules = artifact.resolvedRules
+    .filter(rule => !refused.has(rule.id))
+    .map(rule => rules.get(rule.id) ?? rule);
+  return { ...artifact, resolvedRules };
+}
+
+/** Each narrowed rule as an overlaid copy of its catalog artifact, by id. */
+function narrowedRules(
+  resolved: ResolvedCatalog,
+  narrowed: ReadonlyMap<string, string[]>,
+): Map<string, ResolvedArtifact> {
+  const rules = new Map<string, ResolvedArtifact>();
+  for (const [id, appliesTo] of narrowed) {
+    const rule = resolved.byId.get(id);
+    if (rule) rules.set(id, { ...rule, frontmatter: { ...rule.frontmatter, appliesTo } });
+  }
+  return rules;
+}
+
+/**
+ * A copy of `resolved` with each overlaid rule's `appliesTo` narrowed, everywhere it is reached: by
+ * id and through every skill that loads it, which is how `add` installs a dependency. A refused
+ * rule is dropped from those skills, so it is never installed as a dependency either. The input is
+ * unchanged.
+ */
 export function withOverlays(
   resolved: ResolvedCatalog,
   overlays: ProjectOverlays,
 ): OverlaidCatalog {
-  const { narrowed, refused } = narrowAll(resolved, overlays);
-  if (narrowed.size === 0) return { resolved, refused };
-  const artifacts = resolved.artifacts.map(artifact => {
-    const appliesTo = narrowed.get(artifact.id);
-    return appliesTo
-      ? { ...artifact, frontmatter: { ...artifact.frontmatter, appliesTo } }
-      : artifact;
-  });
-  return {
-    resolved: { ...resolved, artifacts, byId: new Map(artifacts.map(a => [a.id, a])) },
-    refused,
-  };
+  const { narrowed, refused, ignored } = narrowAll(resolved, overlays);
+  if (narrowed.size === 0 && refused.size === 0) return { resolved, refused, ignored };
+  const rules = narrowedRules(resolved, narrowed);
+  const artifacts = resolved.artifacts.map(a => rewire(rules.get(a.id) ?? a, rules, refused));
+  const byId = new Map(artifacts.map(a => [a.id, a]));
+  return { resolved: { ...resolved, artifacts, byId }, refused, ignored };
 }
 
 /**
- * The project's overlays applied to `resolved`. `warn` hears about each refused id the catalog does
- * not have (nothing will skip it); the caller reports the others where it skips them.
+ * The project's overlays applied to `resolved`, each entry it could not apply reported once
+ * through `warn`: an ignored one changes nothing, a refused rule is not installed or updated.
  */
 export function applyProjectOverlays(
   resolved: ResolvedCatalog,
@@ -181,8 +228,11 @@ export function applyProjectOverlays(
   warn: (message: string) => void = printWarning,
 ): OverlaidCatalog {
   const overlaid = withOverlays(resolved, loadOverlays(projectDir));
+  for (const [id, reason] of overlaid.ignored) warn(`${OVERLAYS_FILE}: ${id}: ${reason}; ignored`);
   for (const [id, reason] of overlaid.refused) {
-    if (!resolved.byId.has(id)) warn(`${OVERLAYS_FILE}: ${id}: ${reason}; ignored`);
+    warn(
+      `${OVERLAYS_FILE}: ${id}: ${reason}; this rule is not installed or updated until it is fixed`,
+    );
   }
   return overlaid;
 }

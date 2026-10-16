@@ -653,14 +653,17 @@ Each catalog glob gets each directory in front of it: `**/*.ts` becomes `src/**/
 the file and run `sigil update` to change a scope; delete an entry (or the file) and run
 `sigil update` to widen the rule back.
 
-- An overlay only narrows. Each `scope` item is a plain relative directory: no glob characters, no
-  `..`, `.` or empty segment, not absolute.
+- An overlay only narrows. Each `scope` item is a relative directory: names made of letters,
+  digits, spaces and `. _ - + @`, joined by `/` (a trailing `/` is fine). No glob characters,
+  commas, backslashes, `.` or `..`, and nothing absolute.
 - Only rules can be narrowed, and only when every catalog glob of the rule starts with `**/` (every
-  shipped rule does).
-- A bad entry affects only its own rule: `add` skips that rule and `update` leaves its installed file
-  as it is, each saying why, so nothing is installed wider than you asked. An id the catalog does not
-  have is reported and ignored. A file sigil cannot read as a whole (not YAML, no `rules:` mapping,
-  a link, over 64 KB) stops the command and names the file.
+  shipped rule does). A rule a skill installs as its own file (Claude Code) is narrowed too. Copilot
+  copies a skill's rules into the skill instead, where they load with the skill and have no scope.
+- A bad entry for a rule affects only that rule, and sigil says why: `add` does not install it (as
+  a pick, as a skill's dependency, or copied into a skill) and `update` leaves its installed file as
+  it is, so nothing is installed wider than you asked. An entry for an id that is not a catalog rule
+  is reported and ignored. A file sigil cannot read as a whole (not YAML, a top-level key other than `rules:`, a
+  link, over 64 KB) stops the command and names the file.
 - A base rule that another rule carries through `extends` (`shared/clean-code` inside
   `typescript/ts-code-quality`) is not installed on its own, so an overlay on it changes nothing;
   narrow the rule that carries it.

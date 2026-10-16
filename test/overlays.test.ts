@@ -12,6 +12,8 @@ import { loadResolvedCatalog } from './helpers/catalog';
 import { withTempDir } from './helpers/temp-dir';
 
 const RULE = 'typescript/ts-code-quality';
+const SKILL = 'typescript/ts-audit-deps';
+const DEP = 'typescript/ts-security';
 
 function overlaysOf(entries: Record<string, unknown>) {
   return parseOverlays(JSON.stringify({ rules: entries }));
@@ -36,6 +38,10 @@ describe('parseOverlays', () => {
       'a/no-scope': {},
       'a/empty-list': { scope: [] },
       'a/not-string': { scope: [3] },
+      'a/comma': { scope: ['package.json,src'] },
+      'a/backslash': { scope: ['src' + String.fromCharCode(92) + 'api'] },
+      'a/control': { scope: ['src' + String.fromCharCode(7) + 'pi'] },
+      'a/padded': { scope: [' src'] },
     };
     const { scopes, refused } = overlaysOf({ ...bad, [RULE]: { scope: ['src'] } });
     assert.deepEqual([...scopes.keys()], [RULE]);
@@ -43,8 +49,15 @@ describe('parseOverlays', () => {
     assert.match(refused.get('a/parent') ?? '', /'\.\.\/x'/);
   });
 
+  it('should accept a trailing slash on a directory', () => {
+    assert.deepEqual(
+      [...overlaysOf({ [RULE]: { scope: ['src/', 'packages/api/'] } }).scopes],
+      [[RULE, ['src', 'packages/api']]],
+    );
+  });
+
   it('should fail naming the file when it is not a mapping of rules', () => {
-    for (const text of ['rules: [a]', 'just text', 'rules: {a: [', '- a']) {
+    for (const text of ['rules: [a]', 'just text', 'rules: {a: [', '- a', 'rule: {}']) {
       assert.throws(() => parseOverlays(text), new RegExp(OVERLAYS_FILE.replace(/[\\.]/g, '.')));
     }
   });
@@ -89,7 +102,17 @@ describe('withOverlays', () => {
     assert.equal(refused.size, 0);
   });
 
-  it('should refuse an id that is not a catalog rule, or a glob it cannot narrow', async () => {
+  it('should point every skill at the narrowed rule it loads, and drop a refused one', async () => {
+    const resolved = await loadResolvedCatalog();
+    const narrowedDep = withOverlays(resolved, overlaysOf({ [DEP]: { scope: ['src'] } })).resolved;
+    const dep = narrowedDep.byId.get(SKILL)?.resolvedRules?.find(r => r.id === DEP);
+    assert.equal(dep, narrowedDep.byId.get(DEP));
+    const refusedDep = withOverlays(resolved, overlaysOf({ [DEP]: { scope: ['src/*'] } })).resolved;
+    const ids = refusedDep.byId.get(SKILL)?.resolvedRules?.map(r => r.id);
+    assert.ok(ids && !ids.includes(DEP) && ids.length > 0);
+  });
+
+  it('should ignore an id that is not a catalog rule, and refuse a glob it cannot narrow', async () => {
     const resolved = await loadResolvedCatalog();
     const rule = resolved.byId.get(RULE)!;
     const odd = {
@@ -102,22 +125,24 @@ describe('withOverlays', () => {
       artifacts: [...resolved.artifacts, odd],
       byId: new Map([...resolved.byId, [odd.id, odd]]),
     };
-    const { refused } = withOverlays(
+    const { refused, ignored } = withOverlays(
       catalog,
       overlaysOf({
         'typescript/ts-debugger': { scope: ['src'] },
         'nope/missing': { scope: ['src'] },
+        'nope/bad': { scope: ['../x'] },
         'x/odd': { scope: ['src'] },
         [RULE]: { scope: ['src'] },
       }),
     );
-    assert.deepEqual([...refused.keys()].sort(), [
+    assert.deepEqual([...refused.keys()], ['x/odd']);
+    assert.deepEqual([...ignored.keys()].sort(), [
+      'nope/bad',
       'nope/missing',
       'typescript/ts-debugger',
-      'x/odd',
     ]);
-    assert.match(refused.get('typescript/ts-debugger') ?? '', /only rules/);
-    assert.match(refused.get('nope/missing') ?? '', /no such catalog rule/);
+    assert.match(ignored.get('typescript/ts-debugger') ?? '', /only rules/);
+    assert.match(ignored.get('nope/missing') ?? '', /no such catalog rule/);
     assert.match(refused.get('x/odd') ?? '', /src\/\*\.ts/);
   });
 });

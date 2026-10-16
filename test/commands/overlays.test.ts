@@ -11,13 +11,20 @@ import { runAdd } from '../../dist-cli/commands/add';
 import { runUpdate } from '../../dist-cli/commands/update';
 import { computeStatus, loadManifest } from '../../dist-cli/manifest';
 import { OVERLAYS_FILE } from '../../dist-cli/overlays';
-import { getAllTargets } from '../../dist-cli/targets/index';
-import { installableKinds } from '../../dist-cli/targets/capabilities';
+import { getAllTargets, getTarget } from '../../dist-cli/targets/index';
+import { installableKinds, isInstallableDependency } from '../../dist-cli/targets/capabilities';
 import { CATALOG, PACKS } from '../helpers/install-scenario';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 const SCOPED = { id: 'typescript/ts-code-quality', globs: ['**/*.ts', '**/*.tsx'] };
 const REPO_WIDE = { id: 'shared/git', globs: ['**/*'] };
+/** A skill whose `uses:` brings in DEP: as its own file, or copied into the skill. */
+const SKILL = 'typescript/ts-audit-deps';
+const DEP = {
+  id: 'typescript/ts-security',
+  title: 'Security (TypeScript)',
+  globs: ['**/*.ts', '**/*.tsx'],
+};
 const TARGETS = getAllTargets()
   .filter(t => installableKinds(t).includes('rule'))
   .map(t => t.name);
@@ -28,15 +35,15 @@ function writeOverlays(dir: string, rules: Record<string, string[]>): void {
   fs.writeFileSync(path.join(dir, OVERLAYS_FILE), `rules:\n${lines.join('\n')}\n`);
 }
 
-async function add(dir: string, target: string, ids: string[]): Promise<void> {
+async function add(dir: string, target: string, ids: string[], deps = false): Promise<void> {
   await runAdd(
-    ids.map(id => `rule:${id}`),
+    ids.map(id => (id === SKILL ? `skill:${id}` : `rule:${id}`)),
     {
       projectDir: dir,
       catalogDir: CATALOG,
       packs: PACKS,
       target,
-      deps: false,
+      deps,
       dryRun: false,
       interactive: false,
       yes: true,
@@ -58,14 +65,18 @@ async function update(dir: string, target: string): Promise<void> {
   });
 }
 
-/** The globs in the frontmatter of `id`'s installed file, sorted; undefined when not installed. */
-function scope(dir: string, target: string, id: string): string[] | undefined {
+/** The text of `id`'s installed (first) file; undefined when not installed. */
+function installedText(dir: string, target: string, id: string): string | undefined {
   const entry = loadManifest(dir).entries.find(e => e.id === id && e.target === target);
   const file = entry?.files[0]?.path;
-  if (file === undefined) return undefined;
-  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(
-    fs.readFileSync(path.join(dir, file), 'utf8'),
-  );
+  return file === undefined ? undefined : fs.readFileSync(path.join(dir, file), 'utf8');
+}
+
+/** The globs in the frontmatter of `id`'s installed file, sorted; undefined when not installed. */
+function scope(dir: string, target: string, id: string): string[] | undefined {
+  const text = installedText(dir, target, id);
+  if (text === undefined) return undefined;
+  const frontmatter = /^---\r?\n([\s\S]*?)\r?\n---/.exec(text);
   return (frontmatter?.[1]?.match(/[^\s"',]*\*\*[^\s"',]*/g) ?? []).sort();
 }
 
@@ -106,6 +117,25 @@ for (const target of TARGETS) {
         fs.rmSync(path.join(dir, OVERLAYS_FILE));
         await update(dir, target);
         assert.deepEqual(scope(dir, target, SCOPED.id), [...SCOPED.globs].sort());
+      });
+    });
+
+    // A target either installs a skill's rules as their own files or copies them into the skill.
+    const depAsFile = isInstallableDependency(getTarget(target), 'rule');
+
+    it('should narrow a rule a skill brings in, and leave it out when refused', async () => {
+      await withTempDirAsync(async dir => {
+        writeOverlays(dir, { [DEP.id]: ['src'] });
+        await add(dir, target, [SKILL], true);
+        if (depAsFile) assert.deepEqual(scope(dir, target, DEP.id), under(['src'], DEP.globs));
+        else assert.ok(installedText(dir, target, SKILL)?.includes(DEP.title));
+        assert.ok(statuses(dir).every(s => s.endsWith(' up-to-date')));
+      });
+      await withTempDirAsync(async dir => {
+        writeOverlays(dir, { [DEP.id]: ['src/*'] });
+        await add(dir, target, [SKILL], true);
+        assert.equal(scope(dir, target, DEP.id), undefined);
+        assert.equal(installedText(dir, target, SKILL)?.includes(DEP.title), false);
       });
     });
 

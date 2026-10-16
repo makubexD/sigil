@@ -65,6 +65,32 @@ Each arm: 18 fresh runs (T1–T6 × 3), same model, compared with B1 (`runs/b1-c
   correctness, which weighs against removing it.
 - If no arm passes, no single rule drives fragmentation and the round closes with no catalog change.
 
+## Round 4 hypothesis: remove the split gate (registered 2026-10-16, after A1 and before any D1 run)
+
+A1 (the code-quality rule removed, with the `clean-code` base it inlines) passed H51. Its archived
+source shows what goes: top-level functions 84 in B1 vs 38 in A1, interfaces 28 vs 17, named literal
+constants 23 vs 21. So the function-size gate drives fragmentation, not the magic-number line.
+Round 2 kept the gate and added softer wording next to it, which did not move the count. D1 removes
+the gate instead of qualifying it:
+
+- `clean-code`: "extract a part when it has its own name and reason to change, never to meet a line
+  count" replaces "if you need to scroll to see the end of a function, it is too long".
+- Every language's structure slot: "Max 20 lines … split into smaller units before proceeding"
+  becomes signals (steps that need comments, more than 4 parameters), "not counts to split to". God
+  Object thresholds stay. The refactor specialists' Extract Function trigger loses its line count.
+
+**Candidate D1**: `625f794` (branch `feat/split-by-responsibility`), 18 fresh runs (T1–T6 × 3), same
+model, against B1 (`runs/b1-current.jsonl`).
+
+- **H6**: D1 has fewer top-level `declarations` than B1, accepted under all four round-2 criteria
+  (p ≤ 0.05 with at least 10 decided pairs; correctness held, held-out tasks included; the blind
+  judge does not prefer B1 on readability; TypeScript rule-load not above B1's, 40,872 bytes). One
+  test, so no Bonferroni correction.
+- The judge runs only if criteria 1 and 2 pass.
+- Reported, not gated: top-level functions and interfaces per arm, lines, cost.
+- The eval measures TypeScript only. The same wording change in the other four languages rides on
+  this result; it is not measured separately.
+
 ## Runs
 
 | Date       | Comparison                                               | Commits                                                   | Model             | Result                                                                                                                                                                                                                                                                                                                    |

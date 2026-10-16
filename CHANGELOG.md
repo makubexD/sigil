@@ -16,6 +16,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `.sigil/overlays.yaml`: narrow where an installed rule applies without editing it. Each rule id
+  takes a `scope` of directories (`scope: [src]` turns `**/*.ts` into `src/**/*.ts`); `add` and
+  `update` apply it for Claude Code and Copilot, and the narrowed file reads up to date. A bad entry
+  skips only its own rule (left as installed by `update`), never installs it wider. See
+  [consuming.md § Narrow where a rule applies](docs/guides/consuming.md#narrow-where-a-rule-applies).
 - `npm run rule-load` (maintainers): the rule bytes an agent receives with one source file per
   language, counting a base rule inlined through `extends` once, the way `add` installs it.
   Catalog PRs report its before/after numbers.

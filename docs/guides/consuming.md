@@ -633,6 +633,40 @@ sigil add skill:csharp/cs-generate-tests --target claude --overwrite --yes
 
 ---
 
+## Narrow where a rule applies
+
+A rule loads for the files its globs match: `typescript/ts-code-quality` for every `.ts` and `.tsx`
+file, `shared/git` for every file. To load one only in part of the project without editing the
+installed file, add `.sigil/overlays.yaml` and commit it next to the manifest:
+
+```yaml
+rules:
+  typescript/ts-code-quality:
+    scope: [src, packages/api]
+  shared/git:
+    scope: [src]
+```
+
+Each catalog glob gets each directory in front of it: `**/*.ts` becomes `src/**/*.ts` and
+`packages/api/**/*.ts`. `add` and `update` apply the file whenever they write a rule, for Claude Code
+(`paths:`) and Copilot (`applyTo:`) alike, and the narrowed file reads `up-to-date` in `status`. Edit
+the file and run `sigil update` to change a scope; delete an entry (or the file) and run
+`sigil update` to widen the rule back.
+
+- An overlay only narrows. Each `scope` item is a plain relative directory: no glob characters, no
+  `..`, `.` or empty segment, not absolute.
+- Only rules can be narrowed, and only when every catalog glob of the rule starts with `**/` (every
+  shipped rule does).
+- A bad entry affects only its own rule: `add` skips that rule and `update` leaves its installed file
+  as it is, each saying why, so nothing is installed wider than you asked. An id the catalog does not
+  have is reported and ignored. A file sigil cannot read as a whole (not YAML, no `rules:` mapping,
+  a link, over 64 KB) stops the command and names the file.
+- A base rule that another rule carries through `extends` (`shared/clean-code` inside
+  `typescript/ts-code-quality`) is not installed on its own, so an overlay on it changes nothing;
+  narrow the rule that carries it.
+
+---
+
 ## Keep installs healthy over time
 
 sigil records what it wrote in `.sigil/manifest.json`: each artifact, its files, and the SHA-256 hash

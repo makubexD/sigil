@@ -9,6 +9,7 @@
  * @module
  */
 import { resolveCatalog } from '../../resolve';
+import { applyProjectOverlays } from '../../overlays';
 import { getTarget } from '../../targets';
 import { CONFIG_KINDS, type SkippedArtifact } from '../../select';
 import { SigilError } from '../../errors';
@@ -73,15 +74,17 @@ function splitCommaFlag(raw: string | undefined): string[] | undefined {
 /** Builds the plan context, resolving inputs/target; returns null when the wizard was cancelled. */
 async function buildPlanCtx(selectors: string[], opts: AddOpts): Promise<PlanCtx | null> {
   const { catalog, packsConfig } = await loadAndValidate(opts.catalogDir, opts.packs);
-  const resolved = resolveCatalog(catalog);
+  const overlaid = applyProjectOverlays(resolveCatalog(catalog), opts.projectDir);
+  const { resolved, refused } = overlaid;
 
-  const inputs = await resolveInputs(selectors, opts, resolved, packsConfig.packs);
+  const inputs = await resolveInputs(selectors, opts, overlaid, packsConfig.packs);
   if (!inputs) return null;
 
   const targetName = inputs.target ?? detectProjectTarget(opts.projectDir, { verbose: true });
   const target = resolveScaffoldTarget(targetName);
 
-  return { opts, resolved, target, targetName, inputs, packs: packsConfig.packs };
+  const packs = packsConfig.packs;
+  return { opts, resolved, refusedOverlays: refused, target, targetName, inputs, packs };
 }
 
 /** Splits resolved ids into whole-file vs config-kind, excluding already-up-to-date ids from both. */

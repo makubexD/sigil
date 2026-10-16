@@ -1,6 +1,7 @@
 /**
  * An artifact left out of an install because another pick already carries it (a base rule inlined
- * through `extends`) is not "unsupported by the tool". The plan box and the summary line say which.
+ * through `extends`) is not "unsupported by the tool", and neither is one the project's overlay file
+ * refused. The plan box and the summary line say which.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -22,6 +23,13 @@ const NO_HOOKS: SkippedArtifact = {
   kind: 'hook',
   cause: 'kind',
   reason: "kind 'hook' is not supported for this target",
+};
+
+const REFUSED: SkippedArtifact = {
+  id: 'shared/git',
+  kind: 'rule',
+  cause: 'overlay',
+  reason: ".sigil/overlays.yaml entry refused: scope '../x' is not a plain relative path",
 };
 
 const viewOf = (skipped: SkippedArtifact[]): PlanView => ({
@@ -55,6 +63,12 @@ describe('plan box skip lines', () => {
     assert.doesNotMatch(lines, /nothing to add:.*protect-config/);
   });
 
+  it('should name the overlay file for a rule its entry refused, not the tool', () => {
+    const lines = skippedLine(viewOf([REFUSED, NO_HOOKS]), target).join('\n');
+    assert.match(lines, /Skipped, \.sigil\/overlays\.yaml entry refused: shared\/git\./);
+    assert.match(lines, /1 item skipped: GitHub Copilot does not support hooks?\./);
+  });
+
   it('should show nothing when nothing was skipped', () => {
     assert.deepEqual(skippedLine(viewOf([]), target), []);
   });
@@ -67,6 +81,13 @@ describe('install summary line', () => {
 
   it('should count an unsupported kind as not supported by the tool', () => {
     assert.equal(skippedSummary(planOf([NO_HOOKS])), ", 1 artifact(s) not supported by 'claude'");
+  });
+
+  it('should count a rule whose overlay entry was refused apart from unsupported kinds', () => {
+    assert.equal(
+      skippedSummary(planOf([REFUSED, NO_HOOKS])),
+      ", 1 artifact(s) not supported by 'claude', 1 skipped by .sigil/overlays.yaml",
+    );
   });
 
   it('should report both, and nothing when nothing was skipped', () => {

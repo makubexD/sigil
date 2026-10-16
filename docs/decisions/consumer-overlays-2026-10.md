@@ -1,7 +1,7 @@
 # Consumer overlays (2026-10)
 
-Status: spike done, go for v1 (see Spike result). Owner put overlays in scope for the 2026-10-14 benchmark
-(docs/audits/2026-10-14); this records the design and the decision gate, not shipped code.
+Status: v1 shipped (see v1). Owner put overlays in scope for the 2026-10-14 benchmark
+(docs/audits/2026-10-14); this records the design, the decision gate and what v1 settled.
 
 ## The need
 
@@ -111,3 +111,41 @@ rules only.
 
 **Decision: go** for v1 as above, as its own PR after the code-quality work, with the spike's
 tests ported first (RED) and the two open items fixed.
+
+## v1 (2026-10-16)
+
+Shipped as the spike's model: `src/overlays.ts` reads `.sigil/overlays.yaml` from the project
+directory and narrows a copy of the resolved catalog; `add` (`commands/add/plan.ts`), `update`
+(`commands/update.ts`) and the add wizard's preview render from it. No manifest field. User guide:
+[consuming.md § Narrow where a rule applies](../guides/consuming.md#narrow-where-a-rule-applies).
+
+The two open items:
+
+- **Copilot.** `add` and `update` write every rule to its own `.github/instructions/<slug>.instructions.md`
+  through `scaffoldArtifact`, with `applyTo:` from the narrowed globs. Only the full `build` folds a
+  `**/*` rule into `copilot-instructions.md`, and `build` never reads an overlay. The end-to-end test
+  (`test/commands/overlays.test.ts`) runs on every target that scaffolds rules natively (Claude Code
+  and Copilot, read from the capability table): a scoped and a repo-wide rule narrowed, `up to date`,
+  re-applied and widened back by `update`.
+- **Per-overlay failure.** A bad entry for a rule refuses only that rule, reported once when the
+  overlays load. `add` and the wizard's preview skip it with cause `overlay` (`skipRefused`, one
+  function for both, so the plan shown is the plan installed); `update` leaves its installed file
+  as it is and says why. An entry for an id that is not a catalog rule is reported and ignored:
+  refusing a skill or agent would protect nothing. Only a file sigil cannot read as a whole (not
+  YAML, a top-level key other than `rules:`, a link, over 64 KB) stops the command. Skipping, not
+  installing wide, is the choice because a rule loaded across the whole repository is what the
+  project said it did not want.
+
+An independent review before merge found two ways around the guarantee, both fixed with a test:
+
+- **Dependencies.** A skill's `resolvedRules` held the original rule objects, so a rule installed
+  as a skill's dependency skipped the overlay (and a refused one was installed wide).
+  `withOverlays` now points every skill at the narrowed copy and drops a refused rule, so every
+  path that walks `uses:` (scaffolding, the closure, the dependency map) sees the overlay.
+- **Commas.** Copilot joins globs with `,` into `applyTo:`, so a scope like `package.json,src`
+  widened the rule. A scope is now an allow-list of directory-name characters joined by `/`, which
+  also refuses `\` and control characters.
+
+Size: `src/overlays.ts` (one module, about 230 lines with its comments) plus a few lines in each
+caller; `update.ts` moved its entry selection to `update-entries.ts` to stay under the file-size
+limit. The CTO dissent still bounds the scope: rules and path narrowing only.

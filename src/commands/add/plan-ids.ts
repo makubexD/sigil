@@ -4,17 +4,24 @@
  *
  * @module
  */
-import { resolveSelection, type SkippedArtifact } from '../../select';
+import { resolveSelection, type SelectionResult } from '../../select';
 import { SigilError } from '../../errors';
+import { skipRefused } from '../../overlays';
 import { computeInstallStates } from '../../install-state';
 import type { PlanCtx } from './plan-context';
 import { carriedKinds, installableKinds } from '../../targets/capabilities';
 
-/** Resolves the candidate artifact ids + skipped list for this install; wraps errors in SigilError. */
-export function resolveIds(
-  ctx: PlanCtx,
-  filters: Parameters<typeof resolveSelection>[0]['filters'],
-): { ids: string[]; skipped: SkippedArtifact[] } {
+type Filters = Parameters<typeof resolveSelection>[0]['filters'];
+
+/**
+ * Resolves the candidate artifact ids + skipped list for this install; wraps errors in SigilError.
+ * An id whose overlay was refused is skipped, never installed wider than the project asked.
+ */
+export function resolveIds(ctx: PlanCtx, filters: Filters): SelectionResult {
+  return skipRefused(select(ctx, filters), ctx.refusedOverlays, ctx.resolved);
+}
+
+function select(ctx: PlanCtx, filters: Filters): SelectionResult {
   try {
     return resolveSelection({
       selectors: ctx.inputs.selectors,

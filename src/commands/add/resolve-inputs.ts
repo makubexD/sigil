@@ -10,7 +10,8 @@ import { SigilError } from '../../errors';
 import { detectProjectTarget } from '../../cli-helpers';
 import { detectedTargetsIn } from '../../project-context';
 import { getTarget } from '../../targets';
-import type { ConfigScope, ResolvedCatalog, Target } from '../../types';
+import type { OverlaidCatalog } from '../../overlays';
+import type { ConfigScope, Target } from '../../types';
 import type { AddOpts } from './index';
 
 export interface ResolvedAddInputs {
@@ -86,17 +87,18 @@ function fixedTargetFor(opts: AddOpts): FixedTarget | undefined {
 /** Runs the interactive wizard and maps its result to `ResolvedAddInputs`, or null on cancel. */
 async function resolveViaWizard(
   opts: AddOpts,
-  resolved: ResolvedCatalog,
+  overlaid: OverlaidCatalog,
   packs: Parameters<typeof runWizardAt>[1],
   baseScope: ConfigScope,
 ): Promise<ResolvedAddInputs | null> {
   if (!isInteractiveTTY()) throwNotInteractiveError();
 
   const detectedTarget = detectProjectTarget(opts.projectDir, { verbose: false });
-  const wizardResult: WizardResult | null = await runWizardAt(resolved, packs, {
+  const wizardResult: WizardResult | null = await runWizardAt(overlaid.resolved, packs, {
     detectedTarget,
     projectDir: opts.projectDir,
     fixed: fixedTargetFor(opts),
+    refusedOverlays: overlaid.refused,
   });
   return wizardResult ? fromWizardResult(wizardResult, opts, baseScope) : null;
 }
@@ -124,7 +126,7 @@ function typedInputs(selectors: string[], opts: AddOpts, scope: ConfigScope): Re
 export async function resolveInputs(
   selectors: string[],
   opts: AddOpts,
-  resolved: ResolvedCatalog,
+  overlaid: OverlaidCatalog,
   packs: Parameters<typeof runWizardAt>[1],
 ): Promise<ResolvedAddInputs | null> {
   const needsWizard = (selectors.length === 0 || opts.interactive) && !opts.yes;
@@ -132,5 +134,5 @@ export async function resolveInputs(
 
   if (!needsWizard) return typedInputs(selectors, opts, baseScope);
 
-  return resolveViaWizard(opts, resolved, packs, baseScope);
+  return resolveViaWizard(opts, overlaid, packs, baseScope);
 }

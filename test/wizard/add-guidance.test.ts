@@ -189,6 +189,17 @@ describe('previewSelection', () => {
     assert.ok(copilot.skipped.length > 0, 'Copilot has no hooks/settings: some are skipped');
     assert.ok(copilot.ids.length < claude.ids.length);
   });
+
+  it('should skip a rule whose overlay entry was refused, as add does', () => {
+    const refused = new Map([['shared/git', "scope '../x' is not a plain relative path"]]);
+    const s = state({ target: 'claude', selectors: ['rule:shared/git', 'rule:shared/clean-code'] });
+    const preview = previewSelection({ ...s, ctx: { ...s.ctx, refusedOverlays: refused } });
+    assert.deepEqual(preview.ids, ['shared/clean-code']);
+    assert.deepEqual(
+      preview.skipped.map(x => `${x.id} ${x.cause}`),
+      ['shared/git overlay'],
+    );
+  });
 });
 
 describe('overwriteStep', () => {

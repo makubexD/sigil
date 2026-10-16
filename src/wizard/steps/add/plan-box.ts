@@ -9,6 +9,7 @@ import { kindNoun, CONFIG_KINDS } from '../../../select';
 import type { ClosurePreview, SkippedArtifact } from '../../../select';
 import type { ConfigKind } from '../../../types';
 import { CLI_LABEL_COL_WIDTH } from '../../../cli-helpers';
+import { OVERLAYS_FILE } from '../../../overlays';
 import { chosenTarget } from './state';
 import type { AddWizardState } from './state';
 
@@ -100,11 +101,25 @@ function includedLine(skipped: SkippedArtifact[]): string[] {
   return ['', `Already included in another pick, nothing to add: ${ids}.`];
 }
 
-/** The lines explaining what the plan leaves out and why; an inlined rule is not "unsupported". */
+/** Artifacts the project's overlay file refused to narrow, so they are not installed wider. */
+function overlayLine(skipped: SkippedArtifact[]): string[] {
+  if (skipped.length === 0) return [];
+  const ids = skipped.map(x => x.id).join(', ');
+  return ['', `Skipped, ${OVERLAYS_FILE} entry refused: ${ids}.`];
+}
+
+/**
+ * The lines explaining what the plan leaves out and why; an inlined rule, or one the overlay file
+ * refused, is not "unsupported".
+ */
 export function skippedLine(view: PlanView, ct: TargetOrUndefined): string[] {
-  const included = view.skipped.filter(x => x.cause === 'inlined');
-  const unsupported = view.skipped.filter(x => x.cause !== 'inlined');
-  return [...unsupportedLine(unsupported, ct), ...includedLine(included)];
+  const of = (cause: string) => view.skipped.filter(x => x.cause === cause);
+  const unsupported = view.skipped.filter(x => x.cause !== 'inlined' && x.cause !== 'overlay');
+  return [
+    ...unsupportedLine(unsupported, ct),
+    ...overlayLine(of('overlay')),
+    ...includedLine(of('inlined')),
+  ];
 }
 
 /** Ids the plan covers: the picks, plus their helpers when those are included. */

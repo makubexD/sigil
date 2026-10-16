@@ -39,6 +39,8 @@ export interface WizardSite {
   /** The tool preselected when none is fixed. */
   detectedTarget: string;
   fixed?: FixedTarget | undefined;
+  /** Ids whose consumer overlay was refused (src/overlays.ts): the preview skips them as `add` does. */
+  refusedOverlays?: ReadonlyMap<string, string> | undefined;
 }
 
 function buildInitialState(
@@ -54,6 +56,7 @@ function buildInitialState(
       projectDir: site.projectDir,
       scaffoldableTargets: getAllTargets().filter(t => Boolean(t.scaffold)),
       fixedTarget: site.fixed?.name,
+      refusedOverlays: site.refusedOverlays,
     },
     // Matches the pre-registry wizard's default: config-kind-only selections
     // (which skip the deps prompt entirely) behave as if "Yes" was answered.

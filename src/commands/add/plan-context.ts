@@ -12,7 +12,10 @@ import type { AddOpts } from './index';
 
 export interface PlanCtx {
   opts: AddOpts;
+  /** The catalog with the project's overlays applied (src/overlays.ts). */
   resolved: ResolvedCatalog;
+  /** Ids whose overlay entry was refused, with the reason: never installed wider than asked. */
+  refusedOverlays: ReadonlyMap<string, string>;
   target: Target;
   targetName: string;
   inputs: ResolvedAddInputs;

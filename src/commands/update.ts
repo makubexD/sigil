@@ -10,6 +10,7 @@
  * @module
  */
 import { resolveCatalog } from '../resolve';
+import { applyProjectOverlays } from '../overlays';
 import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets';
 import { saveManifest } from '../manifest';
@@ -24,6 +25,7 @@ import { catalogConfigOps } from './update-config-catalog';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
 import { installNewDependencies } from './update-deps';
+import { entriesToUpdate } from './update-entries';
 import { warnMcpEnvCaveats } from './add/execute-config';
 import type { WrittenConfig } from './add/execute-config';
 
@@ -44,17 +46,6 @@ export interface UpdateOptions {
    * section lists only related artifacts that are installed alongside.
    */
   installedIds?: ReadonlySet<string> | undefined;
-}
-
-/** Filters manifest entries by target (and by explicit ids, when provided). */
-function filterEntriesToUpdate(
-  manifest: { entries: ManifestEntry[] },
-  targetName: string,
-  idFilter: Set<string>,
-): ManifestEntry[] {
-  return manifest.entries.filter(
-    e => e.target === targetName && (idFilter.size === 0 || idFilter.has(e.id)),
-  );
 }
 
 /** Prints the final summary line (or the dry-run notice). */
@@ -88,15 +79,6 @@ function printInlinedNotice(manifest: Manifest, target: Target, resolved: Resolv
   if (lines.length === 0) return;
   for (const line of lines) console.error(line);
   console.error('');
-}
-
-/** Prints the "nothing to update" message when the entry filter matched zero entries. */
-function printNoEntriesMessage(idFilter: Set<string>, targetName: string): void {
-  const msg =
-    idFilter.size > 0
-      ? `No installed artifacts match: ${[...idFilter].join(', ')}`
-      : `No artifacts installed for target '${targetName}'.`;
-  console.log(`\n  ${msg}\n`);
 }
 
 interface EntryUpdateOutcome {
@@ -209,18 +191,14 @@ async function prepareUpdateRun(
   opts: UpdateOptions,
 ): Promise<UpdateRunSetup | undefined> {
   const { catalog: rawCatalog } = await loadAndValidate(opts.catalogDir, opts.packs);
-  const resolved = resolveCatalog(rawCatalog);
+  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
   const target = getTarget(targetName);
   assertTargetSupportsUpdate(target, targetName);
 
   const manifest = requireManifest(opts.projectDir);
-  const idFilter = new Set(ids);
-  const entries = filterEntriesToUpdate(manifest, targetName, idFilter);
-  if (entries.length === 0) {
-    printNoEntriesMessage(idFilter, targetName);
-    return undefined;
-  }
+  const entries = entriesToUpdate(manifest, targetName, ids, refused);
+  if (!entries) return undefined;
 
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
   const installedIds = installedIdsFor(manifest, targetName);

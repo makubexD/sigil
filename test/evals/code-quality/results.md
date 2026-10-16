@@ -91,6 +91,28 @@ model, against B1 (`runs/b1-current.jsonl`).
 - The eval measures TypeScript only. The same wording change in the other four languages rides on
   this result; it is not measured separately.
 
+## Round 5 hypothesis: no split prose (registered 2026-10-16, after D1 and before any D2 run)
+
+D1 replaced the split gate with a softer split rule and the agent split into modules instead
+(round 4 reading). D2 removes every sentence that tells the agent when to split a function: the
+`clean-code` "small, single-purpose functions" bullet, and the line and parameter limits in every
+language's structure slot (only the God Object threshold stays). The refactor specialists' Extract
+Function loses its line count, as in D1.
+
+**Candidate D2**: `7858063` (branch `feat/no-split-prose`), 18 fresh runs (T1–T6 × 3), same model,
+against B1.
+
+- **H7**: D2 has fewer top-level `declarations` than B1, accepted under all four round-2 criteria
+  (p ≤ 0.05 with at least 10 decided pairs; correctness held, held-out tasks included; the blind
+  judge does not prefer B1 on readability; TypeScript rule-load not above 40,872 bytes, D2 is
+  40,536). One test.
+- Added for this round, because D1 traded functions for modules: **inflation must not rise**
+  (B1 has 0: D2's inflation is non-zero in at most one of the 18 runs). A D2 that passes
+  criterion 1 by moving code into new files or exports is rejected.
+- The judge runs only if criteria 1, 2 and the inflation check pass.
+- Reported, not gated: functions and interfaces per arm, lines, cost.
+- TypeScript only; the other four languages ride on this result.
+
 ## Runs
 
 | Date       | Comparison                                               | Commits                                                       | Model             | Result                                                                                                                                                                                                                                                                                                                                                                                                                      |

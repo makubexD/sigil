@@ -8,6 +8,7 @@
  */
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
+import { OVERLAYS_FILE } from '../../overlays';
 import { buildEquivalentCommand, printEquivalentCommand, isInteractiveTTY } from '../../wizard';
 import type { ConfigRoot } from '../../types';
 import type { AddPlan } from './plan';
@@ -70,12 +71,17 @@ function buildOutcomeSummaryLine(plan: AddPlan, outcome: AddOutcome, written: nu
   );
 }
 
-/** ", N already included in another artifact" and ", N artifact(s) not supported by 'x'", when non-zero. */
+/**
+ * ", N artifact(s) not supported by 'x'", ", N skipped by <overlay file>" and ", N already included
+ * in another artifact", each when non-zero.
+ */
 export function skippedSummary(plan: AddPlan): string {
-  const included = plan.skipped.filter(x => x.cause === 'inlined').length;
-  const unsupported = plan.skipped.length - included;
+  const count = (cause: string) => plan.skipped.filter(x => x.cause === cause).length;
+  const [included, refused] = [count('inlined'), count('overlay')];
+  const unsupported = plan.skipped.length - included - refused;
   return (
     (unsupported > 0 ? `, ${unsupported} artifact(s) not supported by '${plan.targetName}'` : '') +
+    (refused > 0 ? `, ${refused} skipped by ${OVERLAYS_FILE}` : '') +
     (included > 0 ? `, ${included} already included in another artifact` : '')
   );
 }

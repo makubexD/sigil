@@ -112,8 +112,10 @@ TTY. `cli.ts` handles bare `sigil` _before_ `parseAsync` (non-TTY prints help on
   never on adding a second tool.
 - **The risky-folder question is asked once per folder.** `Session.riskAccepted` is set when the user goes ahead and
   cleared when the folder changes; `settleFolder` skips the guard while it is set.
-- **A skip says why.** `SkippedArtifact.cause` is `kind`, `platform` or `inlined`. An inlined base rule is "already
-  included", never "not supported by <tool>" (`plan-box.ts`, `commands/add/render.ts`).
+- **A skip says why.** `SkippedArtifact.cause` is `kind`, `platform`, `inlined` or `overlay`. An inlined base rule
+  is "already included", and a rule whose `.sigil/overlays.yaml` entry was refused names that file; neither is
+  "not supported by <tool>" (`plan-box.ts`, `commands/add/render.ts`). The preview applies the same refusal as
+  `add` (`skipRefused` in `src/overlays.ts`, called by `previewSelection`).
 - **A handler that was cancelled returns `'cancelled'`** (`HomeHandler`, `runAdd`, `runInit`, `runRepair`), so
   backing out of a recommended action is not treated as "ran and changed nothing".
 - `runHome` never exits on an action's failure: a `SigilError` is shown (message plus hint) and the menu

@@ -22,6 +22,8 @@ export interface AddWizardContext {
   readonly scaffoldableTargets: Target[];
   /** Set when the folder (one tool set up) or `--target` already answers "which tool"; the question is skipped. */
   readonly fixedTarget?: string | undefined;
+  /** Ids whose consumer overlay was refused; skipped by the preview exactly as `add` skips them. */
+  readonly refusedOverlays?: ReadonlyMap<string, string> | undefined;
 }
 
 /** Mutable answers accumulated as the wizard progresses. */

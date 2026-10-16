@@ -5,6 +5,7 @@
  * @module
  */
 import { resolveSelection, computeClosure } from '../../../select';
+import { skipRefused } from '../../../overlays';
 import type { SelectionResult } from '../../../select';
 import type { ArtifactInstallState } from '../../../install-state';
 import { carriedKinds, installableKinds } from '../../../targets/capabilities';
@@ -14,7 +15,7 @@ import type { AddWizardState } from './state';
 /** The picks resolved the way `sigil add` resolves them: the chosen target's kinds and platform only. */
 export function previewSelection(s: AddWizardState): SelectionResult {
   const target = chosenTarget(s);
-  return resolveSelection({
+  const selection = resolveSelection({
     selectors: s.selectors ?? [],
     filters: { language: s.language },
     catalog: s.ctx.catalog,
@@ -24,6 +25,7 @@ export function previewSelection(s: AddWizardState): SelectionResult {
       : {}),
     ...(s.target ? { targetName: s.target } : {}),
   });
+  return skipRefused(selection, s.ctx.refusedOverlays, s.ctx.catalog);
 }
 
 /** Ids among `ids` that are already installed and unchanged (skipped unless overwrite is on). */

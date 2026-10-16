@@ -187,6 +187,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Code-quality rules no longer set line or parameter limits to split to. A function is split when
+  a part has its own name and reason to change, never to meet a line count; a long parameter list
+  or a function that needs comments to mark its steps is a signal to look. The same goes for the
+  refactor specialists' Extract Function trigger. The `code-quality` template is at revision 3
+  (`sigil update` applies it).
+
 - `sigil import --shared` sends a skill's `stack-<x>.md` files to the stack's home language as
   stack parts, so imported stack text never lands in `shared/`; the report shows where each went.
   A `--language` import takes no stack files. Titles drop the language prefix read from its

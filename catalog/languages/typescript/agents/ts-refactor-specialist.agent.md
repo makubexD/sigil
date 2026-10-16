@@ -57,8 +57,8 @@ Discover conventions from `{sigil:conventions-file}`, any rules files present, a
 
 Highest-value targets:
 
-- **Extract Function** — body exceeds 20 lines, or a named comment block signals a step that should
-  be its own function.
+- **Extract Function** — a named comment block signals a step that should be its own function, or a
+  part has its own reason to change. Never extract only to shorten.
 - **Extract Module** — more than 3 unrelated responsibilities in one file, or file exceeds ~300 lines
   mixing concerns. Create a new file; update imports everywhere.
 - **Rename** — names that mislead or do not match behavior. Check every call site with Grep before

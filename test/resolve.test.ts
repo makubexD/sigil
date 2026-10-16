@@ -44,7 +44,7 @@ describe('Resolve phase', () => {
       'inherited clean-code guidance present',
     );
     assert.ok(
-      csRule.resolvedBody?.includes('Max 20 lines per method body'),
+      csRule.resolvedBody?.includes('parameter object (a `record`)'),
       'own guidance present',
     );
   });

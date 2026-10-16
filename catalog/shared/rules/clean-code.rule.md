@@ -15,7 +15,7 @@ tags:
 ---
 
 - **Clear names over comments.** Name variables, functions, and types to reveal their intent. A comment that re-states the code name is noise; a comment that explains *why* is valuable.
-- **Small, single-purpose functions.** A function should do one thing. If you need to scroll to see the end of a function, it is too long.
+- **Single-purpose functions.** A function does one thing. Extract a part when it has its own name and reason to change, never to meet a line count.
 - **No dead code.** Delete commented-out code; use version control to recover it if needed. Dead code obscures the live logic.
 - **Avoid magic numbers and strings.** Replace bare literals with named constants or enums so the meaning is clear at the call site.
 - **Handle errors explicitly.** Never silently swallow exceptions or return null to signal an error. Make failure visible and actionable.

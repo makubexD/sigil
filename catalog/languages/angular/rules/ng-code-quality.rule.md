@@ -17,7 +17,7 @@ tags:
 appliesToRationale: Scoped to TypeScript and template files because these structural and SOLID principles govern Angular's two source formats — component/service logic and templates — and don't apply to config or non-Angular files.
 ---
 <!-- slot: structure-limits -->
-Max 20 lines per method body (40 lines for config/builder methods). Max 4 parameters per function, method, or constructor signature. If either limit is exceeded, split into smaller units before proceeding.
+A method that needs comments to mark its steps has steps worth naming; more than 4 parameters usually wants an options object. These are signals, not counts to split to.
 
 A component or service beyond ~200 lines or ~7 public members is a **God Object** candidate — extract a collaborator or split into smaller, single-responsibility units. A component that both fetches data and renders complex UI is two responsibilities: split into a smart container and a presentational child.
 

@@ -17,9 +17,10 @@ tags:
 appliesToRationale: Scoped to component files because these structural rules govern component/hook design, which only exists in .tsx/.jsx files.
 ---
 <!-- slot: structure-limits -->
-Max 20 lines of JSX return body before extracting a sub-component (a longer render function hides
-structure). Max 4 props on a component's `Props` interface before grouping related props into an
-object or reaching for composition (`children`, render props) instead of a growing flat prop list.
+A JSX return body that needs comments to mark its regions has sub-components worth naming; a `Props`
+interface past 4 props usually wants related props grouped into an object, or composition
+(`children`, render props) instead of a growing flat prop list. These are signals, not counts to
+split to.
 
 A component file beyond ~200 lines, or a component managing more than ~5 pieces of local state, is
 a decomposition candidate — extract a sub-component or lift shared logic into a custom hook.

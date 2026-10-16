@@ -58,7 +58,7 @@ Discover conventions (check `{sigil:conventions-file}`, any rules files present,
 
 Use the delegation message to determine what to refactor. If not specific, scan for the highest-value targets:
 
-**Extract Method/Function** — a method body > 20 lines, or a named comment-block identifying a distinct step.
+**Extract Method/Function** — a named comment-block identifying a distinct step, or a part with its own reason to change. Never extract only to shorten.
 
 **Extract Component/Service** — a component mixing data-fetching with presentation (split smart/presentational), or a file > 300 lines mixing concerns.
 

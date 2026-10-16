@@ -36,6 +36,11 @@ const RETIRED: readonly Retired[] = [
     pattern: /either log with context or re-?(throw|raise)/i,
     why: 'log-and-continue is allowed only at a top-level boundary; reviewers flag it elsewhere',
   },
+  {
+    pattern:
+      /max \d+ (lines|parameters|props)|body (>|exceeds) ?\d+ lines|split into smaller units before proceeding|scroll to see the end/i,
+    why: 'a line or parameter count as a gate fragments code (eval round 3, A1); split by responsibility',
+  },
 ];
 
 const TOP_LEVEL_CATCH = 'log and continue only at a top-level boundary';
@@ -43,6 +48,7 @@ const TOP_LEVEL_CATCH = 'log and continue only at a top-level boundary';
 const CANONICAL: readonly Canonical[] = [
   { family: 'code-quality', phrase: 'a wrong abstraction costs more than duplication' },
   { family: 'code-quality', phrase: TOP_LEVEL_CATCH },
+  { family: 'code-quality', phrase: 'never to meet a line count' },
   { family: 'code-reviewer', phrase: TOP_LEVEL_CATCH },
 ];
 

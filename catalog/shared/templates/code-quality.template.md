@@ -14,13 +14,14 @@ description: >-
   catalog-quality-audit-2026-08.md's "what was and wasn't templatized" section.
 appliesToKind:
   - rule
-revision: 2
+revision: 3
 slots:
   - key: structure-limits
     required: true
     description: >-
-      The per-language size-limit paragraph: max lines per function/method, max parameters, and
-      the "God Object" candidate threshold with a language-specific example of what triggers it.
+      The per-language size signals: what in a function or parameter list points to a missing
+      concept, and the "God Object" candidate threshold with a language-specific example of what
+      triggers it. Signals to look, never a line or parameter count to split to.
   - key: solid-principles
     required: true
     description: >-
@@ -64,7 +65,7 @@ If 80%+ overlap with the same concern exists, extend the existing code — do no
 If less than 80% overlap or a genuinely different concern, create new. If uncertain whether overlap
 is sufficient, ask before proceeding.
 
-## Code Structure Limits
+## Code Structure Signals
 <!-- slot: structure-limits -->
 
 ## SOLID Principles

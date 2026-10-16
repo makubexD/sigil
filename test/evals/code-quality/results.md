@@ -42,6 +42,55 @@ A candidate is accepted when all of these hold against its baseline:
 
 Lines of code, inflation and cost are reported, not gated.
 
+## Round 3 hypotheses: ablation (registered 2026-10-15, after round 2 and before any round-3 run)
+
+Round 2 showed that wording added to the same rule set does not undo the fragmentation B0 measured
+(62 declarations without rules, about 156 with them). Round 3 asks which rule drives it, by
+installing the full TypeScript rule set and removing one rule file (`run.mjs --drop`):
+
+| Arm | Removed                                                    | Why it is a suspect                                                                |
+| --- | ---------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| A1  | `typescript-ts-code-quality` (inlines `shared/clean-code`) | 20-line and 4-parameter limits, named constants                                    |
+| A2  | `typescript-ts-conventions`                                | `as const` objects, readonly value objects, factory functions, exhaustive switches |
+| A3  | `typescript-ts-documentation`                              | documentation on every export, which may favour more, smaller named units          |
+| A4  | `typescript-ts-async`                                      | accept and propagate `AbortSignal`, timeouts, concurrency helpers                  |
+
+Each arm: 18 fresh runs (T1–T6 × 3), same model, compared with B1 (`runs/b1-current.jsonl`).
+
+- **H5k (k = 1..4)**: arm Ak has fewer top-level `declarations` than B1. One-sided sign test with a
+  Bonferroni threshold for four tests: **p ≤ 0.0125**, with at least 10 decided pairs.
+- A rule whose arm passes H5k is named a **driver**; the fix that follows edits that rule and goes
+  through round-2 acceptance (all four criteria) as its own candidate.
+- Correctness per arm is reported: an arm that loses hidden tests shows the rule matters for
+  correctness, which weighs against removing it.
+- If no arm passes, no single rule drives fragmentation and the round closes with no catalog change.
+
+## Round 4 hypothesis: remove the split gate (registered 2026-10-16, after A1 and before any D1 run)
+
+A1 (the code-quality rule removed, with the `clean-code` base it inlines) passed H51. Its archived
+source shows what goes: top-level functions 84 in B1 vs 38 in A1, interfaces 28 vs 17, named literal
+constants 23 vs 21. So the function-size gate drives fragmentation, not the magic-number line.
+Round 2 kept the gate and added softer wording next to it, which did not move the count. D1 removes
+the gate instead of qualifying it:
+
+- `clean-code`: "extract a part when it has its own name and reason to change, never to meet a line
+  count" replaces "if you need to scroll to see the end of a function, it is too long".
+- Every language's structure slot: "Max 20 lines … split into smaller units before proceeding"
+  becomes signals (steps that need comments, more than 4 parameters), "not counts to split to". God
+  Object thresholds stay. The refactor specialists' Extract Function trigger loses its line count.
+
+**Candidate D1**: `625f794` (branch `feat/split-by-responsibility`), 18 fresh runs (T1–T6 × 3), same
+model, against B1 (`runs/b1-current.jsonl`).
+
+- **H6**: D1 has fewer top-level `declarations` than B1, accepted under all four round-2 criteria
+  (p ≤ 0.05 with at least 10 decided pairs; correctness held, held-out tasks included; the blind
+  judge does not prefer B1 on readability; TypeScript rule-load not above B1's, 40,872 bytes). One
+  test, so no Bonferroni correction.
+- The judge runs only if criteria 1 and 2 pass.
+- Reported, not gated: top-level functions and interfaces per arm, lines, cost.
+- The eval measures TypeScript only. The same wording change in the other four languages rides on
+  this result; it is not measured separately.
+
 ## Runs
 
 | Date       | Comparison                                               | Commits                                                   | Model             | Result                                                                                                                                                                                                                                                                                                                    |
@@ -50,6 +99,19 @@ Lines of code, inflation and cost are reported, not gated.
 | 2026-10-15 | B1: fresh `current` baseline (`runs/b1-current.jsonl`)   | `b6fbbe4` (catalog unchanged on master)                   | `claude-opus-5-5` | Hidden tests 18/18. Declarations 161, lines 996, cost $9.88. An earlier B1 attempt hit the usage limit; every run was rejected as invalid and none recorded                                                                                                                                                               |
 | 2026-10-15 | H2b: PR4 scope-first ladder vs B1 (`runs/c-pr4.jsonl`)   | `8a80bc2` (branch `feat/scope-to-request`, not merged)    | `claude-opus-5-5` | **Rejected: no measurable effect.** Declarations lower in 5 pairs, higher in 3, 10 ties: 8 decided pairs (< 10), p = 0.363. Hidden tests 18/18 vs 18/18, held out 6 → 6. Lines 996 → 965 (8 lower, 7 higher). Bytes 40,872 → 40,846. Judge not run: criterion 1 already fails. 7 runs hit the usage limit and were re-run |
 | 2026-10-15 | H3b: PR5 fragmentation guards vs B1 (`runs/c-pr5.jsonl`) | `4c70a59` (branch `feat/code-quality-guards`, not merged) | `claude-opus-5-5` | **Rejected: not significant.** Declarations lower in 6 pairs, higher in 4, 8 ties: 10 decided pairs, p = 0.377. Total declarations 161 → 145, lines 996 → 944 (8 lower, 7 higher). Hidden tests 18/18 vs 18/18, held out 6 → 6. Bytes 40,872 → 40,863. Judge not run: criterion 1 fails                                   |
+
+| 2026-10-15 | H51: A1, code-quality rule removed (`runs/a1.jsonl`) | `b6fbbe4`, `--drop typescript-ts-code-quality` | `claude-opus-5-5` | **Driver.** Declarations lower in 13 pairs, higher in 0, 5 ties: p = 0.000122 (≤ 0.0125). Total 161 → 100; top-level functions 84 → 38, interfaces 28 → 17, named literal constants 23 → 21. Lines 996 → 913. Hidden tests 17/18: T5#2 failed only its 500k-operation timing check, and passed on re-run (timing, not logic) |
+| 2026-10-15 | H52: A2, conventions removed (`runs/a2.jsonl`) | `b6fbbe4`, `--drop typescript-ts-conventions` | `claude-opus-5-5` | **Not a driver.** Declarations lower in 3 pairs, higher in 7, 8 ties: p = 0.945. Total 161 → 164. Hidden tests 17/18: T5#1 failed only its timing check and passed on re-run |
+| 2026-10-16 | H53: A3, documentation removed (`runs/a3.jsonl`) | `b6fbbe4`, `--drop typescript-ts-documentation` | `claude-opus-5-5` | **Not a driver.** Declarations lower in 5 pairs, higher in 4, 9 ties: 9 decided pairs, p = 0.500. Total 161 → 156, lines 996 → 944. Hidden tests 18/18 |
+| 2026-10-16 | H54: A4, async removed (`runs/a4.jsonl`) | `b6fbbe4`, `--drop typescript-ts-async` | `claude-opus-5-5` | **Not a driver.** Declarations lower in 4 pairs, higher in 5, 9 ties: 9 decided pairs, p = 0.746. Total 161 → 163, lines 996 → 1,063. Hidden tests 18/18 |
+
+Rounds 3 and 4 runs hit the usage limit several times; each rejected run was re-run, none recorded.
+
+**Round 3 reading.** One rule drives the fragmentation: the code-quality rule with the
+`clean-code` base it inlines. Without it the agent writes half the top-level functions at the same
+correctness. Conventions, documentation and async do not move the count. The two T5 failures (A1,
+A2) were the 3 s budget on 500k cache operations, close to the limit in every arm; neither is a
+behaviour failure, so neither rule is shown to matter for correctness. Round 4 tests the fix.
 
 **Round 2 reading.** Neither wording change moved fragmentation measurably. B0 put the gap between
 no rules and the current rules at 62 vs 156 top-level declarations, and prose added on top of the

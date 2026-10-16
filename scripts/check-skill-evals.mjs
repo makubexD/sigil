@@ -2,7 +2,7 @@
 // the shipped text, size bar, resolvable relative links, and coverage.md rows.
 // Reads the catalog as a skill ships: SKILL.md, references/*.md, and each language's stack part as
 // references/stack-<stack>.md (stackPartsBySkill). A coverage file `rule:<id>` or `agent:<id>`
-// reads that artifact's resolved body (a bare id means `shared/<id>`). A folder with no catalog
+// reads that artifact's title, description and resolved body (a bare id means `shared/<id>`). A folder with no catalog
 // skill is valid when every coverage row names a rule or agent: it evaluates delivered doctrine,
 // so only its coverage rows are checked. Needs a current dist-cli/ (npm run build).
 // Usage: node scripts/check-skill-evals.mjs [skill...]   (default: every folder under test/evals)
@@ -60,8 +60,10 @@ function coverageText(file, files) {
   const id = ref[2].includes('/') ? ref[2] : `shared/${ref[2]}`;
   const artifact = resolved.byId.get(id);
   if (artifact?.kind !== ref[1]) return undefined;
-  // Adapters render the title as the delivered file's H1, so it is shipped text too.
-  return `# ${artifact.frontmatter.title ?? ''}\n${artifact.resolvedBody ?? artifact.body}`;
+  // Adapters render the title as the delivered file's H1 and keep the description in frontmatter
+  // (an agent is dispatched on it), so both are shipped text too.
+  const { title = '', description = '' } = artifact.frontmatter;
+  return `# ${title}\n${description}\n${artifact.resolvedBody ?? artifact.body}`;
 }
 
 function checkCoverage(skill, rows, files, fail) {

@@ -1,0 +1,50 @@
+[
+  {
+    "id": "P1",
+    "expected": "ts-code-reviewer",
+    "boundary": "generic code-reviewer",
+    "prompt": "Review src/orders.ts before I commit it."
+  },
+  {
+    "id": "P2",
+    "expected": "ts-code-reviewer",
+    "boundary": "generic code-reviewer",
+    "prompt": "I just finished the summarizeOrders change in src/orders.ts. Give it a quick check for bugs before I push."
+  },
+  {
+    "id": "P3",
+    "expected": "ts-security-auditor",
+    "boundary": "ts-code-reviewer (per-change security)",
+    "prompt": "Audit this whole project for security vulnerabilities before our first public release."
+  },
+  {
+    "id": "P4",
+    "expected": "ts-architecture-reviewer",
+    "boundary": "ts-code-reviewer, ts-refactor-specialist",
+    "prompt": "Is the module structure of this project healthy? Look at coupling and layering, not at single bugs."
+  },
+  {
+    "id": "P5",
+    "expected": "ts-performance-profiler",
+    "boundary": "ts-debugger, ts-code-reviewer",
+    "prompt": "summarizeOrders in src/orders.ts gets very slow once there are 100k orders. Find out why."
+  },
+  {
+    "id": "P6",
+    "expected": "ts-debugger",
+    "boundary": "ts-code-reviewer, ts-performance-profiler",
+    "prompt": "Totals from summarizeOrders in src/orders.ts come out too low on some days and no error is raised. Find the root cause and fix it."
+  },
+  {
+    "id": "P7",
+    "expected": "ts-refactor-specialist",
+    "boundary": "ts-code-reviewer, ts-architecture-reviewer",
+    "prompt": "Clean up src/orders.ts so it is easier to read, without changing what it does."
+  },
+  {
+    "id": "P8",
+    "expected": "ts-api-compat-reviewer",
+    "boundary": "ts-code-reviewer",
+    "prompt": "We are about to publish this package as 2.0. Will the changes in src/orders.ts break anyone who imports it?"
+  }
+]

@@ -100,6 +100,19 @@ model, against B1 (`runs/b1-current.jsonl`).
 | 2026-10-15 | H2b: PR4 scope-first ladder vs B1 (`runs/c-pr4.jsonl`)   | `8a80bc2` (branch `feat/scope-to-request`, not merged)    | `claude-opus-5-5` | **Rejected: no measurable effect.** Declarations lower in 5 pairs, higher in 3, 10 ties: 8 decided pairs (< 10), p = 0.363. Hidden tests 18/18 vs 18/18, held out 6 → 6. Lines 996 → 965 (8 lower, 7 higher). Bytes 40,872 → 40,846. Judge not run: criterion 1 already fails. 7 runs hit the usage limit and were re-run |
 | 2026-10-15 | H3b: PR5 fragmentation guards vs B1 (`runs/c-pr5.jsonl`) | `4c70a59` (branch `feat/code-quality-guards`, not merged) | `claude-opus-5-5` | **Rejected: not significant.** Declarations lower in 6 pairs, higher in 4, 8 ties: 10 decided pairs, p = 0.377. Total declarations 161 → 145, lines 996 → 944 (8 lower, 7 higher). Hidden tests 18/18 vs 18/18, held out 6 → 6. Bytes 40,872 → 40,863. Judge not run: criterion 1 fails                                   |
 
+| 2026-10-15 | H51: A1, code-quality rule removed (`runs/a1.jsonl`) | `b6fbbe4`, `--drop typescript-ts-code-quality` | `claude-opus-5-5` | **Driver.** Declarations lower in 13 pairs, higher in 0, 5 ties: p = 0.000122 (≤ 0.0125). Total 161 → 100; top-level functions 84 → 38, interfaces 28 → 17, named literal constants 23 → 21. Lines 996 → 913. Hidden tests 17/18: T5#2 failed only its 500k-operation timing check, and passed on re-run (timing, not logic) |
+| 2026-10-15 | H52: A2, conventions removed (`runs/a2.jsonl`) | `b6fbbe4`, `--drop typescript-ts-conventions` | `claude-opus-5-5` | **Not a driver.** Declarations lower in 3 pairs, higher in 7, 8 ties: p = 0.945. Total 161 → 164. Hidden tests 17/18: T5#1 failed only its timing check and passed on re-run |
+| 2026-10-16 | H53: A3, documentation removed (`runs/a3.jsonl`) | `b6fbbe4`, `--drop typescript-ts-documentation` | `claude-opus-5-5` | **Not a driver.** Declarations lower in 5 pairs, higher in 4, 9 ties: 9 decided pairs, p = 0.500. Total 161 → 156, lines 996 → 944. Hidden tests 18/18 |
+| 2026-10-16 | H54: A4, async removed (`runs/a4.jsonl`) | `b6fbbe4`, `--drop typescript-ts-async` | `claude-opus-5-5` | **Not a driver.** Declarations lower in 4 pairs, higher in 5, 9 ties: 9 decided pairs, p = 0.746. Total 161 → 163, lines 996 → 1,063. Hidden tests 18/18 |
+
+Rounds 3 and 4 runs hit the usage limit several times; each rejected run was re-run, none recorded.
+
+**Round 3 reading.** One rule drives the fragmentation: the code-quality rule with the
+`clean-code` base it inlines. Without it the agent writes half the top-level functions at the same
+correctness. Conventions, documentation and async do not move the count. The two T5 failures (A1,
+A2) were the 3 s budget on 500k cache operations, close to the limit in every arm; neither is a
+behaviour failure, so neither rule is shown to matter for correctness. Round 4 tests the fix.
+
 **Round 2 reading.** Neither wording change moved fragmentation measurably. B0 put the gap between
 no rules and the current rules at 62 vs 156 top-level declarations, and prose added on top of the
 same rule set barely shifts it. Exploratory (not a registered result): the hard limits themselves

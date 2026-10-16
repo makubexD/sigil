@@ -660,8 +660,9 @@ the file and run `sigil update` to change a scope; delete an entry (or the file)
   shipped rule does). A rule a skill installs as its own file (Claude Code) is narrowed too. Copilot
   copies a skill's rules into the skill instead, where they load with the skill and have no scope.
 - A bad entry for a rule affects only that rule, and sigil says why: `add` does not install it (as
-  a pick, as a skill's dependency, or copied into a skill) and `update` leaves its installed file as
-  it is, so nothing is installed wider than you asked. An entry for an id that is not a catalog rule
+  a pick, as a skill's dependency, or copied into a skill), and `update` leaves the rule's own
+  installed file as it is but rewrites a skill that copies it without it. Nothing is installed wider
+  than you asked. An entry for an id that is not a catalog rule
   is reported and ignored. A file sigil cannot read as a whole (not YAML, a top-level key other than `rules:`, a
   link, over 64 KB) stops the command and names the file.
 - A base rule that another rule carries through `extends` (`shared/clean-code` inside

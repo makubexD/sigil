@@ -49,6 +49,11 @@ describe('parseOverlays', () => {
     assert.match(refused.get('a/parent') ?? '', /'\.\.\/x'/);
   });
 
+  it('should accept a name with accents, composed or decomposed', () => {
+    const names = ['café', 'café'];
+    assert.deepEqual([...overlaysOf({ [RULE]: { scope: names } }).scopes], [[RULE, names]]);
+  });
+
   it('should accept a trailing slash on a directory', () => {
     assert.deepEqual(
       [...overlaysOf({ [RULE]: { scope: ['src/', 'packages/api/'] } }).scopes],

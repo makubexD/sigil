@@ -41,7 +41,7 @@ const GLOB_SYNTAX = /[*?[\]{}!]/;
  * One directory name: letters, digits, `. _ - + @`, and single spaces inside it. Nothing a glob,
  * a list separator (Copilot joins globs with `,`) or an escape (`\`) could read as more than a name.
  */
-const DIRECTORY_NAME = /^[\p{L}\p{N}._@+-]+(?: [\p{L}\p{N}._@+-]+)*$/u;
+const DIRECTORY_NAME = /^[\p{L}\p{M}\p{N}._@+-]+(?: [\p{L}\p{M}\p{N}._@+-]+)*$/u;
 const NARROWABLE_LEAD = '**/';
 
 const printWarning = (message: string) => console.warn(`  ⚠  ${message}`);

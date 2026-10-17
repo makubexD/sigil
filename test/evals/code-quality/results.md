@@ -122,7 +122,7 @@ simplification. PR8 merged without an eval run. B2 measures it.
 **Baseline B2**: master `fdea053`, 18 fresh `current` runs (T1–T6 × 3), same model, against D2
 (`runs/d2.jsonl`).
 
-- **H8**: PR8 does not bring back the fragmentation D2 removed. Kept when all hold:
+- **H9**: PR8 does not bring back the fragmentation D2 removed. Kept when all hold:
   1. hidden tests pass in at least as many runs as D2 (18), and no held-out run (T5, T6) loses a pass;
   2. declarations do not rise: the one-sided sign test for B2 above D2 is not significant
      (p > 0.05), counted only when at least 10 pairs are decided;
@@ -133,7 +133,7 @@ simplification. PR8 merged without an eval run. B2 measures it.
 
 - Reported, not gated: `shortcut:` comments per run, lines, functions, cost, and T6 declarations
   next to D2 (26) and B1 (18), since T6 rose in all three D2 runs.
-- No judge: H8 is about not regressing, and the judge only runs on a candidate that passes 1–3.
+- No judge: H9 is about not regressing, and the judge only runs on a candidate that passes 1–3.
 
 ## Runs
 

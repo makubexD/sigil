@@ -113,6 +113,28 @@ against B1.
 - Reported, not gated: functions and interfaces per arm, lines, cost.
 - TypeScript only; the other four languages ride on this result.
 
+## Baseline B2: PR8 check (registered 2026-10-16, after D2 merged and before any B2 run)
+
+Since D2 (`7858063`) the only catalog change on master is PR8 (#69): two `clean-code` lines, one on
+names (domain role, predicate booleans, units) and one asking for a `shortcut:` comment on a known
+simplification. PR8 merged without an eval run. B2 measures it.
+
+**Baseline B2**: master `fdea053`, 18 fresh `current` runs (T1–T6 × 3), same model, against D2
+(`runs/d2.jsonl`).
+
+- **H9**: PR8 does not bring back the fragmentation D2 removed. Kept when all hold:
+  1. hidden tests pass in at least as many runs as D2 (18), and no held-out run (T5, T6) loses a pass;
+  2. declarations do not rise: the one-sided sign test for B2 above D2 is not significant
+     (p > 0.05), counted only when at least 10 pairs are decided;
+  3. inflation is non-zero in at most one of the 18 runs.
+
+  If 1 or 2 fails, PR8's lines are a candidate for removal (a separate registered round, not this
+  one). If fewer than 10 pairs are decided, 2 holds: no measurable effect.
+
+- Reported, not gated: `shortcut:` comments per run, lines, functions, cost, and T6 declarations
+  next to D2 (26) and B1 (18), since T6 rose in all three D2 runs.
+- No judge: H9 is about not regressing, and the judge only runs on a candidate that passes 1–3.
+
 ## Runs
 
 | Date       | Comparison                                                          | Commits                                                                                    | Model             | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
@@ -128,6 +150,7 @@ against B1.
 | 2026-10-16 | H6: D1, split gate removed, vs B1 (`runs/d1.jsonl`)                 | `625f794` (branch `feat/split-by-responsibility`, not merged)                              | `claude-opus-5-5` | **Rejected: not significant, and it inflates.** Declarations lower in 7 pairs, higher in 3, 8 ties: 10 decided pairs, p = 0.172. Total 161 → 149; functions 84 → 64. Lines 996 → 1,055, higher in 13 of 17 decided pairs. Inflation 0 → 14, all in T1: every T1 run moved retry into its own `src/retry.ts` with extra exports. Hidden tests 18/18, held out 6 → 6. Bytes 40,872 → 40,859. Judge not run: criterion 1 fails                                                                                                                                                                          |
 | 2026-10-16 | H4: PR6 reviewer "Design and simplicity" vs base, R1 (`runs/r1-*/`) | base `b6fbbe4`, candidate `9f07022` (branch `feat/reviewer-design-simplicity`, not merged) | `claude-opus-5-5` | **Rejected: +1, gate is +2.** Mean seeded defects found per run: base 5.0 (6, 4, 5), candidate 6.0 (6, 6, 6). No invented findings in the candidate. Grading below                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 2026-10-16 | H7: D2, no split prose, vs B1 (`runs/d2.jsonl`)                     | `7858063` (branch `feat/no-split-prose`)                                                   | `claude-opus-5-5` | **Accepted.** Declarations lower in 11 pairs, higher in 3, 4 ties: 14 decided pairs, p = 0.0287. Total 161 → 120; functions 84 → 44, types 15 → 6, interfaces 28 → 27, named literal constants 23 → 38. Hidden tests 18/18, held out 6 → 6. Inflation 0 in all 18 runs. Judge (`runs/judge-d2.jsonl`): readability B1 better 5, D2 better 4, 9 ties, p = 0.500 (no preference); minimalism D2 better 7, B1 better 5. Bytes 40,872 → 40,536. Lines 996 → 1,000 (5 lower, 10 higher). Cost $9.88 → $10.17. T6 (held out) went up in all 3 runs, 18 → 26. 15 runs hit the session limit and were re-run |
+| 2026-10-16 | H9: B2, PR8 naming and `shortcut:` lines, vs D2 (`runs/b2.jsonl`)   | `fdea053` (master)                                                                         | `claude-opus-5-5` | **Kept.** Declarations lower in 6 pairs, higher in 6, 6 ties: 12 decided pairs, one-sided p (B2 > D2) = 0.613. Total 120 → 114. Hidden tests 18/18 vs 18/18, held out 6 → 6. Inflation 0 in all 18 runs. Lines 1,000 → 927 (10 lower, 5 higher, p = 0.151). Cost $10.17 → $9.58. `shortcut:` comments: 1 in 18 runs (T4#3, an assumption that `now` never goes backwards). T6 declarations 26 → 13 (B1: 18). 9 runs hit the session limit and were re-run                                                                                                                                            |
 
 Rounds 3, 4 and 5 runs hit the usage limit several times; each rejected run was re-run, none recorded.
 
@@ -185,6 +208,12 @@ dropped the whole rule, went to 100 declarations; D2 reaches 120 while keeping t
 D2 is the next baseline. Exploratory (not registered): named literal constants rose 23 → 38 while
 functions fell, so the unconditional named-constant line may now carry the decomposition; and the
 held-out T6 went up in every run (18 → 26), which a fresh baseline should watch.
+
+**B2 reading.** PR8 did not bring back the fragmentation D2 removed: all three H9 criteria hold, and
+B2 is the baseline from here. The `shortcut:` marker appeared once in 18 runs, on a real
+assumption, so the line costs little and is rarely triggered on these tasks; its use is not gated.
+Exploratory (not registered): D2's T6 rise (18 → 26) did not repeat (13 in B2), which reads as
+run-to-run noise on a three-run task, not an effect of D2.
 
 **Named-constant line: not a candidate (checked 2026-10-16 from existing counts, no new runs).**
 The round 5 lead does not survive a look at the arms already run. The magic-number line reaches

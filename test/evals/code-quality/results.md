@@ -113,6 +113,28 @@ against B1.
 - Reported, not gated: functions and interfaces per arm, lines, cost.
 - TypeScript only; the other four languages ride on this result.
 
+## Baseline B2: PR8 check (registered 2026-10-16, after D2 merged and before any B2 run)
+
+Since D2 (`7858063`) the only catalog change on master is PR8 (#69): two `clean-code` lines, one on
+names (domain role, predicate booleans, units) and one asking for a `shortcut:` comment on a known
+simplification. PR8 merged without an eval run. B2 measures it.
+
+**Baseline B2**: master `fdea053`, 18 fresh `current` runs (T1–T6 × 3), same model, against D2
+(`runs/d2.jsonl`).
+
+- **H8**: PR8 does not bring back the fragmentation D2 removed. Kept when all hold:
+  1. hidden tests pass in at least as many runs as D2 (18), and no held-out run (T5, T6) loses a pass;
+  2. declarations do not rise: the one-sided sign test for B2 above D2 is not significant
+     (p > 0.05), counted only when at least 10 pairs are decided;
+  3. inflation is non-zero in at most one of the 18 runs.
+
+  If 1 or 2 fails, PR8's lines are a candidate for removal (a separate registered round, not this
+  one). If fewer than 10 pairs are decided, 2 holds: no measurable effect.
+
+- Reported, not gated: `shortcut:` comments per run, lines, functions, cost, and T6 declarations
+  next to D2 (26) and B1 (18), since T6 rose in all three D2 runs.
+- No judge: H8 is about not regressing, and the judge only runs on a candidate that passes 1–3.
+
 ## Runs
 
 | Date       | Comparison                                                          | Commits                                                                                    | Model             | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

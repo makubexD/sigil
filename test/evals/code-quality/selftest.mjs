@@ -6,7 +6,7 @@
 // 2. Each task's bad reference (badrefs.json: a passing archived solution with one hidden-checked
 //    behaviour broken, or T3's unfixed start) fails the hidden check named in `fails` and passes
 //    others, so the hidden tests catch the defect itself, not a crash or a slow machine.
-/* global console */
+/* global process, console */
 import assert from 'node:assert/strict';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -27,7 +27,14 @@ close(signFlipP([1, 1, 1, 1, 1]), 1 / 32, 'sign-flip, 5 equal wins');
 close(signFlipP([4, 4, 0, 3, 16 / 3, -8 / 3]), 4 / 64, 'sign-flip, D2 vs B1');
 close(signFlipP([]), 1, 'sign-flip, no tasks');
 
-const badrefs = JSON.parse(readFileSync(join(here, 'badrefs.json'), 'utf8'));
+// Hidden tests are TypeScript run by Node's type stripping (Node 22.7+, like the eval itself). On an
+// older Node only the statistics are checked; CI's Node 22 job runs the bad references.
+const canRunHidden = process.allowedNodeEnvironmentFlags.has('--experimental-transform-types');
+if (!canRunHidden)
+  console.log(
+    `bad references skipped: Node ${process.version} lacks --experimental-transform-types`,
+  );
+const badrefs = canRunHidden ? JSON.parse(readFileSync(join(here, 'badrefs.json'), 'utf8')) : {};
 const failures = [];
 for (const [task, ref] of Object.entries(badrefs)) {
   const dir = mkdtempSync(join(tmpdir(), `cq-bad-${task}-`));

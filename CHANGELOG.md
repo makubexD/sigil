@@ -342,6 +342,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- Security guidance errata (docs/audits/2026-10-16, F5 and F6):
+  - `csharp/cs-security`'s path-traversal check now appends a trailing separator to the allowed
+    root, so `/app/data-evil` no longer passes a check for `/app/data`.
+  - `typescript/ts-security`'s SSRF advice now checks the resolved address rather than the
+    hostname, and blocks link-local `169.254.x` (cloud metadata), `0.0.0.0` and IPv6 equivalents.
+  - `test/catalog-doctrine.test.ts` gains an IMPLIES table: advice that is safe only with a
+    qualifier must carry it in the same text.
 - Code-quality doctrine no longer contradicts itself (docs/audits/2026-10-14), and the
   `code-quality` template is now at revision 2 (`sigil update` applies it):
   - `shared/clean-code` owns one duplication rule: a wrong abstraction costs more than

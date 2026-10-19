@@ -1,7 +1,8 @@
 /**
  * Catalog doctrine stays consistent across every artifact an agent can receive. Each doctrine has
  * one home (`shared/clean-code` or a template); a retired wording must not survive anywhere else,
- * and a family that must carry a doctrine has it in every member's delivered text.
+ * advice that is safe only with a qualifier carries the qualifier in the same text, and a family
+ * that must carry a doctrine has it in every member's delivered text.
  *
  * Texts are read resolved (templates composed, `extends` bases prepended) plus each skill's
  * reference files, so the check sees what ships, not only the source body. Whitespace is collapsed
@@ -15,6 +16,12 @@ import { CATALOG_DIR, loadResolvedCatalog } from './helpers/catalog';
 
 interface Retired {
   readonly pattern: RegExp;
+  readonly why: string;
+}
+
+interface Implies {
+  readonly when: RegExp;
+  readonly then: RegExp;
   readonly why: string;
 }
 
@@ -40,6 +47,27 @@ const RETIRED: readonly Retired[] = [
     pattern:
       /max \d+ (lines|parameters|props)|body (>|exceeds) ?\d+ lines|split into smaller units before proceeding|single-purpose functions/i,
     why: 'prose that says when to split a function makes agents split more (test/evals/code-quality, rounds 3-4)',
+  },
+];
+
+const PRIVATE_RANGES = /private IP ranges?/i;
+
+/** Advice that matches `when` is safe only when the same delivered text also matches `then`. */
+const IMPLIES: readonly Implies[] = [
+  {
+    when: /[Ss]tartsWith\([^)]*[Rr]oot/,
+    then: /DirectorySeparatorChar|path\.sep/,
+    why: 'a root-prefix check without a trailing separator lets a sibling directory (/app/data-evil) through',
+  },
+  {
+    when: PRIVATE_RANGES,
+    then: /169\.254/,
+    why: 'a private-range block list without link-local leaves the cloud metadata endpoint reachable',
+  },
+  {
+    when: PRIVATE_RANGES,
+    then: /resolved address/i,
+    why: 'checking the hostname instead of the address it resolves to lets a DNS name point anywhere',
   },
 ];
 
@@ -70,6 +98,16 @@ describe('catalog doctrine', () => {
       RETIRED.filter(r => deliveredTexts(artifact).some(text => r.pattern.test(text))).map(
         r => `${artifact.id}: ${r.pattern} (${r.why})`,
       ),
+    );
+    assert.deepEqual(hits, []);
+  });
+
+  it('should pair each conditional advice with what makes it safe', async () => {
+    const catalog = await loadResolvedCatalog();
+    const hits = catalog.artifacts.flatMap(artifact =>
+      IMPLIES.filter(r =>
+        deliveredTexts(artifact).some(text => r.when.test(text) && !r.then.test(text)),
+      ).map(r => `${artifact.id}: ${r.when} without ${r.then} (${r.why})`),
     );
     assert.deepEqual(hits, []);
   });

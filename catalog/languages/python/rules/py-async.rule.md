@@ -24,11 +24,10 @@ async def fetch_user(user_id: str) -> dict:
     response = requests.get(f"/users/{user_id}")
     return response.json()
 
-# Correct — async HTTP client
-async def fetch_user(user_id: str) -> dict:
-    async with httpx.AsyncClient() as client:
-        response = await client.get(f"/users/{user_id}")
-        return response.json()
+# Correct — async HTTP client; reuse one client per application (it holds the connection pool)
+async def fetch_user(client: httpx.AsyncClient, user_id: str) -> dict:
+    response = await client.get(f"/users/{user_id}")
+    return response.json()
 ```
 
 For unavoidable blocking calls (a sync-only SDK, CPU-bound parsing), offload to a thread or process
@@ -45,15 +44,16 @@ guarantees every child task is awaited, cancels siblings on first failure, and p
 via `ExceptionGroup` instead of losing them:
 
 ```python
-# Correct — structured concurrency, exceptions surfaced, siblings cancelled on failure
-async def fetch_all(ids: list[str]) -> list[dict]:
+# Correct — structured concurrency, exceptions surfaced, siblings cancelled on failure.
+# When ids can be large, cap the concurrency: acquire an asyncio.Semaphore(n) inside each task.
+async def fetch_all(client: httpx.AsyncClient, ids: list[str]) -> list[dict]:
     async with asyncio.TaskGroup() as tg:
-        tasks = [tg.create_task(fetch_user(uid)) for uid in ids]
+        tasks = [tg.create_task(fetch_user(client, uid)) for uid in ids]
     return [t.result() for t in tasks]
 
 # Avoid — a bare create_task with no reference is eligible for GC mid-flight, and an
 # unhandled exception inside it is silently logged, not raised to the caller
-asyncio.create_task(fetch_user(uid))
+asyncio.create_task(fetch_user(client, uid))
 ```
 
 On Python < 3.11, use `asyncio.gather(*tasks)` for the same "run concurrently, propagate first
@@ -112,11 +112,10 @@ happen. Prefer `asyncio.timeout()` (3.11+, a context manager, composes cleanly w
 over the older `asyncio.wait_for()`:
 
 ```python
-async def fetch_with_deadline(url: str) -> dict:
+async def fetch_with_deadline(client: httpx.AsyncClient, url: str) -> dict:
     async with asyncio.timeout(5.0):
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url)
-            return response.json()
+        response = await client.get(url)
+        return response.json()
 ```
 
 ## `asyncio.Lock`, Not `threading.Lock`, in Coroutines

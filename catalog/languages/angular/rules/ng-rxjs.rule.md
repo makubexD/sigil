@@ -34,7 +34,7 @@ error propagation. Compose with a flattening operator, chosen by the concurrency
 |---|---|
 | `switchMap` | Only the latest matters — cancel the previous (typeahead, route param → fetch). |
 | `concatMap` | Order matters — queue and run sequentially (sequential writes). |
-| `mergeMap` | Independent and concurrent — run all in parallel (fan-out). |
+| `mergeMap` | Independent and concurrent — run all in parallel (fan-out); for a large source, cap the concurrency with `mergeMap(fn, 4)`. |
 | `exhaustMap` | Ignore new triggers while one is in flight (submit button, login). |
 
 ```ts

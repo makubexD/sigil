@@ -68,11 +68,25 @@ const RETIRED: readonly Retired[] = [
     pattern: /\{ params \}: \{ params: \{/,
     why: 'Next.js 15+ passes params as a Promise; await it',
   },
+  {
+    pattern: /rejection cancel all/i,
+    why: 'Promise.all rejects on the first failure but cancels nothing; the rest keep running',
+  },
+  {
+    pattern: /\.pipe\((?:(?!takeUntil)[^;])*\)\.subscribe\(/,
+    why: 'a subscription with no teardown outlives its component',
+  },
 ];
 
 const PRIVATE_RANGES = /private IP ranges?/i;
 
-/** Advice that matches `when` is safe only when the same delivered text also matches `then`. */
+/** How far from an IMPLIES `when` match its `then` must appear (characters, either side). */
+const NEAR = 300;
+
+/**
+ * Advice that matches `when` is safe only when `then` matches near it: within NEAR characters on
+ * either side, so a qualifier elsewhere in the same artifact does not count.
+ */
 const IMPLIES: readonly Implies[] = [
   {
     when: /[Ss]tartsWith\([^)]*[Rr]oot/,
@@ -88,6 +102,21 @@ const IMPLIES: readonly Implies[] = [
     when: PRIVATE_RANGES,
     then: /resolved address/i,
     why: 'checking the hostname instead of the address it resolves to lets a DNS name point anywhere',
+  },
+  {
+    when: /Promise\.all\(\s*\w+\.map\(|create_task\([^)]*\)\) for \w+ in \w+|mergeMap`? \|[^|]*fan-out/,
+    then: /(cap|limit|bound) (the )?concurrency|concurrency (cap|limit)|Semaphore\(|mergeMap\([^)]*, ?\d/,
+    why: 'one task per item of an unbounded list exhausts sockets, memory and rate limits',
+  },
+  {
+    when: /httpx\.AsyncClient\(\)/,
+    then: /reuse one client|one client per/i,
+    why: 'a client per call throws away the connection pool',
+  },
+  {
+    when: /Sequential `?await`?[^.]{0,80}(Task\.WhenAll|TaskGroup)/,
+    then: /DbContext|database session/,
+    why: 'a DbContext or database session does not support concurrent operations',
   },
 ];
 
@@ -111,6 +140,15 @@ function deliveredTexts(artifact: ResolvedArtifact): string[] {
   return [body, ...(artifact.references ?? []).map(ref => ref.content)].map(flatten);
 }
 
+function unqualified(text: string, rule: Implies): boolean {
+  const when = new RegExp(rule.when.source, rule.when.flags.replace('g', '') + 'g');
+  for (const match of text.matchAll(when)) {
+    const near = text.slice(Math.max(0, match.index - NEAR), match.index + match[0].length + NEAR);
+    if (!rule.then.test(near)) return true;
+  }
+  return false;
+}
+
 describe('catalog doctrine', () => {
   it('should not ship a retired wording in any artifact', async () => {
     const catalog = await loadResolvedCatalog();
@@ -125,9 +163,9 @@ describe('catalog doctrine', () => {
   it('should pair each conditional advice with what makes it safe', async () => {
     const catalog = await loadResolvedCatalog();
     const hits = catalog.artifacts.flatMap(artifact =>
-      IMPLIES.filter(r =>
-        deliveredTexts(artifact).some(text => r.when.test(text) && !r.then.test(text)),
-      ).map(r => `${artifact.id}: ${r.when} without ${r.then} (${r.why})`),
+      IMPLIES.filter(r => deliveredTexts(artifact).some(text => unqualified(text, r))).map(
+        r => `${artifact.id}: ${r.when} without ${r.then} (${r.why})`,
+      ),
     );
     assert.deepEqual(hits, []);
   });

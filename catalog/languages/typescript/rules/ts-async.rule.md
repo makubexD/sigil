@@ -53,14 +53,16 @@ const calendarRows = await fetchCalendar(config);
 const devRows = await fetchDevActivity(config);
 ```
 
-Use `Promise.allSettled` when partial failure is acceptable and you want to inspect each result
-individually rather than letting the first rejection cancel all work.
+`Promise.all` rejects on the first failure but cancels nothing: the other operations keep running
+unless they share an `AbortSignal` you abort. Use `Promise.allSettled` when partial failure is
+acceptable and you want to inspect each result individually.
 
 Never `await` inside a `for` loop for independent items — collect the Promises and `await
-Promise.all`:
+Promise.all`. When the list can be large or unbounded, cap the concurrency (a small worker pool, or
+a limiter the project already has):
 
 ```typescript
-// Correct — all fetch calls in flight simultaneously
+// Correct — all fetch calls in flight simultaneously (a short, bounded list)
 const results = await Promise.all(items.map((item) => fetchItem(item.id)));
 
 // Avoid — serial loop, each fetch waits for the previous

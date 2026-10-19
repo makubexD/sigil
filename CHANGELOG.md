@@ -349,6 +349,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     hostname, and blocks link-local `169.254.x` (cloud metadata), `0.0.0.0` and IPv6 equivalents.
   - `test/catalog-doctrine.test.ts` gains an IMPLIES table: advice that is safe only with a
     qualifier must carry it in the same text.
+- Concurrency guidance errata (docs/audits/2026-10-16, F1, F8, F10, F11, F15):
+  - `typescript/ts-async`, `ts-performance-profiler`, `python/py-async` and `angular/ng-rxjs` cap
+    the concurrency when a fan-out list can be large (`mergeMap(fn, 4)`, `asyncio.Semaphore`).
+  - `ts-async` no longer says `Promise.all` cancels the other operations; it cancels nothing.
+  - `csharp/cs-performance-profiler` and `python/py-performance-profiler` no longer suggest running
+    queries concurrently on one shared `DbContext` or database session.
+  - `py-async` reuses one `httpx.AsyncClient` instead of opening one per call.
+  - `angular/ng-async`'s `switchMap` example tears down with `takeUntilDestroyed`.
+  - `catalog-doctrine` IMPLIES now requires the qualifier within 300 characters of the advice.
 - Guidance no longer names APIs that do not exist or no longer behave as stated (docs/audits/2026-10-16,
   F7, F12, F13, F14):
   - `csharp/cs-async` awaits `Task.WhenAll` and then each task, instead of a nonexistent `.WhenBoth()`.

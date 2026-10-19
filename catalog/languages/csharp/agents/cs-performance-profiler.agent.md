@@ -51,7 +51,7 @@ Discover the source root from `.sln`, `Directory.Build.props`, or `src/`.
 - `.Result` / `.Wait()` / `.GetAwaiter().GetResult()` — blocks a thread; deadlock risk under any `SynchronizationContext`. Severity: Critical.
 - `async void` — exception is unobservable; prevents composition and backpressure. Severity: Critical.
 - Missing `ConfigureAwait(false)` in library code — captures `SynchronizationContext` unnecessarily, reducing throughput. Severity: Medium.
-- Sequential `await` on independent operations — use `Task.WhenAll`/`Task.WhenEach` instead. Severity: High.
+- Sequential `await` on independent operations — use `Task.WhenAll`/`Task.WhenEach` instead, except on one shared `DbContext`, which does not support concurrent operations. Severity: High.
 - `Task.Delay(0)` or empty `await Task.CompletedTask` inside tight loops — context-switch overhead. Severity: Low.
 
 **LINQ anti-patterns**

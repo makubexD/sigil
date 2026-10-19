@@ -6,17 +6,19 @@ project before the agent starts. Background and the plan it gates: `docs/audits/
 
 | File              | Contents                                                                                              |
 | ----------------- | ----------------------------------------------------------------------------------------------------- |
-| `scenarios.md`    | Prompts T1–T6 (T5, T6 held out) and the reviewer scenario R1                                          |
+| `scenarios.md`    | Prompts T1–T6 (T5, T6 held out), trap tasks C1–C12, and the reviewer scenario R1                      |
+| `scenarios.mjs`   | Reads the prompts; throws on a prompt line that lost its `>`                                          |
 | `surface.json`    | The files, exports and option fields each task asks for                                               |
 | `key.md`          | Hidden checks, the inflation definition, the judge rubric, R1's seeded defects                        |
 | `fixture/`        | The starting project (Node 22, TypeScript, no dependencies); `fixture-start/T3/` adds T3's buggy file |
 | `fixture-hidden/` | Hidden tests per task, copied in only after the agent finishes                                        |
+| `fixture-good/`   | A correct reference solution per trap task                                                            |
 | `fixture-review/` | The project R1 reviews                                                                                |
 | `run.mjs`         | Runs one arm headless and appends records                                                             |
-| `measure.mjs`     | Measures one run (`run`) and compares two arms (`compare`, `--metric`)                                |
+| `measure.mjs`     | Measures one run (`run`), compares two arms (`compare`), and scores trap calibration (`calibrate`)    |
 | `stats.cjs`       | Exact tests: sign-flip over per-task means, sign test                                                 |
-| `badrefs.json`    | One bad reference per task: a passing archived solution with one hidden-checked behaviour broken      |
-| `selftest.mjs`    | Checks the statistics and that each bad reference fails its named check (`npm run evals:check`)       |
+| `badrefs.json`    | One bad reference per task: a correct solution with one hidden-checked behaviour broken               |
+| `selftest.mjs`    | Checks the statistics, every task's files, and every good and bad reference (`npm run evals:check`)   |
 | `judge.mjs`       | Blind readability and minimalism judge over two arms' archived source                                 |
 | `results.md`      | Hypotheses written before any run, then one dated row per comparison                                  |
 | `runs/*.jsonl`    | Raw records, one line per run; `runs/<file>/<task>-<run>/` holds that run's `src/`                    |
@@ -64,10 +66,24 @@ From the next comparison on (`docs/audits/2026-10-16/README.md` § 8, E1 and E3)
 - **Selftest.** `node selftest.mjs` (part of `npm run evals:check`) checks the statistics against
   hand-computed p-values and runs each bad reference in `badrefs.json`: it must fail the hidden check
   named in `fails` and pass others. A bad reference that only fails a timing check proves nothing,
-  and T5's "500k operations quickly" check can fail a correct solution on a busy machine.
+  and T5's "500k operations quickly" check can fail a correct solution on a busy machine. Each trap
+  task's good reference in `fixture-good/` must pass every check, and every task in `surface.json`
+  must have a prompt naming its files, hidden tests and a bad reference.
 - **New metrics.** Each run also records `typeErrors` (strict compile errors in `src/`, Node-type
   gaps excluded) and `suppressions` (`@ts-ignore`, `@ts-expect-error`, `eslint-disable`,
   `.skip`/`.only`/`.todo`). Both read 0 on every task's good reference.
+
+## Trap tasks (E2, registered 2026-10-19)
+
+C1–C12 ask for ordinary code under a stated property (a service limit, untrusted input, a time
+zone, a long-running process) where the obvious first implementation is wrong; `key.md` § Trap
+checks names each trap. They answer whether the rules change correctness, which T1–T6 cannot,
+since every arm passes those.
+
+1. Calibrate: `node run.mjs --arm none --install none --tasks C1,C2,…,C12 --runs 3 --out runs/cal-none.jsonl`,
+   then `node measure.mjs calibrate runs/cal-none.jsonl`. It keeps a trap that `none` fails in at
+   least 2 of 3 runs, and says stop when fewer than 6 are kept (`results.md`, H10).
+2. Only the kept traps go into the registered batch (`results.md`, H11 and H12).
 
 ## Acceptance (written before the first run; do not change after seeing results)
 

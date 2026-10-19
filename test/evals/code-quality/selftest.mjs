@@ -22,7 +22,7 @@ import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { hiddenTests } from './measure.mjs';
+import { calibration, hiddenTests } from './measure.mjs';
 import { prompts } from './scenarios.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
@@ -54,6 +54,25 @@ for (const [task, surface] of Object.entries(surfaces)) {
 for (const task of Object.keys(taskPrompts))
   if (!surfaces[task]) incomplete.push(`${task}: prompt without a surface`);
 assert.deepEqual(incomplete, [], 'every task must be complete');
+
+// H10's keep rule: a trap stays when the arm fails its trap check in at least 2 of 3 runs.
+const trapRun = (task, failedTests, pass = 3) => ({ task, failedTests, pass });
+const checks = { C1: { fails: 'trap one' }, C2: { fails: 'trap two' }, T1: { fails: 'plain' } };
+assert.deepEqual(
+  calibration(
+    [
+      ...[['trap one'], ['trap one', 'other'], []].map(f => trapRun('C1', f)),
+      ...[['trap two'], ['other'], []].map(f => trapRun('C2', f)),
+      trapRun('C2', ['hidden-test/x.ts'], 0),
+      trapRun('T1', ['plain']),
+    ],
+    checks,
+  ),
+  [
+    { task: 'C1', runs: 3, trapped: 2, broken: 0, keep: true },
+    { task: 'C2', runs: 4, trapped: 1, broken: 1, keep: false },
+  ],
+);
 
 // Hidden tests are TypeScript run by Node's type stripping (Node 22.7+, like the eval itself). On an
 // older Node only the statistics are checked; CI's Node 22 job runs the bad references.

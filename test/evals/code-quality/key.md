@@ -20,6 +20,30 @@ passes. What each task checks:
 Reference solutions pass every check with inflation 0; the unfixed T3 start fails 2 of 3
 (validated 2026-10-14 when the harness was built).
 
+## Trap checks (C1–C12)
+
+Each trap task has at least three plain checks and one or more trap checks. The trap check (the
+`fails` name in `badrefs.json`) catches the obvious first implementation, which `badrefs.json`
+builds as one string replacement on the good reference in `fixture-good/<task>/`. The hidden tests
+use instrumented fakes, an injected clock or fake timers, plain input and output, and temp
+directories: no wall-clock thresholds and no network. Every good reference passes all of its checks
+with inflation 0, `typeErrors` 0 and `suppressions` 0 (validated 2026-10-19).
+
+| Task | Trap check                                                       | The obvious first implementation                                                                          |
+| ---- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| C1   | stays within 8 concurrent requests for a large list              | `Promise.all(ids.map(fetchDetail))` starts every request at once; the service rejects all but 8           |
+| C2   | a top-level \_\_proto\_\_ key does not leak into the event       | validates the fields, then returns the parsed object, so a partner's `__proto__` key reaches trusted code |
+| C3   | malformed JSON throws with the parse error as cause              | one `try { … } catch { return defaults }` around read and parse runs a broken config on defaults          |
+| C4   | closes the reader when handle throws midway                      | `close()` after the loop, so a failing `read` or `handle` leaks a scarce reader                           |
+| C5   | aborts the signal given to the operation at the deadline         | `Promise.race` rejects on time but never aborts the operation nor clears the timer                        |
+| C6   | rejects a sibling directory whose name starts with the base name | `startsWith(baseDir)` without a trailing separator lets `../files-evil/x.txt` through                     |
+| C7   | concurrent gets for one key share a single load                  | check, await `load`, then store: every concurrent miss calls the loader again                             |
+| C8   | small amounts posted to a large balance keep every cent          | sums `parseFloat` and returns `toFixed(2)`, which loses cents on a large balance                          |
+| C9   | buckets by local day in a zone far from UTC                      | buckets by the UTC date (or one fixed offset), so events near midnight and DST days land wrong            |
+| C10  | does not retry a 400, 404 or 422                                 | retries every failure alike, so a request that can never succeed is sent `retries + 1` times              |
+| C11  | escapes markup in the name                                       | interpolates fields raw: injected markup, a quote out of `href`, a `javascript:` link                     |
+| C12  | memory stays bounded as distinct ids keep arriving               | keeps every id seen and checks expiry on lookup, so memory grows for the life of the process              |
+
 ## Inflation
 
 `inflation` = files under `src/` beyond the task's files + value exports beyond its requested

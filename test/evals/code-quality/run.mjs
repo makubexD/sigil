@@ -15,7 +15,6 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
-  readFileSync,
   realpathSync,
   rmSync,
   writeFileSync,
@@ -24,6 +23,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { prompts } from './scenarios.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -47,21 +47,11 @@ if (!arm || !out || (install !== 'none' && !sigil)) {
   process.exit(2);
 }
 
-/** The quoted prompt under each `## Tn ...` heading of scenarios.md. */
-function prompts() {
-  const text = readFileSync(join(here, 'scenarios.md'), 'utf8');
-  const result = {};
-  for (const section of text.split(/^## /m).slice(1)) {
-    const id = /^(T\d)\b/.exec(section)?.[1];
-    if (!id) continue;
-    result[id] = section
-      .split(/\r?\n/)
-      .filter(line => line.startsWith('>'))
-      .map(line => line.replace(/^> ?/, ''))
-      .join('\n')
-      .trim();
-  }
-  return result;
+const PROMPTS = prompts();
+const unknown = tasks.filter(task => !PROMPTS[task]);
+if (unknown.length) {
+  console.error(`no prompt in scenarios.md for ${unknown.join(', ')}`);
+  process.exit(2);
 }
 
 const sha = sigil
@@ -70,7 +60,6 @@ const sha = sigil
       encoding: 'utf8',
     }).stdout.trim()
   : null;
-const PROMPTS = prompts();
 
 function prepare(task, run) {
   const root = join(tmpdir(), 'sigil-cq-eval');

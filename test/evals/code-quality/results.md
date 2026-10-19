@@ -135,6 +135,61 @@ simplification. PR8 merged without an eval run. B2 measures it.
   next to D2 (26) and B1 (18), since T6 rose in all three D2 runs.
 - No judge: H9 is about not regressing, and the judge only runs on a candidate that passes 1–3.
 
+## Erratum 2026-10-19: the T1 prompt was missing a line
+
+`run.mjs` sent only the prompt lines that start with `>`, and Prettier had dropped the `>` from the
+line continuing T1's wrapped `Order` type. Every T1 run before `ca00aa4` was told
+`` `{ id: string; customerId: `` and then `summarizeOrders(...)`, without `amountCents` and
+`status`. Every arm got the same prompt, so the comparisons above stand. T1's absolute figures
+before `ca00aa4` are not comparable with later ones. `scenarios.mjs` now throws on such a line, and
+Prettier skips `scenarios.md`.
+
+## Trap tasks: calibration and the decisive batch (registered 2026-10-19, before any trap run)
+
+The 2026-10-16 benchmark (`docs/audits/2026-10-16/README.md` § 8, E2 and A1) asks whether sigil's
+rules change correctness at all. T1–T6 cannot say, since every arm passes them. C1–C12
+(`scenarios.md`, `key.md` § Trap checks) are tasks where the obvious first implementation is wrong.
+Each one's trap check is the `fails` test in `badrefs.json`.
+
+**Calibration** (roadmap item 9): `none` arm, 3 runs of each of C1–C12, one model, run with
+`node run.mjs --arm none --install none --tasks C1,…,C12 --runs 3`. A run that hit an API or usage
+limit is not recorded and is re-run.
+
+- **H10**: at least 6 traps catch the unguided model. A trap is **kept** when `none` fails its trap
+  check in at least 2 of its 3 runs (`node measure.mjs calibrate`). A run where no hidden test
+  passes is broken, not trapped.
+  - 6 or more kept: run the batch below on the kept traps only.
+  - Fewer than 6 kept: **stop**. Record that the unguided model already avoids these traps, run no
+    batch, and add no correctness prose to the rules until a new trap set says otherwise.
+
+**Batch** (roadmap item 10, only if H10 holds): three arms, all on the same day, model and CLI
+version.
+
+- `none` installs nothing.
+- `master` installs the TypeScript rules at master's SHA on the day.
+- `delete` installs the same rules minus the lines A1 targets: F4 (unconditional pattern and DI
+  advice), F18, F19 and F20 (`docs/audits/2026-10-16/evidence/panel/senior.md`). Its exact diff and
+  SHA are recorded here before any batch run.
+
+Tasks: the kept traps plus T1, T2, T4, T5 and T6, 3 runs each. T3 is left out because every arm
+passes it identically. Runs alternate arms within each (task, run): `none`, `master`, `delete`,
+with the order rotating by one each run.
+
+- **H11 (rules change correctness)**: `master` falls into fewer traps than `none`. Statistic: an
+  exact one-sided permutation test that shuffles arm labels within each kept trap (stratified by
+  task), on the count of trapped runs. Holds when p ≤ 0.05.
+  - If H11 fails, correctness prose stops growing, and the catalog moves toward errata and minimal
+    style.
+- **H12 (the deletion is non-inferior)**: all of these hold:
+  1. `delete` is trapped in at most 2 more runs than `master` across the kept traps;
+  2. on T1, T2, T4–T6, `delete`'s hidden tests pass in at least as many runs as `master`'s, less one;
+  3. `delete`'s declarations are not significantly higher than `master`'s (sign-flip p > 0.05).
+
+  If H12 holds, the A1 lines are deleted in one PR. If it fails, the failing trap names the lines
+  to keep.
+
+- Reported, not gated: `typeErrors`, `suppressions`, inflation, cost and turns per arm.
+
 ## Runs
 
 | Date       | Comparison                                                          | Commits                                                                                    | Model             | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

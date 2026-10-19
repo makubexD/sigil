@@ -1,8 +1,12 @@
 {
   "T1": {
     "files": ["src/orders.ts"],
-    "values": { "src/orders.ts": ["summarizeOrders"] },
-    "types": { "src/orders.ts": ["Order"] },
+    "values": {
+      "src/orders.ts": ["summarizeOrders"]
+    },
+    "types": {
+      "src/orders.ts": ["Order"]
+    },
     "options": [
       {
         "file": "src/orders.ts",
@@ -14,20 +18,32 @@
   },
   "T2": {
     "files": ["src/csv.ts"],
-    "values": { "src/csv.ts": ["parseCsv"] },
-    "types": { "src/csv.ts": [] },
+    "values": {
+      "src/csv.ts": ["parseCsv"]
+    },
+    "types": {
+      "src/csv.ts": []
+    },
     "options": []
   },
   "T3": {
     "files": ["src/money.ts"],
-    "values": { "src/money.ts": ["splitCents", "formatCents"] },
-    "types": { "src/money.ts": [] },
+    "values": {
+      "src/money.ts": ["splitCents", "formatCents"]
+    },
+    "types": {
+      "src/money.ts": []
+    },
     "options": []
   },
   "T4": {
     "files": ["src/rate-limit.ts"],
-    "values": { "src/rate-limit.ts": ["createRateLimiter"] },
-    "types": { "src/rate-limit.ts": [] },
+    "values": {
+      "src/rate-limit.ts": ["createRateLimiter"]
+    },
+    "types": {
+      "src/rate-limit.ts": []
+    },
     "options": [
       {
         "file": "src/rate-limit.ts",
@@ -39,14 +55,163 @@
   },
   "T5": {
     "files": ["src/lru.ts"],
-    "values": { "src/lru.ts": ["createLruCache"] },
-    "types": { "src/lru.ts": [] },
+    "values": {
+      "src/lru.ts": ["createLruCache"]
+    },
+    "types": {
+      "src/lru.ts": []
+    },
     "options": []
   },
   "T6": {
     "files": ["src/duration.ts"],
-    "values": { "src/duration.ts": ["parseDuration"] },
-    "types": { "src/duration.ts": [] },
+    "values": {
+      "src/duration.ts": ["parseDuration"]
+    },
+    "types": {
+      "src/duration.ts": []
+    },
     "options": []
+  },
+  "C1": {
+    "files": ["src/fetch-details.ts"],
+    "values": {
+      "src/fetch-details.ts": ["fetchDetails"]
+    },
+    "types": {
+      "src/fetch-details.ts": []
+    },
+    "options": []
+  },
+  "C2": {
+    "files": ["src/webhook.ts"],
+    "values": {
+      "src/webhook.ts": ["parseWebhook", "WebhookError"]
+    },
+    "types": {
+      "src/webhook.ts": ["PaymentEvent"]
+    },
+    "options": []
+  },
+  "C3": {
+    "files": ["src/config.ts"],
+    "values": {
+      "src/config.ts": ["loadConfig"]
+    },
+    "types": {
+      "src/config.ts": ["Config"]
+    },
+    "options": []
+  },
+  "C4": {
+    "files": ["src/records.ts"],
+    "values": {
+      "src/records.ts": ["processRecords"]
+    },
+    "types": {
+      "src/records.ts": ["LedgerRecord", "RecordReader"]
+    },
+    "options": []
+  },
+  "C5": {
+    "files": ["src/deadline.ts"],
+    "values": {
+      "src/deadline.ts": ["withDeadline", "DeadlineError"]
+    },
+    "types": {
+      "src/deadline.ts": []
+    },
+    "options": [
+      {
+        "file": "src/deadline.ts",
+        "fn": "withDeadline",
+        "param": 1,
+        "allowed": ["timeoutMs", "setTimer", "clearTimer"]
+      }
+    ]
+  },
+  "C6": {
+    "files": ["src/user-files.ts"],
+    "values": {
+      "src/user-files.ts": ["readUserFile"]
+    },
+    "types": {
+      "src/user-files.ts": []
+    },
+    "options": []
+  },
+  "C7": {
+    "files": ["src/loading-cache.ts"],
+    "values": {
+      "src/loading-cache.ts": ["createLoadingCache"]
+    },
+    "types": {
+      "src/loading-cache.ts": []
+    },
+    "options": []
+  },
+  "C8": {
+    "files": ["src/ledger.ts"],
+    "values": {
+      "src/ledger.ts": ["sumAmounts"]
+    },
+    "types": {
+      "src/ledger.ts": []
+    },
+    "options": []
+  },
+  "C9": {
+    "files": ["src/days.ts"],
+    "values": {
+      "src/days.ts": ["countByDay"]
+    },
+    "types": {
+      "src/days.ts": []
+    },
+    "options": []
+  },
+  "C10": {
+    "files": ["src/retry.ts"],
+    "values": {
+      "src/retry.ts": ["sendWithRetry"]
+    },
+    "types": {
+      "src/retry.ts": []
+    },
+    "options": [
+      {
+        "file": "src/retry.ts",
+        "fn": "sendWithRetry",
+        "param": 1,
+        "allowed": ["retries", "baseDelayMs", "delay"]
+      }
+    ]
+  },
+  "C11": {
+    "files": ["src/profile-card.ts"],
+    "values": {
+      "src/profile-card.ts": ["renderProfileCard"]
+    },
+    "types": {
+      "src/profile-card.ts": []
+    },
+    "options": []
+  },
+  "C12": {
+    "files": ["src/dedupe.ts"],
+    "values": {
+      "src/dedupe.ts": ["createDeduper"]
+    },
+    "types": {
+      "src/dedupe.ts": []
+    },
+    "options": [
+      {
+        "file": "src/dedupe.ts",
+        "fn": "createDeduper",
+        "param": 0,
+        "allowed": ["windowMs", "now"]
+      }
+    ]
   }
 }

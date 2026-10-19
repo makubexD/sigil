@@ -3,6 +3,7 @@
 //   node measure.mjs run <dir> --task T1 --arm current --run 1 [--out runs/b0.jsonl] [--sha X] [--model Y]
 //   node measure.mjs compare <baseline.jsonl> <candidate.jsonl> [--arm-a X] [--arm-b Y]
 //                            [--metric inflation|declarations|loc]
+//   node measure.mjs calibrate <runs.jsonl> [--arm none]   (H10: which trap tasks to keep)
 //
 // `run` copies the task's hidden tests into <dir>/hidden-test/, runs them with Node, and records
 // the hidden-test result, source lines, and inflation: files, value exports and option fields
@@ -311,6 +312,40 @@ function taskLevel(a, b, metric) {
   ].join('\n');
 }
 
+/**
+ * H10 calibration (results.md): per trap task (Cn), how many runs failed its trap check, the
+ * `fails` name in badrefs.json. A trap is kept when the arm failed it in at least 2 of 3 runs. A
+ * run where no hidden test passed is `broken`: it never reached the trap, so it does not count as
+ * trapped.
+ */
+export function calibration(records, badrefs) {
+  const byTask = new Map();
+  for (const r of records) {
+    if (!/^C\d+$/.test(r.task)) continue;
+    const tally = byTask.get(r.task) ?? { task: r.task, runs: 0, trapped: 0, broken: 0 };
+    tally.runs++;
+    if (r.pass === 0) tally.broken++;
+    else if (r.failedTests.includes(badrefs[r.task].fails)) tally.trapped++;
+    byTask.set(r.task, tally);
+  }
+  return [...byTask.values()]
+    .sort((a, b) => Number(a.task.slice(1)) - Number(b.task.slice(1)))
+    .map(t => ({ ...t, keep: t.runs >= 3 && 3 * t.trapped >= 2 * t.runs }));
+}
+
+function calibrate(args) {
+  const badrefs = JSON.parse(readFileSync(join(here, 'badrefs.json'), 'utf8'));
+  const rows = calibration(readRuns(args[0], flag(args, 'arm')), badrefs);
+  for (const t of rows)
+    console.log(
+      `${t.task.padEnd(4)} trapped ${t.trapped}/${t.runs}${t.broken ? ` (broken ${t.broken})` : ''}  ${t.keep ? 'keep' : 'drop'}`,
+    );
+  const kept = rows.filter(t => t.keep).length;
+  console.log(
+    `\n${kept} of ${rows.length} traps kept${kept < 6 ? ' (fewer than 6: stop, H10)' : ''}`,
+  );
+}
+
 // Run as a script, not when selftest.mjs imports hiddenTests. Compare real paths: on Windows argv[1]
 // can be an 8.3 short path while import.meta.url is the long one.
 const invoked = process.argv[1] && realpathSync(process.argv[1]);
@@ -318,9 +353,10 @@ if (invoked === realpathSync(fileURLToPath(import.meta.url))) {
   const [command, ...rest] = process.argv.slice(2);
   if (command === 'run') run(rest);
   else if (command === 'compare') compare(rest);
+  else if (command === 'calibrate') calibrate(rest);
   else {
     console.error(
-      'usage: node measure.mjs run <dir> --task Tn [...] | compare <a.jsonl> <b.jsonl>',
+      'usage: node measure.mjs run <dir> --task Tn [...] | compare <a.jsonl> <b.jsonl> | calibrate <runs.jsonl>',
     );
     process.exit(2);
   }

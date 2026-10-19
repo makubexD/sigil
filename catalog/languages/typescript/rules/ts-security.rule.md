@@ -154,5 +154,7 @@ environments, and never leave it in production code without a documented justifi
 an environment variable.
 
 Allowlist redirect targets and outbound URLs when a service makes requests on behalf of user input
-(SSRF). Reject requests to private IP ranges (`127.x`, `10.x`, `172.16-31.x`, `192.168.x`) and
-non-HTTP/HTTPS schemes unless explicitly required.
+(SSRF). Where a block list is unavoidable, check the resolved address, not the hostname, and connect
+to that address so a re-resolution cannot swap it. Reject private IP ranges: loopback, `10.x`,
+`172.16-31.x`, `192.168.x`, link-local `169.254.x` (cloud metadata), `0.0.0.0`, and their IPv6
+equivalents. Reject non-HTTP/HTTPS schemes unless explicitly required.

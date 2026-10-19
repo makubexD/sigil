@@ -76,10 +76,11 @@ var user = await conn.QueryFirstOrDefaultAsync<User>(
 
 ## Path Traversal
 Validate user-supplied filesystem paths against an allowed root before opening them.
-Use `Path.GetFullPath` to normalize and assert the resolved path starts with the allowed root.
+Use `Path.GetFullPath` to normalize and assert the resolved path starts with the allowed root plus a
+trailing separator — without it, `/app/data-evil` passes a check for `/app/data`.
 
 ```csharp
-var safeRoot = Path.GetFullPath("/app/data");
+var safeRoot = Path.GetFullPath("/app/data") + Path.DirectorySeparatorChar;
 var requested = Path.GetFullPath(Path.Combine(safeRoot, userPath));
 if (!requested.StartsWith(safeRoot, StringComparison.Ordinal))
     throw new UnauthorizedAccessException("Path traversal detected.");

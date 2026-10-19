@@ -5,6 +5,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { CATALOG_DIR } from './helpers/catalog';
 
@@ -21,8 +22,17 @@ interface RuleLoadReport {
   languages: Record<string, LanguageLoad>;
 }
 
-const { ruleLoad } = require(path.join(CATALOG_DIR, '..', 'scripts', 'rule-load.cjs')) as {
+interface Baseline {
+  bytes: number;
+  reason: string;
+}
+
+const { ruleLoad, BASELINE_PATH, SLACK_BYTES } = require(
+  path.join(CATALOG_DIR, '..', 'scripts', 'rule-load.cjs'),
+) as {
   ruleLoad: (catalogDir: string) => Promise<RuleLoadReport>;
+  BASELINE_PATH: string;
+  SLACK_BYTES: number;
 };
 
 describe('scripts/rule-load.cjs', () => {
@@ -52,6 +62,26 @@ describe('scripts/rule-load.cjs', () => {
       const sum = load.rules.reduce((total, r) => total + r.bytes, 0);
       assert.equal(load.bytes, sum, lang);
       assert.ok(load.bytes > 0, lang);
+    }
+  });
+
+  // Always-loaded rule bytes are paid on every session (docs/audits/2026-10-16, A3). Growth needs a
+  // recorded reason; a drop must lower the baseline so the room cannot be refilled silently.
+  it('keeps every language within its recorded rule-load baseline', async () => {
+    const { languages } = await ruleLoad(CATALOG_DIR);
+    const baseline = JSON.parse(fs.readFileSync(BASELINE_PATH, 'utf8')) as Record<string, Baseline>;
+    const fix = 'npm run rule-load -- --baseline "<why>"';
+    for (const [lang, load] of Object.entries(languages)) {
+      const recorded = baseline[lang];
+      assert.ok(recorded?.reason, `${lang}: no baseline with a reason; run ${fix}`);
+      assert.ok(
+        load.bytes <= recorded.bytes,
+        `${lang} grew ${recorded.bytes} -> ${load.bytes} bytes; if intended, run ${fix}`,
+      );
+      assert.ok(
+        recorded.bytes - load.bytes <= SLACK_BYTES,
+        `${lang} shrank ${recorded.bytes} -> ${load.bytes} bytes; lower the baseline: ${fix}`,
+      );
     }
   });
 });

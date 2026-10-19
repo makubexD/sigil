@@ -86,7 +86,7 @@ does not respond, skip all deletions and record "orphans not removed — user de
 ## Step 6 — Run and report
 
 Run the test command discovered in Step 2 (the project's own `package.json` script, not a
-hardcoded runner invocation). Fix any failures introduced by the new or updated tests.
+hardcoded runner invocation). If a test fails after the sync, decide whether the test or the code is wrong: never weaken an assertion to make it pass; report a suspected bug instead.
 
 ```
 ## Sync Tests Report

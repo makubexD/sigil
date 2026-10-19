@@ -2,7 +2,7 @@
   ".claude/agents/cli-auditor.md": "81f62783ac8899a6c5be33f7f336f4c4ad5a14e12af4f5bd5ba93fc230ebf6b8",
   ".claude/agents/cs-code-reviewer.md": "dc1ab2d9167d627a2163e5e402eb1f9de3c1b7ad972d8ecc0dfb84d2027dc00c",
   ".claude/rules/angular-ng-conventions.md": "7a64baadc9a1d11b86977f788024e2c5ce69458bc6bbad0aa8168b694d357522",
-  ".claude/rules/csharp-cs-testing.md": "658766f1519c89385663e047ad706f2f06aa24a6db532f29c353610e9dc5542e",
+  ".claude/rules/csharp-cs-testing.md": "b152b421e3df775eae503fc0821c02b4fc49abcda89ea1a389835dd535efb7fa",
   ".claude/rules/shared-cli-rules.md": "43f0cb82e2d4aa43fb3b0a6394fa11eceb8a193b13590b7c7260326f13d9478c",
   ".claude/rules/typescript-ts-conventions.md": "fcc74d235022927f7468fcbd474f94104ace7f7af4c5a1b2c181a863a66111ae",
   ".claude/rules/typescript-ts-npm.md": "092ff8414cc4915ba54c9ecdf757b8fce2bd28cde6be079c40421f3623af8aaf",
@@ -20,10 +20,10 @@
   ".claude/skills/cli/references/stack-python.md": "a371e8a559bc63f0f4fa705d9b3d7e317a71dd0004973212d78b6139a9ffc1c3",
   ".claude/skills/cli/references/stack-rust.md": "caec8e889d44cad66c61e383ef105edac99facb5b97abf6f0d0af302110a6943",
   ".claude/skills/cli/references/testing.md": "d42c4e985555244ee508e439616e0acc62c3dd806bc2db4abde742b83db64eb4",
-  ".claude/skills/cs-generate-tests/SKILL.md": "bd68e663d6e237dd9c82129f2dc4a806b15e41669595ede574e5fec25c8f6f0f",
+  ".claude/skills/cs-generate-tests/SKILL.md": "b0e836e3c35ff4c740720d980bcc80e98df0244135ef9184b0c07dc2b172552c",
   ".claude/skills/shared-explain-diff/SKILL.md": "02800e7c98d7ad21040948a5e3b84f36aa6bdd2dd7daf075aa0c6732f82ad679",
   ".claude/skills/ts-release/SKILL.md": "ab41c08cf142a7171b99fab25d670d58c85b6a4fbc9d5e16bd8fd8821f2835a3",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "9cfa5d13338ab95541603202eabda6b211f141dcd35f37558cc67049a3587985",
+  ".sigil/manifest.json": "74af5aa6c7b459b42081578a690775b7c4263014975128516d85ad4786c3875f",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

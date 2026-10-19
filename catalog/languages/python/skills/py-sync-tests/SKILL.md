@@ -53,7 +53,7 @@ For each source module in scope:
   against a signature that no longer matches.
 
 ```bash
-pytest --collect-only 2>&1 | grep -i error   # surfaces import errors from renamed/removed symbols
+pytest --collect-only 2>&1 | grep -i error   # import errors from renamed/removed symbols; via uv run / poetry run if the project uses one
 ```
 
 ### Add missing tests
@@ -80,9 +80,11 @@ obsolete.
 ## Step 6 — Run and report
 
 ```bash
-pytest
+pytest   # through the project's runner if it has one: uv run, poetry run
 ruff check .
 ```
+
+If a test fails after the sync, decide whether the test or the code is wrong: never weaken an assertion to make it pass; report a suspected bug instead.
 
 ```
 ## Sync Tests Report

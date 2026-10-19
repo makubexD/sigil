@@ -99,7 +99,7 @@ describe("Users", () => {
 
 ## Step 5 — Run and report
 
-Run the discovered test command for the new file. Fix any failures before finishing. Then emit:
+Run the discovered test command for the new file. If a new test fails, decide whether the test or the code is wrong: fix a wrong test, but never weaken an assertion to make it pass; report a suspected bug instead. Then emit:
 
 ```
 ## Test Generation Report

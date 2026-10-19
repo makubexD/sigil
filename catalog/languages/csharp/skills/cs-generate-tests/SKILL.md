@@ -104,7 +104,7 @@ Discover the project's test command:
 - Check for a build orchestrator (`build.ps1`, `Nuke`, `Cake`, `justfile`, `Makefile`).
 - Fallback: `dotnet test <TestProject.csproj> -v minimal`.
 
-Run it. If it fails, diagnose and fix before finishing. Report:
+Run it. If a new test fails, decide whether the test or the code is wrong: fix a wrong test, but never weaken an assertion to make it pass; report a suspected bug instead. Report:
 
 ```
 Generated: <test-file-path>

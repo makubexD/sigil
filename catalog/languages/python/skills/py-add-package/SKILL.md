@@ -95,7 +95,7 @@ git diff uv.lock  # or poetry.lock — confirm the new package + its transitive 
 ### Quality gate
 
 ```bash
-ruff check . && mypy . && pytest
+ruff check . && mypy . && pytest   # through the project's runner if it has one: uv run, poetry run
 ```
 
 If the gate fails, **undo the addition** (revert `pyproject.toml` and the lock file) and report the

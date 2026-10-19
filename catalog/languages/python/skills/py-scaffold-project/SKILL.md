@@ -94,12 +94,12 @@ def test_package_imports():
 ```
 
 Write `.gitignore` per `py-git`'s standard additions, and a minimal `README.md`: package name,
-one-sentence description, install command (`uv sync`), and how to run tests (`pytest`).
+one-sentence description, install command (`uv sync`), and how to run tests (`uv run pytest`).
 
 ## Step 5 — Verify
 
 ```bash
-ruff check . && mypy . && pytest
+uv run ruff check . && uv run mypy . && uv run pytest
 ```
 
 ## Step 6 — Report

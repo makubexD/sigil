@@ -349,6 +349,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     hostname, and blocks link-local `169.254.x` (cloud metadata), `0.0.0.0` and IPv6 equivalents.
   - `test/catalog-doctrine.test.ts` gains an IMPLIES table: advice that is safe only with a
     qualifier must carry it in the same text.
+- Toolchain and test-truth errata (docs/audits/2026-10-16, F3, F17, F21):
+  - Every `*-generate-tests` and `*-sync-tests` skill now says: when a test fails, decide whether
+    the test or the code is wrong, never weaken an assertion to make it pass, and report a suspected
+    bug. They used to say "fix any failures".
+  - React and TypeScript agents and skills run the project's test script instead of assuming
+    `npx vitest run` (the React scaffold, which chooses Vitest, is unchanged).
+  - `python/py-scaffold-project` runs `uv run ruff`, `uv run mypy` and `uv run pytest` inside the
+    venv it creates; the other Python agents and skills point bare `pytest` at the project's runner.
+  - `csharp/cs-testing` uses the test-double library the project already has, not always Moq.
+  - `catalog-doctrine` RETIRED rows take an `except` list of artifact ids.
 - Concurrency guidance errata (docs/audits/2026-10-16, F1, F8, F10, F11, F15):
   - `typescript/ts-async`, `ts-performance-profiler`, `python/py-async` and `angular/ng-rxjs` cap
     the concurrency when a fan-out list can be large (`mergeMap(fn, 4)`, `asyncio.Semaphore`).

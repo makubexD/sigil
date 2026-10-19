@@ -54,8 +54,8 @@ private static readonly string TestSummary = "Standup";
 ## Mock Only I/O Boundaries
 Mock filesystem access, network calls, clocks, database access, and external services.
 Test pure functions, domain logic, and records through their real implementations — do not mock
-internal collaborators. Use **Moq** (`new Mock<IRepo>()`) when a double is needed. Do not add
-additional mocking libraries for new code; Moq is sufficient.
+internal collaborators. When a double is needed, use the library the project already has (Moq, NSubstitute, FakeItEasy);
+with none, use **Moq** (`new Mock<IRepo>()`). Do not add a second mocking library.
 
 Use `tmp_path`-equivalent patterns for real file I/O (e.g., `Path.GetTempFileName()` + cleanup in
 `Dispose()`).

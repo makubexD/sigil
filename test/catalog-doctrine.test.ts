@@ -17,6 +17,8 @@ import { CATALOG_DIR, loadResolvedCatalog } from './helpers/catalog';
 interface Retired {
   readonly pattern: RegExp;
   readonly why: string;
+  /** Artifact ids where the wording is correct (a scaffold that chooses the tool, say). */
+  readonly except?: readonly string[];
 }
 
 interface Implies {
@@ -76,6 +78,19 @@ const RETIRED: readonly Retired[] = [
     pattern: /\.pipe\((?:(?!takeUntil)[^;])*\)\.subscribe\(/,
     why: 'a subscription with no teardown outlives its component',
   },
+  {
+    pattern: /npx (vitest|jest)/,
+    why: "run the project's own test script; the runner is discovered, never assumed",
+    except: ['react/react-scaffold-project', 'react/react-allow-dev-tools'],
+  },
+  {
+    pattern: /fix any failures|diagnose and fix before finishing/i,
+    why: 'a new test that fails may have found a real bug; fixing it can mean weakening the assertion',
+  },
+  {
+    pattern: /Moq is sufficient/,
+    why: 'use the test-double library the project already has',
+  },
 ];
 
 const PRIVATE_RANGES = /private IP ranges?/i;
@@ -118,7 +133,14 @@ const IMPLIES: readonly Implies[] = [
     then: /DbContext|database session/,
     why: 'a DbContext or database session does not support concurrent operations',
   },
+  {
+    when: /```bash[^`]*\bpytest\b/,
+    then: /uv run|poetry run|project's (own )?(test )?(script|command|runner)/,
+    why: "a bare pytest outside the project's environment runs the wrong interpreter or none",
+  },
 ];
+
+const NEVER_WEAKEN = 'never weaken an assertion to make it pass';
 
 const TOP_LEVEL_CATCH = 'log and continue only at a top-level boundary';
 
@@ -129,6 +151,8 @@ const CANONICAL: readonly Canonical[] = [
   { family: 'code-quality', phrase: 'a quantity carries its unit' },
   { family: 'code-quality', phrase: 'mark it with a `shortcut:` comment' },
   { family: 'code-reviewer', phrase: TOP_LEVEL_CATCH },
+  { family: 'generate-tests', phrase: NEVER_WEAKEN },
+  { family: 'sync-tests', phrase: NEVER_WEAKEN },
 ];
 
 function flatten(text: string): string {
@@ -153,9 +177,11 @@ describe('catalog doctrine', () => {
   it('should not ship a retired wording in any artifact', async () => {
     const catalog = await loadResolvedCatalog();
     const hits = catalog.artifacts.flatMap(artifact =>
-      RETIRED.filter(r => deliveredTexts(artifact).some(text => r.pattern.test(text))).map(
-        r => `${artifact.id}: ${r.pattern} (${r.why})`,
-      ),
+      RETIRED.filter(
+        r =>
+          !r.except?.includes(artifact.id) &&
+          deliveredTexts(artifact).some(text => r.pattern.test(text)),
+      ).map(r => `${artifact.id}: ${r.pattern} (${r.why})`),
     );
     assert.deepEqual(hits, []);
   });

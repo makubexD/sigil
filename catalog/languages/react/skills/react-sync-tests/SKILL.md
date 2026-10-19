@@ -54,7 +54,7 @@ For each component/hook in scope:
 
 ```bash
 npx tsc --noEmit 2>&1 | grep -i "test"   # surfaces type errors in test files from renamed props
-npx vitest run 2>&1 | grep -i "cannot find"
+npm test 2>&1 | grep -i "cannot find"
 ```
 
 ### Add missing tests
@@ -81,9 +81,11 @@ genuinely obsolete.
 ## Step 6 — Run and report
 
 ```bash
-npx vitest run
+npm test
 npx tsc --noEmit
 ```
+
+If a test fails after the sync, decide whether the test or the code is wrong: never weaken an assertion to make it pass; report a suspected bug instead.
 
 ```
 ## Sync Tests Report

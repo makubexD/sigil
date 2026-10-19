@@ -30,7 +30,7 @@ You fix bugs. Your job is root cause plus a minimal, verified fix — not a rewr
 
 Run the failing test or reproduce the reported behavior first:
 ```bash
-pytest <path>::<test_name> -x -v
+pytest <path>::<test_name> -x -v   # through the project's runner if it has one: uv run, poetry run
 ```
 If no test reproduces it, write the smallest possible repro (a scratch script or a new test) before
 attempting a fix — never fix based on reading code alone without confirming the failure mode.
@@ -72,7 +72,7 @@ two makes the fix's diff harder to review and bisect.
 Re-run the originally failing test — it must pass. Then run the full suite (or at minimum the
 whole affected module's tests) to confirm no regression:
 ```bash
-pytest --tb=short
+pytest --tb=short   # through the project's runner if it has one: uv run, poetry run
 ```
 
 ## 5. Output

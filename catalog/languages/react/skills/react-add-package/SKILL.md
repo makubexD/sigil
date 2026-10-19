@@ -95,7 +95,7 @@ git diff package-lock.json   # or pnpm-lock.yaml / yarn.lock
 ### Quality gate
 
 ```bash
-npm run lint && npx tsc --noEmit && npx vitest run && npm run build
+npm run lint && npx tsc --noEmit && npm test && npm run build
 ```
 
 If the gate fails, **undo the addition** (revert `package.json` and the lock file) and report the

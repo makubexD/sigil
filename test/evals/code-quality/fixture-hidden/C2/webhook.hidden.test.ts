@@ -11,6 +11,9 @@ const valid = {
 
 const FIELDS = ['amountCents', 'id', 'metadata', 'type'];
 
+// Compares own fields only: a metadata object without a prototype is a valid Record<string, string>.
+const plain = (event: ReturnType<typeof parseWebhook>) => ({ ...event, metadata: { ...event.metadata } });
+
 function rejects(body: string): void {
   assert.throws(() => parseWebhook(body), WebhookError, `accepted ${body}`);
 }
@@ -25,12 +28,12 @@ function cleanPrototype(...keys: string[]): void {
 }
 
 test('parses a payment.succeeded event', () => {
-  assert.deepEqual(parseWebhook(JSON.stringify(valid)), valid);
+  assert.deepEqual(plain(parseWebhook(JSON.stringify(valid))), valid);
 });
 
 test('parses a payment.failed event with empty metadata', () => {
   const body = withBody({ type: 'payment.failed', amountCents: 0, metadata: {} });
-  assert.deepEqual(parseWebhook(body), { ...valid, type: 'payment.failed', amountCents: 0, metadata: {} });
+  assert.deepEqual(plain(parseWebhook(body)), { ...valid, type: 'payment.failed', amountCents: 0, metadata: {} });
 });
 
 test('WebhookError is an Error', () => {

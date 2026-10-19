@@ -112,7 +112,7 @@ with deletions. If the user says no, declines, or does not respond, skip all del
 ## Step 6 — Run and report
 
 Discover the test command (check `build.ps1`, `Nuke`, `Cake`, `justfile`; fallback `dotnet test`).
-Run it. If any tests fail after sync, diagnose and fix before finishing.
+Run it. If a test fails after the sync, decide whether the test or the code is wrong: never weaken an assertion to make it pass; report a suspected bug instead.
 
 ```
 ## Sync Tests Report

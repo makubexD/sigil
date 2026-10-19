@@ -42,7 +42,7 @@ identical — same inputs produce the same outputs, same exceptions, same side e
 
 Run the full test suite first and confirm it's green:
 ```bash
-pytest
+pytest   # through the project's runner if it has one: uv run, poetry run
 ```
 If it's not green, **stop** — report the pre-existing failures and ask whether to proceed anyway.
 Refactoring against a red baseline makes it impossible to tell your change from a pre-existing bug.
@@ -85,7 +85,7 @@ immediately clear which step broke something if the test suite goes red.
 Run after every step:
 
 ```bash
-pytest
+pytest   # through the project's runner if it has one: uv run, poetry run
 ruff check .
 mypy .
 ```

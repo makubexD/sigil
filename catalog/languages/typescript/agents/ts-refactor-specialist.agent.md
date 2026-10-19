@@ -44,8 +44,8 @@ and after**. If a refactor requires a behavior change, stop and report — do no
 
 ## 1. Establish baseline
 
-Discover the test runner from `package.json` scripts (look for `test`, `vitest`). Fallback:
-`npx vitest run`.
+Discover the test runner from `package.json` scripts (look for `test`, `vitest`). Fallback: the
+installed runner's own CLI (check `devDependencies`) — never assume Vitest.
 
 Run the full suite and **record the baseline**: N passed, M failed, coverage %. If the baseline has
 failures, **stop and report** — distinguishing a regression from a pre-existing failure is impossible
@@ -77,7 +77,7 @@ Plan steps in order. Each step must leave the test suite green before the next s
 
 For each planned step:
 1. Make the change (Edit / Write).
-2. Run the full suite: `npx vitest run` (or the discovered script).
+2. Run the full suite with the discovered script.
 3. If the suite fails → **undo the change immediately** (restore the original content), record the
    failure, and skip to the next planned step or stop and report.
 4. If the suite passes → record the step as complete.

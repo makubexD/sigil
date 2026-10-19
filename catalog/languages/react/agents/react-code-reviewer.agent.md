@@ -83,7 +83,7 @@ found, run it and capture output. If not found, run the fallback gate — never 
 ```bash
 npx tsc --noEmit
 npx eslint . --ext .ts,.tsx
-npx vitest run        # or: npx jest --ci, whichever the project uses
+npm test              # the project's test script (package.json); never assume the runner
 ```
 
 The `eslint` run is where `eslint-plugin-react-hooks` (`rules-of-hooks`, `exhaustive-deps`) and

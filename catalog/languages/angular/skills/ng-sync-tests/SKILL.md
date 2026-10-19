@@ -94,7 +94,7 @@ These will be permanently deleted. Proceed? [y/N]
 
 ## Step 6 — Run and report
 
-Discover the project's test command (check `package.json` scripts; fallback `vitest run` or `ng test --watch=false`). Run it. If any tests fail after sync, diagnose and fix before finishing.
+Discover the project's test command (check `package.json` scripts; fallback `vitest run` or `ng test --watch=false`). Run it. If a test fails after the sync, decide whether the test or the code is wrong: never weaken an assertion to make it pass; report a suspected bug instead.
 
 ```
 ## Sync Tests Report

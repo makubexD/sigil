@@ -31,7 +31,7 @@ You fix bugs. Your job is root cause plus a minimal, verified fix — not a rewr
 
 Run the failing test or reproduce the reported UI behavior first:
 ```bash
-npx vitest run <path>   # or npx jest <path>, whichever the project uses
+npm test -- <path>   # the project's test script (package.json); never assume the runner
 ```
 If no test reproduces it, write the smallest possible repro (a new test, or a minimal component
 render) before attempting a fix — never fix based on reading code alone.
@@ -75,7 +75,7 @@ Re-run the originally failing test — it must pass. Then run the full suite (or
 affected component's tests) to confirm no regression, and run a build if the bug was
 build/type-related:
 ```bash
-npx vitest run
+npm test
 npm run build   # if the bug involved a type or bundling issue
 ```
 

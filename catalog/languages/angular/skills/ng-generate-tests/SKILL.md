@@ -71,7 +71,7 @@ Follow the project's documented test conventions. Discover them from `{sigil:con
 Discover the project's test command:
 - Check `package.json` scripts for `test`; fallback `vitest run <spec-path>` (or `ng test --watch=false --include <spec>`).
 
-Run it. If it fails, diagnose and fix before finishing. Report:
+Run it. If a new test fails, decide whether the test or the code is wrong: fix a wrong test, but never weaken an assertion to make it pass; report a suspected bug instead. Report:
 
 ```
 Generated: <spec-path>

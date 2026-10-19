@@ -32,7 +32,7 @@ correct fix, then verify. Every action should be purposeful and minimal.
 ## 1. Reproduce
 
 Discover the test runner from `package.json` scripts (look for `test`, `test:unit`, `vitest`).
-Fallback: `npx vitest run`.
+Fallback: the installed runner's own CLI (check `devDependencies`) — never assume Vitest.
 
 Run the failing test exactly as reported and capture the **full** output — test name, assertion
 error, and stack trace. If no specific test was given, run the full suite to identify all failures

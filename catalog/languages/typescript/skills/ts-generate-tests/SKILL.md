@@ -88,8 +88,8 @@ Create the containing directory if it does not exist.
 ## Step 5 — Run and report
 
 Run the test command discovered in Step 2 (never hardcode `vitest run` — use the project's actual
-`package.json` script or the runner's own CLI for the specific file). Fix any failures before
-finishing. Then emit:
+`package.json` script or the runner's own CLI for the specific file). If a new test fails, decide whether the test or the code is wrong: fix a wrong test, but never weaken an assertion to make it pass; report a suspected bug instead.
+Then emit:
 
 ```
 ## Test Generation Report

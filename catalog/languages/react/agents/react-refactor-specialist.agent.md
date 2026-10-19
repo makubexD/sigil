@@ -43,7 +43,7 @@ same effects.
 
 Run the full test suite first and confirm it's green:
 ```bash
-npx vitest run   # or npx jest, whichever the project uses
+npm test   # the project's test script (package.json); never assume the runner
 ```
 If it's not green, **stop** — report the pre-existing failures and ask whether to proceed anyway.
 
@@ -85,7 +85,7 @@ one kind of change, verify, then move to the next.
 Run after every step:
 
 ```bash
-npx vitest run
+npm test
 npx tsc --noEmit
 npx eslint .
 ```

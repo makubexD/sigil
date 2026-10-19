@@ -46,5 +46,119 @@
     "breaks": "m is tried before ms, so 500ms is misread",
     "fails": "tells m from ms",
     "replace": ["(ms|d|h|m|s)", "(d|h|m|s|ms)"]
+  },
+  "C1": {
+    "from": "fixture-good/C1/fetch-details.ts",
+    "to": "src/fetch-details.ts",
+    "breaks": "every request starts at once (Promise.all over ids.map), so the service rejects the excess",
+    "fails": "stays within 8 concurrent requests for a large list",
+    "replace": [
+      "  const workers = Array.from({ length: Math.min(MAX_CONCURRENT, ids.length) }, worker);\n  await Promise.all(workers);\n  return details;",
+      "  return Promise.all(ids.map(id => fetchDetail(id)));"
+    ]
+  },
+  "C2": {
+    "from": "fixture-good/C2/webhook.ts",
+    "to": "src/webhook.ts",
+    "breaks": "the validated parse result is returned as is, so a partner's __proto__ key (and any extra field) reaches the event",
+    "fails": "a top-level __proto__ key does not leak into the event",
+    "replace": [
+      "  return { id, type, amountCents, metadata: Object.fromEntries(entries) as Record<string, string> };",
+      "  return raw as PaymentEvent;"
+    ]
+  },
+  "C3": {
+    "from": "fixture-good/C3/config.ts",
+    "to": "src/config.ts",
+    "breaks": "every load failure falls back to the defaults, so malformed or unreadable files are hidden",
+    "fails": "malformed JSON throws with the parse error as cause",
+    "replace": [
+      "    if ((error as { code?: unknown }).code === 'ENOENT') return { ...DEFAULTS };\n    throw new Error(`Cannot load config file ${path}`, { cause: error });",
+      "    return { ...DEFAULTS };"
+    ]
+  },
+  "C4": {
+    "from": "fixture-good/C4/records.ts",
+    "to": "src/records.ts",
+    "breaks": "the reader is closed only after the loop finishes, so a failing read or handle leaks it",
+    "fails": "closes the reader when handle throws midway",
+    "replace": [
+      "  try {\n    for (let record = await reader.read(); record !== null; record = await reader.read()) {\n      await handle(record);\n      count++;\n    }\n  } finally {\n    // Readers are scarce: give this one back even when read or handle fails.\n    await reader.close();\n  }\n",
+      "  for (let record = await reader.read(); record !== null; record = await reader.read()) {\n    await handle(record);\n    count++;\n  }\n  await reader.close();\n"
+    ]
+  },
+  "C5": {
+    "from": "fixture-good/C5/deadline.ts",
+    "to": "src/deadline.ts",
+    "breaks": "Promise.race: the deadline rejects but never aborts the operation or clears its timer",
+    "fails": "aborts the signal given to the operation at the deadline",
+    "replace": [
+      "  const controller = new AbortController();\n  return new Promise<T>((resolve, reject) => {\n    const timer = setTimer(() => {\n      const error = new DeadlineError(timeoutMs);\n      controller.abort(error);\n      reject(error);\n    }, timeoutMs);\n    operation(controller.signal).then(\n      value => {\n        clearTimer(timer);\n        resolve(value);\n      },\n      (error: unknown) => {\n        clearTimer(timer);\n        reject(error);\n      },\n    );\n  });\n",
+      "  const timeout = new Promise<never>((_, reject) => {\n    setTimer(() => reject(new DeadlineError(timeoutMs)), timeoutMs);\n  });\n  return Promise.race([operation(new AbortController().signal), timeout]);\n"
+    ]
+  },
+  "C6": {
+    "from": "fixture-good/C6/user-files.ts",
+    "to": "src/user-files.ts",
+    "breaks": "the containment check is a bare prefix match, so a sibling named <base>-evil passes",
+    "fails": "rejects a sibling directory whose name starts with the base name",
+    "replace": ["if (!full.startsWith(base + path.sep)) {", "if (!full.startsWith(base)) {"]
+  },
+  "C7": {
+    "from": "fixture-good/C7/loading-cache.ts",
+    "to": "src/loading-cache.ts",
+    "breaks": "check, await the load, then store: concurrent gets for one key each call the loader",
+    "fails": "concurrent gets for one key share a single load",
+    "replace": [
+      "    get(key) {\n      const cached = entries.get(key);\n      if (cached) return cached;\n      const loading = load(key);\n      entries.set(key, loading);\n      // A failed load is forgotten so the next get tries again.\n      loading.catch(() => {\n        if (entries.get(key) === loading) entries.delete(key);\n      });\n      return loading;\n    },\n",
+      "    async get(key) {\n      const cached = entries.get(key);\n      if (cached) return cached;\n      const value = await load(key);\n      entries.set(key, Promise.resolve(value));\n      return value;\n    },\n"
+    ]
+  },
+  "C8": {
+    "from": "fixture-good/C8/ledger.ts",
+    "to": "src/ledger.ts",
+    "breaks": "floats: parseFloat accumulation with toFixed(2) drops cents on a large balance",
+    "fails": "small amounts posted to a large balance keep every cent",
+    "replace": [
+      "  let cents = 0n;\n  for (const amount of amounts) {\n    const match = AMOUNT.exec(amount);\n    if (!match) throw new RangeError(`not a money amount: ${JSON.stringify(amount)}`);\n    const [, sign, whole, fraction = ''] = match;\n    const value = BigInt(whole) * 100n + BigInt(fraction.padEnd(2, '0'));\n    cents += sign ? -value : value;\n  }\n  const negative = cents < 0n;\n  const magnitude = negative ? -cents : cents;\n  return `${negative ? '-' : ''}${magnitude / 100n}.${String(magnitude % 100n).padStart(2, '0')}`;\n",
+      "  let total = 0;\n  for (const amount of amounts) {\n    if (!AMOUNT.test(amount)) throw new RangeError(`not a money amount: ${JSON.stringify(amount)}`);\n    total += parseFloat(amount);\n  }\n  return total.toFixed(2);\n"
+    ]
+  },
+  "C9": {
+    "from": "fixture-good/C9/days.ts",
+    "to": "src/days.ts",
+    "breaks": "days are UTC dates, not the user's local days",
+    "fails": "buckets by local day in a zone far from UTC",
+    "replace": [
+      "const day = localDay(time);",
+      "const day = new Date(time).toISOString().slice(0, 10);"
+    ]
+  },
+  "C10": {
+    "from": "fixture-good/C10/retry.ts",
+    "to": "src/retry.ts",
+    "breaks": "a 4xx is retried like a transient failure",
+    "fails": "does not retry a 400, 404 or 422",
+    "replace": ["      if (response.status >= 400 && response.status < 500) break;\n", ""]
+  },
+  "C11": {
+    "from": "fixture-good/C11/profile-card.ts",
+    "to": "src/profile-card.ts",
+    "breaks": "fields are interpolated raw and any website becomes a link",
+    "fails": "escapes markup in the name",
+    "replace": [
+      "  const link = /^https?:\\/\\//i.test(website)\n    ? `<a href=\"${escapeHtml(website)}\">${escapeHtml(website)}</a>`\n    : '';\n  return `<div class=\"profile\"><h2>${escapeHtml(name)}</h2><p>${escapeHtml(bio)}</p>${link}</div>`;",
+      "  const link = website ? `<a href=\"${website}\">${website}</a>` : '';\n  return `<div class=\"profile\"><h2>${name}</h2><p>${bio}</p>${link}</div>`;"
+    ]
+  },
+  "C12": {
+    "from": "fixture-good/C12/dedupe.ts",
+    "to": "src/dedupe.ts",
+    "breaks": "expired ids are checked on lookup but never dropped",
+    "fails": "memory stays bounded as distinct ids keep arriving",
+    "replace": [
+      "      dropExpired(time);\n      if (recordedAt.has(id)) return true;",
+      "      const at = recordedAt.get(id);\n      if (at !== undefined && time - at < windowMs) return true;"
+    ]
   }
 }

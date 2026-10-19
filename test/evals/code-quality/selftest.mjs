@@ -3,12 +3,21 @@
 //   node selftest.mjs     (run by `npm run evals:check`; needs no model and no network)
 //
 // 1. The statistics in stats.cjs return hand-computed exact p-values.
-// 2. Each task's bad reference (badrefs.json: a passing archived solution with one hidden-checked
-//    behaviour broken, or T3's unfixed start) fails the hidden check named in `fails` and passes
-//    others, so the hidden tests catch the defect itself, not a crash or a slow machine.
+// 2. Each task's bad reference (badrefs.json: a passing solution with one hidden-checked behaviour
+//    broken, or T3's unfixed start) fails the hidden check named in `fails` and passes others, so
+//    the hidden tests catch the defect itself, not a crash or a slow machine. A trap task's good
+//    reference (fixture-good/<task>/) passes every hidden check.
 /* global process, console */
 import assert from 'node:assert/strict';
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
@@ -35,30 +44,45 @@ if (!canRunHidden)
     `bad references skipped: Node ${process.version} lacks --experimental-transform-types`,
   );
 const badrefs = canRunHidden ? JSON.parse(readFileSync(join(here, 'badrefs.json'), 'utf8')) : {};
-const failures = [];
-for (const [task, ref] of Object.entries(badrefs)) {
-  const dir = mkdtempSync(join(tmpdir(), `cq-bad-${task}-`));
+
+/** Hidden-test results for `source` written to `ref.to` in a fresh fixture copy (null: the start). */
+function hiddenFor(task, ref, source) {
+  const dir = mkdtempSync(join(tmpdir(), `cq-ref-${task}-`));
   try {
     cpSync(join(here, 'fixture'), dir, { recursive: true });
-    if (task === 'T3') cpSync(join(here, 'fixture-start', 'T3'), dir, { recursive: true });
-    if (ref.from) {
-      const good = readFileSync(join(here, ref.from), 'utf8').replace(/\r\n/g, '\n');
-      const [from, to] = ref.replace;
-      if (!good.includes(from)) failures.push(`${task}: mutation no longer matches ${ref.from}`);
+    const start = join(here, 'fixture-start', task);
+    if (existsSync(start)) cpSync(start, dir, { recursive: true });
+    if (source !== null) {
       mkdirSync(dirname(join(dir, ref.to)), { recursive: true });
-      writeFileSync(join(dir, ref.to), good.replace(from, to));
+      writeFileSync(join(dir, ref.to), source);
     }
-    const result = hiddenTests(dir, task);
-    const line = `${task} (${ref.breaks}): pass ${result.pass}, fail ${result.fail}`;
-    console.log(line);
-    // The named check must be among the failures: a timing check failing alone proves nothing.
-    if (!result.failedTests.includes(ref.fails) || result.pass === 0)
-      failures.push(
-        `${line}; expected "${ref.fails}" to fail, failed: ${result.failedTests.join(' | ')}`,
-      );
+    return hiddenTests(dir, task);
   } finally {
     rmSync(dir, { recursive: true, force: true });
   }
 }
-assert.deepEqual(failures, [], 'every bad reference must fail its named check and pass others');
+
+const failures = [];
+for (const [task, ref] of Object.entries(badrefs)) {
+  const good = ref.from && readFileSync(join(here, ref.from), 'utf8').replace(/\r\n/g, '\n');
+  // A committed good reference (fixture-good/) must pass every check; archived run outputs
+  // (runs/) are not re-checked, since T5's timing check can fail them on a busy machine.
+  if (ref.from?.startsWith('fixture-good/')) {
+    const result = hiddenFor(task, ref, good);
+    console.log(`${task} good reference: pass ${result.pass}, fail ${result.fail}`);
+    if (result.fail > 0 || result.pass === 0)
+      failures.push(`${task}: good reference failed: ${result.failedTests.join(' | ')}`);
+  }
+  if (good && !good.includes(ref.replace[0]))
+    failures.push(`${task}: mutation no longer matches ${ref.from}`);
+  const result = hiddenFor(task, ref, good ? good.replace(...ref.replace) : null);
+  const line = `${task} (${ref.breaks}): pass ${result.pass}, fail ${result.fail}`;
+  console.log(line);
+  // The named check must be among the failures: a timing check failing alone proves nothing.
+  if (!result.failedTests.includes(ref.fails) || result.pass === 0)
+    failures.push(
+      `${line}; expected "${ref.fails}" to fail, failed: ${result.failedTests.join(' | ')}`,
+    );
+}
+assert.deepEqual(failures, [], 'every reference must behave as badrefs.json says');
 console.log('selftest ok');

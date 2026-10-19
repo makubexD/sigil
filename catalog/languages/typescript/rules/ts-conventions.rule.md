@@ -184,11 +184,11 @@ for string formatting — no manual concatenation for new code. Use `node:path` 
 
 ## Never
 
-- `any` without a `@ts-expect-error // reason` comment.
+- `any` without an inline comment giving the reason — prefer `unknown` and narrow.
 - Non-null assertion `!` on a value that could realistically be `null`/`undefined` at runtime.
 - `var` — use `const` (default) or `let`; never `var`.
 - Empty `catch {}` or `catch (e) { /* ignored */ }` — silent lies.
-- `catch (e) { throw e; }` — pointless rethrow that adds no context; either rethrow bare `throw` or wrap with cause.
+- `catch (e) { throw e; }` — a catch that only rethrows adds nothing; remove it, or wrap with `cause`.
 - Mutable module-level state (hidden shared state, obstructs testing and concurrency).
 - Using exceptions for expected control flow (return a typed result instead).
 - `eval`, `new Function(code)`, or `vm.runInNewContext` on non-constant input.

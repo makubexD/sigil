@@ -85,7 +85,8 @@ Read in order:
 
 **Unsafe deserialization and untrusted input**
 - `JSON.parse` result cast with `as SomeType` without schema validation — use zod/valibot.
-- `yaml.load` without `{ schema: yaml.JSON_SCHEMA }` (allows JS object construction).
+- Untrusted YAML parsed by `js-yaml` below 4, or with a schema that adds JavaScript types
+  (`js-yaml-js-types`), which allows JS object construction.
 - `eval` or `new Function` on any non-constant string.
 - Deserializing untrusted binary data (msgpack, BSON, etc.) without schema enforcement.
 

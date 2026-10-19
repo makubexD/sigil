@@ -62,8 +62,9 @@ In a Next.js App Router Server Component, `await` the data source directly — t
 
 ```tsx
 // Server Component — no "use client", no hook
-export default async function UserPage({ params }: { params: { id: string } }) {
-  const user = await fetchUser(params.id);
+export default async function UserPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params; // a Promise since Next.js 15
+  const user = await fetchUser(id);
   return <UserProfile user={user} />;
 }
 ```

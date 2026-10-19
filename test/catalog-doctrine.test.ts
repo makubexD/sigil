@@ -48,6 +48,26 @@ const RETIRED: readonly Retired[] = [
       /max \d+ (lines|parameters|props)|body (>|exceeds) ?\d+ lines|split into smaller units before proceeding|single-purpose functions/i,
     why: 'prose that says when to split a function makes agents split more (test/evals/code-quality, rounds 3-4)',
   },
+  {
+    pattern: /\bsafeLoad\b|yaml\.load` without `\{ ?schema/,
+    why: 'js-yaml 4 removed safeLoad, and its yaml.load no longer constructs JavaScript types',
+  },
+  {
+    pattern: /\.WhenBoth\(/,
+    why: 'not a .NET API; await Task.WhenAll, then each task',
+  },
+  {
+    pattern: /rethrow bare `?throw/i,
+    why: 'JavaScript has no bare throw; a catch that only rethrows is removed or wraps with cause',
+  },
+  {
+    pattern: /without a `@ts-expect-error/,
+    why: 'any raises no compile error, so @ts-expect-error over it is itself an error (TS2578)',
+  },
+  {
+    pattern: /\{ params \}: \{ params: \{/,
+    why: 'Next.js 15+ passes params as a Promise; await it',
+  },
 ];
 
 const PRIVATE_RANGES = /private IP ranges?/i;

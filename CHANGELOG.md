@@ -349,6 +349,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     hostname, and blocks link-local `169.254.x` (cloud metadata), `0.0.0.0` and IPv6 equivalents.
   - `test/catalog-doctrine.test.ts` gains an IMPLIES table: advice that is safe only with a
     qualifier must carry it in the same text.
+- Guidance no longer names APIs that do not exist or no longer behave as stated (docs/audits/2026-10-16,
+  F7, F12, F13, F14):
+  - `csharp/cs-async` awaits `Task.WhenAll` and then each task, instead of a nonexistent `.WhenBoth()`.
+  - `react/react-async` awaits Next.js `params`, which is a Promise since Next.js 15.
+  - `typescript/ts-security` and `ts-security-auditor` treat js-yaml 4's `yaml.load` as safe by
+    default; `yaml.safeLoad` was removed in 4.
+  - `typescript/ts-conventions` and `ts-code-reviewer` no longer pair `any` with `@ts-expect-error`
+    (an unused directive is itself a compile error), and no longer suggest a bare `throw`, which
+    JavaScript does not have.
 - Code-quality doctrine no longer contradicts itself (docs/audits/2026-10-14), and the
   `code-quality` template is now at revision 2 (`sigil update` applies it):
   - `shared/clean-code` owns one duplication rule: a wrong abstraction costs more than

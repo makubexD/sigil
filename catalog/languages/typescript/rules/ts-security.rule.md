@@ -86,9 +86,9 @@ const EventSchema = z.object({ id: z.string(), start: z.string() });
 const parsed = EventSchema.parse(JSON.parse(rawBody)); // throws ZodError on invalid shape
 ```
 
-Never deserialize YAML from untrusted sources without restricting the schema. When using `js-yaml`,
-always use `yaml.load(input, { schema: yaml.JSON_SCHEMA })` or `yaml.safeLoad` — never
-`yaml.load` with the default schema, which can construct arbitrary JavaScript objects.
+Never deserialize untrusted YAML with a schema that constructs JavaScript types (functions,
+regexps). `js-yaml` 4+ `yaml.load(input)` is safe by default; on 3.x the default `load` is not, so
+upgrade. Pass `{ schema: yaml.JSON_SCHEMA }` when only JSON-compatible values are expected.
 
 ## Prototype Pollution
 

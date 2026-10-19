@@ -99,10 +99,11 @@ var prs = await github.FetchPrsAsync(ct);
 var workItems = await ado.FetchWorkItemsAsync(ct);
 
 // Correct — concurrent
-var (prs, workItems) = await (
-    github.FetchPrsAsync(ct),
-    ado.FetchWorkItemsAsync(ct)
-).WhenBoth();  // or Task.WhenAll + deconstruct
+var prsTask = github.FetchPrsAsync(ct);
+var workItemsTask = ado.FetchWorkItemsAsync(ct);
+await Task.WhenAll(prsTask, workItemsTask);
+var prs = await prsTask;            // already complete; no second wait
+var workItems = await workItemsTask;
 ```
 
 ## `IAsyncDisposable` and `await using`

@@ -78,7 +78,7 @@ For each changed file, evaluate:
 - Obvious injection patterns. Codebase-wide sweep → `ts-security-auditor`.
 
 **Type safety**
-- No bare `any` / `as any` without a `@ts-expect-error` + reason.
+- No bare `any` / `as any` without an inline comment giving the reason.
 - No non-null assertion `!` on values that could realistically be absent.
 - Full annotation on exported functions (params + return type).
 

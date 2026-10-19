@@ -14,7 +14,7 @@ One row per roadmap item (README § 13). Status is updated as each PR merges.
 | 8   | Eval v2 infrastructure (sign-flip, fresh baseline, E3, new metrics; judge selftest dropped: it needs a model call) | T    | merged #81                                              |
 | 9   | Trap calibration (C1–C12, H10)                                                                                     | E    | merged #82; **H10 false**: 0 of 12 kept, stop (this PR) |
 | 10  | Interleaved batch: `none` / master / deletion (F4, F18–F20)                                                        | E    | not run: H10 stopped it                                 |
-| 11  | E8 skill-firing probe                                                                                              | E    | open                                                    |
+| 11  | E8 skill-firing probe: `test/evals/skill-firing/`, H13 registered                                                  | E    | this PR; runs after merge                               |
 
 Waiting on the owner: H1, H2, a Copilot hook target, a reviewer Bash guard, C1–C5, S1, F16, H0, and A1.
 

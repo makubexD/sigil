@@ -1,0 +1,8 @@
+{
+  "name": "@shop/core",
+  "version": "0.1.0",
+  "type": "module",
+  "exports": { ".": "./src/index.ts" },
+  "dependencies": { "date-fns": "^3.6.0" },
+  "scripts": { "test": "node --test" }
+}

@@ -72,7 +72,8 @@ Read in order:
 **Async anti-patterns** (see `py-async`)
 - A blocking call (`requests.get`, `time.sleep`, sync file I/O) inside an `async def` — stalls the
   entire event loop, not just the calling coroutine.
-- Sequential `await` calls for independent operations that could run concurrently via `TaskGroup`.
+- Sequential `await` calls for independent operations that could run concurrently via `TaskGroup`
+  (not on one shared database session, which does not support concurrent use).
 
 **Needless allocation / repeated computation**
 - Recomputing an expensive, pure result inside a loop instead of hoisting it or memoizing

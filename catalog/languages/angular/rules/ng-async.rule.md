@@ -78,6 +78,7 @@ down the subscription instead, via `takeUntilDestroyed()` (injection-context or 
 export class SearchComponent {
   private readonly destroyRef = inject(DestroyRef);
 
+  // One request per call. If calls can overlap, use switchMap instead (Race Conditions below).
   search(query: string): void {
     this.http
       .get<Result[]>('/api/search', { params: { q: query } })
@@ -105,7 +106,9 @@ async search(query: string): Promise<void> {
 }
 
 // Correct — switchMap cancels the previous in-flight request when a new one starts
-searchTerm$.pipe(switchMap((q) => this.api.search(q))).subscribe((r) => this.results.set(r));
+searchTerm$
+  .pipe(switchMap((q) => this.api.search(q)), takeUntilDestroyed(this.destroyRef))
+  .subscribe((r) => this.results.set(r));
 ```
 
 Prefer RxJS's `switchMap`/`exhaustMap`/`concatMap` (see `ng-rxjs`) over a bare `async`/`await` call

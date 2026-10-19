@@ -59,7 +59,7 @@ Read in order:
 
 **Async / concurrency — Critical tier**
 - `await` inside a `for`/`while` loop processing independent items — should be
-  `Promise.all(items.map(…))`.
+  `Promise.all(items.map(…))`; cap the concurrency when the list can be large.
 - Sequential awaits for operations with no data dependency:
   `const a = await fetchA(); const b = await fetchB()` — should be
   `const [a, b] = await Promise.all([fetchA(), fetchB()])`.

@@ -1,0 +1,61 @@
+language	topic	depth	paths
+typescript	idioms	2	skills/code-simplification/SKILL.md:189-235; skills/api-and-interface-design/SKILL.md:270-321
+typescript	types	2	skills/api-and-interface-design/SKILL.md:270-321 (discriminated unions, branded IDs, input/output split); skills/code-review-and-quality/SKILL.md:62 (explicit type boundaries)
+typescript	async	1	skills/code-simplification/SKILL.md:192-200 (async wrapper); skills/code-review-and-quality/SKILL.md:83 (sync that should be async)
+typescript	errors	2	skills/api-and-interface-design/SKILL.md:61-86 (one error shape); skills/debugging-and-error-recovery/SKILL.md:172-240
+typescript	testing	3	skills/test-driven-development/SKILL.md; references/testing-patterns.md (Jest, RTL, Supertest, Playwright)
+typescript	security	3	skills/security-and-hardening/SKILL.md; skills/security-and-hardening/references/hardening-patterns.md; references/security-checklist.md
+typescript	performance	2	skills/performance-optimization/SKILL.md; skills/performance-optimization/references/optimization-patterns.md
+typescript	architecture	2	skills/api-and-interface-design/SKILL.md; skills/code-review-and-quality/SKILL.md:51-62; agents/code-reviewer.md:26-31
+typescript	tooling	2	skills/constraint-driven-development/SKILL.md:146-160 (tsc --noEmit, eslint/biome, size-limit, dependency-cruiser, Stryker); skills/incremental-implementation/SKILL.md:206
+typescript	framework-specific	1	skills/api-and-interface-design/SKILL.md:88-110 (Express + Zod example only)
+node	idioms	1	skills/code-simplification/SKILL.md:189-235 (shared with TypeScript)
+node	types	0	-
+node	async	1	skills/test-driven-development/SKILL.md (async tests); no event-loop/stream guidance (grep: no "event loop")
+node	errors	1	skills/api-and-interface-design/SKILL.md:61-86
+node	testing	2	references/testing-patterns.md:157-196 (Supertest API testing)
+node	security	3	skills/security-and-hardening/SKILL.md:133-140 (lockfile, install-script gate, npm/pnpm/yarn audit); references/security-checklist.md:145-190
+node	performance	1	skills/performance-optimization/SKILL.md:111-118 (CPU/memory table row); references/performance-checklist.md:87-132
+node	architecture	1	skills/code-review-and-quality/SKILL.md:51-62 (language-agnostic)
+node	tooling	3	skills/security-and-hardening/SKILL.md:135-138; skills/ci-cd-and-automation/SKILL.md (npm pipeline); skills/code-review-and-quality/SKILL.md:281-302 (upgrade workflow, lockfile)
+node	framework-specific	2	skills/security-and-hardening/references/hardening-patterns.md (Express/helmet/rate-limit patterns); skills/api-and-interface-design/SKILL.md:88-110
+angular	idioms	0	-
+angular	types	0	-
+angular	async	0	-
+angular	errors	0	-
+angular	testing	0	-
+angular	security	0	-
+angular	performance	1	agents/web-performance-auditor.md:97 (OnPush, subscription cleanup, one bullet)
+angular	architecture	0	-
+angular	tooling	0	-
+angular	framework-specific	1	agents/web-performance-auditor.md:55,97; skills/source-driven-development/SKILL.md:43 (detection hint only)
+react	idioms	2	skills/frontend-ui-engineering/SKILL.md:20-100 (composition, container/presentation, colocation)
+react	types	1	skills/frontend-ui-engineering/SKILL.md (typed props in examples)
+react	async	1	skills/performance-optimization/SKILL.md (Suspense, lazy); skills/source-driven-development/SKILL.md (useActionState example)
+react	errors	1	skills/shipping-and-launch/SKILL.md:188-195 (ErrorBoundary); skills/frontend-ui-engineering/SKILL.md:233-250 (empty/error states)
+react	testing	2	references/testing-patterns.md:125-156 (React Testing Library)
+react	security	1	skills/security-and-hardening/SKILL.md:71 (no innerHTML with user data); no dangerouslySetInnerHTML specifics
+react	performance	3	skills/performance-optimization/references/optimization-patterns.md:153-200 (re-renders, bundle splitting); agents/web-performance-auditor.md; references/performance-checklist.md:31-86
+react	architecture	2	skills/frontend-ui-engineering/SKILL.md:101-114 (state ladder, prop-drilling limit)
+react	tooling	1	skills/performance-optimization/SKILL.md:205-211 (bundlesize, lhci)
+react	framework-specific	2	skills/frontend-ui-engineering/SKILL.md; references/accessibility-checklist.md
+csharp	idioms	0	-
+csharp	types	0	-
+csharp	async	0	-
+csharp	errors	0	-
+csharp	testing	0	-
+csharp	security	0	-
+csharp	performance	0	-
+csharp	architecture	0	-
+csharp	tooling	0	-
+csharp	framework-specific	0	-
+python	idioms	1	skills/code-simplification/SKILL.md:236-270 (comprehension, guard clauses)
+python	types	1	skills/constraint-driven-development/SKILL.md:149 (mypy gate)
+python	async	0	-
+python	errors	1	skills/code-simplification/SKILL.md:244-264 (typed exceptions in guard-clause example)
+python	testing	1	skills/test-driven-development/SKILL.md:392 (pytest named; examples TypeScript); skills/constraint-driven-development/SKILL.md:152 (pytest-cov)
+python	security	1	references/security-checklist.md (pip-audit named); security pattern code is JS
+python	performance	0	skills/performance-optimization/references/optimization-patterns.md N+1 is ORM-generic (language-neutral prose)
+python	architecture	0	-
+python	tooling	2	skills/constraint-driven-development/SKILL.md:149-152 (mypy, ruff, pytest-cov); skills/shipping-and-launch/SKILL.md (pip-audit)
+python	framework-specific	1	skills/source-driven-development/SKILL.md:45,89 (Django docs fetch example)

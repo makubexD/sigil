@@ -1,0 +1,61 @@
+language	topic	depth	paths
+typescript	idioms	2	rules/typescript/coding-style.md; agents/typescript-reviewer.md; agents/code-simplifier.md
+typescript	types	2	rules/typescript/coding-style.md (public API types, unknown vs any, interface vs type); agents/typescript-reviewer.md (HIGH Type Safety); agents/type-design-analyzer.md
+typescript	async	1	agents/typescript-reviewer.md (floating promises, forEach(async), sequential awaits); no rule file
+typescript	errors	2	rules/typescript/coding-style.md (try/catch + unknown narrowing); agents/typescript-reviewer.md; agents/silent-failure-hunter.md
+typescript	testing	1	rules/typescript/testing.md (Playwright only, 375 B); agents/tdd-guide.md; agents/e2e-runner.md; rules/common/testing.md
+typescript	security	2	agents/typescript-reviewer.md (eval, XSS, prototype pollution, path traversal, child_process); rules/typescript/security.md (env secret only); agents/security-reviewer.md
+typescript	performance	1	agents/typescript-reviewer.md (MEDIUM Performance); agents/performance-optimizer.md; no rule
+typescript	architecture	1	agents/architect.md; agents/code-architect.md; rules/typescript/patterns.md (Repository, ApiResponse); rules/common/patterns.md
+typescript	tooling	2	scripts/hooks/stop-format-typecheck.js; scripts/hooks/config-protection.js; scripts/hooks/post-edit-accumulator.js; rules/typescript/hooks.md; agents/build-error-resolver.md
+typescript	framework-specific	1	rules/typescript/coding-style.md (React props); no Next/Express rule outside react/
+node	idioms	1	agents/typescript-reviewer.md (Node.js Specifics: require in ESM); .claude/rules/node.md (ECC-internal CommonJS conventions only)
+node	types	0	none beyond typescript
+node	async	2	agents/typescript-reviewer.md (sync fs in handlers, callback mixing); agents/code-reviewer.md (Node.js/Backend Patterns: timeouts, synchronous I/O)
+node	errors	1	agents/typescript-reviewer.md (JSON.parse, throw non-Error); agents/code-reviewer.md
+node	testing	0	rules/typescript/testing.md only names Playwright; node:test/jest/vitest only as diagnostic commands in agents/typescript-reviewer.md
+node	security	2	agents/typescript-reviewer.md (child_process allowlist, path traversal, prototype pollution); agents/code-reviewer.md (rate limiting, CORS, error leakage); rules/common/security.md
+node	performance	1	agents/code-reviewer.md (N+1, unbounded queries, missing timeouts); agents/performance-optimizer.md
+node	architecture	1	agents/code-reviewer.md:214-240 (backend patterns); agents/architect.md (Backend Patterns); rules/common/patterns.md
+node	tooling	1	scripts/lib/package-manager.js + tests (npm/pnpm/yarn/bun detection); scripts/hooks/stop-format-typecheck.js
+node	framework-specific	0	no Express/Nest/Fastify rule or agent in non-skills scope
+angular	idioms	3	rules/angular/coding-style.md (standalone, signals, OnPush, control flow, naming); rules/angular/patterns.md
+angular	types	1	rules/angular/security.md (treat HTTP responses as unknown); rules/angular/coding-style.md (Forms); no strict-template or typed-forms rule
+angular	async	2	rules/angular/patterns.md (RxJS operator choice, subscription cleanup, resource); rules/angular/coding-style.md (resource, effect)
+angular	errors	1	rules/angular/patterns.md (catchError, interceptors)
+angular	testing	3	rules/angular/testing.md (TestBed, signal inputs, harnesses, router/HTTP testing, E2E selectors, coverage)
+angular	security	3	rules/angular/security.md (XSS, bypassSecurityTrust, href, HTTP, secrets, guards, SSR TransferState, CSP)
+angular	performance	2	rules/angular/coding-style.md (OnPush); rules/angular/patterns.md (lazy loadChildren, resolvers, SSR/SSG/hydration)
+angular	architecture	2	rules/angular/patterns.md (smart/dumb split, service layer, DI scoping, routing, InjectionToken)
+angular	tooling	1	rules/angular/hooks.md (ng lint/ng build/tsc advice; no matching hook in scripts/hooks)
+angular	framework-specific	3	rules/angular/*.md (5 files, 19,998 B); no Angular reviewer or build-resolver agent
+react	idioms	3	rules/react/coding-style.md; rules/react/hooks.md; agents/react-reviewer.md; commands/react-review.md
+react	types	1	rules/typescript/coding-style.md (props typing); rules/react/coding-style.md (component shape)
+react	async	2	rules/react/patterns.md (Suspense, data fetching); rules/react/testing.md (async assertions); rules/react/hooks.md (cleanup, stale closures)
+react	errors	2	rules/react/patterns.md (error boundaries); agents/react-reviewer.md; agents/typescript-reviewer.md
+react	testing	3	rules/react/testing.md (RTL query priority, MSW, no snapshots, hook testing, a11y assertions); commands/react-test.md
+react	security	3	rules/react/security.md (dangerouslySetInnerHTML, URL schemes, server actions, env exposure, CSP, source maps); agents/react-reviewer.md
+react	performance	2	rules/react/hooks.md (useMemo/useCallback when worth it); agents/react-reviewer.md (MEDIUM Performance)
+react	architecture	2	rules/react/patterns.md (container/presentational, state-location tree, RSC boundary, compound components)
+react	tooling	2	agents/react-build-resolver.md; commands/react-build.md; rules/react/hooks.md (lint config)
+react	framework-specific	3	rules/react/*.md (Next.js App Router/RSC, React 19); agents/react-reviewer.md; agents/react-build-resolver.md
+csharp	idioms	2	rules/csharp/coding-style.md; agents/csharp-reviewer.md (naming, sealed, records, DI)
+csharp	types	2	rules/csharp/coding-style.md (nullable, record, no dynamic); agents/csharp-reviewer.md (HIGH Type Safety)
+csharp	async	2	rules/csharp/coding-style.md (CancellationToken, no .Result); agents/csharp-reviewer.md (async void, ConfigureAwait, sync-over-async)
+csharp	errors	2	rules/csharp/coding-style.md; agents/csharp-reviewer.md (CRITICAL empty catch, using/await using)
+csharp	testing	2	rules/csharp/testing.md (xUnit, WebApplicationFactory, Testcontainers, coverage); no csharp test command
+csharp	security	2	rules/csharp/security.md; agents/csharp-reviewer.md (SQLi, deserialization, CSRF, path traversal)
+csharp	performance	1	agents/csharp-reviewer.md (MEDIUM: StringBuilder, LINQ hot paths, AsNoTracking, N+1)
+csharp	architecture	1	rules/csharp/patterns.md (options pattern, DI lifetimes, repository); agents/csharp-reviewer.md (SRP/god classes)
+csharp	tooling	1	rules/csharp/hooks.md (dotnet format/build/test advice, unimplemented); agents/csharp-reviewer.md (diagnostic commands); no csharp build-resolver
+csharp	framework-specific	1	agents/csharp-reviewer.md (ASP.NET Core, EF Core, Minimal APIs, Blazor checks, 4 lines)
+python	idioms	1	rules/python/coding-style.md (PEP8, frozen dataclass); rules/python/patterns.md; agents/python-reviewer.md (Pythonic Patterns)
+python	types	1	rules/python/coding-style.md (annotations on signatures); agents/python-reviewer.md (HIGH Type Hints)
+python	async	1	rules/python/fastapi.md (no blocking calls in async routes); agents/python-reviewer.md (Concurrency)
+python	errors	1	agents/python-reviewer.md (CRITICAL Error Handling); agents/silent-failure-hunter.md
+python	testing	1	rules/python/testing.md (pytest, markers, coverage); rules/python/fastapi.md (dependency_overrides)
+python	security	1	rules/python/security.md (env secret, bandit); rules/python/fastapi.md (CORS/JWT/redaction); agents/python-reviewer.md
+python	performance	0	none specific in non-skills scope
+python	architecture	1	rules/python/fastapi.md (create_app, thin routers, DI); rules/python/patterns.md (Protocol)
+python	tooling	1	rules/python/coding-style.md (black/isort/ruff); scripts/hooks/quality-gate.js (ruff format --check, strict only); rules/python/hooks.md
+python	framework-specific	2	rules/python/fastapi.md; agents/fastapi-reviewer.md; agents/django-reviewer.md; agents/django-build-resolver.md

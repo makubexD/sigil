@@ -21,6 +21,7 @@ holds the raw material behind it.
 | `2026-10-12` | -     | Probe: does Copilot deliver a skill's rule twice                                          |
 | `2026-10-13` | -     | Pre-release audit of `master`: cli/wizard auditors, code review, evals S1 and W3          |
 | `2026-10-14` | -     | Benchmark of four agent-guidance repos and the catalog code-quality plan                  |
+| `2026-10-16` | -     | Benchmark v2: full brief, final verdicts, guidance errata and the eval-v2 roadmap         |
 
 ## What is in a folder
 

@@ -1,0 +1,61 @@
+language	topic	depth	paths
+typescript	idioms	3	catalog/languages/typescript/rules/ts-conventions.rule.md (11 sections, code examples)
+typescript	types	3	catalog/languages/typescript/rules/ts-conventions.rule.md:21-90 (unknown over any, optionals, interfaces, discriminated unions); ts-project-layout.rule.md:50-80 (strict, noUncheckedIndexedAccess)
+typescript	async	3	catalog/languages/typescript/rules/ts-async.rule.md (9 sections: floating promises, Promise.all, AbortController, event loop); gap: no bounded-concurrency guidance
+typescript	errors	3	catalog/shared/templates/code-quality.template.md error-handling slot + catalog/languages/typescript/rules/ts-code-quality.rule.md:55-80 (cause chain, narrowest catch); ts-logging.rule.md; reviewer cross-check agents/ts-code-reviewer.agent.md:69-73
+typescript	testing	3	catalog/languages/typescript/rules/ts-testing.rule.md; skills/ts-generate-tests, ts-sync-tests; no integration/e2e/property/mutation guidance
+typescript	security	3	catalog/languages/typescript/rules/ts-security.rule.md (secrets, shell injection, path traversal, deserialization, prototype pollution, randomness, timing-safe, network); agents/ts-security-auditor.agent.md
+typescript	performance	3	catalog/languages/typescript/agents/ts-performance-profiler.agent.md:58-102 (async, O(n^2), N+1, memory, regex); on-demand only, no always-on perf rule
+typescript	architecture	3	catalog/languages/typescript/agents/ts-architecture-reviewer.agent.md; rules/ts-code-quality.rule.md (SOLID, layering, coupling slots)
+typescript	tooling	3	catalog/languages/typescript/rules/ts-project-layout.rule.md, ts-npm.rule.md, ts-dependencies.rule.md; skills ts-new-project, ts-scaffold-project, ts-add-package, ts-audit-deps, ts-release
+typescript	framework-specific	0	none for plain TypeScript (no Express/Fastify/Nest/Hono content found by grep)
+node	idioms	1	catalog/languages/typescript/rules/ts-dependencies.rule.md:49-68 (prefer node: built-ins table); no Node-specific rule
+node	types	0	none beyond the TypeScript rules
+node	async	2	catalog/languages/typescript/rules/ts-async.rule.md:166-195 (blocking the event loop, async iteration, streams); no worker_threads/cluster/graceful shutdown
+node	errors	1	catalog/languages/typescript/rules/ts-async.rule.md:73-165 (rejection handling, preserve context); no process-level handler or shutdown guidance outside the cli skill
+node	testing	1	catalog/languages/typescript/skills/ts-new-project/SKILL.md:33 (defaults to node:test); ts-testing.rule.md:20 (translate vitest syntax); examples use vi.*
+node	security	3	catalog/languages/typescript/rules/ts-security.rule.md (child_process.execFile, path traversal, prototype pollution, crypto randomness, timing-safe); ts-npm.rule.md lifecycle-script risk
+node	performance	2	catalog/languages/typescript/agents/ts-performance-profiler.agent.md:103-122 (--cpu-prof, 0x, clinic)
+node	architecture	0	none Node-specific
+node	tooling	2	catalog/languages/typescript/rules/ts-project-layout.rule.md:80-109 (ESM/CJS, exports map); ts-npm.rule.md (engines, overrides, .npmrc, publishing)
+node	framework-specific	0	no HTTP-server framework, worker, stream-pipeline or graceful-shutdown guidance; only catalog/languages/typescript/stack-parts/cli.md for CLIs
+angular	idioms	3	catalog/languages/angular/rules/ng-conventions.rule.md; ng-signals.rule.md; ng-templates.rule.md (control flow)
+angular	types	2	catalog/languages/angular/rules/ng-conventions.rule.md (Types not any, strictness, optionals); agents/ng-code-reviewer.agent.md strictTemplates check
+angular	async	3	catalog/languages/angular/rules/ng-async.rule.md; ng-rxjs.rule.md (teardown, nested subscribe, multicast); ng-signals.rule.md
+angular	errors	2	catalog/shared/templates/code-quality.template.md slot; catalog/languages/angular/rules/ng-rxjs.rule.md (Error Handling)
+angular	testing	3	catalog/languages/angular/rules/ng-testing.rule.md (TestBed, fixtures, time/async); skills ng-generate-tests, ng-sync-tests
+angular	security	3	catalog/languages/angular/rules/ng-security.rule.md (XSS, template injection, Trusted Types/CSP, authz server-side); agents/ng-security-auditor.agent.md
+angular	performance	3	catalog/languages/angular/rules/ng-components.rule.md (OnPush); ng-templates.rule.md (cost out of bindings); agents/ng-performance-profiler.agent.md; ng-project-layout.rule.md (loadComponent splitting)
+angular	architecture	3	catalog/languages/angular/agents/ng-architecture-reviewer.agent.md (8.8 KB); rules/ng-project-layout.rule.md; ng-components.rule.md smart/presentational
+angular	tooling	3	catalog/languages/angular/rules/ng-npm.rule.md (ng update, lockstep); skills ng-new-project, ng-add-project, ng-add-package, ng-release; agents/ng-api-compat-reviewer.agent.md
+angular	framework-specific	3	whole language set: components, signals, rxjs, templates rules + ng-template-reviewer agent + ng-generate-component skill; no SSR/hydration, NgRx or reactive-forms rule found
+react	idioms	2	catalog/languages/react/rules/react-conventions.rule.md (11 bullets + naming table, 2.3 KB)
+react	types	1	catalog/languages/react/rules/react-conventions.rule.md (Props interfaces, explicit return types); TypeScript rules are not co-installed by the react packs
+react	async	2	catalog/languages/react/rules/react-async.rule.md (no raw fetch in useEffect, stale responses, RSC await, Suspense)
+react	errors	1	catalog/languages/react/rules/react-code-quality.rule.md:69-75 (Error Boundary example); template error slot
+react	testing	3	catalog/languages/react/rules/react-testing.rule.md (RTL queries by role, a11y assertions, user-event, providers); skills react-generate-tests, react-sync-tests
+react	security	2	catalog/languages/react/rules/react-security.rule.md (dangerouslySetInnerHTML, public env vars, redirects, token storage, CSRF); agents/react-security-auditor.agent.md
+react	performance	2	catalog/languages/react/agents/react-performance-profiler.agent.md (re-renders, memo in both directions); rules/react-dependencies.rule.md (bundle size); no always-on perf rule
+react	architecture	2	catalog/languages/react/agents/react-architecture-reviewer.agent.md; rules/react-project-layout.rule.md (feature folders, Next App Router, server vs client components)
+react	tooling	2	catalog/languages/react/rules/react-npm.rule.md; react-dependencies.rule.md; skills react-scaffold-project, react-add-project, react-release
+react	framework-specific	2	catalog/languages/react/rules/react-project-layout.rule.md (Next.js App Router, RSC); react-async.rule.md (Server Components); no state-management, forms, routing or data-library guidance beyond one-line mentions
+csharp	idioms	3	catalog/languages/csharp/rules/cs-conventions.rule.md (17 sections: records, primary ctors, LINQ readability, disposables)
+csharp	types	3	catalog/languages/csharp/rules/cs-conventions.rule.md (NRT, explicit nullability, records, return-type narrowing)
+csharp	async	3	catalog/languages/csharp/rules/cs-async.rule.md (9 sections: sync-over-async, async void, ConfigureAwait, CancellationToken, ValueTask, WhenAll)
+csharp	errors	2	catalog/shared/templates/code-quality.template.md slot; catalog/languages/csharp/rules/cs-code-quality.rule.md; cs-logging.rule.md
+csharp	testing	3	catalog/languages/csharp/rules/cs-testing.rule.md (AAA, Theory, time, anti-patterns); skills cs-generate-tests, cs-sync-tests
+csharp	security	3	catalog/languages/csharp/rules/cs-security.rule.md (secrets, shell/SQL injection, traversal, deserialization, randomness, timing-safe); agents/cs-security-auditor.agent.md
+csharp	performance	2	catalog/languages/csharp/agents/cs-performance-profiler.agent.md:64-100 (EF Core N+1, AsNoTracking, HttpClientFactory, dotnet-trace); on-demand only
+csharp	architecture	3	catalog/languages/csharp/agents/cs-architecture-reviewer.agent.md (8.2 KB, Api/Domain/Infrastructure layering); rules/cs-project-layout.rule.md
+csharp	tooling	3	catalog/languages/csharp/rules/cs-nuget.rule.md (CPM, lock files, source mapping, signing, SourceLink); cs-project-layout.rule.md (Directory.Build.props, .editorconfig); skills cs-scaffold-project, cs-release, cs-audit-deps
+csharp	framework-specific	1	ASP.NET Core / EF Core appear only inside agents (agents/cs-performance-profiler.agent.md:64, agents/cs-architecture-reviewer.agent.md:169); no DI-lifetime, middleware, EF migration or minimal-API rule
+python	idioms	2	catalog/languages/python/rules/py-conventions.rule.md (2.2 KB: comprehensions, pathlib, mutable defaults, naming table)
+python	types	1	catalog/languages/python/rules/py-conventions.rule.md:15-16 (one bullet: hints everywhere, dataclass/TypedDict); mypy/pyright only in agents/py-code-reviewer.agent.md:40-97
+python	async	3	catalog/languages/python/rules/py-async.rule.md (TaskGroup, cancellation, timeouts, asyncio.Lock)
+python	errors	2	catalog/languages/python/rules/py-conventions.rule.md (specific exceptions, no bare except); template error slot
+python	testing	3	catalog/languages/python/rules/py-testing.rule.md (fixtures, parametrize, mocking boundaries, async tests); skills py-generate-tests, py-sync-tests
+python	security	3	catalog/languages/python/rules/py-security.rule.md (secrets, shell/SQL injection, deserialization, traversal, timeouts); agents/py-security-auditor.agent.md
+python	performance	2	catalog/languages/python/agents/py-performance-profiler.agent.md (cProfile, timeit, py-spy); on-demand only
+python	architecture	2	catalog/languages/python/agents/py-architecture-reviewer.agent.md (incl. FastAPI/Django layering, new-service layout); rules/py-project-layout.rule.md
+python	tooling	3	catalog/languages/python/rules/py-project-layout.rule.md (src layout, pyproject, venvs, entry points); py-packaging.rule.md (build backend, py.typed, PyPI); py-dependencies.rule.md; skills py-scaffold-project, py-add-project, py-release
+python	framework-specific	1	FastAPI/Django named only in catalog/languages/python/agents/py-architecture-reviewer.agent.md:8,81-128; no framework rule or skill

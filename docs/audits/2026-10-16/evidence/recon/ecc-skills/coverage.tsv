@@ -1,0 +1,61 @@
+language	topic	depth	paths
+typescript	idioms	2	skills/coding-standards/SKILL.md:66-173 (naming, immutability via spread, early returns; mixed with React/Next snippets)
+typescript	types	1	skills/coding-standards/SKILL.md:154-173 (interface vs any only); no strict-tsconfig, discriminated-union, branded-type or satisfies guidance found by grep across skills/
+typescript	async	2	skills/coding-standards/SKILL.md:138-152 (Promise.all); skills/react-performance/SKILL.md:35-127 (waterfalls); skills/error-handling/SKILL.md:301-345 (retry/backoff)
+typescript	errors	3	skills/error-handling/SKILL.md:20-377 (typed AppError, Result pattern, API handler, boundaries, 8-item checklist at :366-377)
+typescript	testing	3	skills/tdd-workflow/SKILL.md:86-261 (RED gate, runner detection, bun:test), :263-560 (unit/API/E2E patterns, mistakes); skills/e2e-testing/SKILL.md
+typescript	security	2	skills/security-review/SKILL.md:22-440 (secrets, zod input validation, SQLi, authN/Z, XSS, CSRF, rate limit) - generic web, partly Supabase/Solana specific
+typescript	performance	2	skills/react-performance/SKILL.md:22-576 (prioritised ruleset, React/Next only); skills/backend-patterns/SKILL.md:130-264 (N+1, caching)
+typescript	architecture	2	skills/backend-patterns/SKILL.md:22-130 (repository/service/middleware); skills/hexagonal-architecture/SKILL.md; skills/nestjs-patterns/SKILL.md
+typescript	tooling	2	skills/verification-loop/SKILL.md:21-95 (tsc/lint/test phases); skills/vite-patterns/SKILL.md (451 lines); skills/tdd-workflow/SKILL.md:88-114 (package-manager vs runner); skills/plankton-code-quality/SKILL.md:290-329 (complexity ceiling)
+typescript	framework-specific	2	skills/nestjs-patterns/SKILL.md; skills/mcp-server-patterns/SKILL.md; skills/prisma-patterns/SKILL.md; skills/nextjs-turbopack/SKILL.md; skills/vue-patterns/SKILL.md; skills/nuxt4-patterns/SKILL.md
+node	idioms	1	skills/bun-runtime/SKILL.md:8-95 (Bun vs Node choice); no Node-specific idiom skill (no event-loop, streams, worker_threads, node:test hits by grep)
+node	types	1	shared with TypeScript row; no Node-specific typing guidance
+node	async	1	skills/backend-patterns/SKILL.md:317-346 (retry), :443-497 (queues); no unhandled-rejection, event-loop-blocking or AbortController guidance for Node (grep: none)
+node	errors	2	skills/error-handling/SKILL.md:113-166 (Express/Next API error handler); skills/backend-patterns/SKILL.md:265-316
+node	testing	2	skills/tdd-workflow/SKILL.md:292-352 (bun:test, API integration); node:test not covered
+node	security	2	skills/security-review/SKILL.md; skills/backend-patterns/SKILL.md:347-440 (JWT verify without algorithm/expiry pinning is a weakness; rate limiting :432); no prototype-pollution coverage
+node	performance	1	skills/backend-patterns/SKILL.md:132-264 (queries, cache-aside); no profiling/event-loop guidance
+node	architecture	2	skills/backend-patterns/SKILL.md; skills/hexagonal-architecture/SKILL.md; skills/api-design/SKILL.md (REST conventions, pagination, versioning :22-525)
+node	tooling	2	skills/bun-runtime/SKILL.md; skills/tdd-workflow/SKILL.md:88-114; skills/vite-patterns/SKILL.md; skills/mcp-dependency-review/SKILL.md (pinning)
+node	framework-specific	2	skills/backend-patterns/SKILL.md (Express/Next routes); skills/nestjs-patterns/SKILL.md (232 lines); skills/mcp-server-patterns/SKILL.md
+angular	idioms	3	skills/angular-developer/SKILL.md:8-156 + references/components.md, inputs.md, outputs.md, host-elements.md (signals, control flow, inject())
+angular	types	1	skills/angular-developer/SKILL.md:143 (signal-form initial values); strict templates/typed forms not covered by grep
+angular	async	3	skills/angular-developer/references/resource.md, linked-signal.md, effects.md:15 (never propagate state in effects), signals-overview.md
+angular	errors	1	skills/angular-developer/references/data-resolvers.md:57-63 (navigation error handler, catchError); no global ErrorHandler guidance
+angular	testing	2	skills/angular-developer/references/testing-fundamentals.md (act-wait-assert, whenStable), component-harnesses.md, router-testing.md, e2e-testing.md (each 1.9-3.8KB)
+angular	security	1	skills/angular-developer/references/route-guards.md; SKILL.md:154 claims security-review has Angular-specific concerns but grep finds none there
+angular	performance	2	skills/angular-developer/references/loading-strategies.md, rendering-strategies.md (SSR/hydration), effects.md:49-81 (afterRenderEffect phases); OnPush only in cli/mcp refs
+angular	architecture	2	skills/angular-developer/references/di-fundamentals.md, hierarchical-injectors.md, defining-providers.md, creating-services.md
+angular	tooling	3	skills/angular-developer/SKILL.md:22-52 (version check, ng new decision steps, mandatory ng build), references/cli.md, mcp.md
+angular	framework-specific	3	skills/angular-developer/references/ (35 files, 131KB: signal-forms.md 23.6KB, angular-aria.md 12.3KB, routing, animations, Tailwind)
+react	idioms	3	skills/react-patterns/SKILL.md:23-343 (pure render, hooks discipline :54-62, state decision tree :64-83)
+react	types	1	skills/coding-standards/SKILL.md:175-209 (typed props only)
+react	async	3	skills/react-patterns/SKILL.md:116-178 (Suspense, form actions, fetching matrix); skills/react-performance/SKILL.md:35-127 (waterfalls)
+react	errors	2	skills/react-patterns/SKILL.md:116-128 (error boundary limits); skills/error-handling/SKILL.md:167-205; skills/frontend-patterns/SKILL.md:478-525
+react	testing	3	skills/react-testing/SKILL.md:8-425 (RTL query priority :49, userEvent :74, MSW :110, axe :227, component-vs-E2E boundary)
+react	security	2	skills/react-performance/SKILL.md:185-203 (server actions are public endpoints); skills/security-review/SKILL.md:202-250 (XSS); rules/react/security.md is outside this scope
+react	performance	3	skills/react-performance/SKILL.md:22-576 (8 priority tiers, adapted from Vercel, 70+ rules); skills/react-patterns/SKILL.md:224-245
+react	architecture	2	skills/react-patterns/SKILL.md:64-114 (state location, RSC boundaries); skills/frontend-patterns/SKILL.md (tutorial style, 83% code)
+react	tooling	2	skills/vite-patterns/SKILL.md; skills/react-testing/SKILL.md:38-47 (library choice); skills/nextjs-turbopack/SKILL.md
+react	framework-specific	3	skills/react-patterns/SKILL.md (RSC/Next App Router); skills/react-native-patterns/SKILL.md; skills/frontend-a11y/SKILL.md; skills/accessibility/SKILL.md
+csharp	idioms	2	skills/dotnet-patterns/SKILL.md:19-83 (records/init, explicit nullability, DI), :289-310 (guard clauses)
+csharp	types	1	skills/dotnet-patterns/SKILL.md:44-66 (nullability mention); nullable-reference-types project setup not covered (grep: none)
+csharp	async	2	skills/dotnet-patterns/SKILL.md:85-128 (CancellationToken, WhenAll), :311-322 (async void, .Result); no ConfigureAwait/IAsyncEnumerable
+csharp	errors	2	skills/dotnet-patterns/SKILL.md:156-185 (Result pattern); anti-pattern table :311-322
+csharp	testing	2	skills/csharp-testing/SKILL.md:8-323 (xUnit, NSubstitute, WebApplicationFactory, Testcontainers, builders, anti-patterns :293-303); skills/fsharp-testing/SKILL.md
+csharp	security	0	no C#/ASP.NET-specific security skill found; skills/security-review/SKILL.md is language-agnostic (TS snippets)
+csharp	performance	0	no .NET performance guidance (grep: no BenchmarkDotNet/Span)
+csharp	architecture	2	skills/dotnet-patterns/SKILL.md:186-288 (EF Core repository, middleware, minimal APIs); skills/hexagonal-architecture/SKILL.md (TS/Java/Kotlin/Go examples, not C#)
+csharp	tooling	1	skills/csharp-testing/SKILL.md:305-323 (dotnet test/filter/coverage); no analyzers/editorconfig/dotnet format guidance
+csharp	framework-specific	2	skills/dotnet-patterns/SKILL.md:130-288 (Options, EF Core, ASP.NET minimal API); skills/csharp-testing/SKILL.md:151-240 (WebApplicationFactory)
+python	idioms	3	skills/python-patterns/SKILL.md:19-500 (EAFP, comprehensions, dataclasses, decorators, context managers; 752 lines)
+python	types	2	skills/python-patterns/SKILL.md:75-139 (hints, 3.9+ syntax, Protocol, TypeVar), :646-685 (mypy config)
+python	async	2	skills/python-patterns/SKILL.md:441-500 (threading vs multiprocessing vs asyncio); skills/fastapi-patterns/SKILL.md; skills/python-testing/SKILL.md:467-518
+python	errors	2	skills/python-patterns/SKILL.md:140-197 (specific, chaining, hierarchy); skills/error-handling/SKILL.md:207-253
+python	testing	3	skills/python-testing/SKILL.md:8-818 (pytest fixtures/parametrize/mocks/async/tmp_path, DO/DON'T :638-660); skills/django-tdd/SKILL.md; skills/django-verification/SKILL.md
+python	security	2	skills/django-security/SKILL.md (17KB, framework-specific); skills/django-verification/SKILL.md:119-144 (pip-audit, bandit); no framework-neutral Python security
+python	performance	2	skills/python-patterns/SKILL.md:564-618 (__slots__, generators, string concat); no profiling guidance (grep: none for cProfile/py-spy)
+python	architecture	2	skills/python-patterns/SKILL.md:502-563 (package layout); skills/fastapi-patterns/SKILL.md:12-393 (factory, DI, service layer); skills/django-patterns/SKILL.md
+python	tooling	3	skills/python-patterns/SKILL.md:619-685 (ruff/black/mypy/pytest + pyproject.toml); skills/django-verification/SKILL.md:20-203 (8-phase loop); skills/verification-loop/SKILL.md
+python	framework-specific	3	skills/django-patterns/SKILL.md, django-security, django-tdd, django-verification, django-celery, skills/fastapi-patterns/SKILL.md (15.6KB), skills/pytorch-patterns/SKILL.md

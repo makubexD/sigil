@@ -154,6 +154,19 @@ simplification. PR8 merged without an eval run. B2 measures it.
 
 Rounds 3, 4 and 5 runs hit the usage limit several times; each rejected run was re-run, none recorded.
 
+**Task-level re-reading of D2 (2026-10-19).** The p-values above pair runs by `task#run`, so they count 18 runs where
+there are 6 distinct tasks. Counted by task, D2 vs B1 is weaker:
+
+- Mean declarations per task fell in 4 tasks (T1, T2, T4, T5), rose in 1 (T6) and tied in T3.
+- A sign test over the 5 decided tasks gives p = 0.188. An exact sign-flip over per-task means gives p = 0.0625
+  (absolute differences) or 0.125 (relative).
+- B1's T5 runs (10, 3, 11 declarations) are the highest of any arm; every other arm's T5 runs fall between 2 and 11,
+  mostly 2 to 5. Every comparison against B1 therefore started with a T5 win.
+
+D2 stays merged. It removed prose and held hidden tests at 18/18, so it meets a non-inferiority bar. Its "accepted"
+label rests on run counting, though. From eval v2 on (`docs/audits/2026-10-16/README.md` § 8, E1), comparisons
+register a task-level statistic and run a fresh interleaved baseline.
+
 ### R1 grading (key.md, R1)
 
 A defect counts once per run when the reply names it and its location. ✓ = found.

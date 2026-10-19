@@ -1,0 +1,61 @@
+language	topic	depth	paths
+typescript	idioms	0	-
+typescript	types	0	-
+typescript	async	0	-
+typescript	errors	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:36-37 (swallowed errors, data loss; language-agnostic)
+typescript	testing	2	AGENTS.md:27;skills/ponytail-review/SKILL.md:41-43 (test where risky logic; one good test, not coverage; language-agnostic)
+typescript	security	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:35-37 (injection, weak randomness, secrets, input checks; language-agnostic list)
+typescript	performance	1	skills/ponytail-review/SKILL.md:38-45 (O(n^2), query per item, growing lists, hot loops; language-agnostic)
+typescript	architecture	1	AGENTS.md:21;skills/ponytail-audit/SKILL.md:50-55 (yagni, one-impl interface, wrapper; split by job)
+typescript	tooling	0	-
+typescript	framework-specific	0	-
+node	idioms	0	-
+node	types	0	-
+node	async	0	-
+node	errors	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:36-37 (swallowed errors, data loss; language-agnostic)
+node	testing	2	AGENTS.md:27;skills/ponytail-review/SKILL.md:41-43 (test where risky logic; one good test, not coverage; language-agnostic)
+node	security	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:35-37 (injection, weak randomness, secrets, input checks; language-agnostic list)
+node	performance	1	skills/ponytail-review/SKILL.md:38-45 (O(n^2), query per item, growing lists, hot loops; language-agnostic)
+node	architecture	1	AGENTS.md:21;skills/ponytail-audit/SKILL.md:50-55 (yagni, one-impl interface, wrapper; split by job)
+node	tooling	0	-
+node	framework-specific	0	-
+angular	idioms	0	-
+angular	types	0	-
+angular	async	0	-
+angular	errors	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:36-37 (swallowed errors, data loss; language-agnostic)
+angular	testing	2	AGENTS.md:27;skills/ponytail-review/SKILL.md:41-43 (test where risky logic; one good test, not coverage; language-agnostic)
+angular	security	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:35-37 (injection, weak randomness, secrets, input checks; language-agnostic list)
+angular	performance	1	skills/ponytail-review/SKILL.md:38-45 (O(n^2), query per item, growing lists, hot loops; language-agnostic)
+angular	architecture	1	AGENTS.md:21;skills/ponytail-audit/SKILL.md:50-55 (yagni, one-impl interface, wrapper; split by job)
+angular	tooling	0	-
+angular	framework-specific	0	-
+react	idioms	0	-
+react	types	0	-
+react	async	0	-
+react	errors	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:36-37 (swallowed errors, data loss; language-agnostic)
+react	testing	2	AGENTS.md:27;skills/ponytail-review/SKILL.md:41-43 (test where risky logic; one good test, not coverage; language-agnostic)
+react	security	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:35-37 (injection, weak randomness, secrets, input checks; language-agnostic list)
+react	performance	1	skills/ponytail-review/SKILL.md:38-45 (O(n^2), query per item, growing lists, hot loops; language-agnostic)
+react	architecture	1	AGENTS.md:21;skills/ponytail-audit/SKILL.md:50-55 (yagni, one-impl interface, wrapper; split by job)
+react	tooling	0	-
+react	framework-specific	1	README.md:92 (date picker: reuse repo Input + native type=date; benchmark example, rung 3 AGENTS.md:15)
+csharp	idioms	0	-
+csharp	types	0	-
+csharp	async	0	-
+csharp	errors	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:36-37 (swallowed errors, data loss; language-agnostic)
+csharp	testing	2	AGENTS.md:27;skills/ponytail-review/SKILL.md:41-43 (test where risky logic; one good test, not coverage; language-agnostic)
+csharp	security	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:35-37 (injection, weak randomness, secrets, input checks; language-agnostic list)
+csharp	performance	1	skills/ponytail-review/SKILL.md:38-45 (O(n^2), query per item, growing lists, hot loops; language-agnostic)
+csharp	architecture	1	AGENTS.md:21;skills/ponytail-audit/SKILL.md:50-55 (yagni, one-impl interface, wrapper; split by job)
+csharp	tooling	0	-
+csharp	framework-specific	0	-
+python	idioms	0	-
+python	types	0	-
+python	async	0	-
+python	errors	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:36-37 (swallowed errors, data loss; language-agnostic)
+python	testing	2	AGENTS.md:27;skills/ponytail-review/SKILL.md:41-43 (test where risky logic; one good test, not coverage; language-agnostic)
+python	security	1	AGENTS.md:30;skills/ponytail-review/SKILL.md:35-37 (injection, weak randomness, secrets, input checks; language-agnostic list)
+python	performance	1	skills/ponytail-review/SKILL.md:38-45 (O(n^2), query per item, growing lists, hot loops; language-agnostic)
+python	architecture	1	AGENTS.md:21;skills/ponytail-audit/SKILL.md:50-55 (yagni, one-impl interface, wrapper; split by job)
+python	tooling	0	-
+python	framework-specific	0	-

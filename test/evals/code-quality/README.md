@@ -14,6 +14,9 @@ project before the agent starts. Background and the plan it gates: `docs/audits/
 | `fixture-review/` | The project R1 reviews                                                                                |
 | `run.mjs`         | Runs one arm headless and appends records                                                             |
 | `measure.mjs`     | Measures one run (`run`) and compares two arms (`compare`, `--metric`)                                |
+| `stats.cjs`       | Exact tests: sign-flip over per-task means, sign test                                                 |
+| `badrefs.json`    | One bad reference per task: a passing archived solution with one hidden-checked behaviour broken      |
+| `selftest.mjs`    | Checks the statistics and that each bad reference fails its named check (`npm run evals:check`)       |
 | `judge.mjs`       | Blind readability and minimalism judge over two arms' archived source                                 |
 | `results.md`      | Hypotheses written before any run, then one dated row per comparison                                  |
 | `runs/*.jsonl`    | Raw records, one line per run; `runs/<file>/<task>-<run>/` holds that run's `src/`                    |
@@ -45,6 +48,26 @@ project before the agent starts. Background and the plan it gates: `docs/audits/
 **Known confound:** `--setting-sources project` drops user settings, hooks and plugins, but the
 user-level instruction file still loads. It is the same file in every arm, so it is constant noise,
 not a bias. Record its presence in `results.md`. Runs cost real money (`costUsd` in each record).
+
+## Statistics and selftest (eval v2, registered 2026-10-19)
+
+From the next comparison on (`docs/audits/2026-10-16/README.md` § 8, E1 and E3):
+
+- **Each task counts once.** The primary statistic is an exact one-sided sign-flip test over the
+  per-task mean difference (baseline minus candidate, absolute units), plus a magnitude floor: the
+  candidate's total over tasks moves at least 10%. `compare` prints it first, with a sign test
+  across tasks; the run-level sign test, which pairs runs by index, follows as a secondary figure.
+  Six tasks cannot reach p ≤ 0.05 unless every decided task moves the same way.
+- **Fresh baseline.** Run the baseline arm again alongside each candidate, the same day, alternating
+  arms, on the same CLI version. A stored baseline can carry an outlier (B1's T5 was 10, 3, 11
+  declarations where every other arm ran 2–5 on most runs).
+- **Selftest.** `node selftest.mjs` (part of `npm run evals:check`) checks the statistics against
+  hand-computed p-values and runs each bad reference in `badrefs.json`: it must fail the hidden check
+  named in `fails` and pass others. A bad reference that only fails a timing check proves nothing,
+  and T5's "500k operations quickly" check can fail a correct solution on a busy machine.
+- **New metrics.** Each run also records `typeErrors` (strict compile errors in `src/`, Node-type
+  gaps excluded) and `suppressions` (`@ts-ignore`, `@ts-expect-error`, `eslint-disable`,
+  `.skip`/`.only`/`.todo`). Both read 0 on every task's good reference.
 
 ## Acceptance (written before the first run; do not change after seeing results)
 

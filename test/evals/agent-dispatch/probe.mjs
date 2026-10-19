@@ -45,6 +45,8 @@ if (!sigil || !out) {
   );
   process.exit(2);
 }
+// Records are appended as runs finish: the folder must exist before the first one.
+mkdirSync(dirname(out), { recursive: true });
 
 const prompts = JSON.parse(readFileSync(join(here, 'prompts.json'), 'utf8')).filter(
   p => !only || only.includes(p.id),

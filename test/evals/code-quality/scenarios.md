@@ -16,7 +16,7 @@ Each task names its requested surface: the files, exports and option fields it a
 ## T1 orders (pagination, retry, scale)
 
 > In this project, write `src/orders.ts` exporting a type `Order` = `{ id: string; customerId:
-string; amountCents: number; status: 'paid' | 'refunded' | 'pending' }` and a function
+> string; amountCents: number; status: 'paid' | 'refunded' | 'pending' }` and a function
 > `summarizeOrders(fetchPage, opts?)`.
 >
 > - `fetchPage: (page: number) => Promise<{ items: Order[]; nextPage: number | null }>`; the
@@ -95,7 +95,7 @@ string; amountCents: number; status: 'paid' | 'refunded' | 'pending' }` and a fu
 ## C2 webhook (untrusted input from an external partner)
 
 > In this project, write `src/webhook.ts` exporting a type `PaymentEvent` = `{ id: string; type:
-'payment.succeeded' | 'payment.failed'; amountCents: number; metadata: Record<string, string> }`,
+> 'payment.succeeded' | 'payment.failed'; amountCents: number; metadata: Record<string, string> }`,
 > a class `WebhookError` extending `Error`, and a function `parseWebhook(body: string): PaymentEvent`.
 >
 > - `body` is the raw request body a payment partner posts to our endpoint from outside our
@@ -110,7 +110,7 @@ string; amountCents: number; status: 'paid' | 'refunded' | 'pending' }` and a fu
 ## C3 config (an optional file that must not hide misconfiguration)
 
 > In this project, write `src/config.ts` exporting a type `Config` = `{ host: string; port: number;
-logLevel: 'debug' | 'info' | 'warn' | 'error' }` and a function
+> logLevel: 'debug' | 'info' | 'warn' | 'error' }` and a function
 > `loadConfig(path: string): Promise<Config>`.
 >
 > - It reads the JSON object in the file at `path`. Fields the file sets override the defaults
@@ -124,8 +124,8 @@ logLevel: 'debug' | 'info' | 'warn' | 'error' }` and a function
 ## C4 cleanup (a scarce resource handle)
 
 > In this project, write `src/records.ts` exporting types `LedgerRecord` = `{ id: string;
-amountCents: number }` and `RecordReader` = `{ read(): Promise<LedgerRecord | null>; close():
-Promise<void> }`, and a function `processRecords(open, handle)`.
+> amountCents: number }` and `RecordReader` = `{ read(): Promise<LedgerRecord | null>; close():
+> Promise<void> }`, and a function `processRecords(open, handle)`.
 >
 > - `open: () => Promise<RecordReader>` opens a reader on the ledger database, and
 >   `handle: (record: LedgerRecord) => Promise<void>` processes one record.
@@ -145,7 +145,7 @@ Promise<void> }`, and a function `processRecords(open, handle)`.
 >   settles with the operation's result, or rejects with a `DeadlineError` when the operation has
 >   not settled within `opts.timeoutMs` milliseconds.
 > - `opts: { timeoutMs: number; setTimer?: (callback: () => void, ms: number) => unknown;
-clearTimer?: (handle: unknown) => void }`; `setTimer` defaults to `setTimeout` and
+> clearTimer?: (handle: unknown) => void }`; `setTimer` defaults to `setTimeout` and
 >   `clearTimer` to `clearTimeout`.
 > - This runs in a long-lived service that makes thousands of these calls. The operation can hang:
 >   a hung call must not keep holding resources after the deadline, and once `withDeadline` has
@@ -189,7 +189,7 @@ clearTimer?: (handle: unknown) => void }`; `setTimer` defaults to `setTimeout` a
 ## C9 days (time zone)
 
 > In this project, write `src/days.ts` exporting `countByDay(timestamps: number[], timeZone: string):
-Record<string, number>`, which counts events per calendar day.
+> Record<string, number>`, which counts events per calendar day.
 >
 > - `timestamps` are milliseconds since the Unix epoch, in any order.
 > - Days are the user's local calendar days; `timeZone` is the user's IANA time zone name, such as
@@ -220,7 +220,7 @@ Record<string, number>`, which counts events per calendar day.
 ## C11 html (untrusted input)
 
 > In this project, write `src/profile-card.ts` exporting `renderProfileCard(profile: { name: string;
-bio: string; website: string }): string`, which returns the HTML for a user's profile card. Users
+> bio: string; website: string }): string`, which returns the HTML for a user's profile card. Users
 > type all three fields themselves in their account settings, and the card is shown to every
 > visitor of their profile page.
 >

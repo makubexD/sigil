@@ -23,6 +23,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { hiddenTests } from './measure.mjs';
+import { prompts } from './scenarios.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const { signTestP, signFlipP } = createRequire(import.meta.url)('./stats.cjs');
@@ -35,6 +36,24 @@ close(signFlipP([1, 1, 1, 1, 1]), 1 / 32, 'sign-flip, 5 equal wins');
 // D2 vs B1 declarations per task (results.md, task-level re-reading): 4 lower, 1 tie, 1 higher.
 close(signFlipP([4, 4, 0, 3, 16 / 3, -8 / 3]), 4 / 64, 'sign-flip, D2 vs B1');
 close(signFlipP([]), 1, 'sign-flip, no tasks');
+
+// Every task run.mjs can be asked for is complete: a prompt naming its files, hidden tests, a
+// surface and a bad reference.
+const surfaces = JSON.parse(readFileSync(join(here, 'surface.json'), 'utf8'));
+const allBadrefs = JSON.parse(readFileSync(join(here, 'badrefs.json'), 'utf8'));
+const taskPrompts = prompts();
+const incomplete = [];
+for (const [task, surface] of Object.entries(surfaces)) {
+  const prompt = taskPrompts[task];
+  if (!prompt) incomplete.push(`${task}: no prompt in scenarios.md`);
+  for (const file of surface.files)
+    if (prompt && !prompt.includes(file)) incomplete.push(`${task}: prompt never names ${file}`);
+  if (!existsSync(join(here, 'fixture-hidden', task))) incomplete.push(`${task}: no hidden tests`);
+  if (!allBadrefs[task]) incomplete.push(`${task}: no bad reference`);
+}
+for (const task of Object.keys(taskPrompts))
+  if (!surfaces[task]) incomplete.push(`${task}: prompt without a surface`);
+assert.deepEqual(incomplete, [], 'every task must be complete');
 
 // Hidden tests are TypeScript run by Node's type stripping (Node 22.7+, like the eval itself). On an
 // older Node only the statistics are checked; CI's Node 22 job runs the bad references.

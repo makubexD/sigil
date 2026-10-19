@@ -36,3 +36,6 @@ docs/audits/2026-10-16/evidence/
 test/evals/*/fixture*/
 # Eval run records and archived agent-written source, kept as produced
 test/evals/*/runs/
+# Eval prompts, sent to the model verbatim: Prettier drops the `>` from a blockquote line that
+# continues a wrapped inline code span, and run.mjs would then drop that line from the prompt
+test/evals/code-quality/scenarios.md

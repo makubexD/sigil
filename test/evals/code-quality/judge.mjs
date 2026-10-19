@@ -19,8 +19,10 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
 
 const here = dirname(fileURLToPath(import.meta.url));
+const { signTestP } = createRequire(import.meta.url)('./stats.cjs');
 const args = process.argv.slice(2);
 const flag = (name, fallback) => {
   const i = args.indexOf(`--${name}`);
@@ -97,16 +99,6 @@ function ask(task, x, y) {
     throw new Error(`judge API error: ${reply.terminal_reason}`);
   const json = /\{[\s\S]*\}/.exec(reply.result)?.[0];
   return { scores: JSON.parse(json), costUsd: reply.total_cost_usd ?? null };
-}
-
-function signTestP(wins, n) {
-  let p = 0;
-  let coef = 1;
-  for (let k = 0; k <= n; k++) {
-    if (k >= wins) p += coef / 2 ** n;
-    coef = (coef * (n - k)) / (k + 1);
-  }
-  return p;
 }
 
 const baseline = new Map(records(fileA).map(r => [`${r.task}#${r.run}`, r]));

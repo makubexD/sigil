@@ -1,0 +1,50 @@
+{
+  "T1": {
+    "from": "runs/b2/T1-1/orders.ts",
+    "to": "src/orders.ts",
+    "breaks": "the final error loses its cause",
+    "fails": "gives up after the configured retries with the last failure as cause",
+    "replace": [", { cause: lastError });", ");"]
+  },
+  "T2": {
+    "from": "runs/b2/T2-1/csv.ts",
+    "to": "src/csv.ts",
+    "breaks": "CRLF ends a record one character early, leaving an empty record",
+    "fails": "splits plain records on LF and CRLF",
+    "replace": ["text[pos + 1] === LF) return 2;", "text[pos + 1] === LF) return 1;"]
+  },
+  "T3": {
+    "from": null,
+    "to": "src/money.ts",
+    "breaks": "the unfixed start: shares do not add up to the total",
+    "fails": "100 split 3 ways is 34, 33, 33",
+    "replace": null
+  },
+  "T4": {
+    "from": "runs/b2/T4-1/rate-limit.ts",
+    "to": "src/rate-limit.ts",
+    "breaks": "a refused call is recorded",
+    "fails": "a refused call is not recorded",
+    "replace": [
+      "if (calls.length >= limit) return false;",
+      "if (calls.length >= limit) { calls.push(currentTime); callsByKey.set(key, calls); return false; }"
+    ]
+  },
+  "T5": {
+    "from": "runs/b2/T5-1/lru.ts",
+    "to": "src/lru.ts",
+    "breaks": "get no longer refreshes recency",
+    "fails": "get refreshes recency",
+    "replace": [
+      "const value = entries.get(key) as V;\n      entries.delete(key);\n      entries.set(key, value);",
+      "const value = entries.get(key) as V;"
+    ]
+  },
+  "T6": {
+    "from": "runs/b2/T6-1/duration.ts",
+    "to": "src/duration.ts",
+    "breaks": "m is tried before ms, so 500ms is misread",
+    "fails": "tells m from ms",
+    "replace": ["(ms|d|h|m|s)", "(d|h|m|s|ms)"]
+  }
+}

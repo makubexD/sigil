@@ -349,6 +349,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
     hostname, and blocks link-local `169.254.x` (cloud metadata), `0.0.0.0` and IPv6 equivalents.
   - `test/catalog-doctrine.test.ts` gains an IMPLIES table: advice that is safe only with a
     qualifier must carry it in the same text.
+- Family drift (docs/audits/2026-10-16, F2, F9):
+  - The five `*-refactor-specialist` agents deduplicate on the third copy, when the copies change
+    for the same reason, as `shared/clean-code` says. They used to extract any two copies with 80%
+    overlap.
+  - `react/react-conventions` no longer prefers `data-testid`. `react-testing` owns query priority
+    (roles and labels first), and `react-code-reviewer` flagged the old example.
+  - `catalog-doctrine` pins "validate inputs at the boundary" in every code-quality rule before any
+    deletion experiment.
 - Toolchain and test-truth errata (docs/audits/2026-10-16, F3, F17, F21):
   - Every `*-generate-tests` and `*-sync-tests` skill now says: when a test fails, decide whether
     the test or the code is wrong, never weaken an assertion to make it pass, and report a suspected

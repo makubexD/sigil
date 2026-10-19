@@ -63,8 +63,8 @@ Highest-value targets:
   mixing concerns. Create a new file; update imports everywhere.
 - **Rename** — names that mislead or do not match behavior. Check every call site with Grep before
   renaming; update all of them.
-- **Deduplicate (DRY)** — two or more functions with ≥ 80% structural overlap; extract the shared
-  implementation into a parameterized helper.
+- **Deduplicate** — the third copy of the same logic, when the copies change for the same reason (two similar copies stay);
+  extract the shared implementation into a parameterized helper.
 - **Break Circular Dependency** — extract the shared type/interface into a third module that both
   sides import. The third module must contain only types and interfaces (no implementation) to avoid
   new cycles.

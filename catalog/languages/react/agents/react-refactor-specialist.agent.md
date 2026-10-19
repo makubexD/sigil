@@ -65,8 +65,8 @@ concern) out of a component into a named `use*` hook, especially when duplicated
 conditional rendering gets split by extracting each cohesive concern into its own sub-component,
 composed via props/children.
 
-**Eliminate duplication** — when the same JSX structure or logic (>80% overlap) appears in two or
-more components, extract it to one shared component/hook; parameterize the small differences.
+**Eliminate duplication** — the third copy of the same logic, when the copies change for the same reason (two similar copies stay);
+extract it to one shared component/hook; parameterize the small differences.
 
 **Convert prop drilling to Context** — when a value passes through more than two uninvolved
 intermediate components, introduce a Context provider at the appropriate boundary instead of

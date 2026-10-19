@@ -67,7 +67,7 @@ Use the delegation message to determine what to refactor. If not specific, scan 
 
 **Rename** — symbol names that don't match their behavior. Use Grep to find all call sites; update all. Ensure the public API's `[Obsolete]` deprecation is placed if this is a published library (see `cs-git`).
 
-**Deduplicate (DRY)** — two or more methods with > 80% structural overlap; extract shared logic into a private or internal method/extension.
+**Deduplicate** — the third copy of the same logic, when the copies change for the same reason (two similar copies stay); extract shared logic into a private or internal method/extension.
 
 **Invert Dependency** — replace a concrete class import in the domain with an `interface`; inject the concrete type at the composition root (DI container or factory).
 

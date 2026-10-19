@@ -91,6 +91,14 @@ const RETIRED: readonly Retired[] = [
     pattern: /Moq is sufficient/,
     why: 'use the test-double library the project already has',
   },
+  {
+    pattern: /`data-testid` over CSS/,
+    why: 'the testing rule owns query priority: roles and labels first, data-testid only without one',
+  },
+  {
+    pattern: /(>|≥) ?80% (structural )?overlap/,
+    why: 'clean-code extracts on the third copy, and only when the copies change for the same reason',
+  },
 ];
 
 const PRIVATE_RANGES = /private IP ranges?/i;
@@ -150,6 +158,8 @@ const CANONICAL: readonly Canonical[] = [
   { family: 'code-quality', phrase: 'a boolean reads as a predicate' },
   { family: 'code-quality', phrase: 'a quantity carries its unit' },
   { family: 'code-quality', phrase: 'mark it with a `shortcut:` comment' },
+  // Safety text pinned before any deletion ablation can remove it (docs/audits/2026-10-16).
+  { family: 'code-quality', phrase: 'validate inputs at the boundary' },
   { family: 'code-reviewer', phrase: TOP_LEVEL_CATCH },
   { family: 'generate-tests', phrase: NEVER_WEAKEN },
   { family: 'sync-tests', phrase: NEVER_WEAKEN },

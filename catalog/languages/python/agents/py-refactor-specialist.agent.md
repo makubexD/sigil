@@ -68,8 +68,8 @@ extracting a collaborator class for each cohesive sub-responsibility, wired via 
 module they can both import without a cycle, or invert the dependency so only one side imports the
 other.
 
-**Eliminate duplication** — when the same logic (>80% overlap) appears in two or more places,
-extract it to one shared function; parameterize the small differences rather than copy-pasting.
+**Eliminate duplication** — the third copy of the same logic, when the copies change for the same reason (two similar copies stay);
+extract it to one shared function; parameterize the small differences.
 
 **Rename for clarity** — rename a symbol whose name no longer reflects its purpose, updating every
 reference (`grep -rn` first to find them all, including string references in tests/config).

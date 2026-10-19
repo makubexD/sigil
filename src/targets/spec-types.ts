@@ -136,8 +136,11 @@ export interface KindEmitSpec {
 
 /** One documented size limit on an emitted file. */
 export interface SpecLimit {
-  /** What is measured: an emitted frontmatter value, or the emitted body. */
-  readonly field: 'name' | 'description' | 'body';
+  /**
+   * What is measured: an emitted frontmatter value, the emitted body, or the `listing` a skill
+   * menu shows (the emitted `description` plus `when_to_use`).
+   */
+  readonly field: 'name' | 'description' | 'listing' | 'body';
   readonly max: number;
   readonly unit: 'chars' | 'lines';
   /** `error` when the provider rejects or drops the file past the limit, `warning` for guidance. */

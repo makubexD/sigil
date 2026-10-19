@@ -1,0 +1,128 @@
+[
+  {
+    "id": "F1",
+    "skill": "ts-add-package",
+    "expect": "fire",
+    "fixture": "review",
+    "prompt": "Ops wants the order summaries exported as real Excel .xlsx files. Pull in a library that writes them and wire it into the project."
+  },
+  {
+    "id": "Q1",
+    "skill": "ts-add-package",
+    "expect": "quiet",
+    "fixture": "workspace",
+    "prompt": "Move packages/core to the newest 3.x release of date-fns."
+  },
+  {
+    "id": "F2",
+    "skill": "ts-audit-deps",
+    "expect": "fire",
+    "fixture": "workspace",
+    "prompt": "We ship on Friday. Are any of the third-party packages this repo relies on vulnerable, abandoned, or far behind?"
+  },
+  {
+    "id": "Q2",
+    "skill": "ts-audit-deps",
+    "expect": "quiet",
+    "fixture": "review",
+    "prompt": "Read src/orders.ts and tell me how an attacker could abuse it. Report only; don't edit files."
+  },
+  {
+    "id": "F3",
+    "skill": "ts-document",
+    "expect": "fire",
+    "fixture": "review",
+    "prompt": "Hovering over the exported functions in src/orders.ts shows nothing in the editor. Write the API comments they need."
+  },
+  {
+    "id": "Q3",
+    "skill": "ts-document",
+    "expect": "quiet",
+    "fixture": "review",
+    "prompt": "Add a short section to README.md explaining how to run the tests."
+  },
+  {
+    "id": "F4",
+    "skill": "ts-generate-tests",
+    "expect": "fire",
+    "fixture": "review",
+    "prompt": "Nothing exercises src/orders.ts yet, and I'm about to change it. Get it covered first."
+  },
+  {
+    "id": "Q4",
+    "skill": "ts-generate-tests",
+    "expect": "quiet",
+    "fixture": "review",
+    "prompt": "Running node --test in this project reports that no tests ran. Why? Explain only; don't change anything."
+  },
+  {
+    "id": "F5",
+    "skill": "ts-sync-tests",
+    "expect": "fire",
+    "fixture": "workspace",
+    "prompt": "packages/core/src changed a lot this sprint and its tests didn't follow: some cover functions that are gone, and some new exports have nothing. Reconcile them."
+  },
+  {
+    "id": "Q5",
+    "skill": "ts-sync-tests",
+    "expect": "quiet",
+    "fixture": "workspace",
+    "prompt": "Rename formatPrice to formatAmount everywhere in packages/core, tests included."
+  },
+  {
+    "id": "F6",
+    "skill": "ts-new-project",
+    "expect": "fire",
+    "fixture": "empty",
+    "prompt": "Start a Node.js TypeScript library here from nothing, for a small package that turns titles into URL slugs."
+  },
+  {
+    "id": "Q6",
+    "skill": "ts-new-project",
+    "expect": "quiet",
+    "fixture": "review",
+    "prompt": "Turn on noUncheckedIndexedAccess in tsconfig.json and fix whatever it flags."
+  },
+  {
+    "id": "F7",
+    "skill": "ts-scaffold-project",
+    "expect": "fire",
+    "fixture": "workspace",
+    "prompt": "Add a second package to this monorepo, packages/pricing, set up the same way as packages/core, for the price-calculation code."
+  },
+  {
+    "id": "Q7",
+    "skill": "ts-scaffold-project",
+    "expect": "quiet",
+    "fixture": "workspace",
+    "prompt": "Move applyDiscount out of packages/core/src/index.ts into its own file in the same package, and keep it exported."
+  },
+  {
+    "id": "F8",
+    "skill": "cli",
+    "expect": "fire",
+    "fixture": "review",
+    "prompt": "Ops wants a terminal tool over these order utilities, to query totals and pipe the output into other tools. Help me lay out its commands and flags before we write any code."
+  },
+  {
+    "id": "Q8",
+    "skill": "cli",
+    "expect": "quiet",
+    "fixture": "review",
+    "prompt": "What exit code does node --test return when a test fails, and why does that matter in CI? Just explain."
+  },
+  {
+    "id": "F9",
+    "skill": "wizard",
+    "expect": "fire",
+    "fixture": "review",
+    "prompt": "First-time users get lost configuring this tool. Give it a guided first-run setup that asks them one question at a time."
+  },
+  {
+    "id": "Q9",
+    "skill": "wizard",
+    "expect": "quiet",
+    "fixture": "review",
+    "prompt": "Write SETUP.md listing the steps to install and configure this project."
+  }
+]

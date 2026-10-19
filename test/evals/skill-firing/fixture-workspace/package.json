@@ -1,0 +1,9 @@
+{
+  "name": "shop",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": ["packages/*"],
+  "engines": { "node": ">=22.18" },
+  "scripts": { "test": "npm test --workspaces" }
+}

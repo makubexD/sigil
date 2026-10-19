@@ -9,6 +9,7 @@ Behavioral evals for the `cli` and `wizard` catalog skills, moved here from `_Ot
 | `wizard/`         | `scenarios.md` (W1–W6), `key.md` (`fixture-flawed/` has 11 planted defects), `results.md`, `coverage.md`, clean `fixture/`                                                   |
 | `code-quality/`   | Rules, not a skill: six coding tasks with hidden tests, arms with and without sigil's TypeScript rules, inflation and a sign test (`run.mjs`, `measure.mjs`; see its README) |
 | `agent-dispatch/` | Agents, not a skill: eight requests that name no agent, and which installed TypeScript agent the model picks first (`probe.mjs`; see its README)                             |
+| `skill-firing/`   | Skill listings: one request each skill should fire on and one it should stay quiet for, and which skill the model calls first (`probe.mjs`; see its README)                  |
 
 ## Mechanical check (CI)
 

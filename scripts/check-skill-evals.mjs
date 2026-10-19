@@ -1,10 +1,10 @@
 // Mechanical checks for a skill that has evals under test/evals/<skill>/: no harness tool names in
 // the shipped text, size bar, resolvable relative links, and coverage.md rows.
 // Reads the catalog as a skill ships: SKILL.md, references/*.md, and each language's stack part as
-// references/stack-<stack>.md (stackPartsBySkill). A coverage file `rule:<id>` or `agent:<id>`
-// reads that artifact's title, description and resolved body (a bare id means `shared/<id>`). A folder with no catalog
-// skill is valid when every coverage row names a rule or agent: it evaluates delivered doctrine,
-// so only its coverage rows are checked. Needs a current dist-cli/ (npm run build).
+// references/stack-<stack>.md (stackPartsBySkill). A coverage file `rule:<id>`, `agent:<id>` or
+// `skill:<id>` reads that artifact's title, description, `whenToUse` and resolved body (a bare id
+// means `shared/<id>`). A folder with no catalog skill is valid when every coverage row names an
+// artifact: it evaluates delivered doctrine, so only its coverage rows are checked. Needs a current dist-cli/ (npm run build).
 // Usage: node scripts/check-skill-evals.mjs [skill...]   (default: every folder under test/evals)
 import { readFileSync, readdirSync, existsSync, statSync } from 'node:fs';
 import { join, dirname, resolve, relative } from 'node:path';
@@ -20,7 +20,7 @@ const { resolveCatalog } = require(join(repo, 'dist-cli', 'resolve.js'));
 const { stackPartsBySkill } = require(join(repo, 'dist-cli', 'load-references.js'));
 const { parts } = stackPartsBySkill(catalog, loadLanguages(catalog));
 const resolved = resolveCatalog(await loadCatalog(catalog));
-const ARTIFACT_REF = /^(rule|agent):(.+)$/;
+const ARTIFACT_REF = /^(rule|agent|skill):(.+)$/;
 const TOOL_NAMES =
   /\b(AskUserQuestion|TodoWrite|ExitPlanMode|EnterPlanMode|WebFetch|WebSearch|subagent_type|Agent tool|Task tool|Bash tool|Read tool|Edit tool|Write tool|Grep tool|Glob tool|Claude Code|CLAUDE\.md|copilot-instructions|runSubagent)\b/;
 
@@ -39,7 +39,7 @@ function shippedFiles(skill) {
   return files;
 }
 
-/** coverage.md rows: | item | shipped file, rule:<id> or agent:<id> | phrase that must appear | */
+/** coverage.md rows: | item | shipped file, rule:<id>, agent:<id> or skill:<id> | phrase | */
 function coverageRows(skill) {
   const table = join(evalsDir, skill, 'coverage.md');
   if (!existsSync(table)) return undefined;
@@ -60,10 +60,10 @@ function coverageText(file, files) {
   const id = ref[2].includes('/') ? ref[2] : `shared/${ref[2]}`;
   const artifact = resolved.byId.get(id);
   if (artifact?.kind !== ref[1]) return undefined;
-  // Adapters render the title as the delivered file's H1 and keep the description in frontmatter
-  // (an agent is dispatched on it), so both are shipped text too.
-  const { title = '', description = '' } = artifact.frontmatter;
-  return `# ${title}\n${description}\n${artifact.resolvedBody ?? artifact.body}`;
+  // Adapters render the title as the delivered file's H1 and keep the description (and a skill's
+  // whenToUse) in frontmatter, where the model reads them to dispatch, so they are shipped text too.
+  const { title = '', description = '', whenToUse = '' } = artifact.frontmatter;
+  return `# ${title}\n${description}\n${whenToUse}\n${artifact.resolvedBody ?? artifact.body}`;
 }
 
 function checkCoverage(skill, rows, files, fail) {

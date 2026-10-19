@@ -64,7 +64,7 @@ Use the delegation message to determine what to refactor. If not specific, scan 
 
 **Rename** — symbol names that don't match their behavior (check call sites and template references with Grep; update all). For a `rename` that crosses the public surface (exported symbol, selector, `@Input`/`@Output`), treat it as a breaking change → escalate per scope discipline.
 
-**Deduplicate (DRY)** — two or more functions/components with > 80% structural overlap; extract shared logic into a function, service, or base.
+**Deduplicate** — the third copy of the same logic, when the copies change for the same reason (two similar copies stay); extract shared logic into a function or service.
 
 **Break Circular Dependency** — extract the shared type/interface/`InjectionToken` into a third module that both can import.
 

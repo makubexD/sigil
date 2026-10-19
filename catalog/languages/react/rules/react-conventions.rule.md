@@ -24,7 +24,6 @@ appliesToRationale: Scoped to component files (.tsx/.jsx) because these hooks an
 - **No direct state mutation.** Treat all state as immutable. Use spread (`[...arr, item]`) or `immer` — never `arr.push(item)`.
 - **Avoid prop drilling beyond two levels.** Use Context or a state library (Zustand, Jotai) when data flows more than two component levels down.
 - **Key props on lists.** Always provide a stable, unique `key` on list items — never the array index unless the list is static and unordered.
-- **`data-testid` over CSS class selectors in tests.** Use `data-testid="submit-button"` for test targeting; CSS classes and element structure change more often.
 - **Naming.** Follow the table below. The `use` prefix on hooks is not cosmetic — the Rules of Hooks lint relies on it.
 
 | Symbol | Style | Example |

@@ -192,6 +192,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `sigil sync --check` (catalog authors): Claude Code's 1,536-character skill-listing limit is now
+  data on the Claude skill spec (`limits`, field `listing`), checked by `provider-limits` against
+  the emitted `description` plus `when_to_use`. The `description-budget` rule, which hard-coded the
+  number, is gone (docs/audits/2026-10-16, A4).
+- Maintainers: CI now holds each language's rule load (`npm run rule-load`) to a recorded baseline,
+  `scripts/rule-load-baseline.json`. Growth needs `npm run rule-load -- --baseline "<why>"`, and a
+  drop over 1 KB must lower the baseline (docs/audits/2026-10-16, A3).
 - Code-quality rules no longer tell agents when to split a function: the line and parameter limits
   and the "small, single-purpose functions" line are gone, and the refactor specialists' Extract
   Function no longer fires on a line count. Measured on TypeScript, that guidance made agents split

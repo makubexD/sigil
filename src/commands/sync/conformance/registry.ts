@@ -16,7 +16,6 @@ import { providerKindCoverageRule } from './rules/provider-kind-coverage';
 import { deprecatedHygieneRule } from './rules/deprecated-hygiene';
 import { declaredButUnemittedRule } from './rules/declared-but-unemitted';
 import { redundantDefaultRule } from './rules/redundant-default';
-import { descriptionBudgetRule } from './rules/description-budget';
 import { providerTermLeakRule } from './rules/provider-term-leak';
 import { catalogSymmetryRule } from './rules/catalog-symmetry';
 import { toolRestrictionCoverageRule } from './rules/tool-restriction-coverage';
@@ -37,7 +36,6 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   deprecatedHygieneRule,
   declaredButUnemittedRule,
   redundantDefaultRule,
-  descriptionBudgetRule,
   providerTermLeakRule,
   catalogSymmetryRule,
   toolRestrictionCoverageRule,

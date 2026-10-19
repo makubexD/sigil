@@ -153,7 +153,7 @@ Consumer commands never read the file; `sigil move` renames a moved id in it. Se
 (provider, kind) pairing: its output path, which frontmatter fields map to which provider keys, which
 body sections wrap the artifact body, and which contract (required/forbidden keys, forbidden body
 patterns) the emitted file must satisfy, and the size limits the provider documents (`limits`:
-name, description and body, each with its doc and an error or warning severity; the shared Agent
+name, description, the skill listing (description plus `when_to_use`) and body, each with its doc and an error or warning severity; the shared Agent
 Skills limits live in `src/targets/agent-skills-limits.ts`). `renderArtifact(spec, artifact, ctx)`
 (`src/targets/emit.ts`) is the single renderer every spec runs through — there is one emission
 function in the whole codebase, not one per platform. `src/targets/emit-files.ts` is the single

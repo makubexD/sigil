@@ -51,9 +51,11 @@ function emitted(
   const rendered = renderSafely(spec, artifact, ctx);
   if (rendered === undefined) return undefined;
   const { data, content } = parseFrontmatter(rendered);
+  const description = String(data.description ?? '');
   return {
     name: String(data.name ?? ''),
-    description: String(data.description ?? ''),
+    description,
+    listing: description + String(data.when_to_use ?? ''),
     body: content.trim(),
   };
 }

@@ -92,6 +92,21 @@ describe('provider-limits', () => {
     assert.ok(over.every(f => /^error .* description/.test(f)));
   });
 
+  it("should flag a skill listing (description + when_to_use) past Claude's 1,536 characters", async () => {
+    const withWhenToUse = (d: number, w: number) =>
+      findings(
+        'shared/skills/probe/SKILL.md',
+        skill('probe', 'd'.repeat(d)).replace('---\n\n', `whenToUse: "${'w'.repeat(w)}"\n---\n\n`),
+      );
+    assert.deepEqual(await withWhenToUse(768, 768), []);
+    const over = await withWhenToUse(800, 800);
+    assert.deepEqual(over.map(head).sort(), declaringAtLeast('skill', 'listing', ['error claude']));
+    assert.ok(
+      over.every(f => /listing is 1600 chars/.test(f)),
+      over.join('\n'),
+    );
+  });
+
   it('should warn when a SKILL.md body runs past 500 lines', async () => {
     assert.deepEqual(await skillAt('probe', 'Probe. Use when probing.', lines(400)), []);
     const over = await skillAt('probe', 'Probe. Use when probing.', lines(600));

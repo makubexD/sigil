@@ -15,6 +15,8 @@ import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import { renderBoundarySection } from '../../shared/boundary';
 
 const MAX_SKILL_BODY_LINES = 500;
+/** Claude Code truncates `description` + `when_to_use` at this length in the skill listing. */
+const MAX_SKILL_LISTING_CHARS = 1536;
 
 const nameMapping: FieldMapping = {
   from: 'name',
@@ -152,6 +154,14 @@ export const CLAUDE_PLUGIN_SKILL_SPEC: KindEmitSpec = {
   docs: [CLAUDE_SKILLS_DOC],
   limits: [
     ...AGENT_SKILLS_LIMITS,
+    // Past it the listing loses its tail, often the trigger phrase the model dispatches on.
+    {
+      field: 'listing',
+      max: MAX_SKILL_LISTING_CHARS,
+      unit: 'chars',
+      severity: 'error',
+      doc: CLAUDE_SKILLS_DOC,
+    },
     // Claude's skill guidance: keep SKILL.md under 500 lines and move detail into references.
     {
       field: 'body',

@@ -1,0 +1,22 @@
+{
+  "typescript": {
+    "bytes": 41337,
+    "reason": "Initial baseline after the 2026-10-16 errata (PRs 75-79)"
+  },
+  "angular": {
+    "bytes": 49451,
+    "reason": "Initial baseline after the 2026-10-16 errata (PRs 75-79)"
+  },
+  "react": {
+    "bytes": 32229,
+    "reason": "Initial baseline after the 2026-10-16 errata (PRs 75-79)"
+  },
+  "csharp": {
+    "bytes": 37211,
+    "reason": "Initial baseline after the 2026-10-16 errata (PRs 75-79)"
+  },
+  "python": {
+    "bytes": 31928,
+    "reason": "Initial baseline after the 2026-10-16 errata (PRs 75-79)"
+  }
+}

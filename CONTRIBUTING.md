@@ -212,6 +212,11 @@ new baseline with the change. The update refuses to drop an emitted path or an a
 (`ids.json`), because a removal breaks existing installs; when one is really intended, set
 `SIGIL_SNAPSHOT_ALLOW_REMOVAL=1` as well.
 
+**Rule load:** `test/rule-load.test.ts` keeps the rule bytes an agent receives per language within
+`scripts/rule-load-baseline.json`. Rules load on every matching session, so growth must be a
+decision: when a rule change grows a language, or shrinks it by more than 1 KB, run
+`npm run rule-load -- --baseline "<why>"` and commit the baseline with the change.
+
 **Existing installs:** `test/fixtures/installs/master-8882c86/` is a project an older sigil set up, and
 `test/commands/install-migration.test.ts` checks that `status`, `update` and `prune` still treat it
 correctly. Never regenerate that fixture: it stands for what users already have on disk.

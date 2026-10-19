@@ -234,40 +234,6 @@ describe('conformance rule: when-to-use-quality', () => {
   });
 });
 
-describe('conformance rule: description-budget', () => {
-  function skillWithLengths(descLen: number, wtuLen: number): Artifact {
-    return makeSkillArtifact({
-      frontmatter: {
-        id: 'csharp/cs-probe',
-        kind: 'skill',
-        name: 'cs-probe',
-        language: 'csharp',
-        description: 'd'.repeat(descLen),
-        whenToUse: 'w'.repeat(wtuLen),
-      },
-    });
-  }
-
-  it('flags a skill whose description + whenToUse exceeds the 1,536-char cap', () => {
-    const catalog = makeCatalog([skillWithLengths(800, 800)]);
-    const findings = runConformance(catalog, [], { ruleId: 'description-budget' });
-    assert.equal(findings.length, 1);
-    assert.match(findings[0]!.detail, /1600 chars exceeds/);
-  });
-
-  it('does not flag a skill under the cap', () => {
-    const catalog = makeCatalog([skillWithLengths(500, 500)]);
-    const findings = runConformance(catalog, [], { ruleId: 'description-budget' });
-    assert.equal(findings.length, 0);
-  });
-
-  it('does not flag a skill exactly at the cap boundary', () => {
-    const catalog = makeCatalog([skillWithLengths(768, 768)]);
-    const findings = runConformance(catalog, [], { ruleId: 'description-budget' });
-    assert.equal(findings.length, 0);
-  });
-});
-
 describe('conformance rule: body-density', () => {
   it('flags a skill body over the line-count threshold', () => {
     const longBody = Array.from({ length: 120 }, (_, i) => `line ${i}`).join('\n');

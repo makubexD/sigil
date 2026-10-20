@@ -160,7 +160,8 @@ Discover the project's coverage command first: check `package.json` scripts for 
 coverage flag (e.g. `vitest run --coverage`, `jest --coverage`, or Node's built-in
 `node --test --experimental-test-coverage`) — never assume a specific runner.
 
-Minimum **70% statement/line coverage** across the package. Gaps on I/O-boundary adapters (network
+Hold the project's configured floor (Vitest `coverage.thresholds`, Jest `coverageThreshold`, or
+the CI config) — do not assume a number. Gaps on I/O-boundary adapters (network
 clients, filesystem wrappers) are acceptable when those boundaries are mocked in tests; gaps on
 pure domain logic are not.
 

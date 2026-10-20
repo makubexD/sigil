@@ -192,6 +192,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- `typescript/ts-testing`, `angular/ng-testing` and `csharp/cs-testing` no longer require a fixed
+  70% coverage minimum: like the Python and React rules, they hold the project's configured floor
+  and never assume a number (docs/audits/2026-10-16, F16).
 - `sigil sync --check` (catalog authors): Claude Code's 1,536-character skill-listing limit is now
   data on the Claude skill spec (`limits`, field `listing`), checked by `provider-limits` against
   the emitted `description` plus `when_to_use`. The `description-budget` rule, which hard-coded the

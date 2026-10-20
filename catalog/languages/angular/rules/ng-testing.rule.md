@@ -96,8 +96,8 @@ Discover and run the project's coverage command:
   `angular.json` (`test` target), `karma.conf.js`, `jest.config.*`.
 - Fallback: `vitest run --coverage` (v8 provider) or `ng test --watch=false --code-coverage`.
 
-Hold a minimum of **70% line coverage** across the source. Close coverage gaps before merging a new
-feature. Gaps on thin I/O-boundary code (HTTP wrappers, bootstrap) are acceptable; gaps on pure
+Hold the project's configured floor (the test runner's coverage thresholds, or the CI config) — do
+not assume a number. Close coverage gaps before merging a new feature. Gaps on thin I/O-boundary code (HTTP wrappers, bootstrap) are acceptable; gaps on pure
 domain logic, pipes, and computed signals are not.
 
 ## Anti-Patterns

@@ -135,7 +135,8 @@ Discover and run the project's coverage command:
 - Fallback: `dotnet test --collect:"XPlat Code Coverage"` + ReportGenerator, or
   `dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura` (Coverlet MSBuild).
 
-Hold a minimum of **70% line coverage** across the main source projects. Coverage gaps on
+Hold the project's configured floor (Coverlet's `Threshold`, or the CI config) — do not assume a
+number. Coverage gaps on
 I/O-boundary code (CLI handlers, HTTP clients, database adapters) are acceptable; gaps on pure
 domain logic are not.
 

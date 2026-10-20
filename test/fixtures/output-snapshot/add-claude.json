@@ -2,7 +2,7 @@
   ".claude/agents/cli-auditor.md": "81f62783ac8899a6c5be33f7f336f4c4ad5a14e12af4f5bd5ba93fc230ebf6b8",
   ".claude/agents/cs-code-reviewer.md": "dc1ab2d9167d627a2163e5e402eb1f9de3c1b7ad972d8ecc0dfb84d2027dc00c",
   ".claude/rules/angular-ng-conventions.md": "7a64baadc9a1d11b86977f788024e2c5ce69458bc6bbad0aa8168b694d357522",
-  ".claude/rules/csharp-cs-testing.md": "b152b421e3df775eae503fc0821c02b4fc49abcda89ea1a389835dd535efb7fa",
+  ".claude/rules/csharp-cs-testing.md": "5a6d75f4002d4364e191d8f36b1674ac001bd116394ba6feb397fef9f187312f",
   ".claude/rules/shared-cli-rules.md": "43f0cb82e2d4aa43fb3b0a6394fa11eceb8a193b13590b7c7260326f13d9478c",
   ".claude/rules/typescript-ts-conventions.md": "fcc74d235022927f7468fcbd474f94104ace7f7af4c5a1b2c181a863a66111ae",
   ".claude/rules/typescript-ts-npm.md": "092ff8414cc4915ba54c9ecdf757b8fce2bd28cde6be079c40421f3623af8aaf",
@@ -24,6 +24,6 @@
   ".claude/skills/shared-explain-diff/SKILL.md": "02800e7c98d7ad21040948a5e3b84f36aa6bdd2dd7daf075aa0c6732f82ad679",
   ".claude/skills/ts-release/SKILL.md": "ab41c08cf142a7171b99fab25d670d58c85b6a4fbc9d5e16bd8fd8821f2835a3",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "74af5aa6c7b459b42081578a690775b7c4263014975128516d85ad4786c3875f",
+  ".sigil/manifest.json": "6f4a7f8dc3ed1daac0c0dcd82a6b2b1172b4d99ec072b12eed57f2a0bc3aaa51",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

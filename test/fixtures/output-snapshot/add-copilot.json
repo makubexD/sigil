@@ -17,9 +17,9 @@
   ".github/skills/cli/references/stack-python.md": "a371e8a559bc63f0f4fa705d9b3d7e317a71dd0004973212d78b6139a9ffc1c3",
   ".github/skills/cli/references/stack-rust.md": "caec8e889d44cad66c61e383ef105edac99facb5b97abf6f0d0af302110a6943",
   ".github/skills/cli/references/testing.md": "d42c4e985555244ee508e439616e0acc62c3dd806bc2db4abde742b83db64eb4",
-  ".github/skills/cs-generate-tests/SKILL.md": "e8a36a76d971c9b8c9195c148b26592781169840b9e89fcc17ad0dfb3617c017",
+  ".github/skills/cs-generate-tests/SKILL.md": "2cc5ea031c6afcfacb5a1956d1fcd001f8f8b1132beb5acc205d843661ea346f",
   ".github/skills/ts-release/SKILL.md": "caa0f6732e6ee700c66b991175aba30be22b3962670b0a6a93b8df605c40027e",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "772d7141479ae1f5c45d87bb83def13ff7129445c0098c13db8fc593244a4bad",
+  ".sigil/manifest.json": "b98f8226e58393cd451cd80bd6662c2391ee4f734cc4b04ec13fa8897273dc7e",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

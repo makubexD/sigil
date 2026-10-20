@@ -99,6 +99,10 @@ const RETIRED: readonly Retired[] = [
     pattern: /(>|≥) ?80% (structural )?overlap/,
     why: 'clean-code extracts on the third copy, and only when the copies change for the same reason',
   },
+  {
+    pattern: /minimum (of )?\*{0,2}\d+ ?%/i,
+    why: "a coverage floor is the project's own setting: discover it, never assume a number",
+  },
 ];
 
 const PRIVATE_RANGES = /private IP ranges?/i;

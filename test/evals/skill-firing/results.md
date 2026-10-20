@@ -25,5 +25,17 @@ runs), `claude-opus-5-5`, Claude Code 2.1.301 or the version recorded with the r
 
 ## Runs
 
-| Date | Probe | Commit | Model | Result |
-| ---- | ----- | ------ | ----- | ------ |
+| Date       | Probe                                     | Commit                              | Model             | Result                                                                                                        |
+| ---------- | ----------------------------------------- | ----------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
+| 2026-10-19 | S0 (`runs/s0.jsonl`), Claude Code 2.1.301 | catalog `3b96e03`, runner `4cd25fe` | `claude-opus-5-5` | **H13 holds**: 54 of 54 runs correct; each of F1–F9 fired its skill 3 of 3, each of Q1–Q9 stayed quiet 3 of 3 |
+
+**S0.** No listing changes, per the decision rule. Reported, not gated:
+
+- Tool calls before the skill fired: 0 in 20 runs, 1 in 7 (F1, F2 and one F7 run read a file first); mean 0.26.
+- No built-in skill fired on any prompt, fire or quiet.
+- The quiet runs called no skill at all: 15 reached the 6-tool-call cap, and 12 finished first (all of Q2, Q3 and
+  Q8, and one run each of Q4, Q5 and Q6).
+- 24 runs (F6–Q9) were first rejected by a session usage limit and re-run after the reset, as the protocol requires.
+  The runner change in `4cd25fe` only creates the records folder; the catalog under test is master `3b96e03`.
+- What this does not show: firing on other models, in other languages' skills, or on prompts written by someone who
+  has not read the listings (see Limits).

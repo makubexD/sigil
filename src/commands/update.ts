@@ -21,7 +21,7 @@ import { SigilError } from '../errors';
 import { applyConfigEntry, isConfigEntry } from './update-config';
 import { isAtRetiredDestination, moveRetiredFragments } from './update-config-move';
 import { inlinedDependencies, inlinedNotice } from './shared/inlined-deps';
-import { catalogConfigOps } from './update-config-catalog';
+import { catalogConfigOps } from '../freshness';
 import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
 import { installNewDependencies } from './update-deps';

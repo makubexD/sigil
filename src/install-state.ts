@@ -23,11 +23,10 @@ import path from 'path';
 import { loadManifest, computeStatus } from './manifest';
 import type { Manifest } from './manifest';
 import { CONFIG_KINDS } from './select';
-import type { Target, ResolvedCatalog, ConfigScope } from './types';
-import { prescaffoldAll } from './install-state-prescaffold';
+import type { Target, ResolvedCatalog } from './types';
+import { prescaffoldUntracked } from './install-state-prescaffold';
+import { entryKey, staleEntries } from './freshness';
 import { retiredConfigDestinationsOf } from './targets';
-
-export { scaffoldHashesForArtifact } from './install-state-prescaffold';
 
 // ── Public types ──────────────────────────────────────────────────────────────
 
@@ -64,32 +63,11 @@ function buildSubManifest(
   };
 }
 
-/**
- * Post-processes a config-kind `up-to-date` status into `outdated` when the catalog's
- * fragment has changed since install. No-op for whole-file kinds or non-up-to-date states.
- */
-function resolveConfigOutdatedState(
-  entry: { id: string; kind: string; configFiles?: { fragmentSha256: string }[] },
-  status: InstallState,
-  freshConfigHashByArtifact: Map<string, string[]>,
-): InstallState {
-  if (status !== 'up-to-date' || !CONFIG_KINDS.has(entry.kind)) return status;
-
-  const freshHashes = freshConfigHashByArtifact.get(entry.id);
-  if (!freshHashes || !entry.configFiles || entry.configFiles.length === 0) return status;
-
-  const isOutdated = entry.configFiles.some((cf, i) => {
-    const fh = freshHashes[i];
-    return fh !== undefined && fh !== cf.fragmentSha256;
-  });
-  return isOutdated ? 'outdated' : status;
-}
-
 /** Determines the install state for a candidate not tracked in the manifest. */
 function resolveUntrackedState(
   artifact: { kind: string },
   id: string,
-  freshByArtifact: Map<string, Map<string, string>>,
+  freshByArtifact: Map<string, string[]>,
   projectDir: string,
 ): InstallState {
   if (CONFIG_KINDS.has(artifact.kind)) {
@@ -99,42 +77,33 @@ function resolveUntrackedState(
     return 'new';
   }
   // Whole-file kind: 'foreign' if any scaffold output path already exists on disk.
-  const freshHashes = freshByArtifact.get(id);
-  const anyOnDisk = freshHashes
-    ? [...freshHashes.keys()].some(relPath => fs.existsSync(path.join(projectDir, relPath)))
-    : false;
+  const anyOnDisk = (freshByArtifact.get(id) ?? []).some(relPath =>
+    fs.existsSync(path.join(projectDir, relPath)),
+  );
   return anyOnDisk ? 'foreign' : 'new';
 }
 
 /** Builds one ArtifactInstallState entry from a single computeStatus result. */
 function buildInstallStateEntry(
   sr: ReturnType<typeof computeStatus>[number],
-  freshConfigHashByArtifact: Map<string, string[]>,
 ): ArtifactInstallState {
   const { entry, status, driftedFiles, missingFiles } = sr;
-  const finalState = resolveConfigOutdatedState(
-    entry,
-    status as InstallState,
-    freshConfigHashByArtifact,
-  );
-
   return {
     id: entry.id,
     kind: entry.kind,
-    state: finalState,
+    state: status as InstallState,
     ...(driftedFiles.length > 0 ? { driftedFiles } : {}),
     ...(missingFiles.length > 0 ? { missingFiles } : {}),
   };
 }
 
-/** Builds the result map from computeStatus's per-entry results, applying config-outdated post-processing. */
+/** Builds the result map from computeStatus's per-entry results. */
 function buildResultFromStatusResults(
   statusResults: ReturnType<typeof computeStatus>,
-  freshConfigHashByArtifact: Map<string, string[]>,
 ): Map<string, ArtifactInstallState> {
   const result = new Map<string, ArtifactInstallState>();
   for (const sr of statusResults) {
-    const entry = buildInstallStateEntry(sr, freshConfigHashByArtifact);
+    const entry = buildInstallStateEntry(sr);
     result.set(entry.id, entry);
   }
   return result;
@@ -146,16 +115,16 @@ interface InstallStateCtx {
   target: Target;
   catalog: ResolvedCatalog;
   projectDir: string;
-  scope: ConfigScope;
   manifest: Manifest;
   catalogIds: Set<string>;
+  refused?: ReadonlyMap<string, string> | undefined;
 }
 
 /** Adds an entry for every candidate not yet tracked in `result` (mutates `result` in place). */
 function fillUntrackedCandidates(
   result: Map<string, ArtifactInstallState>,
   ctx: InstallStateCtx,
-  freshByArtifact: Map<string, Map<string, string>>,
+  freshByArtifact: Map<string, string[]>,
 ): void {
   for (const id of ctx.candidateIds) {
     if (result.has(id)) continue;
@@ -167,15 +136,25 @@ function fillUntrackedCandidates(
   }
 }
 
-/** Builds the sub-manifest and runs computeStatus for this candidate set. */
-function computeStatusResultsFor(
+/**
+ * Runs computeStatus for the tracked candidates. Outdated comes from `staleEntries`, the check
+ * `status` uses, run over the whole manifest so each render sees everything installed.
+ */
+async function computeStatusResultsFor(
   ctx: InstallStateCtx,
-  freshByArtifact: Map<string, Map<string, string>>,
-): ReturnType<typeof computeStatus> {
+): Promise<ReturnType<typeof computeStatus>> {
   const subManifest = buildSubManifest(ctx.manifest, ctx.target.name, ctx.candidateIds);
+  const candidates = new Set(ctx.candidateIds);
+  const stale = await staleEntries(ctx.manifest, {
+    resolved: ctx.catalog,
+    projectDir: ctx.projectDir,
+    targetOf: name => (name === ctx.target.name ? ctx.target : undefined),
+    refused: ctx.refused,
+    only: entry => candidates.has(entry.id),
+  });
   return computeStatus(subManifest, ctx.projectDir, ctx.catalogIds, {
-    scaffoldHashFn: id => freshByArtifact.get(id) ?? null,
     retiredFor: retiredConfigDestinationsOf,
+    isStale: entry => stale.has(entryKey(entry)),
   });
 }
 
@@ -185,22 +164,21 @@ function computeStatusResultsFor(
  */
 async function runInstallStatePipeline(ctx: InstallStateCtx): Promise<{
   statusResults: ReturnType<typeof computeStatus>;
-  freshByArtifact: Map<string, Map<string, string>>;
-  freshConfigHashByArtifact: Map<string, string[]>;
+  freshByArtifact: Map<string, string[]>;
 }> {
-  const { freshByArtifact, freshConfigHashByArtifact } = await prescaffoldAll(ctx);
-  const statusResults = computeStatusResultsFor(ctx, freshByArtifact);
-  return { statusResults, freshByArtifact, freshConfigHashByArtifact };
+  const [freshByArtifact, statusResults] = await Promise.all([
+    prescaffoldUntracked(ctx),
+    computeStatusResultsFor(ctx),
+  ]);
+  return { statusResults, freshByArtifact };
 }
 
 /** Builds the pipeline context: loads the manifest and computes the catalog id set. */
-function buildInstallStateCtx(
-  options: ComputeInstallStatesOptions & { scope: ConfigScope },
-): InstallStateCtx {
-  const { candidateIds, target, catalog, projectDir, scope } = options;
+function buildInstallStateCtx(options: ComputeInstallStatesOptions): InstallStateCtx {
+  const { candidateIds, target, catalog, projectDir, refused } = options;
   const manifest = loadManifest(projectDir);
   const catalogIds = new Set(catalog.artifacts.map(a => a.id));
-  return { candidateIds, target, catalog, projectDir, scope, manifest, catalogIds };
+  return { candidateIds, target, catalog, projectDir, manifest, catalogIds, refused };
 }
 
 /** Parameters for {@link computeInstallStates}. */
@@ -209,33 +187,23 @@ export interface ComputeInstallStatesOptions {
   target: Target;
   catalog: ResolvedCatalog;
   projectDir: string;
-  /**
-   * For config-kind candidates (mcp/hook/settings), the scope that would be used at
-   * install time, so the correct destination file is used during scaffolding.
-   */
-  scope?: ConfigScope;
+  /** Rule ids whose overlay was refused: `update` leaves them as installed, so they are never outdated. */
+  refused?: ReadonlyMap<string, string> | undefined;
 }
 
 /**
  * Compute the install state of every candidate artifact against a target project.
  *
- * Performance: pre-scaffolds each whole-file candidate to get fresh content hashes
- * for 'outdated' detection. This parallels what `add` does immediately after, so
- * the extra scaffold calls are cheap (catalog is small; scaffold is in-memory).
- *
- * For config-kind candidates (mcp/hook/settings), supply the `scope` that would be
- * used at install time so the correct destination file is used during scaffolding.
- * Defaults to `'project'`.
+ * A tracked candidate is `outdated` exactly when `sigil update` would rewrite it (`staleEntries`,
+ * src/freshness.ts). Rendering is in memory, so the extra scaffold calls are cheap.
  */
 export async function computeInstallStates(
   options: ComputeInstallStatesOptions,
 ): Promise<Map<string, ArtifactInstallState>> {
-  const { scope = 'project' } = options;
-  const ctx = buildInstallStateCtx({ ...options, scope });
-  const { statusResults, freshByArtifact, freshConfigHashByArtifact } =
-    await runInstallStatePipeline(ctx);
+  const ctx = buildInstallStateCtx(options);
+  const { statusResults, freshByArtifact } = await runInstallStatePipeline(ctx);
 
-  const result = buildResultFromStatusResults(statusResults, freshConfigHashByArtifact);
+  const result = buildResultFromStatusResults(statusResults);
   fillUntrackedCandidates(result, ctx, freshByArtifact);
   return result;
 }

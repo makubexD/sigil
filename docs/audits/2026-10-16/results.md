@@ -16,12 +16,17 @@ One row per roadmap item (README § 13). Status is updated as each PR merges.
 | 10  | Interleaved batch: `none` / master / deletion (F4, F18–F20)                                                        | E    | not run: H10 stopped it                               |
 | 11  | E8 skill-firing probe: `test/evals/skill-firing/`, H13 registered                                                  | E    | merged #84; **H13 holds**: 54 of 54 correct (this PR) |
 | 12  | F16 coverage floor: discover everywhere (RETIRED fixed minimum)                                                    | T    | this PR                                               |
-| 13  | `sigil status` reports content drift against the catalog, not only template revisions                              | T    | next                                                  |
+| 13  | `sigil status` reports content drift against the catalog, not only template revisions                              | T    | this PR                                               |
 | 14  | A1: delete F4, F18–F20; gate: 18 runs on T1–T6 vs master, hidden tests ≥ master, declarations not up               | E    | planned                                               |
 | 15  | Reviewer Bash guard: spike (does a hook see the agent?), then a PreToolUse hook                                    | T U  | planned                                               |
 | 16  | H1 bar-lowering guard, H2 Stop typecheck                                                                           | T U  | planned                                               |
 | 17  | Copilot hook target (format verified first; live check by the owner)                                               | T U  | planned                                               |
 | 18  | C1–C5: probe the unguided model first; write only what it gets wrong                                               | E U  | planned                                               |
+
+**Row 13 backlog** (found in review, kept, not in that PR): an artifact whose render fails shows as
+`up-to-date` in `status` (update writes nothing for it either, so they agree, but the breakage is hidden); a
+config record at a retired file with no catalog op at the new destination stays `outdated (config moved …)`,
+since `update` cannot move it; and `status` does not show new `uses:` dependencies that `update` would install.
 
 **Owner decisions, 2026-10-19:**
 

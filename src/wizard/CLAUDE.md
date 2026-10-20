@@ -280,10 +280,10 @@ words (see above), so there is no separate `note('Legend')` box. State markers a
 every item they want to install.
 
 **Six install states** (`InstallState` in `src/install-state.ts`). `computeInstallStates` builds one
-state per candidate from the manifest plus `computeStatus` (`src/manifest/status.ts`). Config kinds
-(`mcp` / `hook` / `settings`) store `files: []`; `resolveConfigOutdatedState` compares each recorded
-`fragmentSha256` with the freshly scaffolded fragment and can flip an otherwise `up-to-date` config
-entry to `outdated`. An untracked config kind is `new` even when the shared JSON file already exists
+state per candidate from the manifest plus `computeStatus` (`src/manifest/status.ts`). A tracked
+candidate is `outdated` exactly when `sigil update` would rewrite it: `staleEntries` (`src/freshness.ts`), the
+check `sigil status` uses, renders whole files with everything installed and matches each config fragment to
+the catalog's op for its destination. An untracked config kind is `new` even when the shared JSON file already exists
 — only whole-file kinds can be `foreign` (`resolveUntrackedState`).
 
 | State        | manifest | disk                        | content                         | Default `add` action                 |

@@ -4,7 +4,8 @@
  *
  * Status values:
  *   up-to-date — hashes match and id still in catalog
- *   outdated   — id in catalog but scaffold output differs from recorded hashes
+ *   outdated   — `sigil update` would rewrite it from the catalog (src/freshness.ts), or its
+ *                config file moved
  *   drifted    — at least one file's on-disk content differs from recorded hash
  *   orphaned   — id no longer exists in the bundled catalog
  *   missing    — at least one recorded file is absent from disk
@@ -23,12 +24,16 @@ export type CurrentTemplateOf = (id: string) => { id: string; revision: number }
 
 /** The two least-often-varied `computeStatus` params, bundled to stay under max-params. */
 export interface ComputeStatusExtras {
-  /** Called to re-compute what the scaffold output would produce today ('outdated' detection). */
-  scaffoldHashFn?: ((id: string, target: string) => Map<string, string> | null) | undefined;
   /** Looks up an artifact's live template revision, letting `reason` name *why* it's outdated. */
   currentTemplateOf?: CurrentTemplateOf | undefined;
   /** A target's retired config files (Target.retiredConfigDestinations): records there are moved. */
   retiredFor?: ((target: string) => readonly RetiredConfigDestination[]) | undefined;
+  /**
+   * Whether `sigil update` would rewrite an entry (`staleEntries` in src/freshness.ts). The only
+   * source of `outdated` besides a moved config file: a template revision alone is not, since
+   * `update` writes nothing when the render is unchanged. Without it nothing is outdated.
+   */
+  isStale?: ((entry: ManifestEntry) => boolean) | undefined;
 }
 
 /**
@@ -74,8 +79,8 @@ function statusForEntry(
     driftedFiles,
     missingFiles,
     movedFiles,
-    scaffoldHashFn: extras.scaffoldHashFn,
     currentTemplateOf: extras.currentTemplateOf,
+    isStale: extras.isStale,
   });
 }
 
@@ -104,8 +109,8 @@ interface DeriveStatusOptions {
   driftedFiles: string[];
   missingFiles: string[];
   movedFiles?: string[];
-  scaffoldHashFn?: ((id: string, target: string) => Map<string, string> | null) | undefined;
   currentTemplateOf?: CurrentTemplateOf | undefined;
+  isStale?: ((entry: ManifestEntry) => boolean) | undefined;
 }
 
 /** The live template revision for `entry`, when it differs from what was recorded at install. */
@@ -121,30 +126,9 @@ function templateRevisionMismatch(
   return { id: live.id, from: entry.template.revision, to: live.revision };
 }
 
-/** Checks whether a fresh scaffold run would produce different file hashes than recorded. */
-function scaffoldHashesDiffer(
-  entry: ManifestEntry,
-  scaffoldHashFn: DeriveStatusOptions['scaffoldHashFn'],
-): boolean {
-  if (!scaffoldHashFn) return false;
-  const fresh = scaffoldHashFn(entry.id, entry.target);
-  if (!fresh) return false;
-  return entry.files.some(mf => {
-    const freshHash = fresh.get(mf.path);
-    return freshHash !== undefined && freshHash !== mf.sha256;
-  });
-}
-
-/** True when the entry's recorded output no longer matches what would be scaffolded today. */
-function isOutdated(
-  entry: ManifestEntry,
-  scaffoldHashFn: DeriveStatusOptions['scaffoldHashFn'],
-  currentTemplateOf: CurrentTemplateOf | undefined,
-): boolean {
-  return (
-    templateRevisionMismatch(entry, currentTemplateOf) !== undefined ||
-    scaffoldHashesDiffer(entry, scaffoldHashFn)
-  );
+/** True when `sigil update` would rewrite the entry from today's catalog. */
+function isOutdated(options: DeriveStatusOptions): boolean {
+  return options.isStale?.(options.entry) ?? false;
 }
 
 /** The 'outdated' reason: names the template revision delta when known, else a generic note. */
@@ -155,7 +139,7 @@ function outdatedReason(
   const mismatch = templateRevisionMismatch(entry, currentTemplateOf);
   return mismatch
     ? `template ${mismatch.id} rev ${mismatch.from}→${mismatch.to}`
-    : 'newer scaffold output available';
+    : 'the catalog changed since install';
 }
 
 /** Short human-readable explanation for a non-up-to-date status. */
@@ -181,8 +165,7 @@ function deriveReason(
 }
 
 function deriveStatus(options: DeriveStatusOptions): StatusResult {
-  const { entry, catalogIds, driftedFiles, missingFiles, scaffoldHashFn, currentTemplateOf } =
-    options;
+  const { entry, catalogIds, driftedFiles, missingFiles } = options;
   // Orphaned wins over missing: an artifact the catalog dropped cannot be restored, only cleaned up.
   const status: StatusResult['status'] = !catalogIds.has(entry.id)
     ? 'orphaned'
@@ -190,8 +173,7 @@ function deriveStatus(options: DeriveStatusOptions): StatusResult {
       ? 'missing'
       : driftedFiles.length > 0
         ? 'drifted'
-        : (options.movedFiles?.length ?? 0) > 0 ||
-            isOutdated(entry, scaffoldHashFn, currentTemplateOf)
+        : (options.movedFiles?.length ?? 0) > 0 || isOutdated(options)
           ? 'outdated'
           : 'up-to-date';
 

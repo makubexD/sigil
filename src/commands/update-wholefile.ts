@@ -7,6 +7,7 @@
  */
 import path from 'node:path';
 import { writeFilesSync } from '../cli-helpers';
+import { renderFresh } from '../freshness';
 import { sha256 } from '../manifest';
 import { currentTemplateOfId } from '../manifest/template-of';
 import { stalePaths, applyStaleMigration, rebuildEntryFiles, isFileDrifted } from './update-stale';
@@ -37,11 +38,11 @@ async function scaffoldFreshFiles(
   opts: UpdateOptions,
 ): Promise<Record<string, string> | undefined> {
   try {
-    return await target.scaffold!(entry.id, resolved, {
+    return await renderFresh(entry.id, {
+      target,
+      resolved,
       projectDir: opts.projectDir,
-      overwrite: true,
-      includeDeps: false,
-      ...(opts.installedIds ? { coInstallSet: new Set(opts.installedIds) } : {}),
+      installedIds: opts.installedIds,
     });
   } catch (err) {
     console.error(`  ✗  ${entry.id}: scaffold failed — ${(err as Error).message}`);
@@ -88,18 +89,17 @@ function partitionFreshFiles(
 }
 
 /** Prints the `--dry-run` preview for one whole-file entry. */
-function printDryRunEntryPreview(
-  entry: ManifestEntry,
-  toWrite: Record<string, string>,
-  skipped: string[],
-): void {
-  if (Object.keys(toWrite).length === 0 && skipped.length === 0) {
-    console.log(`  =  ${entry.id}  (up-to-date)`);
-    return;
-  }
-  console.log(`  ↑  ${entry.id}`);
+function printDryRunEntryPreview(entry: ManifestEntry, plan: PlannedUpdate): void {
+  const { toWrite, skipped, staleToDelete } = plan;
+  // `↑` only when the run would write or remove something: `status` calls exactly those outdated.
+  const changes = Object.keys(toWrite).length > 0 || staleToDelete.length > 0;
+  if (changes) console.log(`  ↑  ${entry.id}`);
+  else if (skipped.length > 0)
+    console.log(`  ~  ${entry.id}  (drifted — would skip without --force)`);
+  else console.log(`  =  ${entry.id}  (up-to-date)`);
   for (const p of Object.keys(toWrite)) console.log(`     ~ ${p}`);
   for (const p of skipped) console.log(`     ⊘ ${p}  (drifted — would skip without --force)`);
+  for (const p of staleToDelete) console.log(`     - ${p}  (would be removed — superseded)`);
 }
 
 /** Parameters for {@link writeAndRefreshEntry}, bundled to stay under the project's max-params. */
@@ -194,8 +194,7 @@ export async function updateWholeFileEntry(
   const plan = planUpdate(entry, freshFiles, opts);
 
   if (opts.dryRun) {
-    printDryRunEntryPreview(entry, plan.toWrite, plan.skipped);
-    for (const p of plan.staleToDelete) console.log(`     - ${p}  (would be removed — superseded)`);
+    printDryRunEntryPreview(entry, plan);
     const pending = Object.keys(plan.toWrite).length > 0 || plan.staleToDelete.length > 0;
     return { updated: false, pending, skippedDriftCount: plan.skippedDriftCount };
   }

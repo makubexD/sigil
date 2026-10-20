@@ -243,11 +243,13 @@ and reports deprecated-but-installed ones with `supersededBy`. Removal reuses `r
 (`src/manifest/mutate-remove.ts` — the same function `uninstall.ts` calls), plus `reverseMergeConfigEntries` and the
 same drifted-file protection.
 
-**`sigil status` template labeling is read-only.** `ManifestEntry.template` (`{ id, revision }`) is stamped at install
-from `currentTemplateOf` (`src/manifest/template-of.ts`). `status` compares that revision to the bundled catalog and
-surfaces `template <id> rev <old>→<new>` (`src/manifest/status.ts`); it never writes. `makeScaffoldHashStub`
-(`src/commands/status.ts`) always returns null, so `outdated` on this command is only a template-revision mismatch.
-Propagation is `sigil update`. `sigil sync` is the catalog-author command, not the consumer one.
+**`outdated` means "`sigil update` would rewrite this", in every view.** `src/freshness.ts` holds the one
+render (`renderFresh`: the overlaid catalog plus the installed set, without which a Boundary section drops) and
+the config ops `update` writes with (`catalogConfigOps`, `changedCatalogOp`). `staleEntries` applies update's checks
+and is the only source of `outdated` in `sigil status` and the install states (`add`, the wizard), besides a moved
+config file. It skips entries whose overlay was refused, as `update` does. A template revision alone is never
+outdated (`update` writes nothing when the render is unchanged); it only names the reason (`template <id> rev
+<old>→<new>`, stamped at install from `currentTemplateOf` in `src/manifest/template-of.ts`). `status` never writes. Propagation is `sigil update`. `sigil sync` is the catalog-author command, not the consumer one.
 
 `errors.ts` / `cli-error.ts` are the single error type and the one `process.exit`. `kinds.ts` holds `KIND_REGISTRY`.
 `wizard/` has its own guide, `src/wizard/CLAUDE.md`.

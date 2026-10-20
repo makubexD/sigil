@@ -9,6 +9,9 @@ import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
 import { getAllTargets, getTarget, retiredConfigDestinationsOf } from '../targets';
 import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
+import { resolveCatalog } from '../resolve';
+import { applyProjectOverlays } from '../overlays';
+import { entryKey, staleEntries } from '../freshness';
 import { requireManifest } from './shared/manifest';
 import { JSON_INDENT } from '../json-util';
 import { isConfigKind } from '../kinds';
@@ -131,17 +134,6 @@ function printNoArtifactsMessage(): void {
   );
 }
 
-/**
- * Scaffold-hash stub — target.scaffold is async; deep outdated detection happens in `update`.
- * Always returns null; `target` is still validated by the caller via getTarget() beforehand.
- */
-function makeScaffoldHashStub(
-  targetName: string,
-  target: { scaffold?: unknown },
-): (id: string, t: string) => Map<string, string> | null {
-  return (_id, t) => (t !== targetName || !target.scaffold ? null : null);
-}
-
 /** Looks up an artifact's current `template:`/`revision:` pair straight from catalog frontmatter. */
 function makeCurrentTemplateOf(catalog: LoadedCatalog): CurrentTemplateOf {
   return id => {
@@ -154,25 +146,34 @@ function makeCurrentTemplateOf(catalog: LoadedCatalog): CurrentTemplateOf {
   };
 }
 
-/** Resolves the target + catalog into every input `computeStatus` needs, and runs it. */
-function buildStatuses(
+/**
+ * Resolves the catalog (with project overlays, as `add` and `update` see it) into every input
+ * `computeStatus` needs, and runs it. Outdated means `update` would rewrite the entry.
+ */
+async function buildStatuses(
   manifest: ReturnType<typeof requireManifest>,
   rawCatalog: LoadedCatalog,
-  targetName: string,
   opts: StatusOptions,
-): ReturnType<typeof computeStatus> {
+): Promise<ReturnType<typeof computeStatus>> {
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  const target = getTarget(targetName);
+  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
+  const stale = await staleEntries(manifest, {
+    resolved,
+    projectDir: opts.projectDir,
+    targetOf: name => getAllTargets().find(t => t.name === name),
+    refused,
+  });
   return computeStatus(manifest, opts.projectDir, catalogIds, {
-    scaffoldHashFn: makeScaffoldHashStub(targetName, target),
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
     retiredFor: retiredConfigDestinationsOf,
+    isStale: entry => stale.has(entryKey(entry)),
   });
 }
 
 export async function runStatus(opts: StatusOptions): Promise<void> {
   const { catalog: rawCatalog } = await loadAndValidate(opts.catalogDir, opts.packs);
-  const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
+  // An unknown --target still fails here, before anything is read.
+  getTarget(opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false }));
 
   const manifest = requireManifest(opts.projectDir);
 
@@ -181,7 +182,7 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     return;
   }
 
-  const statuses = buildStatuses(manifest, rawCatalog, targetName, opts);
+  const statuses = await buildStatuses(manifest, rawCatalog, opts);
 
   if (opts.json) {
     printStatusJson(statuses);

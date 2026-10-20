@@ -299,7 +299,7 @@ describe('H — Manifest (manifest.ts)', () => {
     }
   });
 
-  it('computeStatus: outdated with a template-revision reason when the recorded revision is stale', () => {
+  it('computeStatus: outdated names the template revision when update would rewrite the entry', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-test-'));
     try {
       const relPath = 'file.md';
@@ -327,9 +327,17 @@ describe('H — Manifest (manifest.ts)', () => {
 
       const statuses = computeStatus(manifest as any, dir, new Set(['test/skill']), {
         currentTemplateOf,
+        isStale: () => true,
       });
       assert.equal(statuses[0]!.status, 'outdated');
       assert.equal(statuses[0]!.reason, 'template shared/templates/workflow-skill rev 2→3');
+
+      // A revision bump that leaves the render unchanged is not outdated: update writes nothing.
+      const unchanged = computeStatus(manifest as any, dir, new Set(['test/skill']), {
+        currentTemplateOf,
+        isStale: () => false,
+      });
+      assert.equal(unchanged[0]!.status, 'up-to-date');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

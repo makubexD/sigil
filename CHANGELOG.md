@@ -352,6 +352,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sigil status` now calls an artifact `outdated` exactly when `sigil update` would rewrite it.
+  It used to compare only template revisions, so it could report a project as up to date while
+  `update` refreshed 15 artifacts. It renders each one from the current catalog, with your
+  `.sigil/overlays.yaml`, and also catches catalog changes to MCP, hook and settings fragments.
+  A template revision that leaves an artifact's output unchanged no longer shows it as outdated
+  for good, and a rule whose overlay entry was refused is left as installed, as `update` does.
+- The `add` wizard no longer marks a freshly installed `shared/cli` or `shared/wizard` as
+  outdated: it now renders with the installed set, as `add` and `update` do, so each skill's
+  Boundary section is kept.
+- `sigil update --dry-run` marks an artifact `↑` exactly when the run would write or remove a
+  file: one whose only change is a superseded file to remove no longer reads `(up-to-date)`, and
+  one whose only files are your edits reads `~ … (drifted — would skip without --force)`. A config
+  line names the artifact first, like every other line.
+- `sigil add mcp:<id> --scope local` (or any other scope) on a server already installed at another
+  scope writes it at the new scope instead of skipping it as "already up to date".
 - Security guidance errata (docs/audits/2026-10-16, F5 and F6):
   - `csharp/cs-security`'s path-traversal check now appends a trailing separator to the allowed
     root, so `/app/data-evil` no longer passes a check for `/app/data`.

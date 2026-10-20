@@ -71,9 +71,8 @@ Use `logger.exception(...)` inside an `except` block — it automatically attach
 ```python
 try:
     process(item)
-except ValueError:
+except ValueError:  # top-level boundary: skip this item; inner code re-raises
     logger.exception("Failed to process item", extra={"item_id": item.id})
-    raise
 ```
 
 ## Lazy Formatting

@@ -150,9 +150,6 @@ afterEach(() => {
 });
 ```
 
-In production code, accept a `clock: () => Date` parameter (defaulting to `() => new Date()`) rather
-than calling `new Date()` directly — this makes the dependency explicit and testable.
-
 ## Coverage
 
 Discover the project's coverage command first: check `package.json` scripts for a `coverage`,

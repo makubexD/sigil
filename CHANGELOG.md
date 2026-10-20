@@ -602,6 +602,16 @@ through Claude Code and Copilot CLI against seven install combinations:
 
 ### Removed
 
+- Advice that added structure the task did not ask for (docs/audits/2026-10-16, A1: F4, F18–F20):
+  - every `*-code-quality` rule loses its default design patterns ("use Strategy, Factory, Adapter
+    and Builder"), "inject dependencies", and its "Code Structure Limits" section (a size
+    threshold that marked a file a God Object). The bans on Singleton and Service Locator stay.
+  - `ts-project-layout` splits a file when it serves two unrelated purposes, not at ~200 lines;
+    `ts-testing` no longer asks for a `clock` parameter; `ng-conventions` no longer asks for an
+    `InjectionToken` so code can be swapped in tests; `react-conventions` names the project's own
+    state library instead of Zustand or Jotai; `ts-conventions` keeps only "`getX` must not mutate".
+  - the `cs-logging`, `py-logging` and `ng-logging` examples no longer log and then rethrow, which
+    logged one error at every layer: each now logs at a top-level boundary.
 - The internal `requiresLanguage` kind-descriptor flag (no kind requires a language any more).
 
 ## [0.1.0] - 2026-06-22

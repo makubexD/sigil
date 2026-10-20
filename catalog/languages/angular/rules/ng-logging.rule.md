@@ -51,8 +51,8 @@ Pass the caught error through so its stack is preserved; do not log only `error.
 try {
   await this.api.load(id);
 } catch (err) {
+  // top-level boundary (a UI event handler): log here; inner code rethrows with the cause
   this.logger.error('Failed to load resource', err, { id }); // full stack retained
-  throw new Error(`load failed for ${id}`, { cause: err });
 }
 ```
 

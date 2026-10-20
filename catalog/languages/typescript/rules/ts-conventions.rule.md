@@ -174,8 +174,7 @@ Prefer named exports over default exports — they are easier to search, refacto
 ## State and Side Effects
 
 Module-level mutable state is banned (only `UPPER_SNAKE` constants at module scope). Prefer pure
-functions. Apply Command-Query Separation: a function named `getX` must not mutate; a function that
-mutates must not return meaningful data.
+functions. Apply Command-Query Separation: a function named `getX` must not mutate.
 
 ## Constants and Strings
 

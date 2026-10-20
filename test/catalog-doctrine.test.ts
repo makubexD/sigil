@@ -103,6 +103,30 @@ const RETIRED: readonly Retired[] = [
     pattern: /minimum (of )?\*{0,2}\d+ ?%/i,
     why: "a coverage floor is the project's own setting: discover it, never assume a number",
   },
+  // A1 (docs/audits/2026-10-16, F4, F18–F20): advice that adds structure unconditionally.
+  {
+    pattern: /Use Strategy for interchangeable|a Factory function for constructing/,
+    why: 'a pattern earns its place when a second variant exists today, not by default',
+  },
+  {
+    pattern: /Inject dependencies|Pass dependencies through `__init__`/i,
+    why: 'injection is a design choice for a seam the task needs, not a default',
+  },
+  {
+    pattern: /\*\*God Object\*\* candidate|(beyond|exceeds)\s+~\d+ lines/,
+    why: 'a size threshold makes agents split code that has one reason to change',
+    except: ['typescript/ts-refactor-specialist'],
+  },
+  {
+    pattern:
+      /accept a `clock|swapped in tests|state library \(Zustand|must not return meaningful data/,
+    why: 'reshapes code, or adds a library, for testability or taste the task did not ask for',
+  },
+  {
+    // Texts are flattened: a log call, an optional trailing comment, then the rethrow.
+    pattern: /\.(LogError|exception|error)\([^)]*\);?( \/\/ [\w ]+)? (throw|raise)\b/,
+    why: 'log and rethrow logs the same error at every layer: log only at a top-level boundary',
+  },
 ];
 
 const PRIVATE_RANGES = /private IP ranges?/i;

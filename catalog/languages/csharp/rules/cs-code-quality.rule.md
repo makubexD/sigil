@@ -15,11 +15,6 @@ tags:
   - quality
 appliesToRationale: Scoped to C# source because these structural and SOLID principles govern class/method design, which only exists in .cs files.
 ---
-<!-- slot: structure-limits -->
-A class beyond ~200 lines or ~7 public members is a **God Object** candidate — extract a collaborator
-or split into smaller, single-responsibility classes. Constructor injection is the signal: if a
-constructor requires more than 4 collaborators, the class is doing too much.
-
 <!-- slot: solid-principles -->
 - **Single Responsibility**: Each class or module has one reason to change.
 - **Open/Closed**: Extend behavior through composition or inheritance, not modification.
@@ -28,7 +23,6 @@ constructor requires more than 4 collaborators, the class is doing too much.
 - **Interface Segregation**: Prefer narrow, focused interfaces over wide, general-purpose ones.
   A caller should not depend on members it does not use.
 - **Dependency Inversion**: Depend on abstractions (`interface`, `abstract class`), not concretions.
-  Inject dependencies through constructors; never `new` up a service inside a domain class.
 
 <!-- slot: layering -->
 Keep business logic out of I/O, transport, and presentation boundaries — controllers, minimal-API
@@ -53,8 +47,7 @@ within a project are also a smell. Prefer narrow public interfaces; a class that
 cs-performance-profiler
 
 <!-- slot: design-patterns -->
-Use Strategy for interchangeable algorithms, Factory for object creation, Adapter for interface
-translation, and Builder for complex object construction. Avoid Singleton (hides dependencies,
+Avoid Singleton (hides dependencies,
 obstructs testing) and Service Locator (obscures dependencies, inverts control in the wrong
 direction — prefer constructor injection via the DI container).
 

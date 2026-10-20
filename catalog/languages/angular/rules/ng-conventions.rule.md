@@ -87,9 +87,6 @@ export class UserProfileComponent {
 }
 ```
 
-Depend on an abstraction where the consumer owns the contract — inject an interface via an
-`InjectionToken` rather than a concrete class, so the implementation can be swapped in tests.
-
 ## Composition over Inheritance
 Prefer composing services and content projection over inheriting from a base component.
 Inheritance couples a subclass to its parent's implementation and creates fragile hierarchies;

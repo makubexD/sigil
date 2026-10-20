@@ -7,21 +7,15 @@ description: >-
   KISS/YAGNI pair are identical across languages (confirmed via body-shingle overlap analysis,
   docs/audits/2026-08-20/analysis/lane-d-duplication.json — the highest cross-language overlap in
   the catalog, ~0.33-0.44). The duplication doctrine lives once, in the shared/clean-code base
-  every member extends (docs/audits/2026-10-14). Structure limits, SOLID elaboration, layering, coupling, and design
+  every member extends (docs/audits/2026-10-14). SOLID elaboration, layering, coupling, and design
   patterns stay per-language slots because each language's idiom (exceptions vs cause chains,
   DI container vs constructor injection, project refs vs module imports) differs enough that
   forcing them into template prose would lose real information — see docs/decisions/
   catalog-quality-audit-2026-08.md's "what was and wasn't templatized" section.
 appliesToKind:
   - rule
-revision: 3
+revision: 4
 slots:
-  - key: structure-limits
-    required: true
-    description: >-
-      The per-language "God Object" candidate threshold with a language-specific example of what
-      triggers it. No function-size or parameter-count rule: prose that says when to split a
-      function makes agents split more (test/evals/code-quality, rounds 3 and 4).
   - key: solid-principles
     required: true
     description: >-
@@ -64,9 +58,6 @@ Before creating any class, function, method, or module, search the codebase for 
 If 80%+ overlap with the same concern exists, extend the existing code — do not create a new one.
 If less than 80% overlap or a genuinely different concern, create new. If uncertain whether overlap
 is sufficient, ask before proceeding.
-
-## Code Structure Limits
-<!-- slot: structure-limits -->
 
 ## SOLID Principles
 <!-- slot: solid-principles -->

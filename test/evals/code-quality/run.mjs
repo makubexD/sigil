@@ -46,6 +46,8 @@ if (!arm || !out || (install !== 'none' && !sigil)) {
   console.error('usage: node run.mjs --arm <name> --out <file.jsonl> [--sigil <checkout>] [...]');
   process.exit(2);
 }
+// Records are appended as runs finish: the folder must exist before the first one.
+mkdirSync(dirname(out), { recursive: true });
 
 const PROMPTS = prompts();
 const unknown = tasks.filter(task => !PROMPTS[task]);

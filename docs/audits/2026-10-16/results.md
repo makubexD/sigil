@@ -15,8 +15,23 @@ One row per roadmap item (README § 13). Status is updated as each PR merges.
 | 9   | Trap calibration (C1–C12, H10)                                                                                     | E    | merged #82, #83; **H10 false**: 0 of 12 kept, stop    |
 | 10  | Interleaved batch: `none` / master / deletion (F4, F18–F20)                                                        | E    | not run: H10 stopped it                               |
 | 11  | E8 skill-firing probe: `test/evals/skill-firing/`, H13 registered                                                  | E    | merged #84; **H13 holds**: 54 of 54 correct (this PR) |
+| 12  | F16 coverage floor: discover everywhere (RETIRED fixed minimum)                                                    | T    | this PR                                               |
+| 13  | `sigil status` reports content drift against the catalog, not only template revisions                              | T    | next                                                  |
+| 14  | A1: delete F4, F18–F20; gate: 18 runs on T1–T6 vs master, hidden tests ≥ master, declarations not up               | E    | planned                                               |
+| 15  | Reviewer Bash guard: spike (does a hook see the agent?), then a PreToolUse hook                                    | T U  | planned                                               |
+| 16  | H1 bar-lowering guard, H2 Stop typecheck                                                                           | T U  | planned                                               |
+| 17  | Copilot hook target (format verified first; live check by the owner)                                               | T U  | planned                                               |
+| 18  | C1–C5: probe the unguided model first; write only what it gets wrong                                               | E U  | planned                                               |
 
-Waiting on the owner: H1, H2, a Copilot hook target, a reviewer Bash guard, C1–C5, S1, F16, H0, and A1.
+**Owner decisions, 2026-10-19:**
+
+- **A1**: delete, gated by an eval on the T tasks (row 14).
+- **F16**: discover the floor everywhere (row 12).
+- **S1**: declined; `feature` stays as is.
+- **H0**: keep failing open (below).
+- **Start**: the reviewer Bash guard, H1/H2, a Copilot hook target and C1–C5 (rows 15–18).
+- **Found during housekeeping**: `sigil status` said 35 of 36 artifacts were up to date while `sigil update`
+  refreshed 15 (row 13).
 
 **Trap calibration** (`test/evals/code-quality/results.md`, H10): without rules, `claude-opus-5-5` avoided all 12 traps
 in all 36 runs. As registered, no trap batch runs and no correctness prose is added until a new trap set catches the
@@ -28,7 +43,7 @@ whether to delete on D2's precedent (removal held correctness) or keep the lines
 **H0** (`shared/protect-config` fails open on input it cannot parse) is deliberate and tested
 (`test/catalog/protect-config-hook.test.ts`, "fails open on input it cannot read"). Failing closed or asking would
 prompt on, or block, every Edit and Write if Claude Code changed its hook input format, and `claude -p` cannot
-answer a prompt. Keeping or reversing that trade-off is a product decision.
+answer a prompt. The owner kept it (2026-10-19).
 
 Rejected or already present (README § 8): A2, H3, H4, T1, R2, R3, R4, R5, E6, E7, O1 (partial, see row 6), O2, O3,
 O4, O5, O6.

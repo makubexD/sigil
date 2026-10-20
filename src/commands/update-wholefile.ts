@@ -7,7 +7,7 @@
  */
 import path from 'node:path';
 import { writeFilesSync } from '../cli-helpers';
-import { renderFresh } from '../fresh-render';
+import { renderFresh } from '../freshness';
 import { sha256 } from '../manifest';
 import { currentTemplateOfId } from '../manifest/template-of';
 import { stalePaths, applyStaleMigration, rebuildEntryFiles, isFileDrifted } from './update-stale';

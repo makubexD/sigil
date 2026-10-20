@@ -166,3 +166,83 @@ describe('install states agree with update', () => {
     });
   }
 });
+
+/** Hashes every file under `dir`, so a test can prove a command wrote nothing. */
+function treeHash(dir: string): string {
+  const files = (fs.readdirSync(dir, { recursive: true }) as string[])
+    .filter(rel => fs.statSync(path.join(dir, rel)).isFile())
+    .sort();
+  return files.map(rel => `${rel}\0${fs.readFileSync(path.join(dir, rel), 'utf8')}`).join('\0');
+}
+
+describe('status and update agree on the edge cases', () => {
+  const claude = TARGETS.find(t => t.name === 'claude')!;
+
+  /** A copied catalog and a project with `specs` installed for Claude Code. */
+  function setUp(work: string, specs: string[], overlays?: string): [string, string] {
+    const catalog = path.join(work, 'src');
+    const project = path.join(work, 'project');
+    fs.mkdirSync(path.join(project, '.sigil'), { recursive: true });
+    copyCatalog(catalog);
+    if (overlays) fs.writeFileSync(path.join(project, '.sigil/overlays.yaml'), overlays);
+    sigil(project, catalog, 'add', ...specs, '--target', 'claude', '--yes');
+    return [catalog, project];
+  }
+
+  function agree(project: string, catalog: string, expected: string[]): void {
+    const before = treeHash(project);
+    assert.deepEqual(changedByUpdate(project, catalog, 'claude'), expected, 'update preview');
+    assert.deepEqual(outdatedByStatus(project, catalog, 'claude'), expected, 'status');
+    assert.equal(treeHash(project), before, 'status and a preview write nothing');
+  }
+
+  it('a removed output path: the skill is outdated, in status and in the install states', async () => {
+    await withTempDirAsync(async work => {
+      const [catalog, project] = setUp(work, ['skill:shared/cli']);
+      fs.rmSync(path.join(catalog, 'catalog/languages/go/stack-parts/cli.md'));
+
+      agree(project, catalog, ['shared/cli']);
+      const { catalog: loaded } = await loadAndValidate(
+        path.join(catalog, 'catalog'),
+        path.join(catalog, 'packs.yaml'),
+      );
+      const states = await computeInstallStates({
+        candidateIds: ['shared/cli'],
+        target: claude,
+        catalog: resolveCatalog(loaded),
+        projectDir: project,
+      });
+      assert.equal(states.get('shared/cli')?.state, 'outdated');
+    });
+  });
+
+  it('a refused overlay: update leaves the rule as installed, so status does too', () => {
+    withTempDir(work => {
+      const [catalog, project] = setUp(
+        work,
+        ['rule:typescript/ts-testing'],
+        'rules:\n  typescript/ts-testing:\n    scope: [src]\n',
+      );
+      fs.writeFileSync(
+        path.join(project, '.sigil/overlays.yaml'),
+        'rules:\n  typescript/ts-testing:\n    scope: []\n',
+      );
+      agree(project, catalog, []);
+    });
+  });
+
+  it('a template revision that leaves the render unchanged is not outdated', () => {
+    withTempDir(work => {
+      const [catalog, project] = setUp(work, ['rule:typescript/ts-code-quality']);
+      const template = path.join(catalog, 'catalog/shared/templates/code-quality.template.md');
+      const text = fs.readFileSync(template, 'utf8');
+      const bumped = text.replace(
+        /^revision: (\d+)$/m,
+        (_, n: string) => `revision: ${Number(n) + 1}`,
+      );
+      assert.notEqual(bumped, text);
+      fs.writeFileSync(template, bumped);
+      agree(project, catalog, []);
+    });
+  });
+});

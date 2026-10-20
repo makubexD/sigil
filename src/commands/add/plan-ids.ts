@@ -46,7 +46,6 @@ export async function computeUpToDateIds(ctx: PlanCtx, ids: string[]): Promise<s
       target: ctx.target,
       catalog: ctx.resolved,
       projectDir: ctx.opts.projectDir,
-      scope: ctx.inputs.scope,
     });
     if (ctx.inputs.overwrite) return [];
     const upToDateIds = ids.filter(id => installStates.get(id)?.state === 'up-to-date');

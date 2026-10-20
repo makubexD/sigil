@@ -356,6 +356,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   It used to compare only template revisions, so it could report a project as up to date while
   `update` refreshed 15 artifacts. It renders each one from the current catalog, with your
   `.sigil/overlays.yaml`, and also catches catalog changes to MCP, hook and settings fragments.
+  A template revision that leaves an artifact's output unchanged no longer shows it as outdated
+  for good, and a rule whose overlay entry was refused is left as installed, as `update` does.
 - The `add` wizard no longer marks a freshly installed `shared/cli` or `shared/wizard` as
   outdated: it now renders with the installed set, as `add` and `update` do, so each skill's
   Boundary section is kept.

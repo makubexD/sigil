@@ -11,7 +11,7 @@ import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { resolveCatalog } from '../resolve';
 import { applyProjectOverlays } from '../overlays';
-import { staleEntries } from './freshness';
+import { entryKey, staleEntries } from '../freshness';
 import { requireManifest } from './shared/manifest';
 import { JSON_INDENT } from '../json-util';
 import { isConfigKind } from '../kinds';
@@ -156,13 +156,17 @@ async function buildStatuses(
   opts: StatusOptions,
 ): Promise<ReturnType<typeof computeStatus>> {
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  const { resolved } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
-  const targetOf = (name: string) => getAllTargets().find(t => t.name === name);
-  const stale = await staleEntries(manifest, resolved, opts.projectDir, targetOf);
+  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
+  const stale = await staleEntries(manifest, {
+    resolved,
+    projectDir: opts.projectDir,
+    targetOf: name => getAllTargets().find(t => t.name === name),
+    refused,
+  });
   return computeStatus(manifest, opts.projectDir, catalogIds, {
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
     retiredFor: retiredConfigDestinationsOf,
-    stale,
+    isStale: entry => stale.has(entryKey(entry)),
   });
 }
 

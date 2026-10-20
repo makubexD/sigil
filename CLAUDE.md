@@ -243,13 +243,13 @@ and reports deprecated-but-installed ones with `supersededBy`. Removal reuses `r
 (`src/manifest/mutate-remove.ts` — the same function `uninstall.ts` calls), plus `reverseMergeConfigEntries` and the
 same drifted-file protection.
 
-**`sigil status` is read-only, and its `outdated` means "`sigil update` would rewrite this".** `staleEntries`
-(`src/commands/freshness.ts`) applies update's own checks: a fresh render of a whole-file entry differs from the
-recorded files, or a config fragment differs from the catalog's (`changedCatalogOp`). `update`, `status` and the
-wizard's install states render through the one `renderFresh` (`src/fresh-render.ts`), with the overlaid catalog and
-the installed set; a render without that set drops a Boundary section and reads as outdated. A template revision
-change is named in the reason (`template <id> rev <old>→<new>`, stamped at install from `currentTemplateOf` in
-`src/manifest/template-of.ts`). Propagation is `sigil update`. `sigil sync` is the catalog-author command, not the consumer one.
+**`outdated` means "`sigil update` would rewrite this", in every view.** `src/freshness.ts` holds the one
+render (`renderFresh`: the overlaid catalog plus the installed set, without which a Boundary section drops) and
+the config ops `update` writes with (`catalogConfigOps`, `changedCatalogOp`). `staleEntries` applies update's checks
+and is the only source of `outdated` in `sigil status` and the install states (`add`, the wizard), besides a moved
+config file. It skips entries whose overlay was refused, as `update` does. A template revision alone is never
+outdated (`update` writes nothing when the render is unchanged); it only names the reason (`template <id> rev
+<old>→<new>`, stamped at install from `currentTemplateOf` in `src/manifest/template-of.ts`). `status` never writes. Propagation is `sigil update`. `sigil sync` is the catalog-author command, not the consumer one.
 
 `errors.ts` / `cli-error.ts` are the single error type and the one `process.exit`. `kinds.ts` holds `KIND_REGISTRY`.
 `wizard/` has its own guide, `src/wizard/CLAUDE.md`.

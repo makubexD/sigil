@@ -34,7 +34,8 @@ export function applyCatalogChange(
   if (existing === undefined) return false;
   const gate = catalogChangeGate(existing, previous, opts);
   if (gate !== 'write') {
-    console.log(`  ${GATE_NOTE[gate]}  ${entry.id}\n     ${cf.file}`);
+    const { mark, note } = GATE_NOTE[gate];
+    console.log(`  ${mark}  ${entry.id}\n     ${cf.file}  (${note})`);
     return gate === 'dry-run';
   }
   writeMergedConfigFile(fullPath, existing, { previous, next: fresh });
@@ -43,9 +44,10 @@ export function applyCatalogChange(
   return true;
 }
 
+/** Every preview line names the artifact first, like the whole-file lines (`↑  <id>`). */
 const GATE_NOTE = {
-  blocked: "⊘  (catalog changed, but sigil's values were edited — use --force)",
-  'dry-run': '↑  (would be updated from the catalog)',
+  blocked: { mark: '⊘', note: "catalog changed, but sigil's values were edited — use --force" },
+  'dry-run': { mark: '↑', note: 'would be updated from the catalog' },
 } as const;
 
 /** Whether a catalog change may be written: an edited object-spread value needs --force. */

@@ -7,6 +7,7 @@
  */
 import path from 'node:path';
 import { writeFilesSync } from '../cli-helpers';
+import { renderFresh } from '../fresh-render';
 import { sha256 } from '../manifest';
 import { currentTemplateOfId } from '../manifest/template-of';
 import { stalePaths, applyStaleMigration, rebuildEntryFiles, isFileDrifted } from './update-stale';
@@ -37,11 +38,11 @@ async function scaffoldFreshFiles(
   opts: UpdateOptions,
 ): Promise<Record<string, string> | undefined> {
   try {
-    return await target.scaffold!(entry.id, resolved, {
+    return await renderFresh(entry.id, {
+      target,
+      resolved,
       projectDir: opts.projectDir,
-      overwrite: true,
-      includeDeps: false,
-      ...(opts.installedIds ? { coInstallSet: new Set(opts.installedIds) } : {}),
+      installedIds: opts.installedIds,
     });
   } catch (err) {
     console.error(`  ✗  ${entry.id}: scaffold failed — ${(err as Error).message}`);

@@ -27,8 +27,6 @@ import type { Target, ResolvedCatalog, ConfigScope } from './types';
 import { prescaffoldAll } from './install-state-prescaffold';
 import { retiredConfigDestinationsOf } from './targets';
 
-export { scaffoldHashesForArtifact } from './install-state-prescaffold';
-
 // ── Public types ──────────────────────────────────────────────────────────────
 
 export type InstallState =
@@ -149,6 +147,8 @@ interface InstallStateCtx {
   scope: ConfigScope;
   manifest: Manifest;
   catalogIds: Set<string>;
+  /** Every artifact id installed for this target (see PrescaffoldCtx.installedIds). */
+  installedIds: Set<string>;
 }
 
 /** Adds an entry for every candidate not yet tracked in `result` (mutates `result` in place). */
@@ -200,7 +200,10 @@ function buildInstallStateCtx(
   const { candidateIds, target, catalog, projectDir, scope } = options;
   const manifest = loadManifest(projectDir);
   const catalogIds = new Set(catalog.artifacts.map(a => a.id));
-  return { candidateIds, target, catalog, projectDir, scope, manifest, catalogIds };
+  const installedIds = new Set(
+    manifest.entries.filter(e => e.target === target.name).map(e => e.id),
+  );
+  return { candidateIds, target, catalog, projectDir, scope, manifest, catalogIds, installedIds };
 }
 
 /** Parameters for {@link computeInstallStates}. */

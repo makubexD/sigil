@@ -8,6 +8,7 @@
 import { sha256 } from './manifest';
 import { canonicalize } from './config-merge';
 import { CONFIG_KINDS } from './select';
+import { renderFresh, type FreshRenderCtx } from './fresh-render';
 import type { Target, ResolvedCatalog, ConfigScope } from './types';
 
 /** Hashes each `relPath → content` scaffold output entry to `relPath → sha256`. */
@@ -20,26 +21,16 @@ function hashScaffoldOutput(freshFiles: Record<string, string>): Map<string, str
 }
 
 /**
- * Scaffold a single whole-file artifact and return `path → sha256` for each output file.
- * Returns null if scaffolding is not supported or fails.
- *
- * Exported so `sigil update` can share the same computation rather than
- * duplicating the inline scaffold-hash logic from cli.ts:1407-1418.
+ * Renders a single whole-file artifact as `update` would and returns `path → sha256` for each
+ * output file. Returns null if the target cannot scaffold or the render fails.
  */
-export async function scaffoldHashesForArtifact(
+async function freshHashesForArtifact(
   id: string,
-  target: Target,
-  catalog: ResolvedCatalog,
-  projectDir: string,
+  ctx: FreshRenderCtx,
 ): Promise<Map<string, string> | null> {
-  if (!target.scaffold) return null;
+  if (!ctx.target.scaffold) return null;
   try {
-    const freshFiles = await target.scaffold(id, catalog, {
-      projectDir,
-      overwrite: true,
-      includeDeps: false,
-    });
-    return hashScaffoldOutput(freshFiles);
+    return hashScaffoldOutput(await renderFresh(id, ctx));
   } catch {
     return null;
   }
@@ -66,13 +57,11 @@ export function splitCandidatesByKind(
  */
 async function prescaffoldWholeFileHashes(
   wholeFileIds: string[],
-  target: Target,
-  catalog: ResolvedCatalog,
-  projectDir: string,
+  ctx: FreshRenderCtx,
 ): Promise<Map<string, Map<string, string>>> {
   const freshByArtifact = new Map<string, Map<string, string>>();
   for (const id of wholeFileIds) {
-    const hashes = await scaffoldHashesForArtifact(id, target, catalog, projectDir);
+    const hashes = await freshHashesForArtifact(id, ctx);
     if (hashes) freshByArtifact.set(id, hashes);
   }
   return freshByArtifact;
@@ -137,6 +126,8 @@ export interface PrescaffoldCtx {
   catalog: ResolvedCatalog;
   projectDir: string;
   scope: ConfigScope;
+  /** Every artifact id installed for this target: renders must match what `add` wrote. */
+  installedIds: ReadonlySet<string>;
 }
 
 /** Pre-scaffolds both whole-file and config-kind fresh hashes for the candidate set. */
@@ -144,7 +135,12 @@ export async function prescaffoldAll(ctx: PrescaffoldCtx): Promise<PrescaffoldRe
   const { wholeFileIds, configKindIds } = splitCandidatesByKind(ctx.candidateIds, ctx.catalog);
   const env: ScaffoldEnv = { target: ctx.target, catalog: ctx.catalog, projectDir: ctx.projectDir };
   const [freshByArtifact, freshConfigHashByArtifact] = await Promise.all([
-    prescaffoldWholeFileHashes(wholeFileIds, ctx.target, ctx.catalog, ctx.projectDir),
+    prescaffoldWholeFileHashes(wholeFileIds, {
+      target: ctx.target,
+      resolved: ctx.catalog,
+      projectDir: ctx.projectDir,
+      installedIds: ctx.installedIds,
+    }),
     prescaffoldConfigFragmentHashes(configKindIds, env, ctx.scope),
   ]);
   return { freshByArtifact, freshConfigHashByArtifact };

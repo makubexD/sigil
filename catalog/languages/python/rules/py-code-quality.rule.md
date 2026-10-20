@@ -15,10 +15,6 @@ tags:
   - quality
 appliesToRationale: Scoped to Python source because these structural and SOLID principles govern function/class design, which only exists in .py files.
 ---
-<!-- slot: structure-limits -->
-A module beyond ~300 lines or a class beyond ~7 public methods is a **God Object** candidate —
-extract a collaborator or split into smaller, single-responsibility modules/classes.
-
 <!-- slot: solid-principles -->
 - **Single Responsibility**: Each class or module has one reason to change.
 - **Open/Closed**: Extend behavior through composition or a `Protocol`, not modification.
@@ -27,8 +23,7 @@ extract a collaborator or split into smaller, single-responsibility modules/clas
 - **Interface Segregation**: Prefer small `Protocol`s over one wide interface. A caller should not
   depend on methods it does not use.
 - **Dependency Inversion**: Depend on abstractions (`Protocol`, an injected callable), not concrete
-  classes. Pass dependencies through `__init__` or a function parameter; do not instantiate a
-  collaborator deep inside business logic.
+  classes.
 
 <!-- slot: layering -->
 Keep business logic out of I/O, transport, and presentation boundaries — FastAPI/Django view
@@ -54,9 +49,7 @@ siblings, or that itself imports from more than 5 siblings, is a coupling smell.
 py-performance-profiler
 
 <!-- slot: design-patterns -->
-Use Strategy for interchangeable algorithms (pass a callable or a `Protocol` implementation),
-Factory functions for object creation, and Adapter for wrapping a third-party interface behind your
-own. Avoid Singleton (module-level mutable global state hides dependencies and obstructs testing)
+Avoid Singleton (module-level mutable global state hides dependencies and obstructs testing)
 and Service Locator (a global registry obscures which dependencies a function actually needs —
 prefer explicit constructor/parameter injection).
 

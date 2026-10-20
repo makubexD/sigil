@@ -43,7 +43,7 @@ describe('Resolve phase', () => {
       csRule.resolvedBody?.includes('Clear names'),
       'inherited clean-code guidance present',
     );
-    assert.ok(csRule.resolvedBody?.includes('God Object'), 'own guidance present');
+    assert.ok(csRule.resolvedBody?.includes('Avoid Singleton'), 'own guidance present');
   });
 
   it('expands uses.rules for skills', async () => {

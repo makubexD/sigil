@@ -16,10 +16,6 @@ tags:
   - quality
 appliesToRationale: Scoped to component files because these structural rules govern component/hook design, which only exists in .tsx/.jsx files.
 ---
-<!-- slot: structure-limits -->
-A component file beyond ~200 lines, or a component managing more than ~5 pieces of local state, is
-a decomposition candidate — extract a sub-component or lift shared logic into a custom hook.
-
 <!-- slot: solid-principles -->
 - **Single Responsibility**: Each component renders one coherent piece of UI; each custom hook
   encapsulates one concern.
@@ -58,9 +54,7 @@ components directly (rather than composing them via props/children) is a couplin
 react-performance-profiler
 
 <!-- slot: design-patterns -->
-Use composition (`children`, render props, compound components) for interchangeable UI slots,
-custom hooks for reusable stateful logic, and a Factory function for constructing complex initial
-state. Avoid a giant "god" Context that holds unrelated state (forces every consumer to re-render on
+Avoid a giant "god" Context that holds unrelated state (forces every consumer to re-render on
 any change) and avoid prop-based feature flags that branch a component's entire render tree — split
 into separate components instead.
 

@@ -16,16 +16,12 @@ tags:
   - quality
 appliesToRationale: Structural size limits and the search-first protocol apply to TypeScript source; scoped narrower than the shared/clean-code base it extends, which has no language to restrict to.
 ---
-<!-- slot: structure-limits -->
-A module beyond ~200 lines or a class beyond ~7 public methods is a **God Object** candidate —
-extract a collaborator or split into smaller, single-responsibility units.
-
 <!-- slot: solid-principles -->
 - **Single Responsibility**: Each class or module has one reason to change.
 - **Open/Closed**: Extend behavior through composition, not modification.
 - **Liskov Substitution**: Subtypes must be substitutable for their base types without altering correctness.
 - **Interface Segregation**: Prefer narrow, focused interfaces over wide, general-purpose ones.
-- **Dependency Inversion**: Depend on abstractions, not concretions. Inject dependencies.
+- **Dependency Inversion**: Depend on abstractions, not concretions.
 
 <!-- slot: layering -->
 Keep business logic out of I/O, transport, and presentation boundaries — CLI handlers, route
@@ -48,8 +44,7 @@ that exports ≥ 10 symbols or imports from ≥ 5 sibling modules is a coupling 
 ts-performance-profiler
 
 <!-- slot: design-patterns -->
-Use Strategy for interchangeable algorithms, Factory for object creation, Adapter for interface
-translation, and Builder for complex object construction. Avoid Singleton (hides dependencies,
+Avoid Singleton (hides dependencies,
 obstructs testing) and Service Locator (obscures dependencies, inverts control in the wrong direction).
 
 <!-- slot: error-handling -->

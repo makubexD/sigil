@@ -19,8 +19,8 @@ appliesToRationale: Scoped to the project's structural configuration files — t
 ## One Concern Per File
 
 Each file exports one primary type, class, or logical unit. The filename reflects the primary export.
-Avoid catch-all files (`utils.ts`, `helpers.ts`) — they become coupling magnets. When a file exceeds
-~200 lines or starts serving two unrelated purposes, split it.
+Avoid catch-all files (`utils.ts`, `helpers.ts`) — they become coupling magnets. When a file starts
+serving two unrelated purposes, split it.
 
 ## Source and Test Layout
 

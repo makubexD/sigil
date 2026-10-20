@@ -91,10 +91,9 @@ try
 {
     await FetchDataAsync(url, ct);
 }
-catch (HttpRequestException ex)
+catch (HttpRequestException ex)   // top-level boundary: the job stops here; inner code rethrows
 {
     logger.LogError(ex, "Failed to fetch data from {Url}", url);   // stack trace attached
-    throw new DataUnavailableException(url, ex);
 }
 ```
 

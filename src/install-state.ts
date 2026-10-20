@@ -117,6 +117,7 @@ interface InstallStateCtx {
   projectDir: string;
   manifest: Manifest;
   catalogIds: Set<string>;
+  refused?: ReadonlyMap<string, string> | undefined;
 }
 
 /** Adds an entry for every candidate not yet tracked in `result` (mutates `result` in place). */
@@ -148,6 +149,7 @@ async function computeStatusResultsFor(
     resolved: ctx.catalog,
     projectDir: ctx.projectDir,
     targetOf: name => (name === ctx.target.name ? ctx.target : undefined),
+    refused: ctx.refused,
     only: entry => candidates.has(entry.id),
   });
   return computeStatus(subManifest, ctx.projectDir, ctx.catalogIds, {
@@ -173,10 +175,10 @@ async function runInstallStatePipeline(ctx: InstallStateCtx): Promise<{
 
 /** Builds the pipeline context: loads the manifest and computes the catalog id set. */
 function buildInstallStateCtx(options: ComputeInstallStatesOptions): InstallStateCtx {
-  const { candidateIds, target, catalog, projectDir } = options;
+  const { candidateIds, target, catalog, projectDir, refused } = options;
   const manifest = loadManifest(projectDir);
   const catalogIds = new Set(catalog.artifacts.map(a => a.id));
-  return { candidateIds, target, catalog, projectDir, manifest, catalogIds };
+  return { candidateIds, target, catalog, projectDir, manifest, catalogIds, refused };
 }
 
 /** Parameters for {@link computeInstallStates}. */
@@ -185,6 +187,8 @@ export interface ComputeInstallStatesOptions {
   target: Target;
   catalog: ResolvedCatalog;
   projectDir: string;
+  /** Rule ids whose overlay was refused: `update` leaves them as installed, so they are never outdated. */
+  refused?: ReadonlyMap<string, string> | undefined;
 }
 
 /**

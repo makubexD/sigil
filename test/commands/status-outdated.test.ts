@@ -17,6 +17,7 @@ import { loadAndValidate } from '../../dist-cli/cli-helpers';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { applyProjectOverlays } from '../../dist-cli/overlays';
 import { computeInstallStates } from '../../dist-cli/install-state';
+import { sha256 } from '../../dist-cli/manifest';
 
 const ROOT = path.resolve(__dirname, '../..');
 const CLI = path.join(ROOT, 'dist-cli/cli.js');
@@ -213,6 +214,59 @@ describe('status and update agree on the edge cases', () => {
         projectDir: project,
       });
       assert.equal(states.get('shared/cli')?.state, 'outdated');
+    });
+  });
+
+  /** Edits the manifest record of `id`: every file on disk stays byte-identical. */
+  function editRecord(
+    project: string,
+    id: string,
+    change: (files: Array<{ path: string; sha256: string }>) => void,
+  ): void {
+    const file = path.join(project, '.sigil/manifest.json');
+    const manifest = JSON.parse(fs.readFileSync(file, 'utf8'));
+    change(manifest.entries.find((e: { id: string }) => e.id === id).files);
+    fs.writeFileSync(file, JSON.stringify(manifest, null, 2));
+  }
+
+  async function installState(project: string, catalog: string, id: string): Promise<string> {
+    const { catalog: loaded } = await loadAndValidate(
+      path.join(catalog, 'catalog'),
+      path.join(catalog, 'packs.yaml'),
+    );
+    const states = await computeInstallStates({
+      candidateIds: [id],
+      target: claude,
+      catalog: resolveCatalog(loaded),
+      projectDir: project,
+    });
+    return states.get(id)?.state ?? 'none';
+  }
+
+  it('an output path the manifest does not record: update writes it, so it is outdated', async () => {
+    await withTempDirAsync(async work => {
+      const [catalog, project] = setUp(work, ['skill:shared/cli']);
+      editRecord(project, 'shared/cli', files => {
+        const i = files.findIndex(f => f.path.endsWith('stack-go.md'));
+        fs.rmSync(path.join(project, files[i]!.path));
+        files.splice(i, 1);
+      });
+      agree(project, catalog, ['shared/cli']);
+      assert.equal(await installState(project, catalog, 'shared/cli'), 'outdated');
+    });
+  });
+
+  it('a recorded path the render no longer has: update removes it, so it is outdated', async () => {
+    await withTempDirAsync(async work => {
+      const [catalog, project] = setUp(work, ['skill:shared/cli']);
+      const retired = '.claude/skills/cli/references/retired.md';
+      const text = 'retired\n';
+      fs.writeFileSync(path.join(project, retired), text);
+      editRecord(project, 'shared/cli', files =>
+        files.push({ path: retired, sha256: sha256(text) }),
+      );
+      agree(project, catalog, ['shared/cli']);
+      assert.equal(await installState(project, catalog, 'shared/cli'), 'outdated');
     });
   });
 

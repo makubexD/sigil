@@ -28,6 +28,7 @@ async function refreshInstallStates(s: AddWizardState): Promise<void> {
       target: ct,
       catalog: s.ctx.catalog,
       projectDir: s.ctx.projectDir,
+      refused: s.ctx.refusedOverlays,
     });
   } catch {
     // State detection failed — proceed without annotations (all items appear as 'new').

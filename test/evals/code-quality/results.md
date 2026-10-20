@@ -190,6 +190,37 @@ with the order rotating by one each run.
 
 - Reported, not gated: `typeErrors`, `suppressions`, inflation, cost and turns per arm.
 
+## A1 deletion without traps (registered 2026-10-19, after H10 stopped the batch, before any A1 run)
+
+H10 kept no trap, so H12 cannot run. The owner decided on 2026-10-19 to delete the A1 lines anyway,
+gated on the T tasks alone (`docs/audits/2026-10-16/results.md`, row 14). The deletion is commit
+`0eb22fc` (branch `feat/a1-delete-unconditional`). It removes the default design patterns and
+"inject dependencies" from every `*-code-quality` rule (F4), and the code-quality template's
+structure-limits slot plus the ~200-line split trigger in `ts-project-layout` (F20). It also removes
+the `clock` parameter, the `InjectionToken` test seam, the named state libraries and the CQS
+"mutators return nothing" clause (F19), and changes three log-then-rethrow examples (F18, no
+TypeScript line).
+
+**Arms**: `master` at `6f90b66` and `delete` at `0eb22fc`, each from its own worktree. Both install
+the TypeScript rules (`--install rules`), on the same day, model and CLI version. Tasks T1, T2, T4,
+T5 and T6, 3 runs each, so 15 runs per arm. T3 is left out, as in H12. For each run number, both arms
+start together (`--first-run r --runs 1`), so neither arm gets a quieter hour. A run that hit an API or
+usage limit is not recorded and is re-run.
+
+- **H14 (the deletion is non-inferior)**: all of these hold:
+  1. `delete`'s hidden tests pass in at least as many runs as `master`'s, less one;
+  2. `delete`'s declarations are not significantly higher: the task-level sign-flip p for
+     "`master` lower than `delete`" (`compare --arm-a delete --arm-b master --metric declarations`)
+     is above 0.05;
+  3. `delete`'s inflation is non-zero in at most one more run than `master`'s.
+
+  If H14 holds, the PR merges. If any criterion fails, the deletion is not merged and the failing
+  criterion is recorded; no line-by-line follow-up runs without a new registration.
+
+- Reported, not gated: lines, top-level functions, classes, interfaces, `typeErrors`,
+  `suppressions`, cost and turns per arm.
+- TypeScript only. The other four languages ride on this result, as D2's did.
+
 ## Runs
 
 | Date       | Comparison                                                          | Commits                                                                                    | Model             | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |

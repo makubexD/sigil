@@ -43,25 +43,29 @@ Arguments from the user: {sigil:arguments}
    the eval files is fine.
 3. **Check the repo.** Run `git rev-parse --show-toplevel` and `git status --short`. If it isn't a
    git repo, or the tree is dirty, stop and tell the user to commit or stash first.
-4. **Write the spec** in a few lines: the exact change, the files allowed to change, the test
+4. **Size it.** A worker step is one concern touching at most about 3 files. If the step is
+   bigger (several separate changes, a long file-by-file list), split it into sub-steps and send
+   them one at a time, reviewing each before the next. Keep the effort level already chosen.
+5. **Write the spec** in a few lines: the exact change, the files allowed to change, the test
    command that proves it's done, and any setup it needs (such as loading a Node version manager).
    Name callers outside the allowed files that the change could break, so the worker stops instead
    of leaving them broken. Never include secrets, `.env` contents or private data. The worker sends
    everything to DeepSeek, which is not zero-retention.
-5. **Delegate.** Print the report line, then run `mk-exec` in the background and wait for the
+6. **Delegate.** Print the report line, then run `mk-exec` in the background and wait for the
    completion notification instead of polling:
    `⏵ mk-exec (deepseek <model>, <level> effort): <task in 10 words or fewer>`
    `mk-exec --effort <level> <repo> '<spec>'`
    Read only the summary it prints (40 lines at most, ending with `--- log <dir>`). The full
    transcript is in `<dir>/stream.jsonl` when you need it.
-6. **Read the exit code.** 0: review it. 75: a DeepSeek key, balance or rate problem. Stop, report
+7. **Read the exit code.** 0: review it. 75: a DeepSeek key, balance or rate problem. Stop, report
    the error line and don't retry. 2: a setup problem (dirty tree, missing key); fix it and rerun.
-   124: timed out after 15 minutes; treat it as a rejection. Any other non-zero code: read the
-   errors in the summary and treat it as a rejection.
-7. **Review it yourself.** The summary is a claim. Read `git diff`, rerun the test command, and
+   124: timed out after 15 minutes; treat it as a rejection. `(max turns)`: the step was too big
+   and the diff may be partial; review what's there, then split the rest and send it. Any other
+   non-zero code: read the errors in the summary and treat it as a rejection.
+8. **Review it yourself.** The summary is a claim. Read `git diff`, rerun the test command, and
    check that only the allowed files changed and no tests were deleted or skipped. Its tests cover
    the paths it thought of. Exercise the interactive or error paths it may have skipped.
-8. **Report** to the user: accepted or rejected, files changed, test result, model, effort, tokens
+9. **Report** to the user: accepted or rejected, files changed, test result, model, effort, tokens
    and the log dir. Don't commit unless the user asks.
    - Rejected once: resend with a concrete correction.
    - Rejected twice: tell the user and offer to do it in the main session.

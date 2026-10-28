@@ -21,6 +21,12 @@ export function recordedOp(cf: ManifestConfigMerge): ConfigMergeOp {
 /** A fragment scoped to one project inside a shared file (nested under `projects.<dir>`). */
 const perProject = (fragment: Record<string, unknown>): boolean => 'projects' in fragment;
 
+const rootOf = (d: { root?: string | undefined }) => d.root ?? 'project';
+
+/** True when `a` and `b` name the same file under the same root (`project` when absent). */
+export const sameFile = (a: { file: string; root?: string | undefined }, b: typeof a) =>
+  a.file === b.file && rootOf(a) === rootOf(b);
+
 /** Whether `cf` is recorded at a file its provider retired (Target.retiredConfigDestinations). */
 export function isAtRetiredDestination(
   cf: ManifestConfigMerge,

@@ -12,7 +12,7 @@
  */
 import fs from 'node:fs';
 import { canonicalize, classifyConfigDrift } from '../config-merge';
-import { isAtRetiredDestination, sha256 } from '../manifest';
+import { isAtRetiredDestination, sameFile, sha256 } from '../manifest';
 
 export { isAtRetiredDestination };
 import type { ManifestConfigMerge, ManifestEntry } from '../manifest/types';
@@ -32,10 +32,6 @@ export interface MoveResult {
   /** Fragments kept in a retired file because the user edited them (they need --force). */
   readonly skipped: number;
 }
-
-const rootOf = (d: { root?: string | undefined }) => d.root ?? 'project';
-const sameFile = (a: { file: string; root?: string | undefined }, b: typeof a) =>
-  a.file === b.file && rootOf(a) === rootOf(b);
 
 /** The manifest record for `op`, as `add` writes it. */
 function recordOf(op: ConfigMergeOp): ManifestConfigMerge {

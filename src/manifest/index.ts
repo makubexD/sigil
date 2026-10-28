@@ -28,6 +28,7 @@ export { upsertConfigEntry } from './mutate-config';
 export {
   recordedOp,
   sameDestination,
+  sameFile,
   previousOpFor,
   isAtRetiredDestination,
 } from './config-fragments';

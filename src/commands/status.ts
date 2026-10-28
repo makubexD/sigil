@@ -11,10 +11,11 @@ import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { resolveCatalog } from '../resolve';
 import { applyProjectOverlays } from '../overlays';
-import { entryKey, staleEntries } from '../freshness';
+import { staleEntries, statusHooks } from '../freshness';
 import { requireManifest } from './shared/manifest';
 import { JSON_INDENT } from '../json-util';
 import { isConfigKind } from '../kinds';
+import type { Freshness } from '../freshness';
 import type { StatusResult } from '../manifest/types';
 import type { LoadedCatalog } from '../types';
 
@@ -146,28 +147,39 @@ function makeCurrentTemplateOf(catalog: LoadedCatalog): CurrentTemplateOf {
   };
 }
 
+/** What `update` would change, over the catalog with project overlays (as `add` and `update` see it). */
+function scanFreshness(
+  manifest: ReturnType<typeof requireManifest>,
+  rawCatalog: LoadedCatalog,
+  opts: StatusOptions,
+): Promise<Freshness> {
+  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
+  return staleEntries(manifest, {
+    resolved,
+    projectDir: opts.projectDir,
+    targetOf: name => getAllTargets().find(t => t.name === name),
+    refused,
+    retiredFor: retiredConfigDestinationsOf,
+  });
+}
+
 /**
- * Resolves the catalog (with project overlays, as `add` and `update` see it) into every input
- * `computeStatus` needs, and runs it. Outdated means `update` would rewrite the entry.
+ * Runs `computeStatus` with every input it needs. Outdated means `update` would rewrite the entry.
+ * Also returns the scan, whose failed renders and new dependencies the output reports.
  */
 async function buildStatuses(
   manifest: ReturnType<typeof requireManifest>,
   rawCatalog: LoadedCatalog,
   opts: StatusOptions,
-): Promise<ReturnType<typeof computeStatus>> {
+): Promise<{ statuses: ReturnType<typeof computeStatus>; fresh: Freshness }> {
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
-  const stale = await staleEntries(manifest, {
-    resolved,
-    projectDir: opts.projectDir,
-    targetOf: name => getAllTargets().find(t => t.name === name),
-    refused,
-  });
-  return computeStatus(manifest, opts.projectDir, catalogIds, {
+  const fresh = await scanFreshness(manifest, rawCatalog, opts);
+  const statuses = computeStatus(manifest, opts.projectDir, catalogIds, {
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
     retiredFor: retiredConfigDestinationsOf,
-    isStale: entry => stale.has(entryKey(entry)),
+    ...statusHooks(fresh),
   });
+  return { statuses, fresh };
 }
 
 export async function runStatus(opts: StatusOptions): Promise<void> {
@@ -182,7 +194,7 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     return;
   }
 
-  const statuses = await buildStatuses(manifest, rawCatalog, opts);
+  const { statuses } = await buildStatuses(manifest, rawCatalog, opts);
 
   if (opts.json) {
     printStatusJson(statuses);

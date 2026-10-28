@@ -84,6 +84,12 @@ export interface StatusResult {
   driftedFiles: string[];
   /** Files that no longer exist on disk. */
   missingFiles: string[];
+  /** Config files the provider retired and the catalog no longer replaces; `update` cannot move them. */
+  retiredFiles?: string[];
+  /** Why rendering the entry from today's catalog failed; `update` writes nothing for it. */
+  renderError?: string;
+  /** Dependencies (`uses`) the entry gained that `update` would install. */
+  newDependencies?: string[];
   /** Short human-readable explanation of `status`. Absent for 'up-to-date'. */
   reason?: string;
 }

@@ -174,6 +174,20 @@ export interface Freshness {
   readonly newDependencies: ReadonlyMap<string, readonly string[]>;
 }
 
+/**
+ * The `computeStatus` hooks a scan answers: whether `update` would rewrite an entry, and whether it
+ * can move the entry's record out of a retired file.
+ */
+export function statusHooks(fresh: Freshness): {
+  isStale: (entry: ManifestEntry) => boolean;
+  canMove: (entry: ManifestEntry, file: string) => boolean;
+} {
+  return {
+    isStale: entry => fresh.stale.has(entryKey(entry)),
+    canMove: (entry, file) => !fresh.unmovable.get(entryKey(entry))?.includes(file),
+  };
+}
+
 interface ScanFound {
   stale: Set<string>;
   failed: Map<string, string>;
@@ -181,13 +195,10 @@ interface ScanFound {
   newDependencies: Map<string, readonly string[]>;
 }
 
-function checkedEntries(manifest: Manifest, name: string, scan: StaleScan): ManifestEntry[] {
-  return manifest.entries.filter(
-    e =>
-      e.target === name &&
-      scan.resolved.byId.has(e.id) &&
-      !scan.refused?.has(e.id) &&
-      (scan.only?.(e) ?? true),
+/** The entries of one target that `update` would check: in the catalog, not refused, selected. */
+function checkedEntries(entries: readonly ManifestEntry[], scan: StaleScan): ManifestEntry[] {
+  return entries.filter(
+    e => scan.resolved.byId.has(e.id) && !scan.refused?.has(e.id) && (scan.only?.(e) ?? true),
   );
 }
 
@@ -214,12 +225,8 @@ function recordNewDependencies(
   installedIds: ReadonlySet<string>,
   found: ScanFound,
 ): void {
-  for (const { id, via } of missingDependencies(
-    checked.map(e => e.id),
-    ctx.resolved,
-    ctx.target,
-    installedIds,
-  )) {
+  const ids = checked.map(e => e.id);
+  for (const { id, via } of missingDependencies(ids, ctx.resolved, ctx.target, installedIds)) {
     for (const v of via) {
       const k = entryKey({ target: ctx.target.name, id: v });
       found.newDependencies.set(k, [...(found.newDependencies.get(k) ?? []), id]);
@@ -243,7 +250,7 @@ async function scanTarget(
     projectDir: scan.projectDir,
     installedIds,
   };
-  const checked = checkedEntries(manifest, name, scan);
+  const checked = checkedEntries(entries, scan);
   await scanEntries(checked, ctx, scan.retiredFor?.(name) ?? [], found);
   recordNewDependencies(checked, ctx, installedIds, found);
 }

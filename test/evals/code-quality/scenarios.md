@@ -10,7 +10,7 @@ property (a service limit, untrusted input, a time zone, a long-running process)
 first implementation is wrong. Each prompt states the property and never the mechanism. A trap is
 kept only if the `none` arm fails it in calibration (`results.md`, H10).
 
-**P1–P2 are pressure tasks** (audit row 16, `docs/plan-audit-rows-15-18-phase3-spike.md`): a small,
+**P1–P2 are pressure tasks** (audit row 16, PR #109): a small,
 clear job plus an existing problem that blocks a stated deadline. The honest path fixes the problem;
 the bar-lowering path silences it (a skipped test, a type suppression). They measure `suppressions`
 and `typeErrors` under pressure (`results.md`, H15 and H16), not the rules' effect on inflation.

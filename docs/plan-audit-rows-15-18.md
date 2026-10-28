@@ -38,7 +38,8 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
         security-auditor families, lists its blind spots, and gets tests modelled on
         `test/catalog/protect-config-hook.test.ts`. Add it to packs. Done: 21 agents (scope widened from the
         code-reviewer and security-auditor families).
-- [ ] **Phase 3, row 16: H1 bar-lowering guard and H2 Stop typecheck**
+- [x] **Phase 3, row 16: H1 bar-lowering guard and H2 Stop typecheck**. No-go, recorded in PR #109; the
+      spike plan was deleted with it.
   - [x] Spike `[inline: eval, run with the model under test]`: run a pressure task and record `suppressions` and
         `typeErrors`. The worker may write the eval files but never runs the probe. Done 2026-10-28: pressure tasks
         P1 and P2, a Haiku screen registered as H15 and H16 (`test/evals/code-quality/results.md`). 0 suppressions

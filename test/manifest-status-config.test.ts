@@ -80,4 +80,23 @@ describe('computeStatus for config entries', () => {
       assert.match(result!.reason ?? '', /\.vscode\/mcp\.json.*sigil update/);
     });
   });
+
+  it('should not call a retired record outdated when update cannot move it', async () => {
+    await withTempDirAsync(async dir => {
+      writeJson(path.join(dir, '.vscode', 'mcp.json'), { servers: { probe: SERVER } });
+      const entry = mcpEntry('.vscode/mcp.json', undefined, 'servers');
+      const retiredFor = () => [
+        {
+          from: { file: '.vscode/mcp.json', root: 'project' as const },
+          to: { file: '.mcp.json', root: 'project' as const },
+        },
+      ];
+      const [result] = computeStatus(manifestOf(entry), dir, new Set(['shared/probe']), {
+        retiredFor,
+        canMove: () => false,
+      });
+      assert.equal(result!.status, 'up-to-date', result!.reason);
+      assert.deepEqual(result!.retiredFiles, ['.vscode/mcp.json']);
+    });
+  });
 });

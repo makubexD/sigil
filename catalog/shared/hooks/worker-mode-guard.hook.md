@@ -33,7 +33,7 @@ args:
       if (full.startsWith(claudeDir)) return;
       if (/\/docs\/plan-[^/]*\.md$/.test(full) || /\/plans\//.test(full)) return;
       process.stderr.write(
-        'Worker mode is on: edit ' + file + ' through the mk-worker agent (for example /mk-delegate) ' +
+        'Worker mode is on: edit ' + file + ' through the delegated worker (for example /mk-delegate) ' +
         'and review its diff. For a tiny fix or judgment work, ask the user to turn worker mode off ' +
         '(worker-mode off, or delete ~/.claude/state/worker-mode).\n'
       );

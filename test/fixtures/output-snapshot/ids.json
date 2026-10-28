@@ -142,7 +142,6 @@
   "typescript/ts-sync-tests": "skill",
   "shared/cli-auditor": "agent",
   "shared/code-reviewer": "agent",
-  "shared/mk-worker": "agent",
   "shared/wizard-auditor": "agent",
   "shared/protect-config": "hook",
   "shared/worker-mode-guard": "hook",

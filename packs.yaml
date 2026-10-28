@@ -155,14 +155,15 @@ packs:
       - shared/cli
       - shared/wizard
 
-  - name: free-worker
-    displayName: Free Worker (OpenCode delegation)
+  - name: deepseek-worker
+    displayName: DeepSeek Worker (headless Claude Code delegation)
     description: >
-      Plan and review in the main session, and hand mechanical coding steps to OpenCode on a free,
-      zero-retention model (DeepSeek V4.1 Flash Free, GLM 5.3 fallback). Includes /mk-delegate and
-      /mk-check, the mk-worker agent and the orchestration rule as resolved deps, and the
-      worker-mode guard hook (installs with sigil add; plugins can't carry hooks yet). Requires
-      OpenCode and the oc-exec wrapper on the PATH. Works with any language.
+      Plan and review in the main session, and hand mechanical coding steps to a headless Claude
+      Code run on the paid DeepSeek API (mk-exec), with its own config dir, effort low, medium or
+      high, and a full log per run. Includes /mk-delegate, /mk-check (which installs mk-exec,
+      workflow-report and the worker config from its references), the orchestration rule as a
+      resolved dep, and the worker-mode guard hook (installs with sigil add; plugins can't carry
+      hooks yet). Requires Claude Code and a DeepSeek API key. Works with any language.
     artifacts:
       - shared/mk-delegate
       - shared/mk-check

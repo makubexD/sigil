@@ -2,52 +2,60 @@
 id: shared/mk-check
 kind: skill
 name: mk-check
-title: Check the Free Worker Setup
+title: Check the DeepSeek Worker Setup
 description: >-
-  Verify the free-worker setup (oc-exec on the PATH, OpenCode installed, only the two allowed free
-  models pinned, worker mode status) and run a short live job on DeepSeek, or on the GLM fallback.
-  Use only when the user runs /mk-check.
+  Install or verify the DeepSeek worker setup (mk-exec and workflow-report on the PATH, the
+  worker's own Claude Code config, the DeepSeek key and balance, isolation from the main login,
+  worker mode status) and run a short live job. Use only when the user runs /mk-check.
 whenToUse: >-
-  Run manually as `/mk-check` or `/mk-check --fallback` before relying on /mk-delegate on a new
-  machine, after updating OpenCode, or when a delegated run fails or hangs — e.g. "is the free
-  worker working", "check the OpenCode setup", "why did the worker time out". Not for reviewing a
-  delegated result; /mk-delegate does that.
-argumentHint: "[--fallback]"
+  Run manually as `/mk-check`, `/mk-check --install` or `/mk-check --effort high` before relying
+  on /mk-delegate on a new machine, after changing the DeepSeek key, or when a delegated run fails
+  — e.g. "is the worker working", "set up the DeepSeek worker", "why did mk-exec exit 75". Not for
+  reviewing a delegated result; /mk-delegate does that.
+argumentHint: "[--install] [--effort low|medium|high]"
 disableModelInvocation: true
-uses:
-  agents:
-    - shared/mk-worker
+# The worker it installs and tests is a Claude Code process, whatever tool the lead session runs in.
+platforms: [claude]
 tags:
   - delegation
   - workflow
 ---
 
-# /mk-check: check the free-worker setup
+# /mk-check: check the DeepSeek worker setup
 
 Arguments: {sigil:arguments}
+
+## Install
+
+Do this when the arguments contain `--install`, or when step 1 below finds something missing and
+the user agrees. Never overwrite an existing file without showing the user the difference first.
+
+1. Write `~/.local/bin/mk-exec` from [the mk-exec reference](references/mk-exec.md) and
+   `~/.local/bin/workflow-report` from [the workflow-report reference](references/workflow-report.md),
+   then `chmod +x` both. `~/.local/bin` must be on the PATH.
+2. Create `~/.claude-worker` (mode 700) with the `{sigil:conventions-file}` and `settings.json` from
+   [the worker-config reference](references/worker-config.md).
+3. The key: ask the user to add `export DEEPSEEK_API_KEY=<key>` to `~/.config/claude-workers/env`
+   themselves (directory 700, file 600). Don't ask them to paste the key into the chat.
 
 ## Steps
 
 Run the checks in as few shell calls as possible, then report a short checklist: one ✓ or ✗ per
-line, with the fix for every ✗.
+line, with the fix for every ✗. Never print the API key.
 
-1. **Installed:** `command -v oc-exec` and `opencode --version`. OpenCode often comes from a Node
-   version manager, so load it first if needed (for nvm: `source ~/.nvm/nvm.sh`). Also confirm the
-   `mk-worker` agent is available to you.
-2. **Pinned models:** `grep -E 'model=' "$(command -v oc-exec)"` shows only
-   `opencode/deepseek-v4.1-flash-free` and `opencode/glm-5.3-flash-free`. Anything else is a ✗:
-   other free models may keep data for training.
-3. **Empty stdin:** the `opencode run` line in `oc-exec` ends with `< /dev/null`. Without it, a run
-   started in the background waits for input until it times out.
+1. **Installed:** `command -v mk-exec workflow-report claude`, and `~/.claude-worker/{sigil:conventions-file}`
+   and `~/.claude-worker/settings.json` exist.
+2. **Key:** `~/.config/claude-workers/env` exists with mode 600 and has a `DEEPSEEK_API_KEY=` line.
+   Check it with `grep -c`, never `cat`.
+3. **Isolation:** `env | grep -c '^ANTHROPIC_'` in this session prints 0, and `~/.claude-worker`
+   holds no `.credentials.json`. Only the `mk-exec` child process may get the DeepSeek endpoint.
 4. **Worker mode:** if a `worker-mode` command is on the PATH, run `worker-mode status`. Otherwise
    report whether the flag file the `shared/worker-mode-guard` hook checks exists, if that hook is
    installed.
 5. **Live test:** make a throwaway repo (`mktemp -d`), `git init`, and commit an empty `README.md`.
-   Then run
-   `oc-exec <dir> "Append the line 'mk-check ok' to README.md. Change nothing else." > <dir>.log 2>&1`
-   and `grep -m1 'oc-exec: model=' <dir>.log; tail -5 <dir>.log`. Add `--fallback` as the first
-   argument when the arguments contain `--fallback`. It passes if `README.md` contains
-   `mk-check ok` and `git status --short` shows only `README.md`. Report the model from the banner
-   and how long the run took, then delete the throwaway repo and its log.
-
-This check runs `oc-exec` directly instead of handing off to `mk-worker`, so it costs no helper agent.
+   Then run `mk-exec --effort <level, default low> <dir> "Append the line 'mk-check ok' to README.md.
+   Change nothing else. Then run: cat README.md"`. It passes if the exit code is 0, `README.md`
+   contains `mk-check ok`, `git status --short` shows only `README.md`, and the log dir named on the
+   summary's last line holds `stream.jsonl`, `meta.json`, `diff.patch` and `summary.txt`. Report the
+   model, effort, tokens, duration and the balance from the banner, then delete the throwaway repo.
+   Exit 75 means a key or balance problem; exit 2 means a missing key or a dirty tree.

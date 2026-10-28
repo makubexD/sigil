@@ -127,7 +127,7 @@
   "claude/plugins/deepseek-worker/skills/mk-check/SKILL.md": "7cc65041d16e32224201ea5e89a496bb004dc874e48758a31136212d71913ef0",
   "claude/plugins/deepseek-worker/skills/mk-check/references/mk-exec.md": "1251d9cf65b5482ba03c374f86b3f3cc28138487096ab433a9c4054250eec314",
   "claude/plugins/deepseek-worker/skills/mk-check/references/worker-config.md": "24e61fc94655f3f661c91d329139122b058b08654fc15979b7604ab02626f623",
-  "claude/plugins/deepseek-worker/skills/mk-check/references/workflow-report.md": "94483749b2d78359f15b4c38e7175e9d3c10aa5c208b35642c3d53133e9cc81d",
+  "claude/plugins/deepseek-worker/skills/mk-check/references/workflow-report.md": "2217a8a36a4e364bdc83be9ae5d634ace42792cd2a2148008547c56315731418",
   "claude/plugins/deepseek-worker/skills/mk-delegate/SKILL.md": "ea004ebe3deae848331edf1481222ac7327e7a3f5f899c1d43d6e423052fb5cc",
   "claude/plugins/dotnet-starter/.claude-plugin/plugin.json": "942c10ec5a75e48ee3ca9ef3472bfadec03791eee526a9b9cb5ba2acc6e6464b",
   "claude/plugins/dotnet-starter/agents/cs-code-reviewer.md": "dc1ab2d9167d627a2163e5e402eb1f9de3c1b7ad972d8ecc0dfb84d2027dc00c",

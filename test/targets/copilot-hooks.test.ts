@@ -168,6 +168,17 @@ describe('copilot hook config — two hooks share version', () => {
     assert.ok(!('version' in afterB), 'version dropped once no sigil hook is left');
     assert.equal(hookEntries(afterB, 'PreToolUse').length, 0);
   });
+
+  it('keeps a version the user changed when the last hook is uninstalled', async () => {
+    const target = new CopilotTarget();
+    const catalog = makeCatalog(makeHook());
+    const [op] = await scaffold(target, 'shared/test-hook', catalog, 'project');
+
+    const edited = { ...applyMerge({}, op!), version: 2 };
+
+    const after = reverseMerge(edited, op!);
+    assert.deepEqual(after, { version: 2 }, 'a version sigil did not write is never removed');
+  });
 });
 
 describe('copilot hook config — scope labels', () => {

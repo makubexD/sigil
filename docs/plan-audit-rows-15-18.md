@@ -13,8 +13,8 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
 
 - [x] **Phase 0, housekeeping** (`chore/close-status-backlog`): `results.md` row 13 cites PR #92,
       `docs/plan-status-backlog.md` is removed, and `evals:check` now forces the TAP reporter on Node 23+.
-- [ ] **Open question for the owner**: `docs/ideas/ci-test-speed.md` says "done (2026-10-03)" but is still in
-      `docs/ideas/`. Move it into `docs/decisions/` or delete it (ideas README § Close-out).
+- [x] **Open question for the owner**: `docs/ideas/ci-test-speed.md` said "done (2026-10-03)" but was still in
+      `docs/ideas/`. Owner chose to move it: now `docs/decisions/ci-test-speed-2026-10.md`.
 - [ ] **Phase 1, row 17: Copilot hook target** (brief `docs/ideas/copilot-hooks.md`)
   - [ ] Spike `[inline: research]`: check the Copilot hooks docs for the file path, schema, event names, matchers,
         stdin/stdout shape, and whether exit 2 blocks the call. Write `docs/decisions/copilot-hooks-2026-10.md`, which

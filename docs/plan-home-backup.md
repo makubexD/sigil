@@ -57,11 +57,23 @@ Branch: `fix/home-backup-created-file`. Execute one step at a time: "execute ste
      where.
    - Test: step 1's unit cases pass.
 
-3. **Callers pass the recorded ops** `[worker:medium]`
-   - `add` (`execute-config.ts`): the ops recorded before this install is upserted.
-   - `update` (`update-config-io.ts`): the ops recorded for the file, including the fragment being replaced.
-   - `uninstall` / `prune` (`uninstall-config.ts`): the ops recorded for the file, including the one being removed.
-   - Test: every step 1 case passes; `npm test` passes.
+3. **Callers pass the recorded ops**, split in two (amended before step 3 ran: it touches about six files, over the
+   step-size limit).
+
+   3a. **`add` and `uninstall`** `[worker:medium]`
+   - `add` (`commands/add/execute-config.ts`): `recordedOpsAt(ctx.manifest, op)`, taken before this install is
+     upserted.
+   - `uninstall` / `prune` (`commands/uninstall-config.ts`): `reverseMergeOneConfigFile` takes the ops recorded for
+     the file, including the one being removed; `reverseMergeConfigEntries` builds them from the removed and kept
+     entries. Its other caller, `commands/update-config-move.ts`, passes the moving entry's records.
+   - Test: the step-1 CLI case "empty $COPILOT_HOME" passes; `npm test` passes.
+
+   3b. **`update`** `[worker:medium]`
+   - `writeMergedConfigFile` (`commands/update-config-io.ts`) takes the recorded ops; its callers
+     (`update-config.ts`, `update-config-catalog.ts`, `update-config-move.ts`) pass the ops recorded for the file,
+     including the fragment being replaced, threading the manifest (or a lookup built from it) down from `update`.
+   - Remove the `= []` default from `ensureHomeBackup`, so a caller that passes nothing fails to compile.
+   - Test: every step-1 case passes; `npm test` passes.
 
 4. **Docs** `[worker:medium]`
    - `CLAUDE.md` config-kind invariant and `docs/reference/config-kinds.md` backup rule: a backup is taken before the

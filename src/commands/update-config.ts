@@ -10,7 +10,7 @@ import { isConfigKind } from '../kinds';
 import { sameDestination } from '../manifest';
 import type { ManifestEntry, ManifestConfigMerge } from '../manifest/types';
 import type { ConfigMergeOp } from '../types';
-import type { UpdateOptions } from './update';
+import type { ConfigUpdateOptions, UpdateOptions } from './update';
 import { changedCatalogOp } from '../freshness';
 import { applyCatalogChange } from './update-config-catalog';
 import {
@@ -70,7 +70,7 @@ function updateOneConfigFile(
   cf: ManifestConfigMerge,
   op: ConfigMergeOp,
   entry: ManifestEntry,
-  opts: UpdateOptions,
+  opts: ConfigUpdateOptions,
 ): FileOutcome {
   const { fullPath } = resolveConfigFileTarget(cf, opts.projectDir);
   const existing = readExistingOrWarn(fullPath, entry.id, cf.file);
@@ -85,7 +85,7 @@ function updateOneConfigFile(
     return 'wrote';
   }
 
-  writeMergedConfigFile(fullPath, existing, { next: op });
+  writeMergedConfigFile(fullPath, existing, { next: op }, opts.sigilOpsAt(op));
   console.log(`  ✓  ${entry.id}  (${cf.file} ${action})`);
   return 'wrote';
 }
@@ -99,7 +99,7 @@ function updateOneConfigFile(
 function updateFromCatalog(
   cf: ManifestConfigMerge,
   entry: ManifestEntry,
-  opts: UpdateOptions,
+  opts: ConfigUpdateOptions,
   freshOps: readonly ConfigMergeOp[],
 ): FileOutcome {
   const current = freshOps.find(op => sameDestination(cf, op));
@@ -130,7 +130,7 @@ export interface ConfigEntryResult {
  */
 export function applyConfigEntry(
   entry: ManifestEntry,
-  opts: UpdateOptions,
+  opts: ConfigUpdateOptions,
   freshOps: readonly ConfigMergeOp[],
   isRetired: (cf: ManifestConfigMerge) => boolean = () => false,
 ): ConfigEntryResult {
@@ -147,7 +147,7 @@ export function applyConfigEntry(
 /** Like {@link applyConfigEntry}, for callers that only need to know whether anything was written. */
 export function updateConfigEntry(
   entry: ManifestEntry,
-  opts: UpdateOptions,
+  opts: ConfigUpdateOptions,
   freshOps: readonly ConfigMergeOp[],
 ): boolean {
   return applyConfigEntry(entry, opts, freshOps).wrote;

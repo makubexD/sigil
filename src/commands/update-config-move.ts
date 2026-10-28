@@ -17,7 +17,7 @@ import { isAtRetiredDestination, recordedOp, sameFile, sha256 } from '../manifes
 export { isAtRetiredDestination };
 import type { ManifestConfigMerge, ManifestEntry } from '../manifest/types';
 import type { ConfigMergeOp, RetiredConfigDestination } from '../types';
-import type { UpdateOptions } from './update';
+import type { ConfigUpdateOptions, UpdateOptions } from './update';
 import {
   readExistingOrWarn,
   resolveConfigFileTarget,
@@ -52,13 +52,17 @@ function recordOf(op: ConfigMergeOp): ManifestConfigMerge {
  * Merges `next` into its file and records it on `entry`, unless the entry already records it.
  * False when the new file is not valid JSON (already reported): the move doesn't happen.
  */
-function mergeIntoNewFile(entry: ManifestEntry, next: ConfigMergeOp, projectDir: string): boolean {
+function mergeIntoNewFile(
+  entry: ManifestEntry,
+  next: ConfigMergeOp,
+  opts: ConfigUpdateOptions,
+): boolean {
   if ((entry.configFiles ?? []).some(cf => sameFile(cf, next))) return true; // already there
   const record = recordOf(next);
-  const { fullPath } = resolveConfigFileTarget(record, projectDir);
+  const { fullPath } = resolveConfigFileTarget(record, opts.projectDir);
   const existing = readExistingOrWarn(fullPath, entry.id, next.file);
   if (existing === undefined) return false;
-  writeMergedConfigFile(fullPath, existing, { next });
+  writeMergedConfigFile(fullPath, existing, { next }, opts.sigilOpsAt(next));
   entry.configFiles = [...(entry.configFiles ?? []), record];
   return true;
 }
@@ -85,7 +89,7 @@ function moveOne(
   entry: ManifestEntry,
   cf: ManifestConfigMerge,
   next: ConfigMergeOp,
-  opts: UpdateOptions,
+  opts: ConfigUpdateOptions,
 ): 'moved' | 'skipped' | 'none' {
   const gate = moveGate(entry, cf, next, opts);
   if (gate !== 'go') return gate;
@@ -93,7 +97,7 @@ function moveOne(
     console.log(`  ↑  ${entry.id}\n     ${cf.file} → ${next.file}  (would be moved)`);
     return 'moved';
   }
-  if (!mergeIntoNewFile(entry, next, opts.projectDir)) return 'none';
+  if (!mergeIntoNewFile(entry, next, opts)) return 'none';
   // Forget the old record only once sigil's entry is out of the old file (or the file is gone);
   // otherwise uninstall still needs it to find the server there.
   const removed = reverseMergeOneConfigFile(cf, opts.projectDir, sigilOpsFor(entry, cf));
@@ -115,7 +119,7 @@ function warnNoReplacement(entry: ManifestEntry, cf: ManifestConfigMerge): void 
 /** Moves every fragment `entry` records at a retired destination to the file that replaced it. */
 export function moveRetiredFragments(
   entry: ManifestEntry,
-  opts: UpdateOptions,
+  opts: ConfigUpdateOptions,
   freshOps: readonly ConfigMergeOp[],
   retired: readonly RetiredConfigDestination[],
 ): MoveResult {

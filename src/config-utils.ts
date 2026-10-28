@@ -117,7 +117,7 @@ function holdsOnlySigilEntries(fullPath: string, sigilOps: readonly ConfigMergeO
  * copy includes sigil's entries too, so it is the first copy with user content, not a
  * pre-sigil original. Invalid JSON or a non-object is backed up unchanged.
  */
-export function ensureHomeBackup(fullPath: string, sigilOps: readonly ConfigMergeOp[] = []): void {
+export function ensureHomeBackup(fullPath: string, sigilOps: readonly ConfigMergeOp[]): void {
   if (!fs.existsSync(fullPath)) return;
   const bakPath = `${fullPath}.sigil.bak`;
   if (fs.existsSync(bakPath)) {

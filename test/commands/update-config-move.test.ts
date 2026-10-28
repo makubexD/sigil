@@ -9,9 +9,9 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { moveRetiredFragments } from '../../dist-cli/commands/update-config-move';
-import { sha256 } from '../../dist-cli/manifest';
+import { recordedOpsAt, sha256 } from '../../dist-cli/manifest';
 import { canonicalize } from '../../dist-cli/config-merge';
-import type { ManifestEntry } from '../../dist-cli/manifest/types';
+import type { Manifest, ManifestEntry } from '../../dist-cli/manifest/types';
 import type { ConfigMergeOp, RetiredConfigDestination } from '../../dist-cli/types';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { resolveConfigRoot } from '../../dist-cli/config-utils';
@@ -60,21 +60,30 @@ const readJson = (dir: string, rel: string) =>
     Record<string, unknown>
   >;
 
-const opts = (projectDir: string, extra: Partial<{ force: boolean; dryRun: boolean }> = {}) => ({
-  projectDir,
-  catalogDir: '',
-  packs: '',
-  force: false,
-  dryRun: false,
-  ...extra,
-});
+function opts(
+  projectDir: string,
+  entry: ManifestEntry,
+  extra: Partial<{ force: boolean; dryRun: boolean }> = {},
+) {
+  const manifest: Manifest = { manifestVersion: 1, entries: [entry] };
+  return {
+    projectDir,
+    catalogDir: '',
+    packs: '',
+    force: false,
+    dryRun: false,
+    sigilOpsAt: (dest: { file: string; root?: string | undefined }) =>
+      recordedOpsAt(manifest, dest),
+    ...extra,
+  };
+}
 
 describe('moveRetiredFragments', () => {
   it("should move sigil's server and leave the user's own entries in the old file", async () => {
     await withTempDirAsync(async dir => {
       writeJson(dir, '.vscode/mcp.json', { servers: { mine: { command: 'mine' }, probe: SERVER } });
       const entry = entryAt('.vscode/mcp.json');
-      const result = moveRetiredFragments(entry, opts(dir), [NEW_OP], RETIRED);
+      const result = moveRetiredFragments(entry, opts(dir, entry), [NEW_OP], RETIRED);
       assert.deepEqual(result, { wrote: true, skipped: 0 });
       assert.deepEqual(Object.keys(readJson(dir, '.vscode/mcp.json').servers!), ['mine']);
       assert.deepEqual(readJson(dir, '.mcp.json').mcpServers, { probe: SERVER });
@@ -88,7 +97,8 @@ describe('moveRetiredFragments', () => {
   it('should delete the old file when sigil was its only content', async () => {
     await withTempDirAsync(async dir => {
       writeJson(dir, '.vscode/mcp.json', OLD_FRAGMENT);
-      moveRetiredFragments(entryAt('.vscode/mcp.json'), opts(dir), [NEW_OP], RETIRED);
+      const entry = entryAt('.vscode/mcp.json');
+      moveRetiredFragments(entry, opts(dir, entry), [NEW_OP], RETIRED);
       assert.equal(fs.existsSync(path.join(dir, '.vscode/mcp.json')), false);
     });
   });
@@ -98,13 +108,13 @@ describe('moveRetiredFragments', () => {
       const edited = { servers: { probe: { ...SERVER, args: ['-y', 'probe-mcp', '--debug'] } } };
       writeJson(dir, '.vscode/mcp.json', edited);
       const entry = entryAt('.vscode/mcp.json');
-      assert.deepEqual(moveRetiredFragments(entry, opts(dir), [NEW_OP], RETIRED), {
+      assert.deepEqual(moveRetiredFragments(entry, opts(dir, entry), [NEW_OP], RETIRED), {
         wrote: false,
         skipped: 1,
       });
       assert.deepEqual(readJson(dir, '.vscode/mcp.json'), edited);
       assert.equal(fs.existsSync(path.join(dir, '.mcp.json')), false);
-      moveRetiredFragments(entry, opts(dir, { force: true }), [NEW_OP], RETIRED);
+      moveRetiredFragments(entry, opts(dir, entry, { force: true }), [NEW_OP], RETIRED);
       assert.deepEqual(readJson(dir, '.mcp.json').mcpServers, { probe: SERVER });
     });
   });
@@ -113,7 +123,12 @@ describe('moveRetiredFragments', () => {
     await withTempDirAsync(async dir => {
       writeJson(dir, '.vscode/mcp.json', OLD_FRAGMENT);
       const entry = entryAt('.vscode/mcp.json');
-      const result = moveRetiredFragments(entry, opts(dir, { dryRun: true }), [NEW_OP], RETIRED);
+      const result = moveRetiredFragments(
+        entry,
+        opts(dir, entry, { dryRun: true }),
+        [NEW_OP],
+        RETIRED,
+      );
       assert.equal(result.wrote, true);
       assert.deepEqual(readJson(dir, '.vscode/mcp.json'), OLD_FRAGMENT);
       assert.equal(fs.existsSync(path.join(dir, '.mcp.json')), false);
@@ -129,7 +144,7 @@ describe('moveRetiredFragments', () => {
       writeJson(dir, '.vscode/mcp.json', OLD_FRAGMENT);
       fs.writeFileSync(path.join(dir, '.mcp.json'), '{ not json');
       const entry = entryAt('.vscode/mcp.json');
-      const result = moveRetiredFragments(entry, opts(dir), [NEW_OP], RETIRED);
+      const result = moveRetiredFragments(entry, opts(dir, entry), [NEW_OP], RETIRED);
       assert.equal(result.wrote, false);
       assert.deepEqual(readJson(dir, '.vscode/mcp.json'), OLD_FRAGMENT);
       assert.deepEqual(
@@ -162,7 +177,7 @@ describe('moveRetiredFragments', () => {
             to: { file: 'mcp-config.json', root: 'copilot-home' },
           },
         ];
-        moveRetiredFragments(entry, opts(dir), [userOp], retired);
+        moveRetiredFragments(entry, opts(dir, entry), [userOp], retired);
         const moved = readJson(dir, 'copilot-home/mcp-config.json').mcpServers!;
         assert.deepEqual(Object.keys(moved).sort(), ['mine', 'probe']);
         // The new file holds the user's own server, so it is backed up. The old file holds only
@@ -188,7 +203,7 @@ describe('moveRetiredFragments', () => {
       const entry = entryAt('.vscode/mcp.json');
       const warn = mock.method(console, 'error', () => {});
       try {
-        assert.deepEqual(moveRetiredFragments(entry, opts(dir), [], RETIRED), {
+        assert.deepEqual(moveRetiredFragments(entry, opts(dir, entry), [], RETIRED), {
           wrote: false,
           skipped: 0,
         });
@@ -209,7 +224,7 @@ describe('moveRetiredFragments', () => {
     await withTempDirAsync(async dir => {
       writeJson(dir, '.mcp.json', { mcpServers: { probe: SERVER } });
       const entry = entryAt('.mcp.json');
-      assert.deepEqual(moveRetiredFragments(entry, opts(dir), [NEW_OP], RETIRED), {
+      assert.deepEqual(moveRetiredFragments(entry, opts(dir, entry), [NEW_OP], RETIRED), {
         wrote: false,
         skipped: 0,
       });

@@ -53,11 +53,15 @@ function deepEqual(a: unknown, b: unknown): boolean {
   return false;
 }
 
-/** The schema default for one field, or `undefined` if that field has no `ZodDefault` wrapper. */
+/**
+ * The schema default for one field, or `undefined` if that field has no default wrapper.
+ * `.prefault()` (used where the default must still be parsed) counts as a default too.
+ */
 function fieldDefault(shape: z.ZodRawShape, key: string): unknown {
   const field = shape[key];
-  if (!field || field._def.typeName !== 'ZodDefault') return undefined;
-  return (field._def as { defaultValue: () => unknown }).defaultValue();
+  if (!(field instanceof z.ZodDefault) && !(field instanceof z.ZodPrefault)) return undefined;
+  // zod 4: defaultValue is a getter that returns a fresh copy of the value.
+  return field._zod.def.defaultValue;
 }
 
 /** Findings for one artifact's redundant-default keys, given its kind's zod shape. */

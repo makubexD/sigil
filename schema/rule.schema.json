@@ -22,11 +22,11 @@
           "minLength": 1
         },
         "tags": {
+          "default": [],
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "default": []
+          }
         },
         "platforms": {
           "type": "array",
@@ -62,33 +62,33 @@
           "type": "string"
         },
         "appliesTo": {
+          "default": [
+            "**/*"
+          ],
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "default": [
-            "**/*"
-          ]
+          }
         },
         "appliesToRationale": {
           "type": "string",
           "minLength": 1
         },
         "severity": {
+          "default": "recommended",
           "type": "string",
           "enum": [
             "required",
             "recommended",
             "optional"
-          ],
-          "default": "recommended"
+          ]
         },
         "extends": {
+          "default": [],
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "default": []
+          }
         },
         "relatedArtifacts": {
           "type": "array",

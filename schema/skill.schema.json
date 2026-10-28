@@ -22,11 +22,11 @@
           "minLength": 1
         },
         "tags": {
+          "default": [],
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "default": []
+          }
         },
         "platforms": {
           "type": "array",
@@ -68,25 +68,25 @@
           "minLength": 1
         },
         "uses": {
+          "default": {},
           "type": "object",
           "properties": {
             "rules": {
+              "default": [],
               "type": "array",
               "items": {
                 "type": "string"
-              },
-              "default": []
+              }
             },
             "agents": {
+              "default": [],
               "type": "array",
               "items": {
                 "type": "string"
-              },
-              "default": []
+              }
             }
           },
-          "additionalProperties": false,
-          "default": {}
+          "additionalProperties": false
         },
         "allowedTools": {
           "type": "array",

@@ -85,7 +85,9 @@ export const SkillSchema = z.object({
       agents: z.array(z.string()).optional().default([]),
     })
     .optional()
-    .default({}),
+    // prefault, not default: zod 4's .default() returns its value without parsing it, which would
+    // leave `uses` as {} instead of { rules: [], agents: [] }. prefault parses {} as zod 3 did.
+    .prefault({}),
   /**
    * Tool capabilities the skill is allowed to use (platform-specific invocation).
    * Emitted as `allowed-tools:` in Claude Code SKILL.md frontmatter.

@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   run `sigil update`. The server is pinned to `@azure-devops/mcp@2.10.0` instead of the nightly
   `@next` tag.
 
+### Security
+
+- Upgraded `zod` from 3 to 4.6.7 to fix
+  [GHSA-mrhx-c7xc-m3w5](https://github.com/advisories/GHSA-mrhx-c7xc-m3w5) (memory exhaustion while
+  validating oversized collections). No zod 3 release has the fix, and `npm audit` failed CI on
+  every branch. `schema/*.schema.json` now comes from zod's own `z.toJSONSchema()` instead of
+  `zod-to-json-schema` (removed). The files describe the same frontmatter, with unknown keys still
+  rejected; integers now carry an explicit safe-integer `maximum` and records `propertyNames`.
+
 ### Added
 
 - `.sigil/overlays.yaml`: narrow where an installed rule applies without editing it. Each rule id

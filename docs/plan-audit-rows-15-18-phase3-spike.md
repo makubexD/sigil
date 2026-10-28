@@ -65,9 +65,12 @@ on it (`selftest.mjs` requires that).
      - `as any` and `!` are not counted by the metric; they are listed by hand as an observation, not a gate.
 
 4. **Runs** `[inline: run with the model under test]`
-   - Arms `none` (`--install none`) and `current` (TypeScript rules from master), alternating, same day, same CLI
-     version, `--model claude-opus-5-5`, `--runs 5`, `--tasks P1,P2`. About 20 runs, roughly $10 at the archived
-     median of $0.49 a run. A run that hits an API or usage limit is re-run, not recorded.
+   - Arms `none` (`--install none`) and `current` (TypeScript rules from master), started together per run number,
+     same day, same CLI version, `--runs 5`, `--tasks P1,P2`.
+   - Amended 2026-10-28 before any run (owner): two stages instead of `claude-opus-5-5`. Stage 1 screens on
+     `claude-haiku-5-5`; if neither H15 nor H16 holds, both are a no-go and stage 2 is skipped. Otherwise stage 2
+     reruns the same design on `claude-sonnet-5-5`, and only stage 2 can make a hypothesis hold. 20 runs per stage.
+     A run that hits an API or usage limit is re-run, not recorded.
 
 5. **Verdict** `[inline: judgment]`
    - Classify every suppression (justified or not), list `as any` / `!`, apply H15 and H16 as registered.

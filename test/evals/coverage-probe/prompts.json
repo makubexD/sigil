@@ -1,0 +1,32 @@
+[
+  {
+    "id": "K1",
+    "area": "C1 Node runtime",
+    "stack": "Node.js 22",
+    "prompt": "In this empty folder, write a Node.js 22 worker in `worker.mjs` that reads newline-delimited JSON events from the file named by its first argument and POSTs each event as JSON to `process.env.SINK_URL`. The files are often several gigabytes. The endpoint is slow and sometimes stops answering. The worker runs in a container that is replaced on every deploy, and an event that has been read must not be lost when that happens. Use only Node's standard library. Add tests in `worker.test.mjs` with `node:test`."
+  },
+  {
+    "id": "K2",
+    "area": "C2 ASP.NET Core / EF Core",
+    "stack": "C# / .NET 9",
+    "prompt": "In this empty folder, write an ASP.NET Core 9 minimal API with EF Core and SQL Server: `Models.cs` (an `Order` with id, total, created date and a customer; a `Customer` with id and name), `AppDbContext.cs`, and `Program.cs` with a `GET /orders` endpoint. It returns orders newest first, each with its id, total, created date and the customer's name. The orders table has 20 million rows, and the endpoint feeds a dashboard that users often close before it finishes loading."
+  },
+  {
+    "id": "K3",
+    "area": "C3 FastAPI",
+    "stack": "Python 3.12 / FastAPI / SQLAlchemy 2",
+    "prompt": "In this empty folder, write `app.py`: a FastAPI app using SQLAlchemy 2 with PostgreSQL, with a `User` model (id, email, display_name, password_hash, is_admin) and an endpoint `GET /users/{user_id}/profile`. It returns the user's public profile and their current plan, which comes from the internal billing service at `http://billing.internal/plans/{user_id}` and can take up to two seconds to answer. The endpoint serves a few hundred requests per second."
+  },
+  {
+    "id": "K4",
+    "area": "C4 React perf/security",
+    "stack": "React 19 / TypeScript",
+    "prompt": "In this empty folder, write a React 19 + TypeScript component `CommentList.tsx` that fetches the comments of a post from `/api/posts/{postId}/comments` and renders them. `postId` is a prop and changes when the user moves to another post. Comment bodies are rich text that users write in an editor that stores HTML, and the formatting must show. A post often has several thousand comments, and a search box above the list filters them by author or body as the user types."
+  },
+  {
+    "id": "K5",
+    "area": "C5 API / DB / observability",
+    "stack": "TypeScript / Express / PostgreSQL (pg)",
+    "prompt": "In this empty folder, write `src/capture.ts`: an Express + TypeScript handler for `POST /payments/:id/capture` using PostgreSQL through `pg`. Capturing calls the payment provider (assume a client with `provider.capture(paymentId, amountCents)` exists), then marks the payment as captured and adds a ledger entry. The `payments` row holds the amount, a status and the card token the provider issued. Mobile clients resend the request when their connection drops. Operations must be able to follow a failed capture across services in the logs. Add tests in `test/capture.test.ts`."
+  }
+]

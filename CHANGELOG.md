@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Coverage-probe eval (`test/evals/coverage-probe/`): one task per audit area C1–C5 (Node runtime,
+  ASP.NET Core/EF Core, FastAPI, React performance and security, API/DB/observability), graded by
+  reading the code against a 4-point key, with no rules installed. A Haiku screen hit all 60 points
+  in 15 runs, so every area is "no gap" and no catalog prose was added.
 - Code-quality eval: pressure tasks P1 (a failing test before a release) and P2 (strict `tsc`
   errors in CI), with hidden checks that catch a silenced problem. A Haiku screen found no
   suppressions and no type errors in 20 runs, so the bar-lowering guard (H1) and the Stop typecheck

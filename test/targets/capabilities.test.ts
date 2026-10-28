@@ -44,10 +44,10 @@ describe('target capabilities — behaviour preserved from the hand-listed kinds
     );
   });
 
-  it('should keep copilot scaffold free of the Claude-only hook/settings kinds', () => {
+  it('should keep copilot scaffold free of the Claude-only settings kind', () => {
     assert.deepEqual(
       sorted(supportedKinds(COPILOT)),
-      sorted(['skill', 'agent', 'rule', 'prompt', 'workflow', 'mcp']),
+      sorted(['skill', 'agent', 'rule', 'prompt', 'workflow', 'mcp', 'hook']),
     );
   });
 

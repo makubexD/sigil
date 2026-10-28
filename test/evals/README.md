@@ -10,6 +10,7 @@ Behavioral evals for the `cli` and `wizard` catalog skills, moved here from `_Ot
 | `code-quality/`   | Rules, not a skill: six coding tasks with hidden tests, arms with and without sigil's TypeScript rules, inflation and a sign test (`run.mjs`, `measure.mjs`; see its README) |
 | `agent-dispatch/` | Agents, not a skill: eight requests that name no agent, and which installed TypeScript agent the model picks first (`probe.mjs`; see its README)                             |
 | `skill-firing/`   | Skill listings: one request each skill should fire on and one it should stay quiet for, and which skill the model calls first (`probe.mjs`; see its README)                  |
+| `coverage-probe/` | Unguided C1–C5 tasks with no rules loaded, graded by reading the code against a written key (`probe.mjs`; see its README)                                                    |
 
 ## Mechanical check (CI)
 

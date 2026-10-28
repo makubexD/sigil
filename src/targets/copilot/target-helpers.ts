@@ -25,9 +25,9 @@ import { portableMcpOp } from '../portable-mcp';
 import { isRepoWideRule } from '../shared/repo-wide-rules';
 
 /**
- * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
+ * Copilot / VS Code MCP config scopes, ordered by documented precedence (highest → lowest).
  * Copilot has no distinct "local" MCP scope — project and local both resolve to the project's
- * .mcp.json. So only two scopes are offered: Project (.mcp.json) and User (mcp-config.json).
+ * .mcp.json, so only Project and User are offered for an mcp-only selection.
  */
 export const CONFIG_SCOPES = [
   {
@@ -46,22 +46,70 @@ export const CONFIG_SCOPES = [
   },
 ];
 
-/** The file one scope's mcp install writes, with the JSON key its servers sit under. */
-function mcpDestinations(
-  scope: ConfigScope,
-): { file: string; root: ConfigRoot; section: string }[] {
-  return [{ ...resolveCopilotConfigDestination('mcp', scope), section: COPILOT_MCP_SERVERS_KEY }];
+/**
+ * Hook config scopes. Unlike mcp, a hook's `local` scope has its own file
+ * (.github/copilot/settings.local.json), so it is a third option beside Project and User.
+ */
+export const HOOK_CONFIG_SCOPES = [
+  {
+    value: 'local' as ConfigScope,
+    precedence: 1,
+    shared: false,
+    blastRadius: 'project' as const,
+    description: 'workspace — .github/copilot/settings.local.json, not git-committed',
+  },
+  {
+    value: 'project' as ConfigScope,
+    precedence: 2,
+    shared: true,
+    blastRadius: 'project' as const,
+    description: 'workspace — .github/hooks/sigil.json, git-committed',
+  },
+  {
+    value: 'user' as ConfigScope,
+    precedence: 3,
+    shared: false,
+    blastRadius: 'all-projects' as const,
+    description: 'user — hooks/sigil.json under $COPILOT_HOME, all workspaces',
+  },
+];
+
+type KindDestination = { kind: ConfigKind; file: string; root: ConfigRoot; section: string };
+
+/** One scope's mcp destination, with the JSON key its servers sit under. */
+function mcpDestination(scope: ConfigScope): KindDestination {
+  return {
+    kind: 'mcp',
+    ...resolveCopilotConfigDestination('mcp', scope),
+    section: COPILOT_MCP_SERVERS_KEY,
+  };
 }
 
-/** Builds one scope's mcp destinations (the same files buildMcpConfigOps writes), or []. */
+/** One scope's hook destination, with the JSON key its entries sit under. */
+function hookDestination(scope: ConfigScope): KindDestination {
+  return {
+    kind: 'hook',
+    ...resolveCopilotConfigDestination('hook', scope),
+    section: 'hooks',
+  };
+}
+
+/** The config kinds present in `kinds`, with each kind's destination file and in-file section. */
+function destinationsFor(kinds: ConfigKind[], scope: ConfigScope): KindDestination[] {
+  return [
+    ...(kinds.includes('mcp') ? [mcpDestination(scope)] : []),
+    ...(kinds.includes('hook') ? [hookDestination(scope)] : []),
+  ];
+}
+
+/** Builds one scope's config destinations (the same files scaffoldConfig writes), or []. */
 export function buildScopeDestinations(
   kinds: ConfigKind[],
   scopeValue: ConfigScope,
   projectDir: string,
 ): ConfigScopeDestination[] {
-  if (!kinds.includes('mcp')) return [];
-  return mcpDestinations(scopeValue).map(d => ({
-    kind: 'mcp' as ConfigKind,
+  return destinationsFor(kinds, scopeValue).map(d => ({
+    kind: d.kind,
     file: d.file,
     root: d.root,
     fullPath: path.join(resolveConfigRoot(d.root, projectDir), d.file),

@@ -7,7 +7,7 @@
  */
 import { TEMPLATE_NOT_EMITTED, type TargetCapabilities } from '../capability-types';
 
-/** hook/settings frontmatter is Claude Code's own vocabulary (KIND_REGISTRY `ownedBy: ['claude']`). */
+/** settings frontmatter is Claude Code's own vocabulary (KIND_REGISTRY `ownedBy: ['claude']`). */
 const CLAUDE_OWNED =
   "this kind's schema is Claude Code's own vocabulary — sigil has no Copilot emitter for it";
 
@@ -19,7 +19,7 @@ export const COPILOT_CAPABILITIES: TargetCapabilities = {
     prompt: { mode: 'native' },
     workflow: { mode: 'native' },
     mcp: { mode: 'native' },
-    hook: { mode: 'none', reason: CLAUDE_OWNED },
+    hook: { mode: 'native' },
     settings: { mode: 'none', reason: CLAUDE_OWNED },
     template: TEMPLATE_NOT_EMITTED,
   },

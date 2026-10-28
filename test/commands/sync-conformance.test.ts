@@ -279,6 +279,31 @@ describe('conformance rule: platform-path-leak', () => {
     const findings = runConformance(catalog, [], { ruleId: 'platform-path-leak' });
     assert.equal(findings.length, 0);
   });
+
+  const hookNaming = (platforms?: string[]): Artifact => ({
+    id: 'shared/probe-hook',
+    kind: 'hook',
+    filePath: '/fake/probe-hook.hook.md',
+    frontmatter: { id: 'shared/probe-hook', kind: 'hook', ...(platforms ? { platforms } : {}) },
+    body: 'Reads ~/.claude/state before it acts.',
+  });
+
+  it('flags a hook only for the targets that deliver hooks', () => {
+    const findings = runConformance(makeCatalog([hookNaming()]), [], {
+      ruleId: 'platform-path-leak',
+    });
+    assert.deepEqual(
+      findings.map(f => f.provider),
+      ['copilot'],
+    );
+  });
+
+  it('does not flag a hook whose platforms: names only the folder owner', () => {
+    const findings = runConformance(makeCatalog([hookNaming(['claude'])]), [], {
+      ruleId: 'platform-path-leak',
+    });
+    assert.equal(findings.length, 0);
+  });
 });
 
 describe('conformance rule: applies-to-rationale', () => {

@@ -15,8 +15,8 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 | Kind | claude | copilot | agents-standard |
 | --- | --- | --- | --- |
 | mcp | native | native | — (1) |
-| hook | native | — (2) | — (3) |
-| settings | native | — (2) | — (4) |
+| hook | native | native | — (2) |
+| settings | native | — (3) | — (4) |
 | prompt | native | native | — (5) |
 | skill | native | native | native |
 | agent | native | native | — (6) |
@@ -25,8 +25,8 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 | template | — (9) | — (9) | — (9) |
 
 1. the open standard (Agent Skills, AGENTS.md) defines no MCP config file shared by its tools; install it for a tool-specific target
-2. this kind's schema is Claude Code's own vocabulary — sigil has no Copilot emitter for it
-3. the open standard (Agent Skills, AGENTS.md) defines no hooks; install it for a tool-specific target
+2. the open standard (Agent Skills, AGENTS.md) defines no hooks; install it for a tool-specific target
+3. this kind's schema is Claude Code's own vocabulary — sigil has no Copilot emitter for it
 4. the open standard (Agent Skills, AGENTS.md) defines no settings; install it for a tool-specific target
 5. the open standard (Agent Skills, AGENTS.md) defines no user-invoked prompts with arguments; install it for a tool-specific target
 6. the open standard (Agent Skills, AGENTS.md) defines no subagents; install it for a tool-specific target

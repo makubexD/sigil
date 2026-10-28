@@ -1,8 +1,8 @@
 /**
  * Citations for Copilot files no KindEmitSpec renders: `copilot-instructions.md`, `AGENTS.md`
  * (the open standard plus each consumer's doc, since GitHub and VS Code differ on subfolder
- * support) and the merged MCP files. Tracked by `sigil sync --stale` beside the spec citations
- * (allProviderDocRefs, ../all-emit-specs.ts).
+ * support), the merged MCP files and the merged hook files. Tracked by `sigil sync --stale` beside
+ * the spec citations (allProviderDocRefs, ../all-emit-specs.ts).
  *
  * @module
  */
@@ -15,6 +15,7 @@ import {
   COPILOT_CLI_MCP_DOC,
   COPILOT_MCP_VARIABLES_DOC,
 } from '../doc-refs';
+import { COPILOT_HOOKS_DOC, VSCODE_HOOKS_DOC } from '../hook-doc-refs';
 
 export const COPILOT_AGGREGATE_DOCS: readonly SourcedDocRef[] = [
   { source: 'copilot copilot-instructions.md aggregate', doc: COPILOT_INSTRUCTIONS_DOC },
@@ -27,4 +28,12 @@ export const COPILOT_AGGREGATE_DOCS: readonly SourcedDocRef[] = [
     doc: COPILOT_CLI_MCP_DOC,
   },
   { source: 'copilot MCP env references (${NAME})', doc: COPILOT_MCP_VARIABLES_DOC },
+  {
+    source: 'copilot .github/hooks/sigil.json / settings.local.json hooks aggregate',
+    doc: COPILOT_HOOKS_DOC,
+  },
+  {
+    source: 'copilot .github/hooks/sigil.json / settings.local.json hooks aggregate',
+    doc: VSCODE_HOOKS_DOC,
+  },
 ];

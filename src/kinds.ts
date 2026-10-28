@@ -96,8 +96,9 @@ export const KIND_REGISTRY: Record<ArtifactKind, KindDescriptor> = {
     bodyComment: 'Describe what this hook does and when it fires. The command: above is executed.',
     hasUsesClosure: false,
     isDirectoryBacked: false,
-    // event/matcher are Claude Code's lifecycle-hook vocabulary verbatim — see kinds.ts header.
-    ownedBy: ['claude'],
+    // Copilot adopted Claude Code's PascalCase event names and matcher semantics as its own
+    // documented alias (docs/decisions/copilot-hooks-2026-10.md), so the shape is shared.
+    ownedBy: [],
     sourceDir: 'hooks',
     sourceSuffix: '.hook.md',
   },

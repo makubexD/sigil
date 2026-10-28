@@ -23,6 +23,7 @@
  *   spec/          — one KindEmitSpec per kind (COPILOT_EMIT_SPECS = emitSpecs); every
  *                    per-artifact file is written through ../emit-files.ts with these
  *   mcp-key        — COPILOT_MCP_SERVERS_KEY
+ *   hook-ops       — buildCopilotHookOps (the flat hook entry Copilot reads)
  *   target-helpers — free-standing helpers backing the class methods below
  */
 export { COPILOT_MCP_SERVERS_KEY } from './mcp-key';
@@ -55,8 +56,10 @@ import { scaffoldArtifact } from '../emit-files';
 import { COPILOT_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 import { COPILOT_INIT_DIRS, COPILOT_PROJECT_MARKERS, COPILOT_VOCABULARY } from './metadata';
+import { buildCopilotHookOps } from './hook-ops';
 import {
   CONFIG_SCOPES,
+  HOOK_CONFIG_SCOPES,
   buildScopeDestinations,
   buildArtifactFiles,
   buildMcpConfigOps,
@@ -78,11 +81,13 @@ export class CopilotTarget implements Target {
 
   /**
    * Copilot / VS Code config scopes, ordered by documented precedence (highest → lowest).
-   * Copilot has no distinct "local" MCP scope — project and local both resolve to the project's
-   * .mcp.json. So only two scopes are offered: Project (.mcp.json) and User (mcp-config.json).
+   * For mcp, Copilot has no distinct "local" scope — project and local both resolve to the
+   * project's .mcp.json, so only Project and User are offered. A hook does have a distinct local
+   * file (.github/copilot/settings.local.json), so Local joins the list for a hook selection.
    */
   configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
-    return CONFIG_SCOPES.map(sc => ({
+    const scopes = kinds.includes('hook') ? HOOK_CONFIG_SCOPES : CONFIG_SCOPES;
+    return scopes.map(sc => ({
       ...sc,
       label: sc.value,
       destinations: buildScopeDestinations(kinds, sc.value, projectDir),
@@ -139,16 +144,21 @@ export class CopilotTarget implements Target {
     return scaffoldArtifact({ specs: this.emitSpecs, artifact, catalog, options });
   }
 
-  // ── Config scaffold (mcp only — hook/settings are Claude Code-only) ──────────
+  // ── Config scaffold (mcp / hook — settings is Claude Code-only) ──────────────
 
   /**
-   * Produce merge ops for mcp artifacts targeting Copilot (VS Code and Copilot CLI).
+   * Produce merge ops for mcp and hook artifacts targeting Copilot (VS Code and Copilot CLI).
    *
-   * Scope behaviour:
+   * mcp scope behaviour:
    *   project / local → .mcp.json, root: project (VS Code, its Agent Host and Copilot CLI)
    *   user            → mcp-config.json, root: copilot-home ($COPILOT_HOME, default ~/.copilot)
    *
-   * Note: Copilot has no separate "local" MCP scope — `local` aliases to the project.
+   * hook scope behaviour:
+   *   project → .github/hooks/sigil.json, root: project
+   *   local   → .github/copilot/settings.local.json, root: project
+   *   user    → hooks/sigil.json, root: copilot-home
+   *
+   * Note: for mcp, Copilot has no separate "local" scope — `local` aliases to the project.
    */
   async scaffoldConfig(
     artifactId: string,
@@ -160,12 +170,16 @@ export class CopilotTarget implements Target {
       throw new Error(`Artifact '${artifactId}' not found in the catalog`);
     }
 
-    if (artifact.kind !== 'mcp') {
-      throw new Error(`Copilot scaffoldConfig only supports 'mcp' kind, got '${artifact.kind}'`);
+    if (artifact.kind !== 'mcp' && artifact.kind !== 'hook') {
+      throw new Error(
+        `Copilot scaffoldConfig only supports 'mcp' or 'hook' kind, got '${artifact.kind}'`,
+      );
     }
 
     const scope: ConfigScope =
       options.scope ?? (artifact.frontmatter.defaultScope as ConfigScope | undefined) ?? 'project';
-    return buildMcpConfigOps(artifact, scope);
+    return artifact.kind === 'hook'
+      ? buildCopilotHookOps(artifact, scope)
+      : buildMcpConfigOps(artifact, scope);
   }
 }

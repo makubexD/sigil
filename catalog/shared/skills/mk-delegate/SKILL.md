@@ -2,52 +2,65 @@
 id: shared/mk-delegate
 kind: skill
 name: mk-delegate
-title: Delegate to the Free Worker
+title: Delegate to the DeepSeek Worker
 description: >-
-  Hand one mechanical coding task, or one step of a written plan, to the free worker (the mk-worker
-  agent: OpenCode on DeepSeek V4.1 Flash Free), then review its diff and rerun its tests before
-  accepting. Use only when the user runs /mk-delegate.
+  Hand one mechanical coding task, or one step of a written plan, to the DeepSeek worker (mk-exec:
+  a headless Claude Code run on the paid DeepSeek API), then review its diff and rerun its tests
+  before accepting. Use only when the user runs /mk-delegate.
 whenToUse: >-
-  Run manually as `/mk-delegate <task>` or `/mk-delegate step 2 of docs/plan-x.md` when the user
-  wants a mechanical change (renames, docstrings, test conversions, a planned step with exact files
-  and a test command) done by the free worker instead of the main session — e.g. "send step 2 to
-  the free worker", "delegate this rename", "have the worker do the test conversion". Not for
-  design, debugging or user-facing copy, and not for anything that needs secrets.
-argumentHint: "<task> | step <N> of <plan file>"
+  Run manually as `/mk-delegate <task>`, `/mk-delegate step 2 of docs/plan-x.md` or
+  `/mk-delegate --effort high <task>` when the user wants a mechanical change (renames, docstrings,
+  test conversions, a planned step with exact files and a test command) done by the worker instead
+  of the main session — e.g. "send step 2 to the worker", "delegate this rename", "have the worker
+  do the test conversion". Not for design, debugging or user-facing copy, and not for anything that
+  needs secrets.
+argumentHint: "[--effort low|medium|high] <task> | step <N> of <plan file>"
 disableModelInvocation: true
 uses:
   rules:
     - shared/orchestration
-  agents:
-    - shared/mk-worker
 tags:
   - delegation
   - workflow
 ---
 
-# /mk-delegate: hand a task to the free worker
+# /mk-delegate: hand a task to the DeepSeek worker
 
-Task from the user: {sigil:arguments}
+Arguments from the user: {sigil:arguments}
 
 ## Steps
 
-1. **Check the task.** If it is empty, ask what to delegate and stop. If it names a plan step
+1. **Parse effort.** If the arguments start with `--effort <level>`, take it (`low`, `medium` or
+   `high`) and drop it from the task. The default is `medium`. A plan step tagged `[worker:<level>]`
+   sets it too, and an explicit `--effort` wins. low runs `deepseek-flash` at low effort, medium runs
+   `deepseek-flash` at high effort, and high runs `deepseek-v4-pro` at high effort.
+2. **Check the task.** If it is empty, ask what to delegate and stop. If it names a plan step
    ("step 2 of docs/plan-x.md"), read that step and use its files, change and test command as the
-   spec. If it is judgment work (design, debugging, user-facing copy), say so in one line and ask
-   whether to do it in the main session instead.
-2. **Check the repo.** Run `git rev-parse --show-toplevel` and `git status --short`. If it isn't a
+   spec. If the step is tagged `[inline: …]`, stop and say the main session should do it, quoting
+   the reason. If it is judgment work (design, debugging, user-facing copy), say so in one line and
+   ask whether to do it in the main session instead.
+3. **Check the repo.** Run `git rev-parse --show-toplevel` and `git status --short`. If it isn't a
    git repo, or the tree is dirty, stop and tell the user to commit or stash first.
-3. **Write the spec** in a few lines: the exact change, the files allowed to change, and the test
-   command that proves it's done. Never include secrets, `.env` contents or private data. The
-   worker sends everything to a third-party service.
-4. **Delegate.** Print the report line, then hand the repo path and the spec to the `mk-worker`
-   agent:
-   `⏵ mk-worker (opencode/deepseek-v4.1-flash-free, low effort): <task in 10 words or fewer>`
-5. **Review it yourself.** The agent's report is a claim. Read `git diff`, rerun the test command,
-   and check that only the allowed files changed and no tests were deleted or skipped. Its tests
-   cover the paths it thought of. Exercise the interactive or error paths it may have skipped.
-6. **Report** to the user: accepted or rejected, files changed, test result, which model ran and
-   whether the fallback was used. Don't commit unless the user asks.
+4. **Write the spec** in a few lines: the exact change, the files allowed to change, the test
+   command that proves it's done, and any setup it needs (such as loading a Node version manager).
+   Name callers outside the allowed files that the change could break, so the worker stops instead
+   of leaving them broken. Never include secrets, `.env` contents or private data. The worker sends
+   everything to DeepSeek, which is not zero-retention.
+5. **Delegate.** Print the report line, then run `mk-exec` in the background and wait for the
+   completion notification instead of polling:
+   `⏵ mk-exec (deepseek <model>, <level> effort): <task in 10 words or fewer>`
+   `mk-exec --effort <level> <repo> '<spec>'`
+   Read only the summary it prints (40 lines at most, ending with `--- log <dir>`). The full
+   transcript is in `<dir>/stream.jsonl` when you need it.
+6. **Read the exit code.** 0: review it. 75: a DeepSeek key, balance or rate problem. Stop, report
+   the error line and don't retry. 2: a setup problem (dirty tree, missing key); fix it and rerun.
+   124: timed out after 15 minutes; treat it as a rejection. Any other non-zero code: read the
+   errors in the summary and treat it as a rejection.
+7. **Review it yourself.** The summary is a claim. Read `git diff`, rerun the test command, and
+   check that only the allowed files changed and no tests were deleted or skipped. Its tests cover
+   the paths it thought of. Exercise the interactive or error paths it may have skipped.
+8. **Report** to the user: accepted or rejected, files changed, test result, model, effort, tokens
+   and the log dir. Don't commit unless the user asks.
    - Rejected once: resend with a concrete correction.
    - Rejected twice: tell the user and offer to do it in the main session.
 

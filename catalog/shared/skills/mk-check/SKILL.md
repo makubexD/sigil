@@ -57,5 +57,12 @@ line, with the fix for every ✗. Never print the API key.
    Change nothing else. Then run: cat README.md"`. It passes if the exit code is 0, `README.md`
    contains `mk-check ok`, `git status --short` shows only `README.md`, and the log dir named on the
    summary's last line holds `stream.jsonl`, `meta.json`, `diff.patch` and `summary.txt`. Report the
-   model, effort, tokens, duration and the balance from the banner, then delete the throwaway repo.
-   Exit 75 means a key or balance problem; exit 2 means a missing key or a dirty tree.
+   model, effort, tokens, duration, the `cost≈` estimate from the summary and the balance from the
+   banner, then delete the throwaway repo. Exit 75 means a key or balance problem; exit 2 means a
+   missing key or a dirty tree.
+
+   Known and expected, so don't flag them: `stderr.log` has an `unrecognized_model` line for
+   `deepseek-*[1m]` (Claude Code doesn't know DeepSeek model names, and `[1m]` gives the worker its 1M
+   context), and the transcript's own `total_cost_usd` is 0 for the same reason. `mk-exec` estimates
+   the cost from the token counts and DeepSeek's prices instead. The balance updates with a delay, so
+   one small run often shows no change.

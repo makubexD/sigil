@@ -29,13 +29,13 @@ if [[ -n "$(git -C "$repo" status --porcelain)" ]]; then echo "mk-exec: $repo ha
 [[ -r "$HOME/.config/claude-workers/env" ]] && source "$HOME/.config/claude-workers/env"
 if [[ -z "${DEEPSEEK_API_KEY:-}" ]]; then echo "mk-exec: DEEPSEEK_API_KEY missing in ~/.config/claude-workers/env" >&2; exit 2; fi
 
-# The worker loads the repo's own config (CLAUDE.md, .claude/ rules, skills, agents, commands, hooks), never ~/.claude.
+# The worker loads the repo's own config ({sigil:conventions-file}, .claude/ rules, skills, agents, commands, hooks), never ~/.claude.
 # Project settings that could send the DeepSeek key elsewhere (ANTHROPIC_* env, apiKeyHelper) stop the run.
 ps="$repo/.claude/settings.json"
 if [[ -f $ps ]] && ! jq -e '((.env // {}) | keys | any(startswith("ANTHROPIC_"))) or has("apiKeyHelper") | not' "$ps" >/dev/null 2>&1; then
   echo "mk-exec: $ps sets ANTHROPIC_* env or apiKeyHelper (or isn't valid JSON); not running the worker with it" >&2; exit 2
 fi
-project_cfg="$(cd "$repo" && for f in CLAUDE.md .claude/CLAUDE.md .claude/rules .claude/skills .claude/agents .claude/commands .claude/settings.json; do [[ -e $f ]] && printf '%s ' "$f"; done)"
+project_cfg="$(cd "$repo" && for f in {sigil:conventions-file} .claude/{sigil:conventions-file} .claude/rules .claude/skills .claude/agents .claude/commands .claude/settings.json; do [[ -e $f ]] && printf '%s ' "$f"; done)"
 project_cfg="${project_cfg% }"
 
 # Preflight: a bad key or empty balance fails here in a second instead of after Claude Code's retries.

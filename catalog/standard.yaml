@@ -474,3 +474,25 @@ families:
     references:
       files: { examples: examples }
     members: [shared/feature]
+  # Free-worker delegation: the lead plans and reviews, OpenCode on a free model does mechanical work.
+  - id: orchestration
+    kind: rule
+    keys: [appliesTo, appliesToRationale]
+    members: [shared/orchestration]
+  - id: free-worker
+    kind: agent
+    keys: [tools, relatedArtifacts, claude]
+    members: [shared/mk-worker]
+  - id: free-worker-delegate
+    kind: skill
+    keys: [argumentHint, whenToUse, disableModelInvocation]
+    sections:
+      - Steps
+      - Worker mode
+    members: [shared/mk-delegate]
+  - id: free-worker-check
+    kind: skill
+    keys: [argumentHint, whenToUse, disableModelInvocation]
+    sections:
+      - Steps
+    members: [shared/mk-check]

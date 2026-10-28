@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New pack `free-worker`: plan and review in the main session, and hand mechanical coding steps to
+  OpenCode on a free, zero-retention model (DeepSeek V4.1 Flash Free, GLM 5.3 fallback). It brings
+  the `/mk-delegate` and `/mk-check` skills, the `mk-worker` agent and the `shared/orchestration`
+  rule as dependencies, plus the `shared/worker-mode-guard` hook. That hook blocks the main
+  session's file edits while worker mode is on; it installs with `sigil add --scope user`, since
+  plugins can't carry hooks yet. Requires OpenCode and the `oc-exec` wrapper on the PATH. The rule
+  loads for every language (+1030 B per language, recorded in the rule-load baseline).
 - `.sigil/overlays.yaml`: narrow where an installed rule applies without editing it. Each rule id
   takes a `scope` of directories (`scope: [src]` turns `**/*.ts` into `src/**/*.ts`); `add` and
   `update` apply it for Claude Code and Copilot, and the narrowed file reads up to date. A bad entry

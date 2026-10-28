@@ -49,7 +49,9 @@ Arguments from the user: {sigil:arguments}
 5. **Write the spec** in a few lines: the exact change, the files allowed to change, the test
    command that proves it's done, and any setup it needs (such as loading a Node version manager).
    Name callers outside the allowed files that the change could break, so the worker stops instead
-   of leaving them broken. Never include secrets, `.env` contents or private data. The worker sends
+   of leaving them broken. The worker reads the repo's own instructions, rules and project hooks
+   itself, so don't restate them; the summary's `project config:` line shows what it loaded. Never
+   include secrets, `.env` contents or private data. The worker sends
    everything to DeepSeek, which is not zero-retention.
 6. **Delegate.** Print the report line, then run `mk-exec` in the background and wait for the
    completion notification instead of polling:

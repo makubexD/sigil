@@ -52,10 +52,13 @@ line, with the fix for every ✗. Never print the API key.
 4. **Worker mode:** if a `worker-mode` command is on the PATH, run `worker-mode status`. Otherwise
    report whether the flag file the `shared/worker-mode-guard` hook checks exists, if that hook is
    installed.
-5. **Live test:** make a throwaway repo (`mktemp -d`), `git init`, and commit an empty `README.md`.
-   Then run `mk-exec --effort <level, default low> <dir> "Append the line 'mk-check ok' to README.md.
-   Change nothing else. Then run: cat README.md"`. It passes if the exit code is 0, `README.md`
-   contains `mk-check ok`, `git status --short` shows only `README.md`, and the log dir named on the
+5. **Live test:** make a throwaway repo (`mktemp -d`), `git init`, and commit an empty `README.md`
+   and a `{sigil:conventions-file}` with the rule `Every line added to README.md must end with
+   " (project rules loaded)".` Then run `mk-exec --effort <level, default low> <dir> "Append the line
+   'mk-check ok' to README.md, following this repo's rules. Change nothing else. Then run: cat
+   README.md"`. It passes if the exit code is 0, `README.md` contains `mk-check ok (project rules
+   loaded)` (the worker read the project's own instructions), the summary shows a `project config:`
+   line naming that file, `git status --short` shows only `README.md`, and the log dir named on the
    summary's last line holds `stream.jsonl`, `meta.json`, `diff.patch` and `summary.txt`. Report the
    model, effort, tokens, duration, the `cost≈` estimate from the summary and the balance from the
    banner, then delete the throwaway repo. Exit 75 means a key or balance problem; exit 2 means a

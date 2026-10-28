@@ -49,7 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `workflow-report` totals per repo. A worker step is one concern touching about 3 files at most;
   `/mk-delegate` splits bigger ones, and during a committed plan it commits an accepted step and
   sends the next one without asking. A run gets 90 turns, and one that runs out is reported as
-  partial. The worker may not reshape unrelated code to satisfy a lint or size rule.
+  partial. The worker may not reshape unrelated code to satisfy a lint or size rule. The worker loads
+  the repo's own config (`CLAUDE.md`, `.claude/rules`, skills, agents, commands, project hooks) but
+  nothing from `~/.claude` and no MCP; `mk-exec` refuses a repo whose `.claude/settings.json` sets
+  `ANTHROPIC_*` env or `apiKeyHelper`, and `shared/worker-mode-guard` lets the worker (`MK_WORKER=1`)
+  edit.
   It brings the `/mk-delegate` and `/mk-check` skills and the `shared/orchestration` rule as
   dependencies, plus the `shared/worker-mode-guard` hook. That hook blocks the main session's file
   edits while worker mode is on; it installs with `sigil add --scope user`, since plugins can't carry

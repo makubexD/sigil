@@ -21,6 +21,7 @@ packs:
     artifacts:
       - shared/filesystem
       - shared/protect-config
+      - shared/reviewer-bash-guard
       - shared/explain-diff
       - shared/author-artifact
 
@@ -35,6 +36,7 @@ packs:
       - csharp/cs-generate-tests
       - shared/filesystem
       - shared/protect-config
+      - shared/reviewer-bash-guard
       - csharp/cs-allow-dev-tools
 
   - name: python-starter
@@ -48,6 +50,7 @@ packs:
       - python/py-generate-tests
       - shared/filesystem
       - shared/protect-config
+      - shared/reviewer-bash-guard
       - python/py-allow-dev-tools
 
   - name: react-starter
@@ -61,6 +64,7 @@ packs:
       - react/react-generate-tests
       - shared/filesystem
       - shared/protect-config
+      - shared/reviewer-bash-guard
       - react/react-allow-dev-tools
 
   - name: dotnet-tooling
@@ -84,6 +88,7 @@ packs:
       - typescript/ts-release
       - shared/filesystem
       - shared/protect-config
+      - shared/reviewer-bash-guard
       - typescript/ts-allow-dev-tools
 
   - name: typescript-tooling
@@ -106,6 +111,7 @@ packs:
       - angular/ng-generate-component
       - shared/filesystem
       - shared/protect-config
+      - shared/reviewer-bash-guard
       - angular/ng-allow-dev-tools
 
   - name: angular-tooling

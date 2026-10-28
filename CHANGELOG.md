@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New `shared/reviewer-bash-guard` hook (Claude Code only): a `PreToolUse` hook on Bash that blocks
+  write-shaped commands when a read-only review agent runs them — redirects into files, file
+  commands, in-place edits, inline interpreter code, git writes, package changes, and fixers or
+  formatters without a check flag. It covers the code-reviewer, security-auditor,
+  architecture-reviewer, api-compat-reviewer and template-reviewer families (21 language agents,
+  plus the shared `code-reviewer`), with or without a plugin prefix. The main session and every other agent are unaffected. It ships in every
+  pack that ships `shared/protect-config`.
 - New pack `deepseek-worker`: plan and review in the main session, and hand mechanical coding steps
   to `mk-exec`, a headless Claude Code run on the paid DeepSeek API with its own config dir
   (`~/.claude-worker`), so it never sees the main login, hooks or plugins. Effort is `low`, `medium`

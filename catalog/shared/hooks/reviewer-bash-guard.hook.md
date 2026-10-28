@@ -14,7 +14,7 @@ args:
   - |-
     const READ_ONLY = /^(?:[a-z0-9-]+-)?(?:code-reviewer|security-auditor|architecture-reviewer|api-compat-reviewer|template-reviewer)$/;
     const MUTATORS = new Set(['rm', 'rmdir', 'mv', 'cp', 'mkdir', 'touch', 'chmod', 'chown', 'chgrp', 'ln', 'truncate',
-      'dd', 'install', 'unlink', 'rsync', 'shred', 'tee', 'patch', 'wget', 'eval']);
+      'dd', 'install', 'unlink', 'rsync', 'shred', 'tee', 'patch', 'wget', 'eval', 'rimraf']);
     const INLINE = { node: /^(-e|--eval|-p|--print)$/, python: /^-c$/, python3: /^-c$/, ruby: /^-e$/,
       perl: /^-([a-zA-Z]*i|e|E)/, bash: /^-[a-zA-Z]*c/, sh: /^-[a-zA-Z]*c/, zsh: /^-[a-zA-Z]*c/ };
     const GIT_WRITE = new Set(['commit', 'push', 'add', 'rm', 'mv', 'checkout', 'switch', 'restore', 'reset', 'rebase',
@@ -22,6 +22,8 @@ args:
       'submodule', 'mergetool']);
     const PKG_WRITE = new Set(['install', 'i', 'ci', 'add', 'remove', 'rm', 'uninstall', 'un', 'link', 'unlink',
       'update', 'up', 'upgrade', 'dedupe', 'prune', 'publish', 'init', 'version', 'pkg', 'set']);
+    const RUNNERS = { npm: ['exec', 'x'], pnpm: ['exec', 'dlx'], yarn: ['dlx', 'exec'], bun: ['x'], uv: ['run'],
+      poetry: ['run'], pipenv: ['run'], pdm: ['run'], hatch: ['run'] };
     const PY_PKG = new Set(['install', 'uninstall', 'add', 'remove', 'sync', 'lock', 'update', 'upgrade']);
     let raw = '';
     process.stdin.setEncoding('utf8');
@@ -70,7 +72,13 @@ args:
       }
       const t = seg.trim().split(/\s+/).filter(Boolean);
       while (t.length && (/^[A-Za-z_][A-Za-z0-9_]*=/.test(t[0]) || ['sudo', 'env', 'command', 'nohup', 'time', 'exec'].includes(t[0]))) t.shift();
-      if (t[0] === 'npx' || t[0] === 'bunx') { t.shift(); while (t.length && t[0].startsWith('-')) t.shift(); }
+      // Runners (npx, pnpm dlx, uv run, …) start another command: check that one instead.
+      for (;;) {
+        if (['npx', 'bunx', 'uvx'].includes(t[0])) t.shift();
+        else if ((RUNNERS[t[0]] || []).includes(t[1])) t.splice(0, 2);
+        else break;
+        while (t.length && t[0].startsWith('-')) t.shift();
+      }
       if (t.length === 0) return '';
       const cmd = t[0].split('/').pop();
       return writes(cmd, t.slice(1)) ? '`' + t.join(' ') + '`' : '';
@@ -144,7 +152,9 @@ hook covers the other way a review agent could change files.
 **Blocked for the review agents:**
 - Redirects into a file (`>`, `>>`, `&>`); `/dev/null` and copies such as `2>&1` are allowed
 - File commands: `rm`, `mv`, `cp`, `mkdir`, `touch`, `chmod`, `ln`, `tee`, `patch`, `dd`, `rsync`,
-  `wget`, `eval`, and `xargs` or `find -exec` / `-delete` running them
+  `rimraf`, `wget`, `eval`, and `xargs` or `find -exec` / `-delete` running them
+- The same commands started through a runner: `npx`, `pnpm dlx` / `exec`, `npm exec`,
+  `yarn dlx`, `bun x`, `uvx`, and `uv` / `poetry` / `pipenv` / `pdm` / `hatch run`
 - In-place edits (`sed -i`, `perl -i`) and inline code (`node -e`, `python -c`, `bash -c`,
   `sh -c`)
 - git commands that change the repository or the working tree: `commit`, `push`, `add`,

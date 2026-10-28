@@ -105,6 +105,14 @@ describe('shared/reviewer-bash-guard hook', () => {
     'python -c "x"',
     'bash -c "ls"',
     'sh -c "ls"',
+    // a runner prefix starts another command, which is checked in its place
+    'npx prettier --write src',
+    'pnpm dlx prettier --write .',
+    'npm exec -- eslint . --fix',
+    'yarn dlx rimraf x',
+    'bun x prettier --write .',
+    'uv run ruff format .',
+    'poetry run black .',
   ]) {
     it(`blocks \`${command}\``, async () => {
       const r = run((await installedHook()).entry, bash(command, REVIEWER));
@@ -132,6 +140,9 @@ describe('shared/reviewer-bash-guard hook', () => {
     'npm test 2>&1',
     'ls > /dev/null',
     'ls 2>/dev/null',
+    'npx eslint . --max-warnings 0',
+    'uv run pytest -q',
+    'pnpm exec tsc --noEmit',
   ]) {
     it(`allows \`${command}\``, async () => {
       assert.equal(run((await installedHook()).entry, bash(command, REVIEWER)).status, 0);

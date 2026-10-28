@@ -3,6 +3,7 @@
 Source brief: `docs/ideas/friendlier-errors.md`. Branch: `feat/friendlier-errors`. One PR.
 
 ## Context
+
 Audit-rows 15–18 roadmap is closed except the owner's Copilot CLI live check (row 17). The user picked the
 `friendlier-errors` brief next. Evidence re-verified 2026-10-28: `notFoundError` (`src/errors.ts:35-42`) joins
 every catalog id into the message (~150 ids, >5 KB). It is reached through `requireArtifact`
@@ -12,6 +13,7 @@ message (`src/authoring/move/plan.ts:75`, "Run `sigil list`…") with no suggest
 Outcome: a mistyped id prints at most five close matches plus a browse hint; no full dump.
 
 ## Design
+
 - New pure function `suggestIds(id, availableIds, max = 5): string[]` in `src/errors.ts` (next to its only
   consumer; no new module, not exported from `src/index.ts`).
   - Rank 1: ids whose name part (after the last `/`) equals the query's name part, different prefix
@@ -29,6 +31,7 @@ Outcome: a mistyped id prints at most five close matches plus a browse hint; no 
 - Exit codes and `SigilError` shape unchanged (brief's out of scope).
 
 ## Steps
+
 1. `[worker:medium]` RED tests, `test/errors.test.ts` (new). Cases with a fixed id list
    (`shared/clean-code`, `shared/protect-config`, `csharp/cs-conventions`, `typescript/ts-conventions`,
    plus 10 filler ids `shared/filler-a`…`j`):
@@ -40,7 +43,7 @@ Outcome: a mistyped id prints at most five close matches plus a browse hint; no 
      does not contain `Available:` or `shared/filler-a`; `.hint` contains `sigil list` and `sigil search`.
    - No match: message is exactly `Artifact 'zzz/nothing-like-it' not found.`
    - `test/authoring/move.test.ts`: a missing id close to an existing one includes `Did you mean`.
-   Test: `npm test -- --test-name-pattern="suggestIds|notFoundError|move"` fails on missing export / text.
+     Test: `npm test -- --test-name-pattern="suggestIds|notFoundError|move"` fails on missing export / text.
 2. `[worker:medium]` Implement `suggestIds` and the new `notFoundError` in `src/errors.ts`; use it in
    `src/authoring/move/plan.ts:75`; update the module comment in `src/commands/shared/artifact.ts` if it
    mentions "listing availableIds". Test: step 1 tests pass; `test/characterization.test.ts` (`/not found/i`)
@@ -51,10 +54,12 @@ Outcome: a mistyped id prints at most five close matches plus a browse hint; no 
    `docs/reference/troubleshooting.md` only if it documents the old output (grep found none).
 
 ## Verification
+
 `npm run ci:local` green; the two live commands print ≤5 suggestions and the hint;
 `workflow-report sigil`; `/agent-skills:review` of the branch; PR, merge on green CI.
 
 ## Housekeeping (separate, any time)
+
 - Delete 8 local branches already merged into master.
 - After the owner's Copilot live check: row 17 in `docs/audits/2026-10-16/results.md` → `done (PR #102)`,
   delete `docs/plan-audit-rows-15-18.md`.

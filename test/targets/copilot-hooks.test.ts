@@ -170,6 +170,32 @@ describe('copilot hook config — two hooks share version', () => {
   });
 });
 
+describe('copilot hook config — scope labels', () => {
+  const localOf = (kinds: ('mcp' | 'hook')[]) =>
+    new CopilotTarget().configScopes(kinds, '/proj').find(sc => sc.value === 'local');
+
+  it('hook-only Local says not git-committed and names only the settings file', () => {
+    const local = localOf(['hook']);
+    assert.ok(local);
+    assert.match(local.description, /settings\.local\.json, not git-committed/);
+    assert.doesNotMatch(local.description, /\.mcp\.json/);
+  });
+
+  it('mcp + hook Local says the mcp part still goes to the committed .mcp.json', () => {
+    const local = localOf(['mcp', 'hook']);
+    assert.ok(local);
+    assert.match(local.description, /settings\.local\.json \(not git-committed\)/);
+    assert.match(local.description, /git-committed \.mcp\.json/);
+    assert.deepEqual(
+      local.destinations.map(d => [d.kind, d.file]),
+      [
+        ['mcp', '.mcp.json'],
+        ['hook', '.github/copilot/settings.local.json'],
+      ],
+    );
+  });
+});
+
 // ── CLI round trip ─────────────────────────────────────────────────────────────
 
 const HOOK = 'shared/protect-config';

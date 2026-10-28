@@ -58,8 +58,7 @@ import type { TargetCapabilities } from '../capability-types';
 import { COPILOT_INIT_DIRS, COPILOT_PROJECT_MARKERS, COPILOT_VOCABULARY } from './metadata';
 import { buildCopilotHookOps } from './hook-ops';
 import {
-  CONFIG_SCOPES,
-  HOOK_CONFIG_SCOPES,
+  copilotScopesFor,
   buildScopeDestinations,
   buildArtifactFiles,
   buildMcpConfigOps,
@@ -86,8 +85,7 @@ export class CopilotTarget implements Target {
    * file (.github/copilot/settings.local.json), so Local joins the list for a hook selection.
    */
   configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
-    const scopes = kinds.includes('hook') ? HOOK_CONFIG_SCOPES : CONFIG_SCOPES;
-    return scopes.map(sc => ({
+    return copilotScopesFor(kinds).map(sc => ({
       ...sc,
       label: sc.value,
       destinations: buildScopeDestinations(kinds, sc.value, projectDir),

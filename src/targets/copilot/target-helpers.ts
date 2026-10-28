@@ -74,6 +74,24 @@ export const HOOK_CONFIG_SCOPES = [
   },
 ];
 
+/**
+ * The scope list for a selection. With mcp beside a hook, Local still sends the mcp part to the
+ * committed .mcp.json (mcp has no local file), so its description says so.
+ */
+export function copilotScopesFor(kinds: ConfigKind[]) {
+  if (!kinds.includes('hook')) return CONFIG_SCOPES;
+  if (!kinds.includes('mcp')) return HOOK_CONFIG_SCOPES;
+  return HOOK_CONFIG_SCOPES.map(sc =>
+    sc.value === 'local'
+      ? {
+          ...sc,
+          description:
+            'workspace — hooks in .github/copilot/settings.local.json (not git-committed); MCP servers still go to the git-committed .mcp.json',
+        }
+      : sc,
+  );
+}
+
 type KindDestination = { kind: ConfigKind; file: string; root: ConfigRoot; section: string };
 
 /** One scope's mcp destination, with the JSON key its servers sit under. */

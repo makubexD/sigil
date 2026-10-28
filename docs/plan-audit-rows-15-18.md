@@ -39,11 +39,14 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
         `test/catalog/protect-config-hook.test.ts`. Add it to packs. Done: 21 agents (scope widened from the
         code-reviewer and security-auditor families).
 - [ ] **Phase 3, row 16: H1 bar-lowering guard and H2 Stop typecheck**
-  - [ ] Spike `[inline: eval, run with the model under test]`: run a pressure task and record `suppressions` and
-        `typeErrors`. The worker may write the eval files but never runs the probe.
-  - [ ] H1 only if suppressions appear: ask only on unjustified forms, diff old content against new, and match Edit,
-        MultiEdit and Bash.
-  - [ ] H2 only if type errors appear: a Stop hook runs the typecheck it finds for the stack.
+  - [x] Spike `[inline: eval, run with the model under test]`: run a pressure task and record `suppressions` and
+        `typeErrors`. The worker may write the eval files but never runs the probe. Done 2026-10-28: pressure tasks
+        P1 and P2, a Haiku screen registered as H15 and H16 (`test/evals/code-quality/results.md`). 0 suppressions
+        and 0 type errors in 20 runs; Haiku escalated instead of silencing, so the Sonnet stage did not run.
+  - [x] No-go, not built (H15 failed). H1 only if suppressions appear: ask only on unjustified forms, diff old
+        content against new, and match Edit, MultiEdit and Bash.
+  - [x] No-go, not built (H16 failed). H2 only if type errors appear: a Stop hook runs the typecheck it finds for
+        the stack.
 - [ ] **Phase 4, row 18: C1–C5 coverage**
   - [ ] Spike `[inline: eval design]`: one probe task per area (Node runtime, ASP.NET/EF, FastAPI/Django, React
         perf/security, API/DB/observability/e2e). The worker may write the task files.

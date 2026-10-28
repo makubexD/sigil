@@ -28,7 +28,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New pack `deepseek-worker`: plan and review in the main session, and hand mechanical coding steps
   to `mk-exec`, a headless Claude Code run on the paid DeepSeek API with its own config dir
   (`~/.claude-worker`), so it never sees the main login, hooks or plugins. Effort is `low`, `medium`
-  (default) or `high` per step, and every run writes a full log (transcript, meta, diff, summary).
+  (default) or `high` per step, and every run writes a full log (transcript, meta, diff, summary)
+  with a cost estimate from its token counts and DeepSeek's peak/off-peak prices, which
+  `workflow-report` totals per repo.
   It brings the `/mk-delegate` and `/mk-check` skills and the `shared/orchestration` rule as
   dependencies, plus the `shared/worker-mode-guard` hook. That hook blocks the main session's file
   edits while worker mode is on; it installs with `sigil add --scope user`, since plugins can't carry

@@ -141,8 +141,11 @@ export type FileMap = Record<string, string>;
  *   object-spread — deep-merge (incoming wins per leaf). Used for env, scalars.
  *   array-union   — union + dedup. Used for permissions.allow/deny/ask.
  *   array-append  — concatenate without dedup. Used for hooks arrays.
+ *   file-marker   — a file-level value every contributor writes the same (Copilot's hook-file
+ *                   `version`). Applied and drift-checked like object-spread; reverseMerge drops
+ *                   it only once nothing else is left in the file.
  */
-export type MergeStrategy = 'object-spread' | 'array-union' | 'array-append';
+export type MergeStrategy = 'object-spread' | 'array-union' | 'array-append' | 'file-marker';
 
 /**
  * Canonical install scope values for config-kind artifacts.

@@ -62,7 +62,8 @@ function buildFragment(
   const strategy: Record<string, MergeStrategy> = { hooks: 'array-append' };
   if (scope !== 'local') {
     fragment.version = 1;
-    strategy.version = 'object-spread';
+    // Shared by every hook in the file: uninstall keeps it while another hook remains.
+    strategy.version = 'file-marker';
   }
   fragment.hooks = { [event]: [entry] };
   return { fragment, strategy };

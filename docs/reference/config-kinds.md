@@ -73,6 +73,7 @@ applied by `applyMerge` in `src/config-merge/apply.ts`):
 | `object-spread` | Deep-merge; incoming wins per leaf. Default when a key names no strategy             | Settings `env`, `model`, `statusLine`; MCP server objects |
 | `array-union`   | Union with deep-equal dedup. An object-of-arrays (`permissions`) unions each sub-key | Settings `permissions.allow` / `deny` / `ask`             |
 | `array-append`  | Concatenate with no dedup                                                            | Hook event arrays (`hooks`)                               |
+| `file-marker`   | Set like `object-spread`; uninstall drops it only when nothing else is left          | Copilot hook files' `version`                             |
 
 `array-union` and `array-append` are safe to re-apply (union dedupes, append only concatenates).
 `object-spread` assigns leaves, so a user edit of a value sigil wrote is a real overwrite.

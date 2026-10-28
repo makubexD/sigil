@@ -19,7 +19,7 @@ args:
     const os = require('os');
     const path = require('path');
     const home = os.homedir();
-    if (!fs.existsSync(path.join(home, '.claude', 'state', 'worker-mode'))) process.exit(0);
+    if (process.env.MK_WORKER || !fs.existsSync(path.join(home, '.claude', 'state', 'worker-mode'))) process.exit(0);
     let raw = '';
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', chunk => (raw += chunk)).on('end', () => {
@@ -54,6 +54,10 @@ exit code, and it works the same on Linux, macOS and Windows.
 **Turning it on and off:** create or delete the flag file. The `worker-mode on|off|status` script
 from [SyncSettings](https://github.com/makubexD/SyncSettings/blob/master/dotfiles/linux/claude/bin/worker-mode)
 does that, and shows a `WORKER` badge in its status line.
+
+**Never blocks the worker:** `mk-exec` sets `MK_WORKER=1` for its headless Claude Code run, which
+loads project hooks too, so a project-scope install of this hook doesn't stop the worker it exists
+for.
 
 **Still editable while it's on:**
 - Plan files: `docs/plan-*.md` and anything in a `plans/` folder, so the lead session can still

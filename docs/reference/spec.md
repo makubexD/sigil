@@ -260,8 +260,8 @@ such as `catalog/languages/csharp/settings/cs-allow-dev-tools.settings.md`). The
 | `mcp`      | `server`: stdio (`command`, `args`, `env`) or remote (`type: http` or `sse`, `url`, `headers`)                                                                                                |
 
 The merge model, scope tables, drift classification, and backup rules are owned by
-[config-kinds.md](config-kinds.md). `hook` and `settings` model Claude Code's own vocabulary and are
-flagged `KindDescriptor.ownedBy` until a second target supports them.
+[config-kinds.md](config-kinds.md). `settings` models Claude Code's own vocabulary and is
+flagged `KindDescriptor.ownedBy` until a second target supports it.
 
 ### template
 

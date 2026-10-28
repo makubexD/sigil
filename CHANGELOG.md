@@ -214,6 +214,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/reference/cli-flags.md`: per-command flags captured from `--help`. `test/cli-flags.test.ts`
   fails when it lacks a command section, omits a flag from `--help`, or documents an unregistered
   command.
+- `sigil add --target copilot` now installs `hook` artifacts into Copilot's hook files:
+  `.github/hooks/sigil.json` for project scope, `.github/copilot/settings.local.json` for local, and
+  `$COPILOT_HOME/hooks/sigil.json` (default `~/.copilot`) for user. An event Copilot has no
+  PascalCase alias for (`Stop`, `SubagentStop`, `Notification`) is refused with a hint to set
+  `platforms: [claude]`.
+- New config merge strategy `file-marker` (internal): sets a key like `object-spread` but drops it
+  on uninstall only when nothing else is left. It keeps Copilot hook files at `version: 1` while
+  any sigil hook remains, including when one of two installed hooks is uninstalled.
+- `shared/protect-config` reads `tool_input.path` as well as `tool_input.file_path`, so the guard
+  works with whichever key the agent passes.
 
 ### Changed
 

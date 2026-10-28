@@ -145,14 +145,20 @@ catalog has a replacement destination, which `update` moves it to. When the cata
 
 Any write or delete to a home-scoped config file (`ConfigRoot: 'home' | 'copilot-home' | 'vscode-user'`
 — files like `~/.claude.json` or `~/.copilot/mcp-config.json`, which affect **every** project, not just
-the current one) takes a pristine `.sigil.bak` copy before the first such write, via the shared
-`ensureHomeBackup()` helper (`src/config-utils.ts`). This applies uniformly across all three
+the current one) takes a pristine `.sigil.bak` copy before the first such write to a file that holds
+content sigil did not write, via the shared `ensureHomeBackup()` helper (`src/config-utils.ts`); each
+caller passes the fragments the manifest records for that file. A file holding only sigil's recorded
+entries gets none: the helper reverses every recorded fragment, and an empty result means there is
+nothing of the user's to protect. This applies uniformly across all three
 config-JSON writers — `sigil add`, `sigil update`, and `sigil uninstall`
 (`commands/add/execute-config.ts`, `commands/update-config-io.ts`, `commands/uninstall-config.ts`;
 rule from audit finding F23: the first backup guarantee covered only `add`, so every home-directory writer must take it — see [`docs/decisions/catalog-benchmark-audit-2026-08-22.md`](../decisions/catalog-benchmark-audit-2026-08-22.md)).
 The backup is written once, pristine; a
 second write to the same file in the same session keeps the existing backup and just warns that
-it's still there. Project-scoped config files (`.claude/settings.json`, `.mcp.json`) are protected
+it's still there. Once the user adds content to a file sigil created, the next sigil write backs it
+up — that copy includes sigil's entries too, so it is the first copy with user content, not a
+pre-sigil original. Invalid JSON is always backed up. Project-scoped config files
+(`.claude/settings.json`, `.mcp.json`) are protected
 by git instead — no `.bak` is written for them.
 
 On every later run, when the backup already exists, the writer keeps that pristine copy and prints

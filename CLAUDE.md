@@ -64,7 +64,9 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `schema/*.schema.json` from it via `npm run build`. Changing a zod schema without rebuilding leaves the JSON Schemas
   stale — commit both.
 - **Config-kind writes (`mcp`/`hook`/`settings`) merge into user-owned JSON**, never overwrite it. A home-directory
-  write takes exactly one pristine `.sigil.bak` before the first write (`docs/reference/config-kinds.md`).
+  write takes one pristine `.sigil.bak` before the first write to a file that holds content sigil did not write; a
+  file holding only sigil's recorded entries gets none (the check reverses every fragment the manifest records for
+  the file, which callers pass in) (`docs/reference/config-kinds.md`).
   `ensureHomeBackup` / `isHomeScopedRoot` (`src/config-utils.ts`) must be called from every writer that can touch a
   home-scoped file — `add` (`commands/add/execute-config.ts`), `update` (`commands/update-config-io.ts`), and
   `uninstall` (`commands/uninstall-config.ts`). A fourth writer must call them too. (see F23,

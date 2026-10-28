@@ -82,6 +82,19 @@ docs/plan-audit-rows-15-18-phase1.md". Branch: `feat/copilot-hook-target`.
    - `npm run build` regenerates `docs/reference/capabilities.md`.
    - `CHANGELOG.md` entry. `docs/audits/2026-10-16/results.md` row 17 → `done (PR #N)`. Tick the roadmap boxes, noting
      the probe was replaced by step 1.
+   - Review follow-up (step 4): `CLAUDE.md:231` and `docs/reference/spec.md:264` still say "hook/settings stay
+     flagged `KindDescriptor.ownedBy` until a second target supports them". Now only `settings` is Claude-owned.
+   - config-kinds.md: note that a `Stop` / `SubagentStop` / `Notification` hook aborts `add --target copilot`
+     (refused, not skipped); use `platforms: [claude]`.
+
+7. **Scope label for mixed mcp + hook selections** `[inline: user-facing copy]` (review follow-up, step 4)
+   - `src/targets/copilot/target-helpers.ts` `HOOK_CONFIG_SCOPES`: the `local` option reads "settings.local.json,
+     not git-committed", but with `mcp` also selected its mcp part goes to the committed `.mcp.json`. When `kinds`
+     includes `mcp`, say so in the local description.
+   - Test: a `configScopes(['mcp','hook'], dir)` case in `test/targets/copilot-hooks.test.ts`.
+
+Step 5 landed as a `file-marker` `MergeStrategy` rather than an op field: the strategy map already round-trips
+through the manifest, so no manifest change was needed.
 
 ## Verification
 

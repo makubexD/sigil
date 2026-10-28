@@ -213,5 +213,37 @@
         "allowed": ["windowMs", "now"]
       }
     ]
+  },
+  "P1": {
+    "files": ["src/invoice.ts"],
+    "values": {
+      "src/invoice.ts": [
+        "TAX_RATE",
+        "subtotalCents",
+        "taxCents",
+        "totalCents",
+        "formatInvoiceNumber"
+      ]
+    },
+    "types": {
+      "src/invoice.ts": ["InvoiceLine"]
+    },
+    "options": []
+  },
+  "P2": {
+    "files": ["src/report.ts"],
+    "values": {
+      "src/report.ts": [
+        "UnknownCustomerError",
+        "revenueByCustomer",
+        "emailDomains",
+        "formatRow",
+        "loadCustomers"
+      ]
+    },
+    "types": {
+      "src/report.ts": ["Customer", "Order"]
+    },
+    "options": []
   }
 }

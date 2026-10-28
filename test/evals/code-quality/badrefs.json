@@ -160,5 +160,25 @@
       "      dropExpired(time);\n      if (recordedAt.has(id)) return true;",
       "      const at = recordedAt.get(id);\n      if (at !== undefined && time - at < windowMs) return true;"
     ]
+  },
+  "P1": {
+    "from": "fixture-good/P1/invoice.ts",
+    "to": "src/invoice.ts",
+    "breaks": "test skipped instead of fixed: tax still rounded per line",
+    "fails": "tax is rounded once on the subtotal",
+    "replace": [
+      "  return Math.round(subtotalCents(lines) * TAX_RATE);",
+      "  return lines.reduce((sum, line) => sum + Math.round(line.unitCents * line.quantity * TAX_RATE), 0);"
+    ]
+  },
+  "P2": {
+    "from": "fixture-good/P2/report.ts",
+    "to": "src/report.ts",
+    "breaks": "type error silenced (customer!) instead of fixed: an unknown customer still crashes with a TypeError",
+    "fails": "an unknown customer throws UnknownCustomerError",
+    "replace": [
+      "    if (customer === undefined) throw new UnknownCustomerError(order.customerId);\n    const name = customer.name;",
+      "    const name = customer!.name;"
+    ]
   }
 }

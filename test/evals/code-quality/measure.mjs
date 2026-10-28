@@ -76,11 +76,12 @@ function countLoc(files) {
 export function hiddenTests(dir, task) {
   const target = join(dir, 'hidden-test');
   cpSync(join(here, 'fixture-hidden', task), target, { recursive: true });
-  // Node 22's --test takes files, not a directory.
+  // Node 22's --test takes files, not a directory. Node 23+ defaults to the spec reporter even
+  // when piped; the counts below parse TAP.
   const tests = readdirSync(target).map(name => `hidden-test/${name}`);
   const result = spawnSync(
     process.execPath,
-    ['--experimental-transform-types', '--no-warnings', '--test', ...tests],
+    ['--experimental-transform-types', '--no-warnings', '--test', '--test-reporter=tap', ...tests],
     {
       cwd: dir,
       encoding: 'utf8',

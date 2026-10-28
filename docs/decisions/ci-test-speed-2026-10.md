@@ -1,7 +1,8 @@
 # Faster CI: find where the minutes go
 
 **Status: done (2026-10-03).** Both success criteria are met on the median of three runs; see
-[Results](#results). The sections below are the original plan, kept for the evidence.
+[Results](#results). The sections below are the original plan, kept for the evidence. Moved here from
+`docs/ideas/` on 2026-10-28.
 
 ## Objective
 

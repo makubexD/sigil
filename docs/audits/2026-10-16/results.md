@@ -23,8 +23,7 @@ One row per roadmap item (README § 13). Status is updated as each PR merges.
 | 17  | Copilot hook target (format verified first; live check by the owner)                                               | T U  | planned                                               |
 | 18  | C1–C5: probe the unguided model first; write only what it gets wrong                                               | E U  | planned                                               |
 
-**Row 13 backlog** (found in review, kept, not in that PR; **done** on `fix/status-backlog`, PR #TBD, see
-`docs/plan-status-backlog.md`): an artifact whose render fails shows as
+**Row 13 backlog** (found in review, kept, not in that PR; **done** on `fix/status-backlog`, PR #92): an artifact whose render fails shows as
 `up-to-date` in `status` (update writes nothing for it either, so they agree, but the breakage is hidden); a
 config record at a retired file with no catalog op at the new destination stays `outdated (config moved …)`,
 since `update` cannot move it; and `status` does not show new `uses:` dependencies that `update` would install.

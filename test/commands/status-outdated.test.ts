@@ -64,12 +64,19 @@ function sigil(dir: string, catalog: string, ...args: string[]): string {
   );
 }
 
+interface StatusRow {
+  id: string;
+  status: string;
+  renderError?: string;
+  newDependencies?: string[];
+}
+
+function statusRows(dir: string, catalog: string, target: string): StatusRow[] {
+  return JSON.parse(sigil(dir, catalog, 'status', '--json', '--target', target)) as StatusRow[];
+}
+
 function outdatedByStatus(dir: string, catalog: string, target: string): string[] {
-  const rows = JSON.parse(sigil(dir, catalog, 'status', '--json', '--target', target)) as Array<{
-    id: string;
-    status: string;
-  }>;
-  return rows
+  return statusRows(dir, catalog, target)
     .filter(r => r.status === 'outdated')
     .map(r => r.id)
     .sort();
@@ -297,6 +304,48 @@ describe('status and update agree on the edge cases', () => {
       assert.notEqual(bumped, text);
       fs.writeFileSync(template, bumped);
       agree(project, catalog, []);
+    });
+  });
+
+  it('a render that fails: update writes nothing, so it stays up to date, naming the error', () => {
+    withTempDir(work => {
+      const catalog = path.join(work, 'src');
+      const project = path.join(work, 'project');
+      fs.mkdirSync(project);
+      copyCatalog(catalog);
+      const id = 'typescript/ts-code-reviewer';
+      sigil(project, catalog, 'add', `agent:${id}`, '--target', 'copilot', '--yes');
+      // Copilot cannot express disallowedTools, so the agent no longer renders for it.
+      const source = path.join(
+        catalog,
+        'catalog/languages/typescript/agents/ts-code-reviewer.agent.md',
+      );
+      const text = fs.readFileSync(source, 'utf8');
+      const edited = text.replace(/^tools:$/m, 'disallowedTools:\n  - Write\ntools:');
+      assert.notEqual(edited, text);
+      fs.writeFileSync(source, edited);
+
+      const before = treeHash(project);
+      assert.deepEqual(changedByUpdate(project, catalog, 'copilot'), [], 'update preview');
+      const row = statusRows(project, catalog, 'copilot').find(r => r.id === id);
+      assert.equal(row?.status, 'up-to-date');
+      assert.match(row?.renderError ?? '', /disallowedTools/);
+      assert.equal(treeHash(project), before, 'status and a preview write nothing');
+    });
+  });
+
+  it('a dependency the skill gained: status names what update would install', () => {
+    withTempDir(work => {
+      const skill = 'csharp/cs-generate-tests';
+      const [catalog, project] = setUp(work, [`skill:${skill}`, '--no-deps']);
+
+      agree(project, catalog, []);
+      const row = statusRows(project, catalog, 'claude').find(r => r.id === skill);
+      assert.deepEqual(row?.newDependencies, ['csharp/cs-code-reviewer', 'csharp/cs-testing']);
+      assert.match(
+        sigil(project, catalog, 'status', '--target', 'claude'),
+        /Install new dependencies: sigil update/,
+      );
     });
   });
 });

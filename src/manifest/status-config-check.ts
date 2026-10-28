@@ -95,17 +95,30 @@ export interface ConfigFileFindings {
   readonly missingFiles: string[];
   /** Records at a file the provider retired; `sigil update` moves them. */
   readonly movedFiles: string[];
+  /** Records at a retired file the catalog no longer replaces; `update` cannot move them. */
+  readonly retiredFiles: string[];
 }
 
-/** Checks every config-fragment record on `entry` against its live on-disk JSON file. */
+/** A target's retired config files, and whether `update` can move a record out of one. */
+export interface RetiredCheck {
+  readonly destinations: readonly RetiredConfigDestination[];
+  readonly canMove?: ((entry: ManifestEntry, file: string) => boolean) | undefined;
+}
+
+/**
+ * Checks every config-fragment record on `entry` against its live on-disk JSON file. A record at a
+ * retired file is moved when `retired.canMove` allows it (always, without it), and retired otherwise.
+ */
 export function checkConfigFiles(
   entry: ManifestEntry,
   projectDir: string,
-  retired: readonly RetiredConfigDestination[],
+  retired: RetiredCheck,
   found: ConfigFileFindings,
 ): void {
+  const { destinations, canMove } = retired;
   for (const cf of entry.configFiles!) {
-    if (isAtRetiredDestination(cf, retired)) found.movedFiles.push(cf.file);
-    else checkOneConfigFile(cf, projectDir, found.driftedFiles, found.missingFiles);
+    if (isAtRetiredDestination(cf, destinations)) {
+      ((canMove?.(entry, cf.file) ?? true) ? found.movedFiles : found.retiredFiles).push(cf.file);
+    } else checkOneConfigFile(cf, projectDir, found.driftedFiles, found.missingFiles);
   }
 }

@@ -9,33 +9,15 @@
  *
  * @module
  */
-import { computeClosure } from '../select/closure';
+import { missingDependencies } from '../freshness';
 import { runAdd } from './add/index';
 import { isConfigEntry } from './update-config';
 import { loadManifest, saveManifest } from '../manifest';
+import type { MissingDependency } from '../freshness';
 import type { ResolvedCatalog, Target } from '../types';
 import type { ManifestEntry } from '../manifest/types';
 import type { UpdateOptions } from './update';
 import type { AddOpts } from './add/index';
-
-/** A dependency to install, and the installed artifacts that use it. */
-export interface MissingDependency {
-  readonly id: string;
-  readonly via: readonly string[];
-}
-
-/** Dependencies (`uses`) of `updatedIds` that aren't installed for the target yet. */
-export function missingDependencies(
-  updatedIds: readonly string[],
-  resolved: ResolvedCatalog,
-  target: Target,
-  installedIds: ReadonlySet<string>,
-): MissingDependency[] {
-  const known = updatedIds.filter(id => resolved.byId.has(id));
-  return computeClosure(known, resolved, target)
-    .dependencies.filter(dep => !installedIds.has(dep.artifact.id))
-    .map(dep => ({ id: dep.artifact.id, via: dep.via }));
-}
 
 /** Records each new entry as a dependent of `via` and moves it before the config entries. */
 function recordAsDependencies(

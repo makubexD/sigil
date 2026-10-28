@@ -4,7 +4,7 @@
  * VS Code's deprecated `.vscode/mcp.json` to the portable `.mcp.json`. The full migration of a
  * frozen install is covered by install-migration.test.ts; these pin the edge cases.
  */
-import { describe, it } from 'node:test';
+import { describe, it, mock } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -177,6 +177,29 @@ describe('moveRetiredFragments', () => {
           else process.env[key] = saved[key];
         }
       }
+    });
+  });
+
+  it('should warn, and change nothing, when the catalog has no replacement', async () => {
+    await withTempDirAsync(async dir => {
+      writeJson(dir, '.vscode/mcp.json', { servers: { probe: SERVER } });
+      const entry = entryAt('.vscode/mcp.json');
+      const warn = mock.method(console, 'error', () => {});
+      try {
+        assert.deepEqual(moveRetiredFragments(entry, opts(dir), [], RETIRED), {
+          wrote: false,
+          skipped: 0,
+        });
+        const printed = warn.mock.calls.map(c => c.arguments.join(' ')).join('\n');
+        assert.match(
+          printed,
+          /shared\/probe.*\.vscode\/mcp\.json.*no replacement.*sigil uninstall/,
+        );
+      } finally {
+        warn.mock.restore();
+      }
+      assert.deepEqual(readJson(dir, '.vscode/mcp.json').servers, { probe: SERVER });
+      assert.equal(entry.configFiles?.length, 1);
     });
   });
 

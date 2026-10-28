@@ -22,12 +22,17 @@ import type { Manifest, ManifestEntry, StatusResult } from './types';
 /** Looks up an artifact's CURRENT `{id, revision}` template reference in the bundled catalog. */
 export type CurrentTemplateOf = (id: string) => { id: string; revision: number } | undefined;
 
-/** The two least-often-varied `computeStatus` params, bundled to stay under max-params. */
+/** The least-often-varied `computeStatus` params, bundled to stay under max-params. */
 export interface ComputeStatusExtras {
   /** Looks up an artifact's live template revision, letting `reason` name *why* it's outdated. */
   currentTemplateOf?: CurrentTemplateOf | undefined;
   /** A target's retired config files (Target.retiredConfigDestinations): records there are moved. */
   retiredFor?: ((target: string) => readonly RetiredConfigDestination[]) | undefined;
+  /**
+   * Whether `update` can move `entry`'s record at retired `file`: the catalog still has a
+   * replacement. Without it every retired record can be moved.
+   */
+  canMove?: ((entry: ManifestEntry, file: string) => boolean) | undefined;
   /**
    * Whether `sigil update` would rewrite an entry (`staleEntries` in src/freshness.ts). The only
    * source of `outdated` besides a moved config file: a template revision alone is not, since
@@ -57,9 +62,15 @@ function checkEntryFiles(
   projectDir: string,
   extras: ComputeStatusExtras,
 ): ConfigFileFindings {
-  const found: ConfigFileFindings = { driftedFiles: [], missingFiles: [], movedFiles: [] };
+  const found: ConfigFileFindings = {
+    driftedFiles: [],
+    missingFiles: [],
+    movedFiles: [],
+    retiredFiles: [],
+  };
   if (isConfigKind(entry.kind) && entry.configFiles && entry.configFiles.length > 0) {
-    checkConfigFiles(entry, projectDir, extras.retiredFor?.(entry.target) ?? [], found);
+    const destinations = extras.retiredFor?.(entry.target) ?? [];
+    checkConfigFiles(entry, projectDir, { destinations, canMove: extras.canMove }, found);
   } else {
     checkWholeFiles(entry, projectDir, found.driftedFiles, found.missingFiles);
   }
@@ -72,8 +83,9 @@ function statusForEntry(
   catalogIds: Set<string>,
   extras: ComputeStatusExtras,
 ): StatusResult {
-  const { driftedFiles, missingFiles, movedFiles } = checkEntryFiles(entry, projectDir, extras);
-  return deriveStatus({
+  const found = checkEntryFiles(entry, projectDir, extras);
+  const { driftedFiles, missingFiles, movedFiles, retiredFiles } = found;
+  const result = deriveStatus({
     entry,
     catalogIds,
     driftedFiles,
@@ -82,6 +94,7 @@ function statusForEntry(
     currentTemplateOf: extras.currentTemplateOf,
     isStale: extras.isStale,
   });
+  return retiredFiles.length > 0 ? { ...result, retiredFiles } : result;
 }
 
 function checkWholeFiles(

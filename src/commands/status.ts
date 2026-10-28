@@ -11,10 +11,11 @@ import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { resolveCatalog } from '../resolve';
 import { applyProjectOverlays } from '../overlays';
-import { entryKey, staleEntries } from '../freshness';
+import { entryKey, staleEntries, statusHooks } from '../freshness';
 import { requireManifest } from './shared/manifest';
 import { JSON_INDENT } from '../json-util';
 import { isConfigKind } from '../kinds';
+import type { Freshness } from '../freshness';
 import type { StatusResult } from '../manifest/types';
 import type { LoadedCatalog } from '../types';
 
@@ -26,25 +27,28 @@ export interface StatusOptions {
   json: boolean;
 }
 
+/** One entry's row in the `--json` output. */
+function statusJsonRow(s: StatusResult): Record<string, unknown> {
+  return {
+    id: s.entry.id,
+    kind: s.entry.kind,
+    target: s.entry.target,
+    status: s.status,
+    installedAt: s.entry.installedAt,
+    sigilVersion: s.entry.sigilVersion,
+    driftedFiles: s.driftedFiles,
+    missingFiles: s.missingFiles,
+    reason: s.reason,
+    // Each is absent unless non-empty, so JSON.stringify leaves it out.
+    retiredFiles: s.retiredFiles,
+    renderError: s.renderError,
+    newDependencies: s.newDependencies,
+  };
+}
+
 /** Prints the `--json` machine-readable status output. */
 function printStatusJson(statuses: ReturnType<typeof computeStatus>): void {
-  console.log(
-    JSON.stringify(
-      statuses.map(s => ({
-        id: s.entry.id,
-        kind: s.entry.kind,
-        target: s.entry.target,
-        status: s.status,
-        installedAt: s.entry.installedAt,
-        sigilVersion: s.entry.sigilVersion,
-        driftedFiles: s.driftedFiles,
-        missingFiles: s.missingFiles,
-        reason: s.reason,
-      })),
-      null,
-      JSON_INDENT,
-    ),
-  );
+  console.log(JSON.stringify(statuses.map(statusJsonRow), null, JSON_INDENT));
 }
 
 /** Icon per status value, used by the human-readable table. */
@@ -77,6 +81,18 @@ function printStatusTable(statuses: ReturnType<typeof computeStatus>): void {
     if (s.reason) console.log(`     ${s.reason}`);
     for (const f of s.driftedFiles) console.log(`     ~ ${f}`);
     for (const f of s.missingFiles) console.log(`     ! ${f} (missing)`);
+    printScanNotes(s);
+  }
+}
+
+/** The notes under an entry for what the freshness scan found beyond its status. */
+function printScanNotes(s: StatusResult): void {
+  if (s.renderError) console.log(`     ⚠ render failed: ${s.renderError}`);
+  for (const f of s.retiredFiles ?? []) {
+    console.log(`     ⚠ ${f}: retired, no replacement in the catalog`);
+  }
+  if (s.newDependencies) {
+    console.log(`     + update would also install: ${s.newDependencies.join(', ')}`);
   }
 }
 
@@ -99,6 +115,21 @@ export function statusNextSteps(statuses: readonly StatusResult[]): string[] {
       'Artifacts no longer in the catalog can be removed. Preview the cleanup: sigil prune',
     );
   }
+  return [...steps, ...scanSteps(statuses)];
+}
+
+/** The steps for what the freshness scan found: failed renders, retired files, new dependencies. */
+function scanSteps(statuses: readonly StatusResult[]): string[] {
+  const steps: string[] = [];
+  if (statuses.some(s => s.renderError)) {
+    steps.push('Fix the catalog error behind a failed render, then check it: sigil status');
+  }
+  for (const { entry } of statuses.filter(s => s.retiredFiles)) {
+    steps.push(
+      `Remove ${entry.id}, whose config file was retired: sigil uninstall ${entry.id} --target ${entry.target}`,
+    );
+  }
+  if (statuses.some(s => s.newDependencies)) steps.push('Install new dependencies: sigil update');
   return steps;
 }
 
@@ -146,28 +177,51 @@ function makeCurrentTemplateOf(catalog: LoadedCatalog): CurrentTemplateOf {
   };
 }
 
+/** What `update` would change, over the catalog with project overlays (as `add` and `update` see it). */
+function scanFreshness(
+  manifest: ReturnType<typeof requireManifest>,
+  rawCatalog: LoadedCatalog,
+  opts: StatusOptions,
+): Promise<Freshness> {
+  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
+  return staleEntries(manifest, {
+    resolved,
+    projectDir: opts.projectDir,
+    targetOf: name => getAllTargets().find(t => t.name === name),
+    refused,
+    retiredFor: retiredConfigDestinationsOf,
+  });
+}
+
 /**
- * Resolves the catalog (with project overlays, as `add` and `update` see it) into every input
- * `computeStatus` needs, and runs it. Outdated means `update` would rewrite the entry.
+ * Runs `computeStatus` with every input it needs. Outdated means `update` would rewrite the entry.
+ * Also returns the scan, whose failed renders and new dependencies the output reports.
  */
 async function buildStatuses(
   manifest: ReturnType<typeof requireManifest>,
   rawCatalog: LoadedCatalog,
   opts: StatusOptions,
-): Promise<ReturnType<typeof computeStatus>> {
+): Promise<{ statuses: ReturnType<typeof computeStatus>; fresh: Freshness }> {
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
-  const stale = await staleEntries(manifest, {
-    resolved,
-    projectDir: opts.projectDir,
-    targetOf: name => getAllTargets().find(t => t.name === name),
-    refused,
-  });
-  return computeStatus(manifest, opts.projectDir, catalogIds, {
+  const fresh = await scanFreshness(manifest, rawCatalog, opts);
+  const statuses = computeStatus(manifest, opts.projectDir, catalogIds, {
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
     retiredFor: retiredConfigDestinationsOf,
-    isStale: entry => stale.has(entryKey(entry)),
+    ...statusHooks(fresh),
   });
+  return { statuses: statuses.map(s => withScanFindings(s, fresh)), fresh };
+}
+
+/** `s` with the scan's failed render and new dependencies for its entry, when there are any. */
+function withScanFindings(s: StatusResult, fresh: Freshness): StatusResult {
+  const key = entryKey(s.entry);
+  const renderError = fresh.failed.get(key);
+  const newDependencies = fresh.newDependencies.get(key);
+  return {
+    ...s,
+    ...(renderError ? { renderError } : {}),
+    ...(newDependencies ? { newDependencies: [...newDependencies].sort() } : {}),
+  };
 }
 
 export async function runStatus(opts: StatusOptions): Promise<void> {
@@ -182,7 +236,7 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     return;
   }
 
-  const statuses = await buildStatuses(manifest, rawCatalog, opts);
+  const { statuses } = await buildStatuses(manifest, rawCatalog, opts);
 
   if (opts.json) {
     printStatusJson(statuses);

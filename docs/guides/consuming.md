@@ -707,7 +707,17 @@ diagnostic only and never writes. It renders each installed artifact from the cu
 server, hook, settings) is `outdated` when the catalog changed its fragment or its provider moved the file it lives
 in (Copilot's MCP servers moved out of `.vscode/mcp.json`); a fragment you edited or deleted shows as `drifted` or
 `missing`. Each fragment is checked in its own root, so a server in
-`~/.claude.json` or `~/.copilot/mcp-config.json` is read there, not under the project. Catalog **authors**, not consumers, run `sigil sync` to fix
+`~/.claude.json` or `~/.copilot/mcp-config.json` is read there, not under the project.
+
+Three notes can appear under a row, whatever its status, each with a next step after the table:
+
+| Note                                               | Meaning                                                                                                       | `--json` field    |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `⚠ render failed: <message>`                       | The artifact can't be rendered from today's catalog. `update` writes nothing for it, so it stays `up-to-date` | `renderError`     |
+| `⚠ <file>: retired, no replacement in the catalog` | Its config file was retired and the catalog has nowhere to move it. Remove it with `sigil uninstall <id>`     | `retiredFiles`    |
+| `+ update would also install: <ids>`               | The artifact now `uses` artifacts that aren't installed. `sigil update` installs them                         | `newDependencies` |
+
+Each field is present only when non-empty. Catalog **authors**, not consumers, run `sigil sync` to fix
 artifacts that drifted from their own template; see
 [authoring.md § Keeping artifacts in sync with their template](authoring.md#keeping-artifacts-in-sync-with-their-template).
 

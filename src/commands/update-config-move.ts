@@ -12,7 +12,7 @@
  */
 import fs from 'node:fs';
 import { canonicalize, classifyConfigDrift } from '../config-merge';
-import { isAtRetiredDestination, sha256 } from '../manifest';
+import { isAtRetiredDestination, sameFile, sha256 } from '../manifest';
 
 export { isAtRetiredDestination };
 import type { ManifestConfigMerge, ManifestEntry } from '../manifest/types';
@@ -32,10 +32,6 @@ export interface MoveResult {
   /** Fragments kept in a retired file because the user edited them (they need --force). */
   readonly skipped: number;
 }
-
-const rootOf = (d: { root?: string | undefined }) => d.root ?? 'project';
-const sameFile = (a: { file: string; root?: string | undefined }, b: typeof a) =>
-  a.file === b.file && rootOf(a) === rootOf(b);
 
 /** The manifest record for `op`, as `add` writes it. */
 function recordOf(op: ConfigMergeOp): ManifestConfigMerge {
@@ -104,6 +100,14 @@ function moveOne(
   return 'moved';
 }
 
+/** A record at a retired file with nothing to move it to: `update` leaves it, `uninstall` removes it. */
+function warnNoReplacement(entry: ManifestEntry, cf: ManifestConfigMerge): void {
+  console.error(
+    `  ⚠  ${entry.id}: ${cf.file} is retired and the catalog has no replacement — ` +
+      `remove it with sigil uninstall ${entry.id}`,
+  );
+}
+
 /** Moves every fragment `entry` records at a retired destination to the file that replaced it. */
 export function moveRetiredFragments(
   entry: ManifestEntry,
@@ -116,7 +120,8 @@ export function moveRetiredFragments(
   for (const cf of [...(entry.configFiles ?? [])]) {
     const move = retired.find(r => sameFile(cf, r.from));
     const next = move && freshOps.find(op => sameFile(op, move.to));
-    if (!next) continue; // not retired, or the catalog no longer has it (reported elsewhere)
+    if (move && !next) warnNoReplacement(entry, cf);
+    if (!next) continue;
     const outcome = moveOne(entry, cf, next, opts);
     if (outcome === 'moved') wrote = true;
     if (outcome === 'skipped') skipped++;

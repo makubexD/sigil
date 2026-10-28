@@ -25,7 +25,7 @@ import type { Manifest } from './manifest';
 import { CONFIG_KINDS } from './select';
 import type { Target, ResolvedCatalog } from './types';
 import { prescaffoldUntracked } from './install-state-prescaffold';
-import { entryKey, staleEntries } from './freshness';
+import { staleEntries, statusHooks } from './freshness';
 import { retiredConfigDestinationsOf } from './targets';
 
 // ── Public types ──────────────────────────────────────────────────────────────
@@ -145,16 +145,17 @@ async function computeStatusResultsFor(
 ): Promise<ReturnType<typeof computeStatus>> {
   const subManifest = buildSubManifest(ctx.manifest, ctx.target.name, ctx.candidateIds);
   const candidates = new Set(ctx.candidateIds);
-  const stale = await staleEntries(ctx.manifest, {
+  const fresh = await staleEntries(ctx.manifest, {
     resolved: ctx.catalog,
     projectDir: ctx.projectDir,
     targetOf: name => (name === ctx.target.name ? ctx.target : undefined),
     refused: ctx.refused,
     only: entry => candidates.has(entry.id),
+    retiredFor: retiredConfigDestinationsOf,
   });
   return computeStatus(subManifest, ctx.projectDir, ctx.catalogIds, {
     retiredFor: retiredConfigDestinationsOf,
-    isStale: entry => stale.has(entryKey(entry)),
+    ...statusHooks(fresh),
   });
 }
 

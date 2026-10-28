@@ -29,7 +29,8 @@ tags: [workflow, delegation, shared]
 - After two rejected attempts at the same task, do it in the main session.
 - When a plan approved in a planning mode hands steps to a helper, write it to a plan file in the
   repo and stop for review; don't execute in the same turn. A plan of small steps done in the main
-  session may proceed: the approval is the review. Work spanning several PRs or gated on research
-  gets a committed roadmap, then a step-level plan per phase.
+  session may proceed: the approval is the review. An approval that amends a repo plan writes the
+  amendment into that file first. Work spanning several PRs or gated on research gets a committed
+  roadmap, then a step-level plan per phase.
 - Never delegate a task whose result is a model's own behavior (an eval or probe run): the helper
   would measure its own model. It may still write the eval files.

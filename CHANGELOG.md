@@ -374,6 +374,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `.sigil/overlays.yaml`, and also catches catalog changes to MCP, hook and settings fragments.
   A template revision that leaves an artifact's output unchanged no longer shows it as outdated
   for good, and a rule whose overlay entry was refused is left as installed, as `update` does.
+- `sigil status` no longer hides what it can't fix. An artifact whose render fails still reads
+  up to date, as `update` writes nothing for it, but now shows `render failed: <message>`. A
+  config fragment at a retired file the catalog no longer replaces stops reading as `outdated`
+  forever: it shows `retired, no replacement in the catalog` and the `sigil uninstall` command, and
+  `sigil update` warns about it instead of skipping it silently. New `uses:` dependencies that
+  `update` would install are listed under the artifact that gained them. `--json` carries these as
+  `renderError`, `retiredFiles` and `newDependencies`, each present only when non-empty.
 - The `add` wizard no longer marks a freshly installed `shared/cli` or `shared/wizard` as
   outdated: it now renders with the installed set, as `add` and `update` do, so each skill's
   Boundary section is kept.

@@ -132,8 +132,12 @@ it:
   manifest entry is rewritten with the new fragment. An `object-spread` value the user changed
   still needs `--force`; for array fragments a user-edited copy simply stays beside the new one.
 
-`sigil status` does not yet report "catalog changed" for config kinds; `sigil update` is what
-detects and applies it.
+`sigil status` runs the same check, so a config entry reads `outdated` exactly when `sigil update`
+would re-merge its fragment. A fragment at a file its provider retired is `outdated` while the
+catalog has a replacement destination, which `update` moves it to. When the catalog has none,
+`update` cannot move it: it warns and leaves the fragment, and `status` shows the entry as
+`up-to-date` with a `retired, no replacement in the catalog` note (`retiredFiles` in `--json`).
+`sigil uninstall <id>` removes it.
 
 ## `.sigil.bak` home-directory backup
 

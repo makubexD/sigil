@@ -27,3 +27,8 @@ tags: [workflow, delegation, shared]
 - Print one line before every hand-off: `⏵ <agent> (<model>, <effort> effort): <task in 10 words or
   fewer>`. For a fan-out, print one line per phase with the agent count.
 - After two rejected attempts at the same task, do it in the main session.
+- A plan approved in a planning mode is a draft until it is written to a plan file in the repo and
+  reviewed. Write the file and stop; don't start executing in the same turn. Work spanning several
+  PRs or gated on research gets a committed roadmap, then a step-level plan per phase.
+- Never delegate a task whose result is a model's own behavior (an eval or probe run): the helper
+  would measure its own model. It may still write the eval files.

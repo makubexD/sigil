@@ -11,6 +11,7 @@ event: PreToolUse
 matcher: "Edit|Write|MultiEdit|NotebookEdit"
 command: node
 defaultScope: user
+platforms: [claude]
 args:
   - "-e"
   - |-

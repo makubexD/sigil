@@ -51,13 +51,13 @@ tags: [security, safety, shared]
 
 <!-- Describe what this hook does and when it fires. The command: above is executed. -->
 
-Fires before every Edit or Write tool call. Claude Code passes the call as JSON on stdin; the
-hook reads `tool_input.file_path`, also resolves the real path (so a symlink, a Windows short
-name like `ENV~1`, or an `::$DATA` stream suffix can't disguise the target), and checks each
-file name. On a match it exits with code 2, which Claude Code treats as a block, and says why on
-stderr.
+Fires before every Edit or Write tool call. The agent passes the call as JSON on stdin; the
+hook reads `tool_input.file_path` (or `tool_input.path`), also resolves the real path (so a
+symlink, a Windows short name like `ENV~1`, or an `::$DATA` stream suffix can't disguise the
+target), and checks each file name. On a match it exits with code 2, which blocks the call, and
+says why on stderr.
 
-It runs in exec form (`command: node` with `args`), so no shell sits between Claude Code and the
+It runs in exec form (`command: node` with `args`), so no shell sits between the agent and the
 exit code. That matters on Windows without Git Bash, where shell-form hooks run through
 PowerShell and a blocking exit code 2 comes back as 1, which does not block.
 
@@ -77,8 +77,11 @@ PowerShell and a blocking exit code 2 comes back as 1, which does not block.
 - Hardlinks, which can't be recognized by name.
 - The settings file this hook is installed in. An edit there can remove the hook, so review any
   request to change it before approving it.
-- A missing `node` on the PATH Claude Code runs with, or a broken `NODE_OPTIONS`: the hook
-  then fails without blocking. Input it can't parse is also let through.
+- A missing `node` on the PATH the agent runs with, or a broken `NODE_OPTIONS`. Most agents
+  then let the call through; GitHub Copilot fails closed and denies every Edit or Write until
+  `node` starts again. Input the hook can't parse is let through.
+- The GitHub Copilot cloud agent, which skips exec-form hooks. It protects Copilot CLI and
+  VS Code only.
 
-Install it at `project` scope (`.claude/settings.json`) to protect everyone who clones the
-repository; `local` scope protects only you.
+Install it at `project` scope to protect everyone who clones the repository; `local` scope
+protects only you.

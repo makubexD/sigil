@@ -145,7 +145,7 @@
   "claude/plugins/dotnet-tooling/skills/cs-sync-tests/SKILL.md": "323844c516c85e46796f57a6dbebcb558f3124dadcf5d4de491d344758243f06",
   "claude/plugins/essentials/.claude-plugin/plugin.json": "97ecd2e58971f030df52bc92649a39b3c4f61e51ee77185b3bb47571511b447e",
   "claude/plugins/free-worker/.claude-plugin/plugin.json": "1f6bd1a4d49b2d2440f12f461c100877a95d8b355ae68fa7d905c721953b9a46",
-  "claude/plugins/free-worker/agents/mk-worker.md": "9dba9ce1c56bb7f566c10f6396f53ed55805f13341167e3c445447645a38ebb8",
+  "claude/plugins/free-worker/agents/mk-worker.md": "0e4ec6f9595b4f91ec00d615eae6d5f7c211e8717904b8953d9c7ae013807094",
   "claude/plugins/free-worker/skills/mk-check/SKILL.md": "da3237645ad95099b19813ddd6a17dd3a4f3324033dd93759947610dd28384e0",
   "claude/plugins/free-worker/skills/mk-delegate/SKILL.md": "fd4b6f41e8f94968f2ba76a70424766bb2a1649a79606ec954b8c3869229ef01",
   "claude/plugins/python-starter/.claude-plugin/plugin.json": "806b02f4413cf8b1e9c09a88a248a5469a146687678b7a2a96d9129b873c6f84",
@@ -210,7 +210,7 @@
   "claude/plugins/typescript-tooling/skills/ts-release/SKILL.md": "a82e7e901d95e11a50ff194cbde84c28968d1410bb83b6e2e1c16fc0f4da1759",
   "claude/plugins/typescript-tooling/skills/ts-scaffold-project/SKILL.md": "cfe6cf51b7ba61ab11f7fd7473bc03b6912c91bfca99ae0a8210bdd057bccdf7",
   "claude/plugins/typescript-tooling/skills/ts-sync-tests/SKILL.md": "dce6caa5c0bae84a190fd84f8fcbaa23329b5a566e7d36bb4f0f73412b90a883",
-  "copilot/.github/AGENTS.md": "7d4ebe8c39d72e8e1ffbf3d0ad7a71eb27179800db21162e534720a3be816d04",
+  "copilot/.github/AGENTS.md": "9e26da34c06c08658945496cb70b7886a41cc4b0018fc3a1b0554dd7bd8b5dc5",
   "copilot/.github/copilot-instructions.md": "a875d722154274d7bd9203760186271f8d8ea8616a4926047c28bcb2c7a7d23d",
   "copilot/.github/instructions/angular-ng-async.instructions.md": "c43a544ee55b44217e28c4f37ee1ff41d241e6910a99594d5fa5743f2246de63",
   "copilot/.github/instructions/angular-ng-code-quality.instructions.md": "ddb8084e456c4fdd0368e62fd56c5b5d101cccfdf16d3b396a8d5c7695e3c635",
@@ -346,5 +346,5 @@
   "copilot/.github/skills/wizard/references/stack-python.md": "118d9d12cb7ad5315aed9c2ad87afcdf0897f2b961330eef4d7cf08314d83cde",
   "copilot/.github/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "copilot/.github/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
-  "registry.json": "2de26567ca7fc59d4003f21240772a00f87ce1e6c088ef38a255063ac8fccbc6"
+  "registry.json": "17780eb6d2410f6df4f1c334ff37ff4a9c029e93ba8a6cf52abf18a6fea5dc4d"
 }

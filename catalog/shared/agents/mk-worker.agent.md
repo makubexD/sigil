@@ -52,7 +52,7 @@ notice without polling. Otherwise run it in the foreground with a time limit ove
 the result with `tail -40 "$log"`.
 
 - Pass the caller's task text verbatim, plus the plan path if given.
-- Only one OpenCode run at a time. Before any retry, `pgrep -f 'opencode run'` must print nothing.
+- Only one OpenCode run at a time. Before any retry, `pgrep -f '[o]pencode run'` must print nothing.
   Two runs editing one repo corrupt each other's work.
 - Retry once with `oc-exec --fallback` (same task, new log) only when the `EXIT=` line is non-zero
   or the log shows a rate limit or quota error. An odd exit code from your own shell call is not a

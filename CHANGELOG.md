@@ -251,6 +251,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- A mistyped artifact id on `get`, `edit`, `patch`, `retarget`, `delete` or `move` now names at
+  most five close ids (`Did you mean: shared/clean-code?`) and how to browse (`sigil list`,
+  `sigil search <word>`), instead of listing every id in the catalog. The suggestions cover the
+  same name under another language prefix, typos, and partial names.
 - `typescript/ts-testing`, `angular/ng-testing` and `csharp/cs-testing` no longer require a fixed
   70% coverage minimum: like the Python and React rules, they hold the project's configured floor
   and never assume a number (docs/audits/2026-10-16, F16).

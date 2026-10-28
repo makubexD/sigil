@@ -45,8 +45,8 @@ line, with the fix for every ✗. Never print the API key.
 
 1. **Installed:** `command -v mk-exec workflow-report claude`, and `~/.claude-worker/{sigil:conventions-file}`
    and `~/.claude-worker/settings.json` exist.
-2. **Key:** `~/.config/claude-workers/env` exists with mode 600 and has a `DEEPSEEK_API_KEY=` line.
-   Check it with `grep -c`, never `cat`.
+2. **Key:** `~/.config/claude-workers/env` exists with mode 600 and has a key line:
+   `grep -cE '^(export )?DEEPSEEK_API_KEY='`. Never `cat` it.
 3. **Isolation:** `env | grep -c '^ANTHROPIC_'` in this session prints 0, and `~/.claude-worker`
    holds no `.credentials.json`. Only the `mk-exec` child process may get the DeepSeek endpoint.
 4. **Worker mode:** if a `worker-mode` command is on the PATH, run `worker-mode status`. Otherwise

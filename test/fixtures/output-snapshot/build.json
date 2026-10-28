@@ -124,7 +124,7 @@
   "claude/plugins/cli-builder/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "claude/plugins/cli-builder/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
   "claude/plugins/deepseek-worker/.claude-plugin/plugin.json": "0268841ecd8062c00e9c67b3a844dd667c4b7197c32c9197e76b7670b1d1409b",
-  "claude/plugins/deepseek-worker/skills/mk-check/SKILL.md": "33247b70f922c952fd2eb06d0bfa3fc78e3f9d8e120dfec952a15e6b64548928",
+  "claude/plugins/deepseek-worker/skills/mk-check/SKILL.md": "6f6ec10ec6e22653f8fcf3a63870132ff3dceb4489629ac66621666a3c474a37",
   "claude/plugins/deepseek-worker/skills/mk-check/references/mk-exec.md": "6bcf015debc278029a836210a3bcdddfae99271984b9cd58c1cd3403aaef166f",
   "claude/plugins/deepseek-worker/skills/mk-check/references/worker-config.md": "93aaa3e021fcbd9f97ac92b774e2e45ab5769f654b031f48ce9ff1d8bd801a70",
   "claude/plugins/deepseek-worker/skills/mk-check/references/workflow-report.md": "56e57f9fe8083800a55641cfb45d93cf163cfbbcab57e3d4213b37a26d7822e2",
@@ -346,5 +346,5 @@
   "copilot/.github/skills/wizard/references/stack-python.md": "118d9d12cb7ad5315aed9c2ad87afcdf0897f2b961330eef4d7cf08314d83cde",
   "copilot/.github/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "copilot/.github/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
-  "registry.json": "2415da7f789862248035c5a96bfb9a91a72a4020a52ad0470e080719562291a8"
+  "registry.json": "320e2ac85f61390ec08e8409edb0ff7b08058f5acf28228e2c6ef268e37d5b1c"
 }

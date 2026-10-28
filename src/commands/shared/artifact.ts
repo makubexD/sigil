@@ -9,7 +9,7 @@
 import { notFoundError } from '../../errors';
 
 /**
- * Returns `byId.get(id)` or throws `notFoundError` listing `availableIds`.
+ * Returns `byId.get(id)` or throws `notFoundError` suggesting close ids from `availableIds`.
  * Generic over the artifact type so it works with both `LoadedCatalog.byId`
  * (raw `Artifact`) and `ResolvedCatalog.byId` (`ResolvedArtifact`) lookups.
  */

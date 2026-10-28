@@ -8,6 +8,7 @@ import { isArtifactKind, sourceRelPath } from '../../kinds';
 import { namespaceDir, splitId } from '../../catalog-layout';
 import { KEBAB_ID_RE } from '../../schema/shared';
 import { resolveContained } from '../../cli-helpers';
+import { suggestIds } from '../../errors';
 
 // ─── Path helpers ─────────────────────────────────────────────────────────────
 
@@ -72,7 +73,11 @@ export interface MovePlan {
 function resolveMoveSource(oldId: string, newId: string, catalog: LoadedCatalog): Artifact {
   const artifact = catalog.byId.get(oldId);
   if (!artifact) {
-    throw new Error(`Artifact '${oldId}' not found. Run \`sigil list\` to see available ids.`);
+    const suggestions = suggestIds(oldId, [...catalog.byId.keys()]);
+    const didYouMean = suggestions.length > 0 ? ` Did you mean: ${suggestions.join(', ')}?` : '';
+    throw new Error(
+      `Artifact '${oldId}' not found.${didYouMean} Run sigil list or sigil search <word> to browse.`,
+    );
   }
 
   if (!splitId(newId, artifact.kind)) {

@@ -244,11 +244,11 @@ with both targets installed one server entry serves both.
 
 GitHub Copilot hooks (3 scopes, `src/targets/copilot/config.ts` and `target-helpers.ts`):
 
-| Scope (precedence) | Hook file                                                                | Notes                                                  |
-| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------ |
-| local (1)          | `.github/copilot/settings.local.json`                                    | hooks inline; no `version` key; not git-committed      |
-| project (2)        | `.github/hooks/sigil.json`                                               | `version: 1`; git-committed                            |
-| user (3)           | `$COPILOT_HOME/hooks/sigil.json` (default `~/.copilot/hooks/sigil.json`) | home-scoped, so the first write takes one `.sigil.bak` |
+| Scope (precedence) | Hook file                                                                | Notes                                                    |
+| ------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------- |
+| local (1)          | `.github/copilot/settings.local.json`                                    | hooks inline; no `version` key; not git-committed        |
+| project (2)        | `.github/hooks/sigil.json`                                               | `version: 1`; git-committed                              |
+| user (3)           | `$COPILOT_HOME/hooks/sigil.json` (default `~/.copilot/hooks/sigil.json`) | home-scoped: one `.sigil.bak` once it holds user content |
 
 The standalone hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
 hook remains in the file: uninstalling one of several hooks leaves the version in place, and

@@ -1,8 +1,8 @@
 # Copilot hook target (2026-10)
 
-Status: spike done 2026-10-28, verdict **go**, with one live probe left for the owner before the step plan's emitter
-step (see [Probe](#probe-before-building)). Phase 1 of `docs/plan-audit-rows-15-18.md` (audit row 17). Brief:
-`docs/ideas/copilot-hooks.md`.
+Status: shipped in #102 (2026-10-28); the owner's live check in Copilot CLI is still open (see
+[Probe](#probe-before-building)). Phase 1 of `docs/plan-audit-rows-15-18.md` (audit row 17). The brief it started from
+was deleted once this record covered it.
 
 ## What the docs say
 

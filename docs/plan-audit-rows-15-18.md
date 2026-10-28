@@ -49,12 +49,14 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
   - [x] No-go, not built (H16 failed). H2 only if type errors appear: a Stop hook runs the typecheck it finds for
         the stack.
 - [ ] **Phase 4, row 18: C1–C5 coverage**
-  - [ ] Spike `[inline: eval design]`: one probe task per area (Node runtime, ASP.NET/EF, FastAPI/Django, React
-        perf/security, API/DB/observability/e2e). The worker may write the task files.
-  - [ ] Probe runs `[inline: run with the model under test, no rules loaded]`. Write the misses to
-        `test/evals/coverage-probe/results.md`.
-  - [ ] Prose only for confirmed misses, placed where the catalog-layout rule says, each with a RETIRED or IMPLIES
-        guard. A clean area is recorded as "no gap".
+  - [x] Spike `[inline: eval design]`: one probe task per area (Node runtime, ASP.NET/EF, FastAPI/Django, React
+        perf/security, API/DB/observability/e2e). The worker may write the task files. Done 2026-10-28: K1–K5 in
+        `test/evals/coverage-probe/`, graded by reading the code against `key.md` (no .NET or Python runtime here).
+  - [x] Probe runs `[inline: run with the model under test, no rules loaded]`. Write the misses to
+        `test/evals/coverage-probe/results.md`. Done: a Haiku screen, 15 runs, 60 of 60 points hit, so no Sonnet
+        stage.
+  - [x] No confirmed miss, so no prose: every area is "no gap". Prose only for confirmed misses, placed where the
+        catalog-layout rule says, each with a RETIRED or IMPLIES guard. A clean area is recorded as "no gap".
 
 ## Out of scope
 

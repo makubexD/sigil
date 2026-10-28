@@ -22,11 +22,11 @@
           "minLength": 1
         },
         "tags": {
+          "default": [],
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "default": []
+          }
         },
         "platforms": {
           "type": "array",
@@ -79,8 +79,8 @@
           ]
         },
         "matcher": {
-          "type": "string",
-          "default": "*"
+          "default": "*",
+          "type": "string"
         },
         "command": {
           "type": "string",
@@ -94,7 +94,8 @@
         },
         "timeout": {
           "type": "integer",
-          "exclusiveMinimum": 0
+          "exclusiveMinimum": 0,
+          "maximum": 9007199254740991
         }
       },
       "required": [

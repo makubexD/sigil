@@ -8,11 +8,35 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from 'zod';
 import { JSON_INDENT } from '../json-util';
 import { SCHEMAS } from './index';
 
 const OUTPUT_DIR = path.resolve(__dirname, '../../schema');
+
+/** One kind's frontmatter schema as JSON Schema, in the $ref + definitions layout editors read. */
+function toFrontmatterSchema(name: string, schema: z.ZodType): Record<string, unknown> {
+  const definitionName = `${name}-frontmatter`;
+  // io: 'input' describes what an author writes, so a field with a default stays optional.
+  const { $schema, ...definition } = z.toJSONSchema(schema, {
+    target: 'draft-7',
+    io: 'input',
+    unrepresentable: 'any',
+    // Input mode leaves unknown keys open; sigil's objects strip them, and editors should flag
+    // a misspelled key, as the zod-to-json-schema output did. Records keep their own schema.
+    override: ctx => {
+      const out = ctx.jsonSchema;
+      if (out.type === 'object' && out.additionalProperties === undefined) {
+        out.additionalProperties = false;
+      }
+    },
+  });
+  return {
+    $ref: `#/definitions/${definitionName}`,
+    definitions: { [definitionName]: definition },
+    $schema,
+  };
+}
 
 function run(): void {
   if (!fs.existsSync(OUTPUT_DIR)) {
@@ -26,11 +50,7 @@ function run(): void {
   // TS's instantiation depth limit once the schemas are treated as a heterogeneous collection.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   for (const [name, schema] of Object.entries(SCHEMAS) as Array<[string, any]>) {
-    const jsonSchema = zodToJsonSchema(schema, {
-      name: `${name}-frontmatter`,
-      $refStrategy: 'none',
-    });
-
+    const jsonSchema = toFrontmatterSchema(name, schema);
     const outPath = path.join(OUTPUT_DIR, `${name}.schema.json`);
     fs.writeFileSync(outPath, JSON.stringify(jsonSchema, null, JSON_INDENT) + '\n', 'utf-8');
     console.log(`  ✓ schema/${name}.schema.json`);

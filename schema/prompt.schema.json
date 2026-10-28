@@ -22,11 +22,11 @@
           "minLength": 1
         },
         "tags": {
+          "default": [],
           "type": "array",
           "items": {
             "type": "string"
-          },
-          "default": []
+          }
         },
         "platforms": {
           "type": "array",
@@ -77,8 +77,8 @@
                 "type": "string"
               },
               "required": {
-                "type": "boolean",
-                "default": false
+                "default": false,
+                "type": "boolean"
               }
             },
             "required": [

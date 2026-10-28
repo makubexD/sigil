@@ -12,7 +12,7 @@
  */
 import fs from 'node:fs';
 import { canonicalize, classifyConfigDrift } from '../config-merge';
-import { isAtRetiredDestination, sameFile, sha256 } from '../manifest';
+import { isAtRetiredDestination, recordedOp, sameFile, sha256 } from '../manifest';
 
 export { isAtRetiredDestination };
 import type { ManifestConfigMerge, ManifestEntry } from '../manifest/types';
@@ -32,6 +32,10 @@ export interface MoveResult {
   /** Fragments kept in a retired file because the user edited them (they need --force). */
   readonly skipped: number;
 }
+
+/** Every op `entry` records for `cf`'s file. */
+const sigilOpsFor = (entry: ManifestEntry, cf: ManifestConfigMerge): ConfigMergeOp[] =>
+  (entry.configFiles ?? []).filter(c => sameFile(c, cf)).map(recordedOp);
 
 /** The manifest record for `op`, as `add` writes it. */
 function recordOf(op: ConfigMergeOp): ManifestConfigMerge {
@@ -92,7 +96,7 @@ function moveOne(
   if (!mergeIntoNewFile(entry, next, opts.projectDir)) return 'none';
   // Forget the old record only once sigil's entry is out of the old file (or the file is gone);
   // otherwise uninstall still needs it to find the server there.
-  const removed = reverseMergeOneConfigFile(cf, opts.projectDir);
+  const removed = reverseMergeOneConfigFile(cf, opts.projectDir, sigilOpsFor(entry, cf));
   if (removed || !fs.existsSync(resolveConfigFileTarget(cf, opts.projectDir).fullPath)) {
     entry.configFiles = (entry.configFiles ?? []).filter(c => c !== cf);
   }

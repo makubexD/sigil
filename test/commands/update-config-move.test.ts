@@ -139,7 +139,7 @@ describe('moveRetiredFragments', () => {
     });
   });
 
-  it('should move a user-level server to $COPILOT_HOME, backing up both files', async () => {
+  it('should move a user-level server to $COPILOT_HOME, backing up only the file with user content', async () => {
     await withTempDirAsync(async dir => {
       const saved = { ...process.env };
       try {
@@ -165,8 +165,10 @@ describe('moveRetiredFragments', () => {
         moveRetiredFragments(entry, opts(dir), [userOp], retired);
         const moved = readJson(dir, 'copilot-home/mcp-config.json').mcpServers!;
         assert.deepEqual(Object.keys(moved).sort(), ['mine', 'probe']);
+        // The new file holds the user's own server, so it is backed up. The old file holds only
+        // sigil's server, so it is not (#103).
         assert.ok(fs.existsSync(path.join(dir, 'copilot-home/mcp-config.json.sigil.bak')));
-        assert.ok(fs.existsSync(path.join(dir, vsUser, 'mcp.json.sigil.bak')));
+        assert.equal(fs.existsSync(path.join(dir, vsUser, 'mcp.json.sigil.bak')), false);
         assert.deepEqual(
           entry.configFiles!.map(c => [c.file, c.root]),
           [['mcp-config.json', 'copilot-home']],

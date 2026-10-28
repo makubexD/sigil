@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import { replaceMerge, serialize } from '../../config-merge';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../../config-utils';
-import { previousOpFor, upsertConfigEntry } from '../../manifest';
+import { previousOpFor, recordedOpsAt, upsertConfigEntry } from '../../manifest';
 import { pkg } from '../../cli-helpers';
 import type {
   ConfigMergeOp,
@@ -52,9 +52,9 @@ function applyConfigMergeOp(
   op: ConfigMergeOp,
   previous: ConfigMergeOp | undefined,
   id: string,
-  projectDir: string,
+  ctx: InstallCtx,
 ): string | undefined {
-  const rootDir = resolveConfigRoot(op.root as ConfigRoot | undefined, projectDir);
+  const rootDir = resolveConfigRoot(op.root as ConfigRoot | undefined, ctx.plan.opts.projectDir);
   const fullPath = path.join(rootDir, op.file);
   const opSecSuffix = op.section ? `  › ${op.section}` : '';
 
@@ -62,7 +62,9 @@ function applyConfigMergeOp(
   if (existing === undefined) return undefined;
 
   if (isHomeScopedRoot(op.root as ConfigRoot | undefined)) {
-    ensureHomeBackup(fullPath);
+    // Before this install is upserted: the ops already recorded for the file tell the backup
+    // whether its content is all sigil's.
+    ensureHomeBackup(fullPath, recordedOpsAt(ctx.manifest, op));
   }
 
   const merged = replaceMerge(existing, previous, op);
@@ -88,13 +90,13 @@ function applyAllConfigMergeOps(
   ops: ConfigMergeOp[],
   installed: ManifestEntry | undefined,
   id: string,
-  projectDir: string,
+  ctx: InstallCtx,
 ): { merged: string[]; toRecord: ConfigMergeOp[] } {
   const toRecord: ConfigMergeOp[] = [];
   const merged: string[] = [];
   for (const op of ops) {
     const previous = previousOpFor(installed, op);
-    const line = applyConfigMergeOp(op, previous, id, projectDir);
+    const line = applyConfigMergeOp(op, previous, id, ctx);
     if (line) {
       merged.push(line);
       toRecord.push(op);
@@ -139,7 +141,7 @@ async function scaffoldAndApplyConfig(
   if (ops.length === 0) return NOTHING_WRITTEN;
 
   const installed = ctx.manifest.entries.find(e => e.id === id && e.target === ctx.targetName);
-  const applied = applyAllConfigMergeOps(ops, installed, id, plan.opts.projectDir);
+  const applied = applyAllConfigMergeOps(ops, installed, id, ctx);
   const { merged, toRecord } = applied;
   const written = merged.length;
   if (toRecord.length === 0) return { written, merged, upserted: false };

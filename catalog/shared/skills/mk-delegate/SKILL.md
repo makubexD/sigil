@@ -66,7 +66,10 @@ Arguments from the user: {sigil:arguments}
    check that only the allowed files changed and no tests were deleted or skipped. Its tests cover
    the paths it thought of. Exercise the interactive or error paths it may have skipped.
 9. **Report** to the user: accepted or rejected, files changed, test result, model, effort, tokens
-   and the log dir. Don't commit unless the user asks.
+   and the log dir. A one-off task: don't commit unless the user asks. A step of a committed plan:
+   commit the accepted step and send the next one without asking, since the committed plan is the
+   approval. Stop and ask only at an `[inline]` judgment step, a rejection or failure, or the end
+   of the phase or plan.
    - Rejected once: resend with a concrete correction.
    - Rejected twice: tell the user and offer to do it in the main session.
 

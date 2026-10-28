@@ -36,8 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   edits while worker mode is on; it installs with `sigil add --scope user`, since plugins can't carry
   hooks yet. `/mk-check --install` writes `mk-exec`, `workflow-report` and the worker config from its
   references. Requires Claude Code and a DeepSeek API key. The rule loads for every language
-  (+1479 B per language, recorded in the rule-load baseline). The rule also says a plan approved in
-  a planning mode stays a draft until it is written to the repo and reviewed, that work spanning
+  (+1551 B per language, recorded in the rule-load baseline). The rule also says a plan approved in
+  a planning mode that hands steps to a helper is written to the repo and reviewed before it runs, that work spanning
   several PRs gets a committed roadmap plus a plan per phase, and that eval or probe runs are never
   delegated, since the helper would measure its own model. It replaces the unreleased
   `free-worker` pack (OpenCode on free Zen models), whose free quota ran out mid-feature.

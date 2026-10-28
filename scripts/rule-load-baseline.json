@@ -1,22 +1,22 @@
 {
   "typescript": {
-    "bytes": 42386,
-    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
+    "bytes": 42458,
+    "reason": "shared/orchestration (+1551 B per language, was 1479): the stop after a plan-mode approval now applies only when the plan hands steps to a helper; loads everywhere because delegation is about how the session works"
   },
   "angular": {
-    "bytes": 50236,
-    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
+    "bytes": 50308,
+    "reason": "shared/orchestration (+1551 B per language, was 1479): the stop after a plan-mode approval now applies only when the plan hands steps to a helper; loads everywhere because delegation is about how the session works"
   },
   "react": {
-    "bytes": 33301,
-    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
+    "bytes": 33373,
+    "reason": "shared/orchestration (+1551 B per language, was 1479): the stop after a plan-mode approval now applies only when the plan hands steps to a helper; loads everywhere because delegation is about how the session works"
   },
   "csharp": {
-    "bytes": 38157,
-    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
+    "bytes": 38229,
+    "reason": "shared/orchestration (+1551 B per language, was 1479): the stop after a plan-mode approval now applies only when the plan hands steps to a helper; loads everywhere because delegation is about how the session works"
   },
   "python": {
-    "bytes": 32924,
-    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
+    "bytes": 32996,
+    "reason": "shared/orchestration (+1551 B per language, was 1479): the stop after a plan-mode approval now applies only when the plan hands steps to a helper; loads everywhere because delegation is about how the session works"
   }
 }

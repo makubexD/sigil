@@ -7,7 +7,8 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import type { ConfigRoot } from './types';
+import { reverseMerge } from './config-merge';
+import type { ConfigMergeOp, ConfigRoot } from './types';
 
 /** Resolves the default VS Code user-profile directory for the current platform. */
 function resolveVsCodeUserDir(): string {
@@ -77,6 +78,31 @@ export function isHomeScopedRoot(root: ConfigRoot | undefined): boolean {
   return root === 'home' || root === 'copilot-home' || root === 'vscode-user';
 }
 
+/** JSON can only parse to an object, an array or a primitive; only a non-array object is usable. */
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/**
+ * True when `fullPath` parses to a plain object that holds nothing but the fragments in
+ * `sigilOps`: reversing every op in order leaves no keys. Invalid JSON or a non-object is
+ * never "sigil-only" — it is backed up as today.
+ */
+function holdsOnlySigilEntries(fullPath: string, sigilOps: readonly ConfigMergeOp[]): boolean {
+  let content: unknown;
+  try {
+    content = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+  } catch {
+    return false;
+  }
+  if (!isPlainObject(content)) return false;
+  const remaining = sigilOps.reduce<Record<string, unknown>>(
+    (acc, op) => reverseMerge(acc, op),
+    content,
+  );
+  return Object.keys(remaining).length === 0;
+}
+
 /**
  * Writes a pristine `.sigil.bak` before the first write/delete of a home-scoped config file;
  * warns either way. Must be called before ANY write or delete of a file at a home-scoped root —
@@ -85,16 +111,23 @@ export function isHomeScopedRoot(root: ConfigRoot | undefined): boolean {
  * files it protects (2026-08-22 audit F23,
  * docs/decisions/catalog-benchmark-audit-2026-08-22.md). No-ops if `fullPath` doesn't exist yet
  * (nothing to back up).
+ *
+ * The backup protects content sigil did not write: a file holding only the fragments `sigilOps`
+ * records for it gets none. Once the user adds content, the next write backs the file up — that
+ * copy includes sigil's entries too, so it is the first copy with user content, not a
+ * pre-sigil original. Invalid JSON or a non-object is backed up unchanged.
  */
-export function ensureHomeBackup(fullPath: string): void {
+export function ensureHomeBackup(fullPath: string, sigilOps: readonly ConfigMergeOp[] = []): void {
   if (!fs.existsSync(fullPath)) return;
   const bakPath = `${fullPath}.sigil.bak`;
-  if (!fs.existsSync(bakPath)) {
+  if (fs.existsSync(bakPath)) {
+    console.warn(`  ⚠  Existing backup kept → ${bakPath}  (compare before committing)`);
+  } else if (holdsOnlySigilEntries(fullPath, sigilOps)) {
+    console.warn(`  ⓘ  ${fullPath} holds only sigil entries; no backup needed.`);
+  } else {
     fs.copyFileSync(fullPath, bakPath);
     console.warn(`\n  ⚠  Writing to ${fullPath} — this file affects ALL your projects.`);
     console.warn(`  ⚠  Backup saved → ${bakPath}`);
     console.warn(`  ⚠  Review the diff before committing: diff "${bakPath}" "${fullPath}"\n`);
-  } else {
-    console.warn(`  ⚠  Existing backup kept → ${bakPath}  (compare before committing)`);
   }
 }

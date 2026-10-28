@@ -27,6 +27,7 @@ export { upsertEntries } from './mutate';
 export { upsertConfigEntry } from './mutate-config';
 export {
   recordedOp,
+  recordedOpsAt,
   sameDestination,
   sameFile,
   previousOpFor,

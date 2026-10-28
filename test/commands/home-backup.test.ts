@@ -3,10 +3,6 @@
  * content sigil did not write. A file that holds nothing but sigil's recorded fragments is
  * sigil's own work, so there is nothing of the user's to protect; `uninstall` must not leave a
  * backup behind after it deletes the file it created.
- *
- * The unit cases call the planned two-argument `ensureHomeBackup(fullPath, sigilOps)`. The
- * currently built signature takes one argument, so the two-argument form is reached through a
- * local typed alias: the extra argument is ignored at runtime until the fix lands.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -18,10 +14,6 @@ import { applyMerge } from '../../dist-cli/config-merge/index';
 import { ensureHomeBackup } from '../../dist-cli/config-utils';
 import { withTempDir } from '../helpers/temp-dir';
 import type { ConfigMergeOp, ResolvedCatalog } from '../../dist-cli/types';
-
-/** The planned signature; see the file header for why the alias exists. */
-type EnsureHomeBackupWithOps = (fullPath: string, sigilOps: readonly ConfigMergeOp[]) => void;
-const ensureBackupWithOps = ensureHomeBackup as unknown as EnsureHomeBackupWithOps;
 
 const PROJECT_DIR = '/abs/project';
 
@@ -100,7 +92,7 @@ describe('ensureHomeBackup — content-aware backup for home-scoped config files
     withTempDir(dir => {
       const fullPath = hookFile(dir);
 
-      ensureBackupWithOps(fullPath, [op]);
+      ensureHomeBackup(fullPath, [op]);
 
       assert.equal(fs.existsSync(fullPath), false);
       assertNoBackup(fullPath, 'a missing file');
@@ -112,7 +104,7 @@ describe('ensureHomeBackup — content-aware backup for home-scoped config files
     withTempDir(dir => {
       const fullPath = seedHookFile(dir, applyMerge({}, op));
 
-      ensureBackupWithOps(fullPath, [op]);
+      ensureHomeBackup(fullPath, [op]);
 
       assertNoBackup(fullPath, 'a file holding only sigil entries');
     });
@@ -126,7 +118,7 @@ describe('ensureHomeBackup — content-aware backup for home-scoped config files
     withTempDir(dir => {
       const fullPath = seedHookFile(dir, applyMerge(applyMerge({}, opA), opB));
 
-      ensureBackupWithOps(fullPath, [opA, opB]);
+      ensureHomeBackup(fullPath, [opA, opB]);
 
       assertNoBackup(fullPath, 'a file holding two sigil fragments');
     });
@@ -137,7 +129,7 @@ describe('ensureHomeBackup — content-aware backup for home-scoped config files
     withTempDir(dir => {
       const fullPath = seedHookFile(dir, applyMerge({ userSetting: true }, op));
 
-      ensureBackupWithOps(fullPath, [op]);
+      ensureHomeBackup(fullPath, [op]);
 
       assertBackupEqualsFile(fullPath);
     });
@@ -147,7 +139,7 @@ describe('ensureHomeBackup — content-aware backup for home-scoped config files
     withTempDir(dir => {
       const fullPath = seedHookFile(dir, 'not json: { oops');
 
-      ensureBackupWithOps(fullPath, []);
+      ensureHomeBackup(fullPath, []);
 
       assertBackupEqualsFile(fullPath);
     });
@@ -159,7 +151,7 @@ describe('ensureHomeBackup — content-aware backup for home-scoped config files
       const fullPath = seedHookFile(dir, applyMerge({}, op));
       fs.writeFileSync(bakOf(fullPath), 'original backup bytes');
 
-      ensureBackupWithOps(fullPath, [op]);
+      ensureHomeBackup(fullPath, [op]);
 
       assert.equal(fs.readFileSync(bakOf(fullPath), 'utf8'), 'original backup bytes');
     });

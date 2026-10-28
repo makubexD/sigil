@@ -6,7 +6,7 @@
  * @module
  */
 import type { ConfigMergeOp, ConfigRoot, MergeStrategy, RetiredConfigDestination } from '../types';
-import type { ManifestConfigMerge, ManifestEntry } from './types';
+import type { Manifest, ManifestConfigMerge, ManifestEntry } from './types';
 
 /** Rebuilds the ConfigMergeOp a recorded fragment came from. */
 export function recordedOp(cf: ManifestConfigMerge): ConfigMergeOp {
@@ -47,6 +47,16 @@ export function sameDestination(cf: ManifestConfigMerge, op: ConfigMergeOp): boo
     cf.file === op.file &&
     (cf.root ?? 'project') === (op.root ?? 'project') &&
     perProject(cf.fragment) === perProject(op.fragment)
+  );
+}
+
+/** Every op the manifest records for `dest`'s file, across all entries (`sameFile`). */
+export function recordedOpsAt(
+  manifest: Manifest,
+  dest: { file: string; root?: string | undefined },
+): ConfigMergeOp[] {
+  return manifest.entries.flatMap(entry =>
+    (entry.configFiles ?? []).filter(cf => sameFile(cf, dest)).map(recordedOp),
   );
 }
 

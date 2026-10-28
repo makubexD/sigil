@@ -34,9 +34,10 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
         need a new `claude:` field on the agent spec. Record the go/no-go in `results.md`. Done 2026-10-28: go,
         route (a) (`docs/decisions/reviewer-bash-guard-2026-10.md`); scope widened to all 21 read-only agents that
         carry Bash. Step plan: `docs/plan-audit-rows-15-18-phase2.md`.
-  - [ ] If go, step plan: `shared/reviewer-bash-guard` denies write-shaped Bash for the code-reviewer and
+  - [x] If go, step plan: `shared/reviewer-bash-guard` denies write-shaped Bash for the code-reviewer and
         security-auditor families, lists its blind spots, and gets tests modelled on
-        `test/catalog/protect-config-hook.test.ts`. Add it to packs.
+        `test/catalog/protect-config-hook.test.ts`. Add it to packs. Done: 21 agents (scope widened from the
+        code-reviewer and security-auditor families).
 - [ ] **Phase 3, row 16: H1 bar-lowering guard and H2 Stop typecheck**
   - [ ] Spike `[inline: eval, run with the model under test]`: run a pressure task and record `suppressions` and
         `typeErrors`. The worker may write the eval files but never runs the probe.

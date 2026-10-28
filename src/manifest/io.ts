@@ -50,6 +50,9 @@ function parseManifest(raw: string, p: string): Manifest {
   const early = validateManifestVersion(m, p);
   if (early) return early;
 
+  // v2 differs from v3 only by the absent `catalog` field on an entry (absent = bundled), so a
+  // v2 file loads unchanged. Entries are carried through as-written, which also keeps a recorded
+  // `catalog` on load → save; every load is stamped with the current version, so a save writes v3.
   return {
     manifestVersion: MANIFEST_VERSION,
     entries: Array.isArray(m.entries) ? m.entries : [],

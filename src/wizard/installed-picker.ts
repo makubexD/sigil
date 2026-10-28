@@ -7,7 +7,7 @@
  */
 import { multiselect, isCancel } from './prompts';
 import { cancel } from './frame';
-import { computeStatus } from '../manifest';
+import { computeStatus, MANIFEST_VERSION } from '../manifest';
 import { retiredConfigDestinationsOf } from '../targets';
 import type { ManifestEntry, StatusResult } from '../manifest/types';
 import { stateLabelParts } from './state-display';
@@ -49,9 +49,14 @@ export function installedOptions(
 export async function pickInstalled(options: PickInstalledOptions): Promise<string[] | null> {
   const { entries, projectDir, message } = options;
   const known = new Set(entries.map(e => e.id));
-  const statuses = computeStatus({ manifestVersion: 2, entries }, projectDir, known, {
-    retiredFor: retiredConfigDestinationsOf,
-  });
+  const statuses = computeStatus(
+    { manifestVersion: MANIFEST_VERSION, entries },
+    projectDir,
+    known,
+    {
+      retiredFor: retiredConfigDestinationsOf,
+    },
+  );
   const answer = await multiselect({
     message: `${message}  (Space ticks, Enter confirms, Ctrl+C goes back)`,
     options: installedOptions(entries, statuses),

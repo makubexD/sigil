@@ -2,7 +2,7 @@
  * Schema types and constants for the install manifest.
  */
 
-export const MANIFEST_VERSION = 2;
+export const MANIFEST_VERSION = 3;
 export const MANIFEST_RELATIVE_PATH = '.sigil/manifest.json';
 
 /** SHA-256 hex digest of a single installed file. */
@@ -32,12 +32,30 @@ export interface ManifestConfigMerge {
   fragmentSha256: string;
 }
 
+/**
+ * The non-bundled catalog an entry was installed from.
+ * Both paths are relative to the project folder and use `/` separators
+ * (e.g. `../team-catalog`, `../team-catalog/packs.yaml`), so a committed
+ * manifest never holds an absolute, machine-specific path.
+ */
+export type CatalogSource = {
+  /** Catalog directory, relative to the project folder. */
+  dir: string;
+  /** `packs.yaml` file, relative to the project folder. */
+  packs: string;
+};
+
 /** Record for one installed artifact (primary pick or dependency). */
 export interface ManifestEntry {
   id: string;
   kind: string;
   target: string; // platform adapter name, e.g. "claude" | "copilot"
   sigilVersion: string; // pkg.version at install time
+  /**
+   * The catalog this entry was installed from. Absent means the bundled catalog, so a manifest
+   * written against the bundled catalog records nothing (manifestVersion 3 added this field).
+   */
+  catalog?: CatalogSource | undefined;
   /** Whole-file records — set for whole-file kinds (skill, agent, rule, prompt, workflow). */
   files: ManifestFile[];
   /**

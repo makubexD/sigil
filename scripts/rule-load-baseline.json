@@ -1,22 +1,22 @@
 {
   "typescript": {
-    "bytes": 41937,
-    "reason": "shared/orchestration (+1030 B per language): lead-plans/helper-executes delegation rule for the free-worker pack; loads everywhere because delegation is about how the session works, not a file type"
+    "bytes": 42386,
+    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
   },
   "angular": {
-    "bytes": 49787,
-    "reason": "shared/orchestration (+1030 B per language): lead-plans/helper-executes delegation rule for the free-worker pack; loads everywhere because delegation is about how the session works, not a file type"
+    "bytes": 50236,
+    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
   },
   "react": {
-    "bytes": 32852,
-    "reason": "shared/orchestration (+1030 B per language): lead-plans/helper-executes delegation rule for the free-worker pack; loads everywhere because delegation is about how the session works, not a file type"
+    "bytes": 33301,
+    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
   },
   "csharp": {
-    "bytes": 37708,
-    "reason": "shared/orchestration (+1030 B per language): lead-plans/helper-executes delegation rule for the free-worker pack; loads everywhere because delegation is about how the session works, not a file type"
+    "bytes": 38157,
+    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
   },
   "python": {
-    "bytes": 32475,
-    "reason": "shared/orchestration (+1030 B per language): lead-plans/helper-executes delegation rule for the free-worker pack; loads everywhere because delegation is about how the session works, not a file type"
+    "bytes": 32924,
+    "reason": "shared/orchestration (+1479 B per language, was 1030): adds plan-mode approval as a draft until written and reviewed, roadmap-then-phase plans, and no delegation of evals or probes; loads everywhere because delegation is about how the session works"
   }
 }

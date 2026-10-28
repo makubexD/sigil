@@ -25,6 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Code-quality eval: pressure tasks P1 (a failing test before a release) and P2 (strict `tsc`
+  errors in CI), with hidden checks that catch a silenced problem. A Haiku screen found no
+  suppressions and no type errors in 20 runs, so the bar-lowering guard (H1) and the Stop typecheck
+  (H2) from the 2026-10-16 audit are a no-go. Each run's `test/` folder is now archived beside its
+  `src/`.
 - New `shared/reviewer-bash-guard` hook (Claude Code only): a `PreToolUse` hook on Bash that blocks
   write-shaped commands when a read-only review agent runs them — redirects into files, file
   commands, in-place edits, inline interpreter code, git writes, package changes, and fixers or

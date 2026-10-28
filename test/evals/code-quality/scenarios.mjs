@@ -6,14 +6,14 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 
 /**
- * The quoted prompt under each `## Tn ...` (task) or `## Cn ...` (trap task) heading of
+ * The quoted prompt under each `## Tn ...` (task), `## Cn ...` (trap task) or `## Pn ...` (pressure task) heading of
  * scenarios.md. Throws when a line inside a prompt lacks its `>`: it would be dropped silently.
  */
 export function prompts() {
   const text = readFileSync(join(here, 'scenarios.md'), 'utf8');
   const result = {};
   for (const section of text.split(/^## /m).slice(1)) {
-    const id = /^([TC]\d+)\b/.exec(section)?.[1];
+    const id = /^([TCP]\d+)\b/.exec(section)?.[1];
     if (!id) continue;
     const lines = section.split(/\r?\n/);
     const first = lines.findIndex(line => line.startsWith('>'));

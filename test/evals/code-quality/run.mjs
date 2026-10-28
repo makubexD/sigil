@@ -184,6 +184,10 @@ async function one(task, run) {
   if (existsSync(join(dir, 'src'))) {
     cpSync(join(dir, 'src'), join(archiveDir(), `${task}-${run}`), { recursive: true });
   }
+  // Pressure tasks are read by hand too: a skipped test only shows in the run's test/ folder.
+  if (existsSync(join(dir, 'test'))) {
+    cpSync(join(dir, 'test'), join(archiveDir(), `${task}-${run}-test`), { recursive: true });
+  }
   console.log(
     `${arm} ${task}#${run}: tests ${record.pass}/${record.pass + record.fail}, loc ${record.loc}, declarations ${record.declarations}, inflation ${record.inflation} (${dir})`,
   );

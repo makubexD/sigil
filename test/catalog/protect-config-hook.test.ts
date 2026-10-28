@@ -96,4 +96,15 @@ describe('shared/protect-config hook', () => {
       assert.equal(run(entry, stdin).status, 0, stdin);
     }
   });
+
+  for (const [input, status] of [
+    [{ path: '.env' }, 2],
+    [{ path: 'src/a.ts' }, 0],
+    [{}, 0],
+  ] as const) {
+    it(`${status === 2 ? 'blocks' : 'allows'} tool_input ${JSON.stringify(input)}`, async () => {
+      const r = run((await installedHook()).entry, JSON.stringify({ tool_name: 'Write', tool_input: input }));
+      assert.equal(r.status, status, r.stderr);
+    });
+  }
 });

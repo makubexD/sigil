@@ -8,7 +8,8 @@ home for their merge model, provider-declared scope model, and wizard treatment.
 ## Hook fields
 
 A `kind: hook` artifact (`src/schema/index.ts`, `HookSchema`) becomes one entry under
-`hooks.<event>` in Claude Code's settings (`src/targets/claude-code/config-scaffold.ts`):
+`hooks.<event>` in Claude Code's settings (`src/targets/claude-code/config-scaffold.ts`) and in the
+Copilot hook file for its scope (scope table below).
 
 | Field          | Meaning                                                                                                                               |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -73,6 +74,7 @@ applied by `applyMerge` in `src/config-merge/apply.ts`):
 | `object-spread` | Deep-merge; incoming wins per leaf. Default when a key names no strategy             | Settings `env`, `model`, `statusLine`; MCP server objects |
 | `array-union`   | Union with deep-equal dedup. An object-of-arrays (`permissions`) unions each sub-key | Settings `permissions.allow` / `deny` / `ask`             |
 | `array-append`  | Concatenate with no dedup                                                            | Hook event arrays (`hooks`)                               |
+| `file-marker`   | Set like `object-spread`; uninstall drops it only when nothing else is left          | Copilot hook files' `version`                             |
 
 `array-union` and `array-append` are safe to re-apply (union dedupes, append only concatenates).
 `object-spread` assigns leaves, so a user edit of a value sigil wrote is a real overwrite.
@@ -233,6 +235,26 @@ Copilot CLI read them ([VS Code docs](https://code.visualstudio.com/docs/copilot
 VS Code lists its own `.vscode/mcp.json` and user-profile `mcp.json` as deprecated, and Copilot CLI
 never reads `.vscode/mcp.json`. `.mcp.json` is the same file Claude Code's project scope uses, so
 with both targets installed one server entry serves both.
+
+GitHub Copilot hooks (3 scopes, `src/targets/copilot/config.ts` and `target-helpers.ts`):
+
+| Scope (precedence) | Hook file                                                                | Notes                                                  |
+| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------ |
+| local (1)          | `.github/copilot/settings.local.json`                                    | hooks inline; no `version` key; not git-committed      |
+| project (2)        | `.github/hooks/sigil.json`                                               | `version: 1`; git-committed                            |
+| user (3)           | `$COPILOT_HOME/hooks/sigil.json` (default `~/.copilot/hooks/sigil.json`) | home-scoped, so the first write takes one `.sigil.bak` |
+
+The standalone hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
+hook remains in the file: uninstalling one of several hooks leaves the version in place, and
+uninstalling the last one removes it.
+
+On Copilot, a hook that cannot start **denies** the call (fail-closed), and the cloud agent skips
+exec-form hooks (`args`) entirely — `shared/protect-config` is exec form, so it guards Copilot CLI
+and VS Code but not the cloud agent.
+
+A hook on `Stop`, `SubagentStop` or `Notification` makes `sigil add --target copilot` stop with an
+error (refused, not skipped): Copilot documents no PascalCase alias for those events. Give such
+hooks `platforms: [claude]`.
 
 **Moving an older install.** Installs made before this recorded the VS Code files. `sigil update`
 moves each recorded server to its portable file and takes sigil's entry out of the old one (deleting

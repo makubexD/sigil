@@ -20,6 +20,7 @@ import type { Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding, EditorialTask } from '../types';
 import { getAllTargets } from '../../../../targets/index';
 import { KIND_REGISTRY } from '../../../../kinds';
+import { supportsKind } from '../../../../targets/capabilities';
 import { shippedTexts, type ShippedText } from '../../../../artifact-texts';
 
 type Artifact = Parameters<ConformanceRule['detect']>[0]['catalog']['artifacts'][number];
@@ -39,10 +40,18 @@ function leakedDirs(
   );
 }
 
-/** Whether `artifact`'s kind installs on `target` at all (an `ownedBy` kind only on its owners). */
+/**
+ * Whether `artifact` installs on `target` at all: the target delivers its kind, the artifact's
+ * `platforms:` (when set) names the target, and an `ownedBy` kind goes only to its owners.
+ */
 function shipsTo(artifact: Artifact, target: Target): boolean {
   const owners = KIND_REGISTRY[artifact.kind].ownedBy;
-  return owners.length === 0 || owners.includes(target.name);
+  const platforms = artifact.frontmatter.platforms as string[] | undefined;
+  return (
+    supportsKind(target, artifact.kind) &&
+    (platforms === undefined || platforms.includes(target.name)) &&
+    (owners.length === 0 || owners.includes(target.name))
+  );
 }
 
 /** One finding per other provider that receives `shipped`, which names `owner`'s folder `dir`. */

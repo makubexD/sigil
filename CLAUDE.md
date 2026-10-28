@@ -227,8 +227,8 @@ that provider's `KindEmitSpec[]` via `deriveContracts()`, never hand-written.** 
 provider's canonical home for the artifact, and cite both consumers when two products read the same emitted file.
 `KindEmitSpec.supersededBy` is an advisory `sigil sync` notice, never a `--check` failure. Shipped targets do not use
 `Target.frontmatterExtensions`, which is known debt (the list is in
-[architecture.md](docs/reference/architecture.md#extension-model)). `hook`/`settings` stay flagged
-`KindDescriptor.ownedBy` until a second target supports them. Mechanics:
+[architecture.md](docs/reference/architecture.md#extension-model)). `settings` stays flagged
+`KindDescriptor.ownedBy` until a second target supports it. Mechanics:
 [architecture.md](docs/reference/architecture.md).
 
 **`sigil sync`** (`src/commands/sync/`) is catalog-author tooling: `--check` for CI, `--apply` for mechanical fixes

@@ -84,6 +84,7 @@ export function reverseMerge(
     const strat: MergeStrategy = op.strategy[topKey] ?? 'object-spread';
     const current = result[topKey];
 
+    if (strat === 'file-marker') continue; // reversed last, by reverseFileMarkers
     if (strat === 'array-union' || strat === 'array-append') {
       result[topKey] = reverseArrayStrategy(current, contributed);
     } else {
@@ -91,7 +92,22 @@ export function reverseMerge(
     }
   }
 
-  return pruneEmpty(result);
+  return reverseFileMarkers(pruneEmpty(result), op);
+}
+
+/**
+ * Drops `op`'s `file-marker` keys (still equal to what sigil wrote) only when nothing but those
+ * markers is left: another hook, sigil's or the user's, still needs the file's `version`.
+ */
+function reverseFileMarkers(
+  result: Record<string, unknown>,
+  op: ConfigMergeOp,
+): Record<string, unknown> {
+  const markers = Object.keys(op.fragment).filter(k => op.strategy[k] === 'file-marker');
+  if (markers.length === 0 || Object.keys(result).some(k => !markers.includes(k))) return result;
+  const kept = { ...result };
+  for (const k of markers) if (deepEqual(kept[k], op.fragment[k])) delete kept[k];
+  return kept;
 }
 
 /** Rebuilds `current` with key `k` marked for removal, preserving `rest`'s prior edits. */

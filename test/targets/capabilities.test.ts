@@ -44,10 +44,10 @@ describe('target capabilities — behaviour preserved from the hand-listed kinds
     );
   });
 
-  it('should keep copilot scaffold free of the Claude-only hook/settings kinds', () => {
+  it('should keep copilot scaffold free of the Claude-only settings kind', () => {
     assert.deepEqual(
       sorted(supportedKinds(COPILOT)),
-      sorted(['skill', 'agent', 'rule', 'prompt', 'workflow', 'mcp']),
+      sorted(['skill', 'agent', 'rule', 'prompt', 'workflow', 'mcp', 'hook']),
     );
   });
 
@@ -166,11 +166,11 @@ describe('add wizard — visibleArtifacts follows the chosen target', () => {
     assert.equal(visibleArtifacts(s).length, s.ctx.catalog.artifacts.length);
   });
 
-  it('should hide Claude-only config kinds when copilot is chosen', async () => {
+  it('should hide the Claude-only settings kind when copilot is chosen', async () => {
     const kinds = kindsOf(visibleArtifacts(await stateFor('copilot')));
 
-    assert.ok(!kinds.has('hook') && !kinds.has('settings'));
-    assert.ok(kinds.has('skill') && kinds.has('mcp'));
+    assert.ok(!kinds.has('settings'));
+    assert.ok(kinds.has('skill') && kinds.has('mcp') && kinds.has('hook'));
   });
 
   it('should show only skills for the skill-only fixture target', async () => {

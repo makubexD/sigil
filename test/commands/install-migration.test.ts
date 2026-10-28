@@ -134,6 +134,9 @@ for (const target of TARGETS) {
         await add(fresh, target, FULL_SELECTION);
         restoreFrozen(old, target);
         await update(old, target);
+        // Copilot took no hooks at 8882c86, so the frozen install never recorded protect-config and
+        // update rightly leaves it out. Adding it, as the user would, brings the install level.
+        if (target === 'copilot') await add(old, target, ['hook:shared/protect-config']);
         // Rules a Copilot skill now inlines were installed as files too. This manifest predates
         // `picked`, so prune only reports the copies; the user removes them as its hint says.
         const report = await captureJson<{ inlinedUnconfirmed: { id: string }[] }>(() =>

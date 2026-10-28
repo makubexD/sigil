@@ -20,8 +20,9 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
         stdin/stdout shape, and whether exit 2 blocks the call. Write `docs/decisions/copilot-hooks-2026-10.md`, which
         also decides where the source of truth lives. Done 2026-10-28: go; `event` stays as authored (Copilot accepts
         Claude's PascalCase names), not a neutral vocabulary.
-  - [ ] Owner probe: which `tool_input` key Copilot CLI passes for `create` / `edit` (steps in the decision record).
-  - [ ] If go, step plan. Expected scope: `src/targets/copilot/capabilities.ts` makes `hook` `native`; the emitter
+  - [x] Owner probe: which `tool_input` key Copilot CLI passes for `create` / `edit` — replaced by step 1:
+        `protect-config` accepts both `file_path` and `path`.
+  - [x] If go, step plan. Expected scope: `src/targets/copilot/capabilities.ts` makes `hook` `native`; the emitter
         reuses `replaceMerge`, `previousOpFor`, and `ensureHomeBackup` / `isHomeScopedRoot`; an `aggregateDocs`
         citation; `ownedBy` dropped for `hook` only in `src/kinds.ts`; RED tests for the `add`, `update` and
         `uninstall` round trip.

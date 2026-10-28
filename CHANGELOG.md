@@ -30,14 +30,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`~/.claude-worker`), so it never sees the main login, hooks or plugins. Effort is `low`, `medium`
   (default) or `high` per step, and every run writes a full log (transcript, meta, diff, summary)
   with a cost estimate from its token counts and DeepSeek's peak/off-peak prices, which
-  `workflow-report` totals per repo.
+  `workflow-report` totals per repo. A worker step is one concern touching about 3 files at most;
+  `/mk-delegate` splits bigger ones. A run gets 90 turns, and one that runs out is reported as
+  partial. The worker may not reshape unrelated code to satisfy a lint or size rule.
   It brings the `/mk-delegate` and `/mk-check` skills and the `shared/orchestration` rule as
   dependencies, plus the `shared/worker-mode-guard` hook. That hook blocks the main session's file
   edits while worker mode is on; it installs with `sigil add --scope user`, since plugins can't carry
   hooks yet. `/mk-check --install` writes `mk-exec`, `workflow-report` and the worker config from its
   references. Requires Claude Code and a DeepSeek API key. The rule loads for every language
-  (+1551 B per language, recorded in the rule-load baseline). The rule also says a plan approved in
-  a planning mode that hands steps to a helper is written to the repo and reviewed before it runs, that work spanning
+  (+1632 B per language, recorded in the rule-load baseline). The rule also says a plan approved in
+  a planning mode that hands steps to a helper is written to the repo and reviewed before it runs
+  (an approval that amends a repo plan writes the change into that file first), that work spanning
   several PRs gets a committed roadmap plus a plan per phase, and that eval or probe runs are never
   delegated, since the helper would measure its own model. It replaces the unreleased
   `free-worker` pack (OpenCode on free Zen models), whose free quota ran out mid-feature.

@@ -100,6 +100,14 @@ function moveOne(
   return 'moved';
 }
 
+/** A record at a retired file with nothing to move it to: `update` leaves it, `uninstall` removes it. */
+function warnNoReplacement(entry: ManifestEntry, cf: ManifestConfigMerge): void {
+  console.error(
+    `  ⚠  ${entry.id}: ${cf.file} is retired and the catalog has no replacement — ` +
+      `remove it with sigil uninstall ${entry.id}`,
+  );
+}
+
 /** Moves every fragment `entry` records at a retired destination to the file that replaced it. */
 export function moveRetiredFragments(
   entry: ManifestEntry,
@@ -112,7 +120,8 @@ export function moveRetiredFragments(
   for (const cf of [...(entry.configFiles ?? [])]) {
     const move = retired.find(r => sameFile(cf, r.from));
     const next = move && freshOps.find(op => sameFile(op, move.to));
-    if (!next) continue; // not retired, or the catalog no longer has it (reported elsewhere)
+    if (move && !next) warnNoReplacement(entry, cf);
+    if (!next) continue;
     const outcome = moveOne(entry, cf, next, opts);
     if (outcome === 'moved') wrote = true;
     if (outcome === 'skipped') skipped++;

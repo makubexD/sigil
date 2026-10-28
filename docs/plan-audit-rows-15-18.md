@@ -28,12 +28,12 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
         citation; `ownedBy` dropped for `hook` only in `src/kinds.ts`; RED tests for the `add`, `update` and
         `uninstall` round trip.
   - [ ] Live check by the owner: `shared/protect-config` blocks a `.env` write in Copilot CLI.
-- [ ] **Phase 2, row 15: reviewer Bash guard**
+- [x] **Phase 2, row 15: reviewer Bash guard**. Merged in PR #105.
   - [x] Spike `[inline: research + probe]`: can a PreToolUse hook see the subagent? Route (a) is
         `agent_type` / `agent_id` in the hook input. Route (b) is a subagent frontmatter `hooks:` field, which would
         need a new `claude:` field on the agent spec. Record the go/no-go in `results.md`. Done 2026-10-28: go,
         route (a) (`docs/decisions/reviewer-bash-guard-2026-10.md`); scope widened to all 21 read-only agents that
-        carry Bash. Step plan: `docs/plan-audit-rows-15-18-phase2.md`.
+        carry Bash. The step plan was deleted after merge.
   - [x] If go, step plan: `shared/reviewer-bash-guard` denies write-shaped Bash for the code-reviewer and
         security-auditor families, lists its blind spots, and gets tests modelled on
         `test/catalog/protect-config-hook.test.ts`. Add it to packs. Done: 21 agents (scope widened from the

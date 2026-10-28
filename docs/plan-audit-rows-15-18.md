@@ -48,7 +48,7 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
         content against new, and match Edit, MultiEdit and Bash.
   - [x] No-go, not built (H16 failed). H2 only if type errors appear: a Stop hook runs the typecheck it finds for
         the stack.
-- [ ] **Phase 4, row 18: C1–C5 coverage**
+- [x] **Phase 4, row 18: C1–C5 coverage**. No gap, recorded in PR #110; the spike plan was deleted with it.
   - [x] Spike `[inline: eval design]`: one probe task per area (Node runtime, ASP.NET/EF, FastAPI/Django, React
         perf/security, API/DB/observability/e2e). The worker may write the task files. Done 2026-10-28: K1–K5 in
         `test/evals/coverage-probe/`, graded by reading the code against `key.md` (no .NET or Python runtime here).

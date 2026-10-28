@@ -13,7 +13,7 @@ import { resolveCatalog } from '../resolve';
 import { applyProjectOverlays } from '../overlays';
 import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets';
-import { saveManifest } from '../manifest';
+import { recordedOpsAt, saveManifest } from '../manifest';
 import { requireManifest } from './shared/manifest';
 import type { ManifestEntry, Manifest } from '../manifest/types';
 import type { ResolvedCatalog, Target } from '../types';
@@ -28,6 +28,7 @@ import { installNewDependencies } from './update-deps';
 import { entriesToUpdate } from './update-entries';
 import { warnMcpEnvCaveats } from './add/execute-config';
 import type { WrittenConfig } from './add/execute-config';
+import type { SigilOpsAt } from './update-config-io';
 
 export { isFileDrifted } from './update-wholefile';
 
@@ -47,6 +48,9 @@ export interface UpdateOptions {
    */
   installedIds?: ReadonlySet<string> | undefined;
 }
+
+/** `UpdateOptions` plus the manifest-derived lookup the config writers use for the home backup. */
+export type ConfigUpdateOptions = UpdateOptions & { sigilOpsAt: SigilOpsAt };
 
 /** Prints the final summary line (or the dry-run notice). */
 function printUpdateSummary(
@@ -93,7 +97,7 @@ interface UpdateRunCtx {
   catalogIds: Set<string>;
   resolved: ResolvedCatalog;
   target: Target;
-  opts: UpdateOptions;
+  opts: ConfigUpdateOptions;
   /** Config artifacts this run wrote, for the one MCP env warning at the end. */
   written: WrittenConfig[];
 }
@@ -170,6 +174,8 @@ interface UpdateRunSetup {
   entries: ManifestEntry[];
   catalogIds: Set<string>;
   installedIds: Set<string>;
+  /** Every fragment the manifest records for a destination's file, for the home backup check. */
+  sigilOpsAt: SigilOpsAt;
 }
 
 /** Loads + validates everything runUpdate needs; prints the "nothing to update" message and
@@ -202,7 +208,8 @@ async function prepareUpdateRun(
 
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
   const installedIds = installedIdsFor(manifest, targetName);
-  return { resolved, target, manifest, entries, catalogIds, installedIds };
+  const sigilOpsAt: SigilOpsAt = dest => recordedOpsAt(manifest, dest);
+  return { resolved, target, manifest, entries, catalogIds, installedIds, sigilOpsAt };
 }
 
 export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<void> {
@@ -217,11 +224,12 @@ async function applyUpdate(
 ): Promise<UpdateRunTotals | undefined> {
   const setup = await prepareUpdateRun(ids, opts);
   if (!setup) return undefined;
-  const { resolved, target, manifest, entries, catalogIds, installedIds } = setup;
+  const { resolved, target, manifest, entries, catalogIds, installedIds, sigilOpsAt } = setup;
 
   console.log('');
   const written: WrittenConfig[] = [];
-  const run = { catalogIds, resolved, target, opts: { ...opts, installedIds }, written };
+  const runOpts: ConfigUpdateOptions = { ...opts, installedIds, sigilOpsAt };
+  const run = { catalogIds, resolved, target, opts: runOpts, written };
   const totals = await updateAllEntries(entries, run);
   warnMcpEnvCaveats(written, target);
 

@@ -9,6 +9,7 @@ import { resolveContained } from '../cli-helpers';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
 import { reverseMerge, serialize } from '../config-merge';
 import type { ConfigRoot, ConfigMergeOp, MergeStrategy } from '../types';
+import { recordedOp, sameFile } from '../manifest';
 import type { ManifestEntry } from '../manifest';
 import { CONFIG_KINDS } from '../select';
 
@@ -40,19 +41,20 @@ function writeReversedConfigFile(
 }
 
 /** Reverse-merges and removes sigil's contribution from one config-merge file; returns true
- * if it counted as removed (write succeeded or the file was deleted after emptying). */
+ * if it counted as removed (write succeeded or the file was deleted after emptying).
+ * `sigilOps` is every fragment recorded for that file, so a file holding only those needs no backup. */
 export function reverseMergeOneConfigFile(
   cf: NonNullable<ManifestEntry['configFiles']>[number],
   projectDir: string,
+  sigilOps: readonly ConfigMergeOp[],
 ): boolean {
   const rootDir = resolveConfigRoot((cf.root as ConfigRoot | undefined) ?? 'project', projectDir);
   const fullPath = resolveContained(rootDir, cf.file); // the manifest is editable: stay in root
-  const isHomeWrite = isHomeScopedRoot(cf.root as ConfigRoot | undefined);
-  const displayPath = isHomeWrite ? fullPath : cf.file;
+  const displayPath = isHomeScopedRoot(cf.root as ConfigRoot | undefined) ? fullPath : cf.file;
   if (!fs.existsSync(fullPath)) return false;
 
   try {
-    if (isHomeWrite) ensureHomeBackup(fullPath);
+    if (isHomeScopedRoot(cf.root as ConfigRoot | undefined)) ensureHomeBackup(fullPath, sigilOps);
     const live = JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
     const cleaned = reverseMerge(live, buildConfigMergeOpFromEntry(cf));
     writeReversedConfigFile(fullPath, cleaned, displayPath);
@@ -64,6 +66,13 @@ export function reverseMergeOneConfigFile(
 }
 
 type ConfigRecord = NonNullable<ManifestEntry['configFiles']>[number];
+
+/** Every op `entries` records for `cf`'s file, including `cf` itself. */
+function sigilOpsFor(cf: ConfigRecord, entries: readonly ManifestEntry[]): ConfigMergeOp[] {
+  return entries.flatMap(entry =>
+    (entry.configFiles ?? []).filter(c => sameFile(c, cf)).map(recordedOp),
+  );
+}
 
 /** The removed entries that merged into JSON config files (hook/settings/mcp with records). */
 export function configEntriesOf(removed: readonly ManifestEntry[]): ManifestEntry[] {
@@ -92,13 +101,15 @@ export function reverseMergeConfigEntries(
   projectDir: string,
   kept: readonly ManifestEntry[] = [],
 ): number {
+  const allEntries = [...configEntriesToRemove, ...kept];
   let configRemovedCount = 0;
   for (const entry of configEntriesToRemove) {
     for (const cf of entry.configFiles ?? []) {
       const owner = sharedWith(cf, kept);
       if (owner)
         console.log(`  =  ${cf.file}  (kept: still used by ${owner.id} for ${owner.target})`);
-      else if (reverseMergeOneConfigFile(cf, projectDir)) configRemovedCount++;
+      else if (reverseMergeOneConfigFile(cf, projectDir, sigilOpsFor(cf, allEntries)))
+        configRemovedCount++;
     }
   }
   return configRemovedCount;

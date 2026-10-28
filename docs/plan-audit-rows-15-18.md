@@ -15,7 +15,7 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
       `docs/plan-status-backlog.md` is removed, and `evals:check` now forces the TAP reporter on Node 23+.
 - [x] **Open question for the owner**: `docs/ideas/ci-test-speed.md` said "done (2026-10-03)" but was still in
       `docs/ideas/`. Owner chose to move it: now `docs/decisions/ci-test-speed-2026-10.md`.
-- [ ] **Phase 1, row 17: Copilot hook target** (brief `docs/ideas/copilot-hooks.md`). Merged in PR #102; only the
+- [ ] **Phase 1, row 17: Copilot hook target** (decision `docs/decisions/copilot-hooks-2026-10.md`). Merged in PR #102; only the
       owner live check is open.
   - [x] Spike `[inline: research]`: check the Copilot hooks docs for the file path, schema, event names, matchers,
         stdin/stdout shape, and whether exit 2 blocks the call. Write `docs/decisions/copilot-hooks-2026-10.md`, which

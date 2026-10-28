@@ -121,4 +121,5 @@ sigil does not write that layout.
 - `sigil build --target copilot` emits agents as one `.github/AGENTS.md`, while `add` writes
   `.github/agents/*.agent.md`; the two layouts differ (same brief).
 - Nothing publishes the marketplace for you: [publish-claude-marketplace](../ideas/publish-claude-marketplace.md).
-- No hooks or settings for Copilot: [copilot-hooks](../ideas/copilot-hooks.md).
+- No settings for Copilot. Hooks install with `sigil add --target copilot` since #102
+  ([decision](../decisions/copilot-hooks-2026-10.md)).

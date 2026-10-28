@@ -9,7 +9,7 @@ import { canonicalize, classifyConfigDrift } from '../config-merge';
 import { sha256 } from '../manifest';
 import type { ManifestEntry, ManifestConfigMerge } from '../manifest/types';
 import type { ConfigMergeOp } from '../types';
-import type { UpdateOptions } from './update';
+import type { ConfigUpdateOptions, UpdateOptions } from './update';
 import {
   readExistingOrWarn,
   resolveConfigFileTarget,
@@ -26,7 +26,7 @@ export function applyCatalogChange(
   cf: ManifestConfigMerge,
   fresh: ConfigMergeOp,
   entry: ManifestEntry,
-  opts: UpdateOptions,
+  opts: ConfigUpdateOptions,
 ): boolean {
   const { fullPath, op: previous } = resolveConfigFileTarget(cf, opts.projectDir);
   const existing = readExistingOrWarn(fullPath, entry.id, cf.file);
@@ -37,7 +37,7 @@ export function applyCatalogChange(
     console.log(`  ${mark}  ${entry.id}\n     ${cf.file}  (${note})`);
     return gate === 'dry-run';
   }
-  writeMergedConfigFile(fullPath, existing, { previous, next: fresh });
+  writeMergedConfigFile(fullPath, existing, { previous, next: fresh }, opts.sigilOpsAt(fresh));
   recordFragment(cf, fresh);
   console.log(`  ✓  ${entry.id}  (${cf.file} updated from the catalog)`);
   return true;

@@ -24,16 +24,21 @@ function readConfigFile(fullPath: string): Record<string, unknown> | undefined {
   }
 }
 
+/** Every op the manifest records for `dest`'s file (see `recordedOpsAt`), threaded from update. */
+export type SigilOpsAt = (dest: { file: string; root?: string | undefined }) => ConfigMergeOp[];
+
 /**
  * Writes `next` into `fullPath`, first reversing `previous` (the fragment being superseded)
- * when there is one, creating parent dirs.
+ * when there is one, creating parent dirs. `sigilOps` is every fragment the manifest records
+ * for this file (the one being replaced included), for the home-backup content check.
  */
 export function writeMergedConfigFile(
   fullPath: string,
   existing: Record<string, unknown>,
   ops: { previous?: ConfigMergeOp | undefined; next: ConfigMergeOp },
+  sigilOps: readonly ConfigMergeOp[],
 ): void {
-  if (isHomeScopedRoot(ops.next.root)) ensureHomeBackup(fullPath);
+  if (isHomeScopedRoot(ops.next.root)) ensureHomeBackup(fullPath, sigilOps);
   const merged = replaceMerge(existing, ops.previous, ops.next);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
   fs.writeFileSync(fullPath, serialize(merged), 'utf-8');

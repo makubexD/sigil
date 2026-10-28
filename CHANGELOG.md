@@ -665,6 +665,9 @@ through Claude Code and Copilot CLI against seven install combinations:
   on), and Copilot chose its built-in reviewer over `ts-security-auditor`. Each now names it.
 - `shared/allow-dev-tools` dropped `git status`/`diff`/`log`: Claude Code already runs read-only
   commands without a prompt, so those entries did nothing.
+- A home-scoped config file that sigil created no longer gets a `.sigil.bak` holding only sigil's
+  entries, which `uninstall` then left behind. The backup is taken only when the file holds content
+  sigil did not write. (#103)
 
 ### Removed
 

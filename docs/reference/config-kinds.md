@@ -145,14 +145,20 @@ catalog has a replacement destination, which `update` moves it to. When the cata
 
 Any write or delete to a home-scoped config file (`ConfigRoot: 'home' | 'copilot-home' | 'vscode-user'`
 — files like `~/.claude.json` or `~/.copilot/mcp-config.json`, which affect **every** project, not just
-the current one) takes a pristine `.sigil.bak` copy before the first such write, via the shared
-`ensureHomeBackup()` helper (`src/config-utils.ts`). This applies uniformly across all three
+the current one) takes a pristine `.sigil.bak` copy before the first such write to a file that holds
+content sigil did not write, via the shared `ensureHomeBackup()` helper (`src/config-utils.ts`); each
+caller passes the fragments the manifest records for that file. A file holding only sigil's recorded
+entries gets none: the helper reverses every recorded fragment, and an empty result means there is
+nothing of the user's to protect. This applies uniformly across all three
 config-JSON writers — `sigil add`, `sigil update`, and `sigil uninstall`
 (`commands/add/execute-config.ts`, `commands/update-config-io.ts`, `commands/uninstall-config.ts`;
 rule from audit finding F23: the first backup guarantee covered only `add`, so every home-directory writer must take it — see [`docs/decisions/catalog-benchmark-audit-2026-08-22.md`](../decisions/catalog-benchmark-audit-2026-08-22.md)).
 The backup is written once, pristine; a
 second write to the same file in the same session keeps the existing backup and just warns that
-it's still there. Project-scoped config files (`.claude/settings.json`, `.mcp.json`) are protected
+it's still there. Once the user adds content to a file sigil created, the next sigil write backs it
+up — that copy includes sigil's entries too, so it is the first copy with user content, not a
+pre-sigil original. Invalid JSON is always backed up. Project-scoped config files
+(`.claude/settings.json`, `.mcp.json`) are protected
 by git instead — no `.bak` is written for them.
 
 On every later run, when the backup already exists, the writer keeps that pristine copy and prints
@@ -238,11 +244,11 @@ with both targets installed one server entry serves both.
 
 GitHub Copilot hooks (3 scopes, `src/targets/copilot/config.ts` and `target-helpers.ts`):
 
-| Scope (precedence) | Hook file                                                                | Notes                                                  |
-| ------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------ |
-| local (1)          | `.github/copilot/settings.local.json`                                    | hooks inline; no `version` key; not git-committed      |
-| project (2)        | `.github/hooks/sigil.json`                                               | `version: 1`; git-committed                            |
-| user (3)           | `$COPILOT_HOME/hooks/sigil.json` (default `~/.copilot/hooks/sigil.json`) | home-scoped, so the first write takes one `.sigil.bak` |
+| Scope (precedence) | Hook file                                                                | Notes                                                    |
+| ------------------ | ------------------------------------------------------------------------ | -------------------------------------------------------- |
+| local (1)          | `.github/copilot/settings.local.json`                                    | hooks inline; no `version` key; not git-committed        |
+| project (2)        | `.github/hooks/sigil.json`                                               | `version: 1`; git-committed                              |
+| user (3)           | `$COPILOT_HOME/hooks/sigil.json` (default `~/.copilot/hooks/sigil.json`) | home-scoped: one `.sigil.bak` once it holds user content |
 
 The standalone hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
 hook remains in the file: uninstalling one of several hooks leaves the version in place, and

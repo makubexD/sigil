@@ -9,18 +9,25 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { applyConfigEntry, updateConfigEntry } from '../../dist-cli/commands/update-config';
-import type { ManifestEntry } from '../../dist-cli/manifest/types';
+import { recordedOpsAt } from '../../dist-cli/manifest';
+import type { Manifest, ManifestEntry } from '../../dist-cli/manifest/types';
 import type { ConfigMergeOp } from '../../dist-cli/types';
-import type { UpdateOptions } from '../../dist-cli/commands/update';
+import type { ConfigUpdateOptions } from '../../dist-cli/commands/update';
 import { withTempDir } from '../helpers/temp-dir';
 
-function makeOpts(projectDir: string, overrides: Partial<UpdateOptions> = {}): UpdateOptions {
+function makeOpts(
+  projectDir: string,
+  entry: ManifestEntry,
+  overrides: Partial<ConfigUpdateOptions> = {},
+): ConfigUpdateOptions {
+  const manifest: Manifest = { manifestVersion: 1, entries: [entry] };
   return {
     projectDir,
     catalogDir: '/fake/catalog',
     packs: '/fake/packs.yaml',
     force: false,
     dryRun: false,
+    sigilOpsAt: dest => recordedOpsAt(manifest, dest),
     ...overrides,
   };
 }
@@ -92,7 +99,7 @@ describe('updateConfigEntry — F14 missing-vs-modified repair', () => {
 
       const wrote = updateConfigEntry(
         makeHookEntry(),
-        makeOpts(dir, { force: false }),
+        makeOpts(dir, makeHookEntry(), { force: false }),
         opsOf(makeHookEntry()),
       );
 
@@ -111,7 +118,7 @@ describe('updateConfigEntry — F14 missing-vs-modified repair', () => {
 
       const wrote = updateConfigEntry(
         makeSettingsEntry(),
-        makeOpts(dir, { force: false }),
+        makeOpts(dir, makeSettingsEntry(), { force: false }),
         opsOf(makeSettingsEntry()),
       );
 
@@ -128,10 +135,10 @@ describe('updateConfigEntry — F14 missing-vs-modified repair', () => {
       fs.writeFileSync(settingsPath, JSON.stringify({ model: 'claude-sonnet-4-6' }, null, 2));
       const entry = makeSettingsEntry();
 
-      const kept = applyConfigEntry(entry, makeOpts(dir, { force: false }), opsOf(entry));
+      const kept = applyConfigEntry(entry, makeOpts(dir, entry, { force: false }), opsOf(entry));
       assert.deepEqual(kept, { wrote: false, skipped: 1 });
 
-      const forced = applyConfigEntry(entry, makeOpts(dir, { force: true }), opsOf(entry));
+      const forced = applyConfigEntry(entry, makeOpts(dir, entry, { force: true }), opsOf(entry));
       assert.deepEqual(forced, { wrote: true, skipped: 0 });
     });
   });
@@ -142,7 +149,7 @@ describe('updateConfigEntry — F14 missing-vs-modified repair', () => {
       fs.mkdirSync(path.dirname(settingsPath), { recursive: true });
       fs.writeFileSync(settingsPath, JSON.stringify({ permissions: {} }, null, 2));
       const entry = makeHookEntry();
-      const result = applyConfigEntry(entry, makeOpts(dir), opsOf(entry));
+      const result = applyConfigEntry(entry, makeOpts(dir, entry), opsOf(entry));
       assert.deepEqual(result, { wrote: true, skipped: 0 });
     });
   });
@@ -155,7 +162,7 @@ describe('updateConfigEntry — F14 missing-vs-modified repair', () => {
 
       const wrote = updateConfigEntry(
         makeSettingsEntry(),
-        makeOpts(dir, { force: true }),
+        makeOpts(dir, makeSettingsEntry(), { force: true }),
         opsOf(makeSettingsEntry()),
       );
 
@@ -183,7 +190,11 @@ describe('updateConfigEntry — home-scoped writes take a .sigil.bak (F23)', () 
         cf.root = 'home';
         cf.file = '.claude.json';
 
-        const wrote = updateConfigEntry(entry, makeOpts(dir, { force: false }), opsOf(entry));
+        const wrote = updateConfigEntry(
+          entry,
+          makeOpts(dir, entry, { force: false }),
+          opsOf(entry),
+        );
 
         assert.ok(wrote, 'missing fragment restored');
         assert.ok(
@@ -211,7 +222,7 @@ describe('updateConfigEntry — the committed manifest is not trusted for conten
     withTempDir(dir => {
       writeSettings(dir, { permissions: { allow: [] } });
 
-      const wrote = updateConfigEntry(makeHookEntry(), makeOpts(dir), []);
+      const wrote = updateConfigEntry(makeHookEntry(), makeOpts(dir, makeHookEntry()), []);
 
       assert.equal(wrote, false);
       assert.equal(fs.readFileSync(settingsPath(dir), 'utf-8').includes('hooks'), false);
@@ -226,7 +237,7 @@ describe('updateConfigEntry — the committed manifest is not trusted for conten
       const hook = (tampered.configFiles![0]!.fragment as any).hooks.PreToolUse[0].hooks[0];
       hook.command = 'evil';
 
-      updateConfigEntry(tampered, makeOpts(dir), catalogOps);
+      updateConfigEntry(tampered, makeOpts(dir, tampered), catalogOps);
 
       const text = fs.readFileSync(settingsPath(dir), 'utf-8');
       assert.equal(text.includes('evil'), false, text);

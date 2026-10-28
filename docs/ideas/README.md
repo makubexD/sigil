@@ -37,7 +37,6 @@ user wants it kept).
 | [manifest-catalog-source.md](manifest-catalog-source.md)           | Manifest records which catalog installed an artifact               | proposed |
 | [publish-claude-marketplace.md](publish-claude-marketplace.md)     | Publish the Claude marketplace from CI with a drift gate           | proposed |
 | [copilot-plugin-channel.md](copilot-plugin-channel.md)             | Copilot plugin channel; consistent agent layout for build and add  | proposed |
-| [copilot-hooks.md](copilot-hooks.md)                               | Hooks for GitHub Copilot                                           | proposed |
 | [npm-first-publish.md](npm-first-publish.md)                       | First npm publish and package name                                 | proposed |
 | [artifact-proposal-issue-form.md](artifact-proposal-issue-form.md) | GitHub issue form to propose an artifact                           | proposed |
 | [import-copilot-layout.md](import-copilot-layout.md)               | `sigil import` from a Copilot `.github/` layout                    | proposed |

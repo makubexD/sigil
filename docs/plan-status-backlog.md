@@ -17,38 +17,101 @@ change it.
 
 ## Steps
 
-### 1. RED tests `[inline: case (a) needed a design — a render that fails but still validates]`
+### 1. RED tests `[worker]`
 
-**Done.** These tests fail on master for the right reason. Of the 24 tests in the three files, 20 pass and 4 fail.
+Already landed in `ead13bd`. Re-running this step against that commit should change nothing.
 
-- `test/commands/status-outdated.test.ts`, edge-cases block. It adds a `statusRows` helper, which
-  `outdatedByStatus` now uses.
-  - **(a)** "a render that fails…": installs `agent:typescript/ts-code-reviewer` for **copilot**, then adds
-    `disallowedTools: [Write]` to its source. Copilot can't express that, so `assertRestrictionsCarried`
-    throws at render, while `validate` still passes.
-    - Expected: `update --dry-run` shows no `↑` (this passes today).
-    - Expected: status `up-to-date` (this passes today).
-    - Expected: `renderError` matches `/disallowedTools/`. **RED**, because the field is missing.
-    - Expected: the tree is unchanged.
-  - **(c)** "a dependency the skill gained…": `add skill:csharp/cs-generate-tests --no-deps` for claude.
-    - Expected: `agree(…, [])`, meaning nothing is outdated (this passes today).
-    - Expected: `newDependencies` is `['csharp/cs-code-reviewer', 'csharp/cs-testing']` (sorted).
-      **RED**, because the field is undefined.
-    - Expected: the table prints `Install new dependencies: sigil update`.
-- **(b)** `test/manifest-status-config.test.ts`, "should not call a retired record outdated when update cannot
-  move it": calls `computeStatus` with `{ retiredFor, canMove: () => false }`.
-  - Expected: `up-to-date` and `retiredFiles: ['.vscode/mcp.json']`. **RED**: the status is `outdated`, and
-    `tsc` errors on `canMove` and `retiredFiles` until step 4 lands.
-  - The existing case without `canMove` still expects `outdated`.
-- **(b)** `test/commands/update-config-move.test.ts`, "should warn, and change nothing, when the catalog has no
-  replacement": calls `moveRetiredFragments(entry, opts, [], RETIRED)`.
-  - Expected: `{ wrote: false, skipped: 0 }`, and the old file and the record are unchanged (both pass today).
-  - Expected: `console.error` (captured with `mock.method`) matches
-    `/shared\/probe.*\.vscode\/mcp\.json.*no replacement.*sigil uninstall/`. **RED**, because nothing is
-    printed.
+Files: `test/commands/status-outdated.test.ts`, `test/manifest-status-config.test.ts` and
+`test/commands/update-config-move.test.ts`. Do not touch `src/`.
 
-Test: `npm run build && npm run build:test` (it emits even though `tsc` reports the two expected errors), then
-`node --test test-compiled/commands/status-outdated.test.js test-compiled/manifest-status-config.test.js test-compiled/commands/update-config-move.test.js`.
+**Helper, in `status-outdated.test.ts`**
+
+Add `interface StatusRow { id; status; renderError?: string; newDependencies?: string[] }` and
+`statusRows(dir, catalog, target): StatusRow[]`, which parses `sigil status --json --target <target>`. Then make
+`outdatedByStatus` filter `statusRows(...)` instead of parsing the output itself.
+
+**Case 1: "a render that fails: update writes nothing, so it stays up to date, naming the error"**
+
+It goes at the end of the `status and update agree on the edge cases` block.
+
+- Arrange:
+  - In a temp dir, copy the catalog to `src/` (`copyCatalog`) and create `project/`.
+  - Run `sigil add agent:typescript/ts-code-reviewer --target copilot --yes`.
+  - In `src/catalog/languages/typescript/agents/ts-code-reviewer.agent.md`, replace the line `tools:` with
+    `disallowedTools:\n  - Write\ntools:`. Assert that the text changed.
+  - Why this works: Copilot's agent spec has no `disallowedTools` mapping, so `assertRestrictionsCarried`
+    throws when rendering, but `validate` still passes.
+- Assert:
+
+  | Check                                              | Expected                    | Today                           |
+  | -------------------------------------------------- | --------------------------- | ------------------------------- |
+  | `changedByUpdate(project, catalog, 'copilot')`     | `[]`                        | passes                          |
+  | the entry's `status` in `statusRows(…, 'copilot')` | `'up-to-date'`              | passes                          |
+  | the entry's `renderError`                          | matches `/disallowedTools/` | **fails: the field is missing** |
+  | `treeHash(project)`                                | the same before and after   | passes                          |
+
+**Case 2: "a dependency the skill gained: status names what update would install"**
+
+It goes at the end of the same block.
+
+- Arrange: `setUp(work, ['skill:csharp/cs-generate-tests', '--no-deps'])`, which installs for claude. The skill
+  `uses:` the rule `csharp/cs-testing` and the agent `csharp/cs-code-reviewer`.
+- Assert:
+
+  | Check                                         | Expected                                                       | Today                |
+  | --------------------------------------------- | -------------------------------------------------------------- | -------------------- |
+  | `agree(project, catalog, [])`                 | passes: nothing is outdated, nothing is written                | passes               |
+  | the skill's `newDependencies`                 | deep-equals `['csharp/cs-code-reviewer', 'csharp/cs-testing']` | **fails: undefined** |
+  | `sigil status --target claude` (human output) | matches `/Install new dependencies: sigil update/`             | fails                |
+
+**Case 3: "should not call a retired record outdated when update cannot move it"**
+
+It goes in `manifest-status-config.test.ts`, after the existing retired-file case.
+
+- Arrange:
+  - Write `.vscode/mcp.json` with `{ servers: { probe: SERVER } }`.
+  - Create the entry with `mcpEntry('.vscode/mcp.json', undefined, 'servers')`.
+  - `retiredFor` returns `[{ from: {file:'.vscode/mcp.json', root:'project'}, to: {file:'.mcp.json', root:'project'} }]`.
+- Act: `computeStatus(manifestOf(entry), dir, new Set(['shared/probe']), { retiredFor, canMove: () => false })`.
+- Assert:
+
+  | Check          | Expected                           | Today                   |
+  | -------------- | ---------------------------------- | ----------------------- |
+  | `status`       | `'up-to-date'`                     | **fails: `'outdated'`** |
+  | `retiredFiles` | deep-equals `['.vscode/mcp.json']` | fails                   |
+
+  The type errors on `canMove` and `retiredFiles` are expected until step 4.
+
+- The existing case, with no `canMove`, keeps expecting `outdated`.
+
+**Case 4: "should warn, and change nothing, when the catalog has no replacement"**
+
+It goes in `update-config-move.test.ts`, before "should leave a fragment alone…". Add `mock` to the
+`node:test` import.
+
+- Arrange:
+  - Write `.vscode/mcp.json` with `{ servers: { probe: SERVER } }`.
+  - Create the entry with `entryAt('.vscode/mcp.json')`.
+  - Capture output with `mock.method(console, 'error', () => {})`, and restore it in a `finally`.
+- Act: `moveRetiredFragments(entry, opts(dir), [], RETIRED)`. The empty list means no fresh op exists.
+- Assert:
+
+  | Check                             | Expected                                                                        | Today                      |
+  | --------------------------------- | ------------------------------------------------------------------------------- | -------------------------- |
+  | the return value                  | `{ wrote: false, skipped: 0 }`                                                  | passes                     |
+  | the captured `console.error` text | matches `/shared\/probe.*\.vscode\/mcp\.json.*no replacement.*sigil uninstall/` | **fails: nothing printed** |
+  | `.vscode/mcp.json` `servers`      | still `{ probe: SERVER }`                                                       | passes                     |
+  | `entry.configFiles.length`        | `1`                                                                             | passes                     |
+
+**Test**
+
+Run `npm run build && npm run build:test`. It reports exactly two `tsc` errors, both in
+`manifest-status-config.test.ts`, and still emits the compiled tests. Then run:
+
+`node --test test-compiled/commands/status-outdated.test.js test-compiled/manifest-status-config.test.js test-compiled/commands/update-config-move.test.js`
+
+Expected: 24 tests, 20 pass and 4 fail. The failures are cases 1–4, each at the assertion marked **fails**
+above. `npx prettier --check` and `npx eslint` pass on all three files.
 
 ### 2. `src/freshness.ts`: one scan returns everything `[worker]`
 

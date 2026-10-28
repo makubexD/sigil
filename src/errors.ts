@@ -53,11 +53,19 @@ function levenshtein(a: string, b: string): number {
   return prev[b.length] as number;
 }
 
-/** Default suggestion cap, edit-distance floor/divisor, and containment minimum length. */
+/**
+ * Default suggestion cap, edit-distance floor/divisor, and containment minimum lengths.
+ * A candidate name found inside the query needs one more character: three-letter names
+ * (`ado`, `git`, `cli`) otherwise match unrelated words such as `shadow`.
+ */
 const SUGGESTION_LIMIT = 5;
 const MIN_EDIT_DISTANCE = 2;
 const DISTANCE_DIVISOR = 4;
 const MIN_CONTAINS_LENGTH = 3;
+const MIN_CONTAINED_CANDIDATE_LENGTH = 4;
+
+/** Hint printed under every not-found error. */
+export const BROWSE_HINT = 'Run sigil list or sigil search <word> to browse.';
 
 /** Rank 1: ids whose name part equals `query`'s under a different prefix. */
 function sameNameUnderOtherPrefix(query: string, availableIds: readonly string[]): string[] {
@@ -87,7 +95,10 @@ function namePartContains(query: string, availableIds: readonly string[]): strin
   return availableIds.filter(candidate => {
     const candidateName = namePart(candidate.toLowerCase());
     if (Math.min(candidateName.length, queryName.length) < MIN_CONTAINS_LENGTH) return false;
-    return candidateName.includes(queryName) || queryName.includes(candidateName);
+    return (
+      candidateName.includes(queryName) ||
+      (candidateName.length >= MIN_CONTAINED_CANDIDATE_LENGTH && queryName.includes(candidateName))
+    );
   });
 }
 
@@ -126,7 +137,5 @@ export function notFoundError(
 ): SigilError {
   const suggestions = suggestIds(id, availableIds);
   const didYouMean = suggestions.length > 0 ? ` Did you mean: ${suggestions.join(', ')}?` : '';
-  return new SigilError(`${label} '${id}' not found.${didYouMean}`, {
-    hint: 'Run sigil list or sigil search <word> to browse.',
-  });
+  return new SigilError(`${label} '${id}' not found.${didYouMean}`, { hint: BROWSE_HINT });
 }

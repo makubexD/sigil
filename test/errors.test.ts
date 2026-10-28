@@ -39,6 +39,14 @@ describe('suggestIds', () => {
   it('caps suggestions at 5', () => {
     assert.equal(suggestIds('shared/filler', IDS).length, 5);
   });
+
+  it('matches case-insensitively and returns the original id', () => {
+    assert.equal(suggestIds('SHARED/PROTECT-CONFIG', IDS)[0], 'shared/protect-config');
+  });
+
+  it('does not suggest a short name merely contained in the query', () => {
+    assert.deepEqual(suggestIds('shared/shadow-guard', [...IDS, 'shared/ado']), []);
+  });
 });
 
 describe('notFoundError', () => {

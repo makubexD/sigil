@@ -18,7 +18,7 @@ args:
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', chunk => (raw += chunk)).on('end', () => {
       let file;
-      try { file = JSON.parse(raw).tool_input.file_path; } catch { return; }
+      try { const ti = JSON.parse(raw).tool_input; file = ti.file_path ?? ti.path; } catch { return; }
       if (typeof file !== 'string') return;
       const full = path.resolve(file);
       const names = [file, full];

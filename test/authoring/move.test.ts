@@ -28,6 +28,14 @@ describe('J — Move planner (authoring/move.ts)', () => {
     );
   });
 
+  it('suggests a close existing id when the old id is mistyped', () => {
+    const catalog = buildFakeCatalog();
+    assert.throws(
+      () => planMove('shared/clean-cod', 'shared/new-name', catalog as any, FAKE_CATALOG_DIR),
+      /Did you mean: shared\/clean-code/,
+    );
+  });
+
   it('throws on collision with existing id', () => {
     const catalog = buildFakeCatalog();
     assert.throws(

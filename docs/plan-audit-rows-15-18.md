@@ -16,10 +16,11 @@ evidence, a `CHANGELOG.md` entry, and the phase's step plan deleted after merge.
 - [x] **Open question for the owner**: `docs/ideas/ci-test-speed.md` said "done (2026-10-03)" but was still in
       `docs/ideas/`. Owner chose to move it: now `docs/decisions/ci-test-speed-2026-10.md`.
 - [ ] **Phase 1, row 17: Copilot hook target** (brief `docs/ideas/copilot-hooks.md`)
-  - [ ] Spike `[inline: research]`: check the Copilot hooks docs for the file path, schema, event names, matchers,
+  - [x] Spike `[inline: research]`: check the Copilot hooks docs for the file path, schema, event names, matchers,
         stdin/stdout shape, and whether exit 2 blocks the call. Write `docs/decisions/copilot-hooks-2026-10.md`, which
-        also decides where the source of truth lives. Recommended: a provider-neutral `event`, mapped per target in the
-        spec.
+        also decides where the source of truth lives. Done 2026-10-28: go; `event` stays as authored (Copilot accepts
+        Claude's PascalCase names), not a neutral vocabulary.
+  - [ ] Owner probe: which `tool_input` key Copilot CLI passes for `create` / `edit` (steps in the decision record).
   - [ ] If go, step plan. Expected scope: `src/targets/copilot/capabilities.ts` makes `hook` `native`; the emitter
         reuses `replaceMerge`, `previousOpFor`, and `ensureHomeBackup` / `isHomeScopedRoot`; an `aggregateDocs`
         citation; `ownedBy` dropped for `hook` only in `src/kinds.ts`; RED tests for the `add`, `update` and

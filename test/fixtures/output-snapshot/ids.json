@@ -144,6 +144,7 @@
   "shared/code-reviewer": "agent",
   "shared/wizard-auditor": "agent",
   "shared/protect-config": "hook",
+  "shared/reviewer-bash-guard": "hook",
   "shared/worker-mode-guard": "hook",
   "shared/ado": "mcp",
   "shared/context-mode": "mcp",

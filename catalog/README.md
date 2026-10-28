@@ -92,6 +92,10 @@ and load rules and agents from the same families.
 | skill-rules | rule | — | `shared/cli-rules`, `shared/wizard-rules` | — | — |
 | generic-code-reviewer | agent | — | `shared/code-reviewer` | — | — |
 | feature | skill | — | `shared/feature` | — | examples (examples) |
+| orchestration | rule | — | `shared/orchestration` | — | — |
+| free-worker | agent | — | `shared/mk-worker` | — | — |
+| free-worker-delegate | skill | — | `shared/mk-delegate` | 2 | — |
+| free-worker-check | skill | — | `shared/mk-check` | 1 | — |
 
 ## Stacks, severities and bases
 

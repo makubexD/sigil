@@ -22,7 +22,7 @@
   "agents-standard/.agents/skills/cs-sync-tests/SKILL.md": "e031cf196d2d3cbf59b2069b94f1379f1f1bdb41f27b87d47473cd51e2078591",
   "agents-standard/.agents/skills/feature/SKILL.md": "0209cd98a998229cbd8b6ae8a019aef7b04c1a800f06ed2f872aa7096e9723cf",
   "agents-standard/.agents/skills/feature/references/examples.md": "8dbd2fbaa2878d6661411589531bd60dbf546666637aa7a2709c91f6fdd16e70",
-  "agents-standard/.agents/skills/mk-delegate/SKILL.md": "dee5949c64366bf8270eb03cefdcaa5ac929aca8e529fb034a469569e7872d2a",
+  "agents-standard/.agents/skills/mk-delegate/SKILL.md": "ff545353a2dc13e8b7f30a2e35802fe939616ca8477170d806e869feb42d52ea",
   "agents-standard/.agents/skills/ng-add-package/SKILL.md": "57b8d3c13be3ac772f915bcce3983e3ee8d6d04548fe1f1b29e5ef4e18ef62c5",
   "agents-standard/.agents/skills/ng-add-project/SKILL.md": "d57b52b57937813ebafc03d06aa56b863c825bf79b354e9d72894897c63fa32a",
   "agents-standard/.agents/skills/ng-audit-deps/SKILL.md": "0dcee88aaf935f4031dff97bb7f9676347d9354409bb0678a418aafefb594af1",
@@ -128,7 +128,7 @@
   "claude/plugins/deepseek-worker/skills/mk-check/references/mk-exec.md": "1251d9cf65b5482ba03c374f86b3f3cc28138487096ab433a9c4054250eec314",
   "claude/plugins/deepseek-worker/skills/mk-check/references/worker-config.md": "24e61fc94655f3f661c91d329139122b058b08654fc15979b7604ab02626f623",
   "claude/plugins/deepseek-worker/skills/mk-check/references/workflow-report.md": "2217a8a36a4e364bdc83be9ae5d634ace42792cd2a2148008547c56315731418",
-  "claude/plugins/deepseek-worker/skills/mk-delegate/SKILL.md": "ea004ebe3deae848331edf1481222ac7327e7a3f5f899c1d43d6e423052fb5cc",
+  "claude/plugins/deepseek-worker/skills/mk-delegate/SKILL.md": "bc790d5c68ff9dbebd8a5267626e15ba5b16173d039f9a9e6530bc1b53cf74aa",
   "claude/plugins/dotnet-starter/.claude-plugin/plugin.json": "942c10ec5a75e48ee3ca9ef3472bfadec03791eee526a9b9cb5ba2acc6e6464b",
   "claude/plugins/dotnet-starter/agents/cs-code-reviewer.md": "dc1ab2d9167d627a2163e5e402eb1f9de3c1b7ad972d8ecc0dfb84d2027dc00c",
   "claude/plugins/dotnet-starter/skills/cs-generate-tests/SKILL.md": "703b37fb79fce747160e9c40e9d183ebfd3a9e03b5c32ee31f238e3b4c3f0de4",
@@ -299,7 +299,7 @@
   "copilot/.github/skills/cs-sync-tests/SKILL.md": "e031cf196d2d3cbf59b2069b94f1379f1f1bdb41f27b87d47473cd51e2078591",
   "copilot/.github/skills/feature/SKILL.md": "0209cd98a998229cbd8b6ae8a019aef7b04c1a800f06ed2f872aa7096e9723cf",
   "copilot/.github/skills/feature/references/examples.md": "8dbd2fbaa2878d6661411589531bd60dbf546666637aa7a2709c91f6fdd16e70",
-  "copilot/.github/skills/mk-delegate/SKILL.md": "dee5949c64366bf8270eb03cefdcaa5ac929aca8e529fb034a469569e7872d2a",
+  "copilot/.github/skills/mk-delegate/SKILL.md": "ff545353a2dc13e8b7f30a2e35802fe939616ca8477170d806e869feb42d52ea",
   "copilot/.github/skills/ng-add-package/SKILL.md": "57b8d3c13be3ac772f915bcce3983e3ee8d6d04548fe1f1b29e5ef4e18ef62c5",
   "copilot/.github/skills/ng-add-project/SKILL.md": "d57b52b57937813ebafc03d06aa56b863c825bf79b354e9d72894897c63fa32a",
   "copilot/.github/skills/ng-audit-deps/SKILL.md": "0dcee88aaf935f4031dff97bb7f9676347d9354409bb0678a418aafefb594af1",
@@ -346,5 +346,5 @@
   "copilot/.github/skills/wizard/references/stack-python.md": "118d9d12cb7ad5315aed9c2ad87afcdf0897f2b961330eef4d7cf08314d83cde",
   "copilot/.github/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "copilot/.github/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
-  "registry.json": "cc2cd9a26ec88faba85a0c50aff719af1d8026be622c68c1aedb07ae37a6a448"
+  "registry.json": "6ec7a0955f851a128bfe75f6da287f66e46bca7ca3ffdb583460a37ab3f0fd1d"
 }

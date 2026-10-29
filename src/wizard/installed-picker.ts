@@ -49,14 +49,10 @@ export function installedOptions(
 export async function pickInstalled(options: PickInstalledOptions): Promise<string[] | null> {
   const { entries, projectDir, message } = options;
   const known = new Set(entries.map(e => e.id));
-  const statuses = computeStatus(
-    { manifestVersion: MANIFEST_VERSION, entries },
-    projectDir,
-    known,
-    {
-      retiredFor: retiredConfigDestinationsOf,
-    },
-  );
+  const manifest = { manifestVersion: MANIFEST_VERSION, entries };
+  const statuses = computeStatus(manifest, projectDir, known, {
+    retiredFor: retiredConfigDestinationsOf,
+  });
   const answer = await multiselect({
     message: `${message}  (Space ticks, Enter confirms, Ctrl+C goes back)`,
     options: installedOptions(entries, statuses),

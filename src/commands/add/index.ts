@@ -8,7 +8,7 @@
  * @module
  */
 import { buildAddPlan } from './plan';
-import { executeAddPlan } from './execute';
+import { executeAddPlan, moveUpToDateEntries } from './execute';
 import { renderDryRun, renderOutcome } from './render';
 
 export interface AddOpts {
@@ -34,6 +34,7 @@ export interface AddOpts {
 export async function runAdd(selectors: string[], opts: AddOpts): Promise<void | 'cancelled'> {
   const plan = await buildAddPlan(selectors, opts);
   if (!plan) return 'cancelled';
+  if (!opts.dryRun) moveUpToDateEntries(plan);
 
   if (plan.wholeFileIds.length === 0 && plan.configIds.length === 0) {
     console.log('No artifacts to install (all were filtered out or unsupported).');

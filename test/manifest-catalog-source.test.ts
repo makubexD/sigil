@@ -133,4 +133,28 @@ describe('catalog source', () => {
       fs.rmSync(projectDir, { recursive: true, force: true });
     }
   });
+  it('groupBySource: a malformed recorded catalog throws, naming the entry', () => {
+    for (const bad of [{ dir: 5, packs: 'p' }, { dir: '', packs: 'p' }, 'team', null]) {
+      const broken = { ...entry('shared/team-rule'), catalog: bad } as unknown as Entry;
+      assert.throws(
+        () => groupBySource([broken], { projectDir: '/w/p', ...bundledOpts }),
+        (err: unknown) => {
+          assert.ok(err instanceof SigilError, `${JSON.stringify(bad)} throws SigilError`);
+          assert.match(err.message, /shared\/team-rule/);
+          assert.match(err.hint ?? '', /--catalog-dir/);
+          return true;
+        },
+      );
+    }
+  });
+
+  it('groupBySource: an explicit --catalog-dir never reads the recorded catalog', () => {
+    const broken = { ...entry('shared/team-rule'), catalog: 'team' } as unknown as Entry;
+    const groups = groupBySource([broken], {
+      projectDir: '/w/p',
+      catalogDir: '/x/other',
+      packs: '/x/other/packs.yaml',
+    });
+    assert.equal(groups[0]!.entries.length, 1);
+  });
 });

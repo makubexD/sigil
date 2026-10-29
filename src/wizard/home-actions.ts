@@ -8,7 +8,7 @@
 import { resolveDefault, loadAndValidate } from '../cli-helpers';
 import { loadManifest } from '../manifest';
 import { groupBySource } from '../manifest/catalog-source';
-import type { ManifestEntry } from '../manifest/types';
+import type { SourceGroup } from '../manifest/catalog-source';
 import { runAdd } from '../commands/add';
 import { runInit } from '../commands/init';
 import { runPrune } from '../commands/prune';
@@ -68,13 +68,15 @@ async function idsIn(catalogDir: string, packs: string): Promise<Set<string> | u
 async function catalogIds(dir: string): Promise<Set<string> | undefined> {
   const ids = await idsIn(bundled().catalogDir, bundled().packs);
   if (ids === undefined) return undefined;
-  let entries: ManifestEntry[];
+  let groups: SourceGroup[];
   try {
-    entries = loadManifest(dir).entries;
+    groups = groupBySource(loadManifest(dir).entries, { projectDir: dir, ...bundled() });
   } catch {
-    return ids; // a damaged manifest is the "repair" state, not an orphaned-count error
+    // A damaged manifest is the "repair" state, and a bad recorded catalog is reported by the
+    // command run on it; neither is an orphaned-count error.
+    return ids;
   }
-  for (const group of groupBySource(entries, { projectDir: dir, ...bundled() })) {
+  for (const group of groups) {
     if (group.source === undefined) continue;
     const recorded = await idsIn(group.catalogDir, group.packs);
     if (recorded === undefined) continue;

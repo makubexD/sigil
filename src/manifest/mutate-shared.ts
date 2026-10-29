@@ -14,6 +14,11 @@ export function mergeDependentOf(existing: string[], toAdd: string[]): void {
  * recorded source; a present-but-undefined catalog is the bundled one, whose entry keeps no key
  * (`catalog: undefined` would dirty the manifest JSON).
  */
+/** True when two recorded sources name the same catalog (both absent = both bundled). */
+export function sameCatalog(a: CatalogSource | undefined, b: CatalogSource | undefined): boolean {
+  return a?.dir === b?.dir && a?.packs === b?.packs;
+}
+
 export function applyCatalog(
   entry: ManifestEntry,
   from: { catalog?: CatalogSource | undefined },

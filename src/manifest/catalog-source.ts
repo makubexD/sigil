@@ -98,7 +98,7 @@ function partitionBySource(entries: readonly ManifestEntry[]): {
   const bundled: ManifestEntry[] = [];
   const recorded = new Map<string, { source: CatalogSource; entries: ManifestEntry[] }>();
   for (const entry of entries) {
-    const source = entry.catalog;
+    const source = recordedSource(entry);
     if (source === undefined) {
       bundled.push(entry);
       continue;
@@ -109,6 +109,23 @@ function partitionBySource(entries: readonly ManifestEntry[]): {
     else group.entries.push(entry);
   }
   return { bundled, recorded };
+}
+
+/**
+ * The entry's recorded catalog, checked: the manifest is a hand-editable committed file, and this
+ * value decides which folder a command reads. Anything but `{ dir: string, packs: string }` throws.
+ */
+function recordedSource(entry: ManifestEntry): CatalogSource | undefined {
+  const source: unknown = entry.catalog;
+  if (source === undefined) return undefined;
+  const { dir, packs } = (source ?? {}) as Partial<Record<keyof CatalogSource, unknown>>;
+  if (typeof dir === 'string' && dir !== '' && typeof packs === 'string' && packs !== '') {
+    return { dir, packs };
+  }
+  throw new SigilError(
+    `The catalog recorded in ${MANIFEST_RELATIVE_PATH} for '${entry.id}' is not { "dir": "<path>", "packs": "<path>" }.`,
+    { hint: 'Fix or remove its "catalog" field, or pass --catalog-dir <path>.' },
+  );
 }
 
 /** One group per recorded source, sorted by `dir`, its paths resolved against `projectDir`. */

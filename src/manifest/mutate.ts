@@ -7,7 +7,7 @@
 import fs from 'fs';
 import path from 'path';
 import { sha256 } from './hash';
-import { applyCatalog, mergeDependentOf } from './mutate-shared';
+import { applyCatalog, mergeDependentOf, sameCatalog } from './mutate-shared';
 import type { CatalogSource, Manifest, ManifestEntry, ManifestFile } from './types';
 
 /** Unique key for a manifest entry: id + target combination. */
@@ -182,4 +182,23 @@ export function upsertEntries(manifest: Manifest, options: UpsertEntriesOptions)
   upsertPrimaryEntries(ctx, options);
   upsertDependencyEntries(ctx, options);
   manifest.entries = [...ctx.byKey.values()];
+}
+
+/**
+ * Records `catalog` on the `target` entries of `ids` whose files were already up to date, so
+ * re-adding an artifact from another catalog moves it although no file changes (the content is the
+ * same in both). Returns whether any entry moved.
+ */
+export function recordCatalogSource(
+  manifest: Manifest,
+  target: string,
+  ids: readonly string[],
+  catalog: CatalogSource | undefined,
+): boolean {
+  const wanted = new Set(ids);
+  const moving = manifest.entries.filter(
+    e => e.target === target && wanted.has(e.id) && !sameCatalog(e.catalog, catalog),
+  );
+  for (const entry of moving) applyCatalog(entry, { catalog });
+  return moving.length > 0;
 }

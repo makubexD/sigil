@@ -177,6 +177,22 @@ describe('catalog source commands', () => {
     });
   });
 
+  it('re-adding from the bundled catalog moves a team entry back to it', async () => {
+    const root = makeRoot();
+    const team = makeTeamCatalog(root);
+    const project = makeProject(root);
+
+    await add(project, `rule:${BUNDLED_RULE}`, { catalogDir: team.dir, packs: team.packs });
+    assert.ok(entryOf(project, BUNDLED_RULE).catalog, 'recorded from the team catalog first');
+    await add(project, `rule:${BUNDLED_RULE}`, BUNDLED);
+
+    const raw = JSON.parse(fs.readFileSync(path.join(project, MANIFEST_FILE), 'utf8')) as {
+      entries: { id: string }[];
+    };
+    const recorded = raw.entries.find(e => e.id === BUNDLED_RULE);
+    assert.ok(recorded && !('catalog' in recorded), 'the bundled entry keeps no catalog key');
+  });
+
   it('add records nothing for an artifact installed from the bundled catalog', async () => {
     const root = makeRoot();
     const project = makeProject(root);

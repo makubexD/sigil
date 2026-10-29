@@ -5,7 +5,13 @@
  *
  * @module
  */
-import { loadManifest, saveManifest, sourceToRecord, upsertEntries } from '../../manifest';
+import {
+  loadManifest,
+  recordCatalogSource,
+  saveManifest,
+  sourceToRecord,
+  upsertEntries,
+} from '../../manifest';
 import type { Manifest } from '../../manifest';
 import { writeFilesSync, pkg } from '../../cli-helpers';
 import { printConflictAdvice } from '../../wizard';
@@ -133,4 +139,15 @@ export async function executeAddPlan(plan: AddPlan): Promise<AddOutcome> {
   if (fileManifestDirty || manifestDirty) trySaveManifest(opts.projectDir, manifest);
 
   return { overwrittenCount, ...config };
+}
+
+/** Moves picks that were already up to date to this run's catalog (see `recordCatalogSource`). */
+export function moveUpToDateEntries(plan: AddPlan): void {
+  if (plan.upToDateIds.length === 0) return;
+  const { projectDir, catalogDir, packs } = plan.opts;
+  const manifest = loadManifest(projectDir);
+  const catalog = sourceToRecord(projectDir, catalogDir, packs);
+  if (recordCatalogSource(manifest, plan.targetName, plan.upToDateIds, catalog)) {
+    trySaveManifest(projectDir, manifest);
+  }
 }

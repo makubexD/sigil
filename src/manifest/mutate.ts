@@ -7,8 +7,8 @@
 import fs from 'fs';
 import path from 'path';
 import { sha256 } from './hash';
-import { mergeDependentOf } from './mutate-shared';
-import type { Manifest, ManifestEntry, ManifestFile } from './types';
+import { applyCatalog, mergeDependentOf } from './mutate-shared';
+import type { CatalogSource, Manifest, ManifestEntry, ManifestFile } from './types';
 
 /** Unique key for a manifest entry: id + target combination. */
 function entryKey(id: string, target: string): string {
@@ -30,6 +30,12 @@ interface UpsertContext {
   projectDir: string;
   sigilVersion: string;
   now: string;
+  /**
+   * The catalog this install came from. Present only when the caller decides the source:
+   * `undefined` means the bundled catalog (the entry records no key), absent means "leave the
+   * recorded source alone" (what `update` does).
+   */
+  catalog?: CatalogSource | undefined;
 }
 
 /** One artifact's data to upsert into the manifest, besides the shared UpsertContext. */
@@ -51,6 +57,7 @@ function refreshExistingEntry(
   files: ManifestFile[],
   input: EntryInput,
 ): void {
+  applyCatalog(existing, ctx);
   existing.files = files;
   existing.sigilVersion = ctx.sigilVersion;
   existing.installedAt = ctx.now;
@@ -66,7 +73,7 @@ function buildNewEntry(
   input: EntryInput,
   files: ManifestFile[],
 ): ManifestEntry {
-  return {
+  const entry: ManifestEntry = {
     id: input.id,
     kind: input.kind,
     target: ctx.target,
@@ -77,6 +84,8 @@ function buildNewEntry(
     installedAt: ctx.now,
     template: input.template,
   };
+  applyCatalog(entry, ctx);
+  return entry;
 }
 
 /** Upsert a single whole-file artifact entry into `ctx.byKey` (mutated in place). */
@@ -111,6 +120,11 @@ export interface UpsertEntriesOptions {
   sigilVersion: string;
   /** ISO timestamp — stamped by the CLI layer, not Date.now(). */
   now: string;
+  /**
+   * The catalog this install came from, from `sourceToRecord(...)`: `undefined` for the bundled
+   * catalog (no key recorded). Omit it entirely to leave an existing entry's record untouched.
+   */
+  catalog?: CatalogSource | undefined;
 }
 
 /** Upserts every primary pick (empty `dependentOf`). */
@@ -163,6 +177,7 @@ export function upsertEntries(manifest: Manifest, options: UpsertEntriesOptions)
     sigilVersion,
     now,
   };
+  if ('catalog' in options) ctx.catalog = options.catalog;
 
   upsertPrimaryEntries(ctx, options);
   upsertDependencyEntries(ctx, options);

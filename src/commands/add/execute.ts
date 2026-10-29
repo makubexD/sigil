@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { loadManifest, saveManifest, upsertEntries } from '../../manifest';
+import { loadManifest, saveManifest, sourceToRecord, upsertEntries } from '../../manifest';
 import type { Manifest } from '../../manifest';
 import { writeFilesSync, pkg } from '../../cli-helpers';
 import { printConflictAdvice } from '../../wizard';
@@ -59,6 +59,7 @@ function recordFileManifestEntries(
     projectDir: plan.opts.projectDir,
     sigilVersion: pkg.version,
     now: update.now,
+    catalog: sourceToRecord(plan.opts.projectDir, plan.opts.catalogDir, plan.opts.packs),
   });
 }
 

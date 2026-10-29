@@ -5,7 +5,7 @@
  * @module
  */
 import { resolveSelection, computeClosure } from '../../../select';
-import { skipRefused } from '../../../overlays';
+import { skipRefused } from '../../../overlay-report';
 import type { SelectionResult } from '../../../select';
 import type { ArtifactInstallState } from '../../../install-state';
 import { carriedKinds, installableKinds } from '../../../targets/capabilities';

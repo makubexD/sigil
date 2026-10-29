@@ -15,7 +15,7 @@ import { getAllTargets } from '../../dist-cli/targets';
 import { installableKinds } from '../../dist-cli/targets/capabilities';
 import { loadAndValidate } from '../../dist-cli/cli-helpers';
 import { resolveCatalog } from '../../dist-cli/resolve';
-import { applyProjectOverlays } from '../../dist-cli/overlays';
+import { applyProjectOverlays } from '../../dist-cli/overlay-report';
 import { computeInstallStates } from '../../dist-cli/install-state';
 import { sha256 } from '../../dist-cli/manifest';
 

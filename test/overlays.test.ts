@@ -8,6 +8,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { OVERLAYS_FILE, loadOverlays, parseOverlays, withOverlays } from '../dist-cli/overlays';
+import type { OverlaidCatalog } from '../dist-cli/overlays';
+import { reportOverlayIssues } from '../dist-cli/overlay-report';
 import { loadResolvedCatalog } from './helpers/catalog';
 import { withTempDir } from './helpers/temp-dir';
 
@@ -149,5 +151,42 @@ describe('withOverlays', () => {
     assert.match(ignored.get('typescript/ts-debugger') ?? '', /only rules/);
     assert.match(ignored.get('nope/missing') ?? '', /no such catalog rule/);
     assert.match(refused.get('x/odd') ?? '', /src\/\*\.ts/);
+  });
+});
+
+describe('reportOverlayIssues', () => {
+  /** An overlaid catalog with only the issue maps set, which is all the report reads. */
+  const overlaid = (ignored: [string, string][], refused: [string, string][]): OverlaidCatalog =>
+    ({ resolved: undefined, ignored: new Map(ignored), refused: new Map(refused) }) as never;
+
+  /** Every warning `reportOverlayIssues` prints for `catalogs`. */
+  const warnings = (catalogs: OverlaidCatalog[]): string[] => {
+    const lines: string[] = [];
+    reportOverlayIssues(catalogs, line => lines.push(line));
+    return lines;
+  };
+
+  it('reports an ignored entry only when every catalog ignored it', () => {
+    const lines = warnings([
+      overlaid(
+        [
+          ['team/only', 'not in the catalog'],
+          ['gone/rule', 'not in the catalog'],
+        ],
+        [],
+      ),
+      overlaid([['gone/rule', 'not in the catalog']], []),
+    ]);
+    assert.deepEqual(lines, [`${OVERLAYS_FILE}: gone/rule: not in the catalog; ignored`]);
+  });
+
+  it('reports a refused entry once when several catalogs refused it', () => {
+    const lines = warnings([overlaid([], [['a/rule', 'bad']]), overlaid([], [['a/rule', 'bad']])]);
+    assert.equal(lines.length, 1);
+    assert.match(lines[0]!, /a\/rule: bad; this rule is not installed or updated/);
+  });
+
+  it('reports nothing for no catalogs', () => {
+    assert.deepEqual(warnings([]), []);
   });
 });

@@ -10,14 +10,15 @@ import { getAllTargets, getTarget, retiredConfigDestinationsOf } from '../target
 import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { resolveCatalog } from '../resolve';
-import { applyProjectOverlays } from '../overlays';
+import { overlayProject, reportOverlayIssues } from '../overlay-report';
+import type { OverlaidCatalog } from '../overlays';
 import { entryKey, staleEntries, statusHooks } from '../freshness';
 import { requireManifest } from './shared/manifest';
 import { perCatalog, printSourceLine } from './shared/catalog-groups';
-import { JSON_INDENT } from '../json-util';
+import { printStatusJson } from './status-json';
 import { isConfigKind } from '../kinds';
 import type { Freshness } from '../freshness';
-import type { CatalogSource, StatusResult } from '../manifest';
+import type { StatusResult } from '../manifest';
 import type { LoadedCatalog } from '../types';
 
 export interface StatusOptions {
@@ -26,32 +27,6 @@ export interface StatusOptions {
   catalogDir: string;
   packs: string;
   json: boolean;
-}
-
-/** One entry's row in the `--json` output, tagged with its catalog when it was not the bundled one. */
-function statusJsonRow(s: StatusResult, catalog?: CatalogSource): Record<string, unknown> {
-  return {
-    id: s.entry.id,
-    kind: s.entry.kind,
-    target: s.entry.target,
-    status: s.status,
-    catalog,
-    installedAt: s.entry.installedAt,
-    sigilVersion: s.entry.sigilVersion,
-    driftedFiles: s.driftedFiles,
-    missingFiles: s.missingFiles,
-    reason: s.reason,
-    // Each is absent unless non-empty, so JSON.stringify leaves it out.
-    retiredFiles: s.retiredFiles,
-    renderError: s.renderError,
-    newDependencies: s.newDependencies,
-  };
-}
-
-/** Prints the `--json` machine-readable status output. */
-function printStatusJson(results: Awaited<ReturnType<typeof perCatalogStatus>>): void {
-  const rows = results.flatMap(r => r.result.statuses.map(s => statusJsonRow(s, r.source)));
-  console.log(JSON.stringify(rows, null, JSON_INDENT));
 }
 
 /** Icon per status value, used by the human-readable table. */
@@ -183,10 +158,10 @@ function makeCurrentTemplateOf(catalog: LoadedCatalog): CurrentTemplateOf {
 /** What `update` would change, over the catalog with project overlays (as `add` and `update` see it). */
 function scanFreshness(
   manifest: ReturnType<typeof requireManifest>,
-  rawCatalog: LoadedCatalog,
+  overlaid: OverlaidCatalog,
   opts: StatusOptions,
 ): Promise<Freshness> {
-  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
+  const { resolved, refused } = overlaid;
   return staleEntries(manifest, {
     resolved,
     projectDir: opts.projectDir,
@@ -203,10 +178,11 @@ function scanFreshness(
 async function buildStatuses(
   manifest: ReturnType<typeof requireManifest>,
   rawCatalog: LoadedCatalog,
+  overlaid: OverlaidCatalog,
   opts: StatusOptions,
 ): Promise<{ statuses: ReturnType<typeof computeStatus>; fresh: Freshness }> {
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  const fresh = await scanFreshness(manifest, rawCatalog, opts);
+  const fresh = await scanFreshness(manifest, overlaid, opts);
   const statuses = computeStatus(manifest, opts.projectDir, catalogIds, {
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
     retiredFor: retiredConfigDestinationsOf,
@@ -227,9 +203,16 @@ function withScanFindings(s: StatusResult, fresh: Freshness): StatusResult {
   };
 }
 
-/** Runs the per-catalog status logic once per catalog the manifest records. */
-function perCatalogStatus(manifest: ReturnType<typeof requireManifest>, opts: StatusOptions) {
-  return perCatalog(manifest, opts, (catalog, view) => buildStatuses(view, catalog, opts));
+/** Runs the per-catalog status logic once per catalog the manifest records; overlay issues print once. */
+async function perCatalogStatus(manifest: ReturnType<typeof requireManifest>, opts: StatusOptions) {
+  const overlaid: OverlaidCatalog[] = [];
+  const results = await perCatalog(manifest, opts, (catalog, view) => {
+    const group = overlayProject(resolveCatalog(catalog), opts.projectDir);
+    overlaid.push(group);
+    return buildStatuses(view, catalog, group, opts);
+  });
+  reportOverlayIssues(overlaid);
+  return results;
 }
 
 export async function runStatus(opts: StatusOptions): Promise<void> {

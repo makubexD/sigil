@@ -16,7 +16,7 @@
  * it wider than the project asked would be worse than not installing it. Only a file sigil cannot
  * read as a whole fails the command.
  *
- * Applied by `add` and `update` to a copy of the resolved catalog before any target renders, so it
+ * Applied (`src/overlay-report.ts`) by `add`, `status` and `update` to a copy of the resolved catalog before any target renders, so it
  * is target-neutral and the drift hash is taken on the overlaid file. Read from the project
  * directory, never through `PKG_ROOT`.
  *
@@ -27,7 +27,6 @@ import path from 'node:path';
 import yaml from 'js-yaml';
 import { readRegularFile } from './safe-read';
 import { SigilError } from './errors';
-import type { SelectionResult } from './select';
 import type { ResolvedArtifact, ResolvedCatalog } from './types';
 
 /** Relative to the project directory; forward slashes, so messages read the same on every OS. */
@@ -43,8 +42,6 @@ const GLOB_SYNTAX = /[*?[\]{}!]/;
  */
 const DIRECTORY_NAME = /^[\p{L}\p{M}\p{N}._@+-]+(?: [\p{L}\p{M}\p{N}._@+-]+)*$/u;
 const NARROWABLE_LEAD = '**/';
-
-const printWarning = (message: string) => console.warn(`  ⚠  ${message}`);
 
 /** The project's overlays: rule id → directory prefixes, and id → why its entry was refused. */
 export interface ProjectOverlays {
@@ -216,68 +213,4 @@ export function withOverlays(
   const artifacts = resolved.artifacts.map(a => rewire(rules.get(a.id) ?? a, rules, refused));
   const byId = new Map(artifacts.map(a => [a.id, a]));
   return { resolved: { ...resolved, artifacts, byId }, refused, ignored };
-}
-
-/**
- * The project's overlays applied to `resolved`, each entry it could not apply reported once
- * through `warn`: an ignored one changes nothing, a refused rule is not installed or updated.
- */
-export function applyProjectOverlays(
-  resolved: ResolvedCatalog,
-  projectDir: string,
-  warn: (message: string) => void = printWarning,
-): OverlaidCatalog {
-  const overlaid = withOverlays(resolved, loadOverlays(projectDir));
-  for (const [id, reason] of overlaid.ignored) warn(`${OVERLAYS_FILE}: ${id}: ${reason}; ignored`);
-  for (const [id, reason] of overlaid.refused) {
-    warn(
-      `${OVERLAYS_FILE}: ${id}: ${reason}; this rule is not installed or updated until it is fixed`,
-    );
-  }
-  return overlaid;
-}
-
-/**
- * `entries` without those whose overlay was refused, each reported through `warn`: an installed
- * artifact is left as it is rather than re-rendered wider than the project asked.
- */
-export function withoutRefused<T extends { id: string }>(
-  entries: T[],
-  refused: ReadonlyMap<string, string>,
-  warn: (message: string) => void = printWarning,
-): T[] {
-  return entries.filter(entry => {
-    const reason = refused.get(entry.id);
-    if (reason !== undefined) warn(`${entry.id} left as installed: ${refusedReason(reason)}`);
-    return reason === undefined;
-  });
-}
-
-/**
- * `selection` with every id whose overlay was refused moved to `skipped` (cause `overlay`). `sigil
- * add` and the add wizard's preview both call it, so the plan shown is the plan installed.
- */
-export function skipRefused(
-  selection: SelectionResult,
-  refused: ReadonlyMap<string, string> | undefined,
-  catalog: ResolvedCatalog,
-): SelectionResult {
-  if (!refused?.size) return selection;
-  const skipped = selection.ids
-    .filter(id => refused.has(id))
-    .map(id => ({
-      id,
-      kind: catalog.byId.get(id)?.kind ?? 'rule',
-      reason: refusedReason(refused.get(id) ?? ''),
-      cause: 'overlay' as const,
-    }));
-  return {
-    ids: selection.ids.filter(id => !refused.has(id)),
-    skipped: [...selection.skipped, ...skipped],
-  };
-}
-
-/** Why an artifact whose overlay was refused is skipped. */
-function refusedReason(reason: string): string {
-  return `${OVERLAYS_FILE} entry refused: ${reason}`;
 }

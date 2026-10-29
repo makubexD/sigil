@@ -9,7 +9,7 @@
  * @module
  */
 import { resolveCatalog } from '../../resolve';
-import { applyProjectOverlays } from '../../overlays';
+import { applyProjectOverlays } from '../../overlay-report';
 import { getTarget } from '../../targets';
 import { CONFIG_KINDS, type SkippedArtifact } from '../../select';
 import { SigilError } from '../../errors';

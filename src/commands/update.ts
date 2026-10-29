@@ -7,27 +7,25 @@
  * imports (the modules were already imported in cli.ts; the require() calls were a mistake).
  * The file-drift detection is extracted into `isFileDrifted` — a pure, testable helper.
  *
+ * The run itself happens once per catalog the manifest records (`./update-groups.ts`); this module
+ * builds the setup, then saves the manifest and prints the merged summary once.
+ *
  * @module
  */
-import { resolveCatalog } from '../resolve';
-import { applyProjectOverlays } from '../overlays';
-import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
+import { detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets';
 import { recordedOpsAt, saveManifest } from '../manifest';
+import { assertReachable, groupBySource } from '../manifest/catalog-source';
 import { requireManifest } from './shared/manifest';
-import type { ManifestEntry, Manifest } from '../manifest/types';
-import type { ResolvedCatalog, Target } from '../types';
 import { SigilError } from '../errors';
-import { applyConfigEntry, isConfigEntry } from './update-config';
-import { isAtRetiredDestination, moveRetiredFragments } from './update-config-move';
-import { inlinedDependencies, inlinedNotice } from './shared/inlined-deps';
-import { catalogConfigOps } from '../freshness';
-import { updateWholeFileEntry } from './update-wholefile';
 import { runGuidedUpdate, shouldGuideUpdate } from './update-guided';
-import { installNewDependencies } from './update-deps';
-import { entriesToUpdate } from './update-entries';
+import { filterEntriesToUpdate, printNoEntriesMessage } from './update-entries';
+import { finishEachGroup, loadUpdateGroups, updateEachGroup } from './update-groups';
+import type { UpdateGroup } from './update-groups';
 import { warnMcpEnvCaveats } from './add/execute-config';
 import type { WrittenConfig } from './add/execute-config';
+import type { Manifest } from '../manifest/types';
+import type { Target } from '../types';
 import type { SigilOpsAt } from './update-config-io';
 
 export { isFileDrifted } from './update-wholefile';
@@ -72,72 +70,6 @@ function printUpdateSummary(
   console.log('');
 }
 
-/** Points at `sigil prune` when an installed dependency is now carried inline by its parent. */
-function printInlinedNotice(manifest: Manifest, target: Target, resolved: ResolvedCatalog): void {
-  const entries = manifest.entries.filter(e => e.target === target.name);
-  const { removable, unconfirmed } = inlinedDependencies(entries, target, resolved);
-  const lines = inlinedNotice(
-    removable.map(e => e.id),
-    unconfirmed.map(e => e.id),
-  );
-  if (lines.length === 0) return;
-  for (const line of lines) console.error(line);
-  console.error('');
-}
-
-interface EntryUpdateOutcome {
-  updated: boolean;
-  pending?: boolean;
-  skippedDriftCount: number;
-  orphaned: boolean;
-}
-
-/** Shared context for the update-run helpers below. */
-interface UpdateRunCtx {
-  catalogIds: Set<string>;
-  resolved: ResolvedCatalog;
-  target: Target;
-  opts: ConfigUpdateOptions;
-  /** Config artifacts this run wrote, for the one MCP env warning at the end. */
-  written: WrittenConfig[];
-}
-
-/** Brings a config-kind entry (hook/settings/mcp) up to date. */
-async function updateConfigOutcome(
-  entry: ManifestEntry,
-  ctx: UpdateRunCtx,
-): Promise<EntryUpdateOutcome> {
-  const { opts } = ctx;
-  const freshOps = await catalogConfigOps(entry.id, ctx, opts.projectDir);
-  const retired = ctx.target.retiredConfigDestinations ?? [];
-  const moved = moveRetiredFragments(entry, opts, freshOps, retired);
-  const applied = applyConfigEntry(entry, opts, freshOps, cf =>
-    isAtRetiredDestination(cf, retired),
-  );
-  const wrote = moved.wrote || applied.wrote;
-  const skipped = moved.skipped + applied.skipped;
-  const pending = wrote && !!opts.dryRun;
-  const artifact = ctx.resolved.byId.get(entry.id);
-  if (wrote && !opts.dryRun && artifact) ctx.written.push({ id: entry.id, artifact });
-  return { updated: wrote, pending, skippedDriftCount: skipped, orphaned: false };
-}
-
-/** Updates one manifest entry: orphan check, then config-kind or whole-file update. */
-async function updateOneEntry(
-  entry: ManifestEntry,
-  ctx: UpdateRunCtx,
-): Promise<EntryUpdateOutcome> {
-  const { catalogIds, resolved, target, opts } = ctx;
-  if (!catalogIds.has(entry.id)) {
-    console.log(`  ✗  ${entry.id}  (no longer in the catalog — run sigil prune to clean up)`);
-    return { updated: false, skippedDriftCount: 0, orphaned: true };
-  }
-
-  if (isConfigEntry(entry)) return updateConfigOutcome(entry, ctx);
-  const result = await updateWholeFileEntry(entry, resolved, target, opts);
-  return { ...result, orphaned: false };
-}
-
 export interface UpdateRunTotals {
   updatedCount: number;
   /** In a preview (`--dry-run`): how many artifacts would change. */
@@ -146,40 +78,17 @@ export interface UpdateRunTotals {
   orphanedCount: number;
 }
 
-/** Updates every manifest entry in sequence, aggregating the run totals. */
-async function updateAllEntries(
-  entries: ManifestEntry[],
-  ctx: UpdateRunCtx,
-): Promise<UpdateRunTotals> {
-  let updatedCount = 0;
-  let pendingCount = 0;
-  let skippedDrift = 0;
-  let orphanedCount = 0;
-
-  for (const entry of entries) {
-    const outcome = await updateOneEntry(entry, ctx);
-    if (outcome.orphaned) orphanedCount++;
-    if (outcome.updated) updatedCount++;
-    if (outcome.pending) pendingCount++;
-    skippedDrift += outcome.skippedDriftCount;
-  }
-
-  return { updatedCount, pendingCount, skippedDrift, orphanedCount };
-}
-
 interface UpdateRunSetup {
-  resolved: ResolvedCatalog;
   target: Target;
   manifest: Manifest;
-  entries: ManifestEntry[];
-  catalogIds: Set<string>;
+  /** Every artifact id the manifest records for the target, across all its catalogs. */
   installedIds: Set<string>;
   /** Every fragment the manifest records for a destination's file, for the home backup check. */
   sigilOpsAt: SigilOpsAt;
+  /** One group per catalog this run touches, in report order (bundled first). */
+  groups: UpdateGroup[];
 }
 
-/** Loads + validates everything runUpdate needs; prints the "nothing to update" message and
- * returns undefined when the entry filter matched zero entries. */
 /** Throws unless the target supports whole-file scaffolding (required for `sigil update`). */
 function assertTargetSupportsUpdate(target: Target, targetName: string): void {
   if (!target.scaffold) {
@@ -192,24 +101,33 @@ function installedIdsFor(manifest: Manifest, targetName: string): Set<string> {
   return new Set(manifest.entries.filter(e => e.target === targetName).map(e => e.id));
 }
 
+/**
+ * Builds everything runUpdate needs, loading each catalog the manifest records (but only after
+ * refusing to run on a recorded one that is gone). Prints the "nothing to update" message and
+ * returns undefined when the whole-manifest entry filter matched zero entries.
+ */
 async function prepareUpdateRun(
   ids: string[],
   opts: UpdateOptions,
 ): Promise<UpdateRunSetup | undefined> {
-  const { catalog: rawCatalog } = await loadAndValidate(opts.catalogDir, opts.packs);
-  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
   const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
   const target = getTarget(targetName);
   assertTargetSupportsUpdate(target, targetName);
 
   const manifest = requireManifest(opts.projectDir);
-  const entries = entriesToUpdate(manifest, targetName, ids, refused);
-  if (!entries) return undefined;
+  const idFilter = new Set(ids);
+  if (filterEntriesToUpdate(manifest, targetName, idFilter).length === 0) {
+    printNoEntriesMessage(idFilter, targetName);
+    return undefined;
+  }
 
-  const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
+  const sourceGroups = groupBySource(manifest.entries, opts);
+  assertReachable(sourceGroups, opts.projectDir);
+  const groups = await loadUpdateGroups(sourceGroups, targetName, idFilter, opts.projectDir);
+
   const installedIds = installedIdsFor(manifest, targetName);
   const sigilOpsAt: SigilOpsAt = dest => recordedOpsAt(manifest, dest);
-  return { resolved, target, manifest, entries, catalogIds, installedIds, sigilOpsAt };
+  return { target, manifest, installedIds, sigilOpsAt, groups };
 }
 
 export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<void> {
@@ -224,18 +142,16 @@ async function applyUpdate(
 ): Promise<UpdateRunTotals | undefined> {
   const setup = await prepareUpdateRun(ids, opts);
   if (!setup) return undefined;
-  const { resolved, target, manifest, entries, catalogIds, installedIds, sigilOpsAt } = setup;
+  const { target, manifest, installedIds, sigilOpsAt, groups } = setup;
 
   console.log('');
   const written: WrittenConfig[] = [];
   const runOpts: ConfigUpdateOptions = { ...opts, installedIds, sigilOpsAt };
-  const run = { catalogIds, resolved, target, opts: runOpts, written };
-  const totals = await updateAllEntries(entries, run);
+  const totals = await updateEachGroup(groups, target, runOpts, written);
   warnMcpEnvCaveats(written, target);
 
   if (!opts.dryRun) saveManifest(opts.projectDir, manifest);
   printUpdateSummary(opts, totals.updatedCount, totals.skippedDrift, totals.orphanedCount);
-  await installNewDependencies({ entries, resolved, target, installedIds }, opts);
-  printInlinedNotice(manifest, target, resolved);
+  await finishEachGroup(groups, target, installedIds, opts);
   return totals;
 }

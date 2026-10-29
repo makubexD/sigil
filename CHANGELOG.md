@@ -251,6 +251,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The manifest (`.sigil/manifest.json`) is now version 3: an artifact installed with
+  `--catalog-dir` records that catalog as `catalog: { dir, packs }`, relative to the project. A v2
+  manifest loads unchanged and is saved as v3. An older sigil refuses a v3 manifest instead of
+  reporting team artifacts as orphaned.
+- `.sigil/overlays.yaml` problems are reported once per run, also when a run reads several catalogs.
+- `npm test -- --test-name-pattern=<re>` now runs only the matching tests; `scripts/run-tests.cjs`
+  passes extra arguments on to `node --test`.
+
 - A mistyped artifact id on `get`, `edit`, `patch`, `retarget`, `delete` or `move` now names at
   most five close ids (`Did you mean: shared/clean-code?`) and how to browse (`sigil list`,
   `sigil search <word>`), instead of listing every id in the catalog. The suggestions cover the
@@ -414,6 +422,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `renderCapabilityMatrix()` so the generated file and its staleness test agree.
 
 ### Fixed
+
+- `sigil status`, `update`, `prune` and the home menu no longer report artifacts installed from a
+  team catalog as `orphaned` when run without `--catalog-dir`, and `prune --apply` no longer removes
+  them. Each artifact is checked against the catalog it was installed from, and a recorded catalog
+  that is gone is an error that names it, not an orphan.
 
 - `sigil status` now calls an artifact `outdated` exactly when `sigil update` would rewrite it.
   It used to compare only template revisions, so it could report a project as up to date while

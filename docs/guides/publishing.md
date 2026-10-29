@@ -19,6 +19,12 @@ package** (`resolveDefault` in `src/cli-helpers.ts`), so a team catalog must alw
 sigil validate --catalog-dir ./catalog --packs ./packs.yaml
 ```
 
+A consumer project passes them once, to `sigil add`. The manifest records the catalog each
+artifact came from (relative to the project, e.g. `../team-catalog`), so later `status`, `update`
+and `prune` runs find it with no flags and print `Using catalog ../team-catalog (recorded in
+.sigil/manifest.json)`. Keep the catalog at the same place relative to the project on every machine
+(a sibling checkout works), or pass `--catalog-dir` and `--packs` again.
+
 Catalog layout, artifact frontmatter and `packs.yaml` format: [authoring.md](authoring.md) and
 [spec.md](../reference/spec.md). The minimum is one artifact plus one pack:
 
@@ -113,10 +119,6 @@ sigil does not write that layout.
 
 - Marketplace `name`/`owner` and plugin `author`/`license` are hardcoded to sigil:
   [own-marketplace-metadata](../ideas/own-marketplace-metadata.md).
-- The manifest does not record which catalog installed an artifact, so `status`/`update`/`prune`
-  without `--catalog-dir` report a team artifact as `orphaned`:
-  [manifest-catalog-source](../ideas/manifest-catalog-source.md). Always pass the same
-  `--catalog-dir` and `--packs`.
 - No Copilot plugin channel: [copilot-plugin-channel](../ideas/copilot-plugin-channel.md).
 - `sigil build --target copilot` emits agents as one `.github/AGENTS.md`, while `add` writes
   `.github/agents/*.agent.md`; the two layouts differ (same brief).

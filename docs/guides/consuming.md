@@ -394,7 +394,7 @@ may have picked it; remove it with `sigil uninstall <id>` if you did not. It onl
 the preview looks like this:
 
 ```
-1 orphaned artifact(s) — no longer in the bundled catalog:
+1 orphaned artifact(s) — no longer in the catalog it was installed from:
   ✗  csharp/gone-rule
 
 Run `sigil prune --apply` to remove the artifact(s) listed above.
@@ -673,8 +673,16 @@ the file and run `sigil update` to change a scope; delete an entry (or the file)
 
 ## Keep installs healthy over time
 
-sigil records what it wrote in `.sigil/manifest.json`: each artifact, its files, and the SHA-256 hash
-of every file at install time.
+sigil records what it wrote in `.sigil/manifest.json`: each artifact, its files, the SHA-256 hash
+of every file at install time, and, for an artifact installed with `--catalog-dir`, the catalog it
+came from (as `catalog: { dir, packs }`, relative to the project, so the file never holds a path
+from your machine). An artifact from the bundled catalog records no catalog.
+
+`status`, `update` and `prune` check each artifact against the catalog it was installed from, unless
+you pass `--catalog-dir`, which then applies to every artifact. A recorded catalog that is gone stops
+the command before it reads or writes anything (`Catalog '../team-catalog' recorded in
+.sigil/manifest.json for 3 artifacts was not found.`); restore it or pass `--catalog-dir <path>`.
+The manifest format is version 3; an older sigil refuses it rather than misreading it.
 
 > **Commit this file.** `.sigil/manifest.json` is project state, not a build artifact. Committing it
 > lets every teammate and CI run use the commands below with the full install history.
@@ -697,7 +705,7 @@ All four accept `--project-dir` and `--target`. Step-by-step output for each is 
 | `outdated`   | The catalog changed this artifact since you installed it, or its config file moved (`config moved: …`). Run `sigil update`                         |
 | `drifted`    | You edited a file. `update` keeps your version unless the catalog changed it too, and then needs `--force`                                         |
 | `missing`    | A file sigil installed was deleted. `sigil add <that entry's own id>` writes it again; `update` restores only config entries (MCP, hook, settings) |
-| `orphaned`   | The artifact is no longer in the catalog. `sigil prune` reports it and `--apply` removes it                                                        |
+| `orphaned`   | The artifact is no longer in the catalog it was installed from. `sigil prune` reports it and `--apply` removes it                                  |
 
 A non-`up-to-date` row prints its reason on the next line. After the table, `status` also notes any artifact a tool
 loads twice: Copilot reads `.claude/skills` and `.agents/skills` as well as its own folder, so a skill

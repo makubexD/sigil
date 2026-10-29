@@ -193,11 +193,14 @@ npm test
 npm run build && npm run build:test && node --test test-compiled/cli-help-accuracy.test.js
 ```
 
-**Run one test by name** (matches test or suite names):
+**Run one test by name** (matches test or suite names). `npm test` passes extra arguments on to
+`node --test`, so this builds and runs every test whose name matches:
 
 ```bash
-node --test --test-name-pattern "help" test-compiled/cli-help-accuracy.test.js
+npm test -- --test-name-pattern="help"
 ```
+
+On one file, without the build: `node --test --test-name-pattern "help" test-compiled/cli-help-accuracy.test.js`.
 
 **Debug:** attach an inspector with `node --inspect-brk --test test-compiled/<path>.test.js`. Compiled
 tests are emitted with `sourceMap: false` (`tsconfig.test.json`), so the debugger shows the compiled

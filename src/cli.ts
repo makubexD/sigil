@@ -241,8 +241,8 @@ program
   .command('prune')
   .description(
     "Report (default) / --apply (write) cleanup of a project's manifest: removes orphaned " +
-      'artifacts (no longer in the bundled catalog) and dependency copies a skill already carries ' +
-      'inline; reports deprecated ones and inline copies you may have picked.',
+      'artifacts (no longer in the catalog each was installed from) and dependency copies a skill ' +
+      'already carries inline; reports deprecated ones and inline copies you may have picked.',
   )
   .option('--project-dir <dir>', 'Consumer project root', process.cwd())
   .option('--target <name>', 'Target platform (auto-detected if omitted)')

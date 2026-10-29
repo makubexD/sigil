@@ -5,7 +5,7 @@
  *
  * @module
  */
-import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
+import { detectProjectTarget } from '../cli-helpers';
 import { getAllTargets, getTarget, retiredConfigDestinationsOf } from '../targets';
 import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
@@ -13,10 +13,11 @@ import { resolveCatalog } from '../resolve';
 import { applyProjectOverlays } from '../overlays';
 import { entryKey, staleEntries, statusHooks } from '../freshness';
 import { requireManifest } from './shared/manifest';
+import { perCatalog, printSourceLine } from './shared/catalog-groups';
 import { JSON_INDENT } from '../json-util';
 import { isConfigKind } from '../kinds';
 import type { Freshness } from '../freshness';
-import type { StatusResult } from '../manifest/types';
+import type { CatalogSource, StatusResult } from '../manifest';
 import type { LoadedCatalog } from '../types';
 
 export interface StatusOptions {
@@ -27,13 +28,14 @@ export interface StatusOptions {
   json: boolean;
 }
 
-/** One entry's row in the `--json` output. */
-function statusJsonRow(s: StatusResult): Record<string, unknown> {
+/** One entry's row in the `--json` output, tagged with its catalog when it was not the bundled one. */
+function statusJsonRow(s: StatusResult, catalog?: CatalogSource): Record<string, unknown> {
   return {
     id: s.entry.id,
     kind: s.entry.kind,
     target: s.entry.target,
     status: s.status,
+    catalog,
     installedAt: s.entry.installedAt,
     sigilVersion: s.entry.sigilVersion,
     driftedFiles: s.driftedFiles,
@@ -47,8 +49,9 @@ function statusJsonRow(s: StatusResult): Record<string, unknown> {
 }
 
 /** Prints the `--json` machine-readable status output. */
-function printStatusJson(statuses: ReturnType<typeof computeStatus>): void {
-  console.log(JSON.stringify(statuses.map(statusJsonRow), null, JSON_INDENT));
+function printStatusJson(results: Awaited<ReturnType<typeof perCatalogStatus>>): void {
+  const rows = results.flatMap(r => r.result.statuses.map(s => statusJsonRow(s, r.source)));
+  console.log(JSON.stringify(rows, null, JSON_INDENT));
 }
 
 /** Icon per status value, used by the human-readable table. */
@@ -224,9 +227,13 @@ function withScanFindings(s: StatusResult, fresh: Freshness): StatusResult {
   };
 }
 
+/** Runs the per-catalog status logic once per catalog the manifest records. */
+function perCatalogStatus(manifest: ReturnType<typeof requireManifest>, opts: StatusOptions) {
+  return perCatalog(manifest, opts, (catalog, view) => buildStatuses(view, catalog, opts));
+}
+
 export async function runStatus(opts: StatusOptions): Promise<void> {
-  const { catalog: rawCatalog } = await loadAndValidate(opts.catalogDir, opts.packs);
-  // An unknown --target still fails here, before anything is read.
+  // An unknown --target still fails here, before any catalog is read.
   getTarget(opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false }));
 
   const manifest = requireManifest(opts.projectDir);
@@ -236,14 +243,14 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     return;
   }
 
-  const { statuses } = await buildStatuses(manifest, rawCatalog, opts);
+  const results = await perCatalogStatus(manifest, opts);
 
-  if (opts.json) {
-    printStatusJson(statuses);
-    return;
+  if (opts.json) return printStatusJson(results);
+
+  for (const r of results) {
+    printSourceLine(r.source);
+    printStatusTable(r.result.statuses);
   }
-
-  printStatusTable(statuses);
-  printStatusSummary(statuses);
+  printStatusSummary(results.flatMap(r => r.result.statuses));
   for (const note of duplicateLoads(manifest.entries, getAllTargets())) console.log(`  ℹ  ${note}`);
 }

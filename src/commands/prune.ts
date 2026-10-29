@@ -1,6 +1,6 @@
 /**
  * `sigil prune` — cleanup command for a consumer project's manifest: removes orphaned entries
- * (ids no longer in the bundled catalog) and dependency copies every installed parent already
+ * (ids no longer in the catalog each was installed from) and dependency copies every installed parent already
  * carries inline; reports deprecated-but-installed ones and inline copies that may have been picked. Preview by
  * default, like `sigil sync` — bare `sigil prune` reports and writes nothing; `--apply` writes.
  *
@@ -14,11 +14,12 @@
  *
  * @module
  */
-import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
+import { detectProjectTarget } from '../cli-helpers';
 import { getTarget } from '../targets/index';
 import { inlinedDependencies } from './shared/inlined-deps';
 import { requireManifest } from './shared/manifest';
-import type { ManifestEntry } from '../manifest';
+import { perCatalog, printSourceLines } from './shared/catalog-groups';
+import type { Manifest, ManifestEntry } from '../manifest';
 import type { LoadedCatalog } from '../types';
 import type { Deprecated } from '../schema/index';
 import { JSON_INDENT } from '../json-util';
@@ -110,7 +111,9 @@ function printJsonReport(candidates: PruneCandidates, applied: boolean): void {
 
 function printOrphanedSection(orphaned: ManifestEntry[]): void {
   if (orphaned.length === 0) return;
-  console.log(`${orphaned.length} orphaned artifact(s) — no longer in the bundled catalog:`);
+  console.log(
+    `${orphaned.length} orphaned artifact(s) — no longer in the catalog it was installed from:`,
+  );
   for (const e of orphaned) console.log(`  ✗  ${e.id}`);
   console.log('');
 }
@@ -185,18 +188,44 @@ async function previewAndOffer(
   if (offering) await offerApply(manifest, candidates, ctx);
 }
 
-export async function runPrune(opts: PruneOptions): Promise<void> {
-  const { catalog: rawCatalog } = await loadAndValidate(opts.catalogDir, opts.packs);
-  const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
-
-  const manifest = requireManifest(opts.projectDir);
-  const deprecatedById = new Map(
-    rawCatalog.artifacts
+/** Every catalog artifact carrying `deprecated:`, by id. */
+function deprecatedById(catalog: LoadedCatalog): Map<string, Deprecated> {
+  return new Map(
+    catalog.artifacts
       .filter(a => a.frontmatter.deprecated)
       .map(a => [a.id, a.frontmatter.deprecated as Deprecated]),
   );
+}
 
-  const candidates = findCandidates(manifest, targetName, rawCatalog, deprecatedById);
+/** One group's candidates, found by judging its entries against its own catalog. */
+function groupCandidates(
+  view: Manifest,
+  targetName: string,
+  catalog: LoadedCatalog,
+): PruneCandidates {
+  return findCandidates(view, targetName, catalog, deprecatedById(catalog));
+}
+
+/** The per-group reports as the one report the command prints. */
+function mergeCandidates(parts: readonly PruneCandidates[]): PruneCandidates {
+  return {
+    orphaned: parts.flatMap(p => p.orphaned),
+    inlined: parts.flatMap(p => p.inlined),
+    inlinedUnconfirmed: parts.flatMap(p => p.inlinedUnconfirmed),
+    deprecated: parts.flatMap(p => p.deprecated),
+  };
+}
+
+export async function runPrune(opts: PruneOptions): Promise<void> {
+  const targetName = opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false });
+  const manifest = requireManifest(opts.projectDir);
+
+  const results = await perCatalog(manifest, opts, (catalog, view) =>
+    groupCandidates(view, targetName, catalog),
+  );
+
+  if (!opts.json) printSourceLines(results);
+  const candidates = mergeCandidates(results.map(r => r.result));
 
   const ctx = { targetName, opts, printJsonReport };
   if (opts.apply) await applyPrune(manifest, candidates, ctx);

@@ -121,6 +121,30 @@ in .sigil/manifest.json)` (not in `--json`, where the group's `catalog` is a fie
    manifest v3, older sigil refuses it; Fixed: team artifacts no longer orphaned), delete the brief
    and its row in `docs/ideas/README.md`. Live check against a temp team catalog. `npm run ci:local`.
 
+## Status (2026-10-28)
+
+Steps 1–9 done and committed on `feat/manifest-catalog-source` (local only, not pushed yet).
+`npm run ci:local` green before the review fixes; full `npm test` green after them (1645 tests).
+`/agent-skills:review` done; its three findings are fixed in `7bfd83f` (malformed recorded
+catalog is a `SigilError`; re-adding an up-to-date pick from another catalog moves it; test for
+the absent `catalog` key).
+
+Beyond the plan: `scripts/run-tests.cjs` forwards `--test-name-pattern`; overlay issues are
+reported once across catalogs (`src/overlay-report.ts`); `status --json` moved to
+`src/commands/status-json.ts`.
+
+Next, in order:
+
+1. `npm run ci:local`, then push the branch and open the PR (needs the owner's go-ahead).
+2. Merge on green CI, then delete this plan file.
+
+Optional follow-ups from the review (not blocking):
+
+- Test that `sigil update <id>` keeps the inlined-dependency notice for the group's other entries
+  (`finishEachGroup` in `src/commands/update-groups.ts`).
+- Document the optional `catalog` field on `status --json` rows in `docs/reference/spec.md`.
+- Cache `catalogIds(dir)` per folder in the home menu if it ever feels slow (`src/wizard/home.ts`).
+
 ## Verification
 
 Per step: the listed tests, then `npm test`. End: `npm run ci:local` green; live run of add from a

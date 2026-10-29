@@ -21,6 +21,7 @@ import { createRecorder, mockClack } from '../helpers/clack-mock';
 import { fakeTTY } from '../helpers/tty';
 import type { MockAnswer } from '../helpers/clack-mock';
 import { withTempDirAsync } from '../helpers/temp-dir';
+import { makeTeamCatalog } from '../helpers/team-catalog';
 
 function context(overrides: Partial<ProjectContext> = {}): ProjectContext {
   return {
@@ -462,6 +463,46 @@ describe('home menu with the real handlers', () => {
         ),
         false,
       );
+    });
+  });
+});
+
+describe('home menu with a recorded team catalog', () => {
+  it('should not count a team install as orphaned in the header', async () => {
+    await withTempDirAsync(async root => {
+      const team = makeTeamCatalog(root);
+      const project = path.join(root, 'project');
+      fs.mkdirSync(project);
+      await runAdd(['rule:shared/team-only'], {
+        projectDir: project,
+        catalogDir: team.dir,
+        packs: team.packs,
+        target: 'claude',
+        deps: false,
+        dryRun: false,
+        interactive: false,
+        yes: true,
+        overwrite: false,
+        settingsLocal: false,
+      });
+
+      // The real ids: the bundled catalog plus the catalog this folder's manifest records.
+      const { catalogIds } = defaultHomeDeps(() => {});
+      assert.ok(catalogIds, 'the real deps always resolve catalog ids');
+      const ids = await catalogIds(project);
+      assert.ok(ids, 'the bundled catalog loads');
+      assert.equal(detectProjectContext(project, { catalogIds: ids }).health.orphaned, 0);
+
+      const seen = createRecorder();
+      const restore = mockClack(['quit'], seen);
+      try {
+        await runHome(project, { catalogIds, handlers: {}, homeDir: '/nowhere/home' });
+      } finally {
+        restore();
+      }
+      const header = seen.notes.find(n => n.title === 'This folder')?.body ?? '';
+      assert.match(header, /1 installed/);
+      assert.doesNotMatch(header, /no longer in the catalog/);
     });
   });
 });

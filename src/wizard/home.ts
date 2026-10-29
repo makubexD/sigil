@@ -31,8 +31,11 @@ export type HomeHandler = (projectDir: string) => Promise<void | 'cancelled'>;
 
 export interface HomeDeps {
   handlers: Partial<Record<HomeActionId, HomeHandler>>;
-  /** Ids in the bundled catalog, so orphaned artifacts can be spotted. Optional. */
-  catalogIds?: () => Promise<Set<string> | undefined>;
+  /**
+   * Ids in every catalog `dir` is judged against (the bundled one plus any its manifest records),
+   * so orphaned artifacts can be spotted. Read per folder. Optional.
+   */
+  catalogIds?: (dir: string) => Promise<Set<string> | undefined>;
   /** Overridable so tests never depend on the real home folder. */
   homeDir?: string;
 }
@@ -97,6 +100,7 @@ interface ChoiceResult {
 /** What `runChoice` needs besides the menu choice itself. */
 interface Env {
   deps: HomeDeps;
+  /** Ids in the catalogs of the folder currently shown; a folder peeked at by the guard uses them too. */
   catalogIds: Set<string> | undefined;
   /** The user already said to go ahead in this folder, so the risky-folder question is not repeated. */
   riskAccepted: boolean;
@@ -258,8 +262,9 @@ async function homeLoop(projectDir: string, deps: HomeDeps): Promise<void> {
     riskAccepted: false,
   };
   if (process.env['SIGIL_DEBUG'] === 'terminal') log.info(describeTerminal());
-  const catalogIds = await deps.catalogIds?.();
   for (;;) {
+    // Per folder: each one has its own manifest and so its own recorded catalogs.
+    const catalogIds = await deps.catalogIds?.(session.dir);
     const ctx = readContext(session.dir, catalogIds, deps);
     dismissIfStuck(session, ctx);
     const picked = await askNext(ctx, session);

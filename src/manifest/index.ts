@@ -10,6 +10,7 @@
  *   hash    — sha256, hashFiles
  *   mutate  — upsertEntries, upsertConfigEntry, removeEntries
  *   status  — computeStatus, recordedHashes
+ *   catalog-source — the catalog an entry came from, and grouping entries by it
  */
 
 export type {
@@ -36,3 +37,10 @@ export {
 export { removeEntries } from './mutate-remove';
 export { computeStatus, recordedHashes } from './status';
 export type { CurrentTemplateOf } from './status';
+export {
+  sourceToRecord,
+  isExplicitCatalog,
+  groupBySource,
+  assertReachable,
+} from './catalog-source';
+export type { CatalogSource, CatalogSourceOptions, SourceGroup } from './catalog-source';

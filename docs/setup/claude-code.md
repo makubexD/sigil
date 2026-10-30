@@ -30,16 +30,28 @@ Each pack in [`packs.yaml`](../../packs.yaml) is one plugin with the same name:
 /plugin install typescript-starter@sigil
 ```
 
-A pack whose artifacts are all MCP servers or hooks has no plugin yet: plugins can't carry those
-kinds. Install it with `sigil add` instead. `essentials` has a plugin that carries only
-`/essentials:explain-diff`. Its MCP server and hooks still need `sigil add`, and so does
-`author-artifact`, which runs the `sigil` CLI against a catalog.
+Each hook and MCP server is its own opt-in plugin, named `hook-<name>` or `mcp-<name>`:
+
+```
+/plugin install hook-protect-config@sigil
+/plugin install mcp-filesystem@sigil
+```
+
+A pack's plugin never contains them, except that `deepseek-worker` depends on
+`hook-worker-mode-guard`. `essentials` has a plugin that carries only `/essentials:explain-diff`. Add
+`mcp-filesystem`, `hook-protect-config` and `hook-reviewer-bash-guard` for the rest of it.
+`author-artifact` still needs `sigil add`, because it runs the `sigil` CLI against a catalog.
+
+An MCP plugin's description names the environment variables it needs. Nothing warns you when one is
+unset, and a plugin update can change a hook's command with no review step. Details are in
+[consuming.md](../guides/consuming.md#install-a-pack-as-a-claude-plugin).
 
 Browse the full list on the **Discover** tab of `/plugin`, or in the published
 `.claude-plugin/marketplace.json`. Plugins load in the next session, or after `/reload-plugins`.
 
-**What a plugin carries.** Skills, agents, workflows and prompts. Each rule a skill uses is inlined
-into that skill. MCP servers, hooks and settings are not packaged into plugins. Install those with
+**What a plugin carries.** A pack's plugin carries skills, agents, workflows and prompts, and a
+generated plugin carries one hook or MCP server. Each rule a skill uses is inlined into that skill.
+Settings are not packaged into plugins. Install those with
 [`sigil add`](../guides/consuming.md), which also suits you better when you want files you can read
 and edit in your project. The per-kind table is in [capabilities.md](../reference/capabilities.md).
 

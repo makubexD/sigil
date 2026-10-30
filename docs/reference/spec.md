@@ -398,21 +398,21 @@ reaches it inside skills, and a full build also writes repo-wide rules to a root
 
 ## File conventions
 
-| Path                                                      | Contents                                                                                                                                      |
-| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| `catalog/shared/`                                         | Cross-language artifacts, one subdirectory per kind: `skills/`, `agents/`, `rules/`, `prompts/`, `hooks/`, `settings/`, `mcps/`, `templates/` |
-| `catalog/languages/<lang>/`                               | Language-specific skills, rules, agents                                                                                                       |
-| `catalog/languages/<lang>/language.yaml`                  | Display name, artifact-name `prefix`, `stack`, file globs, icon                                                                               |
-| `catalog/standard.yaml`                                   | The catalog standard as data: stacks and families (members, section skeleton, required keys); read by `sync --check` only                     |
-| `catalog/languages/<lang>/skills/<name>/SKILL.md`         | Skill entry point                                                                                                                             |
-| `catalog/languages/<lang>/skills/<name>/references/`      | Supplementary docs bundled with the skill                                                                                                     |
-| `catalog/shared/skills/<name>/SKILL.md`                   | Stack-agnostic (language-less) skill, plus `references/`                                                                                      |
-| `packs.yaml`                                              | Curated bundles (explicit `artifacts:` or `languages:`); `pluginExclude:` keeps a listed artifact out of the Claude plugin                    |
-| `schema/*.schema.json`                                    | JSON Schemas for editor autocomplete (generated from zod)                                                                                     |
-| `catalog/shared/templates/*.template.md`                  | Shared body structure (`kind: template`)                                                                                                      |
-| `*.agent.md`, `*.rule.md`, `*.prompt.md`, `*.workflow.md` | Single-file artifacts (kinds `agent`, `rule`, `prompt`, `workflow`)                                                                           |
-| `*.hook.md`, `*.settings.md`, `*.mcp.md`                  | Config-kind artifacts (kinds `hook`, `settings`, `mcp`)                                                                                       |
-| `.sigil/manifest.json`                                    | Consumer install manifest                                                                                                                     |
+| Path                                                      | Contents                                                                                                                                                                                            |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `catalog/shared/`                                         | Cross-language artifacts, one subdirectory per kind: `skills/`, `agents/`, `rules/`, `prompts/`, `hooks/`, `settings/`, `mcps/`, `templates/`                                                       |
+| `catalog/languages/<lang>/`                               | Language-specific skills, rules, agents                                                                                                                                                             |
+| `catalog/languages/<lang>/language.yaml`                  | Display name, artifact-name `prefix`, `stack`, file globs, icon                                                                                                                                     |
+| `catalog/standard.yaml`                                   | The catalog standard as data: stacks and families (members, section skeleton, required keys); read by `sync --check` only                                                                           |
+| `catalog/languages/<lang>/skills/<name>/SKILL.md`         | Skill entry point                                                                                                                                                                                   |
+| `catalog/languages/<lang>/skills/<name>/references/`      | Supplementary docs bundled with the skill                                                                                                                                                           |
+| `catalog/shared/skills/<name>/SKILL.md`                   | Stack-agnostic (language-less) skill, plus `references/`                                                                                                                                            |
+| `packs.yaml`                                              | Curated bundles (explicit `artifacts:` or `languages:`); `pluginExclude:` keeps a listed artifact out of the Claude plugin; `pluginDependencies:` makes it depend on a generated hook or MCP plugin |
+| `schema/*.schema.json`                                    | JSON Schemas for editor autocomplete (generated from zod)                                                                                                                                           |
+| `catalog/shared/templates/*.template.md`                  | Shared body structure (`kind: template`)                                                                                                                                                            |
+| `*.agent.md`, `*.rule.md`, `*.prompt.md`, `*.workflow.md` | Single-file artifacts (kinds `agent`, `rule`, `prompt`, `workflow`)                                                                                                                                 |
+| `*.hook.md`, `*.settings.md`, `*.mcp.md`                  | Config-kind artifacts (kinds `hook`, `settings`, `mcp`)                                                                                                                                             |
+| `.sigil/manifest.json`                                    | Consumer install manifest                                                                                                                                                                           |
 
 ---
 

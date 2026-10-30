@@ -83,9 +83,10 @@ branch of this repository. In Claude Code:
 /plugin install spec-driven@sigil
 ```
 
-Each pack in [`packs.yaml`](packs.yaml) is one plugin. To stay on one release, add
-`makubexD/sigil#marketplace-v<version>` instead. Plugins carry skills, agents, workflows and
-prompts. Rules ride inside the skills, and MCP servers, hooks and settings still need `sigil add`.
+Each pack in [`packs.yaml`](packs.yaml) is one plugin, and each hook and MCP server is its own opt-in
+plugin (`hook-<name>`, `mcp-<name>`). To stay on one release, add
+`makubexD/sigil#marketplace-v<version>` instead. Pack plugins carry skills, agents, workflows and
+prompts. Rules ride inside the skills, and settings still need `sigil add`.
 Setup, updates and removal: [docs/setup/claude-code.md](docs/setup/claude-code.md).
 
 </details>

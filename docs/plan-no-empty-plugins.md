@@ -102,7 +102,7 @@ succeed, and the installed plugin holds `skills/feature/SKILL.md`.
 `/plugin marketplace add makubexD/sigil#marketplace`, then `/plugin install spec-driven@sigil`; the `feature` skill
 appears.
 
-## Step 8 — mark the channel supported `[worker:medium]` (only after step 7 is confirmed)
+## Step 8 — mark the channel supported `[worker:medium]` (amended 2026-10-30: runs before step 7)
 
 Files: `README.md`, `docs/setup/claude-code.md`, `docs/index.md`, `docs/decisions/publish-claude-marketplace-2026-10.md`.
 
@@ -111,7 +111,8 @@ Files: `README.md`, `docs/setup/claude-code.md`, `docs/index.md`, `docs/decision
 - `docs/index.md` S2 row: status `Supported (first publish pending)` → `Supported`; in the notes cell replace "From
   the next release on, each release pushes" with "Each release pushes".
 - Decision doc `Status:` paragraph → "Status: shipped; first published with `v0.2.0` (2026-10-30), empty-plugin fix
-  in `v0.2.1`, clean-machine install confirmed by the owner." Keep the ADR sentence that follows.
+  in `v0.2.1`; install verified with the Claude Code CLI against an empty config dir. The owner's clean-machine
+  check is still open." Keep the ADR sentence that follows.
 - Delete `docs/plan-gate-npm-publish.md` (its steps 5-8 are covered here) and this plan file.
 
 Test: `npx prettier --check` on the four files; `grep -rn -i 'first publish pending' README.md docs/` returns

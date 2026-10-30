@@ -35,7 +35,7 @@ program
 // ─── build ────────────────────────────────────────────────────────────────────
 program
   .command('build')
-  .description('Compile the catalog to dist/<target>/.')
+  .description('Compile the catalog to dist/<target>/, replacing that folder.')
   .option(
     '--target <name>',
     `Platform to emit (${getAllTargets()
@@ -418,7 +418,7 @@ const HELP_LAYOUT: Readonly<Record<string, { group: string; summary: string }>> 
   import: { group: AUTHOR, summary: 'Import a Claude template directory' },
   sync: { group: AUTHOR, summary: 'Check catalog vs templates/standards' },
   validate: { group: AUTHOR, summary: 'Check the catalog (schema + references)' },
-  build: { group: BUILD, summary: 'Compile the catalog to dist/<target>/' },
+  build: { group: BUILD, summary: 'Compile the catalog to dist/<target>/, replacing that folder' },
   index: { group: BUILD, summary: 'Write dist/registry.json' },
   release: { group: BUILD, summary: 'Bump version, tag (does not push)' },
   completion: { group: BUILD, summary: 'Print a shell completion script' },

@@ -223,8 +223,10 @@ git push && git push --tags
 ```
 
 Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which runs `npm ci`, installs the
-pinned Claude Code CLI, runs `npm run ci:local` (the same gate as CI), and then
-`npm publish --provenance --access public` using npm OIDC Trusted Publishing (no stored token).
+pinned Claude Code CLI, and runs `npm run ci:local` (the same gate as CI). It then publishes the
+Claude marketplace, and runs `npm publish --provenance --access public` (npm OIDC Trusted
+Publishing, no stored token) only when the repository variable `NPM_PUBLISH` is `true`. Until then
+the npm job is skipped, and the run still concludes green.
 
 > **The release gate is the CI gate.** `sigil release` and `release.yml` both run `npm run ci:local`,
 > so a release can't pass a narrower check than a pull request (`test/workflows.test.ts` guards this).
@@ -240,8 +242,10 @@ OIDC publishing does not work until the package exists on npm and is linked to t
    The package must already exist on npmjs.com before a Trusted Publisher can be attached.
 2. On npmjs.com, open the package, then **Publishing → Trusted Publishers**, and add: repository
    `makubexD/sigil`, workflow `release.yml`, environment left blank.
+3. In GitHub, open **Settings → Secrets and variables → Actions → Variables** and set
+   `NPM_PUBLISH` to `true`.
 
-After that, tag pushes publish automatically. If OIDC cannot be configured, the comment in
+After all three, tag pushes publish to npm automatically. If OIDC cannot be configured, the comment in
 `release.yml` describes a fallback that publishes with an `NPM_TOKEN` secret instead.
 
 ---

@@ -42,6 +42,9 @@ acme/
 sigil build --target claude --catalog-dir ./catalog --packs ./packs.yaml --out-dir ./out
 ```
 
+Point `--out-dir` at a folder only sigil writes to: each target folder inside it is replaced on every
+build, and `build` refuses to do that when the `--out-dir` folder has no `registry.json`.
+
 Real output for the catalog above (the marketplace root is `out/claude/`):
 
 ```

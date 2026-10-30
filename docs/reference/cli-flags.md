@@ -40,10 +40,11 @@ Per-command flags for the user-facing `sigil` commands. The command summary is i
 ```text
 Usage: sigil build [options]
 
-Compile the catalog to dist/<target>/.
+Compile the catalog to dist/<target>/, replacing that folder.
 
 Options:
-  --target <name>      Platform to emit (claude, copilot, all) (default: "all")
+  --target <name>      Platform to emit (claude, copilot, agents-standard, all)
+                       (default: "all")
   --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
   --out-dir <dir>      Output root (default: <package>/dist)

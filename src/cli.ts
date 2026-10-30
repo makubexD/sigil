@@ -35,7 +35,7 @@ program
 // ─── build ────────────────────────────────────────────────────────────────────
 program
   .command('build')
-  .description('Compile the catalog to dist/<target>/.')
+  .description('Compile the catalog to dist/<target>/, replacing that folder.')
   .option(
     '--target <name>',
     `Platform to emit (${getAllTargets()

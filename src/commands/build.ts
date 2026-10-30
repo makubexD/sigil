@@ -18,7 +18,7 @@ import { loadAndValidate, resolveDefault, writeFilesSync, pkg } from '../cli-hel
 import { SigilError } from '../errors';
 import { renderViolations } from './shared/contract';
 import { JSON_INDENT } from '../json-util';
-import type { CompileOptions, ResolvedCatalog, Target } from '../types';
+import type { CompileOptions, FileMap, ResolvedCatalog, Target } from '../types';
 
 export interface BuildOptions {
   target: string;
@@ -33,13 +33,12 @@ function filterForTarget(resolved: ResolvedCatalog, name: string): ResolvedCatal
   return { ...resolved, artifacts: filtered, byId: new Map(filtered.map(a => [a.id, a])) };
 }
 
-/** Compiles one target's catalog slice, checks output conformance, and writes it to disk. */
-async function buildOneTarget(
+/** Compiles one target's catalog slice and checks its output against the target's contracts. */
+async function compileTarget(
   target: Target,
   resolved: ResolvedCatalog,
   compileOpts: CompileOptions,
-  outDir: string,
-): Promise<void> {
+): Promise<FileMap> {
   console.log(`\nBuilding target: ${target.name}`);
   const files = await target.compile(filterForTarget(resolved, target.name), compileOpts);
 
@@ -52,8 +51,41 @@ async function buildOneTarget(
     );
   }
 
-  writeFilesSync(files, path.join(outDir, target.name));
+  return files;
+}
+
+/** Compiles every target before anything is written, so a failed target changes nothing on disk. */
+async function compileTargets(
+  targets: Target[],
+  resolved: ResolvedCatalog,
+  compileOpts: CompileOptions,
+): Promise<{ target: Target; files: FileMap }[]> {
+  const compiled: { target: Target; files: FileMap }[] = [];
+  for (const target of targets) {
+    compiled.push({ target, files: await compileTarget(target, resolved, compileOpts) });
+  }
+  return compiled;
+}
+
+/** Replaces a target's folder in outDir with the freshly compiled files. */
+function writeTarget(target: Target, files: FileMap, outDir: string): void {
+  const dir = path.join(outDir, target.name);
+  fs.rmSync(dir, { recursive: true, force: true });
+  writeFilesSync(files, dir);
   console.log(`  ✓ ${Object.keys(files).length} file(s) written to dist/${target.name}/`);
+}
+
+/** Refuses to replace a target folder in an output root that sigil did not build. */
+function assertReplaceable(targets: Target[], outDir: string): void {
+  if (fs.existsSync(path.join(outDir, 'registry.json'))) return;
+  const existing = targets
+    .map(target => path.join(outDir, target.name))
+    .find(dir => fs.existsSync(dir));
+  if (existing === undefined) return;
+  throw new SigilError(
+    `Refusing to replace ${existing}: ${outDir} has no registry.json, so it is not a sigil build output.`,
+    { hint: 'Use an empty --out-dir, or remove the folder first.' },
+  );
 }
 
 /** Writes registry.json alongside the per-target dist directories. */
@@ -94,8 +126,12 @@ export async function runBuild(opts: BuildOptions): Promise<void> {
     marketplace: packsConfig.marketplace,
   };
 
-  for (const target of targets) {
-    await buildOneTarget(target, resolved, compileOpts, opts.outDir);
+  const compiled = await compileTargets(targets, resolved, compileOpts);
+
+  assertReplaceable(targets, opts.outDir);
+
+  for (const { target, files } of compiled) {
+    writeTarget(target, files, opts.outDir);
   }
 
   writeRegistry(resolved, opts.outDir);

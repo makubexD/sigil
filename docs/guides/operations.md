@@ -154,6 +154,10 @@ cat dist/claude/plugins/dotnet-tooling/.claude-plugin/plugin.json               
 node dist-cli/schema/emit.js
 ```
 
+`build` removes and rewrites each target folder it builds, so a plugin or skill dropped from the
+catalog no longer lingers in `dist/`. `npm run build` compiles the CLI and regenerates the schemas; it
+does not touch `dist/`.
+
 To install the Claude output as a plugin, see the plugin section of
 [consuming.md](consuming.md#install-a-pack-as-a-claude-plugin).
 

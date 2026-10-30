@@ -1,13 +1,18 @@
 /**
- * Claude Code `agent` emission spec — one layout shared by both compile (`agents/<name>.md` in
- * the plugin) and scaffold (`.claude/agents/<name>.md`) paths; unlike skill, agent has no
- * variant split. `claude:` namespace hints (model/effort/maxTurns/isolation/skills) are flattened
- * to top-level frontmatter keys, and `disallowedTools` is emitted as a JSON array when present.
+ * Claude Code `agent` emission spec. Two variants share one field-mapping table:
+ *   - 'scaffold' → .claude/agents/<name>.md in a consumer project, where every documented agent
+ *                  field is honoured.
+ *   - 'plugin'   → dist/claude/plugins/<pack>/agents/<name>.md. A Claude plugin silently ignores
+ *                  `permissionMode`, `hooks`, `mcpServers` and `initialPrompt` (see
+ *                  PLUGIN_IGNORED_AGENT_KEYS), so the plugin variant forbids them and the build
+ *                  fails rather than shipping a field that does nothing.
+ * `claude:` namespace hints (model/effort/maxTurns/isolation/skills) are flattened to top-level
+ * frontmatter keys, and `disallowedTools` is emitted as a JSON array when present.
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { yamlList, yamlScalar } from '../../yaml-util';
 import { renderBoundarySection } from '../../shared/boundary';
-import { CLAUDE_AGENTS_DOC } from '../../doc-refs';
+import { CLAUDE_AGENTS_DOC, CLAUDE_PLUGIN_COMPONENTS_DOC } from '../../doc-refs';
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 
@@ -39,8 +44,8 @@ function claudeHintMapping(key: 'model' | 'effort' | 'maxTurns' | 'isolation'): 
  * `claude.skills` — catalog skill ids, emitted as Claude's subagent `skills:` preload list of skill
  * *names*. `validate` rejects an unknown or non-skill id and a preloaded skill whose name isn't its
  * id's last segment (src/refs.ts), so no catalog lookup is needed here.
- * Scaffold names resolve against `.claude/skills/<name>`; skills inside a plugin are namespaced
- * (`<plugin>:<name>`), so only author this on agents whose skill is scaffolded alongside them.
+ * Scaffold names resolve against `.claude/skills/<name>`; bare names also resolve for plugin
+ * agents, probed on Claude Code 2.1.314.
  */
 const claudeSkillsMapping: FieldMapping = {
   from: 'claude.skills',
@@ -94,13 +99,22 @@ const boundarySection: BodySectionSpec = {
   render: (artifact, ctx) => renderBoundarySection(artifact, ctx.installSet, ctx.catalog),
 };
 
+/** Agent frontmatter fields a Claude plugin ignores — CLAUDE_PLUGIN_COMPONENTS_DOC. */
+const PLUGIN_IGNORED_AGENT_KEYS: readonly string[] = [
+  'permissionMode',
+  'hooks',
+  'mcpServers',
+  'initialPrompt',
+];
+
 export const CLAUDE_AGENT_SPEC: KindEmitSpec = {
   kind: 'agent',
+  variant: 'scaffold',
   outputPath: (artifact, ctx) => {
     const name = artifact.frontmatter.name as string;
     return ctx.packName ? `plugins/${ctx.packName}/agents/${name}.md` : `.claude/agents/${name}.md`;
   },
-  pathPattern: /(plugins\/[^/]+|\.claude)\/agents\/.*\.md$/,
+  pathPattern: /\.claude\/agents\/.*\.md$/,
   frontmatter: AGENT_FRONTMATTER,
   emitEmptyFrontmatter: true,
   body: [boundarySection],
@@ -108,4 +122,16 @@ export const CLAUDE_AGENT_SPEC: KindEmitSpec = {
   lexicon: CLAUDE_LEXICON,
   bodyForbids: [UNTRANSLATED_TOKEN_FORBID],
   docs: [CLAUDE_AGENTS_DOC],
+};
+
+/**
+ * Plugin agents: the same layout, plus the plugin-only field guard. .claude/agents/ honours the
+ * four ignored keys, so only this variant forbids them.
+ */
+export const CLAUDE_PLUGIN_AGENT_SPEC: KindEmitSpec = {
+  ...CLAUDE_AGENT_SPEC,
+  variant: 'plugin',
+  pathPattern: /plugins\/[^/]+\/agents\/.*\.md$/,
+  forbiddenKeys: [...CLAUDE_AGENT_SPEC.forbiddenKeys, ...PLUGIN_IGNORED_AGENT_KEYS],
+  docs: [CLAUDE_AGENTS_DOC, CLAUDE_PLUGIN_COMPONENTS_DOC],
 };

@@ -261,11 +261,11 @@ export const CLAUDE_PLUGIN_MANIFEST_DOC: DocRef = {
 export const CLAUDE_PLUGIN_COMPONENTS_DOC: DocRef = {
   url: 'https://code.claude.com/docs/en/plugins/components',
   title: 'Claude Code — Plugin components',
-  verifiedOn: '2026-10-03',
+  verifiedOn: '2026-10-30',
   covers:
-    'Plugins do not load a CLAUDE.md at the plugin root ("To include instructions in a plugin, ' +
-    'write them as a skill") and a plugin settings.json applies only `agent` and ' +
-    '`subagentStatusLine` — why the plugin channel inlines rules into skills and carries no settings.',
+    'Plugins load no root CLAUDE.md ("write them as a skill"), settings.json applies only `agent` and ' +
+    '`subagentStatusLine`, and agents ignore permissionMode, hooks, mcpServers and initialPrompt — ' +
+    'why rules inline into skills, no settings ship, and CLAUDE_PLUGIN_AGENT_SPEC forbids those keys.',
 };
 
 /** `marketplace.json` — the distribution catalog listing plugins, a distinct file and page from plugin.json. */

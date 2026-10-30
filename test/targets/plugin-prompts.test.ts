@@ -203,4 +203,70 @@ describe('Claude plugin: prompts as skills', () => {
       'the prompt is emitted once, with no collision error',
     );
   });
+
+  it('should emit a language prompt under its plain basename', async () => {
+    const { resolved } = await compileBundled();
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(withPrompt(resolved, 'csharp/cs-deploy'), {
+      version: VERSION,
+      packs: [packOf('lang', ['csharp/cs-deploy'])],
+    });
+
+    const f = files['plugins/lang/skills/cs-deploy/SKILL.md'];
+    assert.ok(f, 'the language prompt lands under its basename');
+    assert.ok(f.includes('name: cs-deploy'), 'name is the plain basename');
+  });
+
+  it('should not stutter the language into the plugin slug', async () => {
+    const { resolved } = await compileBundled();
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(withPrompt(resolved, 'csharp/cs-deploy'), {
+      version: VERSION,
+      packs: [packOf('lang', ['csharp/cs-deploy'])],
+    });
+
+    assert.ok(
+      !Object.keys(files).some(key => key.includes('csharp-cs-deploy')),
+      'no compiled key keeps the csharp-cs-deploy name',
+    );
+  });
+
+  it('should reject two prompts that share a basename', async () => {
+    const { resolved } = await compileBundled();
+    const withBoth = withPrompt(withPrompt(resolved, 'csharp/cs-deploy'), 'shared/cs-deploy');
+    const target = new ClaudeCodeTarget();
+
+    await assert.rejects(
+      target.compile(withBoth, {
+        version: VERSION,
+        packs: [packOf('basenames', ['csharp/cs-deploy', 'shared/cs-deploy'])],
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof SigilError, 'rejects with a SigilError');
+        assert.match(error.message, /^plugin 'basenames':/);
+        assert.ok(error.message.includes('csharp/cs-deploy'), 'names the language prompt');
+        assert.ok(error.message.includes('shared/cs-deploy'), 'names the shared prompt');
+        assert.ok(
+          error.message.includes('plugins/basenames/skills/cs-deploy/SKILL.md'),
+          'names the colliding path',
+        );
+        return true;
+      },
+    );
+  });
+
+  it('should keep the scaffold id for a language prompt', async () => {
+    const { resolved } = await compileBundled();
+    const target = new ClaudeCodeTarget();
+    const files = await target.scaffold!(
+      'csharp/cs-deploy',
+      withPrompt(resolved, 'csharp/cs-deploy'),
+      { projectDir: '/fake' },
+    );
+
+    assert.ok(
+      '.claude/skills/csharp-cs-deploy/SKILL.md' in files,
+      'the scaffold has no namespace, so it keeps the full id',
+    );
+  });
 });

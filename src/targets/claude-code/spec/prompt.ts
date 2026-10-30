@@ -5,9 +5,10 @@
  *                  (see spec/workflow.ts), which shares this exact user-invoked-skill shape plus
  *                  a "## Steps" body section.
  *   - 'plugin'   → dist/claude/plugins/<pack>/skills/<slug>/SKILL.md. A plugin skill's command is
- *                  `/<pack>:<name>`, so the leading `shared/` is dropped: `shared/explain-diff`
- *                  becomes `/essentials:explain-diff`. A language prompt keeps its language
- *                  (`csharp/deploy` → `csharp-deploy`), which stays unique under the pack prefix.
+ *                  `/<pack>:<name>`, so the slug is the id's last segment: `shared/explain-diff`
+ *                  becomes `/essentials:explain-diff`, `csharp/cs-deploy` becomes
+ *                  `/<pack>:cs-deploy`. The pack namespace does the rest; two members with one
+ *                  name fail `writeMemberFiles`.
  *
  * `{{name}}` catalog placeholders translate to `$name` in both variants, resolved via the
  * `arguments:` frontmatter list Claude Code maps by position.
@@ -35,22 +36,24 @@ import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-typ
 import { yamlScalar } from '../../yaml-util';
 import { toClaudePlaceholders, buildArgumentHint, type PromptArg } from '../../prompt-args';
 import { CLAUDE_SKILLS_DOC } from '../../doc-refs';
+import { basenameOfId } from '../../../paths';
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 
 /** Same id -> slug rule the old `.claude/commands/<slug>.md` path used (full id, `/` -> `-`) —
- * kept identical to preserve cross-language uniqueness. `basenameOfId` alone is NOT safe here:
- * two artifacts named `deploy` in different language prefixes would collide on both the `name:`
- * value and the skill directory. */
+ * kept identical to preserve cross-language uniqueness. The scaffold has no pack namespace and no
+ * collision guard, so `basenameOfId` alone is NOT safe here: two artifacts named `deploy` in
+ * different language prefixes would collide on both the `name:` value and the skill directory. */
 function slugOf(id: string): string {
   return id.replace(/\//g, '-');
 }
 
-/** Plugin variant: a plugin skill's command is `/<pack>:<name>`, so the `shared/` prefix is
- * redundant there. Dropping only that prefix keeps a language prompt's language
- * (`csharp/deploy` → `csharp-deploy`), and the pack namespace does the rest. */
+/** Plugin variant: a plugin skill's command is `/<pack>:<name>`, so the id's last segment is the
+ * whole name — `shared/` is redundant there, and a language prefix would only stutter
+ * (`csharp/cs-deploy` → `cs-deploy`). The pack namespace does the rest, and two members with one
+ * name fail `writeMemberFiles`. */
 function pluginSlugOf(id: string): string {
-  return id.replace(/^shared\//, '').replace(/\//g, '-');
+  return basenameOfId(id);
 }
 
 /** `name:` derives from the artifact id's slug — prompt/workflow frontmatter carries no `name`

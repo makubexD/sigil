@@ -11,6 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `sigil build` replaces `dist/<target>/` instead of adding to it, so plugins removed from the catalog
   no longer linger in the output. It refuses to replace a target folder it did not build.
+- `sigil build` fails when a Claude plugin agent would carry a field plugins ignore
+  (`permissionMode`, `hooks`, `mcpServers`, `initialPrompt`).
 
 ## [0.2.1] - 2026-10-30
 

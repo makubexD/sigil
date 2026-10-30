@@ -24,8 +24,6 @@ Standing procedure: RED first, `npm run ci:local` green, merge on green CI. Clos
   nothing for a language or a group. `sigil cost` (ADR Phase 1b) does not exist.
 - The Claude docs now offer plugin `dependencies`, `userConfig`, `hooks/hooks.json`, `.mcp.json` at the plugin root, and
   `${user_config.KEY}` in MCP config and exec-form hook args.
-- **Not confirmed in the current docs:** the ADR's claim that plugin agents ignore `hooks`, `mcpServers` and
-  `permissionMode`. Phase A checks it first.
 
 ### "Family" means two things
 
@@ -36,7 +34,7 @@ meant topic groups, and those have no definition in the catalog yet. Phase D set
 
 ## Phases
 
-### Phase A: plugin-agent field guard
+### Phase A: plugin-agent field guard — done 2026-10-30
 
 Small and independent, so it goes first. Confirm the restriction from the current docs or a live probe, and record
 what was found. No catalog agent sets these fields today, so the guard protects future authoring: the Claude plugin

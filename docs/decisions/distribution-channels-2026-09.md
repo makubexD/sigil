@@ -104,15 +104,15 @@ Conclusions:
 
 ## 3. What a plugin can carry, per ecosystem
 
-| sigil kind | Claude plugin                                      | Copilot plugin (CLI + VS Code)                            | Codex plugin                       | Cursor plugin    | Gemini extension             |
-| ---------- | -------------------------------------------------- | --------------------------------------------------------- | ---------------------------------- | ---------------- | ---------------------------- |
-| skill      | ✅                                                 | ✅                                                        | ✅                                 | ✅               | ✅                           |
-| agent      | ✅ (ignores `hooks`/`mcpServers`/`permissionMode`) | ✅                                                        | ❌ (native `.codex/agents/*.toml`) | ✅               | ✅ (preview)                 |
-| prompt     | ✅ as skill / command                              | ⚠ "commands", not `.prompt.md`                            | ❌ (prompts deprecated → skills)   | ✅               | ✅ `commands/*.toml`         |
-| hook       | ✅                                                 | ✅ (VS Code ignores matchers)                             | ✅                                 | ✅               | ✅                           |
-| mcp        | ✅                                                 | ✅                                                        | ✅                                 | ✅               | ✅                           |
-| rule       | ❌ (write it as a skill)                           | ⚠ AP1.0 `com.github.copilot/rules/` — format undocumented | ❌                                 | ✅ `rules/*.mdc` | ⚠ one always-on context file |
-| settings   | ❌ (only `agent`, `subagentStatusLine`)            | ❌                                                        | ❌                                 | ❌               | ⚠ env vars / tool excludes   |
+| sigil kind | Claude plugin                                                      | Copilot plugin (CLI + VS Code)                            | Codex plugin                       | Cursor plugin    | Gemini extension             |
+| ---------- | ------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------------- | ---------------- | ---------------------------- |
+| skill      | ✅                                                                 | ✅                                                        | ✅                                 | ✅               | ✅                           |
+| agent      | ✅ (ignores `hooks`/`mcpServers`/`permissionMode`/`initialPrompt`) | ✅                                                        | ❌ (native `.codex/agents/*.toml`) | ✅               | ✅ (preview)                 |
+| prompt     | ✅ as skill / command                                              | ⚠ "commands", not `.prompt.md`                            | ❌ (prompts deprecated → skills)   | ✅               | ✅ `commands/*.toml`         |
+| hook       | ✅                                                                 | ✅ (VS Code ignores matchers)                             | ✅                                 | ✅               | ✅                           |
+| mcp        | ✅                                                                 | ✅                                                        | ✅                                 | ✅               | ✅                           |
+| rule       | ❌ (write it as a skill)                                           | ⚠ AP1.0 `com.github.copilot/rules/` — format undocumented | ❌                                 | ✅ `rules/*.mdc` | ⚠ one always-on context file |
+| settings   | ❌ (only `agent`, `subagentStatusLine`)                            | ❌                                                        | ❌                                 | ❌               | ⚠ env vars / tool excludes   |
 
 Sources: [Claude — plugin manifest reference](https://code.claude.com/docs/en/plugins/manifest-reference),
 [GitHub — CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference),
@@ -206,7 +206,9 @@ interface TargetCapabilities {
 
 "No empty plugins" (Phase 0) is done as of 2026-10-30
 ([publish-claude-marketplace-2026-10](publish-claude-marketplace-2026-10.md#empty-plugins)), and
-`build` cleaning `dist/<target>/` before it writes is done as of 2026-10-30.
+`build` cleaning `dist/<target>/` before it writes is done as of 2026-10-30. Phase 1's plugin-agent
+field guard is done as of 2026-10-30: `build` fails when a plugin agent would carry a field Claude
+plugins ignore.
 
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,

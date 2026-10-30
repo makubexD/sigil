@@ -27,7 +27,7 @@ audit of `master`, passed on 2026-10-13 ([audit](../audits/2026-10-13/README.md)
 
 ## Out of scope
 
-- Marketplace publishing ([publish-claude-marketplace](publish-claude-marketplace.md)).
+- Marketplace publishing ([shipped](../decisions/publish-claude-marketplace-2026-10.md)).
 - Changing the release workflow beyond what the first publish needs.
 - Renaming the CLI binary.
 

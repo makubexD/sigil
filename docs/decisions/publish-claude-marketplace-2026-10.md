@@ -1,9 +1,8 @@
 # Publish the Claude marketplace from CI (2026-10)
 
-Status: in progress on `feat/publish-claude-marketplace` (`docs/plan-publish-claude-marketplace.md`). Started from
-`docs/ideas/publish-claude-marketplace.md` and ADR
-[distribution-channels-2026-09](distribution-channels-2026-09.md) § 6, Phase 0 (deterministic output) and Phase 2
-(publish + CI sync gate).
+Status: shipped on `feat/publish-claude-marketplace`; the owner's clean-machine install check after the first release
+is still open. ADR [distribution-channels-2026-09](distribution-channels-2026-09.md) § 6, Phase 0 (deterministic
+output) and Phase 2 (publish + CI sync gate). The brief it started from was deleted once this record covered it.
 
 ## Determinism
 

@@ -25,6 +25,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Each release now publishes the Claude plugin marketplace to the orphan `marketplace`
+  branch: `/plugin marketplace add makubexD/sigil#marketplace`, pinned with
+  `#marketplace-v<version>` for a fixed release
+  ([guide](docs/setup/claude-code.md)). A `Marketplace drift` workflow and
+  `npm run marketplace:check` fail when that branch differs from a fresh build of the latest
+  release, and a test guards byte-identical `--target claude` builds across processes, time zones
+  and locales.
 - `packs.yaml` takes an optional top-level `marketplace:` block (`name`, `owner`, `description`,
   `author`, `license`, `homepage`) that `sigil build --target claude` writes into
   `marketplace.json` and every `plugin.json`, so a fork no longer ships as `sigil` and can be added

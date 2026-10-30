@@ -36,7 +36,7 @@ describe('emit-files', () => {
     const claude = getAllTargets().find(t => t.name === 'claude')!;
     assert.equal(specFor(claude.emitSpecs!, 'skill', 'plugin')?.variant, 'plugin');
     assert.equal(specFor(claude.emitSpecs!, 'skill', 'scaffold')?.variant, 'scaffold');
-    assert.equal(specFor(claude.emitSpecs!, 'agent', 'plugin')?.variant, undefined);
+    assert.equal(specFor(claude.emitSpecs!, 'workflow', 'plugin')?.variant, undefined);
     assert.equal(specFor(claude.emitSpecs!, 'mcp', 'scaffold'), undefined);
   });
 

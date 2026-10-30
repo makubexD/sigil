@@ -6,7 +6,9 @@ import assert from 'node:assert/strict';
 
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { checkOutputContract } from '../../dist-cli/targets/output-contract';
+import { specFor } from '../../dist-cli/targets/emit-files';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
+import { CLAUDE_EMIT_SPECS } from '../../dist-cli/targets/claude-code/spec';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
 import { loadBundledCatalog } from '../helpers/catalog';
 
@@ -217,5 +219,69 @@ describe('checkOutputContract — red paths (violations detected)', () => {
     };
     const violations = checkOutputContract(irrelevantFiles, target.outputContracts ?? []);
     assert.deepEqual(violations, [], 'aggregate files should not trigger false violations');
+  });
+});
+
+describe('Claude plugin agent field guard', () => {
+  // Claude Code plugins ignore these agent frontmatter fields (plugins/components).
+  const PLUGIN_IGNORED_KEYS = ['permissionMode', 'hooks', 'mcpServers', 'initialPrompt'];
+  const agentFile = (key = '') => `---\nname: a\ndescription: d\n${key}---\n\nBody.\n`;
+  const contracts = new ClaudeCodeTarget().outputContracts;
+
+  for (const key of PLUGIN_IGNORED_KEYS) {
+    it(`plugin agents refuse '${key}'`, () => {
+      const violations = checkOutputContract(
+        { 'plugins/p/agents/a.md': agentFile(`${key}: x\n`) },
+        contracts,
+      );
+      assert.equal(
+        violations.length,
+        1,
+        `expected one violation for '${key}' — got: ${JSON.stringify(violations)}`,
+      );
+      assert.equal(violations[0]!.label, 'agent (plugin)');
+      assert.ok(
+        violations[0]!.problem.includes(`'${key}'`),
+        `violation message should name '${key}' — got: ${violations[0]!.problem}`,
+      );
+    });
+  }
+
+  it('scaffold agents keep the plugin-ignored keys', () => {
+    const violations = checkOutputContract(
+      { '.claude/agents/a.md': agentFile('permissionMode: plan\n') },
+      contracts,
+    );
+    assert.deepEqual(violations, [], 'scaffolded agents honour permissionMode');
+  });
+
+  it('a clean plugin agent passes', () => {
+    const violations = checkOutputContract({ 'plugins/p/agents/a.md': agentFile() }, contracts);
+    assert.deepEqual(violations, []);
+  });
+
+  it('existing keys stay forbidden for plugin agents', () => {
+    const violations = checkOutputContract(
+      { 'plugins/p/agents/a.md': agentFile('paths: x\n') },
+      contracts,
+    );
+    assert.equal(
+      violations.length,
+      1,
+      `expected one violation — got: ${JSON.stringify(violations)}`,
+    );
+    assert.ok(
+      violations[0]!.problem.includes("'paths'"),
+      `violation message should mention 'paths' — got: ${violations[0]!.problem}`,
+    );
+  });
+
+  it('each channel gets its own agent spec', () => {
+    const pluginSpec = specFor(CLAUDE_EMIT_SPECS, 'agent', 'plugin');
+    const scaffoldSpec = specFor(CLAUDE_EMIT_SPECS, 'agent', 'scaffold');
+    assert.ok(pluginSpec, 'a plugin agent spec must exist');
+    assert.ok(scaffoldSpec, 'a scaffold agent spec must exist');
+    assert.equal(pluginSpec.variant, 'plugin');
+    assert.equal(scaffoldSpec.variant, 'scaffold');
   });
 });

@@ -127,6 +127,23 @@ job's permissions stay unchanged.
 Test: `npx prettier --check .github/workflows/release.yml`, plus `actionlint` if installed. The real run is checked in
 step 9.
 
+### 6b. Split the release gate from npm publish `[worker:medium]`
+
+Added 2026-10-30 after review: step 6's `needs: publish` tied the marketplace to `npm publish`, which comes last (it
+needs npm Trusted Publishing set up first). The owner approved the split.
+
+File: `.github/workflows/release.yml`.
+
+Change: three jobs. `gate` holds the existing checkout, setup-node, `npm ci`, Claude Code CLI install and
+`npm run ci:local` steps (with their comments). `publish` gets `needs: gate`, and runs checkout, setup-node with
+`registry-url`, `npm ci`, and the existing npm publish step and comment block (`prepack` builds). `marketplace` gets
+`needs: gate` instead of `needs: publish`. Top-level permissions become `contents: read` only. `id-token: write` moves
+to the `publish` job together with `contents: read`, and `marketplace` keeps `contents: write`. Update the marketplace
+comment ("runs after the npm publish succeeds" becomes "runs after the gate passes, independent of npm publish").
+
+Test: prettier check; a YAML parse asserting `gate` has no `needs`, `publish.needs == gate`, `marketplace.needs == gate`,
+top-level permissions has no `id-token`, and `publish.permissions['id-token'] == 'write'`.
+
 ### 7. Drift gate job `[worker:medium]`
 
 File: `.github/workflows/marketplace-drift.yml` (new).

@@ -12,7 +12,8 @@ import { resolveCatalog } from '../../dist-cli/resolve';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { specFor } from '../../dist-cli/targets/emit-files';
 import { CLAUDE_EMIT_SPECS } from '../../dist-cli/targets/claude-code/spec';
-import type { FileMap, ResolvedCatalog } from '../../dist-cli/types';
+import { SigilError } from '../../dist-cli/errors';
+import type { FileMap, Pack, ResolvedCatalog } from '../../dist-cli/types';
 import { loadBundledCatalog } from '../helpers/catalog';
 import { PACKS as BUNDLED_PACKS } from '../helpers/install-scenario';
 
@@ -37,6 +38,25 @@ function pluginKeys(files: FileMap, packName: string): string[] {
 function marketplaceNames(files: FileMap): string[] {
   const marketplace = JSON.parse(files['.claude-plugin/marketplace.json']!);
   return marketplace.plugins.map((entry: { name: string }) => entry.name);
+}
+
+/** A pack made of explicit catalog ids, so a test names exactly what it holds. */
+function packOf(name: string, artifacts: string[]): Pack {
+  return { name, displayName: name, description: `The ${name} pack.`, artifacts };
+}
+
+/** The resolved catalog with `shared/explain-diff` cloned under `id`, as a prompt. */
+function withPrompt(resolved: ResolvedCatalog, id: string): ResolvedCatalog {
+  const base = resolved.byId.get('shared/explain-diff');
+  assert.ok(base, 'shared/explain-diff is in the bundled catalog');
+  const clone = structuredClone(base);
+  clone.id = id;
+  clone.frontmatter.id = id;
+  return {
+    ...resolved,
+    artifacts: [...resolved.artifacts, clone],
+    byId: new Map(resolved.byId).set(id, clone),
+  };
 }
 
 const EXPLAIN_DIFF = 'plugins/essentials/skills/explain-diff/SKILL.md';
@@ -142,6 +162,45 @@ describe('Claude plugin: prompts as skills', () => {
       specFor(CLAUDE_EMIT_SPECS, 'prompt', 'scaffold')?.variant,
       'scaffold',
       'the scaffold channel resolves a scaffold-variant prompt spec',
+    );
+  });
+
+  it('should reject a prompt that collides with a skill', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = withPrompt(resolveCatalog(catalog), 'shared/cs-generate-tests');
+    const target = new ClaudeCodeTarget();
+
+    await assert.rejects(
+      target.compile(resolved, {
+        version: VERSION,
+        packs: [packOf('collide', ['shared/cs-generate-tests', 'csharp/cs-generate-tests'])],
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof SigilError, 'rejects with a SigilError');
+        assert.match(error.message, /^plugin 'collide':/);
+        assert.ok(error.message.includes('shared/cs-generate-tests'), 'names the prompt id');
+        assert.ok(error.message.includes('csharp/cs-generate-tests'), 'names the skill id');
+        assert.ok(
+          error.message.includes('plugins/collide/skills/cs-generate-tests/SKILL.md'),
+          'names the colliding path',
+        );
+        return true;
+      },
+    );
+  });
+
+  it('should accept the same id listed twice', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(resolved, {
+      version: VERSION,
+      packs: [packOf('twice', ['shared/explain-diff', 'shared/explain-diff'])],
+    });
+
+    assert.ok(
+      'plugins/twice/skills/explain-diff/SKILL.md' in files,
+      'the prompt is emitted once, with no collision error',
     );
   });
 });

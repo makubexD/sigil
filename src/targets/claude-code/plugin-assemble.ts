@@ -12,6 +12,7 @@ import type {
   MarketplaceIdentity,
 } from '../../types';
 import { JSON_INDENT } from '../../json-util';
+import { SigilError } from '../../errors';
 import { CLAUDE_EMIT_SPECS } from './spec';
 import { emitFile, specFor } from '../emit-files';
 import type { EmitContext } from '../spec-types';
@@ -113,15 +114,29 @@ function computeSharedAgentIds(
  * through their plugin-channel specs (src/targets/emit-files.ts). Skills inline their rules: a
  * plugin can't ship loose rule files. `ctx` carries the pack name (paths under `plugins/<pack>/`)
  * and the pack's install set, which drives each file's conditional Boundary section.
+ *
+ * Two different members whose spec resolves to the same output path fail the build: a plugin
+ * skill folder has no per-kind namespace, so a skill and a prompt named alike would silently
+ * overwrite each other. The same artifact id written twice stays legal: a pack may list one twice.
  */
 function writeMemberFiles(
   members: readonly ResolvedArtifact[],
   ctx: EmitContext,
   files: FileMap,
 ): void {
+  const writtenBy = new Map<string, string>();
   for (const artifact of members) {
     const spec = specFor(CLAUDE_EMIT_SPECS, artifact.kind, 'plugin');
-    if (spec) emitFile(spec, artifact, ctx, files);
+    if (!spec) continue;
+    const filePath = spec.outputPath(artifact, ctx);
+    const otherId = writtenBy.get(filePath);
+    if (otherId !== undefined && otherId !== artifact.id) {
+      throw new SigilError(
+        `plugin '${ctx.packName}': ${artifact.id} and ${otherId} both write ${filePath}`,
+      );
+    }
+    writtenBy.set(filePath, artifact.id);
+    emitFile(spec, artifact, ctx, files);
   }
 }
 

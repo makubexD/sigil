@@ -1,0 +1,73 @@
+# Drift gate for the published Claude marketplace.
+#
+# After every successful Release (and on demand) this checks that the `marketplace` branch equals
+# a fresh `--target claude` build of the latest `v*.*.*` tag. A difference means the branch was
+# edited by hand, or a publish was partial or failed. Unreleased changes on `master` are not
+# drift: the comparison is always against a tag build, never against the default branch.
+# Node is pinned to the release workflow's version so the drift build matches the published one.
+# See docs/decisions/publish-claude-marketplace-2026-10.md.
+
+name: Marketplace drift
+
+on:
+  workflow_run:
+    workflows: [Release]
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+
+      - name: Resolve the latest release and the marketplace branch
+        id: resolve
+        run: |
+          set -euo pipefail
+
+          TAG=$(git tag --list "v*.*.*" --sort=-v:refname | head -n1)
+          if [ -z "$TAG" ]; then
+            echo "::notice::no release tag yet; nothing to check"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if ! git ls-remote --exit-code --heads origin marketplace; then
+            echo "::notice::no marketplace branch yet; nothing to check"
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git fetch origin marketplace:refs/remotes/origin/marketplace
+          git checkout --quiet "$TAG"
+          git worktree add --detach "$RUNNER_TEMP/branch" origin/marketplace
+
+          echo "skip=false" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Checking marketplace against $TAG"
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        if: steps.resolve.outputs.skip != 'true'
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        if: steps.resolve.outputs.skip != 'true'
+        run: npm ci
+
+      - name: Build
+        if: steps.resolve.outputs.skip != 'true'
+        run: npm run build
+
+      - name: Compare the marketplace branch with a fresh build
+        if: steps.resolve.outputs.skip != 'true'
+        run: npm run marketplace:check -- "$RUNNER_TEMP/branch"

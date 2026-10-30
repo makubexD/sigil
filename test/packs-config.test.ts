@@ -8,22 +8,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { parsePacksConfig } from '../dist-cli/packs-config';
 import { SigilError } from '../dist-cli/errors';
-import type { PacksConfig } from '../dist-cli/types';
 import { PACKS } from './helpers/install-scenario';
 
 const pack = (name: string) =>
   `packs:\n  - name: "${name}"\n    displayName: P\n    description: A pack.\n    languages: [csharp]\n`;
-
-/** The marketplace block is not on `PacksConfig` yet (plan step 2 adds it); the cast keeps this
- *  suite compiling so the cases fail on the parsed value, not on a type error. */
-type MarketplaceShape = {
-  name?: string;
-  owner?: { name?: string; url?: string; email?: string };
-  description?: string;
-  author?: { name?: string; url?: string; email?: string };
-  license?: string;
-  homepage?: string;
-};
 
 /** A packs file with one pack and a top-level marketplace block made of `lines` (unindented). */
 const marketplaceConfig = (lines: string[]): string =>
@@ -53,17 +41,13 @@ describe('parsePacksConfig', () => {
   });
 
   it('should parse the bundled packs.yaml with no marketplace block', () => {
-    const config = parsePacksConfig(fs.readFileSync(PACKS, 'utf8'), PACKS) as PacksConfig & {
-      marketplace?: MarketplaceShape;
-    };
+    const config = parsePacksConfig(fs.readFileSync(PACKS, 'utf8'), PACKS);
     assert.equal(config.marketplace, undefined);
   });
 
   it('should parse a marketplace block and round-trip its fields', () => {
     const raw = marketplaceConfig(['name: acme-ai', 'owner:', '  name: Acme']);
-    const config = parsePacksConfig(raw, 'packs.yaml') as PacksConfig & {
-      marketplace?: MarketplaceShape;
-    };
+    const config = parsePacksConfig(raw, 'packs.yaml');
     assert.equal(config.marketplace?.name, 'acme-ai');
     assert.deepEqual(config.marketplace?.owner, { name: 'Acme' });
   });

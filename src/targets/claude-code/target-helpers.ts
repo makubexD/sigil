@@ -13,6 +13,7 @@ import type {
   ConfigKind,
   ConfigScopeDestination,
   MarketplaceIdentity,
+  Pack,
 } from '../../types';
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
@@ -113,8 +114,8 @@ export interface PluginEntry {
   source: string;
 }
 
-/** Builds one pack's marketplace.json entry. */
-function buildPluginEntry(pack: CompileOptions['packs'][number]): PluginEntry {
+/** Builds one pack's marketplace.json entry (a generated config plugin reuses this with a synthetic pack). */
+export function buildPluginEntry(pack: Pack): PluginEntry {
   return {
     name: pack.name,
     displayName: pack.displayName,

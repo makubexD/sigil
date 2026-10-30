@@ -18,7 +18,9 @@ import {
 export const CLAUDE_AGGREGATE_DOCS: readonly SourcedDocRef[] = [
   { source: 'claude-directory aggregate', doc: CLAUDE_DIRECTORY_DOC },
   { source: 'claude .mcp.json aggregate', doc: CLAUDE_MCP_DOC },
+  { source: 'claude plugin .mcp.json aggregate', doc: CLAUDE_MCP_DOC },
   { source: 'claude .claude/settings.json hooks aggregate', doc: CLAUDE_HOOKS_DOC },
+  { source: 'claude plugin hooks/hooks.json aggregate', doc: CLAUDE_HOOKS_DOC },
   { source: 'claude .claude/settings.json aggregate', doc: CLAUDE_SETTINGS_DOC },
   { source: 'claude plugin.json aggregate', doc: CLAUDE_PLUGIN_MANIFEST_DOC },
   { source: 'claude marketplace.json aggregate', doc: CLAUDE_PLUGIN_MARKETPLACES_DOC },

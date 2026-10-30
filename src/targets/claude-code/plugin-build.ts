@@ -5,6 +5,16 @@
  * loose rule files.
  */
 import type { ResolvedCatalog, ResolvedArtifact, Pack } from '../../types';
+import { basenameOfId } from '../../paths';
+
+/**
+ * The generated plugin name for a config-kind artifact: `hook-<basename>` or `mcp-<basename>`
+ * (`shared/protect-config` → `hook-protect-config`). Lives here, not in plugin-config.ts, because
+ * plugin-assemble.ts needs the same name and plugin-config.ts already imports that module.
+ */
+export function configPluginName(artifact: Pick<ResolvedArtifact, 'id' | 'kind'>): string {
+  return `${artifact.kind}-${basenameOfId(artifact.id)}`;
+}
 
 /**
  * Select the artifacts that belong to a pack.

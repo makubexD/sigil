@@ -52,9 +52,11 @@ describe('target capabilities — behaviour preserved from the hand-listed kinds
     );
   });
 
-  it('should emit only skill, agent, workflow and prompt as claude plugin members', () => {
+  it('should emit skill, agent, workflow, prompt, hook and mcp as claude plugin members', () => {
     assert.deepEqual(sorted(nativeKinds(CLAUDE, 'plugin')), [
       'agent',
+      'hook',
+      'mcp',
       'prompt',
       'skill',
       'workflow',
@@ -64,6 +66,8 @@ describe('target capabilities — behaviour preserved from the hand-listed kinds
   it('should count rules as delivered to plugins, inlined into skills rather than as members', () => {
     assert.deepEqual(sorted(supportedKinds(CLAUDE, 'plugin')), [
       'agent',
+      'hook',
+      'mcp',
       'prompt',
       'rule',
       'skill',

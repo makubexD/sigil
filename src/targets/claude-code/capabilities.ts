@@ -8,10 +8,6 @@
 import { TEMPLATE_NOT_EMITTED, type TargetCapabilities } from '../capability-types';
 import { CLAUDE_PLUGIN_COMPONENTS_DOC } from '../doc-refs';
 
-/** Shown for kinds sigil could package as plugins but doesn't yet (distribution ADR, Phase 0/1). */
-const NOT_YET_PACKAGED =
-  'sigil does not package this kind into plugins yet — install it with `sigil add`';
-
 export const CLAUDE_CAPABILITIES: TargetCapabilities = {
   scaffold: {
     skill: { mode: 'native' },
@@ -30,8 +26,8 @@ export const CLAUDE_CAPABILITIES: TargetCapabilities = {
     workflow: { mode: 'native' },
     rule: { mode: 'via', as: 'inline', docs: [CLAUDE_PLUGIN_COMPONENTS_DOC] },
     prompt: { mode: 'native' },
-    hook: { mode: 'none', reason: NOT_YET_PACKAGED },
-    mcp: { mode: 'none', reason: NOT_YET_PACKAGED },
+    hook: { mode: 'native' },
+    mcp: { mode: 'native' },
     settings: {
       mode: 'none',
       reason: 'a plugin settings.json applies only `agent` and `subagentStatusLine`',

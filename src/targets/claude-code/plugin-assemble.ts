@@ -158,15 +158,18 @@ export interface BuildPluginOptions {
 }
 
 /**
- * Kinds this assembler has a writer for. This lists implementation coverage, not support — support
- * is CLAUDE_CAPABILITIES' plugin channel; test/targets/capabilities.test.ts asserts every native
- * plugin kind appears here, so a capability row flip fails `npm test`, not a release build.
+ * Kinds the plugin channel has a writer for — these four here, `hook` and `mcp` in plugin-config.ts
+ * (one generated plugin per artifact). This lists implementation coverage, not support — support is
+ * CLAUDE_CAPABILITIES' plugin channel; test/targets/capabilities.test.ts asserts every native plugin
+ * kind appears here, so a capability row flip fails `npm test`, not a release build.
  */
 export const WRITABLE_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'skill',
   'agent',
   'workflow',
   'prompt',
+  'hook',
+  'mcp',
 ]);
 
 /**

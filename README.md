@@ -83,10 +83,6 @@ branch of this repository. In Claude Code:
 /plugin install spec-driven@sigil
 ```
 
-> **First publish pending.** The `marketplace` branch appears with the next Sigil release; until
-> then the add command cannot find it. Use the local build in
-> [consuming.md](docs/guides/consuming.md#install-a-pack-as-a-claude-plugin) meanwhile.
-
 Each pack in [`packs.yaml`](packs.yaml) is one plugin. To stay on one release, add
 `makubexD/sigil#marketplace-v<version>` instead. Plugins carry skills and agents. Rules ride inside
 the skills, and MCP servers, hooks and settings still need `sigil add`. Setup, updates and removal:

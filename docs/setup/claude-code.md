@@ -30,14 +30,16 @@ Each pack in [`packs.yaml`](../../packs.yaml) is one plugin with the same name:
 /plugin install typescript-starter@sigil
 ```
 
-A pack whose artifacts are all MCP servers, hooks or prompts, such as `essentials`, has no plugin
-yet: plugins can't carry those kinds. Install it with `sigil add` instead.
+A pack whose artifacts are all MCP servers or hooks has no plugin yet: plugins can't carry those
+kinds. Install it with `sigil add` instead. `essentials` has a plugin that carries only its two
+commands, `/essentials:explain-diff` and `/essentials:author-artifact`, so its MCP server and hooks
+still need `sigil add`.
 
 Browse the full list on the **Discover** tab of `/plugin`, or in the published
 `.claude-plugin/marketplace.json`. Plugins load in the next session, or after `/reload-plugins`.
 
-**What a plugin carries.** Skills and agents. Each rule a skill uses is inlined into that skill.
-MCP servers, hooks, settings and prompts are not packaged into plugins. Install those with
+**What a plugin carries.** Skills, agents, workflows and prompts. Each rule a skill uses is inlined
+into that skill. MCP servers, hooks and settings are not packaged into plugins. Install those with
 [`sigil add`](../guides/consuming.md), which also suits you better when you want files you can read
 and edit in your project. The per-kind table is in [capabilities.md](../reference/capabilities.md).
 

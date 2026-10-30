@@ -494,20 +494,21 @@ sigil build --target claude
 ```
 
 The marketplace is named `sigil`, and each pack in `packs.yaml` becomes a plugin of the same name,
-for example `dotnet-starter`, `dotnet-tooling`, `python-starter`, `react-starter`,
+for example `essentials`, `dotnet-starter`, `dotnet-tooling`, `python-starter`, `react-starter`,
 `typescript-starter`, `typescript-tooling`, `angular-starter`, `angular-tooling`, `python-tooling`,
 `react-tooling`, `spec-driven`, and `cli-builder`.
 `dist/claude/.claude-plugin/marketplace.json` lists them all. Without `--target`, `sigil build` builds
 **both** targets (`dist/claude/` and `dist/copilot/`).
 
-A pack whose artifacts are all MCP servers, hooks or prompts, such as `essentials`, has no plugin
-yet: plugins can't carry those kinds ([capabilities.md](../reference/capabilities.md#plugin)).
-Install it with `sigil add` instead.
+A pack whose artifacts are all MCP servers or hooks has no plugin yet: plugins can't carry those
+kinds ([capabilities.md](../reference/capabilities.md#plugin)). Install it with `sigil add`
+instead. `essentials` has a plugin that carries only its two commands, `/essentials:explain-diff` and
+`/essentials:author-artifact`, so its MCP server and hooks still need `sigil add`.
 
-**What a plugin carries.** Skills, agents, and workflows. Rules cannot ride in a plugin as loose
-files, so each rule a skill uses is **inlined** into that skill's `SKILL.md` under `## Applied Rules`.
-MCP servers, hooks, settings, and prompts are not packaged into plugins yet; install those with
-`sigil add`. The per-kind table is in [capabilities.md](../reference/capabilities.md).
+**What a plugin carries.** Skills, agents, workflows, and prompts. Rules cannot ride in a plugin as
+loose files, so each rule a skill uses is **inlined** into that skill's `SKILL.md` under
+`## Applied Rules`. MCP servers, hooks, and settings are not packaged into plugins yet; install those
+with `sigil add`. The per-kind table is in [capabilities.md](../reference/capabilities.md).
 
 ```
 dist/claude/

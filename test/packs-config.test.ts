@@ -17,6 +17,11 @@ const pack = (name: string) =>
 const marketplaceConfig = (lines: string[]): string =>
   `${pack('dotnet-starter')}\nmarketplace:\n${lines.map(l => `  ${l}`).join('\n')}\n`;
 
+/** A pack with an explicit `artifacts:` list and extra lines at pack indent. */
+const explicitPack = (name: string, artifacts: string[], extra: string[] = []): string =>
+  `packs:\n  - name: "${name}"\n    displayName: P\n    description: A pack.\n` +
+  `    artifacts: [${artifacts.join(', ')}]\n${extra.map(l => `    ${l}\n`).join('')}`;
+
 describe('parsePacksConfig', () => {
   it('should parse the bundled packs.yaml', () => {
     const config = parsePacksConfig(fs.readFileSync(PACKS, 'utf8'), PACKS);
@@ -34,6 +39,29 @@ describe('parsePacksConfig', () => {
     for (const name of ['x&calc', '../up', 'Has Space', 'UPPER']) {
       assert.throws(() => parsePacksConfig(pack(name), 'packs.yaml'), /packs\.yaml/, name);
     }
+  });
+
+  it('should parse pluginExclude', () => {
+    const raw = explicitPack('dotnet-starter', ['a/b', 'a/c'], ['pluginExclude: [a/c]']);
+    assert.deepEqual(parsePacksConfig(raw, 'packs.yaml').packs[0]?.pluginExclude, ['a/c']);
+  });
+
+  it('should reject a pluginExclude id that is not in artifacts', () => {
+    const raw = explicitPack('dotnet-starter', ['a/b'], ['pluginExclude: [a/z]']);
+    assert.throws(
+      () => parsePacksConfig(raw, 'packs.yaml'),
+      (err: unknown) => err instanceof SigilError && /pluginExclude/.test(err.message),
+      'a pluginExclude id must also be in artifacts',
+    );
+  });
+
+  it('should reject pluginExclude on a languages-only pack', () => {
+    const raw = `${pack('dotnet-starter')}    pluginExclude: [a/z]\n`;
+    assert.throws(
+      () => parsePacksConfig(raw, 'packs.yaml'),
+      (err: unknown) => err instanceof SigilError && /pluginExclude/.test(err.message),
+      'pluginExclude needs an explicit artifacts list',
+    );
   });
 
   it('should reject a file without a packs list', () => {

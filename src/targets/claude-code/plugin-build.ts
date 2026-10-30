@@ -9,13 +9,15 @@ import type { ResolvedCatalog, ResolvedArtifact, Pack } from '../../types';
 /**
  * Select the artifacts that belong to a pack.
  *
- * When the pack declares an explicit `artifacts:` list, use that.
+ * When the pack declares an explicit `artifacts:` list, use that, minus its `pluginExclude`.
  * Otherwise fall back to all catalog artifacts whose language matches
  * one of the pack's declared languages.
  */
 export function getPackArtifacts(pack: Pack, catalog: ResolvedCatalog): ResolvedArtifact[] {
   if (pack.artifacts && pack.artifacts.length > 0) {
+    const excluded = new Set(pack.pluginExclude ?? []);
     return pack.artifacts
+      .filter(id => !excluded.has(id))
       .map(id => catalog.byId.get(id))
       .filter((a): a is ResolvedArtifact => a !== undefined);
   }

@@ -255,6 +255,48 @@ describe('Claude plugin: prompts as skills', () => {
     );
   });
 
+  it('should leave an excluded prompt out of the plugin', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(resolved, {
+      version: VERSION,
+      packs: [
+        {
+          ...packOf('exclude', ['shared/explain-diff', 'shared/author-artifact']),
+          pluginExclude: ['shared/author-artifact'],
+        },
+      ],
+    });
+
+    assert.deepEqual(
+      pluginKeys(files, 'exclude').filter(key => key.includes('/skills/')),
+      ['plugins/exclude/skills/explain-diff/SKILL.md'],
+      'only the non-excluded prompt is a plugin skill',
+    );
+  });
+
+  it('should emit no plugin for a pack whose every member is excluded', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(resolved, {
+      version: VERSION,
+      packs: [
+        {
+          ...packOf('allexcluded', ['shared/author-artifact']),
+          pluginExclude: ['shared/author-artifact'],
+        },
+      ],
+    });
+
+    assert.deepEqual(pluginKeys(files, 'allexcluded'), [], 'no files under the pack folder');
+    assert.ok(
+      !marketplaceNames(files).includes('allexcluded'),
+      'no marketplace entry for the empty pack',
+    );
+  });
+
   it('should keep the scaffold id for a language prompt', async () => {
     const { resolved } = await compileBundled();
     const target = new ClaudeCodeTarget();

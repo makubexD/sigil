@@ -41,6 +41,8 @@ audit of `master`, passed on 2026-10-13 ([audit](../audits/2026-10-13/README.md)
 - `npx <name> --version` works from an empty directory; README install lines match the real name.
 - If renamed, `package.json` `name`/`bin`, README and docs install strings updated.
 - `npm run ci:local` green (includes `sigil validate` and `sigil sync --check`)
+- After publish, remove `pluginExclude: [shared/author-artifact]` from `essentials` in `packs.yaml`, put
+  `/essentials:author-artifact` back in its description and the docs, and update the output snapshot.
 
 ## Riskiest assumption
 

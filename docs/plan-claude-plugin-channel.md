@@ -43,13 +43,14 @@ the restriction no longer holds, this phase ends as a recorded no-go and the ADR
 
 ### Phase B: prompts as skills — done 2026-10-30
 
-`explain-diff` and `author-artifact` become plugin skills, reusing the `workflow` plugin shape, which is already
+Prompts become plugin skills, reusing the `workflow` plugin shape, which is already
 `native`. Expected scope: the `prompt` plugin row, a plugin-channel `KindEmitSpec`, `WRITABLE_PLUGIN_KINDS`, regenerated
 `capabilities.md`.
 
-`essentials` returns to the marketplace as a plugin holding only its two prompts, which reverses the v0.2.1 note in
+`essentials` returns to the marketplace as a plugin holding only `explain-diff`, which reverses the v0.2.1 note in
 [publish-claude-marketplace-2026-10](decisions/publish-claude-marketplace-2026-10.md#empty-plugins). Its pack
 description promises the Filesystem MCP and config protection, so the plugin description must not until Phase C.
+`author-artifact` waits for npm publish, because it needs the `sigil` CLI.
 
 Check at step-plan time: the slug-based name gives `/essentials:shared-explain-diff`. Decide whether a plugin name
 should drop the `shared-` prefix; `sigil add` keeps its current names either way.

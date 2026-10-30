@@ -5,14 +5,16 @@ on:
     tags:
       - 'v*.*.*'
 
-# id-token is required for npm OIDC Trusted Publishing (no stored NPM_TOKEN needed).
-# See: https://docs.npmjs.com/generating-provenance-statements
 permissions:
   contents: read
-  id-token: write
 
 jobs:
-  publish:
+  # ── Gate ───────────────────────────────────────────────────────────────────
+  #
+  # The same gate CI runs, on the tagged commit. `publish` and `marketplace` both wait on
+  # this and nothing else, so the marketplace ships even before npm Trusted Publishing is set
+  # up, and a failed npm publish never blocks it.
+  gate:
     runs-on: ubuntu-latest
 
     steps:
@@ -21,7 +23,6 @@ jobs:
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
           node-version: '20'
-          registry-url: 'https://registry.npmjs.org'
           cache: npm
 
       - name: Install dependencies
@@ -45,6 +46,30 @@ jobs:
           CLAUDE_CODE_DISABLE_NONESSENTIAL_TRAFFIC: '1'
         run: npm run ci:local
 
+  publish:
+    needs: gate
+    runs-on: ubuntu-latest
+
+    # id-token is required for npm OIDC Trusted Publishing (no stored NPM_TOKEN needed).
+    # See: https://docs.npmjs.com/generating-provenance-statements
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The package's `prepack` script runs the build, so no separate build step is needed here.
+
       # ── Publish ──────────────────────────────────────────────────────────────
       #
       # RECOMMENDED PATH — npm OIDC Trusted Publishing (no stored secret):
@@ -65,15 +90,16 @@ jobs:
 
   # ── Marketplace ────────────────────────────────────────────────────────────
   #
-  # Runs after the npm publish succeeds. It builds the tag's Claude marketplace and publishes
-  # it to the orphan `marketplace` branch, which users add with
+  # Runs after the gate passes, independent of npm publish, so the marketplace ships even
+  # before npm Trusted Publishing is set up. It builds the tag's Claude marketplace and
+  # publishes it to the orphan `marketplace` branch, which users add with
   # `/plugin marketplace add makubexD/sigil#marketplace`. Every publish is also
   # tagged `marketplace-v<version>` so a user can pin one. `contents: write` is
   # granted on this job only — the workflow-level permissions stay read-only.
   # See docs/decisions/publish-claude-marketplace-2026-10.md.
   #
   marketplace:
-    needs: publish
+    needs: gate
     runs-on: ubuntu-latest
     permissions:
       contents: write

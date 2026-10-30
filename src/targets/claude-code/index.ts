@@ -27,7 +27,7 @@
  *   config          — ConfigDestination, resolveClaudeConfigDestination
  *   plugin-build    — getPackArtifacts (a pack's members)
  *   plugin-assemble — buildPlugin (assembles a pack's full FileMap)
- *   plugin-config   — one generated plugin per hook/mcp artifact (hook-<id>, mcp-<id>)
+ *   plugin-config   — one generated plugin per hook/mcp artifact (hook-<basename>, mcp-<basename>)
  *   spec/           — one KindEmitSpec per kind and channel (CLAUDE_EMIT_SPECS = emitSpecs);
  *                     every file is written through ../emit-files.ts with these
  *   target-helpers  — free-standing helpers backing the class methods below
@@ -77,8 +77,9 @@ import type { TargetCapabilities } from '../capability-types';
 export { ConfigDestination, resolveClaudeConfigDestination } from './config';
 
 /**
- * Adds each generated hook/MCP plugin to the build. A generated name that shadows a pack fails the
- * build: the marketplace would otherwise list two plugins with one name.
+ * Adds each generated hook/MCP plugin to the build. A generated name already taken by a pack or by
+ * another generated plugin (`shared/x` and `python/x` share a basename) fails the build: the
+ * marketplace would otherwise list two plugins with one name, and one would overwrite the other.
  */
 function addConfigPlugins(
   files: FileMap,
@@ -86,12 +87,14 @@ function addConfigPlugins(
   catalog: ResolvedCatalog,
   options: CompileOptions,
 ): void {
+  const taken = new Set(options.packs.map(pack => pack.name));
   for (const plugin of buildConfigPlugins(catalog, options)) {
-    if (options.packs.some(pack => pack.name === plugin.entry.name)) {
+    if (taken.has(plugin.entry.name)) {
       throw new SigilError(
-        `generated config plugin '${plugin.entry.name}' collides with a pack of the same name`,
+        `generated config plugin '${plugin.entry.name}' collides with a pack or another generated plugin of the same name`,
       );
     }
+    taken.add(plugin.entry.name);
     Object.assign(files, plugin.files);
     entries.push(plugin.entry);
   }

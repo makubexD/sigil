@@ -34,7 +34,7 @@ const CONFIG_PLUGIN_KINDS = ['hook', 'mcp'] as const;
  * plugin user about an unset `${NAME}`, so the description names them (decision 4).
  */
 function configDescription(artifact: ResolvedArtifact): string {
-  const description = (artifact.frontmatter.description as string | undefined) ?? '';
+  const description = artifact.frontmatter.description as string;
   if (artifact.kind !== 'mcp') return description;
   const names = envTokenNames(artifact.frontmatter.server);
   if (names.length === 0) return description;
@@ -48,7 +48,7 @@ function configDescription(artifact: ResolvedArtifact): string {
 function configPack(artifact: ResolvedArtifact): Pack {
   return {
     name: configPluginName(artifact),
-    displayName: (artifact.frontmatter.title as string | undefined) ?? artifact.id,
+    displayName: artifact.frontmatter.title as string,
     description: configDescription(artifact),
   };
 }

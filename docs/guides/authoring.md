@@ -350,7 +350,8 @@ installs it. Every id must also be in `artifacts:`. Use it for an artifact a plu
 run.
 
 Hooks and MCP servers never go in a pack's plugin: each one gets a generated `hook-<name>` or
-`mcp-<name>` plugin, and a generated name equal to a pack name fails the build.
+`mcp-<name>` plugin, and a generated name equal to a pack name or another generated plugin fails the
+build. `<name>` is the id's last segment, so `shared/x` and `python/x` of the same kind collide.
 `pluginDependencies: [<id>]` makes the pack's plugin depend on one of those. Every id must be in
 `artifacts:` and be a hook or MCP. Use it only when the pack doesn't work without that artifact,
 because everything else stays opt-in.

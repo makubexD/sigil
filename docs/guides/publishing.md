@@ -81,8 +81,9 @@ out/
 }
 ```
 
-One plugin is emitted per pack in `packs.yaml`; `plugin.json` carries `version` = the sigil
-package version, not your catalog's. The output passes
+One plugin is emitted per pack in `packs.yaml`, plus one `hook-<name>` or `mcp-<name>` plugin per
+hook and MCP server in your catalog; `plugin.json` carries `version` = the sigil package version,
+not your catalog's. The output passes
 `claude plugin validate --strict out/claude` (`✔ Validation passed`).
 
 ### Name your marketplace

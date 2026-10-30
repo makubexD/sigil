@@ -55,7 +55,8 @@ export function buildPluginJson(pack: Pack, options: BuildPluginOptions): string
  * The manifest's `dependencies` entry: each `pluginDependencies` catalog id mapped to the bare
  * name of its generated hook/mcp plugin (`configPluginName`), so the dependency resolves in the
  * same marketplace. Absent when the pack declares none. The catalog exists only at compile time
- * (`parsePacksConfig` has none), so this is also where an id of any other kind is rejected.
+ * (`parsePacksConfig` has none), so this is also where an id of any other kind is rejected. The
+ * catalog is already filtered to this target, so an artifact excluded by `platforms` is missing here.
  */
 function manifestDependencies(
   pack: Pack,
@@ -68,7 +69,7 @@ function manifestDependencies(
       const artifact = catalog.byId.get(id);
       if (artifact === undefined || (artifact.kind !== 'hook' && artifact.kind !== 'mcp')) {
         throw new SigilError(
-          `pack '${pack.name}': pluginDependencies id '${id}' must name a hook or mcp catalog artifact`,
+          `pack '${pack.name}': pluginDependencies id '${id}' must name a hook or mcp catalog artifact available on Claude`,
         );
       }
       return configPluginName(artifact);

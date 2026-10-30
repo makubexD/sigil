@@ -54,6 +54,19 @@ async function compileTarget(
   return files;
 }
 
+/** Compiles every target before anything is written, so a failed target changes nothing on disk. */
+async function compileTargets(
+  targets: Target[],
+  resolved: ResolvedCatalog,
+  compileOpts: CompileOptions,
+): Promise<{ target: Target; files: FileMap }[]> {
+  const compiled: { target: Target; files: FileMap }[] = [];
+  for (const target of targets) {
+    compiled.push({ target, files: await compileTarget(target, resolved, compileOpts) });
+  }
+  return compiled;
+}
+
 /** Replaces a target's folder in outDir with the freshly compiled files. */
 function writeTarget(target: Target, files: FileMap, outDir: string): void {
   const dir = path.join(outDir, target.name);
@@ -113,10 +126,7 @@ export async function runBuild(opts: BuildOptions): Promise<void> {
     marketplace: packsConfig.marketplace,
   };
 
-  const compiled: { target: Target; files: FileMap }[] = [];
-  for (const target of targets) {
-    compiled.push({ target, files: await compileTarget(target, resolved, compileOpts) });
-  }
+  const compiled = await compileTargets(targets, resolved, compileOpts);
 
   assertReplaceable(targets, opts.outDir);
 

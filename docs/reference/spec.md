@@ -192,10 +192,12 @@ A reusable, parameterised prompt that can be invoked by name.
   as `/slug` in Copilot Chat.
 - **Claude Code:** emitted as a **user-invoked skill** (`.claude/skills/<slug>/SKILL.md`,
   `disable-model-invocation: true`), invoked as `/slug` in Claude Code. In the plugin build it is
-  `plugins/<pack>/skills/<name>/SKILL.md`, invoked as `/<pack>:<name>`, with `shared/` dropped from
-  the name. Formerly a custom command at `.claude/commands/<slug>.md` — Anthropic merged custom
-  commands into skills (see `src/targets/doc-refs.ts`'s `CLAUDE_SKILLS_DOC`); sigil no longer writes
-  the legacy path, though Claude Code still reads it if a project has old files there.
+  `plugins/<pack>/skills/<name>/SKILL.md`, invoked as `/<pack>:<name>`, named by the id's last
+  segment (`shared/explain-diff` → `explain-diff`, `csharp/cs-deploy` → `cs-deploy`). Two members of
+  a pack with one name fail the build. Formerly a custom command at `.claude/commands/<slug>.md` —
+  Anthropic merged custom commands into skills (see `src/targets/doc-refs.ts`'s
+  `CLAUDE_SKILLS_DOC`); sigil no longer writes the legacy path, though Claude Code still reads it if
+  a project has old files there.
 
 **File:** `catalog/shared/prompts/<name>.prompt.md` or `catalog/languages/<lang>/prompts/<name>.prompt.md`
 
@@ -405,7 +407,7 @@ reaches it inside skills, and a full build also writes repo-wide rules to a root
 | `catalog/languages/<lang>/skills/<name>/SKILL.md`         | Skill entry point                                                                                                                             |
 | `catalog/languages/<lang>/skills/<name>/references/`      | Supplementary docs bundled with the skill                                                                                                     |
 | `catalog/shared/skills/<name>/SKILL.md`                   | Stack-agnostic (language-less) skill, plus `references/`                                                                                      |
-| `packs.yaml`                                              | Curated bundles (explicit `artifacts:` or `languages:`)                                                                                       |
+| `packs.yaml`                                              | Curated bundles (explicit `artifacts:` or `languages:`); `pluginExclude:` keeps a listed artifact out of the Claude plugin                    |
 | `schema/*.schema.json`                                    | JSON Schemas for editor autocomplete (generated from zod)                                                                                     |
 | `catalog/shared/templates/*.template.md`                  | Shared body structure (`kind: template`)                                                                                                      |
 | `*.agent.md`, `*.rule.md`, `*.prompt.md`, `*.workflow.md` | Single-file artifacts (kinds `agent`, `rule`, `prompt`, `workflow`)                                                                           |

@@ -180,3 +180,29 @@ Owner part, recorded in the PR:
 - On a clean machine: `/plugin marketplace add makubexD/sigil#marketplace` and `/plugin install <one plugin>` succeed, and the
   plugin's skill appears.
 - Then `workflow-report .`, `/agent-skills:review` of the feature, and this plan deleted after merge.
+
+### 10. Review follow-ups (2026-10-30)
+
+From `/agent-skills:review`. The owner approved all fixes and delegated R2 ("choose the most appropriate one"): option b,
+because a release is the owner's public action and its npm job fails until Trusted Publishing is set up.
+
+- **10a `[worker:medium]`** `scripts/check-marketplace-drift.cjs`, `test/scripts/check-marketplace-drift.test.ts`,
+  `test/commands/build-determinism.test.ts`. O2: any entry in either tree that is neither a regular file nor a directory
+  (for example a symlink) counts as a path, whose content is the string `<non-regular: link>` or `<non-regular>`, so a
+  symlink in the published dir reports as `added`. New test: a symlink at the published root → exit 1 with an `added`
+  line (skip the case when `fs.symlinkSync` throws EPERM on Windows). N2: the determinism `fileMap` stores the sha256 hex
+  of each file instead of the whole file as hex. Test: `npm test -- --test-name-pattern="marketplace-drift|determinism"`.
+- **10b `[worker:medium]`** `.github/workflows/release.yml`, `.github/workflows/marketplace-drift.yml`.
+  - R1: drift resolves the tag from the branch tip:
+    `git -c versionsort.suffix=- tag --points-at origin/marketplace --list "marketplace-v*.*.*" --sort=-v:refname`.
+    No branch → notice, then skip. A tip without a tag, or one whose source tag is missing → `::error::`, exit 1.
+  - O1: the `marketplace` job publishes only when `$GITHUB_REF_NAME` is the newest `v*.*.*` tag on origin
+    (`git -c versionsort.suffix=- ls-remote --tags --refs --sort=-v:refname origin "v*.*.*"`); otherwise notice, then
+    exit 0.
+  - O3: a job-level `concurrency: { group: marketplace-publish, cancel-in-progress: false }`.
+  - O4: when the tag is already on origin → notice, then exit 0.
+  - N1: rewrap the drift header comment.
+  - Test: prettier, YAML assertions, and a re-run of both scripts against a local test remote.
+- **10c `[inline: user-facing copy + decision doc]`** R2: a "first publish pending" note in the README `<details>` block,
+  the `docs/index.md` S2 row and `docs/setup/claude-code.md`. The owner's post-release check (step 9) removes it. The
+  decision doc § Drift gate and § Location gain the points-at and newest-tag rules.

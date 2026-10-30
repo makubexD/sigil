@@ -62,7 +62,10 @@ Decided 2026-10-30; the owner delegated the choice ("choose the best option").
 
 ## Drift gate
 
-The `marketplace` branch must equal a fresh `--target claude` build of the latest `v*.*.*` release tag. The gate catches
+The `marketplace` branch must equal a fresh `--target claude` build of the release it claims to hold: the newest
+`marketplace-v*` tag, minus its prefix. Branch and tag are pushed together (`git push --atomic`). The drift workflow runs
+after every Release run whatever its conclusion, since npm publish can fail while the marketplace job succeeds; a release
+whose gate failed pushes no marketplace tag, so it is never compared. The gate catches
 a hand edit to the branch, or a partial or failed publish. Unreleased catalog changes on `master` are not drift. False
 failures are guarded by the determinism test in the normal suite (§ Determinism), and by the drift workflow building on
 the same Node version as `release.yml`.

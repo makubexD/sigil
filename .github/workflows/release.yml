@@ -153,4 +153,4 @@ jobs:
           fi
 
           git tag "$TAG"
-          git push origin marketplace "refs/tags/$TAG"
+          git push --atomic origin marketplace "refs/tags/$TAG"

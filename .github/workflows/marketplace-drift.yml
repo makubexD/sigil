@@ -1,8 +1,10 @@
 # Drift gate for the published Claude marketplace.
 #
-# After every successful Release (and on demand) this checks that the `marketplace` branch equals
-# a fresh `--target claude` build of the latest `v*.*.*` tag. A difference means the branch was
-# edited by hand, or a publish was partial or failed. Unreleased changes on `master` are not
+# After every Release run (and on demand) this checks that the `marketplace` branch equals a fresh
+# `--target claude` build of the release it claims to hold: the newest `marketplace-v*` tag, minus
+# its prefix. It runs whatever the Release conclusion, because npm publish can fail while the
+# marketplace job succeeds; a release whose gate failed publishes no marketplace tag, so it is
+# never compared. A difference means the branch was edited by hand, or a publish was partial. Unreleased changes on `master` are not
 # drift: the comparison is always against a tag build, never against the default branch.
 # Node is pinned to the release workflow's version so the drift build matches the published one.
 # See docs/decisions/publish-claude-marketplace-2026-10.md.
@@ -21,21 +23,21 @@ permissions:
 jobs:
   drift:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
-      - name: Resolve the latest release and the marketplace branch
+      - name: Resolve the published release and the marketplace branch
         id: resolve
         run: |
           set -euo pipefail
 
-          TAG=$(git tag --list "v*.*.*" --sort=-v:refname | head -n1)
-          if [ -z "$TAG" ]; then
-            echo "::notice::no release tag yet; nothing to check"
+          MTAG=$(git tag --list "marketplace-v*.*.*" --sort=-v:refname | head -n1)
+          TAG="${MTAG#marketplace-}"
+          if [ -z "$MTAG" ] || ! git rev-parse --verify --quiet "refs/tags/$TAG" > /dev/null; then
+            echo "::notice::no published marketplace release yet; nothing to check"
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi

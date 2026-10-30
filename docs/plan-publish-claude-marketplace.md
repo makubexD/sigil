@@ -146,6 +146,10 @@ top-level permissions has no `id-token`, and `publish.permissions['id-token'] ==
 
 ### 7. Drift gate job `[worker:medium]`
 
+Amended 2026-10-30 after step 6b: the release to compare is the newest `marketplace-v*` tag minus its prefix, not the
+latest `v*.*.*` tag, and the job runs after every Release run (no `conclusion == 'success'` condition), because npm
+publish can now fail while the marketplace job succeeds. Release pushes branch and tag with `git push --atomic`.
+
 File: `.github/workflows/marketplace-drift.yml` (new).
 
 Change: triggers on `workflow_run` of Release (completed) and on `workflow_dispatch`, with `permissions: contents: read`.

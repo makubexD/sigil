@@ -80,7 +80,7 @@ branch of this repository. In Claude Code:
 
 ```
 /plugin marketplace add makubexD/sigil#marketplace
-/plugin install essentials@sigil
+/plugin install spec-driven@sigil
 ```
 
 > **First publish pending.** The `marketplace` branch appears with the next Sigil release; until

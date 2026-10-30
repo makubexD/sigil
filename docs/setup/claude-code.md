@@ -29,9 +29,12 @@ To stay on one release, add its tag instead: `makubexD/sigil#marketplace-v<versi
 Each pack in [`packs.yaml`](../../packs.yaml) is one plugin with the same name:
 
 ```
-/plugin install essentials@sigil
+/plugin install spec-driven@sigil
 /plugin install typescript-starter@sigil
 ```
+
+A pack whose artifacts are all MCP servers, hooks or prompts, such as `essentials`, has no plugin
+yet: plugins can't carry those kinds. Install it with `sigil add` instead.
 
 Browse the full list on the **Discover** tab of `/plugin`, or in the published
 `.claude-plugin/marketplace.json`. Plugins load in the next session, or after `/reload-plugins`.
@@ -46,7 +49,7 @@ and edit in your project. The per-kind table is in [capabilities.md](../referenc
 Third-party marketplaces do not auto-update by default. Run `/plugin`, open the **Marketplaces**
 tab and select `sigil`. There, **Enable auto-update** keeps it current from then on, and **Update
 marketplace** updates now: it refreshes the listing and the plugins you installed from it. From a
-shell, update one plugin with `claude plugin update essentials@sigil`.
+shell, update one plugin with `claude plugin update spec-driven@sigil`.
 ([Keep plugins updated](https://code.claude.com/docs/en/discover-plugins#keep-plugins-updated).)
 
 Every plugin's `version` is the Sigil release that built it. A marketplace pinned to
@@ -55,7 +58,7 @@ Every plugin's `version` is the Sigil release that built it. A marketplace pinne
 ## Remove
 
 ```
-/plugin uninstall essentials@sigil
+/plugin uninstall spec-driven@sigil
 /plugin marketplace remove sigil
 ```
 

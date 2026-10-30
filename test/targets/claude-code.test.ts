@@ -7,7 +7,7 @@ import assert from 'node:assert/strict';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { CLAUDE_PROMPT_SPEC } from '../../dist-cli/targets/claude-code/spec/prompt';
-import type { CompileOptions } from '../../dist-cli/types';
+import type { CompileOptions, MarketplaceIdentity } from '../../dist-cli/types';
 import { loadBundledCatalog } from '../helpers/catalog';
 
 const VERSION = '0.1.0';
@@ -32,12 +32,8 @@ const PACKS = [
   },
 ];
 
-/**
- * `marketplace` is not on `CompileOptions` yet (plan step 3 adds it). The cast keeps the suite
- * compiling so the cases fail on the emitted JSON, not on a type error.
- */
-function compileOpts(marketplace?: unknown): CompileOptions {
-  return { version: VERSION, packs: PACKS, marketplace } as CompileOptions;
+function compileOpts(marketplace?: MarketplaceIdentity): CompileOptions {
+  return { version: VERSION, packs: PACKS, ...(marketplace ? { marketplace } : {}) };
 }
 
 describe('Claude Code target', () => {

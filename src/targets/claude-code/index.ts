@@ -129,6 +129,7 @@ export class ClaudeCodeTarget implements Target {
     files['.claude-plugin/marketplace.json'] = buildMarketplaceJson(
       pluginEntries,
       options.homepage,
+      options.marketplace,
     );
     return files;
   }

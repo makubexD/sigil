@@ -70,7 +70,12 @@ export async function runBuild(opts: BuildOptions): Promise<void> {
   const resolved = resolveCatalog(catalog);
 
   const targets = opts.target === 'all' ? getAllTargets() : [getTarget(opts.target)];
-  const compileOpts = { version: pkg.version, packs: packsConfig.packs, homepage: pkg.homepage };
+  const compileOpts = {
+    version: pkg.version,
+    packs: packsConfig.packs,
+    homepage: pkg.homepage,
+    marketplace: packsConfig.marketplace,
+  };
 
   for (const target of targets) {
     await buildOneTarget(target, resolved, compileOpts, opts.outDir);

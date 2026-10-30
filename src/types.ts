@@ -361,6 +361,11 @@ export interface CompileOptions {
    * Falls back to a placeholder when absent.
    */
   homepage?: string | undefined;
+  /**
+   * Marketplace/plugin identity (packs.yaml `marketplace:` block). When absent, the build emits
+   * sigil's own identity exactly as before; when present, fields it leaves out are omitted.
+   */
+  marketplace?: MarketplaceIdentity | undefined;
 }
 
 export interface ScaffoldOptions {

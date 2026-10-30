@@ -70,10 +70,17 @@ function markRecordedHashStale(dir: string, relPath: string): void {
   saveManifest(dir, manifest);
 }
 
-/** Drops the `picked` field from every manifest entry in `dir`. */
-function stripPicked(dir: string): void {
+/**
+ * Drops the fields from every manifest entry in `dir` that an updated install can't share with a
+ * fresh one: `picked`, and `sigilVersion`, which stays at the release that wrote an entry update
+ * left alone.
+ */
+function stripUnshared(dir: string): void {
   const manifest = loadManifest(dir);
-  for (const entry of manifest.entries) delete entry.picked;
+  for (const entry of manifest.entries) {
+    delete entry.picked;
+    delete (entry as { sigilVersion?: string }).sigilVersion;
+  }
   saveManifest(dir, manifest);
 }
 
@@ -152,9 +159,10 @@ for (const target of TARGETS) {
             dryRun: false,
           });
         }
-        // The fresh manifest records `picked`; the old one can't know it for every entry.
-        stripPicked(fresh);
-        stripPicked(old);
+        // The fresh manifest records `picked`; the old one can't know it for every entry. Entries
+        // update left alone keep the sigilVersion of the release that wrote them.
+        stripUnshared(fresh);
+        stripUnshared(old);
         assert.deepEqual(treeDiff(hashTree(fresh), hashTree(old)), []);
       });
     });

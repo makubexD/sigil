@@ -18,6 +18,12 @@ import type { ResolvedCatalog } from './types';
 import { artifactTargetsPlatform } from './select';
 import { getAllTargets, getTarget } from './targets';
 import { supportsKind } from './targets/capabilities';
+import { readRegularFile } from './safe-read';
+
+/** Far above a real registry (about 140 KiB); anything larger is not one. */
+const MAX_REGISTRY_KIB = 16_384;
+const KIB = 1024;
+const MAX_REGISTRY_BYTES = MAX_REGISTRY_KIB * KIB;
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -46,6 +52,26 @@ export interface Registry {
   generatedAt: string;
   artifacts: RegistryEntry[];
   facets: RegistryFacets;
+}
+
+/**
+ * True when `file` is a regular file holding a sigil registry, so another tool's `registry.json`
+ * doesn't pass. `sigil index` writes the same shape as `build`, so this can't tell them apart.
+ */
+export function isRegistryFile(file: string): boolean {
+  const read = readRegularFile(file, { maxBytes: MAX_REGISTRY_BYTES });
+  if (!('content' in read)) return false;
+  try {
+    const parsed = JSON.parse(read.content) as Partial<Registry> | null;
+    return (
+      typeof parsed?.version === 'string' &&
+      typeof parsed.generatedAt === 'string' &&
+      Array.isArray(parsed.artifacts) &&
+      Array.isArray(parsed.facets?.kinds)
+    );
+  } catch {
+    return false;
+  }
 }
 
 // ─── SHA256 helper ────────────────────────────────────────────────────────────

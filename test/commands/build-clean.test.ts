@@ -138,6 +138,49 @@ describe('build replaces its output folder', () => {
     });
   });
 
+  const FOREIGN_REGISTRIES: [string, string][] = [
+    ['another tool', '{ "name": "acme", "items": [] }\n'],
+    ['not JSON', 'not json\n'],
+    ['JSON null', 'null\n'],
+    ['the wrong types', '{ "version": "1", "generatedAt": "x", "artifacts": "x", "facets": {} }\n'],
+  ];
+
+  for (const [label, content] of FOREIGN_REGISTRIES) {
+    it(`should refuse an output root whose registry.json is ${label}`, async () => {
+      await withTempDirAsync(async root => {
+        const outDir = path.join(root, 'dist');
+        const mine = path.join(outDir, 'claude', 'mine.md');
+        fs.mkdirSync(path.dirname(mine), { recursive: true });
+        fs.writeFileSync(mine, 'mine\n');
+        fs.writeFileSync(path.join(outDir, 'registry.json'), content);
+
+        await assert.rejects(build(root, 'claude'), {
+          name: 'SigilError',
+          message: /registry\.json/,
+        });
+
+        assert.ok(fs.existsSync(mine), 'the user file survives');
+      });
+    });
+  }
+
+  it('should refuse an output root whose registry.json is a directory', async () => {
+    await withTempDirAsync(async root => {
+      const outDir = path.join(root, 'dist');
+      const mine = path.join(outDir, 'claude', 'mine.md');
+      fs.mkdirSync(path.dirname(mine), { recursive: true });
+      fs.writeFileSync(mine, 'mine\n');
+      fs.mkdirSync(path.join(outDir, 'registry.json'));
+
+      await assert.rejects(build(root, 'claude'), {
+        name: 'SigilError',
+        message: /registry\.json/,
+      });
+
+      assert.ok(fs.existsSync(mine), 'the user file survives');
+    });
+  });
+
   it('should leave the previous output intact when a build fails', async () => {
     await withTempDirAsync(async root => {
       const seeded = seedCatalog(root);

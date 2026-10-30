@@ -53,8 +53,7 @@ and a go / fix-first verdict. **Stop and report to the owner.** The owner decide
   is amended.
 
 Result (2026-10-30): cases a–e identical. Case f (Node 20) was not run, because downloading a Node 20 binary was blocked
-on this machine; step 3's test covers it on CI's Node 20 leg. Recommended verdict: **go**, so step 4 is skipped. It is
-awaiting the owner's call. Details: decision doc § Determinism.
+on this machine; step 3's test covers it on CI's Node 20 leg. Owner verdict 2026-10-30: **go** ("go all"), so step 4 is skipped. Details: decision doc § Determinism.
 
 ### 2. Record the location decision `[inline: decision doc]`
 
@@ -135,7 +134,8 @@ File: `.github/workflows/marketplace-drift.yml` (new).
 Change: triggers on `workflow_run` of Release (completed) and on `workflow_dispatch`, with `permissions: contents: read`.
 It checks out the latest `v*.*.*` tag, builds, checks out the `marketplace` branch into a second directory and runs
 `npm run marketplace:check <dir>`; it fails on drift. Before the branch exists it reports "no marketplace branch yet"
-and passes.
+and passes. `setup-node` uses Node `'20'`, the same as `release.yml`, so the drift build matches the published one
+(decision doc § Determinism).
 
 Test: same as step 6.
 

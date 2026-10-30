@@ -37,3 +37,33 @@ Source scan of the build path (`localeCompare`, `Intl.`, `Math.random`, `new Dat
 skipped. The one gap, Node 20, is closed by step 3's determinism test running in CI's Node 20 leg; and as long as the drift
 workflow (step 7) pins the same Node version as `release.yml` (`'20'`), a cross-version difference cannot cause a false
 drift failure between the two.
+
+## Location
+
+Decided 2026-10-30; the owner delegated the choice ("choose the best option").
+
+- **An orphan `marketplace` branch in this repo**, holding exactly the contents of `claude/` at its root
+  (`.claude-plugin/marketplace.json`, `plugins/`). Users add it with `/plugin marketplace add makubexD/sigil#marketplace`.
+  Claude Code accepts `owner/repo#ref` to pin a branch or tag
+  ([discover-plugins](https://code.claude.com/docs/en/discover-plugins), "Add a marketplace" source table, checked
+  2026-10-30).
+- **Rejected: the root of `master`.** Every catalog PR would carry regenerated output, `master` history would hold
+  generated files, and users would get unreleased catalog changes.
+- **Rejected: a dedicated repo.** It needs a deploy key or PAT secret and a second repo to maintain, and a branch gives
+  the same clean add command now that refs work.
+- **Rejected: tags only.** Users would have to change their add command on every release to get updates.
+
+## Auth and versioning
+
+- **Auth**: the workflow `GITHUB_TOKEN` with `contents: write`, granted on the `marketplace` job only. No PAT or deploy
+  key. The npm `publish` job keeps `contents: read` + `id-token: write`.
+- **Versioning: per sigil release.** `plugin.json` already carries `pkg.version` (`buildPluginJson`). Each publish
+  commit on `marketplace` is tagged `marketplace-v<version>`, so a user can pin
+  `makubexD/sigil#marketplace-v<version>`.
+
+## Drift gate
+
+The `marketplace` branch must equal a fresh `--target claude` build of the latest `v*.*.*` release tag. The gate catches
+a hand edit to the branch, or a partial or failed publish. Unreleased catalog changes on `master` are not drift. False
+failures are guarded by the determinism test in the normal suite (§ Determinism), and by the drift workflow building on
+the same Node version as `release.yml`.

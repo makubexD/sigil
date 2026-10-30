@@ -171,7 +171,9 @@ function printReleaseSummary(nextVersion: string): void {
   console.log(`\n✓ Release v${nextVersion} is ready locally.\n`);
   console.log('Next: push the commit and the tag to trigger CI publish:');
   console.log(`\n  git push && git push --tags\n`);
-  console.log('This triggers release.yml → npm publish --provenance via OIDC Trusted Publishing.');
+  console.log(
+    'This triggers release.yml: the CI gate, the Claude marketplace publish, and npm publish when NPM_PUBLISH is set.',
+  );
 }
 
 /** Computes the bumped version, wrapping any error as a SigilError. */

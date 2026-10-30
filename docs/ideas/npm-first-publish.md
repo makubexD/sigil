@@ -19,7 +19,8 @@ audit of `master`, passed on 2026-10-13 ([audit](../audits/2026-10-13/README.md)
   `prepack` runs `npm run build`.
 - `.github/workflows/release.yml:8` and `:41-45` say: publish once manually, then add a Trusted
   Publisher (repo, `release.yml`, no environment); `:54-55` run
-  `npm publish --provenance --access public` on `v*.*.*` tags.
+  `npm publish --provenance --access public` on `v*.*.*` tags; the `publish` job is gated on
+  `vars.NPM_PUBLISH == 'true'`.
 - `README.md:44-45` says `npx sigil` and `npm install -g sigil` work "once Sigil is published".
 - `npm view sigil` (run 2026-10-01, read-only) returns E404: "Unpublished on 2024-10-09". So the
   name is not currently served, but a previous owner unpublished it. Whether npm lets this
@@ -35,8 +36,8 @@ audit of `master`, passed on 2026-10-13 ([audit](../audits/2026-10-13/README.md)
 
 - Package name decided and recorded (unscoped `sigil` if allowed, else a scoped name).
 - `npm pack --dry-run` file list reviewed; no test or scratch files shipped.
-- First manual `npm publish --access public` done; Trusted Publisher configured; a tagged release
-  publishes with provenance.
+- First manual `npm publish --access public` done; Trusted Publisher configured; `NPM_PUBLISH`
+  repository variable set to `true`; a tagged release publishes with provenance.
 - `npx <name> --version` works from an empty directory; README install lines match the real name.
 - If renamed, `package.json` `name`/`bin`, README and docs install strings updated.
 - `npm run ci:local` green (includes `sigil validate` and `sigil sync --check`)

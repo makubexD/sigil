@@ -69,6 +69,7 @@ The `marketplace` branch must equal a fresh `--target claude` build of the relea
 (`marketplace-v<version>`, minus the prefix). Only the release workflow creates that tag, and it pushes branch and tag
 together (`git push --atomic`), so a tip without one fails the gate as a hand edit. Reading the tag from the tip, not
 the highest tag, keeps the gate correct whatever order releases ran in. The drift workflow runs after every Release run
-whatever its conclusion, since npm publish can fail while the marketplace job succeeds. The gate catches a hand edit or a
-partial publish. Unreleased catalog changes on `master` are not drift. False failures are guarded by the determinism test
-in the normal suite (§ Determinism), and by the drift workflow building on the same Node version as `release.yml`.
+whatever its conclusion, since the npm publish job can fail or be skipped (it runs only when the `NPM_PUBLISH`
+repository variable is `true`) while the marketplace job succeeds. The gate catches a hand edit or a partial publish.
+Unreleased catalog changes on `master` are not drift. False failures are guarded by the determinism test in the normal
+suite (§ Determinism), and by the drift workflow building on the same Node version as `release.yml`.

@@ -32,6 +32,23 @@ describe('release and CI workflows', () => {
     assert.ok(gate > 0 && publish > gate, 'ci:local must run before npm publish');
   });
 
+  it('should skip npm publish unless the NPM_PUBLISH repository variable is true', () => {
+    const release = workflow('release.yml');
+    // Each job runs from its two-space header to the next one (or the end of the file).
+    const jobs = [...release.matchAll(/^ {2}([a-z-]+):\s*$/gm)];
+    const jobBlock = (name: string): string => {
+      const i = jobs.findIndex(job => job[1] === name);
+      assert.ok(i >= 0, `release.yml must declare the ${name} job`);
+      const from = jobs[i]!.index! + jobs[i]![0].length;
+      const to = jobs[i + 1]?.index ?? release.length;
+      return release.slice(from, to);
+    };
+
+    assert.match(jobBlock('publish'), /^\s{4}if:\s*vars\.NPM_PUBLISH == 'true'\s*$/m);
+    // The marketplace ships regardless: it never waits on the npm publish job.
+    assert.doesNotMatch(jobBlock('marketplace'), /NPM_PUBLISH/);
+  });
+
   it('should pin the Claude Code CLI once, in package.json, for both workflows', () => {
     assert.match(pkg.config?.claudeCodeVersion ?? '', /^\d+\.\d+\.\d+$/);
     for (const name of ['ci.yml', 'release.yml']) {

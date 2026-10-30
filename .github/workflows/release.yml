@@ -13,7 +13,9 @@ jobs:
   #
   # The same gate CI runs, on the tagged commit. `publish` and `marketplace` both wait on
   # this and nothing else, so the marketplace ships even before npm Trusted Publishing is set
-  # up, and a failed npm publish never blocks it.
+  # up, and a failed npm publish never blocks it. `publish` also requires the repository
+  # variable NPM_PUBLISH set to `true` and is skipped otherwise, so a release cut before npm
+  # is set up still concludes green.
   gate:
     runs-on: ubuntu-latest
 
@@ -48,6 +50,7 @@ jobs:
 
   publish:
     needs: gate
+    if: vars.NPM_PUBLISH == 'true'
     runs-on: ubuntu-latest
 
     # id-token is required for npm OIDC Trusted Publishing (no stored NPM_TOKEN needed).
@@ -76,6 +79,8 @@ jobs:
       #   1. Publish once manually: `npm publish --access public`
       #   2. On npmjs.com → your package → Publishing → Trusted Publishers
       #      Add: repo=<owner>/<repo>, workflow=release.yml, environment=<leave blank>
+      #   3. In GitHub → Settings → Secrets and variables → Actions → Variables, set
+      #      NPM_PUBLISH = true. Until then this job is skipped, not failed.
       #   After that, OIDC authentication is automatic and this step runs as-is.
       #
       # FALLBACK (if OIDC cannot be configured):
@@ -84,6 +89,7 @@ jobs:
       #       env:
       #         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
       #       run: npm publish --access public
+      #   Step 3 still applies: without NPM_PUBLISH = true this job never runs.
       #
       - name: Publish to npm (OIDC + provenance)
         run: npm publish --provenance --access public

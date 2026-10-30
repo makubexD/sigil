@@ -8,17 +8,17 @@ export function mergeDependentOf(existing: string[], toAdd: string[]): void {
   }
 }
 
+/** True when two recorded sources name the same catalog (both absent = both bundled). */
+export function sameCatalog(a: CatalogSource | undefined, b: CatalogSource | undefined): boolean {
+  return a?.dir === b?.dir && a?.packs === b?.packs;
+}
+
 /**
  * Applies the caller's catalog record to `entry`, so re-adding an artifact from another catalog
  * moves it. Only a caller that carries the key at all touches it, so `update` never changes a
  * recorded source; a present-but-undefined catalog is the bundled one, whose entry keeps no key
  * (`catalog: undefined` would dirty the manifest JSON).
  */
-/** True when two recorded sources name the same catalog (both absent = both bundled). */
-export function sameCatalog(a: CatalogSource | undefined, b: CatalogSource | undefined): boolean {
-  return a?.dir === b?.dir && a?.packs === b?.packs;
-}
-
 export function applyCatalog(
   entry: ManifestEntry,
   from: { catalog?: CatalogSource | undefined },

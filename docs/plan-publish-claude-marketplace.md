@@ -177,6 +177,8 @@ row removed; the decision doc keeps the still-true facts (location, auth, versio
 Owner part, recorded in the PR:
 
 - After the first tagged release: the `marketplace` job pushed, and the drift job is green.
+- Then remove the "First publish pending" notes (README `<details>` block, `docs/setup/claude-code.md`) and set the
+  `docs/index.md` S2 row to "Supported".
 - On a clean machine: `/plugin marketplace add makubexD/sigil#marketplace` and `/plugin install <one plugin>` succeed, and the
   plugin's skill appears.
 - Then `workflow-report .`, `/agent-skills:review` of the feature, and this plan deleted after merge.

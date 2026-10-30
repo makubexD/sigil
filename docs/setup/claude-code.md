@@ -7,6 +7,9 @@ Sigil's packs are published as a Claude Code plugin marketplace, so you can inst
 cloning Sigil or installing its CLI. Each release builds the marketplace from its tag and pushes it to
 the `marketplace` branch of [makubexD/sigil](https://github.com/makubexD/sigil).
 
+> **First publish pending.** The `marketplace` branch appears with the next Sigil release; until then
+> `/plugin marketplace add` cannot find it. Meanwhile, [build it yourself](#build-it-yourself).
+
 ## Add the marketplace
 
 In a Claude Code session:

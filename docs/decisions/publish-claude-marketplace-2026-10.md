@@ -59,13 +59,16 @@ Decided 2026-10-30; the owner delegated the choice ("choose the best option").
 - **Versioning: per sigil release.** `plugin.json` already carries `pkg.version` (`buildPluginJson`). Each publish
   commit on `marketplace` is tagged `marketplace-v<version>`, so a user can pin
   `makubexD/sigil#marketplace-v<version>`.
+- **Only the newest release publishes.** The `marketplace` job skips a tag that is not the newest `v*.*.*` on origin, so
+  a backport release never rolls users back, and it skips a tag already published, so re-running a release is a no-op.
+  A `concurrency` group serializes two releases pushed together.
 
 ## Drift gate
 
-The `marketplace` branch must equal a fresh `--target claude` build of the release it claims to hold: the newest
-`marketplace-v*` tag, minus its prefix. Branch and tag are pushed together (`git push --atomic`). The drift workflow runs
-after every Release run whatever its conclusion, since npm publish can fail while the marketplace job succeeds; a release
-whose gate failed pushes no marketplace tag, so it is never compared. The gate catches
-a hand edit to the branch, or a partial or failed publish. Unreleased catalog changes on `master` are not drift. False
-failures are guarded by the determinism test in the normal suite (§ Determinism), and by the drift workflow building on
-the same Node version as `release.yml`.
+The `marketplace` branch must equal a fresh `--target claude` build of the release its tip is tagged with
+(`marketplace-v<version>`, minus the prefix). Only the release workflow creates that tag, and it pushes branch and tag
+together (`git push --atomic`), so a tip without one fails the gate as a hand edit. Reading the tag from the tip, not
+the highest tag, keeps the gate correct whatever order releases ran in. The drift workflow runs after every Release run
+whatever its conclusion, since npm publish can fail while the marketplace job succeeds. The gate catches a hand edit or a
+partial publish. Unreleased catalog changes on `master` are not drift. False failures are guarded by the determinism test
+in the normal suite (§ Determinism), and by the drift workflow building on the same Node version as `release.yml`.

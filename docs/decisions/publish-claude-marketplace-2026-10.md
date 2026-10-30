@@ -1,8 +1,9 @@
 # Publish the Claude marketplace from CI (2026-10)
 
-Status: shipped on `feat/publish-claude-marketplace`; the owner's clean-machine install check after the first release
-is still open. ADR [distribution-channels-2026-09](distribution-channels-2026-09.md) § 6, Phase 0 (deterministic
-output) and Phase 2 (publish + CI sync gate). The brief it started from was deleted once this record covered it.
+Status: shipped; first published with `v0.2.0` (2026-10-30), empty-plugin fix in `v0.2.1`; install verified with the
+Claude Code CLI against an empty config dir. The owner's clean-machine check is still open. ADR
+[distribution-channels-2026-09](distribution-channels-2026-09.md) § 6, Phase 0 (deterministic output) and Phase 2
+(publish + CI sync gate). The brief it started from was deleted once this record covered it.
 
 ## Determinism
 

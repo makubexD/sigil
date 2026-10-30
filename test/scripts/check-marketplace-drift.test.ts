@@ -115,6 +115,27 @@ describe('marketplace-drift check', () => {
     });
   });
 
+  it('should report a symlink in the published dir as added', async t => {
+    await withTempDirAsync(async dir => {
+      const published = buildPublished(path.join(dir, 'expected'));
+      const target = resolveIn(published, firstFileNamed(published, 'SKILL.md'));
+      try {
+        fs.symlinkSync(target, path.join(published, 'stray-link'));
+      } catch (err) {
+        if ((err as NodeJS.ErrnoException).code === 'EPERM') {
+          t.skip('symlinks need privileges here');
+          return;
+        }
+        throw err;
+      }
+
+      const result = runScript(published);
+
+      assert.equal(result.status, 1, result.stderr);
+      assert.ok(result.stdout.includes('added   stray-link'), result.stdout);
+    });
+  });
+
   it('should ignore a top-level .git entry', async () => {
     await withTempDirAsync(async dir => {
       const published = buildPublished(path.join(dir, 'expected'));

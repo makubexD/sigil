@@ -11,6 +11,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFile } from 'node:child_process';
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { promisify } from 'node:util';
@@ -45,8 +46,10 @@ async function buildInto(outDir: string, extraEnv: NodeJS.ProcessEnv = {}): Prom
 }
 
 /**
- * Byte-exact recursive snapshot of `root`: every regular file's POSIX-relative path mapped to
- * the hex of its raw contents, with keys sorted so `deepStrictEqual` compares order too.
+ * Byte-exact recursive snapshot of `root`: every regular file's POSIX-relative path mapped to a
+ * short sha256 hex of its raw contents, with keys sorted so `deepStrictEqual` compares order
+ * too. Hashes keep a mismatch readable — it still names the file, and prints a short hash rather
+ * than the whole file.
  */
 function fileMap(root: string): Record<string, string> {
   const files: Record<string, string> = {};
@@ -57,7 +60,7 @@ function fileMap(root: string): Record<string, string> {
         walk(full);
       } else if (entry.isFile()) {
         const rel = path.relative(root, full).split(path.sep).join('/');
-        files[rel] = fs.readFileSync(full).toString('hex');
+        files[rel] = createHash('sha256').update(fs.readFileSync(full)).digest('hex');
       }
     }
   };

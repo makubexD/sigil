@@ -34,8 +34,12 @@ function printUsage() {
 }
 
 /**
- * Reads every regular file under `root` into a Map of POSIX relative path -> raw Buffer.
- * `skipTopLevel` entries are ignored only at the root, so a `.git` deeper in the tree still counts.
+ * Reads every entry under `root` into a Map of POSIX relative path -> raw Buffer.
+ * Directories are walked; every other non-regular entry (symlink, fifo, socket, …) is recorded
+ * too, as a marker Buffer — `<non-regular: link>` for a symlink, `<non-regular>` otherwise — so
+ * it reports as a path in the diff instead of being silently skipped. Symlinks are never
+ * followed. `skipTopLevel` entries are ignored only at the root, so a `.git` deeper in the
+ * tree still counts.
  */
 function readTree(root, skipTopLevel) {
   const files = new Map();
@@ -43,10 +47,14 @@ function readTree(root, skipTopLevel) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (dir === root && skipTopLevel.has(entry.name)) continue;
       const full = path.join(dir, entry.name);
+      const rel = path.relative(root, full).split(path.sep).join('/');
       if (entry.isDirectory()) {
         walk(full);
       } else if (entry.isFile()) {
-        files.set(path.relative(root, full).split(path.sep).join('/'), fs.readFileSync(full));
+        files.set(rel, fs.readFileSync(full));
+      } else {
+        const marker = entry.isSymbolicLink() ? '<non-regular: link>' : '<non-regular>';
+        files.set(rel, Buffer.from(marker));
       }
     }
   };

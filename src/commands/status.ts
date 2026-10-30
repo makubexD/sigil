@@ -5,18 +5,20 @@
  *
  * @module
  */
-import { loadAndValidate, detectProjectTarget } from '../cli-helpers';
+import { detectProjectTarget } from '../cli-helpers';
 import { getAllTargets, getTarget, retiredConfigDestinationsOf } from '../targets';
 import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { resolveCatalog } from '../resolve';
-import { applyProjectOverlays } from '../overlays';
+import { overlayProject, reportOverlayIssues } from '../overlay-report';
+import type { OverlaidCatalog } from '../overlays';
 import { entryKey, staleEntries, statusHooks } from '../freshness';
 import { requireManifest } from './shared/manifest';
-import { JSON_INDENT } from '../json-util';
+import { perCatalog, printSourceLine } from './shared/catalog-groups';
+import { printStatusJson } from './status-json';
 import { isConfigKind } from '../kinds';
 import type { Freshness } from '../freshness';
-import type { StatusResult } from '../manifest/types';
+import type { StatusResult } from '../manifest';
 import type { LoadedCatalog } from '../types';
 
 export interface StatusOptions {
@@ -25,30 +27,6 @@ export interface StatusOptions {
   catalogDir: string;
   packs: string;
   json: boolean;
-}
-
-/** One entry's row in the `--json` output. */
-function statusJsonRow(s: StatusResult): Record<string, unknown> {
-  return {
-    id: s.entry.id,
-    kind: s.entry.kind,
-    target: s.entry.target,
-    status: s.status,
-    installedAt: s.entry.installedAt,
-    sigilVersion: s.entry.sigilVersion,
-    driftedFiles: s.driftedFiles,
-    missingFiles: s.missingFiles,
-    reason: s.reason,
-    // Each is absent unless non-empty, so JSON.stringify leaves it out.
-    retiredFiles: s.retiredFiles,
-    renderError: s.renderError,
-    newDependencies: s.newDependencies,
-  };
-}
-
-/** Prints the `--json` machine-readable status output. */
-function printStatusJson(statuses: ReturnType<typeof computeStatus>): void {
-  console.log(JSON.stringify(statuses.map(statusJsonRow), null, JSON_INDENT));
 }
 
 /** Icon per status value, used by the human-readable table. */
@@ -180,10 +158,10 @@ function makeCurrentTemplateOf(catalog: LoadedCatalog): CurrentTemplateOf {
 /** What `update` would change, over the catalog with project overlays (as `add` and `update` see it). */
 function scanFreshness(
   manifest: ReturnType<typeof requireManifest>,
-  rawCatalog: LoadedCatalog,
+  overlaid: OverlaidCatalog,
   opts: StatusOptions,
 ): Promise<Freshness> {
-  const { resolved, refused } = applyProjectOverlays(resolveCatalog(rawCatalog), opts.projectDir);
+  const { resolved, refused } = overlaid;
   return staleEntries(manifest, {
     resolved,
     projectDir: opts.projectDir,
@@ -200,10 +178,11 @@ function scanFreshness(
 async function buildStatuses(
   manifest: ReturnType<typeof requireManifest>,
   rawCatalog: LoadedCatalog,
+  overlaid: OverlaidCatalog,
   opts: StatusOptions,
 ): Promise<{ statuses: ReturnType<typeof computeStatus>; fresh: Freshness }> {
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  const fresh = await scanFreshness(manifest, rawCatalog, opts);
+  const fresh = await scanFreshness(manifest, overlaid, opts);
   const statuses = computeStatus(manifest, opts.projectDir, catalogIds, {
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
     retiredFor: retiredConfigDestinationsOf,
@@ -224,9 +203,20 @@ function withScanFindings(s: StatusResult, fresh: Freshness): StatusResult {
   };
 }
 
+/** Runs the per-catalog status logic once per catalog the manifest records; overlay issues print once. */
+async function perCatalogStatus(manifest: ReturnType<typeof requireManifest>, opts: StatusOptions) {
+  const overlaid: OverlaidCatalog[] = [];
+  const results = await perCatalog(manifest, opts, (catalog, view) => {
+    const group = overlayProject(resolveCatalog(catalog), opts.projectDir);
+    overlaid.push(group);
+    return buildStatuses(view, catalog, group, opts);
+  });
+  reportOverlayIssues(overlaid);
+  return results;
+}
+
 export async function runStatus(opts: StatusOptions): Promise<void> {
-  const { catalog: rawCatalog } = await loadAndValidate(opts.catalogDir, opts.packs);
-  // An unknown --target still fails here, before anything is read.
+  // An unknown --target still fails here, before any catalog is read.
   getTarget(opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false }));
 
   const manifest = requireManifest(opts.projectDir);
@@ -236,14 +226,14 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     return;
   }
 
-  const { statuses } = await buildStatuses(manifest, rawCatalog, opts);
+  const results = await perCatalogStatus(manifest, opts);
 
-  if (opts.json) {
-    printStatusJson(statuses);
-    return;
+  if (opts.json) return printStatusJson(results);
+
+  for (const r of results) {
+    printSourceLine(r.source);
+    printStatusTable(r.result.statuses);
   }
-
-  printStatusTable(statuses);
-  printStatusSummary(statuses);
+  printStatusSummary(results.flatMap(r => r.result.statuses));
   for (const note of duplicateLoads(manifest.entries, getAllTargets())) console.log(`  ℹ  ${note}`);
 }

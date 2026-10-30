@@ -10,7 +10,7 @@ import fs from 'fs';
 import path from 'path';
 import { replaceMerge, serialize } from '../../config-merge';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../../config-utils';
-import { previousOpFor, recordedOpsAt, upsertConfigEntry } from '../../manifest';
+import { previousOpFor, recordedOpsAt, sourceToRecord, upsertConfigEntry } from '../../manifest';
 import { pkg } from '../../cli-helpers';
 import type {
   ConfigMergeOp,
@@ -127,6 +127,11 @@ function recordConfigEntry(id: string, kind: string, ops: ConfigMergeOp[], ctx: 
     dependentOf: [],
     sigilVersion: pkg.version,
     now: ctx.now,
+    catalog: sourceToRecord(
+      ctx.plan.opts.projectDir,
+      ctx.plan.opts.catalogDir,
+      ctx.plan.opts.packs,
+    ),
   });
 }
 

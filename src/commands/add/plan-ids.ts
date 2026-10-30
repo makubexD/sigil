@@ -6,7 +6,7 @@
  */
 import { resolveSelection, type SelectionResult } from '../../select';
 import { SigilError } from '../../errors';
-import { skipRefused } from '../../overlays';
+import { skipRefused } from '../../overlay-report';
 import { computeInstallStates } from '../../install-state';
 import { loadManifest, sameDestination } from '../../manifest';
 import { CONFIG_KINDS } from '../../select';

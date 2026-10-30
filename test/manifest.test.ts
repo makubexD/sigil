@@ -19,6 +19,7 @@ import {
 } from '../dist-cli/manifest/index';
 import { applyMerge, canonicalize } from '../dist-cli/config-merge/index';
 import type { ConfigMergeOp } from '../dist-cli/types';
+import type { ManifestEntry } from '../dist-cli/manifest/types';
 
 const VERSION = '0.1.0';
 
@@ -78,6 +79,71 @@ describe('H — Manifest (manifest.ts)', () => {
         'utf-8',
       );
       assert.throws(() => loadManifest(dir), /newer version/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('loadManifest accepts a v2 manifest and saveManifest writes v3', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-test-'));
+    try {
+      fs.mkdirSync(path.join(dir, '.sigil'), { recursive: true });
+      const manifestFile = path.join(dir, '.sigil', 'manifest.json');
+      fs.writeFileSync(manifestFile, JSON.stringify({ manifestVersion: 2, entries: [] }), 'utf-8');
+
+      const loaded = loadManifest(dir);
+      assert.equal(loaded.manifestVersion, MANIFEST_VERSION, 'loaded as the current version');
+      saveManifest(dir, loaded);
+
+      const written = JSON.parse(fs.readFileSync(manifestFile, 'utf-8')) as {
+        manifestVersion: number;
+      };
+      assert.equal(written.manifestVersion, 3, 'a v2 manifest is saved as v3');
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('loadManifest throws on a v4 manifest', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-test-'));
+    try {
+      fs.mkdirSync(path.join(dir, '.sigil'), { recursive: true });
+      fs.writeFileSync(
+        path.join(dir, '.sigil', 'manifest.json'),
+        JSON.stringify({ manifestVersion: 4, entries: [] }),
+        'utf-8',
+      );
+      assert.throws(() => loadManifest(dir), /newer version/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('an entry’s recorded catalog source survives load → save → load', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-test-'));
+    try {
+      const catalog = { dir: '../team', packs: '../team/packs.yaml' };
+      const entries = [
+        {
+          id: 'shared/team-rule',
+          kind: 'rule',
+          target: 'claude',
+          sigilVersion: VERSION,
+          files: [],
+          dependentOf: [],
+          installedAt: '2026-01-01T00:00:00Z',
+          catalog,
+        },
+      ] as unknown as ManifestEntry[];
+
+      saveManifest(dir, { manifestVersion: MANIFEST_VERSION, entries });
+      saveManifest(dir, loadManifest(dir));
+
+      const reloaded = loadManifest(dir).entries as Array<
+        ManifestEntry & { catalog?: { dir: string; packs: string } }
+      >;
+      assert.deepEqual(reloaded, entries);
+      assert.deepEqual(reloaded[0]!.catalog, catalog);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

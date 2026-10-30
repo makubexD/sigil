@@ -6,6 +6,9 @@
  * @module
  */
 import { resolveDefault, loadAndValidate } from '../cli-helpers';
+import { loadManifest } from '../manifest';
+import { groupBySource } from '../manifest/catalog-source';
+import type { SourceGroup } from '../manifest/catalog-source';
 import { runAdd } from '../commands/add';
 import { runInit } from '../commands/init';
 import { runPrune } from '../commands/prune';
@@ -45,14 +48,41 @@ const restore: HomeHandler = async dir => {
   );
 };
 
-/** Ids in the bundled catalog, so the header can count artifacts that have left it. */
-async function bundledCatalogIds(): Promise<Set<string> | undefined> {
+/** Ids in one catalog, or `undefined` when it cannot be loaded or is invalid. */
+async function idsIn(catalogDir: string, packs: string): Promise<Set<string> | undefined> {
   try {
-    const { catalog } = await loadAndValidate(bundled().catalogDir, bundled().packs);
+    const { catalog } = await loadAndValidate(catalogDir, packs);
     return new Set(catalog.artifacts.map(a => a.id));
   } catch {
-    return undefined; // the header just skips the "orphaned" count
+    return undefined;
   }
+}
+
+/**
+ * Ids in every catalog `dir` is judged against: the bundled catalog plus each catalog its
+ * manifest records, so an artifact installed from a team catalog is not counted as orphaned.
+ * A recorded catalog that is missing or invalid is left out (its entries then show as orphaned,
+ * which is the honest state), and an unreadable manifest leaves the bundled ids only. `undefined`
+ * when the bundled catalog itself cannot be loaded, so the header skips the "orphaned" count.
+ */
+async function catalogIds(dir: string): Promise<Set<string> | undefined> {
+  const ids = await idsIn(bundled().catalogDir, bundled().packs);
+  if (ids === undefined) return undefined;
+  let groups: SourceGroup[];
+  try {
+    groups = groupBySource(loadManifest(dir).entries, { projectDir: dir, ...bundled() });
+  } catch {
+    // A damaged manifest is the "repair" state, and a bad recorded catalog is reported by the
+    // command run on it; neither is an orphaned-count error.
+    return ids;
+  }
+  for (const group of groups) {
+    if (group.source === undefined) continue;
+    const recorded = await idsIn(group.catalogDir, group.packs);
+    if (recorded === undefined) continue;
+    for (const id of recorded) ids.add(id);
+  }
+  return ids;
 }
 
 /** Runs `run` for the tool the user means: asks only when more than one tool has installs. */
@@ -102,7 +132,7 @@ export function defaultHomeDeps(showHelp: () => void): HomeDeps {
   const author = { new: newArtifact, edit: editArtifact, validate: validateCatalog };
   const handlers = { init, install, repair, restore, update, uninstall, status, prune };
   return {
-    catalogIds: bundledCatalogIds,
+    catalogIds,
     handlers: { ...handlers, browse, search, ...author, help },
   };
 }

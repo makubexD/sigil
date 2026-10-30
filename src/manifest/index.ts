@@ -8,8 +8,9 @@
  *   types   — schema types and constants
  *   io      — loadManifest, saveManifest, manifestPath
  *   hash    — sha256, hashFiles
- *   mutate  — upsertEntries, upsertConfigEntry, removeEntries
+ *   mutate  — upsertEntries, upsertConfigEntry, removeEntries, recordCatalogSource
  *   status  — computeStatus, recordedHashes
+ *   catalog-source — the catalog an entry came from, and grouping entries by it
  */
 
 export type {
@@ -23,7 +24,7 @@ export type {
 export { MANIFEST_VERSION, MANIFEST_RELATIVE_PATH } from './types';
 export { manifestPath, loadManifest, saveManifest } from './io';
 export { sha256, hashFiles } from './hash';
-export { upsertEntries } from './mutate';
+export { upsertEntries, recordCatalogSource } from './mutate';
 export { upsertConfigEntry } from './mutate-config';
 export {
   recordedOp,
@@ -36,3 +37,10 @@ export {
 export { removeEntries } from './mutate-remove';
 export { computeStatus, recordedHashes } from './status';
 export type { CurrentTemplateOf } from './status';
+export {
+  sourceToRecord,
+  isExplicitCatalog,
+  groupBySource,
+  assertReachable,
+} from './catalog-source';
+export type { CatalogSource, CatalogSourceOptions, SourceGroup } from './catalog-source';

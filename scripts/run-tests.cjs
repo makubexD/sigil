@@ -10,6 +10,9 @@
  * - `SIGIL_TEST_COVERAGE=0` skips `--experimental-test-coverage` (default: on).
  * - `SIGIL_TEST_CONCURRENCY=<n>` sets `--test-concurrency` (default: one test file per CPU, `os.availableParallelism()`).
  *
+ * Extra arguments are passed to `node` ahead of the file list, so `npm test -- --test-name-pattern=<re>`
+ * (or `--test-skip-pattern`, `--test-only`) narrows the run.
+ *
  * Run: node scripts/run-tests.cjs   (after `npm run build && npm run build:test`; `npm test` does both)
  */
 const fs = require('fs');
@@ -59,5 +62,6 @@ if (process.env.SIGIL_TEST_COVERAGE !== '0') {
 const requested = Number.parseInt(process.env.SIGIL_TEST_CONCURRENCY ?? '', 10);
 const concurrency = requested > 0 ? requested : os.availableParallelism();
 args.push(`--test-concurrency=${concurrency}`);
+args.push(...process.argv.slice(2));
 const result = spawnSync(process.execPath, [...args, ...files], { stdio: 'inherit' });
 process.exit(result.status === null ? 1 : result.status);

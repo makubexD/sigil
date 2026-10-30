@@ -19,7 +19,7 @@ import { resolveConfigRoot } from '../../config-utils';
 import { resolveClaudeConfigDestination, CLAUDE_MCP_SERVERS_KEY } from './config';
 import { JSON_INDENT } from '../../json-util';
 import { getPackArtifacts } from './plugin-build';
-import { buildPlugin, resolveIdentityContact } from './plugin-assemble';
+import { buildPlugin, hasPluginMembers, resolveIdentityContact } from './plugin-assemble';
 import { buildHookConfigOps, buildSettingsConfigOps, buildMcpConfigOps } from './config-scaffold';
 
 /** The 3 Claude Code config scopes, ordered by documented precedence (highest → lowest). */
@@ -123,13 +123,17 @@ function buildPluginEntry(pack: CompileOptions['packs'][number]): PluginEntry {
   };
 }
 
-/** Builds one pack's plugin files + its marketplace.json entry. */
+/**
+ * Builds one pack's plugin files + its marketplace.json entry, or `undefined` when the pack has
+ * nothing the plugin channel delivers (then it gets no plugin folder and no marketplace entry).
+ */
 export function buildOnePackPlugin(
   pack: CompileOptions['packs'][number],
   catalog: ResolvedCatalog,
   options: CompileOptions,
-): { files: FileMap; entry: PluginEntry } {
+): { files: FileMap; entry: PluginEntry } | undefined {
   const packArtifacts = getPackArtifacts(pack, catalog);
+  if (!hasPluginMembers(packArtifacts)) return undefined;
   const files = buildPlugin({
     pack,
     packArtifacts,

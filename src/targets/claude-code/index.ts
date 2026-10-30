@@ -120,10 +120,10 @@ export class ClaudeCodeTarget implements Target {
       source: string;
     }> = [];
 
-    for (const pack of options.packs) {
-      const { files: pluginFiles, entry } = buildOnePackPlugin(pack, catalog, options);
-      Object.assign(files, pluginFiles);
-      pluginEntries.push(entry);
+    for (const plugin of options.packs.map(pack => buildOnePackPlugin(pack, catalog, options))) {
+      if (!plugin) continue;
+      Object.assign(files, plugin.files);
+      pluginEntries.push(plugin.entry);
     }
 
     files['.claude-plugin/marketplace.json'] = buildMarketplaceJson(

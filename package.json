@@ -71,6 +71,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check-doc-comments": "node scripts/check-doc-comments.cjs",
+    "marketplace:check": "node scripts/check-marketplace-drift.cjs",
     "check": "npm run lint && npm run format:check && npm run check-doc-comments && npm test",
     "ci:local": "npm audit --omit=dev &&npm run lint && npm run format:check && npm run build && npm run validate && node dist-cli/cli.js sync --check && npm run evals:check && npm run test:built && npm run catalog:build && npm run validate:claude-plugins && node dist-cli/cli.js --version && node dist-cli/cli.js list"
   },

@@ -71,7 +71,8 @@ A pack becomes a plugin only when it holds at least one artifact the plugin chan
 folder and no `marketplace.json` entry, so the marketplace never lists a plugin that delivers nothing. `v0.2.0`
 shipped `essentials` empty, because that pack is all MCP servers, hooks and prompts; `v0.2.1` removes it, and
 `essentials` installs with `sigil add`. Prompts are plugin skills since 2026-10-30, so `essentials` returned to
-the marketplace after `v0.2.1` as a plugin carrying only its two commands.
+the marketplace after `v0.2.1` as a plugin carrying only `/essentials:explain-diff`. `author-artifact`
+stays out until npm publish, because it needs the `sigil` CLI.
 
 ## Drift gate
 

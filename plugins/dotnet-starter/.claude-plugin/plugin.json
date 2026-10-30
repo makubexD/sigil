@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "dotnet-starter",
   "displayName": ".NET / C# Starter",
-  "version": "0.2.1",
-  "description": "Complete setup for .NET / C# development. Includes the cs-generate-tests skill (plus its C# testing rule and the cs-code-reviewer agent as automatically resolved deps), the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
+  "version": "0.3.0",
+  "description": "Complete setup for .NET / C# development. Includes the cs-generate-tests skill (plus its C# testing rule and the cs-code-reviewer agent as automatically resolved deps). With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions. As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard; the permissions need sigil add.\n",
   "author": {
     "name": "Sigil",
     "url": "https://github.com/makubexD/sigil#readme"

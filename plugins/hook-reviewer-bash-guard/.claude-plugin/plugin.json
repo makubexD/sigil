@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "hook-reviewer-bash-guard",
+  "displayName": "Reviewer Bash Guard",
+  "version": "0.3.0",
+  "description": "Blocks write-shaped Bash commands (file writes and redirects, in-place edits, git commits and checkouts, package installs, fixers and formatters) when a read-only reviewer or auditor subagent runs them. The main session and every other agent are not affected.",
+  "author": {
+    "name": "Sigil",
+    "url": "https://github.com/makubexD/sigil#readme"
+  },
+  "license": "MIT",
+  "keywords": []
+}

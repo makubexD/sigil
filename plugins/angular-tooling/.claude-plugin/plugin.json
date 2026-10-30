@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "angular-tooling",
   "displayName": "Angular Tooling",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Full Angular tooling suite — all imported ng- skills, agents, and rules. Covers Angular-specific concerns: components, RxJS, Signals, templates, security, and testing patterns for Angular applications. Skill deps are auto-resolved by the wizard's deps step.\n",
   "author": {
     "name": "Sigil",

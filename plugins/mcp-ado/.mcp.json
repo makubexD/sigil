@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+    "ado": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp@2.10.0",
+        "${ADO_ORG}",
+        "--authentication",
+        "pat",
+        "-d",
+        "core",
+        "work",
+        "work-items"
+      ],
+      "env": {
+        "ADO_MCP_PERSONAL_TOKEN": "${ADO_MCP_PERSONAL_TOKEN}"
+      }
+    }
+  }
+}

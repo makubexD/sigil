@@ -1,0 +1,19 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node",
+            "args": [
+              "-e",
+              "const fs = require('fs');\nconst os = require('os');\nconst path = require('path');\nconst home = os.homedir();\nif (process.env.MK_WORKER || !fs.existsSync(path.join(home, '.claude', 'state', 'worker-mode'))) process.exit(0);\nlet raw = '';\nprocess.stdin.setEncoding('utf8');\nprocess.stdin.on('data', chunk => (raw += chunk)).on('end', () => {\n  let file;\n  try {\n    const input = JSON.parse(raw).tool_input || {};\n    file = input.file_path || input.notebook_path;\n  } catch { return; }\n  if (typeof file !== 'string' || file === '') return;\n  const full = path.resolve(file).split(path.sep).join('/');\n  const claudeDir = path.join(home, '.claude').split(path.sep).join('/') + '/';\n  if (full.startsWith(claudeDir)) return;\n  if (/\\/docs\\/plan-[^/]*\\.md$/.test(full) || /\\/plans\\//.test(full)) return;\n  process.stderr.write(\n    'Worker mode is on: edit ' + file + ' through the delegated worker (for example /mk-delegate) ' +\n    'and review its diff. For a tiny fix or judgment work, ask the user to turn worker mode off ' +\n    '(worker-mode off, or delete ~/.claude/state/worker-mode).\\n'\n  );\n  process.exitCode = 2;\n});"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

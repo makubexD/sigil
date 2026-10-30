@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "react-tooling",
   "displayName": "React Tooling",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "Full React tooling suite — all react- skills, agents, and rules. Skills include scaffolding, testing, documentation, dependency management, security auditing, and release preparation. Skill deps are auto-resolved by the wizard's deps step.\n",
   "author": {
     "name": "Sigil",

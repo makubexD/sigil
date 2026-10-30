@@ -204,6 +204,9 @@ interface TargetCapabilities {
 | 5     | Codex adapter (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin)                                                                                                                                                                                  |                   |
 | 6     | Cursor adapter (`.cursor/rules/*.mdc`, agents, commands, hooks, MCP; Cursor plugin — the one format that carries rules)                                                                                                                                                                    |                   |
 
+"No empty plugins" (Phase 0) is done as of 2026-10-30
+([publish-claude-marketplace-2026-10](publish-claude-marketplace-2026-10.md#empty-plugins)).
+
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,
 then one collapsible section per tool) plus a `docs/setup/<tool>.md` page.

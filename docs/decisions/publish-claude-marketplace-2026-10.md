@@ -63,6 +63,14 @@ Decided 2026-10-30; the owner delegated the choice ("choose the best option").
   a backport release never rolls users back, and it skips a tag already published, so re-running a release is a no-op.
   A `concurrency` group serializes two releases pushed together.
 
+## Empty plugins
+
+A pack becomes a plugin only when it holds at least one artifact the plugin channel carries (`skill`, `agent`,
+`workflow`). A pack whose members are all `mcp`, `hook` or `prompt` — or rules alone — gets no `plugins/<name>/`
+folder and no `marketplace.json` entry, so the marketplace never lists a plugin that delivers nothing. `v0.2.0`
+shipped `essentials` empty, because that pack is all MCP servers, hooks and prompts; `v0.2.1` removes it, and
+`essentials` installs with `sigil add`.
+
 ## Drift gate
 
 The `marketplace` branch must equal a fresh `--target claude` build of the release its tip is tagged with

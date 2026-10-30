@@ -63,11 +63,11 @@ const EXPLAIN_DIFF = 'plugins/essentials/skills/explain-diff/SKILL.md';
 const AUTHOR_ARTIFACT = 'plugins/essentials/skills/author-artifact/SKILL.md';
 
 describe('Claude plugin: prompts as skills', () => {
-  it('should land the prompts in the plugin', async () => {
+  it('should land only explain-diff', async () => {
     const { files } = await compileBundled();
 
     assert.ok(EXPLAIN_DIFF in files, 'explain-diff emitted into the essentials plugin');
-    assert.ok(AUTHOR_ARTIFACT in files, 'author-artifact emitted into the essentials plugin');
+    assert.ok(!(AUTHOR_ARTIFACT in files), 'author-artifact stays out of the plugin');
   });
 
   it('should drop the shared- prefix from explain-diff', async () => {
@@ -112,13 +112,13 @@ describe('Claude plugin: prompts as skills', () => {
     );
   });
 
-  it('should ship only the prompts in the essentials plugin', async () => {
+  it('should ship only explain-diff in the essentials plugin', async () => {
     const { files } = await compileBundled();
 
     assert.deepEqual(
       pluginKeys(files, 'essentials').sort(),
-      ['plugins/essentials/.claude-plugin/plugin.json', EXPLAIN_DIFF, AUTHOR_ARTIFACT].sort(),
-      'essentials carries its manifest and its two prompts, nothing else',
+      ['plugins/essentials/.claude-plugin/plugin.json', EXPLAIN_DIFF].sort(),
+      'essentials carries its manifest and explain-diff, nothing else',
     );
   });
 
@@ -295,6 +295,29 @@ describe('Claude plugin: prompts as skills', () => {
       !marketplaceNames(files).includes('allexcluded'),
       'no marketplace entry for the empty pack',
     );
+  });
+
+  it('should keep author-artifact in the sigil add scaffold', async () => {
+    const { resolved } = await compileBundled();
+    const target = new ClaudeCodeTarget();
+    const files = await target.scaffold!('shared/author-artifact', resolved, {
+      projectDir: '/fake',
+    });
+
+    assert.ok(
+      '.claude/skills/shared-author-artifact/SKILL.md' in files,
+      'sigil add still scaffolds author-artifact under its full id',
+    );
+  });
+
+  it('should lead the plugin description with explain-diff', async () => {
+    const { files } = await compileBundled();
+    const pluginJson = JSON.parse(files['plugins/essentials/.claude-plugin/plugin.json']!);
+    const description: string = pluginJson.description;
+
+    assert.ok(description.startsWith('Explain a diff'), 'the description leads with explain-diff');
+    const firstSentence = description.split('.')[0] ?? '';
+    assert.ok(!/MCP|hook/i.test(firstSentence), 'the first sentence names no MCP server or hook');
   });
 
   it('should keep the scaffold id for a language prompt', async () => {

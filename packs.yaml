@@ -7,6 +7,7 @@
 #
 # Legacy: use `languages: [<lang>]` to include every artifact for a language.
 # Prefer explicit `artifacts:` lists for curated packs (takes precedence over languages).
+# `pluginExclude: [<id>]` keeps a listed artifact out of the Claude plugin; sigil add still installs it.
 #
 # Add a new pack by appending an entry here — no catalog or adapter changes needed.
 #
@@ -17,17 +18,18 @@ packs:
   - name: essentials
     displayName: Essentials (any language)
     description: >
-      Core productivity tools that work with any programming language.
-      Includes the Filesystem MCP for file access, config-file protection,
-      and two utility commands (explain a diff, author a new catalog artifact).
+      Explain a diff for any audience, in any programming language.
+      With sigil add, also installs the Filesystem MCP, config-file protection,
+      and a command that authors new catalog artifacts.
       Dev-tool permissions are per language: each starter pack carries its own.
-      The Claude plugin carries only the two commands; the MCP server and hooks install with sigil add.
     artifacts:
       - shared/filesystem
       - shared/protect-config
       - shared/reviewer-bash-guard
       - shared/explain-diff
       - shared/author-artifact
+    # Needs the sigil CLI and a catalog, which a plugin-only user lacks; returns at npm publish.
+    pluginExclude: [shared/author-artifact]
 
   - name: dotnet-starter
     displayName: .NET / C# Starter

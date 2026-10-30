@@ -357,7 +357,7 @@ describe('empty packs', () => {
     }
     assert.ok(
       names.includes('essentials'),
-      'essentials is listed — its plugin carries the two prompts',
+      'essentials is listed — its plugin carries explain-diff',
     );
   });
 });

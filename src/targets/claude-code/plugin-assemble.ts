@@ -173,6 +173,19 @@ export function pluginMembersByKind(
   return kind => (native.includes(kind) ? packArtifacts.filter(a => a.kind === kind) : []);
 }
 
+/**
+ * Whether a pack has at least one artifact the plugin channel delivers. A pack whose artifacts
+ * the plugin channel can't carry (only `mcp` / `hook` / `prompt` / `settings`, or rules with no
+ * skill) gets no plugin, so the marketplace never lists an empty one.
+ */
+export function hasPluginMembers(packArtifacts: ResolvedArtifact[]): boolean {
+  const members = pluginMembersByKind(packArtifacts);
+  for (const kind of WRITABLE_PLUGIN_KINDS) {
+    if (members(kind).length > 0) return true;
+  }
+  return false;
+}
+
 /** Build all plugin files for a single pack. */
 export function buildPlugin(options: BuildPluginOptions): FileMap {
   const { pack, packArtifacts, catalog } = options;

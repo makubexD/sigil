@@ -3,12 +3,15 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 
+import { parsePacksConfig } from '../../dist-cli/packs-config';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { CLAUDE_PROMPT_SPEC } from '../../dist-cli/targets/claude-code/spec/prompt';
-import type { CompileOptions, MarketplaceIdentity } from '../../dist-cli/types';
+import type { CompileOptions, FileMap, MarketplaceIdentity, Pack } from '../../dist-cli/types';
 import { loadBundledCatalog } from '../helpers/catalog';
+import { PACKS as BUNDLED_PACKS } from '../helpers/install-scenario';
 
 const VERSION = '0.1.0';
 const PACKS = [
@@ -277,5 +280,84 @@ describe('Claude Code target: marketplace identity', () => {
       const pluginJson = JSON.parse(files[`plugins/${pack.name}/.claude-plugin/plugin.json`]!);
       assert.equal(pluginJson.license, 'MIT', `${pack.name} keeps the MIT default`);
     }
+  });
+});
+
+describe('empty packs', () => {
+  /** A pack made of explicit catalog ids, so a test names exactly what it holds. */
+  function packOf(name: string, artifacts: string[]): Pack {
+    return { name, displayName: name, description: `The ${name} pack.`, artifacts };
+  }
+
+  /** Compile the bundled catalog with `packs`. */
+  async function compilePacks(packs: Pack[]): Promise<FileMap> {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    return target.compile(resolved, { version: VERSION, packs });
+  }
+
+  /** Every output path under the pack's plugin folder. */
+  function pluginKeys(files: FileMap, packName: string): string[] {
+    return Object.keys(files).filter(key => key.startsWith(`plugins/${packName}/`));
+  }
+
+  /** The `name` of every marketplace entry, in order. */
+  function marketplaceNames(files: FileMap): string[] {
+    const marketplace = JSON.parse(files['.claude-plugin/marketplace.json']!);
+    return marketplace.plugins.map((entry: { name: string }) => entry.name);
+  }
+
+  it('should give a pack of only an MCP and a hook no plugin', async () => {
+    const files = await compilePacks([
+      packOf('config-only', ['shared/filesystem', 'shared/protect-config']),
+    ]);
+
+    assert.deepEqual(pluginKeys(files, 'config-only'), [], 'no files under plugins/config-only');
+    assert.deepEqual(marketplaceNames(files), [], 'no marketplace entry for the pack');
+  });
+
+  it('should give a pack holding only a rule no skill uses no plugin', async () => {
+    const files = await compilePacks([packOf('rule-only', ['shared/clean-code'])]);
+
+    assert.deepEqual(pluginKeys(files, 'rule-only'), [], 'no files under plugins/rule-only');
+    assert.deepEqual(marketplaceNames(files), [], 'no marketplace entry for the pack');
+  });
+
+  it('should give a pack with a skill a plugin and one marketplace entry', async () => {
+    const files = await compilePacks([packOf('skill-pack', ['csharp/cs-generate-tests'])]);
+
+    assert.ok('plugins/skill-pack/.claude-plugin/plugin.json' in files, 'plugin manifest emitted');
+    assert.ok(
+      'plugins/skill-pack/skills/cs-generate-tests/SKILL.md' in files,
+      'the skill SKILL.md emitted',
+    );
+    assert.deepEqual(marketplaceNames(files), ['skill-pack'], 'exactly one marketplace entry');
+  });
+
+  it('should list only the skill pack when the build mixes an empty pack and a skill pack', async () => {
+    const files = await compilePacks([
+      packOf('empty-pack', ['shared/filesystem', 'shared/protect-config']),
+      packOf('skill-pack', ['csharp/cs-generate-tests']),
+    ]);
+
+    assert.deepEqual(pluginKeys(files, 'empty-pack'), [], 'no files under plugins/empty-pack');
+    assert.deepEqual(marketplaceNames(files), ['skill-pack'], 'only the skill pack is listed');
+  });
+
+  it('should give every bundled pack with a marketplace entry at least one delivered file', async () => {
+    const config = parsePacksConfig(fs.readFileSync(BUNDLED_PACKS, 'utf8'), BUNDLED_PACKS);
+    const files = await compilePacks(config.packs);
+    const names = marketplaceNames(files);
+
+    for (const name of names) {
+      const manifest = `plugins/${name}/.claude-plugin/plugin.json`;
+      const delivered = pluginKeys(files, name).filter(key => key !== manifest);
+      assert.ok(delivered.length > 0, `${name} delivers at least one file besides plugin.json`);
+    }
+    assert.ok(
+      !names.includes('essentials'),
+      'essentials is not listed — the plugin channel cannot carry its MCP, hooks or prompts',
+    );
   });
 });

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- The Claude marketplace no longer lists `essentials` as an empty plugin: a pack whose artifacts
+  plugins can't carry (MCP, hooks, prompts) gets no plugin. Install `essentials` with `sigil add`.
+
 ## [0.2.0] - 2026-10-30
 
 ### Breaking

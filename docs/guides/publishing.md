@@ -123,7 +123,13 @@ Warning: no marketplace: block in packs.yaml; the marketplace keeps the name 'si
 
 **Publish:** copy the _contents_ of `out/claude/` to the root of a git repository (the folder
 that contains `.claude-plugin/`), commit and push. `dist/` and your `--out-dir` are not
-committed or published by sigil; nothing automates this today.
+committed or published by sigil itself. To automate it, copy what sigil does for its own
+marketplace: the `marketplace` job in
+[`.github/workflows/release.yml`](../../.github/workflows/release.yml) builds on each release tag
+and pushes `claude/` to an orphan `marketplace` branch, which users add with `<owner>/<repo>#marketplace`.
+[`.github/workflows/marketplace-drift.yml`](../../.github/workflows/marketplace-drift.yml) then runs
+`npm run marketplace:check` to prove the branch equals a fresh build. The reasons for that layout are in
+[publish-claude-marketplace-2026-10](../decisions/publish-claude-marketplace-2026-10.md).
 
 **Install (users):**
 
@@ -165,6 +171,7 @@ sigil does not write that layout.
 - No Copilot plugin channel: [copilot-plugin-channel](../ideas/copilot-plugin-channel.md).
 - `sigil build --target copilot` emits agents as one `.github/AGENTS.md`, while `add` writes
   `.github/agents/*.agent.md`; the two layouts differ (same brief).
-- Nothing publishes the marketplace for you: [publish-claude-marketplace](../ideas/publish-claude-marketplace.md).
+- Sigil publishes only its own marketplace. For a fork, copy its release `marketplace` job (see
+  [§ 2](#2-build-and-host-a-claude-marketplace)).
 - No settings for Copilot. Hooks install with `sigil add --target copilot` since #102
   ([decision](../decisions/copilot-hooks-2026-10.md)).

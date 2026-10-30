@@ -62,3 +62,69 @@ jobs:
       #
       - name: Publish to npm (OIDC + provenance)
         run: npm publish --provenance --access public
+
+  # ── Marketplace ────────────────────────────────────────────────────────────
+  #
+  # Runs after the npm publish succeeds. It builds the tag's Claude marketplace and publishes
+  # it to the orphan `marketplace` branch, which users add with
+  # `/plugin marketplace add makubexD/sigil#marketplace`. Every publish is also
+  # tagged `marketplace-v<version>` so a user can pin one. `contents: write` is
+  # granted on this job only — the workflow-level permissions stay read-only.
+  # See docs/decisions/publish-claude-marketplace-2026-10.md.
+  #
+  marketplace:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Build the Claude marketplace
+        run: node dist-cli/cli.js build --target claude --out-dir "$RUNNER_TEMP/mp"
+
+      - name: Publish to the marketplace branch
+        run: |
+          set -euo pipefail
+
+          BR="$RUNNER_TEMP/branch"
+          TAG="marketplace-$GITHUB_REF_NAME"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          # First publish has no `marketplace` branch yet: start an orphan one.
+          if git ls-remote --exit-code --heads origin marketplace > /dev/null; then
+            git fetch --depth=1 origin marketplace:refs/remotes/origin/marketplace
+            git worktree add -B marketplace "$BR" origin/marketplace
+          else
+            git worktree add --orphan -b marketplace "$BR"
+          fi
+
+          # Keep `.git/`; replace everything else with the fresh build.
+          find "$BR" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a "$RUNNER_TEMP/mp/claude/." "$BR/"
+
+          cd "$BR"
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "marketplace unchanged; tagging the existing commit"
+          else
+            git commit -m "marketplace: $GITHUB_REF_NAME"
+          fi
+
+          git tag "$TAG"
+          git push origin marketplace "refs/tags/$TAG"

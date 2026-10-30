@@ -13,13 +13,17 @@ import { CATALOG, PACKS } from '../helpers/install-scenario';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 /** Runs `build --target claude` and returns what it wrote to console.warn. */
-async function buildCapturingWarnings(root: string, packsFile: string): Promise<string[]> {
+async function buildCapturingWarnings(
+  root: string,
+  packsFile: string,
+  target = 'claude',
+): Promise<string[]> {
   const lines: string[] = [];
   const original = console.warn;
   console.warn = (msg: string) => void lines.push(msg);
   try {
     await runBuild({
-      target: 'claude',
+      target,
       catalogDir: CATALOG,
       packs: packsFile,
       outDir: path.join(root, 'dist'),
@@ -58,6 +62,16 @@ describe('build marketplace identity', () => {
       );
       assert.match(warnings[0]!, /keeps the name 'sigil'/);
       assert.match(warnings[0]!, /marketplace:/);
+    });
+  });
+
+  it('should not warn for a copilot-only build, which has no marketplace', async () => {
+    await withTempDirAsync(async root => {
+      const copy = path.join(root, 'packs.yaml');
+      fs.copyFileSync(PACKS, copy);
+
+      const warnings = marketplaceWarnings(await buildCapturingWarnings(root, copy, 'copilot'));
+      assert.deepEqual(warnings, [], 'no marketplace warning without a claude target');
     });
   });
 

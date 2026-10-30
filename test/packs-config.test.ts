@@ -60,6 +60,8 @@ describe('parsePacksConfig', () => {
       ["name: 'a..b'", 'a name containing ..'],
       ["name: acme-ai\nowner: { name: '' }", 'an empty owner.name'],
       ['name: acme-ai', 'a block without owner'],
+      ['name: acme-ai\nowner: { name: Acme }\nlicence: MIT', 'a misspelt key'],
+      ['name: acme-ai\nowner: { name: Acme, mail: a@b.c }', 'a misspelt owner key'],
     ];
     for (const [body, label] of cases) {
       assert.throws(

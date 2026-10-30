@@ -20,6 +20,8 @@ import { nativeKinds } from '../capabilities';
 import { CLAUDE_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 
+const PLUGIN_MANIFEST_SCHEMA = 'https://json.schemastore.org/claude-code-plugin-manifest.json';
+
 /** A person/org entry in a configured marketplace identity. */
 export type IdentityContact = MarketplaceIdentity['owner'];
 
@@ -51,7 +53,7 @@ function buildPluginJson(pack: Pack, options: BuildPluginOptions): string {
 function sigilPluginManifest(pack: Pack, version: string, homepage: string | undefined) {
   const pluginUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
   return {
-    $schema: 'https://json.schemastore.org/claude-code-plugin-manifest.json',
+    $schema: PLUGIN_MANIFEST_SCHEMA,
     name: pack.name,
     displayName: pack.displayName,
     version,
@@ -69,7 +71,7 @@ function configuredPluginManifest(pack: Pack, version: string, marketplace: Mark
     marketplace.homepage,
   );
   return {
-    $schema: 'https://json.schemastore.org/claude-code-plugin-manifest.json',
+    $schema: PLUGIN_MANIFEST_SCHEMA,
     name: pack.name,
     displayName: pack.displayName,
     version,

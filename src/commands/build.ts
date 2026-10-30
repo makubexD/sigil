@@ -68,9 +68,11 @@ function writeRegistry(resolved: ResolvedCatalog, outDir: string): void {
 /**
  * Warns once per build when a packs file other than the bundled one names no marketplace,
  * so a fork silently keeps sigil's name and collides with upstream. Building sigil itself
- * uses the bundled packs file and never warns.
+ * uses the bundled packs file and never warns; neither does a build with no Claude marketplace.
  */
-function warnIfMarketplaceUnnamed(packsFile: string, hasMarketplace: boolean): void {
+function warnIfMarketplaceUnnamed(opts: BuildOptions, hasMarketplace: boolean): void {
+  if (opts.target !== 'claude' && opts.target !== 'all') return;
+  const packsFile = opts.packs;
   if (hasMarketplace || path.resolve(packsFile) === resolveDefault('packs.yaml')) return;
   const packsPath = path.relative(process.cwd(), path.resolve(packsFile));
   console.warn(
@@ -82,7 +84,7 @@ export async function runBuild(opts: BuildOptions): Promise<void> {
   const { catalog, packsConfig } = await loadAndValidate(opts.catalogDir, opts.packs);
   const resolved = resolveCatalog(catalog);
 
-  warnIfMarketplaceUnnamed(opts.packs, packsConfig.marketplace !== undefined);
+  warnIfMarketplaceUnnamed(opts, packsConfig.marketplace !== undefined);
 
   const targets = opts.target === 'all' ? getAllTargets() : [getTarget(opts.target)];
   const compileOpts = {

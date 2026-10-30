@@ -43,7 +43,8 @@ sigil build --target claude --catalog-dir ./catalog --packs ./packs.yaml --out-d
 ```
 
 Point `--out-dir` at a folder only sigil writes to: each target folder inside it is replaced on every
-build, and `build` refuses to do that when the `--out-dir` folder has no `registry.json`.
+build, and `build` refuses to do that when the `--out-dir` folder has no sigil `registry.json`.
+Another tool's file of that name doesn't count, but one from `sigil index` does.
 
 Real output for the catalog above (the marketplace root is `out/claude/`):
 

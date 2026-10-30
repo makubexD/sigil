@@ -13,7 +13,7 @@ import { getAllTargets, getTarget } from '../targets';
 import { artifactTargetsPlatform } from '../select';
 import { checkOutputContract } from '../targets/output-contract';
 import { contractsFor } from '../targets/all-emit-specs';
-import { buildRegistry } from '../registry';
+import { buildRegistry, isRegistryFile } from '../registry';
 import { loadAndValidate, resolveDefault, writeFilesSync, pkg } from '../cli-helpers';
 import { SigilError } from '../errors';
 import { renderViolations } from './shared/contract';
@@ -77,13 +77,13 @@ function writeTarget(target: Target, files: FileMap, outDir: string): void {
 
 /** Refuses to replace a target folder in an output root that sigil did not build. */
 function assertReplaceable(targets: Target[], outDir: string): void {
-  if (fs.existsSync(path.join(outDir, 'registry.json'))) return;
+  if (isRegistryFile(path.join(outDir, 'registry.json'))) return;
   const existing = targets
     .map(target => path.join(outDir, target.name))
     .find(dir => fs.existsSync(dir));
   if (existing === undefined) return;
   throw new SigilError(
-    `Refusing to replace ${existing}: ${outDir} has no registry.json, so it is not a sigil build output.`,
+    `Refusing to replace ${existing}: ${outDir} has no sigil registry.json, so it is not a sigil build output.`,
     { hint: 'Use an empty --out-dir, or remove the folder first.' },
   );
 }

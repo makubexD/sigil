@@ -502,8 +502,9 @@ for example `essentials`, `dotnet-starter`, `dotnet-tooling`, `python-starter`, 
 
 A pack whose artifacts are all MCP servers or hooks has no plugin yet: plugins can't carry those
 kinds ([capabilities.md](../reference/capabilities.md#plugin)). Install it with `sigil add`
-instead. `essentials` has a plugin that carries only its two commands, `/essentials:explain-diff` and
-`/essentials:author-artifact`, so its MCP server and hooks still need `sigil add`.
+instead. `essentials` has a plugin that carries only `/essentials:explain-diff`. Its MCP server and
+hooks still need `sigil add`, and so does `author-artifact`, which runs the `sigil` CLI against a
+catalog.
 
 **What a plugin carries.** Skills, agents, workflows, and prompts. Rules cannot ride in a plugin as
 loose files, so each rule a skill uses is **inlined** into that skill's `SKILL.md` under

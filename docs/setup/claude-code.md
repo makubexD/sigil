@@ -31,9 +31,9 @@ Each pack in [`packs.yaml`](../../packs.yaml) is one plugin with the same name:
 ```
 
 A pack whose artifacts are all MCP servers or hooks has no plugin yet: plugins can't carry those
-kinds. Install it with `sigil add` instead. `essentials` has a plugin that carries only its two
-commands, `/essentials:explain-diff` and `/essentials:author-artifact`, so its MCP server and hooks
-still need `sigil add`.
+kinds. Install it with `sigil add` instead. `essentials` has a plugin that carries only
+`/essentials:explain-diff`. Its MCP server and hooks still need `sigil add`, and so does
+`author-artifact`, which runs the `sigil` CLI against a catalog.
 
 Browse the full list on the **Discover** tab of `/plugin`, or in the published
 `.claude-plugin/marketplace.json`. Plugins load in the next session, or after `/reload-plugins`.

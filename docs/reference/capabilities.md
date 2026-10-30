@@ -41,7 +41,7 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 | mcp | — (1) |
 | hook | — (1) |
 | settings | — (2) |
-| prompt | — (1) |
+| prompt | native |
 | skill | native |
 | agent | native |
 | rule | via inline (3) |

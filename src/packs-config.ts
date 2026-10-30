@@ -11,13 +11,19 @@ import { KEBAB_NAME_RE } from './schema/shared';
 import { SigilError } from './errors';
 import type { PacksConfig } from './types';
 
-const PackSchema = z.object({
-  name: z.string().regex(KEBAB_NAME_RE, 'must be kebab-case (lowercase letters, digits, -)'),
-  displayName: z.string(),
-  description: z.string(),
-  languages: z.array(z.string()).optional(),
-  artifacts: z.array(z.string()).optional(),
-});
+const PackSchema = z
+  .object({
+    name: z.string().regex(KEBAB_NAME_RE, 'must be kebab-case (lowercase letters, digits, -)'),
+    displayName: z.string(),
+    description: z.string(),
+    languages: z.array(z.string()).optional(),
+    artifacts: z.array(z.string()).optional(),
+    pluginExclude: z.array(z.string()).optional(),
+  })
+  .refine(pack => (pack.pluginExclude ?? []).every(id => pack.artifacts?.includes(id) === true), {
+    message: "pluginExclude ids must also be listed in that pack's artifacts",
+    path: ['pluginExclude'],
+  });
 
 const MarketplacePersonSchema = z
   .object({

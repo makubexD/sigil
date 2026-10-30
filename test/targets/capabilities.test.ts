@@ -3,7 +3,8 @@
  * of which artifact kinds a target emits on each delivery channel (docs/decisions/
  * distribution-channels-2026-09.md §5). The expected sets below are the hand-listed values that
  * existed before the table (CLAUDE_SUPPORTED_KINDS, COPILOT_SUPPORTED_KINDS, and the plugin
- * assembler's skill/agent/workflow filter) — this refactor must not change any of them.
+ * assembler's skill/agent/workflow filter) — this refactor must not change any of them. Prompts
+ * joined the plugin channel later, once they had their own plugin-channel emit spec.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -51,13 +52,19 @@ describe('target capabilities — behaviour preserved from the hand-listed kinds
     );
   });
 
-  it('should emit only skill, agent and workflow as claude plugin members', () => {
-    assert.deepEqual(sorted(nativeKinds(CLAUDE, 'plugin')), ['agent', 'skill', 'workflow']);
+  it('should emit only skill, agent, workflow and prompt as claude plugin members', () => {
+    assert.deepEqual(sorted(nativeKinds(CLAUDE, 'plugin')), [
+      'agent',
+      'prompt',
+      'skill',
+      'workflow',
+    ]);
   });
 
   it('should count rules as delivered to plugins, inlined into skills rather than as members', () => {
     assert.deepEqual(sorted(supportedKinds(CLAUDE, 'plugin')), [
       'agent',
+      'prompt',
       'rule',
       'skill',
       'workflow',

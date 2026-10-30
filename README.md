@@ -84,9 +84,9 @@ branch of this repository. In Claude Code:
 ```
 
 Each pack in [`packs.yaml`](packs.yaml) is one plugin. To stay on one release, add
-`makubexD/sigil#marketplace-v<version>` instead. Plugins carry skills and agents. Rules ride inside
-the skills, and MCP servers, hooks and settings still need `sigil add`. Setup, updates and removal:
-[docs/setup/claude-code.md](docs/setup/claude-code.md).
+`makubexD/sigil#marketplace-v<version>` instead. Plugins carry skills, agents, workflows and
+prompts. Rules ride inside the skills, and MCP servers, hooks and settings still need `sigil add`.
+Setup, updates and removal: [docs/setup/claude-code.md](docs/setup/claude-code.md).
 
 </details>
 

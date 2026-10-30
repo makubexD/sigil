@@ -345,6 +345,10 @@ and agents (`uses:`) are resolved for you, so you do not list them. The older `l
 `name` becomes a Claude plugin of the same name; see
 [consuming.md](consuming.md#install-a-pack-as-a-claude-plugin).
 
+`pluginExclude: [<id>]` keeps a listed artifact out of the Claude plugin, while `sigil add` still
+installs it. Every id must also be in `artifacts:`. Use it for an artifact a plugin user could not
+run.
+
 **Step 6 — validate and build:**
 
 ```bash

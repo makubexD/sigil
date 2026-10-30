@@ -208,7 +208,9 @@ interface TargetCapabilities {
 ([publish-claude-marketplace-2026-10](publish-claude-marketplace-2026-10.md#empty-plugins)), and
 `build` cleaning `dist/<target>/` before it writes is done as of 2026-10-30. Phase 1's plugin-agent
 field guard is done as of 2026-10-30: `build` fails when a plugin agent would carry a field Claude
-plugins ignore.
+plugins ignore. Prompts as plugin skills is done as of 2026-10-30: `essentials` returns to the
+marketplace as a plugin carrying only `/essentials:explain-diff`. `author-artifact` stays out until
+npm publish, because it needs the `sigil` CLI.
 
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,

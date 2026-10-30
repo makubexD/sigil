@@ -1,6 +1,6 @@
 /**
- * Assembles a pack's full plugin FileMap: plugin.json, plus its skills, agents and workflows
- * written through their plugin-channel specs (../emit-files.ts).
+ * Assembles a pack's full plugin FileMap: plugin.json, plus its skills, agents, workflows and
+ * prompts written through their plugin-channel specs (../emit-files.ts).
  *
  * @module
  */
@@ -12,6 +12,7 @@ import type {
   MarketplaceIdentity,
 } from '../../types';
 import { JSON_INDENT } from '../../json-util';
+import { SigilError } from '../../errors';
 import { CLAUDE_EMIT_SPECS } from './spec';
 import { emitFile, specFor } from '../emit-files';
 import type { EmitContext } from '../spec-types';
@@ -85,11 +86,12 @@ function configuredPluginManifest(pack: Pack, version: string, marketplace: Mark
 /**
  * Compute the shared-agent ids referenced by `skills` that aren't already part of `agents`,
  * and add them to `packInstallSet` (mutated in place) so each file's conditional Boundary
- * section sees them as co-present.
+ * section sees them as co-present. An id in `excluded` stays out even when a skill uses it.
  */
 function computeSharedAgentIds(
   skills: ResolvedArtifact[],
   agents: ResolvedArtifact[],
+  excluded: ReadonlySet<string>,
   packInstallSet: Set<string>,
 ): Set<string> {
   // Set lookup instead of agents.some() per (skill, resolvedAgentId) pair below — was
@@ -99,7 +101,7 @@ function computeSharedAgentIds(
   const sharedAgentIds = new Set<string>();
   for (const skill of skills) {
     for (const agentId of skill.resolvedAgentIds ?? []) {
-      if (!agentIds.has(agentId)) {
+      if (!agentIds.has(agentId) && !excluded.has(agentId)) {
         sharedAgentIds.add(agentId);
         packInstallSet.add(agentId);
       }
@@ -109,19 +111,33 @@ function computeSharedAgentIds(
 }
 
 /**
- * Writes the pack's workflows, skills and agents (plus the shared agents its skills use) through
- * their plugin-channel specs (src/targets/emit-files.ts). Skills inline their rules: a plugin can't
- * ship loose rule files. `ctx` carries the pack name (paths under `plugins/<pack>/`) and the
- * pack's install set, which drives each file's conditional Boundary section.
+ * Writes the pack's workflows, prompts, skills and agents (plus the shared agents its skills use)
+ * through their plugin-channel specs (src/targets/emit-files.ts). Skills inline their rules: a
+ * plugin can't ship loose rule files. `ctx` carries the pack name (paths under `plugins/<pack>/`)
+ * and the pack's install set, which drives each file's conditional Boundary section.
+ *
+ * Two different members whose spec resolves to the same output path fail the build: a plugin
+ * skill folder has no per-kind namespace, so a skill and a prompt named alike would silently
+ * overwrite each other. The same artifact id written twice stays legal: a pack may list one twice.
  */
 function writeMemberFiles(
   members: readonly ResolvedArtifact[],
   ctx: EmitContext,
   files: FileMap,
 ): void {
+  const writtenBy = new Map<string, string>();
   for (const artifact of members) {
     const spec = specFor(CLAUDE_EMIT_SPECS, artifact.kind, 'plugin');
-    if (spec) emitFile(spec, artifact, ctx, files);
+    if (!spec) continue;
+    const filePath = spec.outputPath(artifact, ctx);
+    const otherId = writtenBy.get(filePath);
+    if (otherId !== undefined && otherId !== artifact.id) {
+      throw new SigilError(
+        `plugin '${ctx.packName}': ${artifact.id} and ${otherId} both write ${filePath}`,
+      );
+    }
+    writtenBy.set(filePath, artifact.id);
+    emitFile(spec, artifact, ctx, files);
   }
 }
 
@@ -150,6 +166,7 @@ export const WRITABLE_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'skill',
   'agent',
   'workflow',
+  'prompt',
 ]);
 
 /**
@@ -175,8 +192,8 @@ export function pluginMembersByKind(
 
 /**
  * Whether a pack has at least one artifact the plugin channel delivers. A pack whose artifacts
- * the plugin channel can't carry (only `mcp` / `hook` / `prompt` / `settings`, or rules with no
- * skill) gets no plugin, so the marketplace never lists an empty one.
+ * the plugin channel can't carry (only `mcp` / `hook` / `settings`, or rules with no skill) gets
+ * no plugin, so the marketplace never lists an empty one.
  */
 export function hasPluginMembers(packArtifacts: ResolvedArtifact[]): boolean {
   const members = pluginMembersByKind(packArtifacts);
@@ -198,15 +215,17 @@ export function buildPlugin(options: BuildPluginOptions): FileMap {
   const skills = members('skill');
   const agents = members('agent');
   const workflows = members('workflow');
+  const prompts = members('prompt');
 
   // Build the co-install set for the plugin: pack artifacts + shared agents.
   // Drives each file's conditional Boundary section.
   const packInstallSet = new Set<string>(packArtifacts.map(a => a.id));
-  const sharedAgentIds = computeSharedAgentIds(skills, agents, packInstallSet);
+  const excluded = new Set(pack.pluginExclude ?? []);
+  const sharedAgentIds = computeSharedAgentIds(skills, agents, excluded, packInstallSet);
 
   const sharedAgents = [...sharedAgentIds].flatMap(id => catalog.byId.get(id) ?? []);
   const ctx: EmitContext = { catalog, installSet: packInstallSet, packName: pack.name };
-  writeMemberFiles([...workflows, ...skills, ...agents, ...sharedAgents], ctx, files);
+  writeMemberFiles([...workflows, ...prompts, ...skills, ...agents, ...sharedAgents], ctx, files);
 
   return files;
 }

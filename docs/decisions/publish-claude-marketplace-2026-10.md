@@ -67,10 +67,12 @@ Decided 2026-10-30; the owner delegated the choice ("choose the best option").
 ## Empty plugins
 
 A pack becomes a plugin only when it holds at least one artifact the plugin channel carries (`skill`, `agent`,
-`workflow`). A pack whose members are all `mcp`, `hook` or `prompt` — or rules alone — gets no `plugins/<name>/`
+`workflow`, `prompt`). A pack whose members are all `mcp` or `hook` — or rules alone — gets no `plugins/<name>/`
 folder and no `marketplace.json` entry, so the marketplace never lists a plugin that delivers nothing. `v0.2.0`
 shipped `essentials` empty, because that pack is all MCP servers, hooks and prompts; `v0.2.1` removes it, and
-`essentials` installs with `sigil add`.
+`essentials` installs with `sigil add`. Prompts are plugin skills since 2026-10-30, so `essentials` returned to
+the marketplace after `v0.2.1` as a plugin carrying only `/essentials:explain-diff`. `author-artifact`
+stays out until npm publish, because it needs the `sigil` CLI.
 
 ## Drift gate
 

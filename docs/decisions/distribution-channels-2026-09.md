@@ -205,7 +205,8 @@ interface TargetCapabilities {
 | 6     | Cursor adapter (`.cursor/rules/*.mdc`, agents, commands, hooks, MCP; Cursor plugin — the one format that carries rules)                                                                                                                                                                    |                   |
 
 "No empty plugins" (Phase 0) is done as of 2026-10-30
-([publish-claude-marketplace-2026-10](publish-claude-marketplace-2026-10.md#empty-plugins)).
+([publish-claude-marketplace-2026-10](publish-claude-marketplace-2026-10.md#empty-plugins)), and
+`build` cleaning `dist/<target>/` before it writes is done as of 2026-10-30.
 
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,

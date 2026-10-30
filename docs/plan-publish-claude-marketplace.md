@@ -52,6 +52,10 @@ and a go / fix-first verdict. **Stop and report to the owner.** The owner decide
 - **rethink**: the instability can't be fixed cheaply; the drift gate compares a normalized form instead, and this plan
   is amended.
 
+Result (2026-10-30): cases a–e identical. Case f (Node 20) was not run, because downloading a Node 20 binary was blocked
+on this machine; step 3's test covers it on CI's Node 20 leg. Recommended verdict: **go**, so step 4 is skipped. It is
+awaiting the owner's call. Details: decision doc § Determinism.
+
 ### 2. Record the location decision `[inline: decision doc]`
 
 Decided 2026-10-30 (owner delegated the choice). Write it into the decision doc § Location along with the reasons:

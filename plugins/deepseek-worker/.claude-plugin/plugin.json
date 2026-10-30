@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "deepseek-worker",
   "displayName": "DeepSeek Worker (headless Claude Code delegation)",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Plan and review in the main session, and hand mechanical coding steps to a headless Claude Code run on the paid DeepSeek API (mk-exec), with its own config dir, effort low, medium or high, and a full log per run. Includes /mk-delegate, /mk-check (which installs mk-exec, workflow-report and the worker config from its references), the orchestration rule as a resolved dep, and the worker-mode guard hook (installs with sigil add; plugins can't carry hooks yet). Requires Claude Code and a DeepSeek API key. Works with any language.\n",
   "author": {
     "name": "Sigil",

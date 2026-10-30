@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "angular-starter",
   "displayName": "Angular Starter",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Complete setup for Angular development. Includes generate-tests and generate-component skills plus their deps, the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
   "author": {
     "name": "Sigil",

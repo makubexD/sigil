@@ -7,12 +7,6 @@
   "description": "Vendor-neutral AI skills, agents, and rules for multiple languages.",
   "plugins": [
     {
-      "name": "essentials",
-      "displayName": "Essentials (any language)",
-      "description": "Core productivity tools that work with any programming language. Includes the Filesystem MCP for file access, config-file protection, and two utility commands (explain a diff, author a new catalog artifact). Dev-tool permissions are per language: each starter pack carries its own.\n",
-      "source": "./plugins/essentials"
-    },
-    {
       "name": "dotnet-starter",
       "displayName": ".NET / C# Starter",
       "description": "Complete setup for .NET / C# development. Includes the cs-generate-tests skill (plus its C# testing rule and the cs-code-reviewer agent as automatically resolved deps), the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",

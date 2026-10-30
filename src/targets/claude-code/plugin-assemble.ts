@@ -43,7 +43,7 @@ export function resolveIdentityContact(
 }
 
 /** Build the `plugin.json` manifest content for a pack. */
-function buildPluginJson(pack: Pack, options: BuildPluginOptions): string {
+export function buildPluginJson(pack: Pack, options: BuildPluginOptions): string {
   const manifest = options.marketplace
     ? configuredPluginManifest(pack, options.version, options.marketplace)
     : sigilPluginManifest(pack, options.version, options.homepage);
@@ -170,8 +170,20 @@ export const WRITABLE_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
 ]);
 
 /**
+ * Kinds a pack plugin carries. Config kinds (`hook`, `mcp`) get their own generated plugins
+ * instead, one per artifact, so a pack's plugin never writes `hooks/hooks.json` or `.mcp.json`.
+ */
+export const PACK_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
+  'skill',
+  'agent',
+  'workflow',
+  'prompt',
+]);
+
+/**
  * Returns a lookup of the pack's artifacts per kind, limited to the kinds `capabilities` marks
- * `native` on the plugin channel (`via`-kinds such as rules travel inside skills instead). Throws
+ * `native` on the plugin channel (`via`-kinds such as rules travel inside skills instead) and
+ * `PACK_PLUGIN_KINDS` (config kinds get their own plugins). Throws
  * when a kind is marked native but has no writer here, so flipping a capability row can never
  * silently drop artifacts from a plugin.
  */
@@ -187,7 +199,10 @@ export function pluginMembersByKind(
         'writer for them — add one or change the row in claude-code/capabilities.ts',
     );
   }
-  return kind => (native.includes(kind) ? packArtifacts.filter(a => a.kind === kind) : []);
+  return kind =>
+    native.includes(kind) && PACK_PLUGIN_KINDS.has(kind)
+      ? packArtifacts.filter(a => a.kind === kind)
+      : [];
 }
 
 /**
@@ -197,7 +212,7 @@ export function pluginMembersByKind(
  */
 export function hasPluginMembers(packArtifacts: ResolvedArtifact[]): boolean {
   const members = pluginMembersByKind(packArtifacts);
-  for (const kind of WRITABLE_PLUGIN_KINDS) {
+  for (const kind of PACK_PLUGIN_KINDS) {
     if (members(kind).length > 0) return true;
   }
   return false;

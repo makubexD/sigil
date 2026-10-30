@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "dotnet-starter",
+  "displayName": ".NET / C# Starter",
+  "version": "0.2.0",
+  "description": "Complete setup for .NET / C# development. Includes the cs-generate-tests skill (plus its C# testing rule and the cs-code-reviewer agent as automatically resolved deps), the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
+  "author": {
+    "name": "Sigil",
+    "url": "https://github.com/makubexD/sigil#readme"
+  },
+  "license": "MIT",
+  "keywords": []
+}

@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "cli-builder",
+  "displayName": "CLI Builder",
+  "version": "0.2.0",
+  "description": "Design, build, audit, or refactor a command-line interface and the setup wizard layered over it. Includes the cli and wizard skills (with per-stack guidance for Node/TypeScript, Python, Go, Rust and .NET), their CLI and wizard rules, and the two auditor agents as automatically resolved deps. Works with any language.\n",
+  "author": {
+    "name": "Sigil",
+    "url": "https://github.com/makubexD/sigil#readme"
+  },
+  "license": "MIT",
+  "keywords": []
+}

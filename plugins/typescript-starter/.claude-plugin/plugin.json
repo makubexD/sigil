@@ -1,0 +1,13 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "typescript-starter",
+  "displayName": "TypeScript Starter",
+  "version": "0.2.0",
+  "description": "Complete setup for TypeScript development. Includes generate-tests, document, and release skills plus their deps, the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
+  "author": {
+    "name": "Sigil",
+    "url": "https://github.com/makubexD/sigil#readme"
+  },
+  "license": "MIT",
+  "keywords": []
+}

@@ -1,0 +1,94 @@
+{
+  "name": "sigil",
+  "owner": {
+    "name": "Sigil",
+    "url": "https://github.com/makubexD/sigil#readme"
+  },
+  "description": "Vendor-neutral AI skills, agents, and rules for multiple languages.",
+  "plugins": [
+    {
+      "name": "essentials",
+      "displayName": "Essentials (any language)",
+      "description": "Core productivity tools that work with any programming language. Includes the Filesystem MCP for file access, config-file protection, and two utility commands (explain a diff, author a new catalog artifact). Dev-tool permissions are per language: each starter pack carries its own.\n",
+      "source": "./plugins/essentials"
+    },
+    {
+      "name": "dotnet-starter",
+      "displayName": ".NET / C# Starter",
+      "description": "Complete setup for .NET / C# development. Includes the cs-generate-tests skill (plus its C# testing rule and the cs-code-reviewer agent as automatically resolved deps), the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
+      "source": "./plugins/dotnet-starter"
+    },
+    {
+      "name": "python-starter",
+      "displayName": "Python Starter",
+      "description": "Complete setup for Python development. Includes the py-generate-tests skill (plus its Python testing rule and the py-code-reviewer agent as automatically resolved deps), the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
+      "source": "./plugins/python-starter"
+    },
+    {
+      "name": "react-starter",
+      "displayName": "React Starter",
+      "description": "Complete setup for React development. Includes the react-generate-tests skill (plus its React testing rule and the react-code-reviewer agent as automatically resolved deps), the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
+      "source": "./plugins/react-starter"
+    },
+    {
+      "name": "dotnet-tooling",
+      "displayName": ".NET / C# Tooling",
+      "description": "Full .NET / C# tooling suite — all imported cs- skills, agents, and rules. Skills include scaffolding, testing, documentation, dependency management, security auditing, release preparation, and package vetting. Skill deps (rules + agents) are auto-resolved by the wizard's deps step.\n",
+      "source": "./plugins/dotnet-tooling"
+    },
+    {
+      "name": "typescript-starter",
+      "displayName": "TypeScript Starter",
+      "description": "Complete setup for TypeScript development. Includes generate-tests, document, and release skills plus their deps, the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
+      "source": "./plugins/typescript-starter"
+    },
+    {
+      "name": "typescript-tooling",
+      "displayName": "TypeScript Tooling",
+      "description": "Full TypeScript tooling suite — all imported ts- skills, agents, and rules. Skills include testing, scaffolding, documentation, dependency management, security auditing, and release preparation. Skill deps are auto-resolved by the wizard's deps step.\n",
+      "source": "./plugins/typescript-tooling"
+    },
+    {
+      "name": "angular-starter",
+      "displayName": "Angular Starter",
+      "description": "Complete setup for Angular development. Includes generate-tests and generate-component skills plus their deps, the Filesystem MCP, config-file protection, and common dev-tool permissions.\n",
+      "source": "./plugins/angular-starter"
+    },
+    {
+      "name": "angular-tooling",
+      "displayName": "Angular Tooling",
+      "description": "Full Angular tooling suite — all imported ng- skills, agents, and rules. Covers Angular-specific concerns: components, RxJS, Signals, templates, security, and testing patterns for Angular applications. Skill deps are auto-resolved by the wizard's deps step.\n",
+      "source": "./plugins/angular-tooling"
+    },
+    {
+      "name": "python-tooling",
+      "displayName": "Python Tooling",
+      "description": "Full Python tooling suite — all py- skills, agents, and rules. Skills include scaffolding, testing, documentation, dependency management, security auditing, and release preparation. Skill deps are auto-resolved by the wizard's deps step.\n",
+      "source": "./plugins/python-tooling"
+    },
+    {
+      "name": "react-tooling",
+      "displayName": "React Tooling",
+      "description": "Full React tooling suite — all react- skills, agents, and rules. Skills include scaffolding, testing, documentation, dependency management, security auditing, and release preparation. Skill deps are auto-resolved by the wizard's deps step.\n",
+      "source": "./plugins/react-tooling"
+    },
+    {
+      "name": "spec-driven",
+      "displayName": "Spec-Driven Development",
+      "description": "The /feature conductor: drives one feature through clarify, spec, plan, TDD build, review and close-out with explicit approval gates. Requires the agent-skills collection (addyosmani/agent-skills), installed separately. Works with any language.\n",
+      "source": "./plugins/spec-driven"
+    },
+    {
+      "name": "cli-builder",
+      "displayName": "CLI Builder",
+      "description": "Design, build, audit, or refactor a command-line interface and the setup wizard layered over it. Includes the cli and wizard skills (with per-stack guidance for Node/TypeScript, Python, Go, Rust and .NET), their CLI and wizard rules, and the two auditor agents as automatically resolved deps. Works with any language.\n",
+      "source": "./plugins/cli-builder"
+    },
+    {
+      "name": "deepseek-worker",
+      "displayName": "DeepSeek Worker (headless Claude Code delegation)",
+      "description": "Plan and review in the main session, and hand mechanical coding steps to a headless Claude Code run on the paid DeepSeek API (mk-exec), with its own config dir, effort low, medium or high, and a full log per run. Includes /mk-delegate, /mk-check (which installs mk-exec, workflow-report and the worker config from its references), the orchestration rule as a resolved dep, and the worker-mode guard hook (installs with sigil add; plugins can't carry hooks yet). Requires Claude Code and a DeepSeek API key. Works with any language.\n",
+      "source": "./plugins/deepseek-worker"
+    }
+  ]
+}

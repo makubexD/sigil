@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "dotnet-tooling",
+  "displayName": ".NET / C# Tooling",
+  "version": "0.2.0",
+  "description": "Full .NET / C# tooling suite — all imported cs- skills, agents, and rules. Skills include scaffolding, testing, documentation, dependency management, security auditing, release preparation, and package vetting. Skill deps (rules + agents) are auto-resolved by the wizard's deps step.\n",
+  "author": {
+    "name": "Sigil",
+    "url": "https://github.com/makubexD/sigil#readme"
+  },
+  "license": "MIT",
+  "keywords": [
+    "csharp"
+  ]
+}

@@ -1,0 +1,249 @@
+---
+name: cs-sync-tests
+description: "Sync the xUnit test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion) (.NET / C#)"
+when_to_use: "Run via `/cs-sync-tests` after multiple source files have changed and the test suite has drifted — e.g. \"sync my tests\", \"find missing and orphaned tests\". Default scope targets only files changed in the working tree; pass `--scope=all` for a full-solution audit. Complements cs-generate-tests, which targets one file at a time."
+allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+argument-hint: "[--scope=changed|all] (default: changed)"
+---
+
+# Sync Tests
+
+**Scope:** $ARGUMENTS (defaults to `changed` if empty)
+
+## Step 1 — Determine scope
+
+**`changed` (default):** Modified, added, or renamed source files in the current git working tree.
+
+```bash
+git status --porcelain
+git diff --name-only HEAD
+```
+
+Use the Grep and Glob tools to process results — avoid shell pipelines with `awk`/`xargs`/`grep`
+for cross-platform reliability.
+
+Exclude: deleted source files (handled in Step 4), existing test files (`*Tests.cs`, `*Test.cs`),
+`GlobalUsings.cs`, `*.g.cs` generated files, `bin/`, `obj/`, cache directories, and lock files.
+
+**`all`:** All primary source `.cs` files in the project.
+
+Use Glob with `src/**/*.cs` (or the discovered source root). Exclude test projects, generated files,
+`bin/`, `obj/`, `*.g.cs`.
+
+## Step 2 — Discover the runner and layout
+
+Inspect the repo — do **not** assume a fixed directory structure:
+- Locate the solution root from `.sln` or `Directory.Build.props`.
+- Locate the source root (`src/`) and test root (`tests/`).
+- Read 2–3 existing test files to learn the mirroring pattern in use
+  (e.g. `src/Foo/Bar.cs` → `tests/Foo.Tests/BarTests.cs`).
+- Apply it consistently for every file in scope.
+
+## Step 3 — Add and update tests
+
+For each in-scope source file:
+
+1. Derive the expected test file path using the mirroring convention.
+2. **Test file does not exist:** create it. Follow the project's documented conventions — discover
+   from `CLAUDE.md`, any rules files present, or by reading existing tests:
+   - AAA with `// Arrange` / `// Act` / `// Assert`.
+   - One behaviour per test; `Method_Should_Behavior_When_Condition` names.
+   - Moq for I/O boundaries; test pure logic directly.
+   - `[Theory]` + `[InlineData]` over multiple inputs; never single-case.
+   - Named class-level constants / builders for test data.
+   - Happy path + null/empty edges + error paths.
+3. **Test file exists:** read it alongside the source file. Identify public members that lack tests.
+   Add the missing tests following the same principles. Flag stale tests (whose source counterpart
+   no longer exists) in the report — do not remove them here.
+
+## Step 4 — Detect orphaned tests
+
+Orphaned tests are test files (or classes/methods within them) whose source counterpart was deleted
+or renamed:
+
+```bash
+git status --porcelain   # lines starting with D or R indicate deleted/renamed sources
+```
+
+Map each deleted/renamed source file to its expected test file path. If the test file exists,
+mark it as an orphan candidate.
+
+Also scan for test classes whose tested type no longer exists in the source (rename without corresponding
+test rename) — grep the test class name / method name pattern against the source tree.
+
+Report them — **make no deletions yet.**
+
+## Step 5 — Confirm before any deletion (guardrail)
+
+If orphan candidates were found, present them clearly:
+
+```
+Orphaned tests detected:
+  - tests/Foo.Tests/OldParserTests.cs          (source deleted: src/Foo/OldParser.cs)
+  - CalendarParserTests.ParseLegacyFormat       in tests/Foo.Tests/CalendarParserTests.cs
+    (method ParseLegacyFormat removed from CalendarParser)
+
+These will be permanently deleted. Proceed? [y/N]
+```
+
+**Stop and wait for explicit confirmation.** Only after receiving "y" or "yes" should you proceed
+with deletions. If the user says no, declines, or does not respond, skip all deletions and record
+"orphans not removed — user declined" in the final report.
+
+## Step 6 — Run and report
+
+Discover the test command (check `build.ps1`, `Nuke`, `Cake`, `justfile`; fallback `dotnet test`).
+Run it. If a test fails after the sync, decide whether the test or the code is wrong: never weaken an assertion to make it pass; report a suspected bug instead.
+
+```
+## Sync Tests Report
+  Scope:           <changed | all>
+  Files analyzed:  <N>
+  Tests created:   <N>
+  Tests updated:   <N>
+  Orphans removed: <N>  (or "none" / "skipped — user declined")
+
+Suite: ✅ <N> passed  /  ❌ <N> failed
+Coverage delta: <+/-N%>  (if reported by runner)
+```
+
+---
+
+## Applied Rules
+
+### Testing (.NET / C#)
+
+## AAA Pattern
+Every test has three sections separated by blank lines:
+**Arrange** (build data and configure state), **Act** (call the unit under test),
+**Assert** (verify results). Label each section with an inline comment
+(`// Arrange`, `// Act`, `// Assert`) even when the section is one line.
+
+```csharp
+[Fact]
+public void Format_Duration_Returns_Hours_And_Minutes_When_Both_Present()
+{
+    // Arrange
+    const int TotalMinutes = 75;
+
+    // Act
+    var result = Duration.Format(TotalMinutes);
+
+    // Assert
+    Assert.Equal("1h 15m", result);
+}
+```
+
+## Naming
+Test methods: `Method_Should_Behavior_When_Condition` or `Method_Returns_Expected_When_Condition`.
+Group related tests in one `public sealed class` per class under test
+(e.g., `CalendarParserTests`, `NormalizerTests`). Each test covers exactly one behavior. Multiple
+behaviors under the same condition → multiple test methods, not a single long test.
+
+## No Magic Values
+All test data is named: class-level `const` / `static readonly` fields or builder helper methods
+(`MakeEvent(…)`, `Utc(…)`) declared at the top of the test class. Never use unnamed inline
+literals (raw datetimes, unexplained integer constants, bare strings) directly in assertions or act calls.
+
+```csharp
+private static readonly DateOnly TestDate = new(2026, 6, 10);
+private static readonly string TestSummary = "Standup";
+```
+
+## Mock Only I/O Boundaries
+Mock filesystem access, network calls, clocks, database access, and external services.
+Test pure functions, domain logic, and records through their real implementations — do not mock
+internal collaborators. When a double is needed, use the library the project already has (Moq, NSubstitute, FakeItEasy);
+with none, use **Moq** (`new Mock<IRepo>()`). Do not add a second mocking library.
+
+Use `tmp_path`-equivalent patterns for real file I/O (e.g., `Path.GetTempFileName()` + cleanup in
+`Dispose()`).
+
+```csharp
+var repo = new Mock<ICalendarRepository>();
+repo.Setup(r => r.LoadAsync(It.IsAny<string>(), default))
+    .ReturnsAsync(SampleEvents);
+```
+
+## Fixtures and Lifecycle
+Use **constructor injection** for per-test setup and `IDisposable.Dispose()` for cleanup — xUnit
+constructs a fresh instance per test, guaranteeing isolation by default.
+
+For **genuinely expensive, read-only shared resources** (e.g., a pre-parsed large ICS file, a
+real database connection), use `IClassFixture<T>` or `ICollectionFixture<T>`. Never share mutable
+state through fixtures.
+
+```csharp
+public sealed class CalendarParserTests : IDisposable
+{
+    private readonly string _tempFile;
+
+    public CalendarParserTests()
+    {
+        _tempFile = Path.GetTempFileName();
+        File.WriteAllText(_tempFile, SampleIcs);
+    }
+
+    public void Dispose() => File.Delete(_tempFile);
+}
+```
+
+## Parametrize with `[Theory]`
+Use `[Theory]` + `[InlineData]` / `[MemberData]` / `[ClassData]` for the same behavior over
+multiple inputs. Never a single-case `[Theory]` — use a plain `[Fact]` instead. Give each case a
+readable description via `[InlineData(…)]` labels or explicit `MemberData` names so failures are
+self-describing.
+
+```csharp
+[Theory]
+[InlineData(15,  "15m")]
+[InlineData(60,  "1h")]
+[InlineData(75,  "1h 15m")]
+[InlineData(0,   "0m")]
+public void Format_Duration_Returns_Correct_String(int minutes, string expected)
+{
+    // Arrange / Act
+    var result = Duration.Format(minutes);
+
+    // Assert
+    Assert.Equal(expected, result);
+}
+```
+
+## Time and Dates
+Never assert against the real `DateTime.Now`, `DateTime.UtcNow`, or `DateTimeOffset.Now`. Inject
+time via `TimeProvider` (.NET 8+) or a custom `IClock` interface, and use a deterministic fake in
+tests. A test that passes today but fails tomorrow is a broken test.
+
+```csharp
+// Production code
+public sealed class ReportService(TimeProvider clock)
+{
+    public DateOnly Today() => DateOnly.FromDateTime(clock.GetUtcNow().DateTime);
+}
+
+// Test
+var fakeTime = new FakeTimeProvider(new DateTimeOffset(2026, 6, 10, 0, 0, 0, TimeSpan.Zero));
+var sut = new ReportService(fakeTime);
+Assert.Equal(new DateOnly(2026, 6, 10), sut.Today());
+```
+
+## Coverage
+Discover and run the project's coverage command:
+- Check the solution/project for a build orchestrator (`build.ps1`, `Nuke`, `Cake`, `justfile`).
+- Fallback: `dotnet test --collect:"XPlat Code Coverage"` + ReportGenerator, or
+  `dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura` (Coverlet MSBuild).
+
+Hold the project's configured floor (Coverlet's `Threshold`, or the CI config) — do not assume a
+number. Coverage gaps on
+I/O-boundary code (CLI handlers, HTTP clients, database adapters) are acceptable; gaps on pure
+domain logic are not.
+
+## Anti-Patterns
+- `Thread.Sleep(…)` in tests — use fake `TimeProvider` or `CancellationToken`-based delays.
+- Test-specific flags or branches in production code.
+- Asserting on private members when a public API exercises the same path — unless the private logic
+  is complex enough to warrant an explicit contract.
+- `Assert.True(result != null)` instead of `Assert.NotNull(result)` — use the semantic assert.
+- A single-case `[Theory]` — use a plain `[Fact]`.
+- Shared mutable state between tests without `IClassFixture<T>`.

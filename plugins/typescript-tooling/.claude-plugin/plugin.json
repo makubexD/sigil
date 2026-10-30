@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "typescript-tooling",
+  "displayName": "TypeScript Tooling",
+  "version": "0.2.0",
+  "description": "Full TypeScript tooling suite — all imported ts- skills, agents, and rules. Skills include testing, scaffolding, documentation, dependency management, security auditing, and release preparation. Skill deps are auto-resolved by the wizard's deps step.\n",
+  "author": {
+    "name": "Sigil",
+    "url": "https://github.com/makubexD/sigil#readme"
+  },
+  "license": "MIT",
+  "keywords": [
+    "typescript"
+  ]
+}

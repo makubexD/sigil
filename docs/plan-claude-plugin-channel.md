@@ -41,7 +41,7 @@ what was found. No catalog agent sets these fields today, so the guard protects 
 agent spec forbids any key plugins ignore, so `build` fails instead of shipping an agent that silently loses them. If
 the restriction no longer holds, this phase ends as a recorded no-go and the ADR line is corrected.
 
-### Phase B: prompts as skills
+### Phase B: prompts as skills — done 2026-10-30
 
 `explain-diff` and `author-artifact` become plugin skills, reusing the `workflow` plugin shape, which is already
 `native`. Expected scope: the `prompt` plugin row, a plugin-channel `KindEmitSpec`, `WRITABLE_PLUGIN_KINDS`, regenerated

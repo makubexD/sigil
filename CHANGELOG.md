@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- The Claude marketplace has an `essentials` plugin carrying `/essentials:explain-diff` and
+  `/essentials:author-artifact`. Prompts are now packaged into plugins.
+
 ### Changed
 
 - `sigil build` replaces `dist/<target>/` instead of adding to it, so plugins removed from the catalog

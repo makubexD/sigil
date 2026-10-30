@@ -72,6 +72,28 @@ Files land in your project (`.claude/` or `.github/`) and are tracked in `.sigil
 `sigil status`, `update`, and `uninstall` know what Sigil wrote. Packs are defined in
 [`packs.yaml`](packs.yaml); `sigil list` shows what is available.
 
+<details>
+<summary><strong>Claude Code: install packs as plugins, no clone needed</strong></summary>
+
+Each Sigil release publishes its packs as a Claude Code plugin marketplace on the `marketplace`
+branch of this repository. In Claude Code:
+
+```
+/plugin marketplace add makubexD/sigil#marketplace
+/plugin install essentials@sigil
+```
+
+> **First publish pending.** The `marketplace` branch appears with the next Sigil release; until
+> then the add command cannot find it. Use the local build in
+> [consuming.md](docs/guides/consuming.md#install-a-pack-as-a-claude-plugin) meanwhile.
+
+Each pack in [`packs.yaml`](packs.yaml) is one plugin. To stay on one release, add
+`makubexD/sigil#marketplace-v<version>` instead. Plugins carry skills and agents. Rules ride inside
+the skills, and MCP servers, hooks and settings still need `sigil add`. Setup, updates and removal:
+[docs/setup/claude-code.md](docs/setup/claude-code.md).
+
+</details>
+
 ### Getting help
 
 | You want                                 | Run                                                                  |
@@ -105,8 +127,9 @@ Files land in your project (`.claude/` or `.github/`) and are tracked in `.sigil
 ## Claude Code, Copilot, and other tools
 
 - **Claude Code** (recommended): `sigil add` writes `.claude/skills|agents|rules/` and merges
-  hooks, settings, and MCP config. A plugin marketplace can also be built locally with
-  `sigil build --target claude`; a published marketplace is planned. See
+  hooks, settings, and MCP config. Packs also install as plugins from the published marketplace
+  (`/plugin marketplace add makubexD/sigil#marketplace`) or from a local
+  `sigil build --target claude`. See [docs/setup/claude-code.md](docs/setup/claude-code.md) and
   [consuming.md](docs/guides/consuming.md).
 - **GitHub Copilot**: `sigil add --target copilot` writes `.github/` skills, agents, instructions,
   prompts, and MCP config. Commit those files; Copilot's cloud agent reads repository files. There is

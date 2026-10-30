@@ -475,10 +475,13 @@ yet. See the full per-kind table in [capabilities.md](../reference/capabilities.
 ## Install a pack as a Claude plugin
 
 Besides copying files into your project with `sigil add`, sigil can compile the catalog into **Claude
-Code plugins** that you install from a local marketplace. This is the only plugin flow today, and it
-needs a local clone of sigil, because the marketplace is built on your machine. A published
-marketplace you could add without a clone is planned
-([ideas/publish-claude-marketplace.md](../ideas/publish-claude-marketplace.md)).
+Code plugins**. There are two routes:
+
+- **Published marketplace, no clone needed.** Each release pushes it to the `marketplace` branch:
+  `/plugin marketplace add makubexD/sigil#marketplace`, then `/plugin install <pack>@sigil`. Setup,
+  version pinning, updates and removal are in [docs/setup/claude-code.md](../setup/claude-code.md).
+- **Local build**, for unreleased catalog changes or your own fork. It needs a clone, because the
+  marketplace is built on your machine:
 
 ```bash
 # 1. In your sigil clone (see operations.md#build-and-link): build the Claude plugins.

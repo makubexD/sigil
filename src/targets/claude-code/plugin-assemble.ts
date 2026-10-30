@@ -86,11 +86,12 @@ function configuredPluginManifest(pack: Pack, version: string, marketplace: Mark
 /**
  * Compute the shared-agent ids referenced by `skills` that aren't already part of `agents`,
  * and add them to `packInstallSet` (mutated in place) so each file's conditional Boundary
- * section sees them as co-present.
+ * section sees them as co-present. An id in `excluded` stays out even when a skill uses it.
  */
 function computeSharedAgentIds(
   skills: ResolvedArtifact[],
   agents: ResolvedArtifact[],
+  excluded: ReadonlySet<string>,
   packInstallSet: Set<string>,
 ): Set<string> {
   // Set lookup instead of agents.some() per (skill, resolvedAgentId) pair below — was
@@ -100,7 +101,7 @@ function computeSharedAgentIds(
   const sharedAgentIds = new Set<string>();
   for (const skill of skills) {
     for (const agentId of skill.resolvedAgentIds ?? []) {
-      if (!agentIds.has(agentId)) {
+      if (!agentIds.has(agentId) && !excluded.has(agentId)) {
         sharedAgentIds.add(agentId);
         packInstallSet.add(agentId);
       }
@@ -219,7 +220,8 @@ export function buildPlugin(options: BuildPluginOptions): FileMap {
   // Build the co-install set for the plugin: pack artifacts + shared agents.
   // Drives each file's conditional Boundary section.
   const packInstallSet = new Set<string>(packArtifacts.map(a => a.id));
-  const sharedAgentIds = computeSharedAgentIds(skills, agents, packInstallSet);
+  const excluded = new Set(pack.pluginExclude ?? []);
+  const sharedAgentIds = computeSharedAgentIds(skills, agents, excluded, packInstallSet);
 
   const sharedAgents = [...sharedAgentIds].flatMap(id => catalog.byId.get(id) ?? []);
   const ctx: EmitContext = { catalog, installSet: packInstallSet, packName: pack.name };

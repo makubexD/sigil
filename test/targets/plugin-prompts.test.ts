@@ -276,6 +276,27 @@ describe('Claude plugin: prompts as skills', () => {
     );
   });
 
+  it('should leave out an excluded agent that a member skill uses', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(resolved, {
+      version: VERSION,
+      packs: [
+        {
+          ...packOf('noagent', ['shared/cli', 'shared/cli-auditor']),
+          pluginExclude: ['shared/cli-auditor'],
+        },
+      ],
+    });
+
+    assert.ok('plugins/noagent/skills/cli/SKILL.md' in files, 'the skill stays in the plugin');
+    assert.ok(
+      !('plugins/noagent/agents/cli-auditor.md' in files),
+      'the skill using the agent does not bring it back',
+    );
+  });
+
   it('should emit no plugin for a pack whose every member is excluded', async () => {
     const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);

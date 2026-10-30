@@ -67,7 +67,7 @@ const nameMapping: FieldMapping = {
   serialize: v => `name: ${slugOf(v as string)}`,
 };
 
-/** Plugin variant's `name:` — same derivation as `nameMapping`, minus the `shared/` prefix. */
+/** Plugin variant's `name:` — the id's last segment, matching the plugin output path. */
 const pluginNameMapping: FieldMapping = {
   from: 'id',
   to: 'name',
@@ -147,7 +147,7 @@ export const CLAUDE_PROMPT_SPEC: KindEmitSpec = {
 
 /**
  * Plugin prompts: the same user-invoked skill, inside the pack's plugin folder, with the
- * `shared/` prefix dropped from the slug (see the module header).
+ * slug reduced to the id's last segment (see the module header).
  */
 export const CLAUDE_PLUGIN_PROMPT_SPEC: KindEmitSpec = {
   ...CLAUDE_PROMPT_SPEC,

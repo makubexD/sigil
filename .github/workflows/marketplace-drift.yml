@@ -1,12 +1,10 @@
 # Drift gate for the published Claude marketplace.
 #
-# After every Release run (and on demand) this checks that the `marketplace` branch equals a fresh
-# `--target claude` build of the release it claims to hold: the newest `marketplace-v*` tag, minus
-# its prefix. It runs whatever the Release conclusion, because npm publish can fail while the
-# marketplace job succeeds; a release whose gate failed publishes no marketplace tag, so it is
-# never compared. A difference means the branch was edited by hand, or a publish was partial. Unreleased changes on `master` are not
-# drift: the comparison is always against a tag build, never against the default branch.
-# Node is pinned to the release workflow's version so the drift build matches the published one.
+# After every Release run (any conclusion) and on demand, this checks that the `marketplace`
+# branch equals a fresh `--target claude` build of the release its tip is tagged with
+# (`marketplace-v<version>`). A tip without that tag fails, since only the release workflow
+# tags it. A difference means a hand edit or a partial publish. Unreleased changes on
+# `master` are not drift. Node is pinned to release.yml's version.
 # See docs/decisions/publish-claude-marketplace-2026-10.md.
 
 name: Marketplace drift
@@ -34,21 +32,26 @@ jobs:
         run: |
           set -euo pipefail
 
-          MTAG=$(git tag --list "marketplace-v*.*.*" --sort=-v:refname | head -n1)
-          TAG="${MTAG#marketplace-}"
-          if [ -z "$MTAG" ] || ! git rev-parse --verify --quiet "refs/tags/$TAG" > /dev/null; then
-            echo "::notice::no published marketplace release yet; nothing to check"
-            echo "skip=true" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          if ! git ls-remote --exit-code --heads origin marketplace; then
+          if ! git ls-remote --exit-code --heads origin marketplace > /dev/null; then
             echo "::notice::no marketplace branch yet; nothing to check"
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
           git fetch origin marketplace:refs/remotes/origin/marketplace
+
+          MTAG=$(git -c versionsort.suffix=- tag --points-at origin/marketplace --list "marketplace-v*.*.*" --sort=-v:refname | sed -n 1p)
+          if [ -z "$MTAG" ]; then
+            echo "::error::the marketplace branch tip carries no marketplace-v* tag; it was changed outside the release workflow"
+            exit 1
+          fi
+
+          TAG="${MTAG#marketplace-}"
+          if ! git rev-parse --verify --quiet "refs/tags/$TAG" > /dev/null; then
+            echo "::error::$MTAG names release $TAG, which has no tag"
+            exit 1
+          fi
+
           git checkout --quiet "$TAG"
           git worktree add --detach "$RUNNER_TEMP/branch" origin/marketplace
 

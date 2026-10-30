@@ -94,8 +94,10 @@ jobs:
   # before npm Trusted Publishing is set up. It builds the tag's Claude marketplace and
   # publishes it to the orphan `marketplace` branch, which users add with
   # `/plugin marketplace add makubexD/sigil#marketplace`. Every publish is also
-  # tagged `marketplace-v<version>` so a user can pin one. `contents: write` is
-  # granted on this job only — the workflow-level permissions stay read-only.
+  # tagged `marketplace-v<version>` so a user can pin one. Only the newest `v*.*.*` tag
+  # publishes, so a backport release never rolls users back, and a re-run of an
+  # already published tag is a no-op. `contents: write` is granted on this job only —
+  # the workflow-level permissions stay read-only.
   # See docs/decisions/publish-claude-marketplace-2026-10.md.
   #
   marketplace:
@@ -103,6 +105,11 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+
+    # Two releases publish one after the other, never racing.
+    concurrency:
+      group: marketplace-publish
+      cancel-in-progress: false
 
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -127,6 +134,19 @@ jobs:
 
           BR="$RUNNER_TEMP/branch"
           TAG="marketplace-$GITHUB_REF_NAME"
+
+          # Publish only from the newest release tag: a backport never rolls users back.
+          LATEST=$(git -c versionsort.suffix=- ls-remote --tags --refs --sort=-v:refname origin "v*.*.*" | sed -n 1p | sed 's|.*refs/tags/||')
+          if [ "$GITHUB_REF_NAME" != "$LATEST" ]; then
+            echo "::notice::$GITHUB_REF_NAME is not the newest release ($LATEST); the marketplace stays on the newest one"
+            exit 0
+          fi
+
+          # An already published tag is a no-op, so re-running a release is safe.
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
+            echo "::notice::$TAG is already published; nothing to do"
+            exit 0
+          fi
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

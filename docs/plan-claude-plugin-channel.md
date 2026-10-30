@@ -52,8 +52,7 @@ Prompts become plugin skills, reusing the `workflow` plugin shape, which is alre
 description promises the Filesystem MCP and config protection, so the plugin description must not until Phase C.
 `author-artifact` waits for npm publish, because it needs the `sigil` CLI.
 
-Check at step-plan time: the slug-based name gives `/essentials:shared-explain-diff`. Decide whether a plugin name
-should drop the `shared-` prefix; `sigil add` keeps its current names either way.
+A plugin prompt is named by the id's last segment, `/essentials:explain-diff`; `sigil add` keeps its current names.
 
 ### Phase C: hooks and MCP as opt-in plugins
 

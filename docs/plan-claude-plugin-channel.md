@@ -13,17 +13,18 @@ Standing procedure: RED first, `npm run ci:local` green, merge on green CI. Clos
 
 ## What is true today (checked 2026-10-30)
 
-- The marketplace lists 13 plugins, built one per pack. `essentials` has none: all of its members are `mcp`, `hook` or
-  `prompt`, which the plugin channel marks `none` (`src/targets/claude-code/capabilities.ts`).
+- The marketplace lists 21 plugins: 14 built one per pack, and 7 generated, one per `hook` or `mcp` artifact.
+  `essentials` holds only `explain-diff`: pack plugins leave out `hook` and `mcp`, and `author-artifact` waits for npm
+  publish.
 - Flipping a capability row is not enough. `pluginMembersByKind` throws until `WRITABLE_PLUGIN_KINDS` has a writer, and
   `provider-kind-coverage` requires a matching `KindEmitSpec` for a whole-file kind.
-- **Flipping `hook` or `mcp` to `native` would change every starter.** The five `*-starter` packs and `essentials` list
-  `shared/filesystem`, `shared/protect-config` and `shared/reviewer-bash-guard`, so those would land inside those
-  plugins, turned on with no separate choice. That contradicts "opt-in".
+- **Flipping `hook` and `mcp` to `native` did not change the starters.** The five `*-starter` packs and `essentials`
+  list `shared/filesystem`, `shared/protect-config` and `shared/reviewer-bash-guard`, but `PACK_PLUGIN_KINDS`
+  (`src/targets/claude-code/plugin-assemble.ts`) keeps them out of those plugins, and a test pins that.
 - `Pack` has no `select` field (`src/packs-config.ts`). The selector grammar is `all`, `pack:`, `kind:` and ids, with
   nothing for a language or a group. `sigil cost` (ADR Phase 1b) does not exist.
-- The Claude docs now offer plugin `dependencies`, `userConfig`, `hooks/hooks.json`, `.mcp.json` at the plugin root, and
-  `${user_config.KEY}` in MCP config and exec-form hook args.
+- sigil emits plugin `dependencies`, `hooks/hooks.json` and `.mcp.json` at the plugin root. The Claude docs also offer
+  `userConfig` and `${user_config.KEY}` in MCP config and exec-form hook args, which sigil does not use.
 
 ### "Family" means two things
 
@@ -54,7 +55,9 @@ description promises the Filesystem MCP and config protection, so the plugin des
 
 A plugin prompt is named by the id's last segment, `/essentials:explain-diff`; `sigil add` keeps its current names.
 
-### Phase C: hooks and MCP as opt-in plugins
+### Phase C: hooks and MCP as opt-in plugins — done 2026-10-30
+
+Spike results and decisions: [distribution-channels-2026-09](decisions/distribution-channels-2026-09.md#8-hooks-and-mcp-as-plugins-2026-10-30).
 
 **Spike first `[inline: probe]`,** in real Claude Code, because these run on the user's machine:
 
@@ -101,8 +104,9 @@ and a pure `planPlugins()` as the ADR describes. This gets its own step plan.
 A → B → C → D. C depends on B only for `essentials`, and D is last because it may change plugin names, so it should
 build on the final plugin shapes.
 
-Cut a release after Phase C. That also ships #124 and #125, and it is the point where `essentials` can be installed
-from the marketplace in full. The release itself stays the owner's call.
+Cut a release after Phase C. That also ships #124 and #125, and it is the point where the hooks and MCP servers
+`essentials` lists can be installed from the marketplace, as their own plugins. The release itself stays the owner's
+call.
 
 Out of scope: `sigil add --complement` and the duplicate guard (ADR Phase 2b), `sigil cost` (1b), and Copilot's plugin
 channel (`docs/ideas/copilot-plugin-channel.md`).

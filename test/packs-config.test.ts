@@ -7,10 +7,27 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import { parsePacksConfig } from '../dist-cli/packs-config';
+import { SigilError } from '../dist-cli/errors';
+import type { PacksConfig } from '../dist-cli/types';
 import { PACKS } from './helpers/install-scenario';
 
 const pack = (name: string) =>
   `packs:\n  - name: "${name}"\n    displayName: P\n    description: A pack.\n    languages: [csharp]\n`;
+
+/** The marketplace block is not on `PacksConfig` yet (plan step 2 adds it); the cast keeps this
+ *  suite compiling so the cases fail on the parsed value, not on a type error. */
+type MarketplaceShape = {
+  name?: string;
+  owner?: { name?: string; url?: string; email?: string };
+  description?: string;
+  author?: { name?: string; url?: string; email?: string };
+  license?: string;
+  homepage?: string;
+};
+
+/** A packs file with one pack and a top-level marketplace block made of `lines` (unindented). */
+const marketplaceConfig = (lines: string[]): string =>
+  `${pack('dotnet-starter')}\nmarketplace:\n${lines.map(l => `  ${l}`).join('\n')}\n`;
 
 describe('parsePacksConfig', () => {
   it('should parse the bundled packs.yaml', () => {
@@ -33,5 +50,39 @@ describe('parsePacksConfig', () => {
 
   it('should reject a file without a packs list', () => {
     assert.throws(() => parsePacksConfig('name: x\n', 'packs.yaml'), /packs/);
+  });
+
+  it('should parse the bundled packs.yaml with no marketplace block', () => {
+    const config = parsePacksConfig(fs.readFileSync(PACKS, 'utf8'), PACKS) as PacksConfig & {
+      marketplace?: MarketplaceShape;
+    };
+    assert.equal(config.marketplace, undefined);
+  });
+
+  it('should parse a marketplace block and round-trip its fields', () => {
+    const raw = marketplaceConfig(['name: acme-ai', 'owner:', '  name: Acme']);
+    const config = parsePacksConfig(raw, 'packs.yaml') as PacksConfig & {
+      marketplace?: MarketplaceShape;
+    };
+    assert.equal(config.marketplace?.name, 'acme-ai');
+    assert.deepEqual(config.marketplace?.owner, { name: 'Acme' });
+  });
+
+  it('should reject an invalid marketplace block, naming the source file', () => {
+    const source = '/tmp/fork/packs.yaml';
+    const cases: Array<[string, string]> = [
+      ["name: 'acme ai'", 'a name with a space'],
+      ["name: '-acme'", 'a name starting with a dash'],
+      ["name: 'a..b'", 'a name containing ..'],
+      ["name: acme-ai\nowner: { name: '' }", 'an empty owner.name'],
+      ['name: acme-ai', 'a block without owner'],
+    ];
+    for (const [body, label] of cases) {
+      assert.throws(
+        () => parsePacksConfig(marketplaceConfig(body.split('\n')), source),
+        (err: unknown) => err instanceof SigilError && err.message.includes(source),
+        label,
+      );
+    }
   });
 });

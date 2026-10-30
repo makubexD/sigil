@@ -57,7 +57,7 @@ description, homepage fallback `https://github.com/makubexD/sigil#readme`) and `
    - `test/commands/build-identity.test.ts` (new, `runBuild` like `foreign-literal-gate.test.ts`, capture
      `console.warn`):
      - bundled catalog and packs: no warning containing `marketplace`;
-     - a copied packs file without a block: one warning matching `/marketplace name 'sigil'/` and
+     - a copied packs file without a block: one warning matching `/keeps the name 'sigil'/` and
        `/marketplace:/`;
      - the same file with a block: no warning, and `dist/claude/.claude-plugin/marketplace.json` has the
        configured name.

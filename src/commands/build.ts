@@ -14,7 +14,7 @@ import { artifactTargetsPlatform } from '../select';
 import { checkOutputContract } from '../targets/output-contract';
 import { contractsFor } from '../targets/all-emit-specs';
 import { buildRegistry } from '../registry';
-import { loadAndValidate, writeFilesSync, pkg } from '../cli-helpers';
+import { loadAndValidate, resolveDefault, writeFilesSync, pkg } from '../cli-helpers';
 import { SigilError } from '../errors';
 import { renderViolations } from './shared/contract';
 import { JSON_INDENT } from '../json-util';
@@ -65,12 +65,34 @@ function writeRegistry(resolved: ResolvedCatalog, outDir: string): void {
   console.log(`  ✓ registry.json  (${registry.artifacts.length} artifacts)`);
 }
 
+/**
+ * Warns once per build when a packs file other than the bundled one names no marketplace,
+ * so a fork silently keeps sigil's name and collides with upstream. Building sigil itself
+ * uses the bundled packs file and never warns; neither does a build with no Claude marketplace.
+ */
+function warnIfMarketplaceUnnamed(opts: BuildOptions, hasMarketplace: boolean): void {
+  if (opts.target !== 'claude' && opts.target !== 'all') return;
+  const packsFile = opts.packs;
+  if (hasMarketplace || path.resolve(packsFile) === resolveDefault('packs.yaml')) return;
+  const packsPath = path.relative(process.cwd(), path.resolve(packsFile));
+  console.warn(
+    `Warning: no marketplace: block in ${packsPath}; the marketplace keeps the name 'sigil' and collides with upstream sigil when both are added. Set marketplace.name (see docs/guides/publishing.md).`,
+  );
+}
+
 export async function runBuild(opts: BuildOptions): Promise<void> {
   const { catalog, packsConfig } = await loadAndValidate(opts.catalogDir, opts.packs);
   const resolved = resolveCatalog(catalog);
 
+  warnIfMarketplaceUnnamed(opts, packsConfig.marketplace !== undefined);
+
   const targets = opts.target === 'all' ? getAllTargets() : [getTarget(opts.target)];
-  const compileOpts = { version: pkg.version, packs: packsConfig.packs, homepage: pkg.homepage };
+  const compileOpts = {
+    version: pkg.version,
+    packs: packsConfig.packs,
+    homepage: pkg.homepage,
+    marketplace: packsConfig.marketplace,
+  };
 
   for (const target of targets) {
     await buildOneTarget(target, resolved, compileOpts, opts.outDir);

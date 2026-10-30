@@ -12,13 +12,14 @@ import type {
   ConfigScope,
   ConfigKind,
   ConfigScopeDestination,
+  MarketplaceIdentity,
 } from '../../types';
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
 import { resolveClaudeConfigDestination, CLAUDE_MCP_SERVERS_KEY } from './config';
 import { JSON_INDENT } from '../../json-util';
 import { getPackArtifacts } from './plugin-build';
-import { buildPlugin } from './plugin-assemble';
+import { buildPlugin, resolveIdentityContact } from './plugin-assemble';
 import { buildHookConfigOps, buildSettingsConfigOps, buildMcpConfigOps } from './config-scaffold';
 
 /** The 3 Claude Code config scopes, ordered by documented precedence (highest → lowest). */
@@ -74,21 +75,34 @@ export function buildScopeDestination(
 export function buildMarketplaceJson(
   pluginEntries: Array<{ name: string; displayName: string; description: string; source: string }>,
   homepage: string | undefined,
+  marketplace?: MarketplaceIdentity,
 ): string {
   // See: code.claude.com/docs/en/plugin-marketplaces
+  const body = marketplace
+    ? configuredMarketplace(marketplace, pluginEntries)
+    : sigilMarketplace(homepage, pluginEntries);
+  return JSON.stringify(body, null, JSON_INDENT) + '\n';
+}
+
+/** Today's sigil-literal marketplace, emitted when no identity is configured. */
+function sigilMarketplace(homepage: string | undefined, pluginEntries: PluginEntry[]) {
   const marketplaceUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
-  return (
-    JSON.stringify(
-      {
-        name: 'sigil',
-        owner: { name: 'Sigil', url: marketplaceUrl },
-        description: 'Vendor-neutral AI skills, agents, and rules for multiple languages.',
-        plugins: pluginEntries,
-      },
-      null,
-      JSON_INDENT,
-    ) + '\n'
-  );
+  return {
+    name: 'sigil',
+    owner: { name: 'Sigil', url: marketplaceUrl },
+    description: 'Vendor-neutral AI skills, agents, and rules for multiple languages.',
+    plugins: pluginEntries,
+  };
+}
+
+/** Marketplace built from a configured identity: absent fields are omitted, never sigil's values. */
+function configuredMarketplace(marketplace: MarketplaceIdentity, pluginEntries: PluginEntry[]) {
+  return {
+    name: marketplace.name,
+    owner: resolveIdentityContact(marketplace.owner, marketplace.homepage),
+    ...(marketplace.description !== undefined ? { description: marketplace.description } : {}),
+    plugins: pluginEntries,
+  };
 }
 
 /** One pack's marketplace.json entry. */
@@ -122,6 +136,7 @@ export function buildOnePackPlugin(
     catalog,
     version: options.version,
     homepage: options.homepage,
+    marketplace: options.marketplace,
   });
   return { files, entry: buildPluginEntry(pack) };
 }

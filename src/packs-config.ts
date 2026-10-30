@@ -19,7 +19,32 @@ const PackSchema = z.object({
   artifacts: z.array(z.string()).optional(),
 });
 
-const PacksConfigSchema = z.object({ packs: z.array(PackSchema) });
+const MarketplacePersonSchema = z
+  .object({
+    name: z.string().min(1),
+    url: z.string().optional(),
+    email: z.string().optional(),
+  })
+  .strict();
+
+const MarketplaceSchema = z
+  .object({
+    name: z
+      .string()
+      .regex(/^[A-Za-z0-9][A-Za-z0-9._-]*$/, 'must be alphanumerics, dots, dashes or underscores')
+      .refine(n => !n.includes('..'), 'must not contain ".."'),
+    owner: MarketplacePersonSchema,
+    description: z.string().optional(),
+    author: MarketplacePersonSchema.optional(),
+    license: z.string().optional(),
+    homepage: z.string().optional(),
+  })
+  .strict();
+
+const PacksConfigSchema = z.object({
+  packs: z.array(PackSchema),
+  marketplace: MarketplaceSchema.optional(),
+});
 
 /** Parses packs.yaml's text; throws a SigilError naming `source` when it is malformed. */
 export function parsePacksConfig(raw: string, source: string): PacksConfig {

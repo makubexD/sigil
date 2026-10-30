@@ -21,7 +21,7 @@ Phase 0 hygiene and Phase 2 publish); this brief only records the repo-level gap
 ## Out of scope
 
 - Everything the ADR assigns to Phases 0 and 2 beyond the criteria below (not restated here).
-- Configurable marketplace identity ([own-marketplace-metadata](own-marketplace-metadata.md)).
+- Configurable marketplace identity (shipped: [Name your marketplace](../guides/publishing.md#name-your-marketplace)).
 - Copilot or other-tool marketplaces.
 
 ## Success criteria

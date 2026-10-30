@@ -4,7 +4,13 @@
  *
  * @module
  */
-import type { ResolvedCatalog, ResolvedArtifact, FileMap, Pack } from '../../types';
+import type {
+  ResolvedCatalog,
+  ResolvedArtifact,
+  FileMap,
+  Pack,
+  MarketplaceIdentity,
+} from '../../types';
 import { JSON_INDENT } from '../../json-util';
 import { CLAUDE_EMIT_SPECS } from './spec';
 import { emitFile, specFor } from '../emit-files';
@@ -14,25 +20,66 @@ import { nativeKinds } from '../capabilities';
 import { CLAUDE_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 
+const PLUGIN_MANIFEST_SCHEMA = 'https://json.schemastore.org/claude-code-plugin-manifest.json';
+
+/** A person/org entry in a configured marketplace identity. */
+export type IdentityContact = MarketplaceIdentity['owner'];
+
+/**
+ * A configured owner/author entry, with `url` defaulting to the identity's `homepage` when the
+ * contact sets none. Keys that would hold `undefined` are omitted rather than written.
+ */
+export function resolveIdentityContact(
+  contact: IdentityContact,
+  homepage: string | undefined,
+): IdentityContact {
+  const url = contact.url ?? homepage;
+  return {
+    name: contact.name,
+    ...(url !== undefined ? { url } : {}),
+    ...(contact.email !== undefined ? { email: contact.email } : {}),
+  };
+}
+
 /** Build the `plugin.json` manifest content for a pack. */
-function buildPluginJson(pack: Pack, version: string, homepage: string | undefined): string {
+function buildPluginJson(pack: Pack, options: BuildPluginOptions): string {
+  const manifest = options.marketplace
+    ? configuredPluginManifest(pack, options.version, options.marketplace)
+    : sigilPluginManifest(pack, options.version, options.homepage);
+  return JSON.stringify(manifest, null, JSON_INDENT) + '\n';
+}
+
+/** Today's sigil-literal manifest, emitted when no marketplace identity is configured. */
+function sigilPluginManifest(pack: Pack, version: string, homepage: string | undefined) {
   const pluginUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
-  return (
-    JSON.stringify(
-      {
-        $schema: 'https://json.schemastore.org/claude-code-plugin-manifest.json',
-        name: pack.name,
-        displayName: pack.displayName,
-        version,
-        description: pack.description,
-        author: { name: 'Sigil', url: pluginUrl },
-        license: 'MIT',
-        keywords: pack.languages ?? [],
-      },
-      null,
-      JSON_INDENT,
-    ) + '\n'
+  return {
+    $schema: PLUGIN_MANIFEST_SCHEMA,
+    name: pack.name,
+    displayName: pack.displayName,
+    version,
+    description: pack.description,
+    author: { name: 'Sigil', url: pluginUrl },
+    license: 'MIT',
+    keywords: pack.languages ?? [],
+  };
+}
+
+/** Manifest built from a configured identity: absent fields are omitted, never sigil's values. */
+function configuredPluginManifest(pack: Pack, version: string, marketplace: MarketplaceIdentity) {
+  const author = resolveIdentityContact(
+    marketplace.author ?? marketplace.owner,
+    marketplace.homepage,
   );
+  return {
+    $schema: PLUGIN_MANIFEST_SCHEMA,
+    name: pack.name,
+    displayName: pack.displayName,
+    version,
+    description: pack.description,
+    author,
+    ...(marketplace.license !== undefined ? { license: marketplace.license } : {}),
+    keywords: pack.languages ?? [],
+  };
 }
 
 /**
@@ -90,6 +137,8 @@ export interface BuildPluginOptions {
   version: string;
   /** Optional URL override for author.url fields. */
   homepage?: string | undefined;
+  /** Configured marketplace/plugin identity; absent keeps sigil's own values. */
+  marketplace?: MarketplaceIdentity | undefined;
 }
 
 /**
@@ -126,11 +175,11 @@ export function pluginMembersByKind(
 
 /** Build all plugin files for a single pack. */
 export function buildPlugin(options: BuildPluginOptions): FileMap {
-  const { pack, packArtifacts, catalog, version, homepage } = options;
+  const { pack, packArtifacts, catalog } = options;
   const files: FileMap = {};
   const prefix = `plugins/${pack.name}`;
 
-  files[`${prefix}/.claude-plugin/plugin.json`] = buildPluginJson(pack, version, homepage);
+  files[`${prefix}/.claude-plugin/plugin.json`] = buildPluginJson(pack, options);
 
   const members = pluginMembersByKind(packArtifacts);
   const skills = members('skill');

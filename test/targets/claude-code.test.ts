@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { CLAUDE_PROMPT_SPEC } from '../../dist-cli/targets/claude-code/spec/prompt';
+import type { CompileOptions, MarketplaceIdentity } from '../../dist-cli/types';
 import { loadBundledCatalog } from '../helpers/catalog';
 
 const VERSION = '0.1.0';
@@ -30,6 +31,10 @@ const PACKS = [
     languages: ['react'],
   },
 ];
+
+function compileOpts(marketplace?: MarketplaceIdentity): CompileOptions {
+  return { version: VERSION, packs: PACKS, ...(marketplace ? { marketplace } : {}) };
+}
 
 describe('Claude Code target', () => {
   it('emits marketplace.json with all packs (flat top-level schema)', async () => {
@@ -172,5 +177,105 @@ describe('CLAUDE_PROMPT_SPEC — unresolved {{…}} still forbidden at the spec 
       CLAUDE_PROMPT_SPEC.bodyForbids.some(f => f.pattern.test('{{diff}}')),
       'CLAUDE_PROMPT_SPEC must still forbid an unresolved {{…}} placeholder',
     );
+  });
+});
+
+describe('Claude Code target: marketplace identity', () => {
+  it('should emit a full marketplace block into marketplace.json and every plugin.json', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const marketplace = {
+      name: 'acme-ai',
+      owner: { name: 'Acme', url: 'https://acme.dev', email: 'team@acme.dev' },
+      description: 'Acme internal skills.',
+      author: {
+        name: 'Acme Platform',
+        url: 'https://acme.dev/platform',
+        email: 'platform@acme.dev',
+      },
+      license: 'Apache-2.0',
+      homepage: 'https://acme.dev',
+    };
+    const files = await target.compile(resolved, compileOpts(marketplace));
+
+    const mkt = JSON.parse(files['.claude-plugin/marketplace.json']!);
+    assert.equal(mkt.name, 'acme-ai', 'marketplace name');
+    assert.deepEqual(mkt.owner, marketplace.owner, 'marketplace owner');
+    assert.equal(mkt.description, marketplace.description, 'marketplace description');
+
+    for (const pack of PACKS) {
+      const pluginJson = JSON.parse(files[`plugins/${pack.name}/.claude-plugin/plugin.json`]!);
+      assert.deepEqual(pluginJson.author, marketplace.author, `${pack.name} author`);
+      assert.equal(pluginJson.license, 'Apache-2.0', `${pack.name} license`);
+    }
+  });
+
+  it('should omit fields a minimal marketplace block leaves out', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(
+      resolved,
+      compileOpts({ name: 'acme-ai', owner: { name: 'Acme' } }),
+    );
+
+    const mkt = JSON.parse(files['.claude-plugin/marketplace.json']!);
+    assert.equal(mkt.name, 'acme-ai');
+    assert.ok(!('description' in mkt), 'no description key when the block leaves it out');
+    assert.deepEqual(mkt.owner, { name: 'Acme' }, 'owner is exactly the configured one');
+
+    for (const pack of PACKS) {
+      const pluginJson = JSON.parse(files[`plugins/${pack.name}/.claude-plugin/plugin.json`]!);
+      assert.deepEqual(
+        pluginJson.author,
+        { name: 'Acme' },
+        `${pack.name} author falls back to owner`,
+      );
+      assert.ok(!('license' in pluginJson), `${pack.name} has no license key`);
+    }
+  });
+
+  it('should use marketplace.homepage as the default url for owner and author', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(
+      resolved,
+      compileOpts({
+        name: 'acme-ai',
+        owner: { name: 'Acme' },
+        author: { name: 'Acme' },
+        homepage: 'https://acme.dev',
+      }),
+    );
+
+    const mkt = JSON.parse(files['.claude-plugin/marketplace.json']!);
+    assert.deepEqual(mkt.owner, { name: 'Acme', url: 'https://acme.dev' }, 'owner url defaulted');
+
+    for (const pack of PACKS) {
+      const pluginJson = JSON.parse(files[`plugins/${pack.name}/.claude-plugin/plugin.json`]!);
+      assert.deepEqual(
+        pluginJson.author,
+        { name: 'Acme', url: 'https://acme.dev' },
+        `${pack.name} author url defaulted`,
+      );
+    }
+  });
+
+  it('should keep the sigil identity when no marketplace block is configured', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+    const files = await target.compile(resolved, compileOpts());
+
+    const mkt = JSON.parse(files['.claude-plugin/marketplace.json']!);
+    assert.equal(mkt.name, 'sigil');
+    assert.equal(mkt.owner.name, 'Sigil');
+
+    for (const pack of PACKS) {
+      const pluginJson = JSON.parse(files[`plugins/${pack.name}/.claude-plugin/plugin.json`]!);
+      assert.equal(pluginJson.license, 'MIT', `${pack.name} keeps the MIT default`);
+    }
   });
 });

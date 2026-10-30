@@ -329,8 +329,24 @@ export interface Pack {
   artifacts?: string[]; // optional explicit artifact ID list (overrides languages)
 }
 
+/**
+ * Optional top-level `marketplace:` block in packs.yaml — the identity a build gives the
+ * generated Claude marketplace and its plugins. Absent, the build emits sigil's own identity.
+ */
+export interface MarketplaceIdentity {
+  /** Marketplace name, matching Claude's `^[A-Za-z0-9][A-Za-z0-9._-]*$` rule (no `..`). */
+  name: string;
+  owner: { name: string; url?: string; email?: string };
+  description?: string;
+  /** Plugin author; falls back to `owner` when absent. */
+  author?: { name: string; url?: string; email?: string };
+  license?: string;
+  homepage?: string;
+}
+
 export interface PacksConfig {
   packs: Pack[];
+  marketplace?: MarketplaceIdentity;
 }
 
 // ─── Target adapter interface ─────────────────────────────────────────────────
@@ -345,6 +361,11 @@ export interface CompileOptions {
    * Falls back to a placeholder when absent.
    */
   homepage?: string | undefined;
+  /**
+   * Marketplace/plugin identity (packs.yaml `marketplace:` block). When absent, the build emits
+   * sigil's own identity exactly as before; when present, fields it leaves out are omitted.
+   */
+  marketplace?: MarketplaceIdentity | undefined;
 }
 
 export interface ScaffoldOptions {

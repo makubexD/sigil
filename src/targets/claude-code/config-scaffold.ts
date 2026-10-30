@@ -21,21 +21,21 @@ function buildHookEntry(fm: Artifact['frontmatter']): Record<string, unknown> {
   return hookEntry;
 }
 
-export function buildHookConfigOps(artifact: Artifact, dest: ConfigDestination): ConfigMergeOp[] {
-  const fm = artifact.frontmatter;
+export function hookFragment(fm: Artifact['frontmatter']): Record<string, unknown> {
   const event = fm.event as string;
   const matcher = (fm.matcher as string | undefined) ?? '*';
 
   // Claude Code hooks format:
   // { hooks: { [event]: [{ matcher: "...", hooks: [{type: "command", command: "..."}] }] } }
-  const fragment: Record<string, unknown> = {
-    hooks: { [event]: [{ matcher, hooks: [buildHookEntry(fm)] }] },
-  };
+  return { hooks: { [event]: [{ matcher, hooks: [buildHookEntry(fm)] }] } };
+}
+
+export function buildHookConfigOps(artifact: Artifact, dest: ConfigDestination): ConfigMergeOp[] {
   return [
     {
       file: dest.file,
       root: dest.root,
-      fragment,
+      fragment: hookFragment(artifact.frontmatter),
       // hooks key uses array-append so multiple hooks can coexist for the same event
       strategy: { hooks: 'array-append' },
     },

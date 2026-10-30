@@ -100,3 +100,24 @@ describe('parsePacksConfig', () => {
     }
   });
 });
+
+describe('parsePacksConfig: pluginDependencies', () => {
+  it('accepted', () => {
+    const raw = explicitPack(
+      'dotnet-starter',
+      ['shared/worker-mode-guard'],
+      ['pluginDependencies: [shared/worker-mode-guard]'],
+    );
+    const pack = parsePacksConfig(raw, 'packs.yaml').packs[0];
+    assert.deepEqual(pack?.pluginDependencies, ['shared/worker-mode-guard']);
+  });
+
+  it('must be a pack member', () => {
+    const raw = explicitPack('dotnet-starter', ['a/b'], ['pluginDependencies: [a/z]']);
+    assert.throws(
+      () => parsePacksConfig(raw, 'packs.yaml'),
+      (err: unknown) => err instanceof SigilError && /pluginDependencies/.test(err.message),
+      'a pluginDependencies id must also be listed in that pack artifacts',
+    );
+  });
+});

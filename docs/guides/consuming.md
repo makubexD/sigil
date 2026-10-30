@@ -486,7 +486,7 @@ Code plugins**. There are two routes:
 ```bash
 # 1. In your sigil clone (see operations.md#build-and-link): build the Claude plugins.
 sigil build --target claude
-# → writes dist/claude/ (marketplace + one plugin per pack)
+# → writes dist/claude/ (marketplace, one plugin per pack, one per hook and MCP server)
 
 # 2. In Claude Code, add that folder as a marketplace (use the absolute path), then install a pack:
 #    /plugin marketplace add <abs-path-to-sigil>/dist/claude
@@ -500,16 +500,40 @@ for example `essentials`, `dotnet-starter`, `dotnet-tooling`, `python-starter`, 
 `dist/claude/.claude-plugin/marketplace.json` lists them all. Without `--target`, `sigil build` builds
 **both** targets (`dist/claude/` and `dist/copilot/`).
 
-A pack whose artifacts are all MCP servers or hooks has no plugin yet: plugins can't carry those
-kinds ([capabilities.md](../reference/capabilities.md#plugin)). Install it with `sigil add`
-instead. `essentials` has a plugin that carries only `/essentials:explain-diff`. Its MCP server and
-hooks still need `sigil add`, and so does `author-artifact`, which runs the `sigil` CLI against a
-catalog.
+Each hook and MCP server is also its own opt-in plugin, named `hook-<name>` or `mcp-<name>`:
+`hook-protect-config`, `hook-reviewer-bash-guard`, `hook-worker-mode-guard`, `mcp-ado`,
+`mcp-context-mode`, `mcp-filesystem`, and `mcp-maku-jam`. A pack's plugin never contains them, so
+you choose each hook and server yourself. The one exception is `deepseek-worker`, which depends on
+`hook-worker-mode-guard`. If that plugin is missing, Claude Code disables `deepseek-worker` and
+names the dependency.
 
-**What a plugin carries.** Skills, agents, workflows, and prompts. Rules cannot ride in a plugin as
-loose files, so each rule a skill uses is **inlined** into that skill's `SKILL.md` under
-`## Applied Rules`. MCP servers, hooks, and settings are not packaged into plugins yet; install those
-with `sigil add`. The per-kind table is in [capabilities.md](../reference/capabilities.md).
+The `essentials` plugin carries only `/essentials:explain-diff`. To get the rest of the pack, install
+`mcp-filesystem`, `hook-protect-config`, and `hook-reviewer-bash-guard`. `author-artifact` still needs
+`sigil add`, because it runs the `sigil` CLI against a catalog. The starter packs work the same way:
+the plugin holds the skills and their dependencies, you add the same three plugins, and the dev-tool
+permissions need `sigil add`.
+
+**What a plugin carries.** A pack's plugin carries skills, agents, workflows, and prompts. A generated
+plugin carries one hook or one MCP server. Rules cannot ride in a plugin as loose files, so each rule a
+skill uses is **inlined** into that skill's `SKILL.md` under `## Applied Rules`. Settings are not
+packaged into plugins; install those with `sigil add`. The per-kind table is in
+[capabilities.md](../reference/capabilities.md).
+
+**Environment variables.** An MCP plugin reads `${NAME}` values from the environment Claude Code starts
+from, and its description names the ones it needs. `mcp-ado`, for example, needs `ADO_ORG` and
+`ADO_MCP_PERSONAL_TOKEN`. If a variable is unset, the server still starts with the literal text
+`${NAME}` as its value and Claude Code shows no warning, so a connected server doesn't prove the value
+is set. A project `.mcp.json` from `sigil add` behaves the same way.
+
+**A plugin and `sigil add` together.** Installing the same artifact both ways is safe, but sigil does
+not warn about it. A hook runs twice, which is harmless for sigil's three hooks because they are
+deterministic checks. For an MCP server in a project `.mcp.json`, the outcome depends on what the two
+copies resolve to. If the endpoint is the same, Claude Code drops the plugin's server and keeps the
+project's. If it differs, both run and the tools appear twice.
+
+**Reviewing updates.** A plugin update can change a hook's command with no review step. `sigil update`
+shows what would change before it writes, and `--dry-run` previews it. To read a hook before it runs,
+install it with `sigil add`.
 
 ```
 dist/claude/
@@ -527,8 +551,8 @@ Every plugin's `version` is written from the sigil package version at build time
 `/plugin update` in Claude Code.
 
 **Plugin or `add`?** Use `sigil add` when you want files you can see, edit, and commit in your
-project, and for hooks, settings, MCP servers, and prompts. Use the plugin when you want Claude Code to
-manage skills and agents as an installable unit.
+project, when you want to review changes before an update writes them, and for settings. Use a plugin
+when you want Claude Code to manage an artifact set as an installable unit.
 
 ---
 

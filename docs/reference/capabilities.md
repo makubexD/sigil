@@ -38,17 +38,16 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 
 | Kind | claude |
 | --- | --- |
-| mcp | — (1) |
-| hook | — (1) |
-| settings | — (2) |
+| mcp | native |
+| hook | native |
+| settings | — (1) |
 | prompt | native |
 | skill | native |
 | agent | native |
-| rule | via inline (3) |
+| rule | via inline (2) |
 | workflow | native |
-| template | — (4) |
+| template | — (3) |
 
-1. sigil does not package this kind into plugins yet — install it with `sigil add`
-2. a plugin settings.json applies only `agent` and `subagentStatusLine` — [Claude Code — Plugin components](https://code.claude.com/docs/en/plugins/components)
-3. folded into each skill that `uses:` it — [Claude Code — Plugin components](https://code.claude.com/docs/en/plugins/components)
-4. templates are composed into other artifacts at resolve time, never emitted
+1. a plugin settings.json applies only `agent` and `subagentStatusLine` — [Claude Code — Plugin components](https://code.claude.com/docs/en/plugins/components)
+2. folded into each skill that `uses:` it — [Claude Code — Plugin components](https://code.claude.com/docs/en/plugins/components)
+3. templates are composed into other artifacts at resolve time, never emitted

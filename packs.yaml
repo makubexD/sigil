@@ -8,6 +8,7 @@
 # Legacy: use `languages: [<lang>]` to include every artifact for a language.
 # Prefer explicit `artifacts:` lists for curated packs (takes precedence over languages).
 # `pluginExclude: [<id>]` keeps a listed artifact out of the Claude plugin; sigil add still installs it.
+# `pluginDependencies: [<id>]` makes the Claude plugin depend on a listed hook or MCP's generated plugin.
 #
 # Add a new pack by appending an entry here — no catalog or adapter changes needed.
 #
@@ -21,6 +22,8 @@ packs:
       Explain a diff for any audience, in any programming language.
       With sigil add, also installs the Filesystem MCP, config-file protection,
       and a command that authors new catalog artifacts.
+      As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
+      the authoring command needs sigil add.
       Dev-tool permissions are per language: each starter pack carries its own.
     artifacts:
       - shared/filesystem
@@ -36,8 +39,10 @@ packs:
     description: >
       Complete setup for .NET / C# development.
       Includes the cs-generate-tests skill (plus its C# testing rule and the
-      cs-code-reviewer agent as automatically resolved deps), the
+      cs-code-reviewer agent as automatically resolved deps). With sigil add, also installs the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
+      As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
+      the permissions need sigil add.
     artifacts:
       - csharp/cs-generate-tests
       - shared/filesystem
@@ -50,8 +55,10 @@ packs:
     description: >
       Complete setup for Python development.
       Includes the py-generate-tests skill (plus its Python testing rule and the
-      py-code-reviewer agent as automatically resolved deps), the
+      py-code-reviewer agent as automatically resolved deps). With sigil add, also installs the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
+      As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
+      the permissions need sigil add.
     artifacts:
       - python/py-generate-tests
       - shared/filesystem
@@ -64,8 +71,10 @@ packs:
     description: >
       Complete setup for React development.
       Includes the react-generate-tests skill (plus its React testing rule and the
-      react-code-reviewer agent as automatically resolved deps), the
+      react-code-reviewer agent as automatically resolved deps). With sigil add, also installs the
       Filesystem MCP, config-file protection, and common dev-tool permissions.
+      As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
+      the permissions need sigil add.
     artifacts:
       - react/react-generate-tests
       - shared/filesystem
@@ -86,8 +95,10 @@ packs:
     displayName: TypeScript Starter
     description: >
       Complete setup for TypeScript development.
-      Includes generate-tests, document, and release skills plus their deps,
-      the Filesystem MCP, config-file protection, and common dev-tool permissions.
+      Includes generate-tests, document, and release skills plus their deps.
+      With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions.
+      As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
+      the permissions need sigil add.
     artifacts:
       - typescript/ts-generate-tests
       - typescript/ts-document
@@ -110,8 +121,10 @@ packs:
     displayName: Angular Starter
     description: >
       Complete setup for Angular development.
-      Includes generate-tests and generate-component skills plus their deps,
-      the Filesystem MCP, config-file protection, and common dev-tool permissions.
+      Includes generate-tests and generate-component skills plus their deps.
+      With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions.
+      As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
+      the permissions need sigil add.
     artifacts:
       - angular/ng-generate-tests
       - angular/ng-generate-component
@@ -174,9 +187,10 @@ packs:
       Code run on the paid DeepSeek API (mk-exec), with its own config dir, effort low, medium or
       high, and a full log per run. Includes /mk-delegate, /mk-check (which installs mk-exec,
       workflow-report and the worker config from its references), the orchestration rule as a
-      resolved dep, and the worker-mode guard hook (installs with sigil add; plugins can't carry
-      hooks yet). Requires Claude Code and a DeepSeek API key. Works with any language.
+      resolved dep, and the worker-mode guard hook (the plugin depends on hook-worker-mode-guard).
+      Requires Claude Code and a DeepSeek API key. Works with any language.
     artifacts:
       - shared/mk-delegate
       - shared/mk-check
       - shared/worker-mode-guard
+    pluginDependencies: [shared/worker-mode-guard]

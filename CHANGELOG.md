@@ -13,9 +13,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   now packaged into plugins, named by the id's last segment, and a name collision inside a plugin
   fails the build.
 - A pack's `pluginExclude` keeps an artifact out of its plugin.
+- Each hook and MCP server is now its own opt-in Claude plugin, such as `hook-protect-config` and
+  `mcp-filesystem`, so the marketplace lists 21 plugins. Packs still don't include them. An MCP
+  plugin's description names the environment variables it needs, because nothing warns when one is
+  unset. A plugin update can change a hook's command with no review step, unlike `sigil update`.
+- A pack's `pluginDependencies` makes its plugin depend on a generated hook or MCP plugin.
 
 ### Changed
 
+- The `deepseek-worker` plugin now depends on `hook-worker-mode-guard`, and Claude Code disables it
+  when that plugin is missing.
 - `sigil build` replaces `dist/<target>/` instead of adding to it, so plugins removed from the catalog
   no longer linger in the output. It refuses to replace a target folder it did not build.
 - `sigil build` fails when a Claude plugin agent would carry a field plugins ignore

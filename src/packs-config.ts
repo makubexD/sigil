@@ -19,11 +19,19 @@ const PackSchema = z
     languages: z.array(z.string()).optional(),
     artifacts: z.array(z.string()).optional(),
     pluginExclude: z.array(z.string()).optional(),
+    pluginDependencies: z.array(z.string()).optional(),
   })
   .refine(pack => (pack.pluginExclude ?? []).every(id => pack.artifacts?.includes(id) === true), {
     message: "pluginExclude ids must also be listed in that pack's artifacts",
     path: ['pluginExclude'],
-  });
+  })
+  .refine(
+    pack => (pack.pluginDependencies ?? []).every(id => pack.artifacts?.includes(id) === true),
+    {
+      message: "pluginDependencies ids must also be listed in that pack's artifacts",
+      path: ['pluginDependencies'],
+    },
+  );
 
 const MarketplacePersonSchema = z
   .object({

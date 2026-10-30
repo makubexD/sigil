@@ -53,7 +53,7 @@ describe('Claude Code target', () => {
     assert.ok(!marketplace.marketplace, 'no nested "marketplace" key — must be flat');
     assert.equal(marketplace.name, 'sigil', 'name at top level');
     assert.ok(marketplace.owner?.name, 'owner.name present');
-    assert.equal(marketplace.plugins.length, 3, '3 plugin entries');
+    assert.equal(marketplace.plugins.length, 10, '3 packs plus 7 generated config plugins');
   });
 
   it('emits plugin.json with correct version for each pack', async () => {
@@ -302,10 +302,12 @@ describe('empty packs', () => {
     return Object.keys(files).filter(key => key.startsWith(`plugins/${packName}/`));
   }
 
-  /** The `name` of every marketplace entry, in order. */
+  /** The `name` of every pack's marketplace entry, in order (generated config plugins left out). */
   function marketplaceNames(files: FileMap): string[] {
     const marketplace = JSON.parse(files['.claude-plugin/marketplace.json']!);
-    return marketplace.plugins.map((entry: { name: string }) => entry.name);
+    return marketplace.plugins
+      .map((entry: { name: string }) => entry.name)
+      .filter((name: string) => !/^(hook|mcp)-/.test(name));
   }
 
   it('should give a pack of only an MCP and a hook no plugin', async () => {

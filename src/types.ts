@@ -329,6 +329,8 @@ export interface Pack {
   artifacts?: string[]; // optional explicit artifact ID list (overrides languages)
   /** Ids in `artifacts` left out of the Claude plugin and still installed by `sigil add`. */
   pluginExclude?: string[];
+  /** Catalog ids of hook or mcp artifacts this pack plugin depends on. */
+  pluginDependencies?: string[];
 }
 
 /**

@@ -210,7 +210,9 @@ interface TargetCapabilities {
 field guard is done as of 2026-10-30: `build` fails when a plugin agent would carry a field Claude
 plugins ignore. Prompts as plugin skills is done as of 2026-10-30: `essentials` returns to the
 marketplace as a plugin carrying only `/essentials:explain-diff`. `author-artifact` stays out until
-npm publish, because it needs the `sigil` CLI.
+npm publish, because it needs the `sigil` CLI. Hooks and MCP as their own opt-in plugins is done as
+of 2026-10-30: `build` generates one plugin per artifact, and pack plugins carry neither kind
+([§8](#8-hooks-and-mcp-as-plugins-2026-10-30)).
 
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,
@@ -292,6 +294,64 @@ then one collapsible section per tool) plus a `docs/setup/<tool>.md` page.
   Findings, evidence and cost: [`docs/audits/2026-09-27/findings.md`](../audits/2026-09-27/findings.md).
 
 - **README Quick Start** restructured in the agent-skills style, listing only routes that work today.
+
+## 8. Hooks and MCP as plugins (2026-10-30)
+
+Spike on Claude Code 2.1.314. Each probe ran as `claude -p --plugin-dir` in a throwaway project with
+`--setting-sources project,local`, and the hook probes used the real catalog commands. MCP probes used a local mock
+server that records its argv, env and cwd.
+
+| Question                                           | Result                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Exec-form `node -e` in `hooks/hooks.json`; exit 2? | Works. `protect-config` blocked `.env` (exit 2, file absent) and allowed `.env.example`. The control without the plugin wrote `.env`.                                                                                                                                                                  |
+| `${ADO_ORG}` in a plugin `.mcp.json`, set          | Expanded in `args` and `env`.                                                                                                                                                                                                                                                                          |
+| Same, unset                                        | The server still starts, with the literal text `${ADO_ORG}` as its argument and `${ADO_MCP_PERSONAL_TOKEN}` as its token. `mcp list` says Connected and showed no warning, although the docs promise one. A project `.mcp.json` behaves the same at startup, so a plugin is no worse than `sigil add`. |
+| `reviewer-bash-guard` against a plugin agent       | Blocks. `agent_type` is `probe-agents:cs-code-reviewer`, and the guard allowed `git status --short` from the same agent. The control without the guard created the file.                                                                                                                               |
+| Same hook from a plugin and from settings          | Runs twice. Settings files dedupe among themselves (project + local ran once). Same `command` with different `args` stays two hooks, so sigil's `node` hooks do not swallow each other.                                                                                                                |
+| Same MCP server name, different endpoint           | Both run, so the tools appear twice (`mcp__ado__…` and `mcp__plugin_<plugin>_ado__…`).                                                                                                                                                                                                                 |
+| Same endpoint, different name                      | The plugin server is dropped and the project server wins. A `sigil add` copy of the same artifact is this case once its values expand alike.                                                                                                                                                           |
+
+Extra checks, added because the catalog depends on them:
+
+- **`shared/filesystem` passes `"."`.** A plugin server's cwd is the session directory, not the plugin folder, and
+  `CLAUDE_PROJECT_DIR` matches it, so `.` means the same thing as it does from `sigil add`.
+- **`dependencies`:** a bare name loads when the dependency is present. When missing, the dependent plugin is disabled
+  with `Dependency "hook-log" is not installed`.
+- **Error text:** a blocked hook returns its whole command to the model (1.6K for `protect-config`, 7.4K for
+  `reviewer-bash-guard`). A settings hook does the same (1.5K measured), so this is not new to plugins.
+- **`claude plugin validate --strict` passes** for both shapes with `author` and `license`, which sigil's manifests
+  carry. README and icon findings are directory advice and do not fail it.
+
+Not covered:
+
+- `/plugin install` from a marketplace, including auto-install of a dependency, because `marketplace add` writes to
+  the user's settings. `--plugin-dir` does not exercise it. It is left for the owner's clean-machine check after the
+  next release.
+- An interactive session. Everything ran under `-p`.
+- The shipped reviewer agents' own refusal: `dotnet-tooling:cs-code-reviewer` declined the test command, so the guard
+  was tested with a same-named spike agent. The guard reads only `agent_type`.
+- User-scope and local-scope MCP duplicates, and the real ADO server against a literal `${ADO_ORG}`.
+
+Decisions:
+
+1. **One generated plugin per artifact**, `hook-<basename>` and `mcp-<basename>`, never listed in `packs.yaml`, which
+   also feeds `sigil add`. Seven at the time: `hook-protect-config`, `hook-reviewer-bash-guard`,
+   `hook-worker-mode-guard`, `mcp-ado`, `mcp-context-mode`, `mcp-filesystem`, `mcp-maku-jam`. The marketplace went from
+   14 plugins to 21. An artifact whose `platforms` excludes `claude` gets none. A generated name equal to a pack name
+   fails the build.
+2. **Pack plugins never carry `hook` or `mcp`.** `PACK_PLUGIN_KINDS` holds what a pack plugin writes, separate from
+   `WRITABLE_PLUGIN_KINDS`. Without this, flipping those kinds to `native` would have put `shared/filesystem`,
+   `shared/protect-config` and `shared/reviewer-bash-guard` inside every starter, turned on with no separate choice.
+   Starters are unchanged, and a test pins that.
+3. **`deepseek-worker` depends on `hook-worker-mode-guard`** through the optional `pluginDependencies` pack field,
+   holding catalog ids. Each id must be listed in that pack's `artifacts` and be a `hook` or `mcp`, and emits a bare
+   name, which resolves in the same marketplace. Starters declare none, which keeps them opt-in.
+4. **Keep `{sigil:env:NAME}` and `PORTABLE_MCP_ENV_SYNTAX`; no `userConfig`.** Set variables work and unset ones behave
+   as `sigil add` does, so `userConfig` would only be a second way to supply values. Because nothing warns the user, a
+   generated MCP plugin's description names the variables it needs, derived with `envTokenNames`.
+5. **Duplicates are documented, not guarded** (Phase 2b owns the guard). Running a blocking hook twice is harmless,
+   because all three hooks are deterministic checks. `consuming.md` says what happens.
+6. **`consuming.md` says a plugin update can change a hook command with no review step**, unlike `sigil update`.
 
 ## Appendix — fixes worth making in the original `gid` skills
 

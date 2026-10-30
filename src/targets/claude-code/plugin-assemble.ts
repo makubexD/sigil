@@ -19,6 +19,7 @@ import type { EmitContext } from '../spec-types';
 import type { ArtifactKind } from '../../types';
 import { nativeKinds } from '../capabilities';
 import { CLAUDE_CAPABILITIES } from './capabilities';
+import { configPluginName } from './plugin-build';
 import type { TargetCapabilities } from '../capability-types';
 
 const PLUGIN_MANIFEST_SCHEMA = 'https://json.schemastore.org/claude-code-plugin-manifest.json';
@@ -43,15 +44,46 @@ export function resolveIdentityContact(
 }
 
 /** Build the `plugin.json` manifest content for a pack. */
-function buildPluginJson(pack: Pack, options: BuildPluginOptions): string {
+export function buildPluginJson(pack: Pack, options: BuildPluginOptions): string {
   const manifest = options.marketplace
-    ? configuredPluginManifest(pack, options.version, options.marketplace)
-    : sigilPluginManifest(pack, options.version, options.homepage);
+    ? configuredPluginManifest(pack, options.version, options.marketplace, options.catalog)
+    : sigilPluginManifest(pack, options.version, options.homepage, options.catalog);
   return JSON.stringify(manifest, null, JSON_INDENT) + '\n';
 }
 
+/**
+ * The manifest's `dependencies` entry: each `pluginDependencies` catalog id mapped to the bare
+ * name of its generated hook/mcp plugin (`configPluginName`), so the dependency resolves in the
+ * same marketplace. Absent when the pack declares none. The catalog exists only at compile time
+ * (`parsePacksConfig` has none), so this is also where an id of any other kind is rejected. The
+ * catalog is already filtered to this target, so an artifact excluded by `platforms` is missing here.
+ */
+function manifestDependencies(
+  pack: Pack,
+  catalog: ResolvedCatalog,
+): { dependencies: string[] } | Record<string, never> {
+  const ids = pack.pluginDependencies ?? [];
+  if (ids.length === 0) return {};
+  return {
+    dependencies: ids.map(id => {
+      const artifact = catalog.byId.get(id);
+      if (artifact === undefined || (artifact.kind !== 'hook' && artifact.kind !== 'mcp')) {
+        throw new SigilError(
+          `pack '${pack.name}': pluginDependencies id '${id}' must name a hook or mcp catalog artifact available on Claude`,
+        );
+      }
+      return configPluginName(artifact);
+    }),
+  };
+}
+
 /** Today's sigil-literal manifest, emitted when no marketplace identity is configured. */
-function sigilPluginManifest(pack: Pack, version: string, homepage: string | undefined) {
+function sigilPluginManifest(
+  pack: Pack,
+  version: string,
+  homepage: string | undefined,
+  catalog: ResolvedCatalog,
+) {
   const pluginUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
   return {
     $schema: PLUGIN_MANIFEST_SCHEMA,
@@ -62,15 +94,19 @@ function sigilPluginManifest(pack: Pack, version: string, homepage: string | und
     author: { name: 'Sigil', url: pluginUrl },
     license: 'MIT',
     keywords: pack.languages ?? [],
+    ...manifestDependencies(pack, catalog),
   };
 }
 
 /** Manifest built from a configured identity: absent fields are omitted, never sigil's values. */
-function configuredPluginManifest(pack: Pack, version: string, marketplace: MarketplaceIdentity) {
-  const author = resolveIdentityContact(
-    marketplace.author ?? marketplace.owner,
-    marketplace.homepage,
-  );
+function configuredPluginManifest(
+  pack: Pack,
+  version: string,
+  marketplace: MarketplaceIdentity,
+  catalog: ResolvedCatalog,
+) {
+  const contact = marketplace.author ?? marketplace.owner;
+  const author = resolveIdentityContact(contact, marketplace.homepage);
   return {
     $schema: PLUGIN_MANIFEST_SCHEMA,
     name: pack.name,
@@ -80,6 +116,7 @@ function configuredPluginManifest(pack: Pack, version: string, marketplace: Mark
     author,
     ...(marketplace.license !== undefined ? { license: marketplace.license } : {}),
     keywords: pack.languages ?? [],
+    ...manifestDependencies(pack, catalog),
   };
 }
 
@@ -158,11 +195,25 @@ export interface BuildPluginOptions {
 }
 
 /**
- * Kinds this assembler has a writer for. This lists implementation coverage, not support — support
- * is CLAUDE_CAPABILITIES' plugin channel; test/targets/capabilities.test.ts asserts every native
- * plugin kind appears here, so a capability row flip fails `npm test`, not a release build.
+ * Kinds the plugin channel has a writer for — these four here, `hook` and `mcp` in plugin-config.ts
+ * (one generated plugin per artifact). This lists implementation coverage, not support — support is
+ * CLAUDE_CAPABILITIES' plugin channel; test/targets/capabilities.test.ts asserts every native plugin
+ * kind appears here, so a capability row flip fails `npm test`, not a release build.
  */
 export const WRITABLE_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
+  'skill',
+  'agent',
+  'workflow',
+  'prompt',
+  'hook',
+  'mcp',
+]);
+
+/**
+ * Kinds a pack plugin carries. Config kinds (`hook`, `mcp`) get their own generated plugins
+ * instead, one per artifact, so a pack's plugin never writes `hooks/hooks.json` or `.mcp.json`.
+ */
+export const PACK_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'skill',
   'agent',
   'workflow',
@@ -171,7 +222,8 @@ export const WRITABLE_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
 
 /**
  * Returns a lookup of the pack's artifacts per kind, limited to the kinds `capabilities` marks
- * `native` on the plugin channel (`via`-kinds such as rules travel inside skills instead). Throws
+ * `native` on the plugin channel (`via`-kinds such as rules travel inside skills instead) and
+ * `PACK_PLUGIN_KINDS` (config kinds get their own plugins). Throws
  * when a kind is marked native but has no writer here, so flipping a capability row can never
  * silently drop artifacts from a plugin.
  */
@@ -187,7 +239,10 @@ export function pluginMembersByKind(
         'writer for them — add one or change the row in claude-code/capabilities.ts',
     );
   }
-  return kind => (native.includes(kind) ? packArtifacts.filter(a => a.kind === kind) : []);
+  return kind =>
+    native.includes(kind) && PACK_PLUGIN_KINDS.has(kind)
+      ? packArtifacts.filter(a => a.kind === kind)
+      : [];
 }
 
 /**
@@ -197,7 +252,7 @@ export function pluginMembersByKind(
  */
 export function hasPluginMembers(packArtifacts: ResolvedArtifact[]): boolean {
   const members = pluginMembersByKind(packArtifacts);
-  for (const kind of WRITABLE_PLUGIN_KINDS) {
+  for (const kind of PACK_PLUGIN_KINDS) {
     if (members(kind).length > 0) return true;
   }
   return false;

@@ -27,6 +27,7 @@
  *   config          — ConfigDestination, resolveClaudeConfigDestination
  *   plugin-build    — getPackArtifacts (a pack's members)
  *   plugin-assemble — buildPlugin (assembles a pack's full FileMap)
+ *   plugin-config   — one generated plugin per hook/mcp artifact (hook-<basename>, mcp-<basename>)
  *   spec/           — one KindEmitSpec per kind and channel (CLAUDE_EMIT_SPECS = emitSpecs);
  *                     every file is written through ../emit-files.ts with these
  *   target-helpers  — free-standing helpers backing the class methods below
@@ -53,7 +54,10 @@ import {
   buildMarketplaceJson,
   buildOnePackPlugin,
   scaffoldConfigByKind,
+  type PluginEntry,
 } from './target-helpers';
+import { buildConfigPlugins } from './plugin-config';
+import { SigilError } from '../../errors';
 import {
   CLAUDE_AUTHORING_FIELDS,
   CLAUDE_INIT_DIRS,
@@ -71,6 +75,30 @@ import { CLAUDE_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 
 export { ConfigDestination, resolveClaudeConfigDestination } from './config';
+
+/**
+ * Adds each generated hook/MCP plugin to the build. A generated name already taken by a pack or by
+ * another generated plugin (`shared/x` and `python/x` share a basename) fails the build: the
+ * marketplace would otherwise list two plugins with one name, and one would overwrite the other.
+ */
+function addConfigPlugins(
+  files: FileMap,
+  entries: PluginEntry[],
+  catalog: ResolvedCatalog,
+  options: CompileOptions,
+): void {
+  const taken = new Set(options.packs.map(pack => pack.name));
+  for (const plugin of buildConfigPlugins(catalog, options)) {
+    if (taken.has(plugin.entry.name)) {
+      throw new SigilError(
+        `generated config plugin '${plugin.entry.name}' collides with a pack or another generated plugin of the same name`,
+      );
+    }
+    taken.add(plugin.entry.name);
+    Object.assign(files, plugin.files);
+    entries.push(plugin.entry);
+  }
+}
 
 export class ClaudeCodeTarget implements Target {
   readonly name = 'claude';
@@ -113,18 +141,16 @@ export class ClaudeCodeTarget implements Target {
 
   async compile(catalog: ResolvedCatalog, options: CompileOptions): Promise<FileMap> {
     const files: FileMap = {};
-    const pluginEntries: Array<{
-      name: string;
-      displayName: string;
-      description: string;
-      source: string;
-    }> = [];
+    const pluginEntries: PluginEntry[] = [];
 
     for (const plugin of options.packs.map(pack => buildOnePackPlugin(pack, catalog, options))) {
       if (!plugin) continue;
       Object.assign(files, plugin.files);
       pluginEntries.push(plugin.entry);
     }
+
+    // One generated plugin per config-kind artifact, after the packs (Phase C decision 1).
+    addConfigPlugins(files, pluginEntries, catalog, options);
 
     files['.claude-plugin/marketplace.json'] = buildMarketplaceJson(
       pluginEntries,

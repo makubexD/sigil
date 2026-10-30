@@ -25,6 +25,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `packs.yaml` takes an optional top-level `marketplace:` block (`name`, `owner`, `description`,
+  `author`, `license`, `homepage`) that `sigil build --target claude` writes into
+  `marketplace.json` and every `plugin.json`, so a fork no longer ships as `sigil` and can be added
+  next to upstream. Fields left out are omitted, never filled with sigil's values; without the
+  block the output is unchanged. `build` warns when a packs file other than the bundled one has no
+  block ([guide](docs/guides/publishing.md#name-your-marketplace)).
 - Coverage-probe eval (`test/evals/coverage-probe/`): one task per audit area C1–C5 (Node runtime,
   ASP.NET Core/EF Core, FastAPI, React performance and security, API/DB/observability), graded by
   reading the code against a 4-point key, with no rules installed. A Haiku screen hit all 60 points

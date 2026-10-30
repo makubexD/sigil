@@ -54,13 +54,18 @@ out/
         └── skills/hello/SKILL.md
 ```
 
-`marketplace.json` (verbatim; note `name`, `owner` and the plugin `author` — see limits):
+`marketplace.json` (verbatim, built with the `marketplace:` block shown under
+[Name your marketplace](#name-your-marketplace)):
 
 ```json
 {
-  "name": "sigil",
-  "owner": { "name": "Sigil", "url": "https://github.com/makubexD/sigil#readme" },
-  "description": "Vendor-neutral AI skills, agents, and rules for multiple languages.",
+  "name": "acme-ai",
+  "owner": {
+    "name": "Acme Platform",
+    "url": "https://github.com/acme/ai-catalog",
+    "email": "platform@acme.example"
+  },
+  "description": "Acme's internal skills for Claude Code.",
   "plugins": [
     {
       "name": "acme-starter",
@@ -73,8 +78,48 @@ out/
 ```
 
 One plugin is emitted per pack in `packs.yaml`; `plugin.json` carries `version` = the sigil
-package version, not your catalog's. The output passes `claude plugin validate out/claude`
-(`✔ Validation passed`).
+package version, not your catalog's. The output passes
+`claude plugin validate --strict out/claude` (`✔ Validation passed`).
+
+### Name your marketplace
+
+Claude Code keeps one marketplace per `name`. Without configuration a build uses sigil's own
+identity (`name: sigil`, owner and author `Sigil`, license `MIT`), so a fork added next to
+upstream sigil collides with it. Give your marketplace its own identity with a top-level
+`marketplace:` block in your `packs.yaml`:
+
+```yaml
+marketplace:
+  name: acme-ai # required
+  owner: { name: Acme Platform, email: platform@acme.example } # owner.name required
+  description: Acme's internal skills for Claude Code.
+  license: Apache-2.0
+  homepage: https://github.com/acme/ai-catalog
+packs:
+  - name: acme-starter
+    # …
+```
+
+| Field         | Written to                                          | When left out                     |
+| ------------- | --------------------------------------------------- | --------------------------------- |
+| `name`        | `marketplace.json` `name`                           | required                          |
+| `owner`       | `marketplace.json` `owner` (`name`, `url`, `email`) | required (`owner.name`)           |
+| `description` | `marketplace.json` `description`                    | omitted                           |
+| `author`      | every `plugin.json` `author`, same shape            | `owner` is used                   |
+| `license`     | every `plugin.json` `license`                       | omitted                           |
+| `homepage`    | the `url` of `owner` and `author`                   | they keep only the `url` they set |
+
+With the block present, a field you leave out is left out of the output; it is never filled with
+sigil's value. `name` must start with a letter or digit and hold only letters, digits, `.`, `-` and
+`_`, with no `..` (Claude's rule; `sigil build` rejects anything else and names the file). Names
+Claude reserves are left to `claude plugin validate --strict`. `version` in `plugin.json` stays the
+sigil package version.
+
+`sigil build` warns when the packs file is not the bundled one and has no `marketplace:` block:
+
+```
+Warning: no marketplace: block in packs.yaml; the marketplace keeps the name 'sigil' and collides with upstream sigil when both are added. Set marketplace.name (see docs/guides/publishing.md).
+```
 
 **Publish:** copy the _contents_ of `out/claude/` to the root of a git repository (the folder
 that contains `.claude-plugin/`), commit and push. `dist/` and your `--out-dir` are not
@@ -87,7 +132,7 @@ committed or published by sigil; nothing automates this today.
 /plugin install acme-starter@<marketplace-name>
 ```
 
-The `<marketplace-name>` is the `name` in `marketplace.json`, currently always `sigil`. To verify
+The `<marketplace-name>` is the `name` in `marketplace.json` (`acme-ai` above). To verify
 against Claude's docs: the command also exists as `claude plugin marketplace add <owner>/<repo>`
 and accepts a repository URL or a local directory
 ([Create a marketplace](https://code.claude.com/docs/en/plugin-marketplaces)). Plugins carry
@@ -117,8 +162,6 @@ sigil does not write that layout.
 
 ## Known limits today
 
-- Marketplace `name`/`owner` and plugin `author`/`license` are hardcoded to sigil:
-  [own-marketplace-metadata](../ideas/own-marketplace-metadata.md).
 - No Copilot plugin channel: [copilot-plugin-channel](../ideas/copilot-plugin-channel.md).
 - `sigil build --target copilot` emits agents as one `.github/AGENTS.md`, while `add` writes
   `.github/agents/*.agent.md`; the two layouts differ (same brief).

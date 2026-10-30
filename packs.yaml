@@ -9,6 +9,9 @@
 # Prefer explicit `artifacts:` lists for curated packs (takes precedence over languages).
 #
 # Add a new pack by appending an entry here — no catalog or adapter changes needed.
+#
+# A fork names its marketplace with a top-level `marketplace:` block (absent here, so the build
+# emits sigil's own identity): docs/guides/publishing.md#name-your-marketplace.
 
 packs:
   - name: essentials

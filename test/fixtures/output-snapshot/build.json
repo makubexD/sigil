@@ -123,7 +123,7 @@
   "claude/plugins/cli-builder/skills/wizard/references/stack-python.md": "118d9d12cb7ad5315aed9c2ad87afcdf0897f2b961330eef4d7cf08314d83cde",
   "claude/plugins/cli-builder/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "claude/plugins/cli-builder/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
-  "claude/plugins/deepseek-worker/.claude-plugin/plugin.json": "0268841ecd8062c00e9c67b3a844dd667c4b7197c32c9197e76b7670b1d1409b",
+  "claude/plugins/deepseek-worker/.claude-plugin/plugin.json": "a0fe3be4a804e2f237ed7cc0f9ec92a7e52a26f12b9410b360b4853aaa47e4c9",
   "claude/plugins/deepseek-worker/skills/mk-check/SKILL.md": "81682f7236d161aa1551fe3e71b7307f92dd8d83c1e1dbf4e1251a8441dd3795",
   "claude/plugins/deepseek-worker/skills/mk-check/references/mk-exec.md": "58af8f2bac05071811ca0b251a43c8a72a3fed060d66da6f2add87ea31d431ef",
   "claude/plugins/deepseek-worker/skills/mk-check/references/worker-config.md": "1f5c74b285bef9ac2362a02488fcf71add08dc22fe6c9e4bbfd321a941c3a797",

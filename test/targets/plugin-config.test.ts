@@ -255,3 +255,62 @@ describe('Claude plugin: hooks and MCP as generated plugins', () => {
     );
   });
 });
+
+describe('Claude plugin: pluginDependencies', () => {
+  it('emitted', async () => {
+    const { files } = await compileBundled();
+
+    const manifest = files['plugins/deepseek-worker/.claude-plugin/plugin.json'];
+    assert.ok(manifest, 'deepseek-worker ships a manifest');
+    assert.deepEqual(
+      JSON.parse(manifest).dependencies,
+      ['hook-worker-mode-guard'],
+      'the worker pack depends on the hook plugin generated for shared/worker-mode-guard',
+    );
+  });
+
+  it('starters stay opt-in', async () => {
+    const { files, packs } = await compileBundled();
+
+    const others = packs.filter(pack => pack.name !== 'deepseek-worker');
+    assert.ok(others.length > 0, 'the bundled catalog has packs besides deepseek-worker');
+    for (const pack of others) {
+      const manifest = files[`plugins/${pack.name}/.claude-plugin/plugin.json`];
+      assert.ok(manifest, `${pack.name} ships a manifest`);
+      assert.ok(
+        !('dependencies' in JSON.parse(manifest)),
+        `pack ${pack.name} declares no dependencies`,
+      );
+    }
+  });
+
+  it('wrong kind', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new ClaudeCodeTarget();
+
+    const wrongKind: Pack = {
+      ...packOf('wrong-kind', ['shared/cli']),
+      pluginDependencies: ['shared/cli'],
+    };
+
+    await assert.rejects(
+      target.compile(resolved, { version: VERSION, packs: [...realPacks(), wrongKind] }),
+      (error: unknown) => {
+        assert.ok(error instanceof SigilError, 'rejects with a SigilError');
+        assert.ok(error.message.includes('shared/cli'), 'the message names the dependency');
+        return true;
+      },
+    );
+  });
+
+  it('none on generated', async () => {
+    const { files } = await compileBundled();
+
+    for (const name of CONFIG_PLUGINS) {
+      const manifest = files[`plugins/${name}/.claude-plugin/plugin.json`];
+      assert.ok(manifest, `${name} ships a manifest`);
+      assert.ok(!('dependencies' in JSON.parse(manifest)), `${name} declares no dependencies`);
+    }
+  });
+});

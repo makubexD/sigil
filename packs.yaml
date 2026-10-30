@@ -180,3 +180,4 @@ packs:
       - shared/mk-delegate
       - shared/mk-check
       - shared/worker-mode-guard
+    pluginDependencies: [shared/worker-mode-guard]

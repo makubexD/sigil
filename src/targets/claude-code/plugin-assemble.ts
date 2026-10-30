@@ -19,6 +19,7 @@ import type { EmitContext } from '../spec-types';
 import type { ArtifactKind } from '../../types';
 import { nativeKinds } from '../capabilities';
 import { CLAUDE_CAPABILITIES } from './capabilities';
+import { configPluginName } from './plugin-build';
 import type { TargetCapabilities } from '../capability-types';
 
 const PLUGIN_MANIFEST_SCHEMA = 'https://json.schemastore.org/claude-code-plugin-manifest.json';
@@ -45,13 +46,43 @@ export function resolveIdentityContact(
 /** Build the `plugin.json` manifest content for a pack. */
 export function buildPluginJson(pack: Pack, options: BuildPluginOptions): string {
   const manifest = options.marketplace
-    ? configuredPluginManifest(pack, options.version, options.marketplace)
-    : sigilPluginManifest(pack, options.version, options.homepage);
+    ? configuredPluginManifest(pack, options.version, options.marketplace, options.catalog)
+    : sigilPluginManifest(pack, options.version, options.homepage, options.catalog);
   return JSON.stringify(manifest, null, JSON_INDENT) + '\n';
 }
 
+/**
+ * The manifest's `dependencies` entry: each `pluginDependencies` catalog id mapped to the bare
+ * name of its generated hook/mcp plugin (`configPluginName`), so the dependency resolves in the
+ * same marketplace. Absent when the pack declares none. The catalog exists only at compile time
+ * (`parsePacksConfig` has none), so this is also where an id of any other kind is rejected.
+ */
+function manifestDependencies(
+  pack: Pack,
+  catalog: ResolvedCatalog,
+): { dependencies: string[] } | Record<string, never> {
+  const ids = pack.pluginDependencies ?? [];
+  if (ids.length === 0) return {};
+  return {
+    dependencies: ids.map(id => {
+      const artifact = catalog.byId.get(id);
+      if (artifact === undefined || (artifact.kind !== 'hook' && artifact.kind !== 'mcp')) {
+        throw new SigilError(
+          `pack '${pack.name}': pluginDependencies id '${id}' must name a hook or mcp catalog artifact`,
+        );
+      }
+      return configPluginName(artifact);
+    }),
+  };
+}
+
 /** Today's sigil-literal manifest, emitted when no marketplace identity is configured. */
-function sigilPluginManifest(pack: Pack, version: string, homepage: string | undefined) {
+function sigilPluginManifest(
+  pack: Pack,
+  version: string,
+  homepage: string | undefined,
+  catalog: ResolvedCatalog,
+) {
   const pluginUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
   return {
     $schema: PLUGIN_MANIFEST_SCHEMA,
@@ -62,15 +93,19 @@ function sigilPluginManifest(pack: Pack, version: string, homepage: string | und
     author: { name: 'Sigil', url: pluginUrl },
     license: 'MIT',
     keywords: pack.languages ?? [],
+    ...manifestDependencies(pack, catalog),
   };
 }
 
 /** Manifest built from a configured identity: absent fields are omitted, never sigil's values. */
-function configuredPluginManifest(pack: Pack, version: string, marketplace: MarketplaceIdentity) {
-  const author = resolveIdentityContact(
-    marketplace.author ?? marketplace.owner,
-    marketplace.homepage,
-  );
+function configuredPluginManifest(
+  pack: Pack,
+  version: string,
+  marketplace: MarketplaceIdentity,
+  catalog: ResolvedCatalog,
+) {
+  const contact = marketplace.author ?? marketplace.owner;
+  const author = resolveIdentityContact(contact, marketplace.homepage);
   return {
     $schema: PLUGIN_MANIFEST_SCHEMA,
     name: pack.name,
@@ -80,6 +115,7 @@ function configuredPluginManifest(pack: Pack, version: string, marketplace: Mark
     author,
     ...(marketplace.license !== undefined ? { license: marketplace.license } : {}),
     keywords: pack.languages ?? [],
+    ...manifestDependencies(pack, catalog),
   };
 }
 

@@ -356,8 +356,8 @@ describe('empty packs', () => {
       assert.ok(delivered.length > 0, `${name} delivers at least one file besides plugin.json`);
     }
     assert.ok(
-      !names.includes('essentials'),
-      'essentials is not listed — the plugin channel cannot carry its MCP, hooks or prompts',
+      names.includes('essentials'),
+      'essentials is listed — its plugin carries the two prompts',
     );
   });
 });

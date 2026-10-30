@@ -29,7 +29,7 @@ export const CLAUDE_CAPABILITIES: TargetCapabilities = {
     agent: { mode: 'native' },
     workflow: { mode: 'native' },
     rule: { mode: 'via', as: 'inline', docs: [CLAUDE_PLUGIN_COMPONENTS_DOC] },
-    prompt: { mode: 'none', reason: NOT_YET_PACKAGED },
+    prompt: { mode: 'native' },
     hook: { mode: 'none', reason: NOT_YET_PACKAGED },
     mcp: { mode: 'none', reason: NOT_YET_PACKAGED },
     settings: {

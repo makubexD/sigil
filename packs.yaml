@@ -21,6 +21,7 @@ packs:
       Includes the Filesystem MCP for file access, config-file protection,
       and two utility commands (explain a diff, author a new catalog artifact).
       Dev-tool permissions are per language: each starter pack carries its own.
+      The Claude plugin carries only the two commands; the MCP server and hooks install with sigil add.
     artifacts:
       - shared/filesystem
       - shared/protect-config

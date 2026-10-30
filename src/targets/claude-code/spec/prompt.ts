@@ -1,8 +1,16 @@
 /**
- * Claude Code `prompt` emission spec — scaffold path only (`.claude/skills/<slug>/SKILL.md`).
- * Also reused for `workflow` (see spec/workflow.ts), which shares this exact user-invoked-skill
- * shape plus a "## Steps" body section. `{{name}}` catalog placeholders translate to `$name`,
- * resolved via the `arguments:` frontmatter list Claude Code maps by position.
+ * Claude Code `prompt` emission spec. Two variants share one field-mapping table:
+ *   - 'scaffold' → .claude/skills/<slug>/SKILL.md in a consumer project, the full id slugged
+ *                  (`shared/explain-diff` → `shared-explain-diff`). Also reused for `workflow`
+ *                  (see spec/workflow.ts), which shares this exact user-invoked-skill shape plus
+ *                  a "## Steps" body section.
+ *   - 'plugin'   → dist/claude/plugins/<pack>/skills/<slug>/SKILL.md. A plugin skill's command is
+ *                  `/<pack>:<name>`, so the leading `shared/` is dropped: `shared/explain-diff`
+ *                  becomes `/essentials:explain-diff`. A language prompt keeps its language
+ *                  (`csharp/deploy` → `csharp-deploy`), which stays unique under the pack prefix.
+ *
+ * `{{name}}` catalog placeholders translate to `$name` in both variants, resolved via the
+ * `arguments:` frontmatter list Claude Code maps by position.
  *
  * Formerly emitted to `.claude/commands/<slug>.md`. Per code.claude.com/docs/en/skills (verified
  * 2026-08-06): "Custom commands have been merged into skills. A file at
@@ -12,11 +20,13 @@
  * automatically when relevant." `disable-model-invocation: true` reproduces the old command
  * semantics exactly — user-invoked only, never auto-dispatched.
  *
- * CONTRACT ROUTING NOTE: this spec's `pathPattern` is now IDENTICAL to `spec/skill.ts`'s (both
- * match `.claude/skills/<name>/SKILL.md`) — a direct consequence of the merge documented above.
- * `checkOutputContract()` (output-contract.ts) matches the FIRST entry whose pattern tests true,
- * and `CLAUDE_SCAFFOLD_SKILL_SPEC` sits earlier in `CLAUDE_EMIT_SPECS`, so in practice the skill
- * contract validates this spec's `requiredKeys`/`forbiddenKeys` too (both specs agree on those).
+ * CONTRACT ROUTING NOTE: this spec's `pathPattern` is IDENTICAL to `spec/skill.ts`'s (both match
+ * `.claude/skills/<name>/SKILL.md`), and the plugin variant's is identical to that file's plugin
+ * skill pattern (both match `plugins/<pack>/skills/<name>/SKILL.md`) — a direct consequence of the
+ * merge documented above. `checkOutputContract()` (output-contract.ts) matches the FIRST entry
+ * whose pattern tests true, and both skill specs sit earlier in `CLAUDE_EMIT_SPECS`, so in practice
+ * the skill contract validates this spec's `requiredKeys`/`forbiddenKeys` too (all specs agree on
+ * those).
  * The unresolved-{{…}} bodyForbid below is NOT mirrored onto the skill contract — real skills
  * (Angular) legitimately contain literal `{{ }}` — so it is asserted directly against this spec's
  * `bodyForbids` in test/targets/claude-code.test.ts rather than through checkOutputContract().
@@ -36,6 +46,13 @@ function slugOf(id: string): string {
   return id.replace(/\//g, '-');
 }
 
+/** Plugin variant: a plugin skill's command is `/<pack>:<name>`, so the `shared/` prefix is
+ * redundant there. Dropping only that prefix keeps a language prompt's language
+ * (`csharp/deploy` → `csharp-deploy`), and the pack namespace does the rest. */
+function pluginSlugOf(id: string): string {
+  return id.replace(/^shared\//, '').replace(/\//g, '-');
+}
+
 /** `name:` derives from the artifact id's slug — prompt/workflow frontmatter carries no `name`
  * field of its own (unlike `skill`), so this reads the always-present `id` as its trigger and
  * ignores the raw value, matching the `agent: agent` hardcoded-value pattern used elsewhere. */
@@ -45,6 +62,15 @@ const nameMapping: FieldMapping = {
   required: true,
   alwaysEmit: true,
   serialize: v => `name: ${slugOf(v as string)}`,
+};
+
+/** Plugin variant's `name:` — same derivation as `nameMapping`, minus the `shared/` prefix. */
+const pluginNameMapping: FieldMapping = {
+  from: 'id',
+  to: 'name',
+  required: true,
+  alwaysEmit: true,
+  serialize: v => `name: ${pluginSlugOf(v as string)}`,
 };
 
 const descriptionMapping: FieldMapping = {
@@ -90,6 +116,7 @@ const titleHeading: BodySectionSpec = {
 
 export const CLAUDE_PROMPT_SPEC: KindEmitSpec = {
   kind: 'prompt',
+  variant: 'scaffold',
   outputPath: artifact => `.claude/skills/${slugOf(artifact.id)}/SKILL.md`,
   pathPattern: /\.claude\/skills\/.*\/SKILL\.md$/,
   bodyTransform: toClaudePlaceholders,
@@ -113,4 +140,23 @@ export const CLAUDE_PROMPT_SPEC: KindEmitSpec = {
     UNTRANSLATED_TOKEN_FORBID,
   ],
   docs: [CLAUDE_SKILLS_DOC],
+};
+
+/**
+ * Plugin prompts: the same user-invoked skill, inside the pack's plugin folder, with the
+ * `shared/` prefix dropped from the slug (see the module header).
+ */
+export const CLAUDE_PLUGIN_PROMPT_SPEC: KindEmitSpec = {
+  ...CLAUDE_PROMPT_SPEC,
+  variant: 'plugin',
+  outputPath: (artifact, ctx) =>
+    `plugins/${ctx.packName}/skills/${pluginSlugOf(artifact.id)}/SKILL.md`,
+  pathPattern: /plugins\/[^/]+\/skills\/.*\/SKILL\.md$/,
+  frontmatter: [
+    pluginNameMapping,
+    descriptionMapping,
+    argumentHintMapping,
+    argumentsListMapping,
+    disableModelInvocationMapping,
+  ],
 };

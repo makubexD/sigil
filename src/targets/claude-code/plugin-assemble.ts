@@ -1,6 +1,6 @@
 /**
- * Assembles a pack's full plugin FileMap: plugin.json, plus its skills, agents and workflows
- * written through their plugin-channel specs (../emit-files.ts).
+ * Assembles a pack's full plugin FileMap: plugin.json, plus its skills, agents, workflows and
+ * prompts written through their plugin-channel specs (../emit-files.ts).
  *
  * @module
  */
@@ -109,10 +109,10 @@ function computeSharedAgentIds(
 }
 
 /**
- * Writes the pack's workflows, skills and agents (plus the shared agents its skills use) through
- * their plugin-channel specs (src/targets/emit-files.ts). Skills inline their rules: a plugin can't
- * ship loose rule files. `ctx` carries the pack name (paths under `plugins/<pack>/`) and the
- * pack's install set, which drives each file's conditional Boundary section.
+ * Writes the pack's workflows, prompts, skills and agents (plus the shared agents its skills use)
+ * through their plugin-channel specs (src/targets/emit-files.ts). Skills inline their rules: a
+ * plugin can't ship loose rule files. `ctx` carries the pack name (paths under `plugins/<pack>/`)
+ * and the pack's install set, which drives each file's conditional Boundary section.
  */
 function writeMemberFiles(
   members: readonly ResolvedArtifact[],
@@ -150,6 +150,7 @@ export const WRITABLE_PLUGIN_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'skill',
   'agent',
   'workflow',
+  'prompt',
 ]);
 
 /**
@@ -175,8 +176,8 @@ export function pluginMembersByKind(
 
 /**
  * Whether a pack has at least one artifact the plugin channel delivers. A pack whose artifacts
- * the plugin channel can't carry (only `mcp` / `hook` / `prompt` / `settings`, or rules with no
- * skill) gets no plugin, so the marketplace never lists an empty one.
+ * the plugin channel can't carry (only `mcp` / `hook` / `settings`, or rules with no skill) gets
+ * no plugin, so the marketplace never lists an empty one.
  */
 export function hasPluginMembers(packArtifacts: ResolvedArtifact[]): boolean {
   const members = pluginMembersByKind(packArtifacts);
@@ -198,6 +199,7 @@ export function buildPlugin(options: BuildPluginOptions): FileMap {
   const skills = members('skill');
   const agents = members('agent');
   const workflows = members('workflow');
+  const prompts = members('prompt');
 
   // Build the co-install set for the plugin: pack artifacts + shared agents.
   // Drives each file's conditional Boundary section.
@@ -206,7 +208,7 @@ export function buildPlugin(options: BuildPluginOptions): FileMap {
 
   const sharedAgents = [...sharedAgentIds].flatMap(id => catalog.byId.get(id) ?? []);
   const ctx: EmitContext = { catalog, installSet: packInstallSet, packName: pack.name };
-  writeMemberFiles([...workflows, ...skills, ...agents, ...sharedAgents], ctx, files);
+  writeMemberFiles([...workflows, ...prompts, ...skills, ...agents, ...sharedAgents], ctx, files);
 
   return files;
 }

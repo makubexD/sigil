@@ -147,8 +147,9 @@ describe('discoverCopilotFiles — unrecognised entries', () => {
   it('accepts the first of two files with the same kind and slug', () => {
     withTempDir(project => {
       const github = copilotDir(project);
-      writeFile(github, 'agents/Foo.agent.md', AGENT);
-      writeFile(github, 'agents/foo.agent.md', AGENT);
+      // Case alone won't do: on Windows and macOS, Foo and foo are one file.
+      writeFile(github, 'agents/foo_bar.agent.md', AGENT);
+      writeFile(github, 'agents/foo-bar.agent.md', AGENT);
       const result = discoverCopilotFiles(github, 'typescript');
       assert.equal(result.discovered.length, 1);
       assert.equal(result.unrecognised.length, 1);

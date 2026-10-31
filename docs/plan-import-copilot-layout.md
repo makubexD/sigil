@@ -299,7 +299,7 @@ Tests use `withTempDir` and write real files:
 | `instructions/typescript-ts-a.instructions.md`, namespace `typescript` | slug `ts-a`, no rename note                             |
 | `instructions/Foo_Bar.instructions.md`                                 | slug `foo-bar`, the rename note                         |
 | `instructions/foo.md`, `agents/x.md`                                   | both unrecognised, `Expected …`                         |
-| `Foo.agent.md` and `foo.agent.md`                                      | one discovered, one `same name as`                      |
+| `foo_bar.agent.md` and `foo-bar.agent.md`                              | one discovered, one `same name as`                      |
 | `tools: []` agent                                                      | unrecognised, `not imported: tools is empty…`           |
 | `tools:` YAML list agent                                               | discovered with the array                               |
 | `copilot-instructions.md`, `AGENTS.md`                                 | both unrecognised with the single-file reason           |

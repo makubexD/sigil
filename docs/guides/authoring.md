@@ -245,6 +245,56 @@ the full field map, known YAML pitfalls (glob patterns, `[` chars in argument hi
 content-refinement follow-up checklist. `--display-name` overrides the generated titles;
 `--overwrite` replaces an existing catalog file (the default is to skip the conflict).
 
+A project's `.claude/` folder needs no flag: `sigil import .claude --language foo` reads its
+`rules/`, `agents/` and `skills/` directly.
+
+### Import a Copilot `.github/` layout
+
+Pass `--from copilot` with a project root or the `.github/` folder itself. Everything above about
+`--language`, `--shared`, `--dry-run` and the trust scan applies here too.
+
+```bash
+sigil import path/to/project --from copilot --language foo --create-language --dry-run
+sigil import path/to/project --from copilot --language foo --create-language --yes
+```
+
+Import reads `instructions/*.instructions.md`, `agents/*.agent.md`, `prompts/*.prompt.md` and
+`skills/<name>/SKILL.md`. It removes what `sigil add --target copilot` adds to a file, so a folder
+sigil wrote comes back as catalog source: `# title` lines, the generated comment, a skill's
+`## When to Use` and `**Arguments:**`, `${input:name}` placeholders and Copilot paths. Names come
+from file names, in kebab-case, without a leading `<language>-`, and the report notes any other
+change. `--dry-run` lists every note.
+
+These are reported and not imported:
+
+- `copilot-instructions.md` and `AGENTS.md`: splitting one file means guessing where each rule
+  starts and what it applies to, so move each rule into `instructions/` first.
+- An agent with `tools: []`. Copilot reads that as no tools, but an agent with no list gets every
+  tool, so importing it would widen its access.
+- A file whose frontmatter block is never closed, because its fields can't be read.
+- A file with no usable name, or a second file that normalises to the same name as another.
+- A kind folder that is a symbolic link. Import doesn't follow links, and it refuses a linked
+  `.github/` outright.
+- `.instructions.md` files in subfolders of `instructions/`, which Copilot itself allows. Move them
+  up a level first.
+
+`.chatmode.md` files aren't recognised.
+
+Check these after an import:
+
+- **A prompt loses a narrowed `tools` list.** The Copilot prompt spec writes fixed `agent` and
+  `tools` values, so a prompt narrowed by hand has wider access when it is rendered again. The
+  report lists both fields as dropped on every prompt.
+- **A rule with no `applyTo` applies to every file.** It is imported with the glob `**/*`, and the
+  report notes each one.
+- **Agent `tools` are copied as written.** Other targets may not know Copilot's tool names.
+- **`extends`, templates and `uses.rules` are already flattened** in rendered files. A generated
+  `## Coding guidelines to apply` section stays in the body with a note, and so does `## Boundary`.
+  Wire `uses.rules` with `sigil patch` and set `relatedArtifacts` in the catalog file.
+- **A `workflow` comes back as a `prompt`**, because both render to `.prompt.md`.
+- **The trust scan can refuse prose.** `config/dangerous-command` matches text such as `` `eval` ``
+  in a reviewer's checklist, on either layout, and blocks that file.
+
 ---
 
 ## Add a brand-new language end-to-end

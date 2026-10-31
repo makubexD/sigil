@@ -10,6 +10,7 @@
  * README.md and any other file that doesn't match the layout is placed in `unrecognised`.
  *
  * This module is I/O-only (discovery); translation to catalog format lives in translate.ts.
+ * A Copilot `.github/` layout has its own discovery in discover-copilot.ts.
  */
 import fs from 'fs';
 import path from 'path';
@@ -29,9 +30,13 @@ export interface DiscoveredFile {
   /** Relative path from the source dir root (for display). */
   relativePath: string;
   /** Detected artifact kind. */
-  kind: 'skill' | 'agent' | 'rule';
+  kind: 'skill' | 'agent' | 'rule' | 'prompt';
   /** The source slug (folder name for skills, file stem for others, e.g. "cs-generate-tests"). */
   slug: string;
+  /** A human title from the source layout; overrides the slug-derived title when set. */
+  title?: string;
+  /** Import notes collected during discovery (e.g. a normalised file name), shown in the report. */
+  notes?: string[];
   /** Raw parsed frontmatter from gray-matter. */
   frontmatter: Record<string, unknown>;
   /** Raw body text (everything after the frontmatter block). */
@@ -54,10 +59,13 @@ export interface DiscoverResult {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 /** Classifies one directory entry within a flat kind dir (rules/ or agents/). */
-type ClassifyResult = { discovered?: DiscoveredFile; unrecognised?: UnrecognisedFile };
+export type ClassifyResult = { discovered?: DiscoveredFile; unrecognised?: UnrecognisedFile };
 
 /** Runs `build`; a source file import won't read becomes a "not imported" entry instead. */
-function discoverOrReport(relativePath: string, build: () => DiscoveredFile): ClassifyResult {
+export function discoverOrReport(
+  relativePath: string,
+  build: () => DiscoveredFile,
+): ClassifyResult {
   try {
     return { discovered: build() };
   } catch (err) {
@@ -116,8 +124,12 @@ function discoverFlatKindDir(
 }
 
 /** Builds a DiscoveredFile record for one `skills/<name>/SKILL.md` source file. */
-function buildSkillDiscoveredFile(skillFile: string, skillName: string): DiscoveredFile {
-  const { frontmatter, body } = parseMarkdown(skillFile);
+function buildSkillDiscoveredFile(
+  skillFile: string,
+  skillName: string,
+  opts?: { yamlFirst?: boolean },
+): DiscoveredFile {
+  const { frontmatter, body } = parseMarkdown(skillFile, opts);
   return {
     sourcePath: skillFile,
     relativePath: path.join('skills', skillName, SKILL_FILENAME),
@@ -129,7 +141,11 @@ function buildSkillDiscoveredFile(skillFile: string, skillName: string): Discove
 }
 
 /** Classifies one directory entry within `skills/` — a per-skill subdirectory. */
-function classifySkillEntry(entry: Dirent, skillsDir: string): ClassifyResult {
+function classifySkillEntry(
+  entry: Dirent,
+  skillsDir: string,
+  opts?: { yamlFirst?: boolean },
+): ClassifyResult {
   const notASkill = (reason: string): ClassifyResult => ({
     unrecognised: { relativePath: path.join('skills', entry.name), reason },
   });
@@ -139,19 +155,22 @@ function classifySkillEntry(entry: Dirent, skillsDir: string): ClassifyResult {
   if (!fs.existsSync(skillFile))
     return notASkill(`Missing ${SKILL_FILENAME} inside skill directory`);
   return discoverOrReport(path.join('skills', entry.name, SKILL_FILENAME), () =>
-    buildSkillDiscoveredFile(skillFile, entry.name),
+    buildSkillDiscoveredFile(skillFile, entry.name, opts),
   );
 }
 
 /** Discovers `skills/<name>/SKILL.md` — one directory per artifact. */
-function discoverSkillsDir(sourceDir: string): DiscoverResult {
+export function discoverSkillsDir(
+  sourceDir: string,
+  opts?: { yamlFirst?: boolean },
+): DiscoverResult {
   const discovered: DiscoveredFile[] = [];
   const unrecognised: UnrecognisedFile[] = [];
   const skillsDir = path.join(sourceDir, 'skills');
   if (!fs.existsSync(skillsDir)) return { discovered, unrecognised };
 
   for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    const result = classifySkillEntry(entry, skillsDir);
+    const result = classifySkillEntry(entry, skillsDir, opts);
     if (result.discovered) {
       const { file, notShipped } = withReferences(result.discovered, skillsDir);
       discovered.push(file);

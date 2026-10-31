@@ -7,15 +7,40 @@
 import { stripLanguagePrefix } from './translate-shared';
 
 /**
- * Split a comma-string tools field into a string array.
- * Handles both "Read, Grep, Glob, Bash" and "Read,Grep" formats.
+ * Split a tools field into a string array.
+ *
+ * Accepts a comma string ("Read, Grep"), a YAML list (['Read', 'Grep']), or a
+ * bracketed string that a tolerant parser left as text ('["Read", "Grep"]').
  */
 export function splitToolsString(raw: unknown): string[] {
+  if (Array.isArray(raw)) {
+    return raw
+      .filter((item): item is string => typeof item === 'string')
+      .map(item => item.trim())
+      .filter(Boolean);
+  }
   if (typeof raw !== 'string') return [];
+  const trimmed = raw.trim();
+  if (trimmed.startsWith('[') && trimmed.endsWith(']')) {
+    return splitCommaList(trimmed.slice(1, -1), true);
+  }
+  return splitCommaList(raw, false);
+}
+
+/** Split on commas, optionally stripping one matching quote layer from each item. */
+function splitCommaList(raw: string, stripQuotes: boolean): string[] {
   return raw
     .split(',')
-    .map(s => s.trim())
+    .map(item => (stripQuotes ? stripOneQuoteLayer(item) : item.trim()))
     .filter(Boolean);
+}
+
+/** Trim an item and remove a matching pair of surrounding single or double quotes. */
+function stripOneQuoteLayer(item: string): string {
+  const trimmed = item.trim();
+  const first = trimmed[0];
+  const quoted = trimmed.length > 1 && (first === '"' || first === "'") && trimmed.endsWith(first);
+  return quoted ? trimmed.slice(1, -1).trim() : trimmed;
 }
 
 /**

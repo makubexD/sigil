@@ -1,5 +1,6 @@
 /**
- * `sigil import <source-dir>` command — import a portable Claude template directory.
+ * `sigil import <source-dir>` command — import a portable Claude template directory or a Copilot
+ * `.github/` layout.
  *
  * Extracted from cli.ts so it can be imported and tested without Commander.
  * Replaces the inline `await import('gray-matter')` with a top-level static import.
@@ -14,6 +15,8 @@ import { SigilError } from '../errors';
 import { normPath } from '../paths';
 import {
   discoverFiles,
+  discoverCopilotFiles,
+  resolveCopilotRoot,
   buildImportPlan,
   languageYamlPath,
   executeImport,
@@ -24,6 +27,8 @@ import { SHARED_NAMESPACE } from '../catalog-layout';
 import { KEBAB_NAME_RE } from '../schema/shared';
 
 export interface ImportOptions {
+  /** Source layout: `claude` (default) or `copilot`. */
+  from?: string | undefined;
   /** Target language; exactly one of `language` and `shared` is given. */
   language?: string | undefined;
   /** Import into catalog/shared/ with no `language:`. */
@@ -48,6 +53,24 @@ function printDiscoveryReport(
       console.log(`     ${u.relativePath}  — ${u.reason}`);
     }
   }
+}
+
+/** The validated source layout and the directory its discovery reads. */
+type SourceLayout = { from: 'claude' | 'copilot'; root: string };
+
+const COPILOT_HINT = 'This looks like a Copilot layout: re-run with --from copilot.';
+
+/**
+ * Validates --from and resolves the directory discovery reads. Runs before any catalog read or
+ * write, so a bad layout or a missing `.github/` never leaves a half-written language.yaml behind.
+ */
+function resolveSourceLayout(absSourceDir: string, opts: ImportOptions): SourceLayout {
+  const from = opts.from ?? 'claude';
+  const isGithubDir = path.basename(absSourceDir) === '.github';
+  if (from === 'claude' && isGithubDir) throw new SigilError(COPILOT_HINT);
+  if (from === 'claude') return { from, root: absSourceDir };
+  if (from === 'copilot') return { from, root: resolveCopilotRoot(absSourceDir) };
+  throw new SigilError(`Unknown layout '${from}': use claude or copilot.`);
 }
 
 /** The namespace to import into: --shared or --language <lang>, exactly one. */
@@ -142,26 +165,36 @@ function printImportResults(result: ReturnType<typeof executeImport>, catalogDir
   return ok;
 }
 
-/** Discovers source files and builds the import plan; returns null when nothing was found. */
+/** "Nothing to import.", plus the --from copilot hint when a Claude-layout source holds `.github/`. */
+function printNothingToImport(absSourceDir: string, from: SourceLayout['from']): void {
+  console.log('\nNothing to import.');
+  const github = fs.statSync(path.join(absSourceDir, '.github'), { throwIfNoEntry: false });
+  if (from === 'claude' && github?.isDirectory()) console.log(`  ${COPILOT_HINT}`);
+}
+
+/** Discovery output for the chosen layout. */
+function discoverForLayout(source: SourceLayout, lang: string) {
+  if (source.from === 'copilot') return discoverCopilotFiles(source.root, lang);
+  return discoverFiles(source.root);
+}
+
+/** Discovers source files for the chosen layout and builds the import plan; null when nothing found. */
 function discoverAndPlan(
   absSourceDir: string,
+  source: SourceLayout,
   meta: LanguageMeta,
   opts: ImportOptions,
 ): ReturnType<typeof buildImportPlan> | null {
   console.log(`\nDiscovering artifacts in: ${absSourceDir}`);
-  const { discovered, unrecognised } = discoverFiles(absSourceDir);
+  const { lang, displayName, prefix } = meta;
+  const { discovered, unrecognised } = discoverForLayout(source, lang);
   printDiscoveryReport(discovered, unrecognised);
   if (discovered.length === 0) {
-    console.log('\nNothing to import.');
+    printNothingToImport(absSourceDir, source.from);
     return null;
   }
-  const { lang, displayName, prefix } = meta;
-  return buildImportPlan(discovered, {
-    language: lang,
-    displayName,
-    prefix,
-    catalogDir: opts.catalogDir,
-  });
+  const planOpts = { language: lang, displayName, prefix, catalogDir: opts.catalogDir };
+  return buildImportPlan(discovered, planOpts);
 }
 
 /** Warns about existing conflicts that will be skipped when neither --yes nor --overwrite is set. */
@@ -197,9 +230,11 @@ export async function runImport(sourceDir: string, opts: ImportOptions): Promise
     throw new SigilError(`Source directory not found: ${absSourceDir}`);
   }
 
+  // The layout check runs before any catalog read or write.
+  const source = resolveSourceLayout(absSourceDir, opts);
   const meta = resolveLanguageMeta(opts);
   const { lang } = meta;
-  const plan = discoverAndPlan(absSourceDir, meta, opts);
+  const plan = discoverAndPlan(absSourceDir, source, meta, opts);
   if (!plan) return;
 
   // Load catalog early (needed for overlap report + dry-run validation)

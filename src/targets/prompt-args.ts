@@ -48,6 +48,37 @@ export function toCopilotPlaceholders(body: string): string {
   return substitutePlaceholders(body, name => `\${input:${name}}`);
 }
 
+/** `${input:name}` or `${input:name:hint}` — other VS Code variables (`${file}`, …) are left alone. */
+const COPILOT_INPUT_RE = /\$\{input:([\w-]+)(?::([^}]*))?\}/g;
+
+export interface CopilotPlaceholderResult {
+  body: string;
+  args: PromptArg[];
+}
+
+function recordArg(args: Map<string, PromptArg>, name: string, hint?: string): void {
+  const existing = args.get(name);
+  if (!existing) {
+    args.set(name, hint === undefined ? { name } : { name, description: hint });
+  } else if (existing.description === undefined && hint !== undefined) {
+    existing.description = hint;
+  }
+}
+
+/**
+ * Inverse of `toCopilotPlaceholders`: turns `${input:name}` / `${input:name:hint}` into
+ * `{{name}}` and collects each distinct name once, in first-seen order, as a `PromptArg`
+ * (`description: hint` when a hint exists).
+ */
+export function fromCopilotPlaceholders(body: string): CopilotPlaceholderResult {
+  const args = new Map<string, PromptArg>();
+  const result = body.replace(COPILOT_INPUT_RE, (_match, name: string, hint?: string) => {
+    recordArg(args, name, hint);
+    return `{{${name}}}`;
+  });
+  return { body: result, args: [...args.values()] };
+}
+
 /**
  * Builds the Claude Code `argument-hint:` frontmatter value.
  * Each arg is shown as `[name]`; required args appear without distinction

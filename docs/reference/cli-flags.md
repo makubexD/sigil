@@ -242,10 +242,11 @@ Options:
 ```text
 Usage: sigil import [options] <source-dir>
 
-Import a portable Claude template directory into the catalog as first-class
-artifacts.
+Import a portable Claude template directory or a Copilot .github/ layout into
+the catalog as first-class artifacts.
 
 Options:
+  --from <layout>        Source layout: claude or copilot (default: "claude")
   --language <lang>      Target language key (e.g. csharp, typescript)
   --shared               Import into catalog/shared/ (no language); use instead
                          of --language (default: false)

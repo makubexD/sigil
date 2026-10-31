@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 import {
   toClaudePlaceholders,
   toCopilotPlaceholders,
+  fromCopilotPlaceholders,
   buildArgumentHint,
 } from '../../dist-cli/targets/prompt-args';
 import type { PromptArg } from '../../dist-cli/targets/prompt-args';
@@ -52,6 +53,38 @@ describe('toCopilotPlaceholders', () => {
   it('leaves text with no placeholders unchanged', () => {
     const body = 'No substitution needed here.';
     assert.equal(toCopilotPlaceholders(body), body);
+  });
+});
+
+describe('fromCopilotPlaceholders', () => {
+  it('translates ${input:name} to {{name}} and de-duplicates args', () => {
+    assert.deepEqual(fromCopilotPlaceholders('${input:a} ${input:a}'), {
+      body: '{{a}} {{a}}',
+      args: [{ name: 'a' }],
+    });
+  });
+
+  it('keeps the hint after the second colon as the arg description', () => {
+    assert.deepEqual(fromCopilotPlaceholders('${input:a:Pick one: x}'), {
+      body: '{{a}}',
+      args: [{ name: 'a', description: 'Pick one: x' }],
+    });
+  });
+
+  it('leaves other VS Code variables as written', () => {
+    assert.deepEqual(fromCopilotPlaceholders('${file}'), { body: '${file}', args: [] });
+  });
+
+  it('lists names once in first-seen order', () => {
+    assert.deepEqual(fromCopilotPlaceholders('${input:b} ${input:a:b hint}').args, [
+      { name: 'b' },
+      { name: 'a', description: 'b hint' },
+    ]);
+  });
+
+  it('round-trips a bare ${input:name} back through toCopilotPlaceholders', () => {
+    const body = '${input:a}';
+    assert.equal(toCopilotPlaceholders(fromCopilotPlaceholders(body).body), body);
   });
 });
 

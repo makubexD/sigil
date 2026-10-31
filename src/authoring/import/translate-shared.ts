@@ -1,12 +1,13 @@
 /**
- * Types and string helpers shared by translate.ts, translate-kinds.ts, and translate-helpers.ts.
+ * Types and string helpers shared by translate.ts, translate-kinds.ts, translate-prompt.ts, and
+ * translate-helpers.ts.
  *
  * Split out to break a value-level circular import: translate.ts previously defined these and
  * translate-kinds.ts/translate-helpers.ts imported back from it while translate.ts imported the
  * per-kind translators from translate-kinds.ts — a real A→B→A cycle, fragile under CommonJS load
  * order (2026-08-22 audit F28). This is the one-directional leaf every other file in the cluster
- * imports from; nothing in here imports from translate.ts, translate-kinds.ts, or
- * translate-helpers.ts.
+ * imports from; nothing in here imports from translate.ts, translate-kinds.ts, translate-prompt.ts,
+ * or translate-helpers.ts.
  */
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -20,9 +21,15 @@ export interface TranslateOptions {
   prefix?: string | undefined;
 }
 
+/** A prompt's named input argument. */
+export interface PromptArg {
+  name: string;
+  description?: string | undefined;
+}
+
 export interface CatalogFrontmatter {
   id: string;
-  kind: 'skill' | 'agent' | 'rule';
+  kind: 'skill' | 'agent' | 'rule' | 'prompt';
   title: string;
   description: string;
   /** Absent for a shared artifact. */
@@ -41,6 +48,8 @@ export interface CatalogFrontmatter {
   allowedTools?: string[] | undefined;
   argumentHint?: string | undefined;
   disableModelInvocation?: boolean | undefined;
+  // prompt-specific
+  args?: PromptArg[] | undefined;
 }
 
 export interface TranslateResult {

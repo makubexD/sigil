@@ -4,6 +4,8 @@
 export { discoverFiles } from './discover';
 export type { DiscoveredFile, UnrecognisedFile, DiscoverResult } from './discover';
 
+export { discoverCopilotFiles, resolveCopilotRoot } from './discover-copilot';
+
 export { translateFrontmatter, slugToTitle } from './translate';
 export type { TranslateOptions, CatalogFrontmatter, TranslateResult } from './translate';
 

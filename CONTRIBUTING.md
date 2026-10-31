@@ -25,7 +25,8 @@ maintainer reviews each proposal and, if it fits the catalog, writes the artifac
 
 If you cloned the repo, `sigil new` runs a wizard that scaffolds the file for you (step 3 below).
 `sigil import <dir> --language <lang>` converts an existing Claude-style template folder into
-catalog artifacts; it reads Claude-style folders only and needs `--language <lang>` or `--shared`. See
+catalog artifacts, and `--from copilot` does the same for a `.github/` layout. It needs
+`--language <lang>` or `--shared`. See
 [authoring.md](docs/guides/authoring.md#import-an-existing-portable-template-directory).
 
 ---

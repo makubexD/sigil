@@ -106,29 +106,32 @@ Conclusions:
 
 ## 3. What a plugin can carry, per ecosystem
 
-| sigil kind | Claude plugin                                                      | Copilot plugin (CLI + VS Code)                            | Codex plugin                       | Cursor plugin    | Gemini extension             |
-| ---------- | ------------------------------------------------------------------ | --------------------------------------------------------- | ---------------------------------- | ---------------- | ---------------------------- |
-| skill      | ✅                                                                 | ✅                                                        | ✅                                 | ✅               | ✅                           |
-| agent      | ✅ (ignores `hooks`/`mcpServers`/`permissionMode`/`initialPrompt`) | ✅                                                        | ❌ (native `.codex/agents/*.toml`) | ✅               | ✅ (preview)                 |
-| prompt     | ✅ as skill / command                                              | ⚠ "commands", not `.prompt.md`                            | ❌ (prompts deprecated → skills)   | ✅               | ✅ `commands/*.toml`         |
-| hook       | ✅                                                                 | ✅ (VS Code ignores matchers)                             | ✅                                 | ✅               | ✅                           |
-| mcp        | ✅                                                                 | ✅                                                        | ✅                                 | ✅               | ✅                           |
-| rule       | ❌ (write it as a skill)                                           | ⚠ AP1.0 `com.github.copilot/rules/` — format undocumented | ❌                                 | ✅ `rules/*.mdc` | ⚠ one always-on context file |
-| settings   | ❌ (only `agent`, `subagentStatusLine`)                            | ❌                                                        | ❌                                 | ❌               | ⚠ env vars / tool excludes   |
+| sigil kind | Claude plugin                                                      | Copilot plugin (CLI + VS Code)                                                                   | Codex plugin                       | Cursor plugin    | Gemini extension             |
+| ---------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------- | ---------------- | ---------------------------- |
+| skill      | ✅                                                                 | ✅ as `/<plugin>:<skill>`                                                                        | ✅                                 | ✅               | ✅                           |
+| agent      | ✅ (ignores `hooks`/`mcpServers`/`permissionMode`/`initialPrompt`) | ✅ `.md` files load, as `<plugin>:<agent>`, and `tools` holds                                    | ❌ (native `.codex/agents/*.toml`) | ✅               | ✅ (preview)                 |
+| prompt     | ✅ as skill / command                                              | ⚠ as skill: `$ARGUMENTS` filled by slash only, named arguments stay literal                      | ❌ (prompts deprecated → skills)   | ✅               | ✅ `commands/*.toml`         |
+| hook       | ✅                                                                 | ⚠ needs `exec`: Copilot drops `args` from Claude's `command` + `args` (VS Code ignores matchers) | ✅                                 | ✅               | ✅                           |
+| mcp        | ✅                                                                 | ⚠ `.` is the plugin folder, not the session directory                                            | ✅                                 | ✅               | ✅                           |
+| rule       | ❌ (write it as a skill)                                           | ⚠ AP1.0 `com.github.copilot/rules/` — format undocumented                                        | ❌                                 | ✅ `rules/*.mdc` | ⚠ one always-on context file |
+| settings   | ❌ (only `agent`, `subagentStatusLine`)                            | ❌                                                                                               | ❌                                 | ❌               | ⚠ env vars / tool excludes   |
 
 Sources: [Claude — plugin manifest reference](https://code.claude.com/docs/en/plugins/manifest-reference),
 [GitHub — CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference),
 [OpenAI — build plugins](https://developers.openai.com/plugins/build/plugins),
 [Cursor — plugins reference](https://cursor.com/docs/reference/plugins),
 [Gemini CLI — extensions reference](https://geminicli.com/docs/extensions/reference).
+The Copilot column's skill, agent, prompt, hook and MCP cells were corrected on 2026-10-30 from a live
+test of sigil's Claude-format plugins ([results and causes](copilot-plugin-channel-2026-10.md)).
 The cross-vendor [Agent Plugins](https://agent-plugins.org/) standard makes only skills and MCP
 portable, and Claude is not listed among its adopters — so the Claude format stays sigil's primary
 marketplace format.
 
 **Consequence:** plugins can carry five of sigil's seven kinds, but **rules and settings are
 scaffold-only** for Claude, Copilot and Codex (settings everywhere). Delivering the same artifact
-through both channels is harmful: Claude namespaces plugin items, so it loads both copies; Copilot's
-first-found wins, so one silently shadows the other. A complement mode must keep them disjoint.
+through both channels is harmful: Claude namespaces plugin items, so it loads both copies; on Copilot
+one silently shadows the other, first-found for skills and agents and plugin-over-project for MCP. A
+complement mode must keep them disjoint.
 
 ## 4. Multi-file skills and the "self-adopting" pattern
 
@@ -200,9 +203,9 @@ interface TargetCapabilities {
 | 1b    | `sigil cost` (always-on / on-match / on-invoke tokens) + budget conformance rules                                                                                                                                                                                                          |                   |
 | 1     | Family-granular Claude marketplace via `Pack.select`; hooks/MCP as their own opt-in plugins; prompts as skills; plugin-agent field guard                                                                                                                                                   |                   |
 | 2     | Publish the marketplace in git + CI sync gate; project-scoped `enabledPlugins` snippet                                                                                                                                                                                                     | CI and git layout |
-| 2b    | `sigil add --complement` + duplicate guard against enabled sigil plugins                                                                                                                                                                                                                   |                   |
-| 3     | Agent Skills conformance (`name` = directory, ≤64/≤1024 chars) so `npx skills add … --skill x` works                                                                                                                                                                                       |                   |
-| 4     | Verify the Claude-format marketplace in VS Code / Copilot CLI; Agent Plugins 1.0 output only if a gap remains                                                                                                                                                                              |                   |
+| 2b    | `sigil add --complement` + duplicate guard against enabled sigil plugins — **skipped ahead of Phase 4, not built**                                                                                                                                                                         |                   |
+| 3     | Agent Skills conformance (`name` = directory, ≤64/≤1024 chars) so `npx skills add … --skill x` works — **skipped ahead of Phase 4, checks built, install route unproven**                                                                                                                  |                   |
+| 4     | Verify the Claude-format marketplace in VS Code / Copilot CLI; Agent Plugins 1.0 output only if a gap remains — **done 2026-10-30, no new output**                                                                                                                                         |                   |
 | 5     | Codex adapter (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin)                                                                                                                                                                                  |                   |
 | 6     | Cursor adapter (`.cursor/rules/*.mdc`, agents, commands, hooks, MCP; Cursor plugin — the one format that carries rules)                                                                                                                                                                    |                   |
 
@@ -216,6 +219,30 @@ npm publish, because it needs the `sigil` CLI. Hooks and MCP as their own opt-in
 of 2026-10-30: `build` generates one plugin per artifact, and pack plugins carry neither kind
 ([§8](#8-hooks-and-mcp-as-plugins-2026-10-30)). The family-granular split and `Pack.select` are a recorded
 no-go as of 2026-10-30 ([§9](#9-plugin-granularity-no-go-2026-10-30)), which closes Phase 1.
+
+Phase 4 is done as of 2026-10-30
+([copilot-plugin-channel-2026-10](copilot-plugin-channel-2026-10.md)). On Copilot CLI and VS Code the
+Claude format works for skills, agents and prompts, and fails for hook plugins and `mcp-filesystem`,
+so Copilot keeps `sigil add` for those. Sigil adds no Agent Plugins 1.0 output or other Copilot
+emitter, although the test's gate sent unsafe results to one: the owner accepted the limit as
+documented ([decision](copilot-plugin-channel-2026-10.md#decision)).
+
+Phases 2b and 3 did not run first, despite the suggested order above. The owner took Phase 4 ahead of
+them on 2026-10-30, and it has no code dependency on either. Both stay open, and neither has a brief
+yet.
+
+- **2b is not built.** `src/` has no `--complement` or `enabledPlugins`, and `status-overlaps.ts` only
+  compares what `add` installed. What the skip costs on Copilot: with a `sigil add` copy and the plugin
+  of one artifact, the project copy of a skill or agent silently beats the plugin, while the plugin's
+  MCP server beats the project's. That order is documented, not tested. Nothing warns; the
+  [setup page](../setup/copilot.md#copies-of-the-same-artifact) says so.
+- **3 has its checks built and its goal unproven.** `provider-limits` has enforced both limits through
+  `agent-skills-limits.ts` since `e5939bd` (2026-10-03), and `name` equals the folder because
+  `outputPath` derives from it. Measured on fresh output on 2026-10-30: 0 mismatches across
+  agents-standard (45 skills), Claude plugins (55) and Copilot (45), longest name 22, longest
+  description 587. The stated outcome, `npx skills add … --skill x` working, has never been run and
+  isn't documented. It may need a published tree: `master` holds catalog source with `{sigil:…}`
+  tokens, not rendered skills. Phase 3 stays open, narrowed to that install route.
 
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,

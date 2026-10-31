@@ -151,9 +151,10 @@ claude plugin install acme-starter@<marketplace-name> --scope project
 The `<marketplace-name>` is the `name` in `marketplace.json` (`acme-ai` above). To verify
 against Claude's docs: the command also exists as `claude plugin marketplace add <owner>/<repo>`
 and accepts a repository URL or a local directory
-([Create a marketplace](https://code.claude.com/docs/en/plugin-marketplaces)). Plugins carry
-skills and agents only; rules are inlined into skills; prompts, hooks, MCP and settings are not
-packaged — install those with `sigil add` ([capabilities.md](../reference/capabilities.md)).
+([Create a marketplace](https://code.claude.com/docs/en/plugin-marketplaces)). A pack's plugin
+carries skills, agents, workflows and prompts; a generated plugin carries one hook or one MCP
+server; rules are inlined into skills; settings are not packaged — install those with `sigil add`
+([capabilities.md](../reference/capabilities.md)).
 
 ---
 

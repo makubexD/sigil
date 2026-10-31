@@ -58,10 +58,13 @@ export interface DiscoverResult {
 // ─── Main export ──────────────────────────────────────────────────────────────
 
 /** Classifies one directory entry within a flat kind dir (rules/ or agents/). */
-type ClassifyResult = { discovered?: DiscoveredFile; unrecognised?: UnrecognisedFile };
+export type ClassifyResult = { discovered?: DiscoveredFile; unrecognised?: UnrecognisedFile };
 
 /** Runs `build`; a source file import won't read becomes a "not imported" entry instead. */
-function discoverOrReport(relativePath: string, build: () => DiscoveredFile): ClassifyResult {
+export function discoverOrReport(
+  relativePath: string,
+  build: () => DiscoveredFile,
+): ClassifyResult {
   try {
     return { discovered: build() };
   } catch (err) {
@@ -120,8 +123,12 @@ function discoverFlatKindDir(
 }
 
 /** Builds a DiscoveredFile record for one `skills/<name>/SKILL.md` source file. */
-function buildSkillDiscoveredFile(skillFile: string, skillName: string): DiscoveredFile {
-  const { frontmatter, body } = parseMarkdown(skillFile);
+function buildSkillDiscoveredFile(
+  skillFile: string,
+  skillName: string,
+  opts?: { yamlFirst?: boolean },
+): DiscoveredFile {
+  const { frontmatter, body } = parseMarkdown(skillFile, opts);
   return {
     sourcePath: skillFile,
     relativePath: path.join('skills', skillName, SKILL_FILENAME),
@@ -133,7 +140,11 @@ function buildSkillDiscoveredFile(skillFile: string, skillName: string): Discove
 }
 
 /** Classifies one directory entry within `skills/` — a per-skill subdirectory. */
-function classifySkillEntry(entry: Dirent, skillsDir: string): ClassifyResult {
+function classifySkillEntry(
+  entry: Dirent,
+  skillsDir: string,
+  opts?: { yamlFirst?: boolean },
+): ClassifyResult {
   const notASkill = (reason: string): ClassifyResult => ({
     unrecognised: { relativePath: path.join('skills', entry.name), reason },
   });
@@ -143,19 +154,22 @@ function classifySkillEntry(entry: Dirent, skillsDir: string): ClassifyResult {
   if (!fs.existsSync(skillFile))
     return notASkill(`Missing ${SKILL_FILENAME} inside skill directory`);
   return discoverOrReport(path.join('skills', entry.name, SKILL_FILENAME), () =>
-    buildSkillDiscoveredFile(skillFile, entry.name),
+    buildSkillDiscoveredFile(skillFile, entry.name, opts),
   );
 }
 
 /** Discovers `skills/<name>/SKILL.md` — one directory per artifact. */
-export function discoverSkillsDir(sourceDir: string): DiscoverResult {
+export function discoverSkillsDir(
+  sourceDir: string,
+  opts?: { yamlFirst?: boolean },
+): DiscoverResult {
   const discovered: DiscoveredFile[] = [];
   const unrecognised: UnrecognisedFile[] = [];
   const skillsDir = path.join(sourceDir, 'skills');
   if (!fs.existsSync(skillsDir)) return { discovered, unrecognised };
 
   for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-    const result = classifySkillEntry(entry, skillsDir);
+    const result = classifySkillEntry(entry, skillsDir, opts);
     if (result.discovered) {
       const { file, notShipped } = withReferences(result.discovered, skillsDir);
       discovered.push(file);

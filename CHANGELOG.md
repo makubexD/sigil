@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `shared/protect-config` now blocks GitHub Copilot's `apply_patch`, which passes the raw patch
+  instead of a file path, so a `.env` write went through. Run `sigil update` to get the fix.
+
 ## [0.3.0] - 2026-10-30
 
 ### Added

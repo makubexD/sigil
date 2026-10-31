@@ -17,20 +17,29 @@ args:
     let raw = '';
     process.stdin.setEncoding('utf8');
     process.stdin.on('data', chunk => (raw += chunk)).on('end', () => {
-      let file;
-      try { const ti = JSON.parse(raw).tool_input; file = ti.file_path ?? ti.path; } catch { return; }
-      if (typeof file !== 'string') return;
-      const full = path.resolve(file);
-      const names = [file, full];
-      try { names.push(fs.realpathSync.native(full)); } catch {
-        try { names.push(path.join(fs.realpathSync.native(path.dirname(full)), path.basename(full))); } catch {}
-      }
-      const hit = names.flatMap(baseNames).find(isProtected);
+      let files;
+      try {
+        const ti = JSON.parse(raw).tool_input;
+        files = typeof ti === 'string' ? patchFiles(ti) : [ti.file_path ?? ti.path];
+      } catch { return; }
+      const hit = files.filter(f => typeof f === 'string').flatMap(candidates).find(isProtected);
       if (hit) {
         process.stderr.write('sigil-hook: blocked write to protected file ' + hit + '\n');
         process.exitCode = 2;
       }
     });
+    function patchFiles(patch) {
+      const header = /^\s*\*\*\*\s*(?:add file|update file|delete file|move to):[ \t]*(.+)$/gim;
+      return [...patch.matchAll(header)].map(m => m[1].trim());
+    }
+    function candidates(file) {
+      const full = path.resolve(file);
+      const names = [file, full];
+      try { names.push(fs.realpathSync.native(full)); } catch {
+        try { names.push(path.join(fs.realpathSync.native(path.dirname(full)), path.basename(full))); } catch {}
+      }
+      return names.flatMap(baseNames);
+    }
     function baseNames(p) {
       const b = p.split(/[\\/]/).pop().toLowerCase().replace(/[. ]+$/, '');
       return [b, b.split(':')[0]];
@@ -52,8 +61,9 @@ tags: [security, safety, shared]
 <!-- Describe what this hook does and when it fires. The command: above is executed. -->
 
 Fires before every Edit or Write tool call. The agent passes the call as JSON on stdin; the
-hook reads `tool_input.file_path` (or `tool_input.path`), also resolves the real path (so a
-symlink, a Windows short name like `ENV~1`, or an `::$DATA` stream suffix can't disguise the
+hook reads `tool_input.file_path` (or `tool_input.path`), or every file a patch names when
+`tool_input` is the raw patch text of GitHub Copilot's `apply_patch`, also resolves the real path
+(so a symlink, a Windows short name like `ENV~1`, or an `::$DATA` stream suffix can't disguise the
 target), and checks each file name. On a match it exits with code 2, which blocks the call, and
 says why on stderr.
 

@@ -61,6 +61,8 @@ The brief's riskiest assumption, ids from filenames, is manageable. These are th
   report is where that shows.
 - Only `*.instructions.md` directly in `instructions/` is read; subfolders are reported as unrecognised.
 - `.chatmode.md` is not recognised.
+- The trust scan blocks a file on any layout when `config/dangerous-command` matches its prose, such as a reviewer checklist
+  naming `eval`. It hits 5 of the 36 catalog agents. Narrowing that rule is a separate security change.
 
 ## Out of scope
 
@@ -344,12 +346,12 @@ Use real catalog artifacts and the `add` helper in `test/helpers/install-scenari
 `--language typescript --create-language` for the language artifacts and once with `--shared` for the prompt. Bodies
 compare after `.trim()`.
 
-| Artifact                      | Field compared with the source                                                                                                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `typescript/ts-async`         | same id; `title`, `description`, `appliesTo`, body equal                                                                                                         |
-| `typescript/ts-code-reviewer` | same id; `name`, `title`, `description`, `tools`, body equal (body includes a `{sigil:` token)                                                                   |
-| `typescript/ts-document`      | same id; `name`, `description`, `whenToUse`, `argumentHint`, `allowedTools` equal; body starts with the source body and contains `## Coding guidelines to apply` |
-| `shared/explain-diff`         | same id; `description` equal; `args` names equal; body equal (`{{audience}}` restored)                                                                           |
+| Artifact                 | Field compared with the source                                                                                                                                   |
+| ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `typescript/ts-async`    | same id; `title`, `description`, `appliesTo`, body equal                                                                                                         |
+| `typescript/ts-debugger` | same id; `name`, `title`, `description`, `tools`, body equal (body includes a `{sigil:` token)                                                                   |
+| `typescript/ts-document` | same id; `name`, `description`, `whenToUse`, `argumentHint`, `allowedTools` equal; body starts with the source body and contains `## Coding guidelines to apply` |
+| `shared/explain-diff`    | same id; `description` equal; `args` names equal; body equal (`{{audience}}` restored)                                                                           |
 
 Also:
 
@@ -357,6 +359,8 @@ Also:
   one) and `--target copilot`, into a second project. The rule, agent and prompt files are byte-identical to the first
   install.
 - No imported body matches any Copilot lexicon value.
+- `typescript/ts-code-reviewer` is refused and not written: the trust scanner's `config/dangerous-command` rule matches
+  `eval` in its prose, and import fails closed. The scanner doesn't change here; see Known limits.
 - A failed comparison is a bug in steps 1 to 9. Fix it there, don't loosen this test.
 
 ### 11. Docs `[inline: user-facing copy]`

@@ -6,7 +6,7 @@
   ".claude/rules/shared-cli-rules.md": "43f0cb82e2d4aa43fb3b0a6394fa11eceb8a193b13590b7c7260326f13d9478c",
   ".claude/rules/typescript-ts-conventions.md": "31d25136e9225dbe7817671f8701c5b70df6a342459d14c506eee90fe191ac00",
   ".claude/rules/typescript-ts-npm.md": "092ff8414cc4915ba54c9ecdf757b8fce2bd28cde6be079c40421f3623af8aaf",
-  ".claude/settings.json": "fcd3b7d99c787aef44f8730d0fe95a0dcb67a139a20d9dc8c0851a8fc44c9fc8",
+  ".claude/settings.json": "4b362a1791117963a4cb139f4deee010e8d7f30246a68c917b821d1a22533944",
   ".claude/skills/cli/SKILL.md": "069a30d709fb0eeb9a50ce70c8f16ef8ca4b32d3f9ffb268f5b1a5c76c587ebb",
   ".claude/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
   ".claude/skills/cli/references/auditor.md": "465959572a2b35404c7ed6aead162c194a85a42bfedb470ee144eb51cad3fd95",
@@ -24,6 +24,6 @@
   ".claude/skills/shared-explain-diff/SKILL.md": "02800e7c98d7ad21040948a5e3b84f36aa6bdd2dd7daf075aa0c6732f82ad679",
   ".claude/skills/ts-release/SKILL.md": "ab41c08cf142a7171b99fab25d670d58c85b6a4fbc9d5e16bd8fd8821f2835a3",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "2b9368be5e84c42c294fca5b3268e504287421f1f953f7f59f95aafbaa18abee",
+  ".sigil/manifest.json": "42af24af88f067cbfda9d681eccf193a01659d60f016475280450f9b77a8497e",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

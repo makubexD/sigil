@@ -29,8 +29,8 @@ args:
       }
     });
     function patchFiles(patch) {
-      const header = /^\*\*\* (?:Add File|Update File|Delete File|Move to): (.+?)\s*$/gm;
-      return [...patch.matchAll(header)].map(m => m[1]);
+      const header = /^\s*\*\*\*\s*(?:add file|update file|delete file|move to):[ \t]*(.+)$/gim;
+      return [...patch.matchAll(header)].map(m => m[1].trim());
     }
     function candidates(file) {
       const full = path.resolve(file);

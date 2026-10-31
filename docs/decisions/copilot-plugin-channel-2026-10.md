@@ -68,8 +68,10 @@ its help doesn't show it. Plugin names are namespaced, so documentation must use
 
 **Route A, narrowed: rely on the Claude format for skills, agents and prompts, and add no emitter.**
 These pass on both surfaces, and an emitter's main remaining benefit, the two degraded rows, affects one
-skill. Copilot users keep `sigil add` for hooks and MCP. It writes `exec`; its MCP path was not part of
-this test.
+skill. Copilot users keep `sigil add` for hooks and MCP. It writes `exec`. Its MCP path passed one run
+on Copilot CLI 1.0.105, 2026-10-30: `sigil add mcp:shared/filesystem --target copilot --yes` wrote
+`.mcp.json`, the server connected, and its only allowed directory was the project. Copilot loads a
+project `.mcp.json` only from a trusted folder. VS Code was not run for this path.
 
 The gate in the plan says any unsafe result points to Route B; the owner accepted this as an exception.
 The cost: nothing stops a Copilot user installing a `hook-*` plugin, and the marketplace can't

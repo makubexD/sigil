@@ -67,3 +67,47 @@ export function applyLexicon(body: string, lexicon: ProviderLexicon): string {
     return entry.value;
   });
 }
+
+const REGEX_SPECIAL_RE = /[.*+?^${}()|[\]\\]/g;
+
+interface LexiconValue {
+  readonly term: LexiconTerm;
+  readonly value: string;
+}
+
+function escapeRegExp(value: string): string {
+  return value.replace(REGEX_SPECIAL_RE, '\\$&');
+}
+
+/**
+ * Every distinct value once, longest first. A shared value keeps the first term in
+ * LEXICON_TERMS order (the Map insert below skips a value already claimed).
+ */
+function distinctValues(lexicon: ProviderLexicon): LexiconValue[] {
+  const termsByValue = new Map<string, LexiconTerm>();
+  for (const term of LEXICON_TERMS) {
+    const { value } = lexicon[term];
+    if (!termsByValue.has(value)) termsByValue.set(value, term);
+  }
+  return [...termsByValue]
+    .map(([value, term]) => ({ term, value }))
+    .sort((a, b) => b.value.length - a.value.length);
+}
+
+/**
+ * Inverse of `applyLexicon`: replaces each literal provider value with its neutral
+ * `{sigil:<term>}` token, so `sigil import` can write catalog source back from a provider's
+ * prose. The one alternation is ordered longest-first, so a value containing another is
+ * matched whole rather than partly.
+ */
+export function reverseLexicon(body: string, lexicon: ProviderLexicon): string {
+  const values = distinctValues(lexicon);
+  if (values.length === 0) return body;
+  const pattern = new RegExp(values.map(entry => escapeRegExp(entry.value)).join('|'), 'g');
+  const termsByValue = new Map<string, LexiconTerm>();
+  for (const entry of values) termsByValue.set(entry.value, entry.term);
+  return body.replace(pattern, match => {
+    const term = termsByValue.get(match);
+    return term === undefined ? match : `{sigil:${term}}`;
+  });
+}

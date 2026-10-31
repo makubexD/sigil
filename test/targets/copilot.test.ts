@@ -10,6 +10,7 @@ import { loadResolvedCatalog, loadBundledCatalog } from '../helpers/catalog';
 import { COPILOT_RULE_SPEC } from '../../dist-cli/targets/copilot/spec/rule';
 import { COPILOT_SKILL_SPEC } from '../../dist-cli/targets/copilot/spec/skill';
 import { renderArtifact } from '../../dist-cli/targets/emit';
+import { checkOutputContract } from '../../dist-cli/targets/output-contract';
 import type { ResolvedArtifact } from '../../dist-cli/types';
 
 import { makeRule, makeSkill } from '../helpers/fixtures';
@@ -162,17 +163,6 @@ describe('Copilot target', () => {
     );
   });
 
-  it('emits AGENTS.md with all agents', async () => {
-    const catalog = await loadBundledCatalog();
-    const resolved = resolveCatalog(catalog);
-    const target = new CopilotTarget();
-    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
-
-    assert.ok('.github/AGENTS.md' in files, 'AGENTS.md emitted');
-    const content = files['.github/AGENTS.md'];
-    assert.ok(content.includes('code-reviewer'), 'code-reviewer agent listed');
-  });
-
   it('renders whenToUse as a "## When to Use" body section (Copilot has no frontmatter field for it)', async () => {
     // Regression test: whenToUse used to be silently dropped for Copilot — present in neither
     // frontmatter (Copilot's SKILL.md carries only name/description) nor body. See
@@ -219,6 +209,105 @@ describe('Copilot target', () => {
       'description frontmatter present (required by spec)',
     );
     assert.ok(content.match(/description:\s*"/), 'description is safely quoted');
+  });
+});
+
+describe('full build agents', () => {
+  const agentPath = (agent: ResolvedArtifact) =>
+    `.github/agents/${String(agent.frontmatter.name)}.agent.md`;
+
+  it('compile writes exactly one .agent.md per agent artifact', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+
+    const agents = resolved.artifacts.filter(a => a.kind === 'agent');
+    assert.ok(agents.length > 0, 'catalog has agents');
+
+    assert.deepEqual(
+      Object.keys(files)
+        .filter(k => k.startsWith('.github/agents/'))
+        .sort(),
+      agents.map(agentPath).sort(),
+    );
+  });
+
+  it('compile writes the same bytes as scaffold for each agent', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+
+    const agents = resolved.artifacts.filter(a => a.kind === 'agent');
+    assert.ok(agents.length > 0, 'catalog has agents');
+    const coInstallSet = new Set(resolved.artifacts.map(a => a.id));
+
+    for (const agent of agents) {
+      const scaffolded = await target.scaffold(agent.id, resolved, {
+        projectDir: '/fake',
+        coInstallSet,
+        includeDeps: false,
+      });
+      const path = agentPath(agent);
+      assert.equal(files[path], scaffolded[path], path);
+    }
+  });
+
+  it('compile no longer writes the aggregate .github/AGENTS.md', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+
+    assert.ok(!('.github/AGENTS.md' in files));
+  });
+
+  it('keeps each agent tools line in its built frontmatter', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+
+    const agents = resolved.artifacts.filter(a => a.kind === 'agent');
+    assert.ok(agents.length > 0, 'catalog has agents');
+
+    for (const agent of agents) {
+      const path = agentPath(agent);
+      const content = files[path];
+      assert.ok(content, `${path} emitted`);
+      const lines = content.split('\n');
+      assert.equal(lines[0], '---', `${path} opens with frontmatter`);
+      const end = lines.indexOf('---', 1);
+      assert.ok(end > 0, `${path} closes its frontmatter`);
+      const expected = `tools: ${JSON.stringify(agent.frontmatter.tools)}`;
+      assert.ok(lines.slice(1, end).includes(expected), `${path} keeps ${expected}`);
+    }
+  });
+
+  it('passes its output contracts on the whole compile output', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+
+    assert.deepEqual(checkOutputContract(files, target.outputContracts ?? []), []);
+  });
+
+  it('leaves no untranslated {sigil: token in any built agent body', async () => {
+    const catalog = await loadBundledCatalog();
+    const resolved = resolveCatalog(catalog);
+    const target = new CopilotTarget();
+    const files = await target.compile(resolved, { version: VERSION, packs: PACKS });
+
+    const agents = resolved.artifacts.filter(a => a.kind === 'agent');
+    assert.ok(agents.length > 0, 'catalog has agents');
+
+    for (const agent of agents) {
+      const path = agentPath(agent);
+      assert.ok(path in files, `${path} emitted`);
+      assert.ok(!files[path]!.includes('{sigil:'), `${path} has no {sigil: token`);
+    }
   });
 });
 

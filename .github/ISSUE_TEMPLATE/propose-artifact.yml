@@ -1,0 +1,57 @@
+name: Propose an artifact
+description: Suggest a skill, agent, rule or prompt for the catalog. No YAML or clone needed.
+title: 'Propose: '
+labels: [artifact-proposal]
+body:
+  - type: markdown
+    attributes:
+      value: >-
+        Describe the artifact in plain words and give it a short title above. Check the
+        [catalog](https://github.com/makubexD/sigil/tree/master/catalog) first in case it already
+        exists. A maintainer reviews each proposal and may ask a follow-up question here.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: Kind
+      description: >-
+        skill: a how-to workflow the AI follows on request. agent: an AI persona with an ongoing
+        role. rule: an always-on coding convention. prompt: a one-shot command.
+      options:
+        - skill
+        - agent
+        - rule
+        - prompt
+        - not sure
+    validations:
+      required: true
+  - type: input
+    id: language
+    attributes:
+      label: Language or shared
+      description: For example csharp, python or react. Write "shared" if it works in any language.
+    validations:
+      required: true
+  - type: textarea
+    id: what
+    attributes:
+      label: What should it do?
+      description: The result you want from the AI, and anything it must avoid.
+    validations:
+      required: true
+  - type: textarea
+    id: trigger
+    attributes:
+      label: When should it trigger?
+      description: What someone would ask for, or which files it applies to.
+    validations:
+      required: true
+  - type: textarea
+    id: example
+    attributes:
+      label: Example prompt
+      description: Something you would type to use it. Skip this for a rule.
+  - type: textarea
+    id: sources
+    attributes:
+      label: Sources
+      description: Links to docs, standards or prompts it builds on.

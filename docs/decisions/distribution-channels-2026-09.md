@@ -413,9 +413,6 @@ Not covered:
 - What `/plugin update` does when a plugin disappears. No plugin is removed, so nothing depends on the answer; a future
   removal must test it first.
 
-Follow-up, not done: `consuming.md` installs plugins with the default scope, which is `user`, while decision 2 says
-project scope. Point 4 above is the reason to change that example.
-
 ## Appendix — fixes worth making in the original `gid` skills
 
 - Make paths relative to the skill root (`references/auditor.md`, not `../../references/auditor.md`).

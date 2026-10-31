@@ -9,6 +9,29 @@ import assert from 'node:assert/strict';
 import matter from 'gray-matter';
 import { slugToTitle, translateFrontmatter } from '../../dist-cli/authoring/import/translate';
 import { renderArtifactFile } from '../../dist-cli/authoring/import/plan';
+import { splitToolsString } from '../../dist-cli/authoring/import/translate-helpers';
+
+// ─── splitToolsString ────────────────────────────────────────────────────────
+
+describe('splitToolsString', () => {
+  const cases: Array<[string, unknown, string[]]> = [
+    ['comma string with spaces', 'Read, Grep', ['Read', 'Grep']],
+    ['string array', ['Read', 'Grep'], ['Read', 'Grep']],
+    ['array trims and drops empties', ['Read', ' ', 'Grep '], ['Read', 'Grep']],
+    ['double-quoted YAML list', '["read", "search"]', ['read', 'search']],
+    ['single-quoted YAML list', "['read', 'search']", ['read', 'search']],
+    ['bare bracketed list', '[read, search]', ['read', 'search']],
+    ['empty bracketed list', '[]', []],
+    ['undefined', undefined, []],
+    ['number', 3, []],
+  ];
+
+  for (const [name, input, expected] of cases) {
+    it(name, () => {
+      assert.deepEqual(splitToolsString(input), expected);
+    });
+  }
+});
 
 // ─── slugToTitle ──────────────────────────────────────────────────────────────
 
@@ -115,6 +138,18 @@ describe('translateFrontmatter — agent', () => {
       opts,
     );
     assert.deepEqual(frontmatter.tools, ['Read', 'Grep', 'Glob', 'Bash', 'Edit']);
+  });
+
+  it('maps an array tools field to the same array', () => {
+    const { frontmatter } = translateFrontmatter(
+      'agent',
+      'cs-x',
+      {
+        tools: ['Read', 'Grep'],
+      },
+      opts,
+    );
+    assert.deepEqual(frontmatter.tools, ['Read', 'Grep']);
   });
 
   it('handles tools with no spaces around commas', () => {

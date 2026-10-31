@@ -48,8 +48,10 @@ agent, `dependencies`, Windows, and the MCP servers that need environment values
    path and the script allows the call. With `sigil add --target copilot` in a trusted folder and project
    hooks confirmed loaded, `.env` was created. The `edit` tool sends `path`, which the script reads; a
    `.env` write through `edit` was not tried, because the model chose `apply_patch`. This closes the live check
-   left open in [copilot-hooks-2026-10](copilot-hooks-2026-10.md): it fails. In VS Code the write also
-   succeeded, without a denial, so the hook may not have fired there; that is unconfirmed.
+   left open in [copilot-hooks-2026-10](copilot-hooks-2026-10.md): it failed. Fixed with this record:
+   the hook now reads the patch's file headers, and with `sigil add` both Copilot CLI and VS Code deny an
+   `apply_patch` write of `.env`, and the CLI still allows `notes.txt`. Why `hook-protect-config` neither
+   errored nor blocked as a plugin in VS Code stays unknown.
 3. **`.` in plugin MCP config is the plugin folder on Copilot.** Claude uses the session directory
    ([ADR section 8](distribution-channels-2026-09.md#8-hooks-and-mcp-as-plugins-2026-10-30)), so
    `mcp-filesystem` can't reach the user's project on Copilot.
@@ -66,14 +68,10 @@ its help doesn't show it. Plugin names are namespaced, so documentation must use
 
 **Route A, narrowed: rely on the Claude format for skills, agents and prompts, and add no emitter.**
 These pass on both surfaces, and an emitter's main remaining benefit, the two degraded rows, affects one
-skill. Copilot users keep `sigil add` for hooks and MCP, which is the route that writes `exec` and project
-paths.
+skill. Copilot users keep `sigil add` for hooks and MCP. It writes `exec`; its MCP path was not part of
+this test.
 
 The gate in the plan says any unsafe result points to Route B; the owner accepted this as an exception.
 The cost: nothing stops a Copilot user installing a `hook-*` plugin, and the marketplace can't
 filter by client, so the limit is documentation only. An untested alternative is a single-string
 shell-form `command`, which might run on both clients without a separate format.
-
-**Regardless of route:** fix `shared/protect-config` for string `tool_input` by reading the
-`*** Add File:`, `*** Update File:` and `*** Delete File:` lines, before anything else. It is a shipped
-protection that doesn't protect.

@@ -17,10 +17,9 @@ result is Copilot's behaviour goes to the worker.
       to the brief, including the dead link and the out-of-scope line. Fix the same stale citation in
       `docs/ideas/import-copilot-layout.md:22` and `docs/guides/publishing.md:170`.
       `[inline: tiny docs edit]`
-- [ ] **Priority fix, not gated: `shared/protect-config` misses `apply_patch`**, found by the Phase 1
-      test ([cause 2](decisions/copilot-plugin-channel-2026-10.md#causes)). Shipped behaviour under
-      `sigil add --target copilot`. Own branch and PR, RED first with a string `tool_input`, then re-run
-      the `.env` check in Copilot CLI and find out whether the hook fires in VS Code.
+- [x] **Priority fix, not gated: `shared/protect-config` misses `apply_patch`**, found by the Phase 1
+      test ([cause 2](decisions/copilot-plugin-channel-2026-10.md#causes)). Fixed on
+      `fix/protect-config-apply-patch`; the live `.env` check passes on Copilot CLI and VS Code.
 - [x] **Phase 1, manual test and format decision.** Test done 2026-10-30; results in
       [the record](decisions/copilot-plugin-channel-2026-10.md). **The owner chose a narrowed Route A:**
       Claude format for skills, agents and prompts, no emitter, `sigil add` for hooks and MCP on Copilot.

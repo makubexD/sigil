@@ -107,4 +107,30 @@ describe('shared/protect-config hook', () => {
       assert.equal(r.status, status, r.stderr);
     });
   }
+
+  // Copilot's apply_patch reports as tool_name Edit with the raw patch as a string tool_input
+  // (logged from Copilot CLI 1.0.105, docs/decisions/copilot-plugin-channel-2026-10.md).
+  const patch = (...lines: string[]) =>
+    JSON.stringify({
+      tool_name: 'Edit',
+      tool_input: ['*** Begin Patch', ...lines, '*** End Patch', ''].join('\n'),
+    });
+
+  for (const [name, stdin, status] of [
+    ['an added .env', patch('*** Add File: .env', '+KEY=1'), 2],
+    ['an updated secret by absolute path', patch('*** Update File: /repo/.env.local', '@@', '-a', '+b'), 2],
+    ['a deleted .env', patch('*** Delete File: .env'), 2],
+    ['a rename onto .env', patch('*** Update File: notes.txt', '*** Move to: .env', '@@', '-a', '+b'), 2],
+    ['a secret after a harmless file', patch('*** Add File: a.txt', '+x', '*** Add File: .env', '+KEY=1'), 2],
+    ['CRLF line endings', patch('*** Add File: .env', '+KEY=1').replaceAll('\\n', '\\r\\n'), 2],
+    ['an added harmless file', patch('*** Add File: notes.txt', '+hello'), 0],
+    ['a template', patch('*** Add File: .env.example', '+KEY=example'), 0],
+    ['a header inside added text', patch('*** Add File: notes.txt', '+*** Add File: .env'), 0],
+    ['a string that is not a patch', JSON.stringify({ tool_input: 'just text' }), 0],
+  ] as const) {
+    it(`${status === 2 ? 'blocks' : 'allows'} apply_patch: ${name}`, async () => {
+      const r = run((await installedHook()).entry, stdin);
+      assert.equal(r.status, status, r.stderr);
+    });
+  }
 });

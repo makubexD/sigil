@@ -160,16 +160,15 @@ export const COPILOT_PROMPT_FILES_DOC: DocRef = {
     'steering this format toward agent skills (see COPILOT_PROMPT_SPEC.supersededBy).',
 };
 
-/** Backs the AGENTS.md open-standard aggregate — cited directly since it has no per-kind spec. */
+/** The AGENTS.md open standard — cited by the agents-standard target, which has no per-kind spec. */
 export const AGENTS_MD_STANDARD_DOC: DocRef = {
   url: 'https://agents.md/',
   title: 'AGENTS.md — the open standard',
   verifiedOn: '2026-10-03',
   covers:
     'the AGENTS.md convention itself: a prose "README for agents". Specifies no frontmatter and ' +
-    "no per-agent sections — the ## <name> sectioning buildAgentsMd() renders is sigil's own " +
-    'layout choice, not part of this standard. See COPILOT_INSTRUCTIONS_DOC / VSCODE_INSTRUCTIONS_DOC ' +
-    'for where each consumer documents actually reading AGENTS.md.',
+    'no per-agent sections. See COPILOT_INSTRUCTIONS_DOC / VSCODE_INSTRUCTIONS_DOC for where ' +
+    'each consumer documents actually reading AGENTS.md.',
 };
 
 /** Provenance for the whole Claude Code artifact-to-doc mapping this file follows — Anthropic's

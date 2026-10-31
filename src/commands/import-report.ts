@@ -104,6 +104,11 @@ export interface PrintCoverageReportOptions {
   targets: Target[];
 }
 
+/** One `    note: <text>` line per discovery note. */
+function printNotes(notes: string[] | undefined): void {
+  for (const note of notes ?? []) console.log(`    note: ${note}`);
+}
+
 /** Prints one item's coverage line (flag + paths + warnings), plus its dry-run preview if requested. */
 function printCoverageItem(
   item: ImportItem,
@@ -120,6 +125,7 @@ function printCoverageItem(
   if (item.droppedFields.length > 0) {
     console.log(`    dropped source fields: ${item.droppedFields.join(', ')}`);
   }
+  printNotes(item.notes);
   printStackRouting(item, catalogDir);
 }
 

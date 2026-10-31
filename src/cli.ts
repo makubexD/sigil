@@ -201,8 +201,9 @@ program
 program
   .command('import <source-dir>')
   .description(
-    'Import a portable Claude template directory into the catalog as first-class artifacts.',
+    'Import a portable Claude template directory or a Copilot .github/ layout into the catalog as first-class artifacts.',
   )
+  .option('--from <layout>', 'Source layout: claude or copilot', 'claude')
   .option('--language <lang>', 'Target language key (e.g. csharp, typescript)')
   .option('--shared', 'Import into catalog/shared/ (no language); use instead of --language', false)
   .option('--display-name <name>', 'Override the language display name in generated titles')
@@ -415,7 +416,7 @@ const HELP_LAYOUT: Readonly<Record<string, { group: string; summary: string }>> 
   retarget: { group: AUTHOR, summary: "Change an artifact's platforms" },
   delete: { group: AUTHOR, summary: 'Remove an artifact from the catalog' },
   check: { group: AUTHOR, summary: 'Validate catalog source files' },
-  import: { group: AUTHOR, summary: 'Import a Claude template directory' },
+  import: { group: AUTHOR, summary: 'Import Claude template or Copilot layout' },
   sync: { group: AUTHOR, summary: 'Check catalog vs templates/standards' },
   validate: { group: AUTHOR, summary: 'Check the catalog (schema + references)' },
   build: { group: BUILD, summary: 'Compile the catalog to dist/<target>/' },

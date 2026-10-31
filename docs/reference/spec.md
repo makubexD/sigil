@@ -485,8 +485,8 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
     Anthropic / OpenAI / Slack / Stripe / Google / npm tokens, and JWTs.
   - `config/*` — dangerous shell patterns and possible exfiltration. These run on every file, not
     only hook and MCP commands, because an artifact body is an instruction to a model with shell
-    access. `config/dangerous-command` matches an invocation, never the bare word: `` `eval` `` and
-    `eval()` pass, `eval(x)` and `eval "$x"` don't.
+    access. `config/dangerous-command` matches an invocation, never the bare word: `` `eval` `` passes,
+    and so does `eval()` except on a line that names `perl`; `eval(x)` and `eval "$x"` don't.
   - `injection/*` — "ignore previous instructions", system-prompt disregard, jailbreak overrides,
     data-exfil URL patterns, and role-switch phrases.
 - **Severity:** `error` findings always fail `sigil check --trust`. `warn` findings are printed

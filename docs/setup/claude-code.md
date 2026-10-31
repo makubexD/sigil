@@ -23,18 +23,21 @@ To stay on one release, add its tag instead: `makubexD/sigil#marketplace-v<versi
 
 ## Install a pack
 
-Each pack in [`packs.yaml`](../../packs.yaml) is one plugin with the same name:
+Each pack in [`packs.yaml`](../../packs.yaml) is one plugin with the same name. From your project's
+root:
 
+```bash
+claude plugin install spec-driven@sigil --scope project
+claude plugin install typescript-starter@sigil --scope project
 ```
-/plugin install spec-driven@sigil
-/plugin install typescript-starter@sigil
-```
+
+Install at project scope because the default, `user`, loads a plugin's listing into every project.
 
 Each hook and MCP server is its own opt-in plugin, named `hook-<name>` or `mcp-<name>`:
 
-```
-/plugin install hook-protect-config@sigil
-/plugin install mcp-filesystem@sigil
+```bash
+claude plugin install hook-protect-config@sigil --scope project
+claude plugin install mcp-filesystem@sigil --scope project
 ```
 
 A pack's plugin never contains them, except that `deepseek-worker` depends on
@@ -59,8 +62,8 @@ and edit in your project. The per-kind table is in [capabilities.md](../referenc
 
 Third-party marketplaces do not auto-update by default. Run `/plugin`, open the **Marketplaces**
 tab and select `sigil`. There, **Enable auto-update** keeps it current from then on, and **Update
-marketplace** updates now: it refreshes the listing and the plugins you installed from it. From a
-shell, update one plugin with `claude plugin update spec-driven@sigil`.
+marketplace** updates now: it refreshes the listing and the plugins you installed from it. From your
+project's shell, update one plugin with `claude plugin update spec-driven@sigil`.
 ([Keep plugins updated](https://code.claude.com/docs/en/discover-plugins#keep-plugins-updated).)
 
 Every plugin's `version` is the Sigil release that built it. A marketplace pinned to
@@ -68,10 +71,14 @@ Every plugin's `version` is the Sigil release that built it. A marketplace pinne
 
 ## Remove
 
+From your project's root:
+
+```bash
+claude plugin uninstall spec-driven@sigil --scope project
+claude plugin marketplace remove sigil
 ```
-/plugin uninstall spec-driven@sigil
-/plugin marketplace remove sigil
-```
+
+Without `--scope project`, the uninstall fails for a plugin installed at project scope.
 
 ## Build it yourself
 

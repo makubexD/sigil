@@ -140,7 +140,12 @@ and pushes `claude/` to an orphan `marketplace` branch, which users add with `<o
 
 ```
 /plugin marketplace add <owner>/<repo>
-/plugin install acme-starter@<marketplace-name>
+```
+
+Then, from the project's shell:
+
+```bash
+claude plugin install acme-starter@<marketplace-name> --scope project
 ```
 
 The `<marketplace-name>` is the `name` in `marketplace.json` (`acme-ai` above). To verify

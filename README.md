@@ -80,7 +80,12 @@ branch of this repository. In Claude Code:
 
 ```
 /plugin marketplace add makubexD/sigil#marketplace
-/plugin install spec-driven@sigil
+```
+
+Then, from your project's shell:
+
+```bash
+claude plugin install spec-driven@sigil --scope project
 ```
 
 Each pack in [`packs.yaml`](packs.yaml) is one plugin, and each hook and MCP server is its own opt-in

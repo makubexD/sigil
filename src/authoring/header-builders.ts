@@ -32,7 +32,9 @@ function buildSkillUsesLines(v: HeaderValues): string[] {
 export function buildSkillLines(v: HeaderValues): string[] {
   return [
     `name: ${v.name ?? 'TODO'}`,
-    `language: ${v.language ?? 'TODO'}`,
+    v.language
+      ? `language: ${v.language}`
+      : '# language:     # omit for shared skills that work across all languages',
     `# whenToUse:   # trigger phrases the model matches, e.g. "add tests for", "this file has no tests"`,
     ...buildSkillUsesLines(v),
   ];

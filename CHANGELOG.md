@@ -16,6 +16,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- `sigil new skill` without `--language` no longer writes `language: TODO`, which failed `sigil check`.
 - `shared/protect-config` now blocks GitHub Copilot's `apply_patch`, which passes the raw patch
   instead of a file path, so a `.env` write went through. Run `sigil update` to get the fix.
 

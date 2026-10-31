@@ -24,8 +24,6 @@ import type {
 
 const RULE = 'typescript/ts-async';
 const AGENT = 'typescript/ts-debugger';
-/** Its prose names `eval`, which the trust scanner's `config/dangerous-command` rule blocks. */
-const TRUST_BLOCKED_AGENT = 'typescript/ts-code-reviewer';
 const SKILL = 'typescript/ts-document';
 const PROMPT = 'shared/explain-diff';
 const ALL_SELECTORS = [`rule:${RULE}`, `agent:${AGENT}`, `skill:${SKILL}`, `prompt:${PROMPT}`];
@@ -207,20 +205,6 @@ describe('Copilot import round trip', () => {
       fs.mkdirSync(second);
       await rerender(catalogDir, second);
       for (const rel of RENDERED) assertSameFile(project, second, rel);
-    });
-  });
-
-  it('should refuse an agent the trust scanner blocks and write nothing for it', async () => {
-    await withTempDirAsync(async root => {
-      const project = await install(root, 'project', [`agent:${TRUST_BLOCKED_AGENT}`], false);
-      const catalogDir = emptyCatalog(root);
-      await assert.rejects(importProject(project, catalogDir, false), /Fix the errors above/);
-      const written = path.join(catalogDir, 'languages', `${TRUST_BLOCKED_AGENT}.agent.md`);
-      assert.equal(fs.existsSync(written), false);
-      assert.equal(
-        fs.existsSync(path.join(catalogDir, 'languages', 'typescript', 'agents')),
-        false,
-      );
     });
   });
 

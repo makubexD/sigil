@@ -146,9 +146,9 @@ const COMPILED_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
 
 /**
  * Writes every per-file artifact of a full build through its spec (src/targets/emit-files.ts):
- * scoped rules, skills with their references, prompts, workflows and agents. Repo-wide rules go into
- * `.github/copilot-instructions.md` instead. `ctx` co-installs the whole catalog, so every Boundary
- * section resolves.
+ * scoped rules, skills with their references, prompts, workflows and agents. Repo-wide rules go
+ * into `.github/copilot-instructions.md` instead. `ctx` co-installs the whole catalog, so every
+ * Boundary section resolves.
  */
 export function buildArtifactFiles(
   catalog: ResolvedCatalog,

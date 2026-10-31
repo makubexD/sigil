@@ -131,7 +131,7 @@ Consumer commands never read the file; `sigil move` renames a moved id in it. Se
    and `test/targets/provider-registry.test.ts` fails if another module imports a provider folder.
    **Any hand-rolled aggregate that assembles an artifact's body without going through
    `renderArtifact()`** (Copilot's `copilot-instructions.md`, the open standard's `AGENTS.md` — see
-   `copilot/build-helpers.ts`) must call `applyLexicon()` directly; it does not get the pass for
+   `shared/repo-wide-rules.ts`) must call `applyLexicon()` directly; it does not get the pass for
    free just by existing in the same target.
 
 ### Adding a kind

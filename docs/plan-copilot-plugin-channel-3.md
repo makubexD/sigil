@@ -20,10 +20,9 @@ says there is no route.
    Phase 4 keeps the ADR, the brief's retirement and deleting the roadmap.
 3. **Check the MCP route before recommending it.** The record says `sigil add`'s MCP path "was not part
    of this test", and the new page sends users there. Step 1 runs it once.
-4. **The roadmap's "MCP: the plugin beats the project" is not what the docs say.** The documented order
-   lists `~/.copilot/mcp-config.json`, then plugins, then `--additional-mcp-config`. A project
-   `.mcp.json` isn't in it. The page tells users not to define the same server twice and claims no
-   winner. Step 5 corrects the roadmap.
+4. **Corrected in review: the roadmap's "MCP: the plugin beats the project" is right.** The plugin
+   reference's order omits a project `.mcp.json`, but the CLI command reference lists `--additional-mcp-config`,
+   plugins, workspace, then `~/.copilot/mcp-config.json`. The page states that order, marked not tested.
 5. **One code step, beyond "docs only": step 6.** A Copilot user browsing the marketplace sees
    `mcp-filesystem` described as connecting "Claude Code (and Copilot)", which is false on this route,
    and nothing warns about the hooks. The description is the only text they see at install time. It

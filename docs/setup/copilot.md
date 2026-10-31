@@ -76,7 +76,12 @@ those too.
 ## Copies of the same artifact
 
 A project or personal skill or agent with the same name silently beats the plugin, and `sigil status`
-doesn't see plugins. For MCP, don't define one server name twice.
+doesn't see plugins.
+
+MCP goes the other way. Copilot's
+[loading order](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#mcp-server-loading-priority)
+puts a plugin above a project `.mcp.json`, so a leftover `mcp-filesystem` plugin would replace the
+`filesystem` server from `sigil add`. This order wasn't tested. Don't define one server name twice.
 
 ## Update and remove
 

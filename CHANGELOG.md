@@ -16,7 +16,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `sigil import` and `sigil check --trust` no longer refuse a file for naming `eval` in prose, or for
-  piping `curl` to `shasum`. Nine catalog agents and rules can now be imported. One example in
+  piping `curl` to `shasum`. A word right after `"eval"` or touching the closing backtick of
+  `` `eval` `` is still refused. Nine catalog agents and rules can now be imported. One example in
   `typescript/ts-security` was reworded, so installed copies show as outdated until `sigil update`.
 - The trust scan now refuses dangerous commands it used to miss: `curl` with a quoted URL piped to a
   shell, a pipe to `sudo bash` or `zsh`, `eval $(…)`, and `nc` with an IP address and `-e`.

@@ -293,9 +293,10 @@ Check these after an import:
   `## Coding guidelines to apply` section stays in the body with a note, and so does `## Boundary`.
   Wire `uses.rules` with `sigil patch` and set `relatedArtifacts` in the catalog file.
 - **A `workflow` comes back as a `prompt`**, because both render to `.prompt.md`.
-- **The trust scan refuses commands, even in examples.** Naming `eval` is fine, but a body with
-  `eval(x)` or a pipe from `curl` to a shell is refused on either layout, even in a bad-code example,
-  and nothing overrides it. Reword the example before importing.
+- **The trust scan refuses commands, even in examples.** Naming `eval` is fine, unless a word follows
+  `"eval"` or touches the closing backtick of `` `eval` ``. A body with `eval(x)` or a pipe from `curl`
+  to a shell is refused on either layout, even in a bad-code example, and nothing overrides it. Reword
+  the example before importing.
 
 ---
 

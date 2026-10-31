@@ -119,7 +119,7 @@ export const RULES: ScanRule[] = [
     description: 'Dangerous shell pattern in any artifact',
     // Catches invocations, never the bare word: rm -rf, pipe-to-sh, eval "x", reverse shells, etc.
     pattern:
-      /(?:rm\s+-[rf]{1,2}f?\s+\/|^(?=[^\n]*\b(?:curl|wget)\b)[^\n]*\|\s*(?:sudo\s+)?(?:env\s+)?(?:ba|z|da|k)?sh\b|\beval[`"]?\s+["`$]|\beval\s*\((?!\s*\))|(?<![`"])\beval[`"]|nc\s+[-\w.]*\s+\d+\s+-e|python[23]?\s+-c\s*['"`]import\s+socket|bash\s+-i\s*>&?\s*\/dev\/tcp)/i,
+      /(?:rm\s+-[rf]{1,2}f?\s+\/|^(?=[^\n]*(?:curl|wget))[^\n]*\|\s*(?:sudo\s+)?(?:env\s+)?(?:ba|z|da|k)?sh(?![a-z])|(?<!retri|medi|prim|literal_)eval[`"]?\s+["`$]|(?<!retri|medi|prim|literal_)eval\s*\((?!\s*\))|^(?=[^\n]*\bperl\b)[^\n]*\beval\s*\(|(?<![`"])(?<!retri|medi|prim|literal_)eval[`"]|([`"])eval(?!\1(?:[^\w`"$(]|$))[`"]|eval[`"][\])]\s*\(|nc\s+(?:[-\w.]+\s+)?\d+\s+-e|python[23]?\s+-c\s*['"`]import\s+socket|bash\s+-i\s*>&?\s*\/dev\/tcp)/i,
   },
   {
     id: 'config/exfil-in-command',

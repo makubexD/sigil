@@ -60,9 +60,10 @@ When asked to write integration tests:
 3. …
 ```
 
-**Put it in a family** (`catalog/standard.yaml`). Every language agent, rule and skill belongs to
-exactly one family; a skill with no siblings in other languages is a family of one. A language
-description must also name its language (".NET" above):
+**Put it in a family** (`catalog/standard.yaml`). Every agent, rule and skill (shared ones too,
+except the rules listed as `bases`) belongs to exactly one family; a skill with no siblings in
+other languages is a family of one. A language description must also name its language (".NET"
+above):
 
 ```yaml
 families:

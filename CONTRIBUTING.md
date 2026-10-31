@@ -6,8 +6,8 @@ Thanks for helping. There are two ways to contribute:
   prompt, or other catalog item. No TypeScript needed.
 - **[B. Contributing code](#b-contributing-code)** — change the `sigil` CLI, the build pipeline, or the tests.
 
-Not sure where to start? Open an issue or discussion and describe what you want; we will point you
-to the right place.
+Not sure where to start? Open an issue and describe what you want; we will point you to the right
+place.
 
 ---
 
@@ -18,10 +18,10 @@ You need a clone with the CLI built — see [Build and link](docs/guides/operati
 
 ### No code? Suggest an artifact
 
-You can contribute an idea without writing the artifact. Open an issue or discussion that says what
-the artifact does, which AI tool it is for (Claude Code, GitHub Copilot, or both), and the language
-or stack (or "shared"). A guided issue form is planned:
-[docs/ideas/artifact-proposal-issue-form.md](docs/ideas/artifact-proposal-issue-form.md).
+You can contribute an idea without writing the artifact. Fill in the
+[artifact proposal form](https://github.com/makubexD/sigil/issues/new?template=propose-artifact.yml):
+it asks what the artifact should do, when it should trigger, and its language (or "shared"). A
+maintainer reviews each proposal and, if it fits the catalog, writes the artifact.
 
 If you cloned the repo, `sigil new` runs a wizard that scaffolds the file for you (step 3 below).
 `sigil import <dir> --language <lang>` converts an existing Claude-style template folder into
@@ -139,6 +139,44 @@ Fill in the artifact checklist in [the PR template](.github/PULL_REQUEST_TEMPLAT
 - `platforms:` is intentional (omit for the DRY default, or justify the restriction)
 - The `id` matches the path convention (`<language>/<name>` or `shared/<name>`)
 - `extends:` / `uses:` are used rather than copied content
+
+---
+
+## Triage a proposal
+
+For maintainers. Proposals arrive with the `artifact-proposal` label.
+
+1. Read the issue and run `sigil search <term>`. If the catalog already covers it or it doesn't
+   fit, close the issue with the reason. If what it should do or when it triggers is unclear, ask
+   in a comment before scaffolding.
+2. Pick the kind and [where it goes](docs/guides/authoring.md#where-an-artifact-goes), then a
+   kebab-case name. A language artifact's name starts with the `prefix` in its `language.yaml`. For
+   a language not yet in `catalog/languages/`, follow
+   [Add a brand-new language](docs/guides/authoring.md#add-a-brand-new-language-end-to-end)
+   instead of the next step: the wizard lists only languages that already have artifacts.
+3. Run `sigil new` with no arguments. The wizard takes the kind, language, name, title and
+   description. When it asks which AIs, select all of them unless the artifact needs a
+   restriction; selecting none goes back a step. `sigil new <kind>` skips the wizard: without
+   `--name` it writes a placeholder `new-<kind>`, and `--yes` leaves the title and description as
+   TODO.
+4. Fill in what the wizard doesn't take, then write the body in your own words. Don't paste from
+   the issue: catalog bodies become AI instructions on every install, and sources may be licensed.
+
+   | Form field              | Where it goes                                                         |
+   | ----------------------- | --------------------------------------------------------------------- |
+   | When should it trigger? | Skill: `whenToUse`. Agent or prompt: `description`. Rule: `appliesTo` |
+   | Example prompt          | Try the artifact with it; quote the result in the PR's testing notes  |
+   | Sources                 | Reference while writing the body                                      |
+
+5. Add an agent, rule or skill to a family in `catalog/standard.yaml`
+   ([how](docs/guides/authoring.md#add-a-new-skill-that-reuses-an-existing-rule-and-agent));
+   prompts have no family. A language artifact's `description` must also name its language. If a
+   pack in `packs.yaml` fits, add the artifact there.
+6. Run `sigil check <file> --trust`, `sigil sync --check` and `npm run ci:local`. `--trust` scans
+   for secrets and injection phrases, and `sync --check` catches a missing family or a wrong
+   prefix. Plain `sigil check` catches neither. Commit the `catalog/README.md` that the build
+   regenerates.
+7. Open the PR as in [step 7](#7-submit-a-pull-request), with `Closes #<issue>` in its description.
 
 ---
 

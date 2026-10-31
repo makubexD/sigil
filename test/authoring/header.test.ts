@@ -21,6 +21,34 @@ describe('E4 — headerFor', () => {
     assert.ok(result.includes('language: csharp'), 'language field present');
   });
 
+  it('shared skill header omits the language line', () => {
+    const result = headerFor('skill', {
+      id: 'shared/foo',
+      kind: 'skill',
+      title: 'Foo',
+      description: 'Foo desc',
+      name: 'foo',
+    });
+    assert.equal(
+      result.split('\n').find(l => /^language:/.test(l)),
+      undefined,
+      'no active language: line when no language is given',
+    );
+    assert.ok(result.includes('# language:'), 'commented language hint present');
+  });
+
+  it('language skill header contains the language line', () => {
+    const result = headerFor('skill', {
+      id: 'csharp/bar',
+      kind: 'skill',
+      title: 'Bar',
+      description: 'Bar desc',
+      name: 'bar',
+      language: 'csharp',
+    });
+    assert.ok(result.includes('language: csharp'), 'language: csharp line present');
+  });
+
   it('restricted platforms emitted active', () => {
     const result = headerFor('rule', {
       id: 'shared/bar',

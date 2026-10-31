@@ -456,19 +456,21 @@ them and `sigil prune --apply` removes them.
 
 What Copilot targets receive, by kind:
 
-| Catalog kind   | Written to                                                      |
-| -------------- | --------------------------------------------------------------- |
-| skill          | `.github/skills/<name>/SKILL.md` (plus any `references/` files) |
-| rule           | `.github/instructions/<id>.instructions.md`                     |
-| agent          | `.github/agents/<name>.agent.md`                                |
-| prompt         | `.github/prompts/<id>.prompt.md`                                |
-| mcp            | merged into `.mcp.json` (VS Code and Copilot CLI)               |
-| hook, settings | **Not supported** for Copilot. `add` skips them with a warning  |
+| Catalog kind | Written to                                                                 |
+| ------------ | -------------------------------------------------------------------------- |
+| skill        | `.github/skills/<name>/SKILL.md` (plus any `references/` files)            |
+| rule         | `.github/instructions/<id>.instructions.md`                                |
+| agent        | `.github/agents/<name>.agent.md`                                           |
+| prompt       | `.github/prompts/<id>.prompt.md`                                           |
+| mcp          | merged into `.mcp.json` (VS Code and Copilot CLI)                          |
+| workflow     | written as a prompt file, `.github/prompts/<id>.prompt.md`                 |
+| hook         | merged into `.github/hooks/sigil.json`. Skipped when `platforms: [claude]` |
+| settings     | **Not supported** for Copilot. `add` skips it with a warning               |
 
 Copilot Chat applies `.github/instructions/*.instructions.md` to files matching `applyTo`, and loads
-`.github/skills/*/SKILL.md` as native Agent Skills. There is no Copilot plugin or marketplace channel
-yet. See the full per-kind table in [capabilities.md](../reference/capabilities.md) and the proposal in
-[ideas/copilot-plugin-channel.md](../ideas/copilot-plugin-channel.md).
+`.github/skills/*/SKILL.md` as native Agent Skills. See the full per-kind table in
+[capabilities.md](../reference/capabilities.md). Skills, agents and prompts can also come from Sigil's
+marketplace, with no project files: [setup/copilot.md](../setup/copilot.md).
 
 ---
 

@@ -1,7 +1,8 @@
 /**
  * GitHub Copilot's capability table — which kinds this target delivers per channel. The single
- * declaration of Copilot kind support (see ../capability-types.ts). No `plugin` channel yet:
- * whether the Claude-format marketplace already serves Copilot is Phase 4 of the distribution ADR.
+ * declaration of Copilot kind support (see ../capability-types.ts). No `plugin` channel: sigil emits
+ * no Copilot plugin, and Copilot reads the Claude one
+ * (docs/decisions/copilot-plugin-channel-2026-10.md).
  *
  * @module
  */

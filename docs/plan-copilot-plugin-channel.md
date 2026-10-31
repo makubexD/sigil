@@ -27,8 +27,9 @@ result is Copilot's behaviour goes to the worker.
       Copilot CLI and VS Code (owner's instruction, 2026-10-30), never the worker: the result is Copilot's
       behaviour. Results and the decision go in `docs/decisions/copilot-plugin-channel-2026-10.md`,
       with a route from [the gate](#gate-what-the-result-decides). **Phases 3 and 4 wait for this.**
-- [ ] **Phase 2, agent layout.** Not gated: `build` and `add` should agree whichever route wins. It runs
+- [x] **Phase 2, agent layout.** Not gated: `build` and `add` should agree whichever route wins. It runs
       after Phase 1 only so that a Copilot emitter would start from the finished layout. Scope below.
+      Done on `feat/copilot-build-agents`: 0 byte differences from a full `add`.
 - [ ] **Phase 3, Route A docs.** Narrowed from the gate's Route A: also say `hook-*` and `mcp-filesystem`
       aren't for Copilot, and use the prefixed names. Route B's spike and Route C are not taken.
 - [ ] **Phase 4, close-out.** ADR, generated docs, and the brief's retirement. Scope below.
@@ -233,9 +234,9 @@ Make `build --target copilot` write `.github/agents/<name>.agent.md` by adding `
 `COMPILED_FILE_KINDS`, so both commands use `COPILOT_AGENT_SPEC`.
 
 **Recommendation: drop `.github/AGENTS.md` from `build`** rather than emit both. It is 195 KB that
-duplicates the per-file agents, written as repository instructions, so a project that commits it may
-pay for it on every request. This removes output, so the owner confirms it in the step plan's review. If kept, `publishing.md` documents
-why there are two.
+duplicates the per-file agents and drops their tool limits. As a nested file it usually never loads,
+and when it does, Copilot is working on a file under `.github/`, so the cost buys nothing. The owner
+confirmed the drop on 2026-10-30.
 
 Touches `target-helpers.ts`, `build-helpers.ts`, `index.ts`, `test/targets/copilot.test.ts`,
 `output-contract.test.ts`, `doc-refs.test.ts`, `test/fixtures/output-snapshot/build.json`, the

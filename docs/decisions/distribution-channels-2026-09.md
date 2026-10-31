@@ -22,8 +22,10 @@ targets diverge, and (d) whether a multi-file "self-adopting" skill layout (`gid
    Plugins carry _capabilities_ (skill, agent, prompt-as-skill, hook, mcp); `sigil add` carries
    _policy_ (rules, settings) and anything a team or cloud agent must find committed in the repo.
    `sigil add` stays the only per-artifact precision channel.
-2. **Marketplace granularity: per language × family** (e.g. `ts-review`, `ts-testing`,
-   `mcp-<server>`), enabled at **project** scope by default. This is the cheapest channel measured.
+2. **Marketplace granularity: one plugin per pack, plus one per hook or MCP server** (`mcp-<server>`),
+   enabled at **project** scope by default. This is the cheapest channel measured. The original
+   decision was per language × family (`ts-review`, `ts-testing`); measuring it rejected the split
+   ([§9](#9-plugin-granularity-no-go-2026-10-30)).
 3. **Architecture: one declarative per-target capability table** that every consumer (selection,
    plugin assembly, complement mode, docs) reads — extend the existing `Target`/`KindEmitSpec`
    model, don't rewrite it.
@@ -212,7 +214,8 @@ plugins ignore. Prompts as plugin skills is done as of 2026-10-30: `essentials` 
 marketplace as a plugin carrying only `/essentials:explain-diff`. `author-artifact` stays out until
 npm publish, because it needs the `sigil` CLI. Hooks and MCP as their own opt-in plugins is done as
 of 2026-10-30: `build` generates one plugin per artifact, and pack plugins carry neither kind
-([§8](#8-hooks-and-mcp-as-plugins-2026-10-30)).
+([§8](#8-hooks-and-mcp-as-plugins-2026-10-30)). The family-granular split and `Pack.select` are a recorded
+no-go as of 2026-10-30 ([§9](#9-plugin-granularity-no-go-2026-10-30)), which closes Phase 1.
 
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,
@@ -352,6 +355,66 @@ Decisions:
 5. **Duplicates are documented, not guarded** (Phase 2b owns the guard). Running a blocking hook twice is harmless,
    because all three hooks are deterministic checks. `consuming.md` says what happens.
 6. **`consuming.md` says a plugin update can change a hook command with no review step**, unlike `sigil update`.
+
+## 9. Plugin granularity: no-go (2026-10-30)
+
+**Decision: keep today's packs.** Don't split `*-tooling`, and don't add `Pack.select`, a `group` field or
+`planPlugins()`. No plugin name changes, so there is no migration.
+
+Each case ran as a one-turn `claude -p --plugin-dir` session on Claude Code 2.1.314 (Sonnet) in an empty project, with
+`--setting-sources project,local` and `--strict-mcp-config`. The figure is the first request's total input tokens,
+cached or not, minus a session with no plugin (14,786). Two runs of each case matched exactly; `empty` ran once. The
+split was four throwaway plugins cut from `typescript-tooling`.
+
+| Plugins enabled                   | Skills | Agents | Added per session |
+| --------------------------------- | ------ | ------ | ----------------- |
+| `empty` (a manifest only)         | 0      | 0      | 0                 |
+| `typescript-starter`              | 3      | 1      | 444               |
+| `typescript-tooling`              | 8      | 7      | 2,546             |
+| Split: `ts-testing`               | 2      | 0      | 361               |
+| Split: `ts-review`                | 0      | 5      | 963               |
+| Split: `ts-project`               | 6      | 0      | 882               |
+| Split: `ts-debug`                 | 0      | 2      | 302               |
+| Split: `ts-testing` + `ts-review` | 2      | 5      | 1,324             |
+| All five `*-tooling` plugins      | 41     | 36     | 12,556            |
+
+Why it is a no-go:
+
+1. **The best realistic saving is about 1.2k tokens** (`ts-testing` + `ts-review` against `typescript-tooling`), or
+   0.6 % of a 200k window, and it sits in the cached prefix, so later turns bill it at a fraction.
+2. **Agent dependencies cut across the groups.** In every language, 5 or 6 of the 8 or 9 skills name an agent in
+   `uses`, and `ts-generate-tests` needs the reviewer, so `ts-testing` alone (361) is not a usable unit. A plugin
+   `dependencies` entry pulls in the whole of `ts-review`. `ts-project` needs it too, which leaves about 1,845 by
+   adding the two rows, a saving of about 700.
+3. **Starters already are the small unit.** `typescript-starter` adds 444, less than the split's testing and review
+   pair, and `sigil add` remains the per-artifact channel.
+4. **Install scope matters about eight times more.** Five `*-tooling` plugins at user scope add 12.6k to every
+   project; enabling only the matching one per project saves about 10k. `claude plugin install` defaults to `user`.
+5. **The split has a real cost.** Four groups across five languages turn 5 plugins into 20, take the marketplace from
+   21 to 36, and need the Boundary sections and a plugin dependency graph kept right across groups.
+
+What else this showed:
+
+- **The listing is not truncated at this size.** The five `*-tooling` plugins hold 34,739 chars of descriptions, which
+  at `typescript-tooling`'s rate predicts about 12,520 tokens against the 12,556 measured. The split's four parts sum
+  to 2,508. So 41 skills and 36 agents all appear to reach the session in full.
+- **§2's estimate of 4 chars/token runs low for this listing.** `typescript-tooling` has 7,066 chars of description
+  text and adds 2,546 tokens, about 2.8 chars/token once the listing's own text is counted. The split's ~0.3–0.6k in
+  §2 holds for one small group, and `ts-review` is past it.
+- **Every `*-tooling` plugin is the same shape** (6.4k–7.5k chars of descriptions, 15–17 artifacts), so the TypeScript
+  result carries to the other four. Only TypeScript was measured live.
+
+Not covered:
+
+- Whether a smaller listing improves dispatch. §2 says overlapping descriptions hurt it, but that concerned other
+  languages' artifacts, which one `*-tooling` plugin doesn't add. Revisit if a live probe shows a `*-tooling` plugin
+  misdispatching where a narrower set doesn't.
+- An interactive session, and models other than Sonnet.
+- What `/plugin update` does when a plugin disappears. No plugin is removed, so nothing depends on the answer; a future
+  removal must test it first.
+
+Follow-up, not done: `consuming.md` installs plugins with the default scope, which is `user`, while decision 2 says
+project scope. Point 4 above is the reason to change that example.
 
 ## Appendix — fixes worth making in the original `gid` skills
 

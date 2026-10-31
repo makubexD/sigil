@@ -119,4 +119,15 @@ describe('discoverFiles on a Claude layout namespace', () => {
       assert.match(unrecognised[0]!.reason, /same name/);
     });
   });
+
+  it('should report a non-markdown file under rules', () => {
+    withTempDir(root => {
+      writeFiles(root, ['rules/notes.txt']);
+      const { discovered, unrecognised } = discoverFiles(root, 'angular');
+      assert.deepEqual(discovered, []);
+      assert.equal(unrecognised.length, 1);
+      assert.equal(unrecognised[0]!.relativePath, path.join('rules', 'notes.txt'));
+      assert.equal(unrecognised[0]!.reason, 'Not a .md file');
+    });
+  });
 });

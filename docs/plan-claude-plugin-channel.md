@@ -82,7 +82,10 @@ Spike results and decisions: [distribution-channels-2026-09](decisions/distribut
 
 Close-out includes regenerating `capabilities.md` and removing "plugins can't carry hooks yet" from pack descriptions.
 
-### Phase D: granularity, spike then decide
+### Phase D: granularity, spike then decide — no-go 2026-10-30
+
+Measurements and decision: [distribution-channels-2026-09](decisions/distribution-channels-2026-09.md#9-plugin-granularity-no-go-2026-10-30).
+Today's packs stay, and nothing below "If go" was built.
 
 Spike `[inline: research]`, ending in a go/no-go in the ADR:
 

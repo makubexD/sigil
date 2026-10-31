@@ -478,8 +478,9 @@ Besides copying files into your project with `sigil add`, sigil can compile the 
 Code plugins**. There are two routes:
 
 - **Published marketplace, no clone needed.** Each release pushes it to the `marketplace` branch:
-  `/plugin marketplace add makubexD/sigil#marketplace`, then `/plugin install <pack>@sigil`. Setup,
-  version pinning, updates and removal are in [docs/setup/claude-code.md](../setup/claude-code.md).
+  `/plugin marketplace add makubexD/sigil#marketplace`, then, from your project's shell,
+  `claude plugin install <pack>@sigil --scope project`. Setup, version pinning, updates and removal
+  are in [docs/setup/claude-code.md](../setup/claude-code.md).
 - **Local build**, for unreleased catalog changes or your own fork. It needs a clone, because the
   marketplace is built on your machine:
 
@@ -488,10 +489,15 @@ Code plugins**. There are two routes:
 sigil build --target claude
 # → writes dist/claude/ (marketplace, one plugin per pack, one per hook and MCP server)
 
-# 2. In Claude Code, add that folder as a marketplace (use the absolute path), then install a pack:
+# 2. In Claude Code, add that folder as a marketplace (use the absolute path):
 #    /plugin marketplace add <abs-path-to-sigil>/dist/claude
-#    /plugin install dotnet-tooling@sigil
+
+# 3. From your project's root, install a pack:
+claude plugin install dotnet-tooling@sigil --scope project
 ```
+
+Install at project scope because the default, `user`, loads a plugin's listing into every project:
+about 2.5k tokens per session for one `*-tooling` plugin.
 
 The marketplace is named `sigil`, and each pack in `packs.yaml` becomes a plugin of the same name,
 for example `essentials`, `dotnet-starter`, `dotnet-tooling`, `python-starter`, `react-starter`,

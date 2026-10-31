@@ -169,6 +169,8 @@ sigil add --target copilot --catalog-dir ./catalog --packs ./packs.yaml   # wiza
 A skill lands at `.github/skills/<name>/SKILL.md` (verified), agents at
 `.github/agents/<name>.agent.md` (`src/targets/copilot/spec/agent.ts:59`), and
 `.sigil/manifest.json` records what was written. Commit those files so every clone gets them.
+`sigil build --target copilot` writes the same agent files; they match `add` for the same install
+set. A smaller install gets a shorter Boundary section.
 
 To verify (GitHub docs, not tested here): org-wide custom agents go in an `agents/` folder at the
 root of the org's `.github` or `.github-private` repository
@@ -180,8 +182,6 @@ sigil does not write that layout.
 ## Known limits today
 
 - No Copilot plugin channel: [copilot-plugin-channel](../ideas/copilot-plugin-channel.md).
-- `sigil build --target copilot` emits agents as one `.github/AGENTS.md`, while `add` writes
-  `.github/agents/*.agent.md`; the two layouts differ (same brief).
 - Sigil publishes only its own marketplace. For a fork, copy its release `marketplace` job (see
   [§ 2](#2-build-and-host-a-claude-marketplace)).
 - No settings for Copilot. Hooks install with `sigil add --target copilot` since #102

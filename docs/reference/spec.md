@@ -299,11 +299,11 @@ uses:
 The resolver looks up each rule (resolving its own `extends` chain) and records each agent ID.
 Adapters then decide how to materialise the closure:
 
-| Adapter                    | Rules                                                          | Agents                                    |
-| -------------------------- | -------------------------------------------------------------- | ----------------------------------------- |
-| Claude Code (plugin build) | Inlined as `## Applied Rules` section in SKILL.md              | Written to `agents/<name>.md` in the pack |
-| Claude Code (scaffold/add) | Written to `.claude/rules/<slug>.md`                           | Written to `.claude/agents/<name>.md`     |
-| GitHub Copilot             | Inlined as `## Coding guidelines to apply` section in SKILL.md | Entry in `AGENTS.md`                      |
+| Adapter                    | Rules                                                          | Agents                                      |
+| -------------------------- | -------------------------------------------------------------- | ------------------------------------------- |
+| Claude Code (plugin build) | Inlined as `## Applied Rules` section in SKILL.md              | Written to `agents/<name>.md` in the pack   |
+| Claude Code (scaffold/add) | Written to `.claude/rules/<slug>.md`                           | Written to `.claude/agents/<name>.md`       |
+| GitHub Copilot             | Inlined as `## Coding guidelines to apply` section in SKILL.md | Written to `.github/agents/<name>.agent.md` |
 
 ---
 

@@ -130,7 +130,7 @@ Consumer commands never read the file; `sigil move` renames a moved id in it. Se
    `registerTarget()` lists providers: every cross-provider list is derived from `getAllTargets()`,
    and `test/targets/provider-registry.test.ts` fails if another module imports a provider folder.
    **Any hand-rolled aggregate that assembles an artifact's body without going through
-   `renderArtifact()`** (Copilot's `AGENTS.md`/`copilot-instructions.md` — see
+   `renderArtifact()`** (Copilot's `copilot-instructions.md`, the open standard's `AGENTS.md` — see
    `copilot/build-helpers.ts`) must call `applyLexicon()` directly; it does not get the pass for
    free just by existing in the same target.
 
@@ -161,8 +161,9 @@ writer: `emitFile` puts the rendered file at `spec.outputPath(artifact, ctx)` (a
 references beside it), `specFor` picks a target's spec for a kind on a channel (`scaffold` or
 `plugin`), and `scaffoldArtifact` adds a skill's rules and agents. `outputPath` is therefore the
 only source of a whole-file path; `test/targets/emit-files.test.ts` fails if code under
-`src/targets/` builds one by hand. Only the aggregates (Copilot's `AGENTS.md` and
-`copilot-instructions.md`, `plugin.json`, `marketplace.json`) are written directly.
+`src/targets/` builds one by hand. Only the aggregates (Copilot's
+`copilot-instructions.md`, the open standard's `AGENTS.md`, `plugin.json`, `marketplace.json`) are
+written directly.
 
 Two consequences of this being data rather than code:
 

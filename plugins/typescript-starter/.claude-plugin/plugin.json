@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "typescript-starter",
   "displayName": "TypeScript Starter",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Complete setup for TypeScript development. Includes generate-tests, document, and release skills plus their deps. With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions. As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard; the permissions need sigil add.\n",
   "author": {
     "name": "Sigil",

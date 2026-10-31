@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "mcp-context-mode",
   "displayName": "Context Mode MCP Server",
-  "version": "0.3.0",
-  "description": "Connects Claude Code (and Copilot) to the local context-mode MCP server, which must be installed globally and available on PATH.",
+  "version": "0.4.0",
+  "description": "Connects Claude Code (and Copilot) to the local context-mode MCP server, which must be installed globally and available on PATH. As a plugin, this is for Claude Code only.",
   "author": {
     "name": "Sigil",
     "url": "https://github.com/makubexD/sigil#readme"

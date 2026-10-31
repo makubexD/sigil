@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "spec-driven",
   "displayName": "Spec-Driven Development",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "The /feature conductor: drives one feature through clarify, spec, plan, TDD build, review and close-out with explicit approval gates. Requires the agent-skills collection (addyosmani/agent-skills), installed separately. Works with any language.\n",
   "author": {
     "name": "Sigil",

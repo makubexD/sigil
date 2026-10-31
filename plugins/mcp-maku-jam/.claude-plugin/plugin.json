@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "mcp-maku-jam",
   "displayName": "MakuJam MCP Server",
-  "version": "0.3.0",
-  "description": "Connects Claude Code (and Copilot) to the MakuJam remote MCP server over HTTP at mcp.jam.dev.",
+  "version": "0.4.0",
+  "description": "Connects Claude Code (and Copilot) to the MakuJam remote MCP server over HTTP at mcp.jam.dev. As a plugin, this is for Claude Code only.",
   "author": {
     "name": "Sigil",
     "url": "https://github.com/makubexD/sigil#readme"

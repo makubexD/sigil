@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "hook-protect-config",
   "displayName": "Protect Config Files",
-  "version": "0.3.0",
-  "description": "Blocks Edit/Write tool calls that target secret-bearing files (.env and .env.*, .envrc, private keys, certificates, credential and secrets data files). Templates such as .env.example stay editable.",
+  "version": "0.4.0",
+  "description": "Blocks Edit/Write tool calls that target secret-bearing files (.env and .env.*, .envrc, private keys, certificates, credential and secrets data files). Templates such as .env.example stay editable. As a plugin, this is for Claude Code only.",
   "author": {
     "name": "Sigil",
     "url": "https://github.com/makubexD/sigil#readme"

@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "essentials",
   "displayName": "Essentials (any language)",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "description": "Explain a diff for any audience, in any programming language. With sigil add, also installs the Filesystem MCP, config-file protection, and a command that authors new catalog artifacts. As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard; the authoring command needs sigil add. Dev-tool permissions are per language: each starter pack carries its own.\n",
   "author": {
     "name": "Sigil",

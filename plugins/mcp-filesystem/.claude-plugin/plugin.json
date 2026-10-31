@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "mcp-filesystem",
   "displayName": "Filesystem MCP Server",
-  "version": "0.3.0",
-  "description": "Connects Claude Code (and Copilot) to the official MCP filesystem server, enabling structured read/write access to local directories via the MCP protocol.",
+  "version": "0.4.0",
+  "description": "Connects Claude Code (and Copilot) to the official MCP filesystem server, enabling structured read/write access to local directories via the MCP protocol. As a plugin, this is for Claude Code only.",
   "author": {
     "name": "Sigil",
     "url": "https://github.com/makubexD/sigil#readme"

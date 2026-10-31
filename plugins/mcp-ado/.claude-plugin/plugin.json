@@ -2,8 +2,8 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "mcp-ado",
   "displayName": "Azure DevOps MCP Server",
-  "version": "0.3.0",
-  "description": "Connects Claude Code (and Copilot) to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. Requires the environment variables ADO_ORG and ADO_MCP_PERSONAL_TOKEN.",
+  "version": "0.4.0",
+  "description": "Connects Claude Code (and Copilot) to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. Requires the environment variables ADO_ORG and ADO_MCP_PERSONAL_TOKEN. As a plugin, this is for Claude Code only.",
   "author": {
     "name": "Sigil",
     "url": "https://github.com/makubexD/sigil#readme"

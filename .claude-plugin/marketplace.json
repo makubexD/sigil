@@ -93,43 +93,43 @@
     {
       "name": "hook-protect-config",
       "displayName": "Protect Config Files",
-      "description": "Blocks Edit/Write tool calls that target secret-bearing files (.env and .env.*, .envrc, private keys, certificates, credential and secrets data files). Templates such as .env.example stay editable.",
+      "description": "Blocks Edit/Write tool calls that target secret-bearing files (.env and .env.*, .envrc, private keys, certificates, credential and secrets data files). Templates such as .env.example stay editable. As a plugin, this is for Claude Code only.",
       "source": "./plugins/hook-protect-config"
     },
     {
       "name": "hook-reviewer-bash-guard",
       "displayName": "Reviewer Bash Guard",
-      "description": "Blocks write-shaped Bash commands (file writes and redirects, in-place edits, git commits and checkouts, package installs, fixers and formatters) when a read-only reviewer or auditor subagent runs them. The main session and every other agent are not affected.",
+      "description": "Blocks write-shaped Bash commands (file writes and redirects, in-place edits, git commits and checkouts, package installs, fixers and formatters) when a read-only reviewer or auditor subagent runs them. The main session and every other agent are not affected. As a plugin, this is for Claude Code only.",
       "source": "./plugins/hook-reviewer-bash-guard"
     },
     {
       "name": "hook-worker-mode-guard",
       "displayName": "Worker Mode Guard",
-      "description": "While worker mode is on (the file ~/.claude/state/worker-mode exists), blocks Edit, Write, MultiEdit and NotebookEdit calls so code changes go through a delegated worker instead of the main session. Plan files and anything under ~/.claude stay editable. Does nothing while worker mode is off.",
+      "description": "While worker mode is on (the file ~/.claude/state/worker-mode exists), blocks Edit, Write, MultiEdit and NotebookEdit calls so code changes go through a delegated worker instead of the main session. Plan files and anything under ~/.claude stay editable. Does nothing while worker mode is off. As a plugin, this is for Claude Code only.",
       "source": "./plugins/hook-worker-mode-guard"
     },
     {
       "name": "mcp-ado",
       "displayName": "Azure DevOps MCP Server",
-      "description": "Connects Claude Code (and Copilot) to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. Requires the environment variables ADO_ORG and ADO_MCP_PERSONAL_TOKEN.",
+      "description": "Connects Claude Code (and Copilot) to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. Requires the environment variables ADO_ORG and ADO_MCP_PERSONAL_TOKEN. As a plugin, this is for Claude Code only.",
       "source": "./plugins/mcp-ado"
     },
     {
       "name": "mcp-context-mode",
       "displayName": "Context Mode MCP Server",
-      "description": "Connects Claude Code (and Copilot) to the local context-mode MCP server, which must be installed globally and available on PATH.",
+      "description": "Connects Claude Code (and Copilot) to the local context-mode MCP server, which must be installed globally and available on PATH. As a plugin, this is for Claude Code only.",
       "source": "./plugins/mcp-context-mode"
     },
     {
       "name": "mcp-filesystem",
       "displayName": "Filesystem MCP Server",
-      "description": "Connects Claude Code (and Copilot) to the official MCP filesystem server, enabling structured read/write access to local directories via the MCP protocol.",
+      "description": "Connects Claude Code (and Copilot) to the official MCP filesystem server, enabling structured read/write access to local directories via the MCP protocol. As a plugin, this is for Claude Code only.",
       "source": "./plugins/mcp-filesystem"
     },
     {
       "name": "mcp-maku-jam",
       "displayName": "MakuJam MCP Server",
-      "description": "Connects Claude Code (and Copilot) to the MakuJam remote MCP server over HTTP at mcp.jam.dev.",
+      "description": "Connects Claude Code (and Copilot) to the MakuJam remote MCP server over HTTP at mcp.jam.dev. As a plugin, this is for Claude Code only.",
       "source": "./plugins/mcp-maku-jam"
     }
   ]

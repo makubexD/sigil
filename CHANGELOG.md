@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The `shared/protect-config` notes and the config-kind docs now warn that Copilot CLI loads
+  repository hooks only from a trusted folder: `copilot -p` in an untrusted one skips them silently,
+  and `--trust-folder` fixes that for one session.
+
 ## [0.4.0] - 2026-10-31
 
 ### Added

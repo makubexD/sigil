@@ -92,6 +92,8 @@ PowerShell and a blocking exit code 2 comes back as 1, which does not block.
   `node` starts again. Input the hook can't parse is let through.
 - The GitHub Copilot cloud agent, which skips exec-form hooks. It protects Copilot CLI and
   VS Code only.
+- GitHub Copilot CLI in an untrusted folder. It loads repository hooks only from a trusted folder,
+  so `copilot -p` there skips this hook silently. `--trust-folder` fixes that for one session.
 
 Install it at `project` scope to protect everyone who clones the repository; `local` scope
 protects only you.

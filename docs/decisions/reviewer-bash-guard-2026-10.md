@@ -1,6 +1,6 @@
 # Reviewer Bash guard: can a hook see the agent? (spike, 2026-10-28)
 
-Audit row 15 (`docs/audits/2026-10-16/results.md`), Phase 2 of `docs/plan-audit-rows-15-18.md`. The principal's
+Audit row 15 (`docs/audits/2026-10-16/results.md`). The principal's
 finding (`evidence/panel/principal.md` §3.3): read-only agents carry Bash, "read-only by instruction, not
 sandboxed". A PreToolUse guard scoped to reviewer agents was the candidate, if Claude Code exposes the agent to hooks.
 

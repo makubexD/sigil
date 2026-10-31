@@ -1,8 +1,8 @@
 # Copilot hook target (2026-10)
 
-Status: shipped in #102 (2026-10-28); the owner's live check in Copilot CLI is still open (see
-[Probe](#probe-before-building)). Phase 1 of `docs/plan-audit-rows-15-18.md` (audit row 17). The brief it started from
-was deleted once this record covered it.
+Status: shipped in #102 (2026-10-28); the owner's live check passed on 2026-10-31 with v0.4.0 and Copilot CLI 1.0.105,
+for `apply_patch` only (see [Probe](#probe-before-building)). Audit row 17 (`docs/audits/2026-10-16/results.md`). The
+brief it started from was deleted once this record covered it.
 
 ## What the docs say
 
@@ -86,5 +86,7 @@ pass the path as `path`, the installed guard would silently do nothing. The owne
 3. If the key is not `file_path`, the step plan's first step makes `protect-config` read
    `tool_input.file_path ?? tool_input.path` (harmless for Claude) and adds a test for both shapes.
 
-The live check that stays at the end of Phase 1 is unchanged: `shared/protect-config` installed with
+This probe was not run: step 1 made `shared/protect-config` accept both keys instead.
+
+The live check that closed Phase 1 was unchanged: `shared/protect-config` installed with
 `sigil add --target copilot` blocks a `.env` write in Copilot CLI.

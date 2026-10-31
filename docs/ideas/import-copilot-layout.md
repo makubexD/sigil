@@ -19,7 +19,7 @@ source files; targets are unchanged.
   (CLAUDE.md names them as the places new translators go).
 - No Copilot-layout discovery exists: a search of `src/authoring/import/` finds no `.github` reference.
 - The Copilot emitters show the layouts to invert: `.github/agents/<name>.agent.md`
-  (`src/targets/copilot/spec/agent.ts:57`); read the other `spec/*.ts` files for the rest.
+  (`src/targets/copilot/spec/agent.ts:59`); read the other `spec/*.ts` files for the rest.
 
 ## Out of scope
 

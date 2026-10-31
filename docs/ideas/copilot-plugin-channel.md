@@ -8,26 +8,37 @@ Claude-format marketplace loads in Copilot CLI and VS Code (ADR Phase 4,
 Copilot plugin output. Also make `sigil build --target copilot` emit the same agent layout as
 `sigil add`. Users install through Copilot's plugin commands or by committing `.github/` files.
 
+The manual test ran on 2026-10-30, and the owner chose a narrowed Route A:
+[copilot-plugin-channel-2026-10](../decisions/copilot-plugin-channel-2026-10.md). The remaining work
+is in the roadmap, [plan-copilot-plugin-channel](../plan-copilot-plugin-channel.md).
+
 ## Evidence
 
+Re-verified 2026-10-30.
+
 - `src/targets/copilot/capabilities.ts:2-5` documents that there is no `plugin` channel and ties it
-  to ADR Phase 4; the exported table has only `scaffold` (`:14-25`), with `hook` and `settings`
-  `none`.
-- `src/targets/copilot/index.ts:101-105` writes all agents into one `.github/AGENTS.md` on build;
-  `src/targets/copilot/build-helpers.ts:126-133` comments that it is a sigil layout choice and
-  that moving it is "a follow-up, not done".
-- `src/targets/copilot/spec/agent.ts:57` makes `add` write `.github/agents/<name>.agent.md`, so the
+  to ADR Phase 4; the exported table has only `scaffold` (`:14-26`). `hook` is `native` since #102;
+  `settings` stays `none`.
+- `src/targets/copilot/index.ts:121-125` writes all agents into one `.github/AGENTS.md` on build.
+  The cause is `COMPILED_FILE_KINDS` (`src/targets/copilot/target-helpers.ts:140`), which omits
+  `agent`: a fresh build writes no file to `.github/agents/`, and one 195 KB `AGENTS.md` for 39
+  catalog agents. (The "follow-up, not done" comment at `build-helpers.ts:58-64` is about moving that
+  file to the repo root, not about per-file agents.)
+- `src/targets/copilot/spec/agent.ts:59` makes `add` write `.github/agents/<name>.agent.md`, so the
   two commands produce different agent layouts.
-- Web, to verify: [About Copilot plugins](https://docs.github.com/en/copilot/concepts/agents/about-plugins)
-  lists custom agents, skills, hooks, MCP and LSP configs, on Copilot CLI, the cloud agent and the
-  Copilot app, and does not mention `.claude-plugin` compatibility in the page read.
-  [Creating a marketplace](https://docs.github.com/en/copilot/how-tos/copilot-cli/customize-copilot/plugins-marketplace)
-  (search result, not fetched) reportedly accepts `marketplace.json` under `.github/plugin` or
-  `.claude-plugin/`.
+- [About Copilot plugins](https://docs.github.com/en/copilot/concepts/agents/about-plugins) lists
+  custom agents, skills, hooks, MCP and LSP configs, and extensions, on VS Code, Copilot CLI, the
+  Copilot app and the cloud (repository settings).
+- The [CLI plugin reference](https://docs.github.com/en/copilot/reference/cli-plugin-reference)
+  confirms `.claude-plugin/` for both `marketplace.json` and `plugin.json`, last in the lookup order.
+  VS Code names a Claude format and warns that support for a format doesn't guarantee every component
+  works ([reference](https://code.visualstudio.com/docs/agents/reference/agent-plugin-reference)).
 
 ## Out of scope
 
-- Hooks for Copilot ([copilot-hooks](copilot-hooks.md)).
+- Hooks for Copilot through `sigil add`, which shipped
+  ([copilot-hooks-2026-10](../decisions/copilot-hooks-2026-10.md)). Hook _plugins_ were in the manual
+  test.
 - Other tools (Codex, Cursor, Gemini).
 - Rules as plugin content (the ADR matrix marks it undocumented for Copilot).
 

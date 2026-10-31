@@ -378,3 +378,16 @@ Also:
 ### 12. Close-out `[inline: review of the whole feature]`
 
 `npm run ci:local`, then `workflow-report .`, then `/agent-skills:review`. Open the PR after that.
+
+### 13. Review follow-ups `[inline: fixes from attacking the real CLI]`
+
+Files: `src/authoring/import/translate-prompt.ts`, `parse-markdown.ts`, `discover-copilot.ts`, new `discover-copilot-root.ts`, `src/targets/lexicon.ts`,
+`src/commands/import.ts`, `src/commands/import-report.ts`, `docs/guides/authoring.md`, new
+`test/commands/import-copilot-hostile.test.ts`.
+
+- Copy prompt `args` field by field, so a YAML alias bomb or a cycle can't reach the serializer, and report the rest as dropped.
+- A BOM no longer hides the frontmatter, and an unclosed block is refused. Either one lost `tools`, which grants every tool.
+- A linked `.github`, kind folder or `skills/` is refused, not followed.
+- `reverseLexicon` matches whole terms only, so `MY_AGENTS.md` and URLs stay as written.
+- `sigil import .github` without `--from` names the flag instead of crashing on `Invalid id`.
+- Source text in the coverage report has control characters masked.

@@ -13,7 +13,7 @@ result is Copilot's behaviour goes to the worker.
 
 ## TODO
 
-- [ ] **Phase 0, brief refresh** (`docs/copilot-plugin-brief`): apply [the corrections](#evidence-re-verified)
+- [x] **Phase 0, brief refresh** (`docs/copilot-plugin-brief`): apply [the corrections](#evidence-re-verified)
       to the brief, including the dead link and the out-of-scope line. Fix the same stale citation in
       `docs/ideas/import-copilot-layout.md:22` and `docs/guides/publishing.md:170`.
       `[inline: tiny docs edit]`

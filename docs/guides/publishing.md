@@ -167,7 +167,7 @@ sigil add --target copilot --catalog-dir ./catalog --packs ./packs.yaml   # wiza
 ```
 
 A skill lands at `.github/skills/<name>/SKILL.md` (verified), agents at
-`.github/agents/<name>.agent.md` (`src/targets/copilot/spec/agent.ts:57`), and
+`.github/agents/<name>.agent.md` (`src/targets/copilot/spec/agent.ts:59`), and
 `.sigil/manifest.json` records what was written. Commit those files so every clone gets them.
 
 To verify (GitHub docs, not tested here): org-wide custom agents go in an `agents/` folder at the

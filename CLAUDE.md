@@ -168,7 +168,7 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   and one `ProviderLexicon` per provider (`src/targets/<provider>/lexicon.ts`), applied by `renderArtifact()`
   (`src/targets/emit.ts`). Every `KindEmitSpec` must set `lexicon:` and include `UNTRANSLATED_TOKEN_FORBID`
   (`src/targets/lexicon-forbid.ts`) in `bodyForbids`. A hand-rolled aggregate that does not call `renderArtifact()`
-  (Copilot `AGENTS.md` / `copilot-instructions.md` in `targets/copilot/build-helpers.ts`) must call `applyLexicon()` itself.
+  (Copilot `copilot-instructions.md` in `targets/copilot/build-helpers.ts`) must call `applyLexicon()` itself.
   `provider-term-leak` derives its literals from the registered lexicons, not a hand-listed set. A skill's reference
   files are shipped prose too: `emitFile` renders them through `renderReference` (the same lexicon), the reference
   contract `deriveContracts` adds checks them, and prose rules read every shipped text through `shippedTexts`

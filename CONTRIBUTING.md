@@ -155,10 +155,10 @@ For maintainers. Proposals arrive with the `artifact-proposal` label.
    [Add a brand-new language](docs/guides/authoring.md#add-a-brand-new-language-end-to-end)
    instead of the next step: the wizard lists only languages that already have artifacts.
 3. Run `sigil new` with no arguments. The wizard takes the kind, language, name, title and
-   description. When it asks which AIs, select all of them unless the artifact needs a
-   restriction; selecting none goes back a step. `sigil new <kind>` skips the wizard: without
-   `--name` it writes a placeholder `new-<kind>`, and `--yes` leaves the title and description as
-   TODO.
+   description. When it asks which AIs, select each one with space unless the artifact needs a
+   restriction. Don't press `a`: it also selects `← Back`, which returns to the kind prompt.
+   Selecting none goes back a step too. `sigil new <kind>` skips the wizard: without `--name` it
+   writes a placeholder `new-<kind>`, and `--yes` leaves the title and description as TODO.
 4. Fill in what the wizard doesn't take, then write the body in your own words. Don't paste from
    the issue: catalog bodies become AI instructions on every install, and sources may be licensed.
 

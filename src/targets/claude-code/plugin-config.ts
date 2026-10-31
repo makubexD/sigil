@@ -30,18 +30,25 @@ export interface ConfigPlugin {
 const CONFIG_PLUGIN_KINDS = ['hook', 'mcp'] as const;
 
 /**
+ * The sentence every generated hook and MCP plugin description ends with: these plugins exist only
+ * for Claude Code, and a Copilot user browses the same marketplace.
+ */
+const CLAUDE_ONLY_SUFFIX = 'As a plugin, this is for Claude Code only.';
+
+/**
  * The catalog description, plus the environment variables an MCP server needs: nothing warns a
- * plugin user about an unset `${NAME}`, so the description names them (decision 4).
+ * plugin user about an unset `${NAME}`, so the description names them (decision 4). Every config
+ * plugin then ends with the Claude-only sentence.
  */
 function configDescription(artifact: ResolvedArtifact): string {
   const description = artifact.frontmatter.description as string;
-  if (artifact.kind !== 'mcp') return description;
+  if (artifact.kind !== 'mcp') return `${description} ${CLAUDE_ONLY_SUFFIX}`;
   const names = envTokenNames(artifact.frontmatter.server);
-  if (names.length === 0) return description;
+  if (names.length === 0) return `${description} ${CLAUDE_ONLY_SUFFIX}`;
   const list =
     names.length === 1 ? names[0] : `${names.slice(0, -1).join(', ')} and ${names.at(-1)}`;
   const noun = names.length === 1 ? 'variable' : 'variables';
-  return `${description} Requires the environment ${noun} ${list}.`;
+  return `${description} Requires the environment ${noun} ${list}. ${CLAUDE_ONLY_SUFFIX}`;
 }
 
 /** A synthetic pack so a config plugin reuses the pack manifest and marketplace entry builders. */

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `sigil build --target copilot` now writes each agent to `.github/agents/<name>.agent.md`, the same
   files `sigil add` writes, with their tool limits. `.github/AGENTS.md` is no longer written; delete
   any copy you committed.
+- Generated hook and MCP plugins now say they're for Claude Code only.
 
 ### Fixed
 

@@ -135,20 +135,20 @@ export function buildScopeDestinations(
   }));
 }
 
-/** Globs that mean "every file" — a rule scoped only to these belongs in the repo-wide aggregate. */
-/** The per-file kinds `compile` writes; agents go only into the AGENTS.md aggregate. */
+/** The per-file kinds `compile` writes. */
 const COMPILED_FILE_KINDS: ReadonlySet<ArtifactKind> = new Set([
   'rule',
   'skill',
   'prompt',
   'workflow',
+  'agent',
 ]);
 
 /**
  * Writes every per-file artifact of a full build through its spec (src/targets/emit-files.ts):
- * scoped rules, skills with their references, prompts and workflows. Repo-wide rules go into
- * `.github/copilot-instructions.md` instead. `ctx` co-installs the whole catalog, so a skill's
- * Boundary section resolves the way an agent's does in AGENTS.md.
+ * scoped rules, skills with their references, prompts, workflows and agents. Repo-wide rules go into
+ * `.github/copilot-instructions.md` instead. `ctx` co-installs the whole catalog, so every Boundary
+ * section resolves.
  */
 export function buildArtifactFiles(
   catalog: ResolvedCatalog,

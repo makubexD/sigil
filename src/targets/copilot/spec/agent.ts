@@ -1,8 +1,6 @@
 /**
- * Copilot `agent` emission spec — the per-file `.github/agents/<name>.agent.md` scaffold layout.
- * Frontmatter is `name` + `description` only. The aggregate `.github/AGENTS.md` (open standard,
- * all agents in one file) stays hand-written in build-helpers.ts's buildAgentsMd — it renders
- * multiple artifacts into one document, which is not a per-artifact KindEmitSpec's shape.
+ * Copilot `agent` emission spec — the per-file `.github/agents/<name>.agent.md` that `build` and
+ * `add` both write. Frontmatter is `name`, `description` and `tools`.
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { yamlScalar } from '../../yaml-util';

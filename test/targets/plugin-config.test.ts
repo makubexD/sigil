@@ -20,6 +20,9 @@ import { PACKS as BUNDLED_PACKS } from '../helpers/install-scenario';
 
 const VERSION = '0.1.0';
 
+/** The sentence every generated hook and MCP plugin description ends with. */
+const CLAUDE_ONLY = 'As a plugin, this is for Claude Code only.';
+
 /** The seven generated plugins of decision 1, in marketplace order. */
 const CONFIG_PLUGINS = [
   'hook-protect-config',
@@ -55,8 +58,10 @@ function pluginKeys(files: FileMap, pluginName: string): string[] {
   return Object.keys(files).filter(key => key.startsWith(`plugins/${pluginName}/`));
 }
 
-/** The `name`/`source` pair of every marketplace entry, in order. */
-function marketplaceEntries(files: FileMap): Array<{ name: string; source: string }> {
+/** The `name`/`source`/`description` of every marketplace entry, in order. */
+function marketplaceEntries(
+  files: FileMap,
+): Array<{ name: string; source: string; description: string }> {
   const marketplace = files['.claude-plugin/marketplace.json'];
   assert.ok(marketplace, 'marketplace.json is emitted');
   return JSON.parse(marketplace).plugins;
@@ -188,22 +193,75 @@ describe('Claude plugin: hooks and MCP as generated plugins', () => {
     assert.ok(filesystemArtifact, 'shared/filesystem is in the bundled catalog');
     assert.equal(
       JSON.parse(filesystemManifest).description,
-      filesystemArtifact.frontmatter.description,
-      'an MCP with no env tokens keeps the catalog description verbatim',
+      `${filesystemArtifact.frontmatter.description} ${CLAUDE_ONLY}`,
+      'an MCP with no env tokens keeps the catalog description, then the Claude-only sentence',
     );
   });
 
   it('description lists one variable in the singular', async () => {
     assert.ok(
-      (await adoDescriptionFor(['ONE'])).endsWith(' Requires the environment variable ONE.'),
+      (await adoDescriptionFor(['ONE'])).endsWith(
+        ` Requires the environment variable ONE. ${CLAUDE_ONLY}`,
+      ),
     );
   });
 
   it('description lists three variables with commas and "and"', async () => {
     assert.ok(
       (await adoDescriptionFor(['ONE', 'TWO', 'THREE'])).endsWith(
-        ' Requires the environment variables ONE, TWO and THREE.',
+        ` Requires the environment variables ONE, TWO and THREE. ${CLAUDE_ONLY}`,
       ),
+    );
+  });
+
+  it('a hook plugin is marked Claude-only', async () => {
+    const { files } = await compileBundled();
+
+    const manifest = files['plugins/hook-protect-config/.claude-plugin/plugin.json'];
+    assert.ok(manifest, 'hook-protect-config ships a manifest');
+    assert.ok(
+      JSON.parse(manifest).description.endsWith(CLAUDE_ONLY),
+      'the hook plugin description ends with the Claude-only sentence',
+    );
+  });
+
+  it('an env MCP plugin puts the Claude-only sentence after the variable sentence', async () => {
+    const { files } = await compileBundled();
+
+    const manifest = files['plugins/mcp-ado/.claude-plugin/plugin.json'];
+    assert.ok(manifest, 'mcp-ado ships a manifest');
+    const description: string = JSON.parse(manifest).description;
+    assert.ok(
+      description.includes(
+        `Requires the environment variables ADO_ORG and ADO_MCP_PERSONAL_TOKEN. ${CLAUDE_ONLY}`,
+      ),
+      'the variable sentence is immediately followed by the Claude-only sentence',
+    );
+    assert.ok(description.endsWith(CLAUDE_ONLY), 'the Claude-only sentence ends the description');
+  });
+
+  it('a marketplace entry repeats its plugin description', async () => {
+    const { files } = await compileBundled();
+
+    const manifest = files['plugins/mcp-filesystem/.claude-plugin/plugin.json'];
+    assert.ok(manifest, 'mcp-filesystem ships a manifest');
+    const entry = marketplaceEntries(files).find(candidate => candidate.name === 'mcp-filesystem');
+    assert.ok(entry, 'mcp-filesystem is a marketplace entry');
+    assert.equal(
+      entry.description,
+      JSON.parse(manifest).description,
+      'the marketplace entry carries the same description as plugin.json',
+    );
+  });
+
+  it('the catalog description stays free of the Claude-only sentence', async () => {
+    const { resolved } = await compileBundled();
+
+    const artifact = resolved.byId.get('shared/filesystem');
+    assert.ok(artifact, 'shared/filesystem is in the bundled catalog');
+    assert.ok(
+      !(artifact.frontmatter.description as string).includes(CLAUDE_ONLY),
+      'the sentence stays out of the catalog, so sigil add output does not change',
     );
   });
 

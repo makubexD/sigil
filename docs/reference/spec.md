@@ -392,7 +392,7 @@ reaches it inside skills, and a full build also writes repo-wide rules to a root
   shared rule with `appliesTo` still emits `paths:`/`applyTo:` — it is never gated on `language` being
   set. **Skills never had a valid use for `appliesTo`** on either platform and the field was removed
   from `SkillSchema` — see the [skill-dispatch audit](../decisions/skill-dispatch-audit-2026-08.md).
-- **Flat `marketplace.json`** (`name`/`owner`/`plugins[]`) is emitted only by the Claude Code plugin build (`dist/claude/`) — Copilot has no equivalent manifest.
+- **Flat `marketplace.json`** (`name`/`owner`/`plugins[]`) is emitted only by the Claude Code plugin build (`dist/claude/`). Sigil emits no Copilot manifest; Copilot reads this one ([setup](../setup/copilot.md)).
 
 ---
 

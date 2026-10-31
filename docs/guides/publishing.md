@@ -160,7 +160,8 @@ server; rules are inlined into skills; settings are not packaged — install tho
 
 ## 3. Copilot: commit the generated `.github/` files
 
-There is no Copilot plugin or marketplace output. Today's route is per-project:
+Sigil builds no Copilot plugin output. Its Claude marketplace also loads in Copilot, with the limits
+on the [setup page](../setup/copilot.md). The route that covers every Copilot kind is per-project:
 
 ```bash
 sigil add --target copilot --catalog-dir ./catalog --packs ./packs.yaml   # wizard, or skill:shared/hello --yes
@@ -181,7 +182,8 @@ sigil does not write that layout.
 
 ## Known limits today
 
-- No Copilot plugin channel: [copilot-plugin-channel](../ideas/copilot-plugin-channel.md).
+- No Copilot plugin output: Copilot loads the Claude marketplace, and its hook and filesystem MCP
+  plugins don't work there ([setup page](../setup/copilot.md)).
 - Sigil publishes only its own marketplace. For a fork, copy its release `marketplace` job (see
   [§ 2](#2-build-and-host-a-claude-marketplace)).
 - No settings for Copilot. Hooks install with `sigil add --target copilot` since #102

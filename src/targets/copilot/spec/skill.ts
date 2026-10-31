@@ -36,7 +36,7 @@ import {
 
 export const COPILOT_SKILL_SPEC: KindEmitSpec = {
   kind: 'skill',
-  // Same layout for compile and scaffold: Copilot has no plugin channel.
+  // Same layout for compile and scaffold: sigil emits no Copilot plugin.
   outputPath: artifact => `.github/skills/${artifact.frontmatter.name as string}/SKILL.md`,
   pathPattern: /\.github\/skills\/.*\/SKILL\.md$/,
   frontmatter: [nameMapping, descriptionMapping, allowedToolsMapping],

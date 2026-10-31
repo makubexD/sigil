@@ -39,6 +39,8 @@ export interface ImportItem {
   conflicts: boolean;
   /** True when the description was absent from the source and a generic fallback was used. */
   descriptionSynthesized?: boolean | undefined;
+  /** Discovery notes carried through to the coverage report. */
+  notes?: string[] | undefined;
   /** A skill's references/*.md files, written beside its SKILL.md. */
   references?: ReferenceFile[] | undefined;
   /** A shared skill's stack files, written as parts in each stack's home language (stack-parts.ts). */
@@ -88,10 +90,13 @@ function buildSkillEntries(frontmatter: CatalogFrontmatter): Array<[string, unkn
   return entries;
 }
 
-/** Kind-specific frontmatter entries (rule/skill/agent), appended after the base entries. */
+/** Kind-specific frontmatter entries (rule/skill/agent/prompt), appended after the base entries. */
 function buildKindSpecificEntries(frontmatter: CatalogFrontmatter): Array<[string, unknown]> {
   if (frontmatter.kind === 'rule') return buildRuleEntries(frontmatter);
   if (frontmatter.kind === 'skill') return buildSkillEntries(frontmatter);
+  if (frontmatter.kind === 'prompt') {
+    return frontmatter.args === undefined ? [] : [['args', frontmatter.args]];
+  }
   if (frontmatter.kind === 'agent' && frontmatter.tools && frontmatter.tools.length > 0) {
     return [['tools', frontmatter.tools]];
   }
@@ -181,25 +186,36 @@ function applyBodyPrefix(bodyPrefix: string | undefined, body: string): string {
   return bodyPrefix ? `${bodyPrefix}${body.trimStart()}` : body;
 }
 
+/** Translates one source file, applying a discovered title override, and computes its path. */
+function translateItem(file: DiscoveredFile, opts: PlanOptions) {
+  const translated = translateFrontmatter(file.kind, file.slug, file.frontmatter, opts);
+  const frontmatter =
+    file.title === undefined
+      ? translated.frontmatter
+      : { ...translated.frontmatter, title: file.title };
+  const destPath = computeDestinationPath(frontmatter.id, file.kind, opts.catalogDir);
+  return { translated, frontmatter, destPath };
+}
+
+/** Notes to copy onto the item, or nothing when the source layout recorded none. */
+function notesField(file: DiscoveredFile): Pick<ImportItem, 'notes'> {
+  return file.notes === undefined ? {} : { notes: file.notes };
+}
+
 /** Translates and builds one discovered file's ImportItem. */
 function buildImportItem(file: DiscoveredFile, opts: PlanOptions): ImportItem {
-  const t = translateFrontmatter(file.kind, file.slug, file.frontmatter, {
-    language: opts.language,
-    displayName: opts.displayName,
-    prefix: opts.prefix,
-  });
-  const destPath = computeDestinationPath(t.frontmatter.id, file.kind, opts.catalogDir);
-
+  const { translated, frontmatter, destPath } = translateItem(file, opts);
   return {
     sourcePath: file.sourcePath,
     relativePath: file.relativePath,
-    frontmatter: t.frontmatter,
-    body: applyBodyPrefix(t.bodyPrefix, file.body),
+    frontmatter,
+    body: applyBodyPrefix(translated.bodyPrefix, file.body),
     destPath,
-    droppedFields: t.droppedFields,
+    droppedFields: translated.droppedFields,
     conflicts: fs.existsSync(destPath),
-    descriptionSynthesized: t.descriptionSynthesized,
-    ...referenceFields(file, t.frontmatter.id, opts),
+    descriptionSynthesized: translated.descriptionSynthesized,
+    ...notesField(file),
+    ...referenceFields(file, frontmatter.id, opts),
   };
 }
 

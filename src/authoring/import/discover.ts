@@ -29,9 +29,13 @@ export interface DiscoveredFile {
   /** Relative path from the source dir root (for display). */
   relativePath: string;
   /** Detected artifact kind. */
-  kind: 'skill' | 'agent' | 'rule';
+  kind: 'skill' | 'agent' | 'rule' | 'prompt';
   /** The source slug (folder name for skills, file stem for others, e.g. "cs-generate-tests"). */
   slug: string;
+  /** A human title from the source layout; overrides the slug-derived title when set. */
+  title?: string;
+  /** Import notes collected during discovery (e.g. a normalised file name), shown in the report. */
+  notes?: string[];
   /** Raw parsed frontmatter from gray-matter. */
   frontmatter: Record<string, unknown>;
   /** Raw body text (everything after the frontmatter block). */
@@ -144,7 +148,7 @@ function classifySkillEntry(entry: Dirent, skillsDir: string): ClassifyResult {
 }
 
 /** Discovers `skills/<name>/SKILL.md` — one directory per artifact. */
-function discoverSkillsDir(sourceDir: string): DiscoverResult {
+export function discoverSkillsDir(sourceDir: string): DiscoverResult {
   const discovered: DiscoveredFile[] = [];
   const unrecognised: UnrecognisedFile[] = [];
   const skillsDir = path.join(sourceDir, 'skills');

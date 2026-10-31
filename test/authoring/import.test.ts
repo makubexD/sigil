@@ -6,10 +6,14 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
 import matter from 'gray-matter';
 import { slugToTitle, translateFrontmatter } from '../../dist-cli/authoring/import/translate';
-import { renderArtifactFile } from '../../dist-cli/authoring/import/plan';
+import { buildImportPlan, renderArtifactFile } from '../../dist-cli/authoring/import/plan';
+import type { DiscoveredFile } from '../../dist-cli/authoring/import/discover';
 import { splitToolsString } from '../../dist-cli/authoring/import/translate-helpers';
+import { getSchema } from '../../dist-cli/schema';
 
 // ─── splitToolsString ────────────────────────────────────────────────────────
 
@@ -374,6 +378,19 @@ describe('renderArtifactFile', () => {
     assert.equal(parsed.severity, 'recommended');
   });
 
+  it('round-trips a prompt with args and passes the prompt schema', () => {
+    const { frontmatter } = translateFrontmatter(
+      'prompt',
+      'explain-diff',
+      { description: 'd', args: [{ name: 'audience', description: 'Who it is for' }] },
+      { language: 'shared', displayName: '' },
+    );
+    const content = renderArtifactFile(frontmatter, '\nExplain the diff.\n');
+    const parsed = parse(content);
+    assert.deepEqual(parsed.args, [{ name: 'audience', description: 'Who it is for' }]);
+    assert.equal(getSchema('prompt').safeParse(parsed).success, true);
+  });
+
   it('round-trips a skill with argumentHint containing [ via gray-matter', () => {
     const { frontmatter } = translateFrontmatter(
       'skill',
@@ -466,5 +483,58 @@ describe('renderArtifactFile', () => {
     // whenToUse is a frontmatter field — it does not leak into the body
     assert.equal((parsed.data as Record<string, unknown>).whenToUse, 'Use after coding.');
     assert.equal(parsed.content.trim(), 'Original body.');
+  });
+});
+
+// ─── buildImportPlan: layout fields ──────────────────────────────────────────
+
+describe('buildImportPlan — layout fields', () => {
+  const catalogDir = path.join(os.tmpdir(), 'sigil-import-test-no-catalog');
+
+  /** A minimal DiscoveredFile carrying any layout fields under test. */
+  function discoveredFile(
+    fields: Partial<DiscoveredFile> & { kind: DiscoveredFile['kind']; slug: string },
+  ): DiscoveredFile {
+    return {
+      sourcePath: `/source/${fields.slug}.md`,
+      relativePath: `${fields.slug}.md`,
+      frontmatter: { description: 'd' },
+      body: 'Body.\n',
+      ...fields,
+    };
+  }
+
+  const shared = { language: 'shared', displayName: '', catalogDir };
+  const csharp = { language: 'csharp', displayName: '.NET / C#', prefix: 'cs', catalogDir };
+
+  it('places a prompt at shared/prompts/<slug>.prompt.md', () => {
+    const [item] = buildImportPlan(
+      [
+        discoveredFile({
+          kind: 'prompt',
+          slug: 'explain-diff',
+          frontmatter: { description: 'd', args: [{ name: 'a' }] },
+        }),
+      ],
+      shared,
+    ).items;
+    assert.ok(item?.destPath.endsWith(path.join('shared', 'prompts', 'explain-diff.prompt.md')));
+    assert.deepEqual(item?.frontmatter.args, [{ name: 'a' }]);
+  });
+
+  it('uses a discovered title in place of the slug-derived one', () => {
+    const [item] = buildImportPlan(
+      [discoveredFile({ kind: 'rule', slug: 'cs-async', title: 'Async (TypeScript)' })],
+      csharp,
+    ).items;
+    assert.equal(item?.frontmatter.title, 'Async (TypeScript)');
+  });
+
+  it('carries discovered notes on the item', () => {
+    const [item] = buildImportPlan(
+      [discoveredFile({ kind: 'rule', slug: 'cs-async', notes: ['n'] })],
+      csharp,
+    ).items;
+    assert.deepEqual(item?.notes, ['n']);
   });
 });

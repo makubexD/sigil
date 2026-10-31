@@ -29,7 +29,7 @@ export interface NormalizedBody {
 }
 
 const BOUNDARY_NOTE =
-  'body keeps the generated ## Boundary section; wire relatedArtifacts with sigil patch';
+  'body keeps the generated ## Boundary section; set relatedArtifacts in the catalog file';
 const CODING_GUIDELINES_NOTE =
   'body keeps the generated ## Coding guidelines to apply section; wire uses.rules with sigil patch';
 

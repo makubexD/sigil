@@ -10,6 +10,7 @@
  * README.md and any other file that doesn't match the layout is placed in `unrecognised`.
  *
  * This module is I/O-only (discovery); translation to catalog format lives in translate.ts.
+ * A Copilot `.github/` layout has its own discovery in discover-copilot.ts.
  */
 import fs from 'fs';
 import path from 'path';

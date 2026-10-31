@@ -54,7 +54,8 @@ The brief's riskiest assumption, ids from filenames, is manageable. These are th
 
 - `workflow` also renders to `.prompt.md`, so it comes back as `prompt`.
 - `extends`, templates and `uses.rules` are flattened at render time. A `## Coding guidelines to apply` or `## Boundary`
-  section stays in the body with a coverage note; `uses` and `relatedArtifacts` are wired afterwards with `sigil patch`.
+  section stays in the body with a coverage note. `uses` is wired afterwards with `sigil patch`; `relatedArtifacts` has no
+  `patch` flag, so it is set in the catalog file.
 - Copilot `tools` values are copied as written; other targets may not know those names.
 - A prompt's `tools` and `agent` are always listed as dropped, because the Copilot prompt spec emits fixed values
   (`agent: agent`, `tools: codebase, github`). A hand-narrowed prompt therefore gets wider on re-render, and the coverage
@@ -202,7 +203,7 @@ line and heading below is what the emitters write; quote them from the specs rat
   `getTarget('copilot').lexicon`: `test/targets/provider-registry.test.ts` forbids importing a provider folder from
   outside `src/targets/`, so `authoring/` can't import `COPILOT_LEXICON`.
 - A remaining `## Boundary` heading adds the note
-  `body keeps the generated ## Boundary section; wire relatedArtifacts with sigil patch`. A remaining
+  `body keeps the generated ## Boundary section; set relatedArtifacts in the catalog file`. A remaining
   `## Coding guidelines to apply` heading adds the note
   `body keeps the generated ## Coding guidelines to apply section; wire uses.rules with sigil patch`.
 

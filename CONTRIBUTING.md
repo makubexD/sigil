@@ -150,7 +150,10 @@ For maintainers. Proposals arrive with the `artifact-proposal` label.
    fit, close the issue with the reason. If what it should do or when it triggers is unclear, ask
    in a comment before scaffolding.
 2. Pick the kind and [where it goes](docs/guides/authoring.md#where-an-artifact-goes), then a
-   kebab-case name. A language artifact's name starts with the `prefix` in its `language.yaml`.
+   kebab-case name. A language artifact's name starts with the `prefix` in its `language.yaml`. For
+   a language not yet in `catalog/languages/`, follow
+   [Add a brand-new language](docs/guides/authoring.md#add-a-brand-new-language-end-to-end)
+   instead of the next step: the wizard lists only languages that already have artifacts.
 3. Run `sigil new` with no arguments. The wizard takes the kind, language, name, title and
    description. When it asks which AIs, select all of them unless the artifact needs a
    restriction; selecting none goes back a step. `sigil new <kind>` skips the wizard: without

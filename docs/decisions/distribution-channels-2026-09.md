@@ -403,6 +403,9 @@ What else this showed:
   §2 holds for one small group, and `ts-review` is past it.
 - **Every `*-tooling` plugin is the same shape** (6.4k–7.5k chars of descriptions, 15–17 artifacts), so the TypeScript
   result carries to the other four. Only TypeScript was measured live.
+- **"Family" in this ADR means a topic group, not a `catalog/standard.yaml` family.** That file came later: its 40
+  families hold at most 5 members, one per language, so language × family read that way would be one artifact per
+  plugin, around 75 plugins. The catalog defines no topic groups, and the split measured here was cut by hand.
 
 Not covered:
 

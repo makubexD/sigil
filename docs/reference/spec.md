@@ -488,8 +488,8 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
     access. `config/dangerous-command` matches an invocation and what can't be told from one. It is a
     check on one line, not a parser, so an extra character can defeat it; the
     [limits](../decisions/trust-scan-eval-limits-2026-10.md) list what passes. A backticked `` `eval` ``
-    passes unless a word character, `$`, `(`, `"` or a backtick touches its closing backtick, or a
-    quoted or `$` argument follows it. An odd number of backticks earlier on the line also refuses it,
+    passes unless an ASCII word character, `$`, `(`, `"` or a backtick touches its closing backtick, a
+    double-quoted, backticked or `$` argument follows it, or `]` or `)` then `(` follows it. An odd number of backticks earlier on the line also refuses it,
     even in harmless prose, because that reads as the closing half of a span. `"eval"` passes only
     before `,` `.` `;` `:` `)` `]` `}` or the end of the line. `eval()` passes except on a line that
     names `perl`; `eval(x)` and `eval "$x"` don't.

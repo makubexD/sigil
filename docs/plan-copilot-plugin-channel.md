@@ -30,7 +30,7 @@ result is Copilot's behaviour goes to the worker.
 - [x] **Phase 2, agent layout.** Not gated: `build` and `add` should agree whichever route wins. It runs
       after Phase 1 only so that a Copilot emitter would start from the finished layout. Scope below.
       Done on `feat/copilot-build-agents`: 0 byte differences from a full `add`.
-- [ ] **Phase 3, Route A docs.** Narrowed from the gate's Route A: also say `hook-*` and `mcp-filesystem`
+- [x] **Phase 3, Route A docs.** Narrowed from the gate's Route A: also say `hook-*` and `mcp-filesystem`
       aren't for Copilot, and use the prefixed names. Route B's spike and Route C are not taken.
 - [ ] **Phase 4, close-out.** ADR, generated docs, and the brief's retirement. Scope below.
 
@@ -79,8 +79,10 @@ section 6, so the ADR stops implying they came first.
 - **2b (`sigil add --complement`, duplicate guard): not built.** No `--complement` or `enabledPlugins`
   anywhere in `src/`. `status-overlaps.ts` only compares what `add` installed. What the skip costs on
   Copilot: if a project has a `sigil add` copy and the plugin of the same artifact, agents and skills
-  are first-found-wins, so the project copy silently beats the plugin, while MCP is last-wins, so the
-  plugin beats the project. Nothing warns. Route A or B documents that.
+  are first-found-wins, so the project copy silently beats the plugin. MCP is last-wins, but the
+  documented order lists `~/.copilot/mcp-config.json`, then plugins, then `--additional-mcp-config`, and
+  a project `.mcp.json` isn't in it, so which one wins is unknown. Nothing warns. Route A or B documents
+  that.
 - **3 (Agent Skills conformance): the checks are built; the goal is unproven.** Both limits are enforced
   by `provider-limits` through `agent-skills-limits.ts` since `e5939bd` (2026-10-03), and `name` equals
   the folder because `outputPath` derives from it. Measured on fresh output: 0 mismatches across
@@ -248,8 +250,6 @@ install set, or any difference is explained.
 
 - ADR section 6: the Phase 4 result, the 2b and 3 status from this plan, and section 3's Copilot column
   corrected from the test.
-- Regenerate `docs/reference/capabilities.md` if a `plugin` row was added.
-- `publishing.md` section 3 and known limits, `docs/index.md` row S4, and `README.md`.
 - Move the brief's surviving facts into the decision record, delete it, and remove its row from
   `docs/ideas/README.md`. Delete this plan.
 

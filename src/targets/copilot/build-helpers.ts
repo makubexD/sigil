@@ -1,12 +1,10 @@
 /**
  * Full-build helpers for the GitHub Copilot target.
  *
- * The two hand-rolled aggregates, which no KindEmitSpec renders: .github/copilot-instructions.md
- * (repo-wide rules) and .github/AGENTS.md. Per-artifact files go through src/targets/emit-files.ts.
+ * The one hand-rolled aggregate, which no KindEmitSpec renders: .github/copilot-instructions.md
+ * (repo-wide rules). Per-artifact files go through src/targets/emit-files.ts.
  */
-import type { ResolvedArtifact, ResolvedCatalog } from '../../types';
-import { renderBoundarySection } from '../shared/boundary';
-import { applyLexicon } from '../lexicon';
+import type { ResolvedArtifact } from '../../types';
 import { COPILOT_LEXICON } from './lexicon';
 import { renderRulesDocument } from '../shared/repo-wide-rules';
 
@@ -15,79 +13,9 @@ import { renderRulesDocument } from '../shared/repo-wide-rules';
  *
  * No KindEmitSpec backs this aggregate (it has no per-artifact frontmatter to map), so its
  * citation is declared directly: see COPILOT_INSTRUCTIONS_DOC (../doc-refs.ts), tracked for
- * staleness via the target's aggregateDocs (copilot/aggregate-docs.ts). Same reasoning as
- * renderAgentSection above for the explicit `applyLexicon` call — this bypasses renderArtifact
- * entirely, so it needs its own lexicon pass.
+ * staleness via the target's aggregateDocs (copilot/aggregate-docs.ts). Because this bypasses
+ * renderArtifact entirely, it passes the lexicon itself.
  */
 export function buildCopilotInstructions(sharedRules: ResolvedArtifact[]): string {
   return renderRulesDocument('# Copilot Instructions', sharedRules, COPILOT_LEXICON);
-}
-
-/**
- * Renders one agent's AGENTS.md section, including its Boundary block when co-present artifacts
- * exist. This is a hand-rolled aggregate (no KindEmitSpec — see buildAgentsMd's own doc comment),
- * so unlike `.github/agents/<name>.agent.md` (COPILOT_AGENT_SPEC, routed through renderArtifact)
- * it does NOT get the lexicon pass for free; `applyLexicon` is called directly here so a body
- * written once for both providers ({sigil:conventions-file}, …) still translates correctly in
- * this aggregate too — see docs/decisions/provider-neutral-body-lexicon-2026-08.md for the audit
- * that found this second, independent bypass of the same translation step.
- */
-function renderAgentSection(
-  agent: ResolvedArtifact,
-  installSet: Set<string> | undefined,
-  catalog: ResolvedCatalog | undefined,
-): string {
-  const name = agent.frontmatter.name as string;
-  const title = agent.frontmatter.title as string;
-  const description = agent.frontmatter.description as string;
-
-  // Conditional Boundary section — only for co-present related artifacts
-  const boundaryLines = renderBoundarySection(agent, installSet, catalog);
-  const agentBody = applyLexicon(agent.resolvedBody ?? agent.body, COPILOT_LEXICON);
-  const bodySection =
-    boundaryLines.length > 0 ? [...boundaryLines, agentBody].join('\n') : agentBody;
-
-  return [`## ${name}`, '', `**${title}**`, '', description, '', bodySection].join('\n');
-}
-
-/**
- * Builds .github/AGENTS.md — a single file listing all agents, as a repository INSTRUCTIONS
- * document (per the agents.md open standard): prose context for coding agents, resolved
- * nearest-in-tree. It is NOT how Copilot surfaces custom agent MODES — that's a distinct
- * mechanism, `.github/agents/*.agent.md` (spec/agent.ts, COPILOT_AGENT_SPEC), read independently.
- * The `## <name>` per-agent sectioning below is sigil's own layout choice; the open standard
- * itself specifies no structure beyond "a markdown file."
- *
- * GitHub supports AGENTS.md anywhere in the repo; VS Code documents subfolder placement as
- * experimental (root is the only unconditionally-supported location on both) — see
- * VSCODE_INSTRUCTIONS_DOC.covers. Emission stays at `.github/AGENTS.md` here regardless — moving
- * it to the repo root would change output and is tracked as a follow-up, not done in this pass.
- *
- * When `catalog` is provided, each agent's `relatedArtifacts` are rendered as
- * a Boundary section — since AGENTS.md is a full-build output, all agents in the
- * file are considered co-present, so all related artifacts in the same file
- * get rendered.
- *
- * No KindEmitSpec backs this aggregate — its citations are AGENTS_MD_STANDARD_DOC (the standard
- * itself), COPILOT_INSTRUCTIONS_DOC, and VSCODE_INSTRUCTIONS_DOC (../doc-refs.ts, each consumer's
- * doc for actually reading it), tracked for staleness via
- * the target's aggregateDocs (copilot/aggregate-docs.ts).
- */
-export function buildAgentsMd(agents: ResolvedArtifact[], catalog?: ResolvedCatalog): string {
-  // In the full build, all agents in the file are co-present.
-  const installSet = catalog ? new Set(agents.map(a => a.id)) : undefined;
-  const sections = agents.map(agent => renderAgentSection(agent, installSet, catalog));
-
-  return (
-    [
-      '# AI Agents',
-      '',
-      '<!-- Generated by sigil. Edit source in catalog/*/agents/. -->',
-      '<!-- Use these agents in GitHub Copilot Chat by invoking their @name. -->',
-      '',
-      ...sections,
-    ]
-      .join('\n')
-      .trimEnd() + '\n'
-  );
 }

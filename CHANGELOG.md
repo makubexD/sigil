@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- A GitHub issue form lets you propose a skill, agent, rule or prompt without writing YAML or
+  cloning the repo.
+
 ### Changed
 
 - `sigil build --target copilot` now writes each agent to `.github/agents/<name>.agent.md`, the same

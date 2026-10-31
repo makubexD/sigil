@@ -118,7 +118,7 @@ export const RULES: ScanRule[] = [
     description: 'Hook or MCP command with dangerous shell pattern',
     // Catches common destructive/exfil patterns: rm -rf, pipe-to-sh, reverse shells, eval, etc.
     pattern:
-      /(?:rm\s+-[rf]{1,2}f?\s+\/|curl[^'"]*\|\s*(?:bash|sh)|wget[^'"]*\|\s*(?:bash|sh)|eval\s*["`(]|nc\s+[-\w]*\s+\d+\s+-e|python[23]?\s+-c\s*['"`]import\s+socket|bash\s+-i\s*>&?\s*\/dev\/tcp)/i,
+      /(?:rm\s+-[rf]{1,2}f?\s+\/|^(?=[^\n]*\b(?:curl|wget)\b)[^\n]*\|\s*(?:sudo\s+)?(?:env\s+)?(?:ba|z|da|k)?sh\b|eval\s*["`(]|nc\s+[-\w.]*\s+\d+\s+-e|python[23]?\s+-c\s*['"`]import\s+socket|bash\s+-i\s*>&?\s*\/dev\/tcp)/i,
   },
   {
     id: 'config/exfil-in-command',

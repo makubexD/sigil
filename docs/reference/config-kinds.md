@@ -258,6 +258,10 @@ On Copilot, a hook that cannot start **denies** the call (fail-closed), and the 
 exec-form hooks (`args`) entirely — `shared/protect-config` is exec form, so it guards Copilot CLI
 and VS Code but not the cloud agent.
 
+Copilot CLI loads repository hooks only from a trusted folder. `copilot -p` in an untrusted folder
+skips them silently, so nothing guards that session; `--trust-folder` trusts the folder for that one
+session.
+
 A hook on `Stop`, `SubagentStop` or `Notification` makes `sigil add --target copilot` stop with an
 error (refused, not skipped): Copilot documents no PascalCase alias for those events. Give such
 hooks `platforms: [claude]`.

@@ -20,7 +20,7 @@ One row per roadmap item (README § 13). Status is updated as each PR merges.
 | 14  | A1: delete F4, F18–F20; gate H14: 15 runs (T1, T2, T4–T6) vs master, tests ≥ master − 1, declarations not up       | E    | **H14 holds** (this PR)                               |
 | 15  | Reviewer Bash guard: spike (does a hook see the agent?), then a PreToolUse hook                                    | T U  | merged #105                                           |
 | 16  | H1 bar-lowering guard, H2 Stop typecheck                                                                           | T U  | no-go: 0 suppressions, 0 type errors under pressure   |
-| 17  | Copilot hook target (format verified first; live check by the owner)                                               | T U  | merged #102, live check open                          |
+| 17  | Copilot hook target (format verified first; live check by the owner)                                               | T U  | merged #102, live check passed (`apply_patch` only)   |
 | 18  | C1–C5: probe the unguided model first; write only what it gets wrong                                               | E U  | no gap: 60 of 60 points hit (Haiku, no rules)         |
 
 **Row 13 backlog** (found in review, kept, not in that PR; **done** on `fix/status-backlog`, PR #92): an artifact whose render fails shows as

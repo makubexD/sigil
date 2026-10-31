@@ -196,7 +196,9 @@ line and heading below is what the emitters write; quote them from the specs rat
   removed, ending before the next `**Arguments:** ` line or next heading. A `**Arguments:** X` line right after that point
   sets `argumentHint: 'X'` and is removed. The same section found later in the body stays where it is.
 - `prompt`: apply `fromCopilotPlaceholders`, setting `args` when non-empty.
-- All kinds: `reverseLexicon` with `COPILOT_LEXICON` runs on `body` and on `whenToUse`.
+- All kinds: `reverseLexicon` with the Copilot target's lexicon runs on `body` and on `whenToUse`. Read it through
+  `getTarget('copilot').lexicon`: `test/targets/provider-registry.test.ts` forbids importing a provider folder from
+  outside `src/targets/`, so `authoring/` can't import `COPILOT_LEXICON`.
 - A remaining `## Boundary` heading adds the note
   `body keeps the generated ## Boundary section; wire relatedArtifacts with sigil patch`. A remaining
   `## Coding guidelines to apply` heading adds the note
@@ -267,7 +269,7 @@ new `test/authoring/import-copilot-discover.test.ts`.
   - `instructions/*.instructions.md` is `rule`, `agents/*.agent.md` is `agent`, `prompts/*.prompt.md` is `prompt`. The slug
     is `copilotSlug(stem, namespace)` for rules and prompts, and `copilotSlug(stem)` for agents.
   - `skills/` reuses `discoverSkillsDir(githubDir)`, then the slug is `copilotSlug(folder)`, and each reference's `content`
-    goes through `reverseLexicon` with `COPILOT_LEXICON`.
+    goes through `reverseLexicon` with the Copilot target's lexicon, read as in step 5.
   - A slug that changed beyond the namespace strip adds the note `file name normalised: <stem> → <slug>`.
   - `relativePath` is relative to `githubDir`, with `/` separators via `normPath`.
 - Reported in `unrecognised`, with these reasons:

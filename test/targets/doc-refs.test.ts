@@ -31,7 +31,7 @@ describe('every KindEmitSpec carries at least one docs[] citation', () => {
 });
 
 describe('allProviderDocRefs() — the sigil sync --stale input', () => {
-  it('should include at least one entry per registered provider plus the two aggregates', () => {
+  it('should include at least one entry per registered provider plus the copilot-instructions aggregate', () => {
     // Arrange
     const sources = allProviderDocRefs().map(ref => ref.source);
 
@@ -47,10 +47,6 @@ describe('allProviderDocRefs() — the sigil sync --stale input', () => {
     assert.ok(
       sources.includes('copilot copilot-instructions.md aggregate'),
       'copilot-instructions.md aggregate citation missing',
-    );
-    assert.ok(
-      sources.includes('copilot AGENTS.md aggregate'),
-      'AGENTS.md aggregate citation missing',
     );
   });
 

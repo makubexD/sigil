@@ -8,7 +8,7 @@
  *       instructions/<slug>.instructions.md ← every scoped rule, with or without a language
  *       skills/<skill-name>/SKILL.md
  *       prompts/<slug>.prompt.md
- *       AGENTS.md
+ *       agents/<name>.agent.md
  *
  * Scaffold (add): emits per-artifact files — never clobbers an aggregate file.
  *   .github/
@@ -19,7 +19,7 @@
  *
  * Sub-modules:
  *   config         — CopilotConfigDestination, resolveCopilotConfigDestination
- *   build-helpers  — buildCopilotInstructions, buildAgentsMd (the two aggregates)
+ *   build-helpers  — buildCopilotInstructions (the aggregate)
  *   spec/          — one KindEmitSpec per kind (COPILOT_EMIT_SPECS = emitSpecs); every
  *                    per-artifact file is written through ../emit-files.ts with these
  *   mcp-key        — COPILOT_MCP_SERVERS_KEY
@@ -43,7 +43,6 @@ import type {
   ContractEntry,
   RetiredConfigDestination,
 } from '../../types';
-import { buildAgentsMd } from './build-helpers';
 import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
 import { COPILOT_EMIT_SPECS } from './spec';
 import { COPILOT_RETIRED_MCP_DESTINATIONS } from './config';
@@ -117,12 +116,6 @@ export class CopilotTarget implements Target {
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {
     const files: FileMap = {};
     buildArtifactFiles(catalog, this.emitSpecs, files);
-
-    // AGENTS.md — pass catalog so Boundary sections can be rendered for co-present agents
-    const agents = catalog.artifacts.filter(a => a.kind === 'agent');
-    if (agents.length > 0) {
-      files['.github/AGENTS.md'] = buildAgentsMd(agents, catalog);
-    }
 
     return files;
   }

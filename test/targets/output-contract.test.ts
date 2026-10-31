@@ -212,9 +212,9 @@ describe('checkOutputContract — red paths (violations detected)', () => {
 
   it('files matching no contract entry are silently skipped (no false positives)', () => {
     const target = new CopilotTarget();
-    // AGENTS.md and copilot-instructions.md have no matching entry
+    // Neither root AGENTS.md nor copilot-instructions.md has a matching entry
     const irrelevantFiles = {
-      '.github/AGENTS.md': '# AI Agents\n\n## code-reviewer\nBody',
+      'AGENTS.md': '# AI Agents\n\n## code-reviewer\nBody',
       '.github/copilot-instructions.md': '# Copilot Instructions\n\n## Clean Code\nBody',
     };
     const violations = checkOutputContract(irrelevantFiles, target.outputContracts ?? []);

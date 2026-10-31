@@ -485,10 +485,14 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
     Anthropic / OpenAI / Slack / Stripe / Google / npm tokens, and JWTs.
   - `config/*` — dangerous shell patterns and possible exfiltration. These run on every file, not
     only hook and MCP commands, because an artifact body is an instruction to a model with shell
-    access. `config/dangerous-command` matches an invocation, and it reads quoting. A backticked
-    `` `eval` `` passes unless it is glued to more text, and `"eval"` passes before punctuation or the
-    end of the line, so `` `eval`ing `` and `"eval" is dangerous` are refused. `eval()` passes except on
-    a line that names `perl`; `eval(x)` and `eval "$x"` don't.
+    access. `config/dangerous-command` matches an invocation and what can't be told from one. It is a
+    check on one line, not a parser, so an extra character can defeat it; the
+    [limits](../decisions/trust-scan-eval-limits-2026-10.md) list what passes. A backticked `` `eval` ``
+    passes unless a word character, `$`, `(`, `"` or a backtick touches its closing backtick, or a
+    quoted or `$` argument follows it. An odd number of backticks earlier on the line also refuses it,
+    even in harmless prose, because that reads as the closing half of a span. `"eval"` passes only
+    before `,` `.` `;` `:` `)` `]` `}` or the end of the line. `eval()` passes except on a line that
+    names `perl`; `eval(x)` and `eval "$x"` don't.
   - `injection/*` — "ignore previous instructions", system-prompt disregard, jailbreak overrides,
     data-exfil URL patterns, and role-switch phrases.
 - **Severity:** `error` findings always fail `sigil check --trust`. `warn` findings are printed

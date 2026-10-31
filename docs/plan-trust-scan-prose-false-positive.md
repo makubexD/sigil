@@ -187,6 +187,38 @@ than gaining an exemption for one comment. Installed copies show as outdated unt
 
 Test: `npm run validate`, plus `sigil check --trust` on that file exits 0.
 
+### 4a. Claude import drops the namespace from a rule's file name `[worker:medium]`
+
+Added while running step 5. `add --target claude` writes `.claude/rules/<namespace>-<name>.md`, and Claude discovery keeps the
+whole stem, so `angular/ng-security` imports as `angular/angular-ng-security`. Copilot discovery already strips this prefix. The
+bug predates this branch; it is fixed here because step 5's Claude cases need it.
+
+Files: `src/authoring/import/discover.ts`, `src/commands/import.ts`, new `test/commands/import-claude-layout.test.ts`.
+
+- `discoverFiles(sourceDir, namespace)` takes the import namespace, and `discoverForLayout` passes `lang`, as it does for Copilot.
+- For a rule only, the slug drops a leading `<namespace>-`, once, exact case, and only when something remains after it. Agents and
+  skills keep their names: their file names carry no namespace. No other normalisation: Claude stems stay as they are.
+- Stripping can make two files one name, so run the rules through `dedupeDiscovered` (`discover-copilot-root.ts`), and include its
+  `unrecognised` in the result. A second file must be reported, never overwrite the first.
+- Update the header comment of `discover.ts`.
+
+Test `discoverFiles` directly on a temp folder:
+
+| Case | Files under the source                | Namespace | Expected                                                                       |
+| ---- | ------------------------------------- | --------- | ------------------------------------------------------------------------------ |
+| 1    | `rules/angular-ng-security.md`        | `angular` | one rule, slug `ng-security`                                                   |
+| 2    | `rules/cs-style.md`                   | `csharp`  | slug `cs-style`                                                                |
+| 3    | `rules/shared-clean-code.md`          | `shared`  | slug `clean-code`                                                              |
+| 4    | `rules/python-py-security.md`         | `angular` | slug `python-py-security`                                                      |
+| 5    | `rules/angular-angular-x.md`          | `angular` | slug `angular-x`, stripped once                                                |
+| 6    | `rules/angular-.md`                   | `angular` | slug `angular-`, nothing remains after the prefix                              |
+| 7    | `agents/angular-reviewer.md`          | `angular` | agent slug `angular-reviewer`                                                  |
+| 8    | `skills/angular-x/SKILL.md`           | `angular` | skill slug `angular-x`                                                         |
+| 9    | `rules/angular-a.md` and `rules/a.md` | `angular` | one rule, slug `a`; one `unrecognised` entry whose reason contains `same name` |
+
+Test: `npm test`, plus `npm run lint`. Step 5's Claude cases are stashed during this step, because the worker needs a clean tree;
+they come back afterwards and must pass unchanged.
+
 ### 5. Prove the catalog imports, and keep it that way `[worker:medium]`
 
 Files: `test/trust-scan.test.ts`, `test/commands/import-copilot-roundtrip.test.ts`.
@@ -209,7 +241,9 @@ Test: `npm test`.
   State that inline `sigil-allow` only silences `warn` rules, and that `.sigil/allow.json` is not read by any command.
 - `docs/guides/authoring.md:295`: replace the bullet. Naming `eval` is fine; a body with `eval(x)` or a pipe from `curl` to a
   shell is refused even in a bad-code example, with no override.
-- `CHANGELOG.md` `[Unreleased]`: `### Fixed` for both directions, the false positive and the commands that used to pass.
+- `docs/guides/authoring.md:248`: a rule file named `<language>-<name>.md` imports as `<name>`, as the Copilot layout does.
+- `CHANGELOG.md` `[Unreleased]`: `### Fixed` for both directions, the false positive and the commands that used to pass, plus
+  the Claude rule id from step 4a. A rule that already imported as `<language>-<name>` now imports under the shorter id.
 
 Test: `npm run ci:local`.
 

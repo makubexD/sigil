@@ -96,6 +96,22 @@ Setup, updates and removal: [docs/setup/claude-code.md](docs/setup/claude-code.m
 
 </details>
 
+<details>
+<summary><strong>GitHub Copilot: install packs as plugins</strong></summary>
+
+Copilot reads the same marketplace. On Copilot CLI:
+
+```bash
+copilot plugin marketplace add makubexD/sigil#marketplace
+copilot plugin install typescript-tooling@sigil
+```
+
+This delivers skills, agents and prompts. Don't install the `hook-*` plugins or `mcp-filesystem` on
+Copilot: they use Claude's forms and fail there. Install hooks and MCP with `sigil add` instead.
+Setup, limits and what was tested: [docs/setup/copilot.md](docs/setup/copilot.md).
+
+</details>
+
 ### Getting help
 
 | You want                                 | Run                                                                  |
@@ -116,15 +132,15 @@ Setup, updates and removal: [docs/setup/claude-code.md](docs/setup/claude-code.m
 
 ## Who are you?
 
-| You want to...                                                  | Start here                                                                                          |
-| --------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
-| Just use Sigil in my project (including the interactive wizard) | [docs/guides/consuming.md](docs/guides/consuming.md)                                                |
-| Use Sigil as a Claude Code plugin                               | [Plugin section of consuming.md](docs/guides/consuming.md#install-a-pack-as-a-claude-plugin)        |
-| Use it with GitHub Copilot                                      | [Copilot section of consuming.md](docs/guides/consuming.md#add-a-skill-to-a-github-copilot-project) |
-| Publish my own catalog or marketplace                           | [docs/guides/publishing.md](docs/guides/publishing.md)                                              |
-| Suggest or write a new skill, rule, or agent                    | [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/guides/authoring.md](docs/guides/authoring.md)         |
-| Contribute code to Sigil itself                                 | [CONTRIBUTING.md § Contributing code](CONTRIBUTING.md#b-contributing-code)                          |
-| See what works today and what is planned                        | [Support matrix](docs/index.md#support-matrix)                                                      |
+| You want to...                                                  | Start here                                                                                   |
+| --------------------------------------------------------------- | -------------------------------------------------------------------------------------------- |
+| Just use Sigil in my project (including the interactive wizard) | [docs/guides/consuming.md](docs/guides/consuming.md)                                         |
+| Use Sigil as a Claude Code plugin                               | [Plugin section of consuming.md](docs/guides/consuming.md#install-a-pack-as-a-claude-plugin) |
+| Use it with GitHub Copilot                                      | [docs/setup/copilot.md](docs/setup/copilot.md)                                               |
+| Publish my own catalog or marketplace                           | [docs/guides/publishing.md](docs/guides/publishing.md)                                       |
+| Suggest or write a new skill, rule, or agent                    | [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/guides/authoring.md](docs/guides/authoring.md)  |
+| Contribute code to Sigil itself                                 | [CONTRIBUTING.md § Contributing code](CONTRIBUTING.md#b-contributing-code)                   |
+| See what works today and what is planned                        | [Support matrix](docs/index.md#support-matrix)                                               |
 
 ## Claude Code, Copilot, and other tools
 
@@ -134,8 +150,10 @@ Setup, updates and removal: [docs/setup/claude-code.md](docs/setup/claude-code.m
   `sigil build --target claude`. See [docs/setup/claude-code.md](docs/setup/claude-code.md) and
   [consuming.md](docs/guides/consuming.md).
 - **GitHub Copilot**: `sigil add --target copilot` writes `.github/` skills, agents, instructions,
-  prompts, and MCP config. Commit those files; Copilot's cloud agent reads repository files. There is
-  no plugin channel, and no hooks or settings. See [consuming.md](docs/guides/consuming.md) and
+  prompts, and hooks, and merges MCP config. Commit those files; Copilot's cloud agent reads
+  repository files. Packs also install from the published marketplace, but its hook and filesystem
+  MCP plugins don't work on Copilot, so use `add` for those. Settings aren't supported. See
+  [docs/setup/copilot.md](docs/setup/copilot.md), [consuming.md](docs/guides/consuming.md) and
   [capabilities](docs/reference/capabilities.md).
 - **Open standard** (`agents-standard`): `sigil add --target agents-standard` writes Agent Skills to
   `.agents/skills/<name>/SKILL.md` exactly as the [Agent Skills spec](https://agentskills.io/specification)

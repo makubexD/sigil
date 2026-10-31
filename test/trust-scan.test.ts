@@ -411,6 +411,35 @@ describe('config/dangerous-command patterns', () => {
   });
 });
 
+// ─── The shipped catalog ──────────────────────────────────────────────────────
+//
+// The trust scanner is the only gate on untrusted imports, so it runs on every file. The bundled
+// catalog is prose written for models with shell access; a hit there means real artifacts would be
+// refused by `sigil import` (see docs/plan-trust-scan-prose-false-positive.md step 5).
+
+/** Every regular file under `dir`, recursively, as absolute paths. */
+function filesUnder(dir: string): string[] {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap(entry => {
+    const full = path.join(dir, entry.name);
+    return entry.isDirectory() ? filesUnder(full) : [full];
+  });
+}
+
+describe('the bundled catalog passes the trust scanner', () => {
+  it('reports no error finding for any file under CATALOG_DIR', () => {
+    const offenders: string[] = [];
+    for (const file of filesUnder(CATALOG_DIR)) {
+      const result = scanContent(file, fs.readFileSync(file, 'utf-8'));
+      for (const finding of result.findings) {
+        if (finding.severity !== 'error') continue;
+        const rel = path.relative(CATALOG_DIR, file);
+        offenders.push(`${rel} — ${finding.rule} (line ${finding.line})`);
+      }
+    }
+    assert.deepEqual(offenders, [], `error findings under catalog/:\n${offenders.join('\n')}`);
+  });
+});
+
 // ─── loadAllowlist ────────────────────────────────────────────────────────────
 
 describe('loadAllowlist', () => {

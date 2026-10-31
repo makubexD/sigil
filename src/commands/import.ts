@@ -58,12 +58,16 @@ function printDiscoveryReport(
 /** The validated source layout and the directory its discovery reads. */
 type SourceLayout = { from: 'claude' | 'copilot'; root: string };
 
+const COPILOT_HINT = 'This looks like a Copilot layout: re-run with --from copilot.';
+
 /**
  * Validates --from and resolves the directory discovery reads. Runs before any catalog read or
  * write, so a bad layout or a missing `.github/` never leaves a half-written language.yaml behind.
  */
 function resolveSourceLayout(absSourceDir: string, opts: ImportOptions): SourceLayout {
   const from = opts.from ?? 'claude';
+  const isGithubDir = path.basename(absSourceDir) === '.github';
+  if (from === 'claude' && isGithubDir) throw new SigilError(COPILOT_HINT);
   if (from === 'claude') return { from, root: absSourceDir };
   if (from === 'copilot') return { from, root: resolveCopilotRoot(absSourceDir) };
   throw new SigilError(`Unknown layout '${from}': use claude or copilot.`);
@@ -164,11 +168,8 @@ function printImportResults(result: ReturnType<typeof executeImport>, catalogDir
 /** "Nothing to import.", plus the --from copilot hint when a Claude-layout source holds `.github/`. */
 function printNothingToImport(absSourceDir: string, from: SourceLayout['from']): void {
   console.log('\nNothing to import.');
-  if (from !== 'claude') return;
-  const githubDir = path.join(absSourceDir, '.github');
-  if (fs.statSync(githubDir, { throwIfNoEntry: false })?.isDirectory()) {
-    console.log('  This looks like a Copilot layout: re-run with --from copilot.');
-  }
+  const github = fs.statSync(path.join(absSourceDir, '.github'), { throwIfNoEntry: false });
+  if (from === 'claude' && github?.isDirectory()) console.log(`  ${COPILOT_HINT}`);
 }
 
 /** Discovery output for the chosen layout. */

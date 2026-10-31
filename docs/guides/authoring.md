@@ -271,7 +271,10 @@ These are reported and not imported:
   starts and what it applies to, so move each rule into `instructions/` first.
 - An agent with `tools: []`. Copilot reads that as no tools, but an agent with no list gets every
   tool, so importing it would widen its access.
+- A file whose frontmatter block is never closed, because its fields can't be read.
 - A file with no usable name, or a second file that normalises to the same name as another.
+- A kind folder that is a symbolic link. Import doesn't follow links, and it refuses a linked
+  `.github/` outright.
 - `.instructions.md` files in subfolders of `instructions/`, which Copilot itself allows. Move them
   up a level first.
 

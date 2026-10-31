@@ -6,6 +6,7 @@
  */
 import { slugToTitle } from './translate-shared';
 import { tagsFromSlug, computeDroppedFields } from './translate-helpers';
+import { isPlainObject } from '../../config-merge/primitives';
 import type {
   TranslateOptions,
   CatalogFrontmatter,
@@ -15,17 +16,35 @@ import type {
 
 const PROMPT_KNOWN_FIELDS = new Set(['description', 'args']);
 
-/** The source `args` list, only when it is a non-empty array. */
-function promptArgs(sourceFm: Record<string, unknown>): PromptArg[] | undefined {
+/** One source arg copied field by field, or nothing when it isn't a named object. */
+function promptArg(raw: unknown): PromptArg | undefined {
+  if (!isPlainObject(raw) || typeof raw.name !== 'string') return undefined;
+  const { name, description } = raw;
+  return typeof description === 'string' ? { name, description } : { name };
+}
+
+/**
+ * The usable source `args`. Each item is copied, never passed through: YAML aliases can make a
+ * short list expand without limit when it is written out, or point back at itself.
+ */
+function promptArgs(sourceFm: Record<string, unknown>): PromptArg[] {
   const raw = sourceFm.args;
-  return Array.isArray(raw) && raw.length > 0 ? (raw as PromptArg[]) : undefined;
+  if (!Array.isArray(raw)) return [];
+  return raw.map(promptArg).filter(arg => arg !== undefined);
+}
+
+/** True when the source `args` held anything that didn't survive `promptArgs`. */
+function lostArgs(sourceFm: Record<string, unknown>, args: PromptArg[]): boolean {
+  const raw = sourceFm.args;
+  if (raw === undefined) return false;
+  return !Array.isArray(raw) || raw.length !== args.length;
 }
 
 /** Builds a prompt's CatalogFrontmatter from its translated fields. */
 function buildPromptFrontmatter(
   slug: string,
   description: string,
-  args: PromptArg[] | undefined,
+  args: PromptArg[],
   opts: TranslateOptions,
 ): CatalogFrontmatter {
   const { language, displayName } = opts;
@@ -36,7 +55,7 @@ function buildPromptFrontmatter(
     description,
     language,
     tags: tagsFromSlug(slug, language, opts.prefix),
-    ...(args ? { args } : {}),
+    ...(args.length > 0 ? { args } : {}),
   };
 }
 
@@ -48,6 +67,7 @@ export function translatePrompt(
   const description = typeof sourceFm.description === 'string' ? sourceFm.description : '';
   const args = promptArgs(sourceFm);
   const droppedFields = computeDroppedFields(sourceFm, PROMPT_KNOWN_FIELDS);
+  if (lostArgs(sourceFm, args)) droppedFields.push('args');
 
   const syntheticDescription = `${opts.displayName} prompt.`;
   const frontmatter = buildPromptFrontmatter(slug, description || syntheticDescription, args, opts);

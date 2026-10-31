@@ -95,6 +95,16 @@ function distinctValues(lexicon: ProviderLexicon): LexiconValue[] {
 }
 
 /**
+ * A value as a whole term, so `MY_AGENTS.md`, `docs/AGENTS.md` and a URL ending in a provider path
+ * stay as written. A value ending in `/` runs on into a file name, so only a word-final one has a
+ * right-hand boundary.
+ */
+function termPattern(value: string): string {
+  const end = /\w$/.test(value) ? '(?![\\w-])' : '';
+  return `(?<![\\w./-])${escapeRegExp(value)}${end}`;
+}
+
+/**
  * Inverse of `applyLexicon`: replaces each literal provider value with its neutral
  * `{sigil:<term>}` token, so `sigil import` can write catalog source back from a provider's
  * prose. The one alternation is ordered longest-first, so a value containing another is
@@ -103,7 +113,7 @@ function distinctValues(lexicon: ProviderLexicon): LexiconValue[] {
 export function reverseLexicon(body: string, lexicon: ProviderLexicon): string {
   const values = distinctValues(lexicon);
   if (values.length === 0) return body;
-  const pattern = new RegExp(values.map(entry => escapeRegExp(entry.value)).join('|'), 'g');
+  const pattern = new RegExp(values.map(entry => termPattern(entry.value)).join('|'), 'g');
   const termsByValue = new Map<string, LexiconTerm>();
   for (const entry of values) termsByValue.set(entry.value, entry.term);
   return body.replace(pattern, match => {

@@ -178,7 +178,8 @@ export function parseMarkdown(
 } {
   const read = readRegularFile(filePath, { maxBytes: MAX_SOURCE_KIB * KIB });
   if ('reason' in read) throw new SourceFileRejected(read.reason);
-  const raw = read.content;
+  // Editors on Windows can write a BOM, which would hide the opening fence and every field with it.
+  const raw = opts?.yamlFirst ? read.content.replace(/^\uFEFF/, '') : read.content;
   const split = splitFrontmatter(raw);
   if (!split) return { frontmatter: {}, body: raw };
   return {

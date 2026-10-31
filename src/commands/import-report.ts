@@ -104,9 +104,14 @@ export interface PrintCoverageReportOptions {
   targets: Target[];
 }
 
+/** Text from a source file with control characters masked, so it can't drive the terminal. */
+function printable(text: string): string {
+  return text.replace(/\p{Cc}/gu, '?');
+}
+
 /** One `    note: <text>` line per discovery note. */
 function printNotes(notes: string[] | undefined): void {
-  for (const note of notes ?? []) console.log(`    note: ${note}`);
+  for (const note of notes ?? []) console.log(`    note: ${printable(note)}`);
 }
 
 /** Prints one item's coverage line (flag + paths + warnings), plus its dry-run preview if requested. */
@@ -123,7 +128,7 @@ function printCoverageItem(
   );
   if (dryRun) printDryRunPreview(item, catalog, targets);
   if (item.droppedFields.length > 0) {
-    console.log(`    dropped source fields: ${item.droppedFields.join(', ')}`);
+    console.log(`    dropped source fields: ${printable(item.droppedFields.join(', '))}`);
   }
   printNotes(item.notes);
   printStackRouting(item, catalogDir);

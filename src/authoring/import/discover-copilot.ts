@@ -19,6 +19,7 @@ import { SigilError } from '../../errors';
 import { reverseLexicon } from '../../targets/lexicon';
 import { parseMarkdown, SourceFileRejected } from './parse-markdown';
 import { discoverOrReport, discoverSkillsDir } from './discover';
+import { GITHUB_DIR, README_MD, dedupeDiscovered, rootFileReports } from './discover-copilot-root';
 import { copilotLexicon, normalizeCopilotBody } from './copilot-body';
 import * as copilotFields from './copilot-fields';
 import type { ClassifyResult, DiscoveredFile, DiscoverResult, UnrecognisedFile } from './discover';
@@ -37,15 +38,10 @@ const FLAT_SPECS: FlatSpec[] = [
   { dir: 'prompts', suffix: '.prompt.md', kind: 'prompt' },
 ];
 
-const GITHUB_DIR = '.github';
-const AGENTS_FILE = 'AGENTS.md';
-const README_MD = 'README.md';
-const SINGLE_FILE_NAME = 'copilot-instructions.md';
-const SINGLE_FILE_REASON =
-  'not imported: single-file instructions are not split into rules; move each into instructions/';
-const ROOT_MD_REASON = 'Root-level .md file — not a recognised artifact location';
 const EMPTY_SLUG_MESSAGE = 'no usable name in the file name';
 const EMPTY_SLUG_REASON = `not imported: ${EMPTY_SLUG_MESSAGE}`;
+const LINK_REASON = 'not imported: a symbolic link, which import does not follow';
+const UNCLOSED_FRONTMATTER = 'the frontmatter block is not closed, so its fields cannot be read';
 
 // ─── Root resolution ──────────────────────────────────────────────────────────
 
@@ -54,9 +50,15 @@ function isDirectory(target: string): boolean {
   return fs.statSync(target, { throwIfNoEntry: false })?.isDirectory() ?? false;
 }
 
+/** True when `target` is itself a symbolic link. */
+function isLink(target: string): boolean {
+  return fs.lstatSync(target, { throwIfNoEntry: false })?.isSymbolicLink() ?? false;
+}
+
 /** The `.github` directory for a project root, or the directory itself when it is `.github`. */
 export function resolveCopilotRoot(absSourceDir: string): string {
   const nested = path.join(absSourceDir, GITHUB_DIR);
+  if (isLink(nested)) throw new SigilError(`${nested} is a symbolic link; import won't follow it.`);
   if (isDirectory(nested)) return nested;
   if (path.basename(absSourceDir) === GITHUB_DIR) return absSourceDir;
   throw new SigilError(`No .github/ folder in ${absSourceDir}`);
@@ -114,6 +116,14 @@ function stemNamespace(ctx: FlatContext): string | undefined {
   return ctx.spec.kind === 'agent' ? undefined : ctx.namespace;
 }
 
+/**
+ * True when a file opens a frontmatter block that never closes. Its fields stay unread, and an
+ * agent whose `tools` went unread would be imported with every tool.
+ */
+function hasUnclosedFrontmatter(parsed: ReturnType<typeof parseMarkdown>): boolean {
+  return Object.keys(parsed.frontmatter).length === 0 && parsed.body.startsWith('---');
+}
+
 /** Builds one flat-kind file: parse, normalise fields and body, collect notes. */
 function buildFlatFile(entry: Dirent, ctx: FlatContext, relativePath: string): DiscoveredFile {
   const stem = entry.name.slice(0, -ctx.spec.suffix.length);
@@ -121,6 +131,7 @@ function buildFlatFile(entry: Dirent, ctx: FlatContext, relativePath: string): D
   if (slug === '') throw new SourceFileRejected(EMPTY_SLUG_MESSAGE);
   const sourcePath = path.join(ctx.dir, entry.name);
   const parsed = parseMarkdown(sourcePath, { yamlFirst: true });
+  if (hasUnclosedFrontmatter(parsed)) throw new SourceFileRejected(UNCLOSED_FRONTMATTER);
   const fields = flatFields(ctx.spec.kind, parsed.frontmatter, slug);
   if (fields.refused !== undefined) throw new SourceFileRejected(fields.refused);
   const body = normalizeCopilotBody(ctx.spec.kind, parsed.body);
@@ -146,11 +157,17 @@ function classifyFlatEntry(entry: Dirent, ctx: FlatContext): ClassifyResult {
   return discoverOrReport(relativePath, () => buildFlatFile(entry, ctx, relativePath));
 }
 
+/** A kind directory that is a link: reported, and nothing under it is read. */
+function linkedDir(relativePath: string): DiscoverResult {
+  return { discovered: [], unrecognised: [{ relativePath, reason: LINK_REASON }] };
+}
+
 /** Discovers one flat kind directory — one suffixed markdown file per artifact. */
 function discoverFlatDir(githubDir: string, spec: FlatSpec, namespace: string): DiscoverResult {
   const dir = path.join(githubDir, spec.dir);
   const discovered: DiscoveredFile[] = [];
   const unrecognised: UnrecognisedFile[] = [];
+  if (isLink(dir)) return linkedDir(spec.dir);
   if (!isDirectory(dir)) return { discovered, unrecognised };
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
     const result = classifyFlatEntry(entry, { dir, spec, namespace });
@@ -199,46 +216,6 @@ function transformSkillDir(result: DiscoverResult): DiscoverResult {
   return { discovered, unrecognised };
 }
 
-// ─── `.github/` root files and duplicates ─────────────────────────────────────
-
-/** `AGENTS.md` beside a `.github/` directory, reported as split-not-supported. */
-function agentsBesideGithub(githubDir: string): UnrecognisedFile | undefined {
-  if (path.basename(githubDir) !== GITHUB_DIR) return undefined;
-  const agentsFile = path.join(path.dirname(githubDir), AGENTS_FILE);
-  if (!fs.statSync(agentsFile, { throwIfNoEntry: false })?.isFile()) return undefined;
-  return { relativePath: normPath(path.join('..', AGENTS_FILE)), reason: SINGLE_FILE_REASON };
-}
-
-/** Markdown files directly in `.github/` — single-file instructions are reported, not split. */
-function rootMarkdownFiles(githubDir: string): UnrecognisedFile[] {
-  const unrecognised: UnrecognisedFile[] = [];
-  for (const entry of fs.readdirSync(githubDir, { withFileTypes: true })) {
-    if (!entry.isFile() || !entry.name.endsWith('.md') || entry.name === README_MD) continue;
-    const reason = entry.name === SINGLE_FILE_NAME ? SINGLE_FILE_REASON : ROOT_MD_REASON;
-    unrecognised.push({ relativePath: normPath(entry.name), reason });
-  }
-  return unrecognised;
-}
-
-/** Marks a second file with the same kind and slug as unrecognised. */
-function dedupeDiscovered(discovered: DiscoveredFile[]): DiscoverResult {
-  const seen = new Map<string, string>();
-  const kept: DiscoveredFile[] = [];
-  const unrecognised: UnrecognisedFile[] = [];
-  for (const file of discovered) {
-    const key = `${file.kind}:${file.slug}`;
-    const other = seen.get(key);
-    if (other !== undefined) {
-      const reason = `not imported: same name as ${other}`;
-      unrecognised.push({ relativePath: file.relativePath, reason });
-      continue;
-    }
-    seen.set(key, file.relativePath);
-    kept.push(file);
-  }
-  return { discovered: kept, unrecognised };
-}
-
 /**
  * Discover and normalise every importable artifact in a Copilot `.github/` directory.
  *
@@ -247,16 +224,17 @@ function dedupeDiscovered(discovered: DiscoveredFile[]): DiscoverResult {
  */
 export function discoverCopilotFiles(githubDir: string, namespace: string): DiscoverResult {
   const flat = FLAT_SPECS.map(spec => discoverFlatDir(githubDir, spec, namespace));
-  const sections = [...flat, transformSkillDir(discoverSkillsDir(githubDir, { yamlFirst: true }))];
+  const skills = isLink(path.join(githubDir, 'skills'))
+    ? linkedDir('skills')
+    : transformSkillDir(discoverSkillsDir(githubDir, { yamlFirst: true }));
+  const sections = [...flat, skills];
   const deduped = dedupeDiscovered(sections.flatMap(section => section.discovered));
-  const beside = agentsBesideGithub(githubDir);
-  const root = rootMarkdownFiles(githubDir);
   return {
     discovered: deduped.discovered,
     unrecognised: [
       ...sections.flatMap(section => section.unrecognised),
       ...deduped.unrecognised,
-      ...(beside === undefined ? root : [...root, beside]),
+      ...rootFileReports(githubDir),
     ],
   };
 }

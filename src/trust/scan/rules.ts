@@ -124,7 +124,7 @@ export const RULES: ScanRule[] = [
   {
     id: 'config/exfil-in-command',
     severity: 'warn',
-    description: 'Hook command that may exfiltrate data (curl/wget to external URL with data)',
+    description: 'Command that may exfiltrate data (curl/wget to external URL with data)',
     pattern:
       /(?:curl|wget)\s+[^'"]*(?:https?:\/\/)[^'" ]+\s+(?:-d\s*['"`]?\$|--data\s*['"`]?\$|--upload-file)/i,
   },

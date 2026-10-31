@@ -19,6 +19,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   piping `curl` to `shasum`. A word right after `"eval"` or touching the closing backtick of
   `` `eval` `` is still refused. Nine catalog agents and rules can now be imported. One example in
   `typescript/ts-security` was reworded, so installed copies show as outdated until `sigil update`.
+  This narrows the check: some commands that used to be refused now import, including a few that run
+  a payload. [The limits](docs/decisions/trust-scan-eval-limits-2026-10.md) list them.
 - The trust scan now refuses dangerous commands it used to miss: `curl` with a quoted URL piped to a
   shell, a pipe to `sudo bash` or `zsh`, `eval $(…)`, and `nc` with an IP address and `-e`.
 - `sigil import` from a `.claude` folder now drops the language prefix from a rule's file name, so

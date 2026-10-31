@@ -150,8 +150,8 @@ function scanGlobalPattern(rule: (typeof RULES)[number], ctx: ScanCtx): ScanFind
 
 /**
  * True when `rule` is allowlisted for this scan. Inline `<!-- sigil-allow: … -->` comments (found
- * inside the very content being scanned) only ever suppress `warn`-severity rules — an `error`
- * rule can only be silenced via `.sigil/allow.json`'s out-of-band, curator-controlled entries.
+ * inside the very content being scanned) only ever suppress `warn`-severity rules. An `error`
+ * rule has no override today: only `externalAllowed` could silence one, and no command passes it.
  * Otherwise a malicious artifact could simply append the comment naming the rule that would have
  * flagged it and neutralize the scanner for exactly the actor it's meant to catch (2026-08-22
  * audit F26).
@@ -199,7 +199,7 @@ function scanFindings(
  *
  * @param filePath      Path for display in findings (doesn't need to exist on disk).
  * @param rawContent    Full raw file content (frontmatter + body).
- * @param allowedRules  Rule IDs suppressed globally (from .sigil/allow.json).
+ * @param allowedRules  Rule IDs suppressed globally. No command passes this yet.
  */
 export function scanContent(
   filePath: string,

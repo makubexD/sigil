@@ -21,12 +21,13 @@
  *             argumentHint (←argument-hint), disableModelInvocation (←flag),
  *             uses: { rules: [], agents: [] }, tags
  *
- * Per-kind translators live in translate-kinds.ts; low-level string helpers live in
- * translate-helpers.ts; shared types + slug/title helpers live in translate-shared.ts — all
- * split out to keep this file under the module-size threshold and to avoid a circular import
- * (see translate-shared.ts's header).
+ * Per-kind translators live in translate-kinds.ts (rule/agent/skill) and translate-prompt.ts
+ * (prompt); low-level string helpers live in translate-helpers.ts; shared types + slug/title
+ * helpers live in translate-shared.ts — all split out to keep this file under the module-size
+ * threshold and to avoid a circular import (see translate-shared.ts's header).
  */
 import { translateRule, translateAgent, translateSkill } from './translate-kinds';
+import { translatePrompt } from './translate-prompt';
 import { SHARED_NAMESPACE } from '../../catalog-layout';
 
 export {
@@ -43,13 +44,13 @@ import type { TranslateOptions, TranslateResult } from './translate-shared';
 /**
  * Translate a discovered artifact's source frontmatter into catalog frontmatter.
  *
- * @param kind      Detected kind ('skill' | 'agent' | 'rule')
+ * @param kind      Detected kind ('skill' | 'agent' | 'rule' | 'prompt')
  * @param slug      Source slug (folder name for skills, file stem for others)
  * @param sourceFm  Raw frontmatter from the source file
  * @param opts      Language and display-name context
  */
 export function translateFrontmatter(
-  kind: 'skill' | 'agent' | 'rule',
+  kind: 'skill' | 'agent' | 'rule' | 'prompt',
   slug: string,
   sourceFm: Record<string, unknown>,
   opts: TranslateOptions,
@@ -62,7 +63,7 @@ export function translateFrontmatter(
 
 /** Dispatches to the per-kind translator. */
 function translateByKind(
-  kind: 'skill' | 'agent' | 'rule',
+  kind: 'skill' | 'agent' | 'rule' | 'prompt',
   slug: string,
   sourceFm: Record<string, unknown>,
   opts: TranslateOptions,
@@ -74,5 +75,7 @@ function translateByKind(
       return translateAgent(slug, sourceFm, opts);
     case 'skill':
       return translateSkill(slug, sourceFm, opts);
+    case 'prompt':
+      return translatePrompt(slug, sourceFm, opts);
   }
 }

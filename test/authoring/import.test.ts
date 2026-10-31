@@ -305,6 +305,50 @@ describe('translateFrontmatter — skill', () => {
   });
 });
 
+// ─── translateFrontmatter: prompt ────────────────────────────────────────────
+
+describe('translateFrontmatter — prompt', () => {
+  const opts = { language: 'x', displayName: 'X' };
+
+  it('keeps description and args, dropping nothing', () => {
+    const { frontmatter, droppedFields, descriptionSynthesized } = translateFrontmatter(
+      'prompt',
+      'explain-diff',
+      { description: 'd', args: [{ name: 'a' }] },
+      opts,
+    );
+    assert.equal(frontmatter.id, 'x/explain-diff');
+    assert.equal(frontmatter.kind, 'prompt');
+    assert.deepEqual(frontmatter.args, [{ name: 'a' }]);
+    assert.deepEqual(droppedFields, []);
+    assert.equal(descriptionSynthesized, false);
+  });
+
+  it('drops agent, tools and model, and synthesizes the description', () => {
+    const { frontmatter, droppedFields, descriptionSynthesized } = translateFrontmatter(
+      'prompt',
+      'explain-diff',
+      { agent: 'agent', tools: ['codebase'], model: 'm' },
+      opts,
+    );
+    assert.deepEqual(droppedFields, ['agent', 'tools', 'model']);
+    assert.equal(frontmatter.description, 'X prompt.');
+    assert.equal(descriptionSynthesized, true);
+    assert.equal(frontmatter.args, undefined);
+  });
+
+  it('omits the language key for a shared prompt', () => {
+    const { frontmatter } = translateFrontmatter(
+      'prompt',
+      'explain-diff',
+      { description: 'd' },
+      { language: 'shared', displayName: '' },
+    );
+    assert.ok(!('language' in frontmatter), 'language key absent');
+    assert.equal(frontmatter.title, 'Explain Diff');
+  });
+});
+
 // ─── renderArtifactFile ───────────────────────────────────────────────────────
 
 describe('renderArtifactFile', () => {

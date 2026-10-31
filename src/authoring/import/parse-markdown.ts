@@ -2,21 +2,25 @@
  * Tolerant frontmatter + body parser for source Claude template markdown files.
  * Split out of discover.ts to keep that file under the repo's own module-size threshold.
  *
- * We do NOT use gray-matter here because the source Claude template files contain
- * unquoted description strings with colons (e.g., "description: Fix: the bug"), which
- * strict YAML parsers reject. Instead we parse the frontmatter line-by-line:
+ * We do NOT use gray-matter here: source files are untrusted, and gray-matter executes the body
+ * of a `---js` block. The default path parses the frontmatter line-by-line:
  *   - A line with `key: value` → key = value (string; everything after the first `: `)
  *   - Special-case: boolean true/false, simple numeric scalars
  *   - A line that looks like `key:` with YAML indented children (e.g. `paths:`) → collect as array
  *
- * This is intentionally tolerant: accuracy matters more than strict YAML compliance
- * for the source-import path.
+ * That tolerant parse is intentional: source files hold unquoted strings with colons (e.g.,
+ * "description: Fix: the bug") that strict YAML rejects, so it is also the fallback when
+ * `yamlFirst` is set. With `yamlFirst`, the frontmatter is first parsed as
+ * real YAML through `parseYamlFrontmatter` (js-yaml, `JSON_SCHEMA`, no code execution), which
+ * preserves quoted and folded scalars; anything it cannot load as a plain mapping falls back to
+ * the line-by-line parse.
  *
  * @module
  */
 import { readRegularFile } from '../../safe-read';
 import path from 'path';
 import { FORBIDDEN_KEYS } from '../../config-merge/primitives';
+import { parseYamlFrontmatter } from '../../frontmatter-parse';
 
 /** YAML frontmatter fence, as it appears at the start and end of a source file. */
 const FRONTMATTER_FENCE = '---';
@@ -128,34 +132,59 @@ const MAX_SOURCE_KIB = 1024;
 const KIB = 1024;
 
 /**
- * Parse a markdown file with simple, tolerant frontmatter (see module doc for why). The file is read
+ * Parses the fenced frontmatter text. With `yamlFirst` it tries real YAML first and falls back to
+ * the tolerant line parser when that yields no plain mapping; otherwise it uses the tolerant
+ * parser only.
+ */
+function parseFrontmatterText(
+  text: string,
+  opts?: { yamlFirst?: boolean },
+): Record<string, unknown> {
+  if (opts?.yamlFirst) {
+    const parsed = parseYamlFrontmatter(text);
+    if (parsed !== undefined) return parsed;
+  }
+  return parseFrontmatterLines(text);
+}
+
+/**
+ * Splits raw markdown into the fenced frontmatter text and the body after the closing fence.
+ * Returns undefined when the file does not start and end a frontmatter block with `---`.
+ */
+function splitFrontmatter(raw: string): { frontmatterText: string; body: string } | undefined {
+  if (!raw.startsWith(FRONTMATTER_FENCE)) return undefined;
+  const rest = raw.slice(FRONTMATTER_FENCE.length);
+  const closeIdx = rest.indexOf(CLOSING_FENCE);
+  if (closeIdx === -1) return undefined;
+  return {
+    frontmatterText: rest.slice(0, closeIdx),
+    body: rest.slice(closeIdx + CLOSING_FENCE.length), // skip \n---
+  };
+}
+
+/**
+ * Parse a markdown file with simple, tolerant frontmatter (see module doc for why). With
+ * `opts.yamlFirst`, valid YAML frontmatter is parsed as YAML and anything else falls back to the
+ * tolerant parser; without it the tolerant parser alone is used, as before. The file is read
  * through safe-read.ts (a regular file, never a followed link, within a size cap); anything else
  * throws SourceFileRejected, which discovery reports as not imported.
  */
-export function parseMarkdown(filePath: string): {
+export function parseMarkdown(
+  filePath: string,
+  opts?: { yamlFirst?: boolean },
+): {
   frontmatter: Record<string, unknown>;
   body: string;
 } {
   const read = readRegularFile(filePath, { maxBytes: MAX_SOURCE_KIB * KIB });
   if ('reason' in read) throw new SourceFileRejected(read.reason);
   const raw = read.content;
-
-  // Must start with ---
-  if (!raw.startsWith(FRONTMATTER_FENCE)) {
-    return { frontmatter: {}, body: raw };
-  }
-
-  // Find closing ---
-  const rest = raw.slice(FRONTMATTER_FENCE.length);
-  const closeIdx = rest.indexOf(CLOSING_FENCE);
-  if (closeIdx === -1) {
-    return { frontmatter: {}, body: raw };
-  }
-
-  const frontmatterText = rest.slice(0, closeIdx);
-  const body = rest.slice(closeIdx + CLOSING_FENCE.length); // skip \n---
-
-  return { frontmatter: parseFrontmatterLines(frontmatterText), body };
+  const split = splitFrontmatter(raw);
+  if (!split) return { frontmatter: {}, body: raw };
+  return {
+    frontmatter: parseFrontmatterText(split.frontmatterText, opts),
+    body: split.body,
+  };
 }
 
 export function stemOf(filePath: string): string {

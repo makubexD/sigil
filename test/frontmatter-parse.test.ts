@@ -8,7 +8,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { parseFrontmatter } from '../dist-cli/frontmatter-parse';
+import { parseFrontmatter, parseYamlFrontmatter } from '../dist-cli/frontmatter-parse';
 import { writeArtifactFrontmatter } from '../dist-cli/authoring/frontmatter';
 import { withTempDirAsync } from './helpers/temp-dir';
 import { loadCatalog } from '../dist-cli/load';
@@ -36,5 +36,38 @@ describe('parseFrontmatter', () => {
         ['shared/probe'],
       );
     });
+  });
+});
+
+describe('parseYamlFrontmatter', () => {
+  it('should parse a quoted scalar the tolerant parser corrupts', () => {
+    const fm = parseYamlFrontmatter('description: "He said \\"hi\\": ok"');
+    assert.equal(fm?.description, 'He said "hi": ok');
+  });
+
+  it('should parse a folded block scalar', () => {
+    const fm = parseYamlFrontmatter('description: >-\n  line one\n  line two');
+    assert.equal(fm?.description, 'line one line two');
+  });
+
+  it('should keep a flow sequence as a string array', () => {
+    const fm = parseYamlFrontmatter('tools: ["read", "search"]');
+    assert.deepEqual(fm?.tools, ['read', 'search']);
+  });
+
+  it('should return undefined for invalid YAML', () => {
+    assert.equal(parseYamlFrontmatter('description: Fix: the bug'), undefined);
+  });
+
+  it('should return undefined when the document is not a mapping', () => {
+    assert.equal(parseYamlFrontmatter('- a\n- b'), undefined);
+    assert.equal(parseYamlFrontmatter('just a string'), undefined);
+  });
+
+  it('should omit forbidden keys without touching Object.prototype', () => {
+    const fm = parseYamlFrontmatter('id: shared/ok\n__proto__: x\nconstructor: y\nprototype: z');
+    assert.deepEqual(fm, { id: 'shared/ok' });
+    assert.equal(Object.getPrototypeOf(fm), Object.prototype);
+    assert.ok(!Object.prototype.hasOwnProperty.call(Object.prototype, 'polluted'));
   });
 });

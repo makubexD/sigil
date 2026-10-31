@@ -483,13 +483,16 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
   source of truth):
   - `secret/*` — AWS keys, PEM blocks, generic API keys, bearer tokens, password fields, GitHub /
     Anthropic / OpenAI / Slack / Stripe / Google / npm tokens, and JWTs.
-  - `config/*` — dangerous shell patterns and possible exfiltration in hook or MCP commands.
+  - `config/*` — dangerous shell patterns and possible exfiltration. These run on every file, not
+    only hook and MCP commands, because an artifact body is an instruction to a model with shell
+    access. `config/dangerous-command` matches an invocation, never the bare word: `` `eval` `` and
+    `eval()` pass, `eval(x)` and `eval "$x"` don't.
   - `injection/*` — "ignore previous instructions", system-prompt disregard, jailbreak overrides,
     data-exfil URL patterns, and role-switch phrases.
 - **Severity:** `error` findings always fail `sigil check --trust`. `warn` findings are printed
   either way and fail the command only with `--strict` (`src/commands/check.ts`).
-- **Allowlist:** inline `<!-- sigil-allow: rule/id -->` in the file body, or a per-project
-  `.sigil/allow.json` `{ "allow": [...] }`.
+- **Allowlist:** inline `<!-- sigil-allow: rule/id -->` in the file body silences `warn` rules only.
+  No command reads `.sigil/allow.json`, so an `error` finding has no override.
 - Binary extensions (`.png`, `.jpg`, `.pdf`, etc.) are skipped entirely.
 
 Surfaced by `sigil check <file> --trust` (authoring time); `--strict` makes warnings fail too. For a

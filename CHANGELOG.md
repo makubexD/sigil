@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   repository hooks only from a trusted folder: `copilot -p` in an untrusted one skips them silently,
   and `--trust-folder` fixes that for one session.
 
+### Fixed
+
+- `sigil import` and `sigil check --trust` no longer refuse a file for naming `eval` in prose, or for
+  piping `curl` to `shasum`. Nine catalog agents and rules can now be imported. One example in
+  `typescript/ts-security` was reworded, so installed copies show as outdated until `sigil update`.
+- The trust scan now refuses dangerous commands it used to miss: `curl` with a quoted URL piped to a
+  shell, a pipe to `sudo bash` or `zsh`, `eval $(…)`, and `nc` with an IP address and `-e`.
+- `sigil import` from a `.claude` folder now drops the language prefix from a rule's file name, so
+  `angular-ng-security.md` imports as `angular/ng-security`, as the Copilot layout does. Re-importing a
+  rule into a catalog holding the old `<language>-<name>` id creates a second artifact, even with
+  `--overwrite`. Run `sigil move` on the old id first.
+
 ## [0.4.0] - 2026-10-31
 
 ### Added

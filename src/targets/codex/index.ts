@@ -1,17 +1,23 @@
 /**
  * The Codex target: Agent Skills in `.agents/skills/<name>/SKILL.md`, the open-standard layout
- * Codex loads, plus a root `AGENTS.md` with the repo-wide rules on a full build. Everything here
- * is data on the shared pipeline: emit specs, lexicon, capabilities and citations. It needs
- * nothing outside this folder except its `registerTarget()` line.
+ * Codex loads, plus a root `AGENTS.md` with the repo-wide rules on a full build, and hooks merged
+ * into `.codex/hooks.json` / `$CODEX_HOME/hooks.json`. Everything here is data on the shared
+ * pipeline: emit specs, lexicon, capabilities and citations. It needs nothing outside this folder
+ * except its `registerTarget()` line.
  *
  * The agents-standard target writes the same `.agents/skills/` files. The two render them
  * identically, so one tool loads each skill once and either install can be removed on its own.
  *
  * @module
  */
+import path from 'path';
 import type {
   ArtifactKind,
   CompileOptions,
+  ConfigKind,
+  ConfigMergeOp,
+  ConfigScope,
+  ConfigScopeInfo,
   ContractEntry,
   FileMap,
   KindVocabulary,
@@ -19,6 +25,7 @@ import type {
   ScaffoldOptions,
   Target,
 } from '../../types';
+import { resolveConfigRoot } from '../../config-utils';
 import type { TargetCapabilities } from '../capability-types';
 import type { ProviderLexicon } from '../lexicon';
 import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
@@ -28,19 +35,37 @@ import { isRepoWideRule, renderRulesDocument } from '../shared/repo-wide-rules';
 import { CODEX_CAPABILITIES } from './capabilities';
 import { CODEX_LEXICON } from './lexicon';
 import { CODEX_EMIT_SPECS } from './spec';
-import {
-  CODEX_AGGREGATE_DOCS,
-  CODEX_INIT_DIRS,
-  CODEX_PROJECT_MARKERS,
-  CODEX_VOCABULARY,
-} from './metadata';
+import { CODEX_AGGREGATE_DOCS } from './aggregate-docs';
+import { CODEX_INIT_DIRS, CODEX_PROJECT_MARKERS, CODEX_VOCABULARY } from './metadata';
+import { buildCodexHookOps } from './hook-ops';
+import { resolveCodexConfigDestination } from './config';
+
+export { CodexConfigDestination, resolveCodexConfigDestination } from './config';
+
+/** Codex hook config scopes, ordered by documented precedence (project overrides user). */
+const CODEX_CONFIG_SCOPES = [
+  {
+    value: 'project' as ConfigScope,
+    precedence: 1,
+    shared: true,
+    blastRadius: 'project' as const,
+    description: 'workspace — .codex/hooks.json, git-committed',
+  },
+  {
+    value: 'user' as ConfigScope,
+    precedence: 2,
+    shared: false,
+    blastRadius: 'all-projects' as const,
+    description: 'user — $CODEX_HOME/hooks.json (default ~/.codex/hooks.json), all projects',
+  },
+];
 
 export class CodexTarget implements Target {
   readonly name = 'codex';
   readonly displayName = 'OpenAI Codex';
   readonly installHint = 'writes to .agents/skills/';
   readonly afterInstallHint =
-    'Codex picks up .agents/skills/ in its next session. Run it in a trusted project: an untrusted one skips AGENTS.md and .codex/ config.';
+    'Codex picks up .agents/skills/ in its next session. Run it in a trusted project: an untrusted one skips AGENTS.md and .codex/ config. Review hooks with /hooks before they run — Codex skips a hook until then.';
 
   readonly capabilities: TargetCapabilities = CODEX_CAPABILITIES;
   readonly initDirs: string[] = CODEX_INIT_DIRS;
@@ -50,6 +75,51 @@ export class CodexTarget implements Target {
   readonly outputContracts: ContractEntry[] = deriveContracts(CODEX_EMIT_SPECS);
   readonly lexicon: ProviderLexicon = CODEX_LEXICON;
   readonly aggregateDocs: readonly SourcedDocRef[] = CODEX_AGGREGATE_DOCS;
+
+  /**
+   * Codex hook config scopes, ordered by documented precedence (project overrides user). Codex has
+   * no distinct "local" hook file, so only Project and User are offered.
+   */
+  configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
+    return CODEX_CONFIG_SCOPES.map(sc => ({
+      ...sc,
+      label: sc.value,
+      destinations: kinds
+        .filter(kind => kind === 'hook')
+        .map(kind => {
+          const dest = resolveCodexConfigDestination(kind, sc.value);
+          return {
+            kind,
+            file: dest.file,
+            root: dest.root,
+            fullPath: path.join(resolveConfigRoot(dest.root, projectDir), dest.file),
+            section: 'hooks',
+          };
+        }),
+    }));
+  }
+
+  // ── Config scaffold (hook — settings/mcp are Claude/Copilot vocabularies) ────
+
+  /**
+   * Produce the merge op for a hook artifact targeting Codex: `.codex/hooks.json` (project) or
+   * `$CODEX_HOME/hooks.json` (user). The install scope is resolved in order:
+   * options.scope → fm.defaultScope → 'project'.
+   */
+  async scaffoldConfig(
+    artifactId: string,
+    catalog: ResolvedCatalog,
+    options: ScaffoldOptions,
+  ): Promise<ConfigMergeOp[]> {
+    const artifact = catalog.byId.get(artifactId);
+    if (!artifact) throw new Error(`Artifact '${artifactId}' not found in the catalog`);
+    if (artifact.kind !== 'hook') {
+      throw new Error(`Codex scaffoldConfig only supports the 'hook' kind, got '${artifact.kind}'`);
+    }
+    const scope: ConfigScope =
+      options.scope ?? (artifact.frontmatter.defaultScope as ConfigScope | undefined) ?? 'project';
+    return buildCodexHookOps(artifact, scope);
+  }
 
   /** Every skill (rules inlined, the whole catalog co-installed) and AGENTS.md with repo-wide rules. */
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {

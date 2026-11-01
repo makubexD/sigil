@@ -332,7 +332,8 @@ reaches it inside skills, and a full build also writes repo-wide rules to a root
 [capabilities.md](capabilities.md). Specs and citations: `src/targets/agents-standard/`.
 
 **OpenAI Codex (`codex`).** Skills and `AGENTS.md` render exactly as for `agents-standard`, so the two targets share
-those files. Every other kind is skipped with the reason in [capabilities.md](capabilities.md). Specs and citations:
+those files. A `hook` merges into `.codex/hooks.json`, or `$CODEX_HOME/hooks.json` at user scope, as one quoted
+command per shell, because Codex ignores `args`. Every other kind is skipped with the reason in [capabilities.md](capabilities.md). Specs and citations:
 `src/targets/codex/`.
 
 **Key vocabulary rules:**

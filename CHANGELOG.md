@@ -9,13 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- New target `codex`: `sigil add --target codex` writes skills to `.agents/skills/`, and `sigil build
-  --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are
+- New target `codex`: `sigil add --target codex` writes skills to `.agents/skills/` and merges hooks
+  into `.codex/hooks.json`, and `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are
   skipped, with the reason. It shares its skill files with `agents-standard`, so removing one install
   keeps them for the other. See `docs/setup/codex.md`.
 
 ### Changed
 
+- `shared/protect-config` now also checks a patch in `tool_input.command`, which is where Codex sends
+  `apply_patch`, and checks `file_path` beside it. This changes the hook `sigil add` writes for every
+  target; run `sigil update`.
 - The `shared/protect-config` notes and the config-kind docs now warn that Copilot CLI loads
   repository hooks only from a trusted folder: `copilot -p` in an untrusted one skips them silently,
   and `--trust-folder` fixes that for one session.

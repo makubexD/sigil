@@ -45,3 +45,14 @@ export const CODEX_CUSTOM_PROMPTS_DOC: DocRef = {
     'custom prompts are deprecated in favor of skills and live only in the home directory, so ' +
     'they are not a project-scoped artifact.',
 };
+
+/** Codex hook files — the schema src/targets/codex/hook-ops.ts writes. */
+export const CODEX_HOOKS_DOC: DocRef = {
+  url: 'https://learn.chatgpt.com/docs/hooks',
+  title: 'OpenAI Codex — Hooks',
+  verifiedOn: '2026-10-31',
+  covers:
+    'Codex hook files (.codex/hooks.json project, $CODEX_HOME/hooks.json user): the ' +
+    '{ hooks: { <event>: [{ matcher, hooks: [entry] }] } } schema, the documented events, and the ' +
+    'command / commandWindows / timeout entry fields buildCodexHookOps writes.',
+};

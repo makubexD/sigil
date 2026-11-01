@@ -3,8 +3,8 @@
 > **Back to:** [README](../../README.md) · [Documentation index](../index.md) ·
 > [consuming.md](../guides/consuming.md)
 
-`sigil add --target codex` writes skills to `.agents/skills/`, where Codex reads them. A full `sigil build --target codex`
-also writes a root `AGENTS.md` with the repo-wide rules.
+`sigil add --target codex` writes skills to `.agents/skills/`, where Codex reads them, and merges hooks into
+`.codex/hooks.json`. A full `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules.
 
 ## Install skills
 
@@ -27,6 +27,36 @@ keeps the file for the other.
 
 Codex treats an explicitly untrusted project differently per file type. Skills in `.agents/skills/` still load, but
 `AGENTS.md` and everything under `.codex/` don't, with no error. Trust the project when Codex asks.
+
+## Install hooks, then review them
+
+```bash
+sigil add shared/protect-config --target codex            # .codex/hooks.json
+sigil add shared/protect-config --target codex --scope user  # $CODEX_HOME/hooks.json
+```
+
+**A hook does nothing until you review it.** Codex skips a new or changed hook with no error, so after installing, open
+`/hooks` in Codex and trust it. In `codex exec`, an unreviewed hook let a `.env` write through in testing, with exit 0.
+For automation that already vets its hooks, `--dangerously-bypass-hook-trust` runs them for one invocation.
+
+Codex has no personal per-project hook file, so `--scope local` is refused.
+
+Treat hooks as a guardrail. Codex says so itself, and any exit code other than 2 lets the call through, so a hook that
+can't start protects nothing. The Windows form of the command is untested.
+
+## Plugins
+
+Sigil's Claude marketplace also loads in Codex, with no project files:
+
+```bash
+codex plugin marketplace add makubexD/sigil --ref marketplace
+codex plugin add typescript-tooling@sigil
+```
+
+Skills and MCP servers arrive. Agents don't, and skill bodies keep Claude's wording, such as `CLAUDE.md`.
+
+**Don't install the `hook-*` plugins on Codex.** Codex drops their arguments, so the hook fails and the call goes through:
+`hook-protect-config` didn't stop a `.env` write in testing. Use `sigil add` for hooks.
 
 ## Keep the listing short
 

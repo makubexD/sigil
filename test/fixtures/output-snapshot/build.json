@@ -49,7 +49,7 @@
   "agents-standard/.agents/skills/react-scaffold-project/SKILL.md": "1ee7877c999fad7e307777ff0cf7606f3e05766f50be711e5090868a3d273de6",
   "agents-standard/.agents/skills/react-sync-tests/SKILL.md": "1758223b4c794247ca80be4a67bfc1f36d0b90cdc68fa714f046ee8a78b7adc2",
   "agents-standard/.agents/skills/ts-add-package/SKILL.md": "85891fbfe0e37ee94bcb365252c8c33339bdeb5153af20a93056f24d5adb855c",
-  "agents-standard/.agents/skills/ts-audit-deps/SKILL.md": "7f754e724e59e50c7c8005867a882018c0fd6820a00dbe3a84d22645f0b5be2a",
+  "agents-standard/.agents/skills/ts-audit-deps/SKILL.md": "1a899f838bb25f6c8a3b12225584e8b10781dc14df46b0d9a58c674e487c8b16",
   "agents-standard/.agents/skills/ts-document/SKILL.md": "40f75e3811fd957b620bdbb1ee6f55a70f9992ee3d6ef798274d300071fec14e",
   "agents-standard/.agents/skills/ts-generate-tests/SKILL.md": "c7703501aa7a4c6cd93e3c5148727a9e5794da986231b788cb326a605d511d73",
   "agents-standard/.agents/skills/ts-new-project/SKILL.md": "7ce78f3a3d1446e3ba52bebd53376a6071a9cb60f27ad5e7de7eba87d3e59389",
@@ -219,7 +219,7 @@
   "claude/plugins/typescript-tooling/agents/ts-refactor-specialist.md": "d1624b936bf0b4dec9fece5a54a29696b4360826486f98bab6565c5c8bcc0112",
   "claude/plugins/typescript-tooling/agents/ts-security-auditor.md": "35117c8385217954ec0559227705c64fd242c270b51bc2717eb4e63e13421faf",
   "claude/plugins/typescript-tooling/skills/ts-add-package/SKILL.md": "46ffa91a09fc205bed4cf111f4d77cc12fee46ad00c493a00f9c2159437a9266",
-  "claude/plugins/typescript-tooling/skills/ts-audit-deps/SKILL.md": "0cf32a89e617400235e11142ff760e04400a42f2430f4621469f371230f6de0f",
+  "claude/plugins/typescript-tooling/skills/ts-audit-deps/SKILL.md": "ba083759b56e603a25ecc63394afb96455aef584459f72ffaf4df603e9fb22ca",
   "claude/plugins/typescript-tooling/skills/ts-document/SKILL.md": "76266e51c2e751f7129a9bc9fa3fc172fc4c07098ded97daba8dd20c1334669d",
   "claude/plugins/typescript-tooling/skills/ts-generate-tests/SKILL.md": "dbe3ab856b9103f1b75dff8a0736dec1af0abecbe62d76ecb363638e0c30d171",
   "claude/plugins/typescript-tooling/skills/ts-new-project/SKILL.md": "43698eab9e76798e7ceef2ba190bc5cc1ce9d0a858ed86f87777aee2f0813904",
@@ -325,7 +325,7 @@
   "copilot/.github/instructions/typescript-ts-logging.instructions.md": "40c0078e42e7eb67f599d38931b278f328b63ee1db554cc817e4b86817ad5bbe",
   "copilot/.github/instructions/typescript-ts-npm.instructions.md": "5434f8224a4ef0d95ffebc37f1b77b52a7878392b977d26d5159f896854fc2ec",
   "copilot/.github/instructions/typescript-ts-project-layout.instructions.md": "7c3f812895070ec0800911263d9953dcc1d6a5a904a0970f64338161527e5d3d",
-  "copilot/.github/instructions/typescript-ts-security.instructions.md": "ed247bcb73b5601da383ff99407ef68cf08141d8cd4f94b8dae79c83eae0f0b5",
+  "copilot/.github/instructions/typescript-ts-security.instructions.md": "0eb8dbd80216c18e6a413d57c1cd47d37212e89516ba44cb3b2a8907d2b2e887",
   "copilot/.github/instructions/typescript-ts-testing.instructions.md": "68ec434ef4190b05f37df314310d8666feb67087262b78cfac58cef5e2735eef",
   "copilot/.github/prompts/shared-author-artifact.prompt.md": "78068f7c97a0c2341f3e5837358713dc6780681e3587130050eb266ad183a392",
   "copilot/.github/prompts/shared-explain-diff.prompt.md": "cb069c425ec23b81fbf039c9b66fee78a892ecd8fa7673b219757c62eb02b380",
@@ -379,7 +379,7 @@
   "copilot/.github/skills/react-scaffold-project/SKILL.md": "1ee7877c999fad7e307777ff0cf7606f3e05766f50be711e5090868a3d273de6",
   "copilot/.github/skills/react-sync-tests/SKILL.md": "1758223b4c794247ca80be4a67bfc1f36d0b90cdc68fa714f046ee8a78b7adc2",
   "copilot/.github/skills/ts-add-package/SKILL.md": "85891fbfe0e37ee94bcb365252c8c33339bdeb5153af20a93056f24d5adb855c",
-  "copilot/.github/skills/ts-audit-deps/SKILL.md": "7f754e724e59e50c7c8005867a882018c0fd6820a00dbe3a84d22645f0b5be2a",
+  "copilot/.github/skills/ts-audit-deps/SKILL.md": "1a899f838bb25f6c8a3b12225584e8b10781dc14df46b0d9a58c674e487c8b16",
   "copilot/.github/skills/ts-document/SKILL.md": "40f75e3811fd957b620bdbb1ee6f55a70f9992ee3d6ef798274d300071fec14e",
   "copilot/.github/skills/ts-generate-tests/SKILL.md": "c7703501aa7a4c6cd93e3c5148727a9e5794da986231b788cb326a605d511d73",
   "copilot/.github/skills/ts-new-project/SKILL.md": "7ce78f3a3d1446e3ba52bebd53376a6071a9cb60f27ad5e7de7eba87d3e59389",
@@ -399,5 +399,5 @@
   "copilot/.github/skills/wizard/references/stack-python.md": "118d9d12cb7ad5315aed9c2ad87afcdf0897f2b961330eef4d7cf08314d83cde",
   "copilot/.github/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "copilot/.github/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
-  "registry.json": "c952e1380fe464839518790d64b88689ee977d1786ee25e9b2b791ad18d88ed1"
+  "registry.json": "9479bfc18a8a8739ff723b6eac5994cbf0b62375b1a67f9d12bf75e3c64b80b5"
 }

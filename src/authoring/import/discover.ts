@@ -2,9 +2,14 @@
  * Discover importable artifact files in a source Claude template directory.
  *
  * Recognises the standard portable-template layout:
- *   rules/<prefix>-<topic>.md        → kind: rule
- *   agents/<prefix>-<role>.md        → kind: agent
- *   skills/<prefix>-<verb-noun>/SKILL.md → kind: skill
+ *   rules/<namespace>-<topic>.md     → kind: rule, slug `<topic>`
+ *   agents/<role>.md                 → kind: agent
+ *   skills/<verb-noun>/SKILL.md      → kind: skill
+ *
+ * A rule file name may carry the import namespace, as `add` writes it, so the slug drops one
+ * leading `<namespace>-` — exact case, once, only when something remains. Agents and skills
+ * keep their names: their file names carry no namespace. Stripping can make two rules one name,
+ * so rules go through `dedupeDiscovered` and a second file is reported, never overwritten.
  *
  * Returns a list of `DiscoveredFile` objects with the kind and parsed frontmatter.
  * README.md and any other file that doesn't match the layout is placed in `unrecognised`.
@@ -19,6 +24,7 @@ import { SKILL_FILENAME } from '../../paths';
 import { parseMarkdown, stemOf } from './parse-markdown';
 import { readReferences, skillFolderExtras } from '../../load-references';
 import { SourceFileRejected } from './parse-markdown';
+import { dedupeDiscovered } from './discover-copilot-root';
 import type { ReferenceFile } from '../../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -74,33 +80,51 @@ export function discoverOrReport(
   }
 }
 
+/**
+ * The slug for a flat-kind file: its stem, minus one leading `<namespace>-` (a rule's prefix),
+ * only when something remains after it. The stem is otherwise untouched — no case change.
+ */
+function flatKindSlug(filePath: string, namespace?: string): string {
+  const stem = stemOf(filePath);
+  if (namespace === undefined || !stem.startsWith(`${namespace}-`)) return stem;
+  const stripped = stem.slice(namespace.length + 1);
+  return stripped === '' ? stem : stripped;
+}
+
 /** Builds a DiscoveredFile record for a flat-kind (rule/agent) source markdown file. */
 function buildFlatKindDiscoveredFile(
   filePath: string,
   relativePath: string,
   kind: 'rule' | 'agent',
+  namespace?: string,
 ): DiscoveredFile {
-  const slug = stemOf(filePath);
+  const slug = flatKindSlug(filePath, namespace);
   const { frontmatter, body } = parseMarkdown(filePath);
   return { sourcePath: filePath, relativePath, kind, slug, frontmatter, body };
 }
 
-function classifyFlatKindEntry(
-  entry: Dirent,
-  dir: string,
-  dirName: string,
-  kind: 'rule' | 'agent',
-): ClassifyResult {
+/** One flat-directory entry plus the context its classifier needs. */
+interface FlatKindContext {
+  dir: string;
+  dirName: string;
+  kind: 'rule' | 'agent';
+  namespace?: string | undefined;
+}
+
+function classifyFlatKindEntry(entry: Dirent, ctx: FlatKindContext): ClassifyResult {
   if (!entry.isFile() || !entry.name.endsWith('.md')) {
     if (entry.name === 'README.md') return {};
     return {
-      unrecognised: { relativePath: path.join(dirName, entry.name), reason: 'Not a .md file' },
+      unrecognised: {
+        relativePath: path.join(ctx.dirName, entry.name),
+        reason: 'Not a .md file',
+      },
     };
   }
-  const filePath = path.join(dir, entry.name);
-  const relativePath = path.join(dirName, entry.name);
+  const filePath = path.join(ctx.dir, entry.name);
+  const relativePath = path.join(ctx.dirName, entry.name);
   return discoverOrReport(relativePath, () =>
-    buildFlatKindDiscoveredFile(filePath, relativePath, kind),
+    buildFlatKindDiscoveredFile(filePath, relativePath, ctx.kind, ctx.namespace),
   );
 }
 
@@ -109,14 +133,16 @@ function discoverFlatKindDir(
   sourceDir: string,
   dirName: string,
   kind: 'rule' | 'agent',
+  namespace?: string,
 ): DiscoverResult {
   const discovered: DiscoveredFile[] = [];
   const unrecognised: UnrecognisedFile[] = [];
   const dir = path.join(sourceDir, dirName);
   if (!fs.existsSync(dir)) return { discovered, unrecognised };
 
+  const ctx: FlatKindContext = { dir, dirName, kind, namespace };
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-    const result = classifyFlatKindEntry(entry, dir, dirName, kind);
+    const result = classifyFlatKindEntry(entry, ctx);
     if (result.discovered) discovered.push(result.discovered);
     if (result.unrecognised) unrecognised.push(result.unrecognised);
   }
@@ -221,9 +247,11 @@ function discoverRootLevelUnrecognised(sourceDir: string): UnrecognisedFile[] {
  * Files that don't match any known layout are collected in `unrecognised`.
  *
  * @param sourceDir  Absolute path to the source Claude template directory (e.g. _Others/.ClaudeDotNet).
+ * @param namespace  Catalog language (or "shared") whose prefix rule file names may carry.
  */
-export function discoverFiles(sourceDir: string): DiscoverResult {
-  const rules = discoverFlatKindDir(sourceDir, 'rules', 'rule');
+export function discoverFiles(sourceDir: string, namespace: string): DiscoverResult {
+  const rulesFound = discoverFlatKindDir(sourceDir, 'rules', 'rule', namespace);
+  const rules = dedupeDiscovered(rulesFound.discovered);
   const agents = discoverFlatKindDir(sourceDir, 'agents', 'agent');
   const skills = discoverSkillsDir(sourceDir);
   const rootUnrecognised = discoverRootLevelUnrecognised(sourceDir);
@@ -231,6 +259,7 @@ export function discoverFiles(sourceDir: string): DiscoverResult {
   return {
     discovered: [...rules.discovered, ...agents.discovered, ...skills.discovered],
     unrecognised: [
+      ...rulesFound.unrecognised,
       ...rules.unrecognised,
       ...agents.unrecognised,
       ...skills.unrecognised,

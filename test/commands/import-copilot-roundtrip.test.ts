@@ -11,6 +11,7 @@ import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
 import { runImport } from '../../dist-cli/commands/import';
 import { loadCatalog } from '../../dist-cli/load';
+import { validateCatalog } from '../../dist-cli/validate';
 import { getTarget } from '../../dist-cli/targets/index';
 import { add, PACKS } from '../helpers/install-scenario';
 import { loadResolvedCatalog } from '../helpers/catalog';
@@ -24,8 +25,6 @@ import type {
 
 const RULE = 'typescript/ts-async';
 const AGENT = 'typescript/ts-debugger';
-/** Its prose names `eval`, which the trust scanner's `config/dangerous-command` rule blocks. */
-const TRUST_BLOCKED_AGENT = 'typescript/ts-code-reviewer';
 const SKILL = 'typescript/ts-document';
 const PROMPT = 'shared/explain-diff';
 const ALL_SELECTORS = [`rule:${RULE}`, `agent:${AGENT}`, `skill:${SKILL}`, `prompt:${PROMPT}`];
@@ -42,24 +41,38 @@ interface RoundTrip {
   catalog: LoadedCatalog;
 }
 
-/** Installs `selectors` for Copilot into `<root>/<name>`; returns the project directory. */
+/** A source layout an import reads: Copilot's `.github/`, or Claude's `.claude/`. */
+type ImportLayout = 'copilot' | 'claude';
+
+/** Installs `selectors` for `target` into `<root>/<name>`; returns the project directory. */
 async function install(
   root: string,
   name: string,
   selectors: string[],
   deps = true,
+  target = 'copilot',
 ): Promise<string> {
   const project = path.join(root, name);
   fs.mkdirSync(project, { recursive: true });
-  await add(project, 'copilot', selectors, deps);
+  await add(project, target, selectors, deps);
   return project;
 }
 
-/** Imports `project`'s Copilot layout into `catalogDir` under the language or shared namespace. */
-async function importProject(project: string, catalogDir: string, shared: boolean): Promise<void> {
-  const common = { from: 'copilot', catalogDir, dryRun: false, yes: true, overwrite: false };
-  if (shared) await runImport(project, { ...common, shared: true, createLanguage: false });
-  else await runImport(project, { ...common, language: 'typescript', createLanguage: true });
+/** Imports `project`'s `layout` folder into `catalogDir` under the language or shared namespace. */
+async function importProject(
+  project: string,
+  catalogDir: string,
+  shared: boolean,
+  language = 'typescript',
+  layout: ImportLayout = 'copilot',
+): Promise<void> {
+  const common = { from: layout, catalogDir, dryRun: false, yes: true, overwrite: false };
+  if (shared) {
+    await runImport(project, { ...common, shared: true, createLanguage: false });
+    return;
+  }
+  const source = layout === 'claude' ? path.join(project, '.claude') : project;
+  await runImport(source, { ...common, language, createLanguage: true });
 }
 
 /** Creates an empty catalog directory at `<root>/catalog` and returns its path. */
@@ -144,6 +157,42 @@ function argNames(artifact: Artifact | ResolvedArtifact): string[] {
   return args.map(arg => arg.name).sort();
 }
 
+/** A catalog artifact whose prose the trust scanner used to refuse on a false positive. */
+interface ImportableArtifact {
+  kind: 'agent' | 'rule';
+  language: string;
+  name: string;
+}
+
+/**
+ * The nine importable artifacts from the trust-scan plan (docs/plan-trust-scan-prose-false-positive.md,
+ * Evidence). The hook there is not importable, so it is not listed.
+ */
+const IMPORTABLE: readonly ImportableArtifact[] = [
+  { kind: 'agent', language: 'typescript', name: 'ts-code-reviewer' },
+  { kind: 'agent', language: 'typescript', name: 'ts-security-auditor' },
+  { kind: 'agent', language: 'csharp', name: 'cs-code-reviewer' },
+  { kind: 'agent', language: 'angular', name: 'ng-security-auditor' },
+  { kind: 'agent', language: 'python', name: 'py-security-auditor' },
+  { kind: 'rule', language: 'angular', name: 'ng-security' },
+  { kind: 'rule', language: 'python', name: 'py-security' },
+  { kind: 'rule', language: 'typescript', name: 'ts-conventions' },
+  { kind: 'rule', language: 'typescript', name: 'ts-security' },
+];
+
+/** Installs one artifact for `layout`, imports it into its own language, and loads that catalog. */
+async function importOne(
+  root: string,
+  artifact: ImportableArtifact,
+  layout: ImportLayout,
+): Promise<RoundTrip> {
+  const id = `${artifact.language}/${artifact.name}`;
+  const project = await install(root, 'project', [`${artifact.kind}:${id}`], false, layout);
+  const catalogDir = emptyCatalog(root);
+  await importProject(project, catalogDir, false, artifact.language, layout);
+  return { project, catalogDir, catalog: await loadCatalog(catalogDir) };
+}
+
 describe('Copilot import round trip', () => {
   it('should bring a rule back with its title, description, scope and body', async () => {
     await withTempDirAsync(async root => {
@@ -210,20 +259,6 @@ describe('Copilot import round trip', () => {
     });
   });
 
-  it('should refuse an agent the trust scanner blocks and write nothing for it', async () => {
-    await withTempDirAsync(async root => {
-      const project = await install(root, 'project', [`agent:${TRUST_BLOCKED_AGENT}`], false);
-      const catalogDir = emptyCatalog(root);
-      await assert.rejects(importProject(project, catalogDir, false), /Fix the errors above/);
-      const written = path.join(catalogDir, 'languages', `${TRUST_BLOCKED_AGENT}.agent.md`);
-      assert.equal(fs.existsSync(written), false);
-      assert.equal(
-        fs.existsSync(path.join(catalogDir, 'languages', 'typescript', 'agents')),
-        false,
-      );
-    });
-  });
-
   it('should leave no Copilot lexicon literal in any imported body', async () => {
     await withTempDirAsync(async root => {
       const { catalog } = await allKindsRoundTrip(root);
@@ -235,6 +270,49 @@ describe('Copilot import round trip', () => {
           assert.ok(!artifact.body.includes(value), `${artifact.id} still contains '${value}'`);
         }
       }
+    });
+  });
+});
+
+describe('catalog artifacts the trust scanner covers', () => {
+  for (const artifact of IMPORTABLE) {
+    const id = `${artifact.language}/${artifact.name}`;
+    for (const layout of ['copilot', 'claude'] as const) {
+      it(`should import ${id} through the ${layout} layout`, async () => {
+        await withTempDirAsync(async root => {
+          const { catalog } = await importOne(root, artifact, layout);
+          const imported = find(catalog.byId, id);
+          assert.ok(
+            fs.existsSync(imported.filePath),
+            `missing ${path.relative(root, imported.filePath)}`,
+          );
+        });
+      });
+    }
+  }
+
+  it('should keep the `eval` line in typescript/ts-code-reviewer and pass validate', async () => {
+    await withTempDirAsync(async root => {
+      const project = await install(
+        root,
+        'project',
+        ['agent:typescript/ts-code-reviewer'],
+        false,
+        'copilot',
+      );
+      const catalogDir = emptyCatalog(root);
+      await importProject(project, catalogDir, false, 'typescript', 'copilot');
+      const catalog = await loadCatalog(catalogDir);
+      const imported = find(catalog.byId, 'typescript/ts-code-reviewer');
+      assert.ok(
+        imported.body.split('\n').some(line => line.includes('`eval`')),
+        'the prose naming `eval` survives the round trip',
+      );
+      const validation = validateCatalog(catalog);
+      assert.ok(
+        validation.valid,
+        `imported catalog should validate: ${validation.errors.map(e => e.error).join('; ')}`,
+      );
     });
   });
 });

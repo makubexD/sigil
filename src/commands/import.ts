@@ -175,7 +175,7 @@ function printNothingToImport(absSourceDir: string, from: SourceLayout['from']):
 /** Discovery output for the chosen layout. */
 function discoverForLayout(source: SourceLayout, lang: string) {
   if (source.from === 'copilot') return discoverCopilotFiles(source.root, lang);
-  return discoverFiles(source.root);
+  return discoverFiles(source.root, lang);
 }
 
 /** Discovers source files for the chosen layout and builds the import plan; null when nothing found. */

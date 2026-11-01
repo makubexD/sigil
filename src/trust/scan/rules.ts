@@ -4,7 +4,8 @@
  * 20 rules across three namespaces:
  *   secret/*    — credentials, tokens, API keys
  *   injection/* — jailbreak overrides, role-switch, data-exfil URLs
- *   config/*    — dangerous or exfiltrating commands in config kinds
+ *   config/*    — dangerous or exfiltrating commands in every file, on purpose: a body is an
+ *                 instruction to a model with shell access
  *
  * Each rule specifies either a per-line `pattern` or a whole-file `globalPattern`.
  * `frontmatterOnly` restricts matching to the YAML block (content before the second ---).
@@ -111,19 +112,19 @@ export const RULES: ScanRule[] = [
     pattern: /\beyJ[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\b/,
   },
 
-  // ── Config artifact security (hooks / MCP execute shell commands) ─────────
+  // ── Config artifact security (every file on purpose; matches an invocation and what can't be told from one) ──
   {
     id: 'config/dangerous-command',
     severity: 'error',
-    description: 'Hook or MCP command with dangerous shell pattern',
-    // Catches common destructive/exfil patterns: rm -rf, pipe-to-sh, reverse shells, eval, etc.
+    description: 'Dangerous shell pattern in any artifact',
+    // Catches invocations and what can't be told from one: rm -rf, pipe-to-sh, eval "x", reverse shells, etc.
     pattern:
-      /(?:rm\s+-[rf]{1,2}f?\s+\/|curl[^'"]*\|\s*(?:bash|sh)|wget[^'"]*\|\s*(?:bash|sh)|eval\s*["`(]|nc\s+[-\w]*\s+\d+\s+-e|python[23]?\s+-c\s*['"`]import\s+socket|bash\s+-i\s*>&?\s*\/dev\/tcp)/i,
+      /(?:rm\s+-[rf]{1,2}f?\s+\/|^(?=[^\n]*(?:curl|wget))[^\n]*\|\s*(?:sudo\s+)?(?:env\s+)?(?:ba|z|da|k)?sh(?![a-z])|(?<!retri|medi|prim|literal_)eval[`"]?\s+["`$]|(?<!retri|medi|prim|literal_)eval\s*\((?!\s*\))|^(?=[^\n]*perl)[^\n]*(?<!retri|medi|prim|literal_)eval\s*\(|(?<![`"])(?<!retri|medi|prim|literal_)eval[`"]|`eval(?!`(?:[^\w`"$(]|$))[`"]|^[^`]*`(?:[^`]*`[^`]*`)*[^`]*`eval`|"eval(?!"(?:[,.;:)\]}]|\s*$))[`"]|eval[`"]\s*[\])][\s\])?.]*\(|nc\s+(?:[-\w.]+\s+)?\d+\s+-e|python[23]?\s+-c\s*['"`]import\s+socket|bash\s+-i\s*>&?\s*\/dev\/tcp)/i,
   },
   {
     id: 'config/exfil-in-command',
     severity: 'warn',
-    description: 'Hook command that may exfiltrate data (curl/wget to external URL with data)',
+    description: 'Command that may exfiltrate data (curl/wget to external URL with data)',
     pattern:
       /(?:curl|wget)\s+[^'"]*(?:https?:\/\/)[^'" ]+\s+(?:-d\s*['"`]?\$|--data\s*['"`]?\$|--upload-file)/i,
   },

@@ -246,7 +246,8 @@ content-refinement follow-up checklist. `--display-name` overrides the generated
 `--overwrite` replaces an existing catalog file (the default is to skip the conflict).
 
 A project's `.claude/` folder needs no flag: `sigil import .claude --language foo` reads its
-`rules/`, `agents/` and `skills/` directly.
+`rules/`, `agents/` and `skills/` directly. A rule file named `<language>-<name>.md` imports as
+`<name>`, as the Copilot layout does.
 
 ### Import a Copilot `.github/` layout
 
@@ -292,8 +293,10 @@ Check these after an import:
   `## Coding guidelines to apply` section stays in the body with a note, and so does `## Boundary`.
   Wire `uses.rules` with `sigil patch` and set `relatedArtifacts` in the catalog file.
 - **A `workflow` comes back as a `prompt`**, because both render to `.prompt.md`.
-- **The trust scan can refuse prose.** `config/dangerous-command` matches text such as `` `eval` ``
-  in a reviewer's checklist, on either layout, and blocks that file.
+- **The trust scan refuses commands, even in examples.** Naming `eval` is usually fine, unless a word
+  follows `"eval"` or touches the closing backtick of `` `eval` ``; reword a line refused for that. A
+  body with `eval(x)` or a pipe from `curl` to a shell is refused on either layout, even in a bad-code
+  example, and nothing overrides it. Reword the example before importing.
 
 ---
 

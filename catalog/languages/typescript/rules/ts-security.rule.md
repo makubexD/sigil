@@ -48,7 +48,7 @@ const execFileAsync = promisify(execFile);
 const { stdout } = await execFileAsync("git", ["log", "--oneline", branch]);
 
 // Avoid — shell interpolation, command injection
-const { stdout } = await exec(`git log --oneline ${branch}`);  // branch could be "; rm -rf /"
+const { stdout } = await exec(`git log --oneline ${branch}`);  // branch could be "; touch /tmp/pwned"
 ```
 
 Avoid `child_process.exec` and `child_process.execSync` with any untrusted input, and never pass

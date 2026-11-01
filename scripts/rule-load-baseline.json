@@ -1,7 +1,7 @@
 {
   "typescript": {
-    "bytes": 42539,
-    "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
+    "bytes": 42547,
+    "reason": "ts-security payload example reworded so the trust scanner passes it"
   },
   "angular": {
     "bytes": 50389,

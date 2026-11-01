@@ -483,13 +483,23 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
   source of truth):
   - `secret/*` — AWS keys, PEM blocks, generic API keys, bearer tokens, password fields, GitHub /
     Anthropic / OpenAI / Slack / Stripe / Google / npm tokens, and JWTs.
-  - `config/*` — dangerous shell patterns and possible exfiltration in hook or MCP commands.
+  - `config/*` — dangerous shell patterns and possible exfiltration. These run on every file, not
+    only hook and MCP commands, because an artifact body is an instruction to a model with shell
+    access. `config/dangerous-command` matches an invocation and what can't be told from one. It is a
+    check of command shapes on one line, not a parser: an extra character can defeat it, and it does
+    not read what prose asks a model to do. The
+    [limits](../decisions/trust-scan-eval-limits-2026-10.md) list what passes. A backticked `` `eval` ``
+    passes unless an ASCII word character, `$`, `(`, `"` or a backtick touches its closing backtick, a
+    double-quoted, backticked or `$` argument follows it, or `]` or `)` then `(` follows it. An odd number of backticks earlier on the line also refuses it,
+    even in harmless prose, because that reads as the closing half of a span. `"eval"` passes only
+    before `,` `.` `;` `:` `)` `]` `}` or the end of the line. `eval()` passes except on a line that
+    names `perl`; `eval(x)` and `eval "$x"` don't.
   - `injection/*` — "ignore previous instructions", system-prompt disregard, jailbreak overrides,
     data-exfil URL patterns, and role-switch phrases.
 - **Severity:** `error` findings always fail `sigil check --trust`. `warn` findings are printed
   either way and fail the command only with `--strict` (`src/commands/check.ts`).
-- **Allowlist:** inline `<!-- sigil-allow: rule/id -->` in the file body, or a per-project
-  `.sigil/allow.json` `{ "allow": [...] }`.
+- **Allowlist:** inline `<!-- sigil-allow: rule/id -->` in the file body silences `warn` rules only.
+  No command reads `.sigil/allow.json`, so an `error` finding has no override.
 - Binary extensions (`.png`, `.jpg`, `.pdf`, etc.) are skipped entirely.
 
 Surfaced by `sigil check <file> --trust` (authoring time); `--strict` makes warnings fail too. For a

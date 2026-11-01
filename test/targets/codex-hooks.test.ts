@@ -114,7 +114,10 @@ describe('codex hook config — scaffoldConfig', () => {
     try {
       const user = target.configScopes!(['hook'], PROJECT_DIR).find(sc => sc.value === 'user');
       assert.ok(user, 'user scope offered');
-      assert.equal(user.destinations[0]!.fullPath, path.join('/tmp/codex-home-test', 'hooks.json'));
+      assert.equal(
+        user.destinations[0]!.fullPath,
+        path.resolve('/tmp/codex-home-test', 'hooks.json'),
+      );
     } finally {
       if (prev === undefined) delete process.env.CODEX_HOME;
       else process.env.CODEX_HOME = prev;

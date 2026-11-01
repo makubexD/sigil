@@ -94,6 +94,11 @@ configured`, the user's own servers included. Leaving `type` off remote servers 
   never pass an authored `type` through unchecked.
 - **`${env:NAME}` in `args` is expanded**, so `shared/ado` renders on Cursor (Decision 2).
 
+Closed (Phase D step 10): `shared/filesystem` and `shared/maku-jam` installed by `sigil add --target cursor` both load
+after `agent mcp enable`, and a filesystem tool call returned the file's contents in print mode, so the dialect's
+stdio entry works live. Still unmeasured: the desktop app, Windows, and a `${env:…}` server installed by sigil itself
+(`shared/ado` needs an Azure DevOps PAT) (Phase G).
+
 ## Agents: `readonly` is tighter than assumed
 
 The roadmap said `readonly: true` "still allows read-only shell and web tools". In this version it doesn't allow shell
@@ -357,3 +362,12 @@ configured`, and `enable` said each was `not found in configuration`. Split apar
 **Run 3, `args` interpolation (owner, by hand).** Fixture: `probe` with `"type":"stdio"` and `args: [server.js,
 "${env:SIGIL_PROBE}"]`. `SIGIL_PROBE=delta-42 agent -p --trust --approve-mcps --force "Call probe_env and answer with
 its result only."`, text output: `delta-42`. **`${env:NAME}` in `args` is expanded.**
+
+**Run 4, sigil-installed servers (Phase D step 10).** Fixture: a repo with one committed `note.txt`
+(`hello-from-live-check`), then the built CLI's `sigil add shared/filesystem shared/maku-jam --target cursor --scope
+project --yes`. `.cursor/mcp.json` held `filesystem` (`type: "stdio"` first, `npx`, the pinned package, `.`) and
+`maku-jam` (`url` only). The after-install hint named `agent mcp enable <name>`. `agent mcp list`: both `not loaded
+(needs approval)`; after `agent mcp enable` each, `filesystem: ready` and `maku-jam: requires_authentication`, and
+`agent mcp list-tools filesystem` listed 14 tools. Owner, by hand: `agent -p --trust --approve-mcps --force "Use the
+filesystem MCP read_text_file tool on note.txt and answer with its contents only."`, output `hello-from-live-check`.
+**A sigil-written `.cursor/mcp.json` loads and its stdio server runs.**

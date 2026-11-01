@@ -101,6 +101,13 @@ function includedLine(skipped: SkippedArtifact[]): string[] {
   return ['', `Already included in another pick, nothing to add: ${ids}.`];
 }
 
+/** Artifacts the target cannot render at all (a hook whose event or matcher has no equivalent). */
+function unrenderableLine(skipped: SkippedArtifact[], ct: TargetOrUndefined): string[] {
+  if (skipped.length === 0) return [];
+  const who = ct?.displayName ?? 'This tool';
+  return ['', `Skipped, ${who} cannot render:`, ...skipped.map(x => `  ${x.id}: ${x.reason}`)];
+}
+
 /** Artifacts the project's overlay file refused to narrow, so they are not installed wider. */
 function overlayLine(skipped: SkippedArtifact[]): string[] {
   if (skipped.length === 0) return [];
@@ -109,14 +116,17 @@ function overlayLine(skipped: SkippedArtifact[]): string[] {
 }
 
 /**
- * The lines explaining what the plan leaves out and why; an inlined rule, or one the overlay file
- * refused, is not "unsupported".
+ * The lines explaining what the plan leaves out and why; an inlined rule, one the overlay file
+ * refused, or one the target cannot render is not "unsupported".
  */
 export function skippedLine(view: PlanView, ct: TargetOrUndefined): string[] {
   const of = (cause: string) => view.skipped.filter(x => x.cause === cause);
-  const unsupported = view.skipped.filter(x => x.cause !== 'inlined' && x.cause !== 'overlay');
+  const unsupported = view.skipped.filter(
+    x => x.cause !== 'inlined' && x.cause !== 'overlay' && x.cause !== 'unrenderable',
+  );
   return [
     ...unsupportedLine(unsupported, ct),
+    ...unrenderableLine(of('unrenderable'), ct),
     ...overlayLine(of('overlay')),
     ...includedLine(of('inlined')),
   ];

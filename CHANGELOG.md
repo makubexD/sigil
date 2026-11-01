@@ -20,8 +20,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Cursor's. A hook Cursor has no equivalent for is skipped with its reason. See `docs/setup/cursor.md`.
 - `sigil add` warns when a hook's command is not on the PATH here, on any target, and lists a hook the
   target cannot render as skipped with its reason rather than as an unsupported kind.
-  `sigil sync --check` fails for a catalog hook that ships to a target which cannot render it
-  (`hook-target-render`).
+  `sigil sync --check` fails for a catalog hook or MCP server that ships to a target which cannot
+  render it (`config-target-render`).
 - New target `codex`: `sigil add --target codex` writes skills to `.agents/skills/` and merges hooks
   into `.codex/hooks.json` and MCP servers into `.codex/config.toml`, keeping your comments, and
   `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are

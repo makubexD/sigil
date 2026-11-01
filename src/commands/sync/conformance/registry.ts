@@ -24,7 +24,7 @@ import { referenceLinksRule } from './rules/reference-links';
 import { providerLimitsRule } from './rules/provider-limits';
 import { familySkeletonRule } from './rules/family-skeleton';
 import { stackLeakRule } from './rules/stack-leak';
-import { hookTargetRenderRule } from './rules/hook-target-render';
+import { configTargetRenderRule } from './rules/config-target-render';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -45,5 +45,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   providerLimitsRule,
   familySkeletonRule,
   stackLeakRule,
-  hookTargetRenderRule,
+  configTargetRenderRule,
 ];

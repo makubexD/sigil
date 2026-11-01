@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- New target `codex`: `sigil add --target codex` writes skills to `.agents/skills/`, and `sigil build
+  --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are
+  skipped, with the reason. It shares its skill files with `agents-standard`, so removing one install
+  keeps them for the other. See `docs/setup/codex.md`.
+
 ### Changed
 
 - The `shared/protect-config` notes and the config-kind docs now warn that Copilot CLI loads

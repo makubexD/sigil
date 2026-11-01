@@ -159,6 +159,28 @@ describe('ensureHomeBackup — content-aware backup for home-scoped config files
   });
 });
 
+describe('ensureHomeBackup on TOML', () => {
+  const op = {
+    file: 'config.toml',
+    fragment: { mcp_servers: { fs: { command: 'npx' } } },
+    strategy: { mcp_servers: 'object-spread' as const },
+  };
+
+  for (const [name, text] of [
+    ['a comment-only file', '# my template\n'],
+    ['a trailing comment on a sigil line', '[mcp_servers.fs]\ncommand = "npx" # pinned\n'],
+  ] as const) {
+    it(`backs up ${name}`, () => {
+      withTempDir(dir => {
+        const fullPath = path.join(dir, 'config.toml');
+        fs.writeFileSync(fullPath, text);
+        ensureHomeBackup(fullPath, [op]);
+        assert.equal(fs.readFileSync(`${fullPath}.sigil.bak`, 'utf-8'), text);
+      });
+    });
+  }
+});
+
 describe('codex-home root', () => {
   /** Runs `fn` with `$CODEX_HOME` set to `value` (undefined unsets it), restoring it afterwards. */
   function withCodexHome<T>(value: string | undefined, fn: () => T): T {

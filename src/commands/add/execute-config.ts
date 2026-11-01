@@ -8,7 +8,8 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { replaceMerge, renderConfig, parseConfig } from '../../config-merge';
+import { renderConfig, replaceMerge } from '../../config-merge';
+import { readExistingConfig } from './read-config';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../../config-utils';
 import { previousOpFor, recordedOpsAt, sourceToRecord, upsertConfigEntry } from '../../manifest';
 import { pkg } from '../../cli-helpers';
@@ -30,19 +31,6 @@ export interface ConfigInstallOutcome {
   merged: string[];
 }
 
-/** Reads the existing JSON at `fullPath`, or `{}` if absent; logs+skips on parse failure. */
-function readExistingConfigJson(fullPath: string, id: string): Record<string, unknown> | undefined {
-  if (!fs.existsSync(fullPath)) return {};
-  try {
-    return parseConfig(fullPath, fs.readFileSync(fullPath, 'utf-8'));
-  } catch {
-    console.error(
-      `✗ Cannot install '${id}': ${fullPath} exists but is not valid JSON. Fix it first.`,
-    );
-    return undefined;
-  }
-}
-
 /**
  * Applies one ConfigMergeOp to disk; returns its listing line, or undefined when nothing was written.
  * `previous` is the fragment an earlier install of the same artifact recorded for this destination:
@@ -58,8 +46,8 @@ function applyConfigMergeOp(
   const fullPath = path.join(rootDir, op.file);
   const opSecSuffix = op.section ? `  › ${op.section}` : '';
 
-  const existing = readExistingConfigJson(fullPath, id);
-  if (existing === undefined) return undefined;
+  const read = readExistingConfig(fullPath, id);
+  if (read === undefined) return undefined;
 
   if (isHomeScopedRoot(op.root as ConfigRoot | undefined)) {
     // Before this install is upserted: the ops already recorded for the file tell the backup
@@ -67,9 +55,9 @@ function applyConfigMergeOp(
     ensureHomeBackup(fullPath, recordedOpsAt(ctx.manifest, op));
   }
 
-  const merged = replaceMerge(existing, previous, op);
+  const merged = replaceMerge(read.existing, previous, op);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-  fs.writeFileSync(fullPath, renderConfig(fullPath, merged), 'utf-8');
+  fs.writeFileSync(fullPath, renderConfig(fullPath, merged, read.before), 'utf-8');
   return `${fullPath}${opSecSuffix}  (merged: ${id})`;
 }
 
@@ -166,6 +154,7 @@ async function installOneConfigArtifact(
     return result;
   } catch (err) {
     console.error(`✗ Failed to install config artifact '${id}': ${(err as Error).message}`);
+    process.exitCode = 1;
     return NOTHING_WRITTEN;
   }
 }

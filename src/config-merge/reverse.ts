@@ -10,7 +10,7 @@
  */
 
 import type { ConfigMergeOp, MergeStrategy } from '../types';
-import { deepEqual, pruneEmpty, isPlainObject, FORBIDDEN_KEYS } from './primitives';
+import { deepEqual, isPlainObject, FORBIDDEN_KEYS } from './primitives';
 
 /** Filters `items` that deep-equal to remove out of `arr`. */
 function removeDeepEqualItems(arr: unknown[], items: unknown[]): unknown[] {
@@ -92,7 +92,27 @@ export function reverseMerge(
     }
   }
 
-  return reverseFileMarkers(pruneEmpty(result), op);
+  return reverseFileMarkers(pruneAlong(result, op.fragment), op);
+}
+
+/**
+ * Drops what `reverseMerge` emptied, only along the paths `fragment` touched. A user's own empty
+ * array, empty table or date elsewhere in the file is not sigil's to remove (`enabled_tools = []`).
+ */
+function pruneAlong(
+  value: Record<string, unknown>,
+  fragment: Record<string, unknown>,
+): Record<string, unknown> {
+  const result = { ...value };
+  for (const [key, contributed] of Object.entries(fragment)) {
+    const current = result[key];
+    if (Array.isArray(current) && current.length === 0) delete result[key];
+    if (!isPlainObject(current) || !isPlainObject(contributed)) continue;
+    const pruned = pruneAlong(current, contributed);
+    if (Object.keys(pruned).length === 0) delete result[key];
+    else result[key] = pruned;
+  }
+  return result;
 }
 
 /**

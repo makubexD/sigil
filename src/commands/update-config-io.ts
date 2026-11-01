@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveContained } from '../cli-helpers';
-import { replaceMerge, renderConfig, parseConfig } from '../config-merge';
+import { configFormatName, parseConfig, renderConfig, replaceMerge } from '../config-merge';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
 import { recordedOp } from '../manifest';
 import type { ManifestConfigMerge } from '../manifest/types';
@@ -40,8 +40,9 @@ export function writeMergedConfigFile(
 ): void {
   if (isHomeScopedRoot(ops.next.root)) ensureHomeBackup(fullPath, sigilOps);
   const merged = replaceMerge(existing, ops.previous, ops.next);
+  const before = fs.existsSync(fullPath) ? fs.readFileSync(fullPath, 'utf-8') : '';
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-  fs.writeFileSync(fullPath, renderConfig(fullPath, merged), 'utf-8');
+  fs.writeFileSync(fullPath, renderConfig(fullPath, merged, before), 'utf-8');
 }
 
 /** Resolves the on-disk path + ConfigMergeOp for a recorded config-merge entry. */
@@ -62,7 +63,9 @@ export function readExistingOrWarn(
 ): Record<string, unknown> | undefined {
   const existing = readConfigFile(fullPath);
   if (existing === undefined) {
-    console.error(`  ✗  ${entryId}: ${cfFile} exists but is not valid JSON. Skipped.`);
+    console.error(
+      `  ✗  ${entryId}: ${cfFile} exists but is not valid ${configFormatName(fullPath)}. Skipped.`,
+    );
   }
   return existing;
 }

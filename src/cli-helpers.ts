@@ -7,6 +7,7 @@
  * @module
  */
 
+import { loadManifest } from './manifest/io';
 import fs from 'fs';
 import path from 'path';
 import { parsePacksConfig } from './packs-config';
@@ -132,10 +133,8 @@ export function writeFilesSync(files: FileMap, outputDir: string): void {
 }
 
 /**
- * Partitions a FileMap into files that can be written (toWrite) and files that would
- * conflict with existing content (conflicting). A file whose existing content is byte-identical
- * is not a conflict: two targets can render the same path (.agents/skills/), and writing it again
- * changes nothing.
+ * Partitions a FileMap into files that don't exist yet (toWrite) and files that
+ * would conflict with existing content (conflicting).
  */
 export function partitionFiles(
   files: FileMap,
@@ -146,10 +145,7 @@ export function partitionFiles(
 
   for (const [relPath, content] of Object.entries(files)) {
     const fullPath = resolveContained(outputDir, relPath);
-    const existsWithOtherContent =
-      fs.existsSync(fullPath) &&
-      !(fs.lstatSync(fullPath).isFile() && fs.readFileSync(fullPath, 'utf-8') === content);
-    if (existsWithOtherContent) {
+    if (fs.existsSync(fullPath)) {
       conflicting[relPath] = content;
     } else {
       toWrite[relPath] = content;
@@ -178,6 +174,17 @@ function logDefaultTarget(defaultTarget: string, targets: Target[]): void {
 }
 
 /**
+ * `detected`, or the target that shares its skill files and is the one this project installed for:
+ * `.agents/skills` alone can't say which of them wrote it, but the manifest can.
+ */
+function targetOwningSkillFiles(detected: Target, targets: Target[], projectDir: string): Target {
+  const entries = loadManifest(projectDir)?.entries ?? [];
+  if (entries.some(e => e.target === detected.name)) return detected;
+  const owner = detected.sharesSkillFilesWith?.find(n => entries.some(e => e.target === n));
+  return targets.find(t => t.name === owner) ?? detected;
+}
+
+/**
  * Auto-detect the installed target from each registered target's `projectMarkers`: the first
  * target (registration order, claude then copilot) with any marker present. Falls back to the
  * first registered target when none match.
@@ -189,7 +196,8 @@ export function detectProjectTarget(
 ): string {
   const targets = getAllTargets();
   const [found] = detectedTargetsIn(projectDir);
-  const target = targets.find(t => t.name === found);
+  const detected = targets.find(t => t.name === found);
+  const target = detected && targetOwningSkillFiles(detected, targets, projectDir);
   if (target) {
     if (opts.verbose) logDetectedTarget(target, projectDir, targets);
     return target.name;

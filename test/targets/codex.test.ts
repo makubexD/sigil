@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getTarget } from '../../dist-cli/targets/index';
+import { detectProjectTarget } from '../../dist-cli/cli-helpers';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { CATALOG, PACKS, add } from '../helpers/install-scenario';
@@ -43,11 +44,6 @@ async function skillPath(): Promise<string> {
   return `.agents/skills/${name}/SKILL.md`;
 }
 
-async function installBoth(dir: string): Promise<void> {
-  await add(dir, PEER, [`skill:${SKILL}`]);
-  await add(dir, TARGET, [`skill:${SKILL}`]);
-}
-
 function manifestEntries(dir: string): { id: string; target: string }[] {
   const manifest = JSON.parse(fs.readFileSync(path.join(dir, '.sigil/manifest.json'), 'utf8'));
   return manifest.entries.map((e: { id: string; target: string }) => ({
@@ -72,50 +68,39 @@ describe('codex target', () => {
     }
   });
 
-  it('should install the skill for codex over the agents-standard file without a conflict', async () => {
+  it('should refuse codex skills once agents-standard installed skills, and the reverse', async () => {
     await withTempDirAsync(async dir => {
-      const relPath = await skillPath();
       await add(dir, PEER, [`skill:${SKILL}`]);
-
-      const plan = await buildAddPlan([`skill:${SKILL}`], addOpts(dir, TARGET));
-      assert.ok(plan);
-      assert.deepEqual(Object.keys(plan.conflicting), []);
-      assert.ok(Object.keys(plan.toWrite).includes(relPath));
-
+      await assert.rejects(() => add(dir, TARGET, [`skill:${SKILL}`]), /writes the same files/);
+      assert.deepEqual(manifestEntries(dir), [{ id: SKILL, target: PEER }]);
+    });
+    await withTempDirAsync(async dir => {
       await add(dir, TARGET, [`skill:${SKILL}`]);
-      assert.deepEqual(
-        manifestEntries(dir)
-          .map(e => `${e.target}:${e.id}`)
-          .sort(),
-        [`${PEER}:${SKILL}`, `${TARGET}:${SKILL}`],
-      );
+      await assert.rejects(() => add(dir, PEER, [`skill:${SKILL}`]), /writes the same files/);
     });
   });
 
-  it('should keep SKILL.md when the agents-standard install is removed', async () => {
+  it('should detect codex, not agents-standard, in a project that installed for codex', async () => {
     await withTempDirAsync(async dir => {
-      const relPath = await skillPath();
-      await installBoth(dir);
-
-      await uninstall(dir, PEER);
-
-      assert.ok(fs.existsSync(path.join(dir, relPath)), 'the codex entry still owns the file');
-      assert.deepEqual(
-        manifestEntries(dir).map(e => e.target),
-        [TARGET],
-      );
+      await add(dir, TARGET, [`skill:${SKILL}`]);
+      assert.equal(detectProjectTarget(dir), TARGET);
     });
   });
 
-  it('should delete SKILL.md only once the codex install is removed too', async () => {
+  it('should allow codex skills after the agents-standard install is removed', async () => {
     await withTempDirAsync(async dir => {
-      const relPath = await skillPath();
-      await installBoth(dir);
-
+      await add(dir, PEER, [`skill:${SKILL}`]);
       await uninstall(dir, PEER);
-      await uninstall(dir, TARGET);
+      await add(dir, TARGET, [`skill:${SKILL}`]);
+      assert.ok(fs.existsSync(path.join(dir, await skillPath())));
+    });
+  });
 
-      assert.ok(!fs.existsSync(path.join(dir, relPath)), 'no owner is left');
+  it('should keep a hook for codex beside agents-standard skills', async () => {
+    await withTempDirAsync(async dir => {
+      await add(dir, PEER, [`skill:${SKILL}`]);
+      await add(dir, TARGET, ['shared/protect-config']);
+      assert.ok(fs.existsSync(path.join(dir, '.codex/hooks.json')));
     });
   });
 

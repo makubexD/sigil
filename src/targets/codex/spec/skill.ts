@@ -1,7 +1,6 @@
 /**
  * Codex `skill` emission spec: `.agents/skills/<name>/SKILL.md`, the open-standard layout Codex
- * loads. Frontmatter, body, forbidden keys and limits match the agents-standard spec, so the two
- * targets render byte-identical skills.
+ * loads. Frontmatter, body, forbidden keys and limits match the agents-standard spec.
  *
  * @module
  */

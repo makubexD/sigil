@@ -4,10 +4,11 @@
  *
  * @module
  */
+import { SigilError } from '../errors';
 import fs from 'node:fs';
 import { resolveContained } from '../cli-helpers';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
-import { reverseMerge, renderConfig, parseConfig } from '../config-merge';
+import { isEmptiedConfig, parseConfig, renderConfig, reverseConfig } from '../config-merge';
 import type { ConfigRoot, ConfigMergeOp, MergeStrategy } from '../types';
 import { recordedOp, sameFile } from '../manifest';
 import type { ManifestEntry } from '../manifest';
@@ -29,15 +30,40 @@ function buildConfigMergeOpFromEntry(
 function writeReversedConfigFile(
   fullPath: string,
   cleaned: Record<string, unknown>,
+  before: string,
   displayPath: string,
 ): void {
-  if (Object.keys(cleaned).length === 0) {
+  const text = renderConfig(fullPath, cleaned, before);
+  if (isEmptiedConfig(fullPath, cleaned, text)) {
     fs.unlinkSync(fullPath);
     console.log(`  - ${displayPath}  (emptied, deleted)`);
   } else {
-    fs.writeFileSync(fullPath, renderConfig(fullPath, cleaned), 'utf-8');
+    fs.writeFileSync(fullPath, text, 'utf-8');
     console.log(`  ~ ${displayPath}  (JSON reverse-merge applied)`);
   }
+}
+
+/** Rewrites `cf`'s file without sigil's fragment, warning about a server left whole because it was edited. */
+function rewriteWithoutFragment(
+  cf: NonNullable<ManifestEntry['configFiles']>[number],
+  fullPath: string,
+  displayPath: string,
+): void {
+  const before = fs.readFileSync(fullPath, 'utf-8');
+  const live = parseConfig(fullPath, before);
+  const { cleaned, kept } = reverseConfig(fullPath, live, buildConfigMergeOpFromEntry(cf));
+  for (const name of kept) {
+    console.warn(
+      `  ⚠  ${name}: you edited this server, so it stays in ${cf.file}. It's yours now.`,
+    );
+  }
+  writeReversedConfigFile(fullPath, cleaned, before, displayPath);
+}
+
+/** `err`'s message, plus its hint when it has one. */
+function withHint(err: unknown): string {
+  const hint = err instanceof SigilError && err.hint ? ` ${err.hint}` : '';
+  return `${(err as Error).message}${hint}`;
 }
 
 /** Reverse-merges and removes sigil's contribution from one config-merge file; returns true
@@ -47,6 +73,7 @@ export function reverseMergeOneConfigFile(
   cf: NonNullable<ManifestEntry['configFiles']>[number],
   projectDir: string,
   sigilOps: readonly ConfigMergeOp[],
+  onFailure?: () => void,
 ): boolean {
   const rootDir = resolveConfigRoot((cf.root as ConfigRoot | undefined) ?? 'project', projectDir);
   const fullPath = resolveContained(rootDir, cf.file); // the manifest is editable: stay in root
@@ -55,12 +82,11 @@ export function reverseMergeOneConfigFile(
 
   try {
     if (isHomeScopedRoot(cf.root as ConfigRoot | undefined)) ensureHomeBackup(fullPath, sigilOps);
-    const live = parseConfig(fullPath, fs.readFileSync(fullPath, 'utf-8'));
-    const cleaned = reverseMerge(live, buildConfigMergeOpFromEntry(cf));
-    writeReversedConfigFile(fullPath, cleaned, displayPath);
+    rewriteWithoutFragment(cf, fullPath, displayPath);
     return true;
   } catch (err) {
-    console.warn(`  ⚠  Could not reverse-merge ${displayPath}: ${(err as Error).message}`);
+    console.warn(`  ⚠  Could not reverse-merge ${displayPath}: ${withHint(err)}`);
+    onFailure?.();
     return false;
   }
 }
@@ -92,23 +118,41 @@ function sharedWith(cf: ConfigRecord, kept: readonly ManifestEntry[]): ManifestE
   return kept.find(e => (e.configFiles ?? []).some(same));
 }
 
+/** The ids of `removing` a failed reversal put back into `kept`, each reported as not removed. */
+export function notRemoved(
+  removing: readonly ManifestEntry[],
+  kept: readonly ManifestEntry[],
+): string[] {
+  const failed = removing.filter(entry => kept.includes(entry)).map(entry => entry.id);
+  for (const id of failed) console.error(`✗ Not removed: ${id}. It stays installed.`);
+  return failed;
+}
+
+/** Puts back an entry whose file couldn't be changed, so a retry finds it, and fails the run. */
+function keepAfterFailure(entry: ManifestEntry, kept: ManifestEntry[]): void {
+  if (!kept.includes(entry)) kept.push(entry);
+  process.exitCode = 1;
+}
+
 /**
  * Reverse-merges and removes sigil's contribution from each config-kind entry's JSON files,
- * except a fragment an entry in `kept` (the manifest after removal) still records.
+ * except a fragment an entry in `kept` (the manifest after removal) still records. An entry whose
+ * file couldn't be changed goes back into `kept` and the run exits non-zero, so a retry can find it.
  */
 export function reverseMergeConfigEntries(
   configEntriesToRemove: ManifestEntry[],
   projectDir: string,
-  kept: readonly ManifestEntry[] = [],
+  kept: ManifestEntry[] = [],
 ): number {
   const allEntries = [...configEntriesToRemove, ...kept];
   let configRemovedCount = 0;
   for (const entry of configEntriesToRemove) {
+    const keepEntry = () => keepAfterFailure(entry, kept);
     for (const cf of entry.configFiles ?? []) {
       const owner = sharedWith(cf, kept);
       if (owner)
         console.log(`  =  ${cf.file}  (kept: still used by ${owner.id} for ${owner.target})`);
-      else if (reverseMergeOneConfigFile(cf, projectDir, sigilOpsFor(cf, allEntries)))
+      else if (reverseMergeOneConfigFile(cf, projectDir, sigilOpsFor(cf, allEntries), keepEntry))
         configRemovedCount++;
     }
   }

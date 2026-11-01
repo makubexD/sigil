@@ -13,6 +13,7 @@ import { applyProjectOverlays } from '../../overlay-report';
 import { getTarget } from '../../targets';
 import { CONFIG_KINDS, type SkippedArtifact } from '../../select';
 import { SigilError } from '../../errors';
+import { loadManifest } from '../../manifest';
 import { printSkippedAdvice } from '../../wizard';
 import { loadAndValidate, detectProjectTarget } from '../../cli-helpers';
 import { resolveInputs } from './resolve-inputs';
@@ -102,6 +103,21 @@ function partitionIdsByKind(
   return { wholeFileIds, configIds };
 }
 
+/** Refuses skills for a target whose skill files another target already installed here. */
+function refuseSharedSkillFiles(ctx: PlanCtx, ids: readonly string[]): void {
+  const peers = ctx.target.sharesSkillFilesWith ?? [];
+  if (!ids.some(id => ctx.resolved.byId.get(id)?.kind === 'skill')) return;
+  const entries = loadManifest(ctx.opts.projectDir)?.entries ?? [];
+  const peer = peers.find(name => entries.some(e => e.target === name && e.kind === 'skill'));
+  if (peer === undefined) return;
+  throw new SigilError(
+    `${peer} already installed skills in this project, and ${ctx.target.name} writes the same files.`,
+    {
+      hint: `Keep ${peer}, or remove its skills with sigil uninstall <ids> --target ${peer} first.`,
+    },
+  );
+}
+
 /** Resolves candidate ids, prints skip advice, and splits them into whole-file vs config-kind. */
 async function resolveAndPartitionIds(
   ctx: PlanCtx,
@@ -114,6 +130,7 @@ async function resolveAndPartitionIds(
 }> {
   const { ids, skipped } = resolveIds(ctx, filters);
   printSkippedAdvice(skipped, ctx.target);
+  refuseSharedSkillFiles(ctx, ids);
 
   const upToDateIds = await computeUpToDateIds(ctx, ids);
   const { wholeFileIds, configIds } = partitionIdsByKind(ids, ctx.resolved, new Set(upToDateIds));

@@ -206,7 +206,7 @@ interface TargetCapabilities {
 | 2b    | `sigil add --complement` + duplicate guard against enabled sigil plugins — **skipped ahead of Phase 4, not built**                                                                                                                                                                         |                   |
 | 3     | Agent Skills conformance (`name` = directory, ≤64/≤1024 chars) so `npx skills add … --skill x` works — **skipped ahead of Phase 4, checks built, install route unproven**                                                                                                                  |                   |
 | 4     | Verify the Claude-format marketplace in VS Code / Copilot CLI; Agent Plugins 1.0 output only if a gap remains — **done 2026-10-30, no new output**                                                                                                                                         |                   |
-| 5     | Codex adapter (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin)                                                                                                                                                                                  |                   |
+| 5     | Codex adapter (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin) — **done 2026-10-31, without agents or a plugin emitter**                                                                                                                        |                   |
 | 6     | Cursor adapter (`.cursor/rules/*.mdc`, agents, commands, hooks, MCP; Cursor plugin — the one format that carries rules)                                                                                                                                                                    |                   |
 
 "No empty plugins" (Phase 0) is done as of 2026-10-30
@@ -243,6 +243,12 @@ yet.
   description 587. The stated outcome, `npx skills add … --skill x` working, has never been run and
   isn't documented. It may need a published tree: `master` holds catalog source with `{sigil:…}`
   tokens, not rendered skills. Phase 3 stays open, narrowed to that install route.
+
+Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
+skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict
+them. There's no Codex plugin emitter: skills and MCP load from the Claude marketplace, and hook plugins fail open.
+`MarketplaceFormat` wasn't extracted, because no second format exists. In § 3, the Codex hook cell holds only for plugins
+installed manually in the desktop app, and sigil's `hook-*` plugins don't work there.
 
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,

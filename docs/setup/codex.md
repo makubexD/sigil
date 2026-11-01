@@ -4,7 +4,7 @@
 > [consuming.md](../guides/consuming.md)
 
 `sigil add --target codex` writes skills to `.agents/skills/`, where Codex reads them, and merges hooks into
-`.codex/hooks.json`. A full `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules.
+`.codex/hooks.json` and MCP servers into `.codex/config.toml`. A full `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules.
 
 ## Install skills
 
@@ -20,8 +20,8 @@ Agents and prompts are skipped, with a warning:
   to have. See [the decision](../decisions/codex-target-2026-10.md#agents).
 - **Prompts.** Codex [deprecated custom prompts](https://learn.chatgpt.com/docs/custom-prompts) in favor of skills.
 
-`agents-standard` writes the same files as `codex`, so installing a skill for both is safe, and removing one install
-keeps the file for the other.
+`agents-standard` writes the same files as `codex`, so a project uses one of them for skills. `add` refuses the second
+one; to switch, remove its skills with `sigil uninstall <ids> --target agents-standard` first.
 
 ## Trust the project
 
@@ -41,8 +41,30 @@ For automation that already vets its hooks, `--dangerously-bypass-hook-trust` ru
 
 Codex has no personal per-project hook file, so `--scope local` is refused.
 
+On Codex a hook script is stored base64-encoded, so that one command works in the shell Codex uses: your login shell on
+macOS and Linux, and `cmd.exe` on Windows. If your login shell is PowerShell, the hook can't block, because PowerShell turns
+exit code 2 into 1. `/hooks` therefore shows an encoded string. To read it, see the hook's source in `catalog/shared/hooks/`.
+
 Treat hooks as a guardrail. Codex says so itself, and any exit code other than 2 lets the call through, so a hook that
 can't start protects nothing. The Windows form of the command is untested.
+
+## Install MCP servers
+
+```bash
+sigil add shared/filesystem --target codex              # .codex/config.toml
+sigil add shared/filesystem --target codex --scope user # $CODEX_HOME/config.toml
+```
+
+Sigil edits only its own `[mcp_servers.<name>]` tables, and your comments and other settings stay as they are. If a
+server is written another way, such as an inline `mcp_servers = { … }`, sigil refuses, writes nothing and exits non-zero.
+A table you wrote with the same name as a catalog server is replaced, as in JSON config files; a user-scope file is backed
+up first. If you edit an installed server, uninstalling leaves the whole server in place and warns that it's now yours,
+because a partial table stops Codex from starting.
+
+Project config loads only in a trusted project, and `--scope local` is refused.
+
+Codex doesn't expand `${NAME}` in MCP config. A catalog variable reaches a server only by name, through `env_vars`, so
+export it before starting Codex. `shared/ado` needs a variable in its arguments, so it's skipped on Codex.
 
 ## Plugins
 

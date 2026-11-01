@@ -1,9 +1,9 @@
 /**
  * What the Codex target delivers: Agent Skills in `.agents/skills/`, with each skill's rules
  * inlined (rules have no per-file format; repo-wide ones also go into `AGENTS.md` on a full build),
- * plus hooks merged into `.codex/hooks.json` / `$CODEX_HOME/hooks.json`. Codex has no
- * tool-restricting subagents, custom prompts are deprecated, and its MCP/settings files are not
- * built yet, so those kinds are skipped with a reason.
+ * plus hooks merged into `.codex/hooks.json` / `$CODEX_HOME/hooks.json` and MCP servers merged
+ * into `.codex/config.toml` / `$CODEX_HOME/config.toml`. Codex has no tool-restricting subagents,
+ * custom prompts are deprecated, and its settings file is Claude Code's own vocabulary.
  *
  * @module
  */
@@ -25,7 +25,7 @@ export const CODEX_CAPABILITIES: TargetCapabilities = {
       docs: [CODEX_CUSTOM_PROMPTS_DOC],
     },
     workflow: { mode: 'none', reason: 'Codex has no workflow file' },
-    mcp: { mode: 'none', reason: 'not built yet: needs a TOML writer' },
+    mcp: { mode: 'native' },
     hook: { mode: 'native' },
     settings: { mode: 'none', reason: "this kind's schema is Claude Code's own vocabulary" },
     template: TEMPLATE_NOT_EMITTED,

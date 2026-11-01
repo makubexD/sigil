@@ -520,6 +520,12 @@ export interface Target {
   }[];
 
   /**
+   * Other targets that write the same skill files as this one. A project uses one of them: `add`
+   * refuses the second, because two manifest entries can't own one file (src/commands/add/plan.ts).
+   */
+  readonly sharesSkillFilesWith?: readonly string[];
+
+  /**
    * Directories created by `sigil init` for this target (relative to project root).
    * Declaring them here lets the `init` command iterate all targets without hardcoding
    * target names or directory structures in shared CLI code.

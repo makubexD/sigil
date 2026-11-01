@@ -43,6 +43,7 @@ export class AgentsStandardTarget implements Target {
   readonly afterInstallHint =
     'tools that read the open standard pick up .agents/skills/ in their next session. Copilot reads it too: do not also install the same skills with --target copilot.';
 
+  readonly sharesSkillFilesWith = ['codex'];
   readonly capabilities: TargetCapabilities = AGENTS_STANDARD_CAPABILITIES;
   readonly initDirs: string[] = AGENTS_STANDARD_INIT_DIRS;
   readonly projectMarkers: string[] = AGENTS_STANDARD_PROJECT_MARKERS;

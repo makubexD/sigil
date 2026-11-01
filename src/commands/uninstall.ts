@@ -15,7 +15,7 @@ import { confirmUninstall, logEquivalentUninstall } from './uninstall-confirm';
 import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
 import { isInteractiveTTY } from '../wizard';
-import { configEntriesOf, reverseMergeConfigEntries } from './uninstall-config';
+import { configEntriesOf, notRemoved, reverseMergeConfigEntries } from './uninstall-config';
 
 export interface UninstallOptions {
   projectDir: string;
@@ -205,5 +205,8 @@ function finishUninstall(
     manifest.entries,
   );
   saveManifest(opts.projectDir, manifest);
-  printUninstallSummary(ids, { pathsToDelete, driftedPaths, configRemovedCount }, opts);
+  const failed = notRemoved(configEntries, manifest.entries);
+  const removed = ids.filter(id => !failed.includes(id));
+  if (removed.length === 0) return;
+  printUninstallSummary(removed, { pathsToDelete, driftedPaths, configRemovedCount }, opts);
 }

@@ -56,3 +56,14 @@ export const CODEX_HOOKS_DOC: DocRef = {
     '{ hooks: { <event>: [{ matcher, hooks: [entry] }] } } schema, the documented events, and the ' +
     'command / commandWindows / timeout entry fields buildCodexHookOps writes.',
 };
+
+/** Codex MCP servers — the `[mcp_servers.<name>]` tables src/targets/codex/mcp-ops.ts writes. */
+export const CODEX_MCP_DOC: DocRef = {
+  url: 'https://learn.chatgpt.com/docs/extend/mcp',
+  title: 'OpenAI Codex — Model Context Protocol (MCP)',
+  verifiedOn: '2026-10-31',
+  covers:
+    'the [mcp_servers.<name>] config.toml tables Codex reads: stdio servers (command, args, env, ' +
+    'cwd) and streamable-HTTP servers (url, http_headers), with env variables forwarded by name ' +
+    'via env_vars rather than ${NAME} expansion.',
+};

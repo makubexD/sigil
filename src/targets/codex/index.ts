@@ -1,12 +1,12 @@
 /**
  * The Codex target: Agent Skills in `.agents/skills/<name>/SKILL.md`, the open-standard layout
- * Codex loads, plus a root `AGENTS.md` with the repo-wide rules on a full build, and hooks merged
- * into `.codex/hooks.json` / `$CODEX_HOME/hooks.json`. Everything here is data on the shared
- * pipeline: emit specs, lexicon, capabilities and citations. It needs nothing outside this folder
- * except its `registerTarget()` line.
+ * Codex loads, plus a root `AGENTS.md` with the repo-wide rules on a full build, hooks merged into
+ * `.codex/hooks.json` / `$CODEX_HOME/hooks.json`, and MCP servers merged into `.codex/config.toml`
+ * / `$CODEX_HOME/config.toml`. Everything here is data on the shared pipeline: emit specs, lexicon,
+ * capabilities and citations. It needs nothing outside this folder except its `registerTarget()` line.
  *
- * The agents-standard target writes the same `.agents/skills/` files. The two render them
- * identically, so one tool loads each skill once and either install can be removed on its own.
+ * The agents-standard target writes the same `.agents/skills/` files, so a project uses one of the
+ * two for skills (Target.sharesSkillFilesWith).
  *
  * @module
  */
@@ -38,27 +38,34 @@ import { CODEX_EMIT_SPECS } from './spec';
 import { CODEX_AGGREGATE_DOCS } from './aggregate-docs';
 import { CODEX_INIT_DIRS, CODEX_PROJECT_MARKERS, CODEX_VOCABULARY } from './metadata';
 import { buildCodexHookOps } from './hook-ops';
+import { buildCodexMcpOps } from './mcp-ops';
 import { resolveCodexConfigDestination } from './config';
 
 export { CodexConfigDestination, resolveCodexConfigDestination } from './config';
 
-/** Codex hook config scopes, ordered by documented precedence (project overrides user). */
+/** Codex config scopes, ordered by documented precedence (project overrides user). */
 const CODEX_CONFIG_SCOPES = [
   {
     value: 'project' as ConfigScope,
     precedence: 1,
     shared: true,
     blastRadius: 'project' as const,
-    description: 'workspace — .codex/hooks.json, git-committed',
+    description: 'workspace — .codex/ config files, git-committed',
   },
   {
     value: 'user' as ConfigScope,
     precedence: 2,
     shared: false,
     blastRadius: 'all-projects' as const,
-    description: 'user — $CODEX_HOME/hooks.json (default ~/.codex/hooks.json), all projects',
+    description: 'user — $CODEX_HOME config files (default ~/.codex), all projects',
   },
 ];
+
+/** The JSON key-path each config kind's fragment lands at, for the scope-menu hint. */
+const CONFIG_KIND_SECTIONS: Record<'hook' | 'mcp', string> = {
+  hook: 'hooks',
+  mcp: 'mcp_servers',
+};
 
 export class CodexTarget implements Target {
   readonly name = 'codex';
@@ -67,6 +74,7 @@ export class CodexTarget implements Target {
   readonly afterInstallHint =
     'Codex picks up .agents/skills/ in its next session. Run it in a trusted project: an untrusted one skips AGENTS.md and .codex/ config. Review hooks with /hooks before they run — Codex skips a hook until then.';
 
+  readonly sharesSkillFilesWith = ['agents-standard'];
   readonly capabilities: TargetCapabilities = CODEX_CAPABILITIES;
   readonly initDirs: string[] = CODEX_INIT_DIRS;
   readonly projectMarkers: string[] = CODEX_PROJECT_MARKERS;
@@ -77,15 +85,15 @@ export class CodexTarget implements Target {
   readonly aggregateDocs: readonly SourcedDocRef[] = CODEX_AGGREGATE_DOCS;
 
   /**
-   * Codex hook config scopes, ordered by documented precedence (project overrides user). Codex has
-   * no distinct "local" hook file, so only Project and User are offered.
+   * Codex config scopes, ordered by documented precedence (project overrides user). Codex has no
+   * distinct "local" config file, so only Project and User are offered.
    */
   configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
     return CODEX_CONFIG_SCOPES.map(sc => ({
       ...sc,
       label: sc.value,
       destinations: kinds
-        .filter(kind => kind === 'hook')
+        .filter(kind => kind === 'hook' || kind === 'mcp')
         .map(kind => {
           const dest = resolveCodexConfigDestination(kind, sc.value);
           return {
@@ -93,18 +101,18 @@ export class CodexTarget implements Target {
             file: dest.file,
             root: dest.root,
             fullPath: path.join(resolveConfigRoot(dest.root, projectDir), dest.file),
-            section: 'hooks',
+            section: CONFIG_KIND_SECTIONS[kind],
           };
         }),
     }));
   }
 
-  // ── Config scaffold (hook — settings/mcp are Claude/Copilot vocabularies) ────
+  // ── Config scaffold (hook / mcp — settings is Claude Code's vocabulary) ─────
 
   /**
-   * Produce the merge op for a hook artifact targeting Codex: `.codex/hooks.json` (project) or
-   * `$CODEX_HOME/hooks.json` (user). The install scope is resolved in order:
-   * options.scope → fm.defaultScope → 'project'.
+   * Produce the merge op for a hook or mcp artifact targeting Codex: `.codex/hooks.json` /
+   * `.codex/config.toml` (project) or `$CODEX_HOME/hooks.json` / `$CODEX_HOME/config.toml` (user).
+   * The install scope is resolved in order: options.scope → fm.defaultScope → 'project'.
    */
   async scaffoldConfig(
     artifactId: string,
@@ -113,12 +121,16 @@ export class CodexTarget implements Target {
   ): Promise<ConfigMergeOp[]> {
     const artifact = catalog.byId.get(artifactId);
     if (!artifact) throw new Error(`Artifact '${artifactId}' not found in the catalog`);
-    if (artifact.kind !== 'hook') {
-      throw new Error(`Codex scaffoldConfig only supports the 'hook' kind, got '${artifact.kind}'`);
+    if (artifact.kind !== 'hook' && artifact.kind !== 'mcp') {
+      throw new Error(
+        `Codex scaffoldConfig only supports the 'hook' and 'mcp' kinds, got '${artifact.kind}'`,
+      );
     }
     const scope: ConfigScope =
       options.scope ?? (artifact.frontmatter.defaultScope as ConfigScope | undefined) ?? 'project';
-    return buildCodexHookOps(artifact, scope);
+    return artifact.kind === 'hook'
+      ? buildCodexHookOps(artifact, scope)
+      : buildCodexMcpOps(artifact, scope);
   }
 
   /** Every skill (rules inlined, the whole catalog co-installed) and AGENTS.md with repo-wide rules. */

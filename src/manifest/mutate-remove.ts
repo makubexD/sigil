@@ -46,9 +46,10 @@ export function removeEntries(
 
   manifest.entries = remaining;
 
-  // Paths safe to delete: referenced only by removed entries. A path another target's entry
-  // still owns stays on disk, because two targets can share one file (.agents/skills/).
-  const remainingPaths = new Set(remaining.flatMap(e => e.files.map(f => f.path)));
+  // Paths safe to delete: referenced only by removed entries
+  const remainingPaths = new Set(
+    remaining.filter(e => e.target === target).flatMap(e => e.files.map(f => f.path)),
+  );
 
   const removedPaths = removed.flatMap(e => e.files.map(f => f.path));
   const pathsToDelete = removedPaths.filter(p => !remainingPaths.has(p));

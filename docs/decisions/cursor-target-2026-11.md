@@ -72,6 +72,10 @@ parser change for Cursor (Phase C's "fix the parser first" doesn't apply). Two r
 A shell write (`printf … > .env`) reaches the hook only as `tool_input.command`, the same gap `protect-config` has on
 Claude's `Bash`.
 
+Closed (Phase C step 11): a `protect-config` installed by `sigil add --target cursor` blocked a `.env` write in
+the CLI and let `notes.txt` through, so the `Write` matcher is confirmed live. Still unmeasured: the desktop app and
+Windows (Phase G).
+
 ## MCP: approval in print mode
 
 `${env:NAME}` is expanded, so Phase D's `EnvSyntax` for Cursor is `${env:NAME}` as documented. A project MCP server is
@@ -309,3 +313,11 @@ then change that line to "done".'`, exit 0, `notes.txt` ended as `done`.
 directory; `.claude/settings.json` with the same hook under `PreToolUse` and `UserPromptSubmit`, each `command` the
 absolute path of `log.sh`. `hook-claude.log` was again never created. **A5: the CLI does not run `.claude/settings.json`
 hooks**, whatever Cursor's third-party hooks doc says; the desktop app's Third-Party Imports setting was not checked.
+
+**Run 3, a sigil-installed hook (Phase C step 11).** Fixture: an empty committed repo, then the built CLI's
+`sigil add shared/protect-config --target cursor` (one `preToolUse` entry, matcher `Write`, the `node -e` command line),
+committed. Prompt: `agent -p --trust --output-format stream-json "Create the file .env containing X=1, then create
+notes.txt containing ok."`, exit 0. The `.env` edit came back `Hook blocked with message` and the stream carried
+`sigil-hook: blocked write to protected file .env` twice; no `.env` exists. `notes.txt` was written (`ok`). The agent
+reported the block and did not retry through the shell. **The translated `Write` matcher and the exec-form command work
+live.**

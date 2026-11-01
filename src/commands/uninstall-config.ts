@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import { resolveContained } from '../cli-helpers';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
-import { reverseMerge, serialize } from '../config-merge';
+import { reverseMerge, renderConfig, parseConfig } from '../config-merge';
 import type { ConfigRoot, ConfigMergeOp, MergeStrategy } from '../types';
 import { recordedOp, sameFile } from '../manifest';
 import type { ManifestEntry } from '../manifest';
@@ -35,7 +35,7 @@ function writeReversedConfigFile(
     fs.unlinkSync(fullPath);
     console.log(`  - ${displayPath}  (emptied, deleted)`);
   } else {
-    fs.writeFileSync(fullPath, serialize(cleaned), 'utf-8');
+    fs.writeFileSync(fullPath, renderConfig(fullPath, cleaned), 'utf-8');
     console.log(`  ~ ${displayPath}  (JSON reverse-merge applied)`);
   }
 }
@@ -55,7 +55,7 @@ export function reverseMergeOneConfigFile(
 
   try {
     if (isHomeScopedRoot(cf.root as ConfigRoot | undefined)) ensureHomeBackup(fullPath, sigilOps);
-    const live = JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
+    const live = parseConfig(fullPath, fs.readFileSync(fullPath, 'utf-8'));
     const cleaned = reverseMerge(live, buildConfigMergeOpFromEntry(cf));
     writeReversedConfigFile(fullPath, cleaned, displayPath);
     return true;

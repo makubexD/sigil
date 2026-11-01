@@ -7,7 +7,7 @@
 import fs from 'fs';
 import os from 'os';
 import path from 'path';
-import { reverseMerge } from './config-merge';
+import { reverseMerge, parseConfig } from './config-merge';
 import type { ConfigMergeOp, ConfigRoot } from './types';
 
 /** Resolves the default VS Code user-profile directory for the current platform. */
@@ -102,7 +102,7 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 function holdsOnlySigilEntries(fullPath: string, sigilOps: readonly ConfigMergeOp[]): boolean {
   let content: unknown;
   try {
-    content = JSON.parse(fs.readFileSync(fullPath, 'utf8'));
+    content = parseConfig(fullPath, fs.readFileSync(fullPath, 'utf8'));
   } catch {
     return false;
   }

@@ -6,7 +6,7 @@
  * @module
  */
 import fs from 'fs';
-import { classifyConfigDrift } from '../config-merge';
+import { classifyConfigDrift, parseConfig } from '../config-merge';
 import { resolveConfigRoot } from '../config-utils';
 import { resolveContained } from '../contained-path';
 import type { ConfigMergeOp, ConfigRoot, MergeStrategy, RetiredConfigDestination } from '../types';
@@ -16,7 +16,7 @@ import { isAtRetiredDestination } from './config-fragments';
 /** Reads and parses an existing JSON config file; returns undefined when it's unparseable. */
 function readLiveConfigJson(fullPath: string): Record<string, unknown> | undefined {
   try {
-    return JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
+    return parseConfig(fullPath, fs.readFileSync(fullPath, 'utf-8'));
   } catch {
     return undefined;
   }

@@ -7,7 +7,7 @@
  */
 import type { ProviderLexicon } from '../lexicon';
 import { AGENT_SKILLS_SPEC_DOC, AGENTS_MD_STANDARD_DOC } from '../doc-refs';
-import { CURSOR_SKILLS_DOC } from './doc-refs';
+import { CURSOR_SKILLS_DOC } from '../cursor/doc-refs';
 
 export const AGENTS_STANDARD_LEXICON: ProviderLexicon = {
   'conventions-file': { value: 'AGENTS.md', doc: AGENTS_MD_STANDARD_DOC },

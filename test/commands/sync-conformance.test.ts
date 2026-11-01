@@ -789,3 +789,44 @@ describe('editorial pass — findings sharing one file do not race', () => {
     assert.doesNotMatch(written, /line 2/);
   });
 });
+
+describe('conformance rule: hook-target-render', () => {
+  function makeHookArtifact(frontmatter: Record<string, unknown> = {}): Artifact {
+    return {
+      id: 'shared/notify-hook',
+      kind: 'hook',
+      filePath: '/fake/notify-hook.hook.md',
+      frontmatter: {
+        id: 'shared/notify-hook',
+        kind: 'hook',
+        event: 'Notification',
+        command: 'node',
+        ...frontmatter,
+      },
+      body: '',
+    } as Artifact;
+  }
+
+  it('flags a hook with no platforms that a native-hook target cannot render', () => {
+    const catalog = makeCatalog([makeHookArtifact()]);
+    const findings = runConformance(catalog, getAllTargets(), { ruleId: 'hook-target-render' });
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0]!.severity, 'error');
+    assert.equal(findings[0]!.artifactId, 'shared/notify-hook');
+    assert.equal(findings[0]!.provider, 'cursor');
+    assert.match(findings[0]!.detail, /shared\/notify-hook/);
+    assert.match(findings[0]!.detail, /platforms/);
+  });
+
+  it('does not flag a hook restricted to another platform', () => {
+    const catalog = makeCatalog([makeHookArtifact({ platforms: ['claude'] })]);
+    const findings = runConformance(catalog, getAllTargets(), { ruleId: 'hook-target-render' });
+    assert.equal(findings.length, 0);
+  });
+
+  it('passes against the real catalog and registered targets', async () => {
+    const catalog = await loadBundledCatalog();
+    const findings = runConformance(catalog, getAllTargets(), { ruleId: 'hook-target-render' });
+    assert.equal(findings.length, 0);
+  });
+});

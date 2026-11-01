@@ -10,8 +10,10 @@ home for their merge model, provider-declared scope model, and wizard treatment.
 A `kind: hook` artifact (`src/schema/index.ts`, `HookSchema`) becomes one entry under
 `hooks.<event>` in Claude Code's settings (`src/targets/claude-code/config-scaffold.ts`) and in the
 Copilot hook file for its scope (scope table below). On Codex it lands in `.codex/hooks.json` or `$CODEX_HOME/hooks.json`,
-and an `mcp` artifact in `config.toml` beside them ([setup](../setup/codex.md)). Only the TOML writer differs: it splices
-sigil's tables into your text (`src/config-merge/toml-file.ts`).
+and an `mcp` artifact in `config.toml` beside them ([setup](../setup/codex.md)). On Cursor it lands in
+`.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), with events and tool names translated from
+Cursor's Claude Code aliases; a hook with no equivalent is skipped with its reason ([setup](../setup/cursor.md)).
+Only the TOML writer differs: it splices sigil's tables into your text (`src/config-merge/toml-file.ts`).
 
 | Field          | Meaning                                                                                                                               |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
@@ -146,8 +148,8 @@ catalog has a replacement destination, which `update` moves it to. When the cata
 ## `.sigil.bak` home-directory backup
 
 Any write or delete to a home-scoped config file (`ConfigRoot: 'home' | 'copilot-home' | 'codex-home' | 'vscode-user'`
-— files like `~/.claude.json` or `~/.copilot/mcp-config.json`, which affect **every** project, not just
-the current one) takes a pristine `.sigil.bak` copy before the first such write to a file that holds
+— files like `~/.claude.json`, `~/.copilot/mcp-config.json` or `~/.cursor/hooks.json`, which affect **every**
+project, not just the current one) takes a pristine `.sigil.bak` copy before the first such write to a file that holds
 content sigil did not write, via the shared `ensureHomeBackup()` helper (`src/config-utils.ts`); each
 caller passes the fragments the manifest records for that file. A file holding only sigil's recorded
 entries gets none: the helper reverses every recorded fragment, and an empty result means there is
@@ -252,7 +254,18 @@ GitHub Copilot hooks (3 scopes, `src/targets/copilot/config.ts` and `target-help
 | project (2)        | `.github/hooks/sigil.json`                                               | `version: 1`; git-committed                              |
 | user (3)           | `$COPILOT_HOME/hooks/sigil.json` (default `~/.copilot/hooks/sigil.json`) | home-scoped: one `.sigil.bak` once it holds user content |
 
-The standalone hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
+Cursor hooks (2 scopes, `src/targets/cursor/config.ts`):
+
+| Scope (precedence) | Hook file              | Notes                                                    |
+| ------------------ | ---------------------- | -------------------------------------------------------- |
+| project (1)        | `.cursor/hooks.json`   | `version: 1`; git-committed                              |
+| user (2)           | `~/.cursor/hooks.json` | home-scoped: one `.sigil.bak` once it holds user content |
+
+Cursor has no personal per-project hook file, so `--scope local` is refused. Its events and tool names
+are translated from Claude Code's aliases, and a hook with no Cursor equivalent is skipped with its reason,
+never written to match nothing ([setup](../setup/cursor.md)).
+
+The Copilot and Cursor hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
 hook remains in the file: uninstalling one of several hooks leaves the version in place, and
 uninstalling the last one removes it.
 

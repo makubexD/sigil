@@ -24,6 +24,60 @@ Both modes carry the rule's `description`. A rule scoped to one language still g
 
 Each skill carries its rules inside it, so installing a skill doesn't also write those rules as `.mdc` files.
 
+## Hooks
+
+```bash
+sigil add shared/protect-config --target cursor              # .cursor/hooks.json
+sigil add shared/protect-config --target cursor --scope user # ~/.cursor/hooks.json
+```
+
+A project hook goes in `.cursor/hooks.json`, which you commit with the repo. A user hook goes in
+`~/.cursor/hooks.json` and applies to every project; sigil saves a one-time `.sigil.bak` copy before its
+first write to a file that holds content it did not write. Cursor has no personal per-project hook file, so
+`--scope local` is refused.
+
+Hooks are written in Cursor's own format (`version: 1`, camelCase events). Sigil translates a catalog hook's
+Claude Code event through Cursor's alias table: `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `Stop`,
+`SubagentStop`, `SessionStart`, `SessionEnd` and `PreCompact` become `preToolUse`, `postToolUse`,
+`beforeSubmitPrompt`, `stop`, `subagentStop`, `sessionStart`, `sessionEnd` and `preCompact`. `SubagentStart`
+becomes `subagentStart` only without a matcher (absent or `*`), because Cursor matches a subagent against its
+own type, not a Claude agent name.
+
+Matchers are translated by exact tool name:
+
+| Claude Code                                     | Cursor    |
+| ----------------------------------------------- | --------- |
+| `Bash`                                          | `Shell`   |
+| `Write`, `Edit`, `MultiEdit`, `NotebookEdit`    | `Write`   |
+| `Read`, `Grep`, `Task`, `WebFetch`, `WebSearch` | unchanged |
+
+An edit fires a `Read` call and then a `Write` call in Cursor, so an edit matcher becomes `Write`: the hook
+sees every edit and no plain read. A `|` list is translated part by part and deduplicated. A matcher that is
+absent or `*` writes no matcher, so the hook runs on every call of its event.
+
+Sigil skips a hook it cannot render, with the reason, and installs the rest. That covers `Notification`,
+`PermissionRequest` and any other event Cursor has no alias for; a matcher on an event other than
+`PreToolUse` or `PostToolUse`; a matcher that is not an exact tool name, such as `Glob`, `Edit.*` or
+`^Bash$`; and a command with a single quote in one of its words, which PowerShell would break on Windows
+(a `node -e` script is exempt: sigil writes it in a form PowerShell runs). `sigil add` and the wizard list each skipped hook and its reason. For
+catalog authors, `sigil sync --check` fails when a catalog hook ships to Cursor but cannot render there, so
+the fix is to add `platforms:` without `cursor` or to change the event or matcher.
+
+Cursor runs a project hook only in a trusted workspace. A hook that exits 2 denies the call; any other exit,
+including a hook that cannot start, lets the call through. Empty stdout on exit 0 is allowed, so sigil writes
+the command as it is and adds no `{"permission":"allow"}` wrapper.
+
+`sigil add` warns when a hook's bare command is not on this machine's PATH, and still writes the file,
+because the project may run on another machine:
+
+```
+⚠  hook shared/protect-config: 'node' is not on PATH here, and a hook that can't start lets every call through
+```
+
+Claude Code hooks in `.claude/settings.json` did not run in the Cursor CLI in testing, although Cursor's
+third-party hooks page lists them: a matcher-less hook never ran, with a relative or an absolute command. Install
+the hook for `cursor` instead. The desktop app was not tested.
+
 ## What is skipped
 
 These kinds are skipped with a warning, and the reason is in [capabilities.md](../reference/capabilities.md):
@@ -31,7 +85,7 @@ These kinds are skipped with a warning, and the reason is in [capabilities.md](.
 - **Agents**, until a later phase. A Cursor subagent has no tool list, so a read-only catalog agent needs
   `readonly: true`, which isn't built yet.
 - **Prompts.** Cursor is folding commands into skills.
-- **Hooks and MCP servers**, until later phases. Install them for another target meanwhile.
+- **MCP servers**, until Phase D. Install them for another target meanwhile.
 - **Workflows and settings.** Cursor has no workflow file, and `settings` is Claude Code's own vocabulary.
 
 ## Skills Cursor already reads
@@ -55,6 +109,8 @@ rule twice.
 
 Cursor Agent CLI `2026.10.22-27dcf5f` on Linux, in print mode with a real model, in throwaway repos with hand-written
 fixture files: `alwaysApply` rules load, scoped rules attach after a read (quoted, unquoted and comma-joined globs),
-skills are picked from their description, and Cursor's own skill copy wins over `.claude/` and `.agents/`. That doesn't
-prove the desktop app, Windows, or sigil's own `.mdc` output in a live session, which a later check covers. Results:
+skills are picked from their description, Cursor's own skill copy wins over `.claude/` and `.agents/`, an edit fires a
+`Read` call and then a `Write` call, exit 2 denies a call, empty stdout on exit 0 lets it through, and
+`.claude/settings.json` hooks did not run. That doesn't prove the desktop app, Windows, an untrusted workspace, or
+sigil's own output in a live session, which a later check covers. Results:
 [cursor-target-2026-11](../decisions/cursor-target-2026-11.md).

@@ -52,6 +52,19 @@ export const CURSOR_HOOKS_DOC: DocRef = {
   covers: 'Cursor hooks, configured in hooks.json.',
 };
 
+/**
+ * Cursor's Claude Code hook compatibility mapping — the event aliases and tool names this target
+ * translates (hook-ops.ts).
+ */
+export const CURSOR_THIRD_PARTY_HOOKS_DOC: DocRef = {
+  url: 'https://cursor.com/docs/reference/third-party-hooks',
+  title: 'Cursor — Third-party hooks',
+  verifiedOn: '2026-11-01',
+  covers:
+    'the Claude Code event and tool-name mapping Cursor applies to imported hooks, and which ' +
+    'Claude Code events and matchers have no equivalent.',
+};
+
 /** Cursor MCP servers — `.cursor/mcp.json`. */
 export const CURSOR_MCP_DOC: DocRef = {
   url: 'https://cursor.com/docs/context/mcp',

@@ -25,8 +25,8 @@ not prove anything about the desktop app, Windows, or a workspace without `--tru
 | A1  | Do `.mdc` rules load by mode?                        | `alwaysApply: true` loads; a `.md` in `.cursor/rules/` is ignored. A `globs` rule did **not** attach when the prompt named a matching path. **It attaches once the agent reads a matching file** (Phase B run 1: quoted, unquoted and comma-joined `globs` all attached) |
 | A2  | Is a `.cursor/skills` skill picked and its ref read? | Yes: picked from its `description`, `references/value.md` read on demand                                                                                                                                                                                                 |
 | A3  | Same skill name in `.cursor/` and `.claude/`?        | **One listing, `.cursor` wins** (inferred from the model's listing). Cursor also lists every skill in `~/.claude/skills/` and `~/.claude/plugins/`                                                                                                                       |
-| A4  | `preToolUse` payload for a write; does exit 2 deny?  | Exit 2 denies. `tool_input.file_path`, absolute. **The edit's hook call was named `Read`**, a shell write `Shell` with `tool_input.command`                                                                                                                              |
-| A5  | Does a `.claude/settings.json` hook run too?         | **Inconclusive.** It never ran, but its `Edit\|Write` matcher matched neither call Cursor made (`Read`, `Shell`)                                                                                                                                                         |
+| A4  | `preToolUse` payload for a write; does exit 2 deny?  | Exit 2 denies. `tool_input.file_path`, absolute. **An edit fires `Read` then `Write`** (Phase C run 1); a shell write is `Shell` with `tool_input.command`. Empty stdout on exit 0 lets the call through                                                                 |
+| A5  | Does a `.claude/settings.json` hook run too?         | **No, in the Linux CLI.** Phase C: a matcher-less `PreToolUse` hook never ran, with a relative or an absolute command, beside a `.cursor` hook or alone. The desktop app is unmeasured                                                                                   |
 | A6  | `${env:NAME}` in `.cursor/mcp.json` `env`?           | Expanded (`golf-99`). Print mode needs `--approve-mcps` to load the server and `--force` to call it; without `--force` the call fails, exit 0                                                                                                                            |
 | A7  | What does a `readonly: true` subagent allow?         | It runs in Ask mode: Write and both Shell calls tried (`touch`, `ls -la`) refused, Glob works                                                                                                                                                                            |
 | A8  | Does a local plugin install, and its rule load?      | **Docs-only.** No install command; `marketplace add` takes a git URL. A rule loaded with `--plugin-dir` did not reach the model                                                                                                                                          |
@@ -60,18 +60,21 @@ G still checks it against sigil's own `.mdc` output.
 Exit 2 denies, and the path is in `tool_input.file_path`, which `protect-config` already reads, so the hook needs no
 parser change for Cursor (Phase C's "fix the parser first" doesn't apply). Two results change Phase C:
 
-1. **The edit tool's `preToolUse` call is named `Read`.** When asked to create `.env`, Cursor's edit fired a hook call
-   with `tool_name: "Read"` and `tool_input.file_path`, and the block there stopped the edit. Whether a second,
-   write-named call would follow is unknown. If Phase C maps Claude's `Edit|Write` matcher to a Cursor matcher such as
-   `Write`, the hook may never see an edit. Phase C's RED test must capture an allowed edit's calls (a matcher-less hook
-   that logs and exits 0) before it picks a matcher.
-2. **A5 is inconclusive.** The `.claude/settings.json` hook never ran, but its matcher was `Edit|Write`, and the only
-   calls Cursor made were named `Read` and `Shell`, which match neither, even with the documented `Edit`→`Write`
-   mapping. So the run doesn't show whether Cursor ignores Claude hooks or only that the matcher never matched. Phase C
-   reruns it with a matcher-less `.claude` hook next to the `.cursor` one and counts the runs.
+1. **An edit fires two `preToolUse` calls: `Read`, then `Write`** (Phase C run 1, both with `tool_input.file_path`).
+   A4's block landed on the `Read` call, so the `Write` one never came. Phase C maps `Edit|Write` to `Write`: the hook
+   sees every edit and no plain read.
+2. **A5: Claude Code hooks don't run in the CLI.** A matcher-less `.claude/settings.json` hook never ran in Phase C,
+   with a relative or an absolute command, beside a `.cursor` hook or alone, despite Cursor's third-party hooks doc.
+   `add` therefore says nothing about a double run. The desktop app may differ (Phase G).
+3. **Empty stdout passes.** Cursor's docs say a `preToolUse` hook that exits 0 with invalid JSON blocks the call; the
+   CLI let both edits through with nothing on stdout, so the writer adds no `{"permission":"allow"}` wrapper.
 
 A shell write (`printf … > .env`) reaches the hook only as `tool_input.command`, the same gap `protect-config` has on
 Claude's `Bash`.
+
+Closed (Phase C step 11): a `protect-config` installed by `sigil add --target cursor` blocked a `.env` write in
+the CLI and let `notes.txt` through, so the `Write` matcher is confirmed live. Still unmeasured: the desktop app and
+Windows (Phase G).
 
 ## MCP: approval in print mode
 
@@ -286,3 +289,35 @@ checksum? Then list the skills you can use with the path of each SKILL.md.`
   `.agents/skills/` appears nowhere in it. As with A3 (`.claude`), Cursor's own copy wins on a name clash, so the
   `.agents` copy goes unused rather than loading twice. The listing again held every `~/.claude/skills/` and
   `~/.claude/plugins/` skill.
+
+### Phase C probes
+
+Cursor Agent CLI `2026.10.22-27dcf5f` (`agent --version`), model `Auto`, Linux, each run in a fresh `git init` repo with
+the fixture committed. Both runs: `agent -p --trust --output-format stream-json 'Create notes.txt containing one line,
+then change that line to "done".'`, exit 0, `notes.txt` ended as `done`.
+
+**Run 1, an edit's calls and empty stdout.** Fixture: `.cursor/hooks.json` =
+`{"version":1,"hooks":{"preToolUse":[{"command":".cursor/hooks/log.sh"}]}}`, no matcher; `log.sh` appends stdin to
+`hook-cursor.log` and exits 0 with empty stdout. `.claude/settings.json` =
+`{"hooks":{"PreToolUse":[{"hooks":[{"type":"command","command":".claude/log.sh"}]}]}}`, appending to `hook-claude.log`.
+
+- The stream held two `editToolCall`s (create with `initial`, then `done`), both `completed`.
+- `hook-cursor.log` held four payloads, in order: `Read`, `Write`, `Read`, `Write`, each with an absolute
+  `tool_input.file_path` to `notes.txt` (the `Write` one also carries the content). **Each edit fires `Read` then
+  `Write`.**
+- **Empty stdout on exit 0 did not block**: both edits completed, so run 2 (printing `{"permission":"allow"}`) wasn't
+  needed.
+- `hook-claude.log` was never created.
+
+**Run 2, A5 control.** Run 1's `.claude` command was relative, which could explain the miss. Fixture: no `.cursor`
+directory; `.claude/settings.json` with the same hook under `PreToolUse` and `UserPromptSubmit`, each `command` the
+absolute path of `log.sh`. `hook-claude.log` was again never created. **A5: the CLI does not run `.claude/settings.json`
+hooks**, whatever Cursor's third-party hooks doc says; the desktop app's Third-Party Imports setting was not checked.
+
+**Run 3, a sigil-installed hook (Phase C step 11).** Fixture: an empty committed repo, then the built CLI's
+`sigil add shared/protect-config --target cursor` (one `preToolUse` entry, matcher `Write`, the `node -e` command line),
+committed. Prompt: `agent -p --trust --output-format stream-json "Create the file .env containing X=1, then create
+notes.txt containing ok."`, exit 0. The `.env` edit came back `Hook blocked with message` and the stream carried
+`sigil-hook: blocked write to protected file .env` twice; no `.env` exists. `notes.txt` was written (`ok`). The agent
+reported the block and did not retry through the shell. **The translated `Write` matcher and the exec-form command work
+live.**

@@ -436,6 +436,13 @@ export interface Target {
   ): Promise<ConfigMergeOp[]>;
 
   /**
+   * A config artifact this target cannot render is skipped with this reason, not an error: `add`
+   * and the wizard list it under skipped, like a kind the target does not support.
+   * Return undefined when the target can render the artifact.
+   */
+  configSkipReason?(artifact: ResolvedArtifact): string | undefined;
+
+  /**
    * Which artifact kinds this target delivers on each channel (scaffold / plugin) — the single
    * declaration of kind support, read through src/targets/capabilities.ts (`supportedKinds`,
    * `supportsKind`, `nativeKinds`). Kinds a channel marks `none` trigger a warn-and-skip during

@@ -33,6 +33,7 @@ function select(ctx: PlanCtx, filters: Filters): SelectionResult {
       supportedKinds: installableKinds(ctx.target),
       carriedKinds: carriedKinds(ctx.target),
       targetName: ctx.targetName,
+      skipReason: a => ctx.target.configSkipReason?.(a),
     });
   } catch (err) {
     throw new SigilError((err as Error).message, { cause: err });

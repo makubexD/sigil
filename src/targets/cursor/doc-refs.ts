@@ -44,12 +44,27 @@ export const CURSOR_COMMANDS_DOC: DocRef = {
   covers: 'custom commands, being folded into skills via /migrate-to-skills.',
 };
 
-/** Cursor hook files — `hooks.json`. */
+/** Cursor hook files — `.cursor/hooks.json` (project) and `~/.cursor/hooks.json` (user). */
 export const CURSOR_HOOKS_DOC: DocRef = {
   url: 'https://cursor.com/docs/agent/hooks',
   title: 'Cursor — Hooks',
   verifiedOn: '2026-11-01',
-  covers: 'Cursor hooks, configured in hooks.json.',
+  covers:
+    'Cursor hooks in .cursor/hooks.json (project) or ~/.cursor/hooks.json (user): `version: 1`, ' +
+    'camelCase event keys, a regex `matcher`, and exit code 2 denying the operation.',
+};
+
+/**
+ * Cursor's Claude Code hook compatibility mapping — the event aliases and tool names this target
+ * translates (hook-ops.ts).
+ */
+export const CURSOR_THIRD_PARTY_HOOKS_DOC: DocRef = {
+  url: 'https://cursor.com/docs/reference/third-party-hooks',
+  title: 'Cursor — Third-party hooks',
+  verifiedOn: '2026-11-01',
+  covers:
+    'the Claude Code event and tool-name mapping Cursor applies to imported hooks, and which ' +
+    'Claude Code events and matchers have no equivalent.',
 };
 
 /** Cursor MCP servers — `.cursor/mcp.json`. */

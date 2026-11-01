@@ -1,7 +1,7 @@
 /**
  * An artifact left out of an install because another pick already carries it (a base rule inlined
  * through `extends`) is not "unsupported by the tool", and neither is one the project's overlay file
- * refused. The plan box and the summary line say which.
+ * refused or one the target cannot render. The plan box and the summary line say which.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -32,14 +32,21 @@ const REFUSED: SkippedArtifact = {
   reason: ".sigil/overlays.yaml entry refused: scope '../x' is not a plain relative path",
 };
 
+const UNRENDERABLE: SkippedArtifact = {
+  id: 'shared/notify',
+  kind: 'hook',
+  cause: 'unrenderable',
+  reason: 'Cursor has no X event',
+};
+
 const viewOf = (skipped: SkippedArtifact[]): PlanView => ({
   closure: { primary: [], dependencies: [] } as unknown as PlanView['closure'],
   skipped,
   upToDate: new Set(),
   writeCount: 0,
 });
-const planOf = (skipped: SkippedArtifact[]): AddPlan =>
-  ({ skipped, targetName: 'claude' }) as unknown as AddPlan;
+const planOf = (skipped: SkippedArtifact[], targetName = 'claude'): AddPlan =>
+  ({ skipped, targetName }) as unknown as AddPlan;
 
 describe('plan box skip lines', () => {
   const target = getTarget('copilot');
@@ -69,6 +76,24 @@ describe('plan box skip lines', () => {
     assert.match(lines, /1 item skipped: GitHub Copilot does not support hooks?\./);
   });
 
+  it('should say the target cannot render an artifact, with its reason, not that it lacks the kind', () => {
+    const lines = skippedLine(viewOf([UNRENDERABLE]), getTarget('cursor')).join('\n');
+    assert.match(lines, /Skipped, Cursor cannot render:/);
+    assert.match(lines, / {2}shared\/notify: Cursor has no X event/);
+    assert.doesNotMatch(lines, /does not support/);
+  });
+
+  it('should show the unsupported and unrenderable lines, each naming only its own artifact', () => {
+    const lines = skippedLine(viewOf([NO_HOOKS, UNRENDERABLE]), getTarget('cursor')).join('\n');
+    const unsupported = lines.split('\n').find(l => l.includes('does not support'));
+    const unrenderable = lines.split('\n').find(l => l.includes('shared/notify'));
+    assert.ok(unsupported);
+    assert.ok(unrenderable);
+    assert.doesNotMatch(unsupported, /shared\/notify/);
+    assert.doesNotMatch(unrenderable, /shared\/protect-config/);
+    assert.match(unrenderable, /: Cursor has no X event$/);
+  });
+
   it('should show nothing when nothing was skipped', () => {
     assert.deepEqual(skippedLine(viewOf([]), target), []);
   });
@@ -88,6 +113,12 @@ describe('install summary line', () => {
       skippedSummary(planOf([REFUSED, NO_HOOKS])),
       ", 1 artifact(s) not supported by 'claude', 1 skipped by .sigil/overlays.yaml",
     );
+  });
+
+  it('should count an artifact the target cannot render apart from unsupported kinds', () => {
+    const summary = skippedSummary(planOf([UNRENDERABLE], 'cursor'));
+    assert.equal(summary, ", 1 skipped (cannot render on 'cursor')");
+    assert.doesNotMatch(summary, /not supported/);
   });
 
   it('should report both, and nothing when nothing was skipped', () => {

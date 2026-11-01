@@ -7,6 +7,7 @@
 import { resolveSelection, computeClosure } from '../../../select';
 import { skipRefused } from '../../../overlay-report';
 import type { SelectionResult } from '../../../select';
+import type { ResolvedArtifact } from '../../../types';
 import type { ArtifactInstallState } from '../../../install-state';
 import { carriedKinds, installableKinds } from '../../../targets/capabilities';
 import { chosenTarget } from './state';
@@ -21,7 +22,11 @@ export function previewSelection(s: AddWizardState): SelectionResult {
     catalog: s.ctx.catalog,
     packs: s.ctx.packs,
     ...(target
-      ? { supportedKinds: installableKinds(target), carriedKinds: carriedKinds(target) }
+      ? {
+          supportedKinds: installableKinds(target),
+          carriedKinds: carriedKinds(target),
+          skipReason: (a: ResolvedArtifact) => target.configSkipReason?.(a),
+        }
       : {}),
     ...(s.target ? { targetName: s.target } : {}),
   });

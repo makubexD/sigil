@@ -75,7 +75,7 @@ export function renderReference(spec: KindEmitSpec, content: string): string {
 }
 
 /** Throws when `spec` cannot carry the restriction `artifact` declares instead of rendering it. */
-function assertRestrictionCarried(spec: KindEmitSpec, artifact: ResolvedArtifact): void {
+export function assertRestrictionCarried(spec: KindEmitSpec, artifact: ResolvedArtifact): void {
   const outcome = restrictionOutcome(spec, artifact.frontmatter);
   if (outcome.kind === 'skip') {
     throw new SigilError(`${artifact.id}: ${outcome.reason}`, {

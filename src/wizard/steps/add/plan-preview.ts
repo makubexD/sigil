@@ -10,6 +10,7 @@ import type { SelectionResult } from '../../../select';
 import type { ResolvedArtifact } from '../../../types';
 import type { ArtifactInstallState } from '../../../install-state';
 import { carriedKinds, installableKinds } from '../../../targets/capabilities';
+import { wholeFileSkipReason } from '../../../targets/tool-restriction';
 import { chosenTarget } from './state';
 import type { AddWizardState } from './state';
 
@@ -25,7 +26,8 @@ export function previewSelection(s: AddWizardState): SelectionResult {
       ? {
           supportedKinds: installableKinds(target),
           carriedKinds: carriedKinds(target),
-          skipReason: (a: ResolvedArtifact) => target.configSkipReason?.(a),
+          skipReason: (a: ResolvedArtifact) =>
+            target.configSkipReason?.(a) ?? wholeFileSkipReason(target, a),
         }
       : {}),
     ...(s.target ? { targetName: s.target } : {}),

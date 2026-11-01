@@ -4,7 +4,8 @@
  * would silently widen the agent. `restrictionOutcome` classifies that per spec: `exact` when the
  * restriction is carried as written, `skip` when it cannot be (the default, fail-closed), and
  * `nearest` when the agent opts into the closest mapping with `toolPolicy: nearest`, which warns.
- * renderArtifact refuses to render a `skip` (build, add and update all fail closed), and
+ * `add` and the wizard skip a `skip` agent at selection time (`wholeFileSkipReason`), emitFile
+ * leaves it out of a build, and renderArtifact refuses to render one as a backstop.
  * `sync --check`'s tool-restriction-coverage rule reports the gap earlier.
  *
  * A mapped restriction on a spec with no `toolDialect` is inexact too: the catalog's names could
@@ -14,6 +15,7 @@
  *
  * @module
  */
+import type { ArtifactKind, Target } from '../types';
 import type { KindEmitSpec } from './spec-types';
 import { renderTools } from './tool-dialect';
 
@@ -80,4 +82,30 @@ export function toolSkipReason(
 ): string | undefined {
   const outcome = restrictionOutcome(spec, artifact.frontmatter);
   return outcome.kind === 'skip' ? outcome.reason : undefined;
+}
+
+/** The warning a `nearest` outcome reports, or `undefined` when the outcome is not `nearest`. */
+export function toolWarning(
+  spec: KindEmitSpec,
+  artifact: { frontmatter: Record<string, unknown> },
+): string | undefined {
+  const outcome = restrictionOutcome(spec, artifact.frontmatter);
+  return outcome.kind === 'nearest' ? outcome.warning : undefined;
+}
+
+/**
+ * The reason `add` and the wizard skip `artifact` as a whole file for `target`, or `undefined`
+ * when it renders. The scaffold-spec lookup is `specFor` (./emit-files.ts) inlined: importing it
+ * would close the cycle emit-files → emit → this module.
+ */
+export function wholeFileSkipReason(
+  target: Pick<Target, 'emitSpecs'>,
+  artifact: { kind: ArtifactKind; frontmatter: Record<string, unknown> },
+): string | undefined {
+  const spec = (target.emitSpecs ?? []).find(
+    candidate =>
+      candidate.kind === artifact.kind &&
+      (candidate.variant === undefined || candidate.variant === 'scaffold'),
+  );
+  return spec ? toolSkipReason(spec, artifact) : undefined;
 }

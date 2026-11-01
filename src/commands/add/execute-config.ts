@@ -8,7 +8,7 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { replaceMerge, serialize } from '../../config-merge';
+import { replaceMerge, renderConfig, parseConfig } from '../../config-merge';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../../config-utils';
 import { previousOpFor, recordedOpsAt, sourceToRecord, upsertConfigEntry } from '../../manifest';
 import { pkg } from '../../cli-helpers';
@@ -34,7 +34,7 @@ export interface ConfigInstallOutcome {
 function readExistingConfigJson(fullPath: string, id: string): Record<string, unknown> | undefined {
   if (!fs.existsSync(fullPath)) return {};
   try {
-    return JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
+    return parseConfig(fullPath, fs.readFileSync(fullPath, 'utf-8'));
   } catch {
     console.error(
       `✗ Cannot install '${id}': ${fullPath} exists but is not valid JSON. Fix it first.`,
@@ -69,7 +69,7 @@ function applyConfigMergeOp(
 
   const merged = replaceMerge(existing, previous, op);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-  fs.writeFileSync(fullPath, serialize(merged), 'utf-8');
+  fs.writeFileSync(fullPath, renderConfig(fullPath, merged), 'utf-8');
   return `${fullPath}${opSecSuffix}  (merged: ${id})`;
 }
 

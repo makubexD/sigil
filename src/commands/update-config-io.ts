@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveContained } from '../cli-helpers';
-import { replaceMerge, serialize } from '../config-merge';
+import { replaceMerge, renderConfig, parseConfig } from '../config-merge';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
 import { recordedOp } from '../manifest';
 import type { ManifestConfigMerge } from '../manifest/types';
@@ -18,7 +18,7 @@ import type { ConfigMergeOp, ConfigRoot } from '../types';
 function readConfigFile(fullPath: string): Record<string, unknown> | undefined {
   if (!fs.existsSync(fullPath)) return {};
   try {
-    return JSON.parse(fs.readFileSync(fullPath, 'utf-8')) as Record<string, unknown>;
+    return parseConfig(fullPath, fs.readFileSync(fullPath, 'utf-8'));
   } catch {
     return undefined;
   }
@@ -41,7 +41,7 @@ export function writeMergedConfigFile(
   if (isHomeScopedRoot(ops.next.root)) ensureHomeBackup(fullPath, sigilOps);
   const merged = replaceMerge(existing, ops.previous, ops.next);
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-  fs.writeFileSync(fullPath, serialize(merged), 'utf-8');
+  fs.writeFileSync(fullPath, renderConfig(fullPath, merged), 'utf-8');
 }
 
 /** Resolves the on-disk path + ConfigMergeOp for a recorded config-merge entry. */

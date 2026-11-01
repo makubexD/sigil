@@ -135,3 +135,20 @@ Neither `notes.txt` nor `made.txt` existed after either run.
   Cursor's, quoted verbatim.
 - In print mode the parent agent rejects state-changing shell commands unless `--force` is given, while plain reads
   (`ls`) run. Web tools never came up.
+
+### A8, plugins
+
+- **The CLI cannot install a plugin.** `agent plugin` has only `marketplace add <gitUrl> | list | remove | update`; there
+  is no `install` or `add` for a plugin, and `marketplace add` takes a git URL, not a local folder.
+- One run with the documented local-load flag instead: a plugin folder with `.cursor-plugin/plugin.json`
+  (`{"name": "probe-plugin", "version": "0.0.1", "description": …}`) and `rules/hotel.mdc` (`alwaysApply: true`,
+  HOTEL), folder discovery (no `rules` field). Run: `agent -p --trust --plugin-dir <folder> --output-format stream-json
+"List every codeword your rules give you; answer with the words only."` Observed: `(none)`. The agent searched the
+  repo, its session memory and the README; neither `HOTEL` nor `probe-plugin` appears anywhere in the stream.
+  **A plugin rule loaded with `--plugin-dir` did not reach the model.** Whether the layout or the flag is at fault is
+  not settled.
+- **Cursor loads Claude Code's installed plugins.** The same run listed and called an MCP server named
+  `plugin-context-mode-context-mode`, which is the `context-mode` plugin installed in `~/.claude/plugins/`; A3 showed
+  the same for those plugins' skills. Phase F should test whether sigil's published Claude marketplace plugin already
+  works in Cursor through this route before designing a `.cursor-plugin/` build.
+- A8 is **docs-only** for Phase F: no install path in the CLI, and the one local-load attempt failed.

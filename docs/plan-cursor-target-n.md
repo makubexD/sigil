@@ -231,7 +231,9 @@ Files: `src/targets/tool-restriction.ts`, `src/targets/emit.ts`, `test/commands/
 
 Replace `droppedRestrictions` / `assertRestrictionsCarried` with `restrictionOutcome(spec, frontmatter): { kind:
 'exact' } | { kind: 'nearest'; warning: string } | { kind: 'skip'; reason: string }`. `tools` / `disallowedTools`
-not exact under `spec.toolDialect`, or present with no dialect, is inexact. Inexact plus `toolPolicy` `nearest` gives
+is inexact when the spec has no mapping for it (today's `droppedRestrictions`), or when the spec has a `toolDialect`
+and `renderTools` is not exact. Transition (amended 2026-11-01): no spec has a dialect until steps 7-8, so a mapped
+field on a spec with no dialect counts as exact here, as it does today. Step 8 removes that fallback. Inexact plus `toolPolicy` `nearest` gives
 `nearest`; otherwise `skip`, with the reason naming the missing tools and the target's limitation. `renderArtifact`
 throws a `SigilError` on `skip` (callers check first; see step 10), keeping today's message and hint. Export
 `toolSkipReason(spec, artifact)` for selection.
@@ -241,7 +243,8 @@ throws a `SigilError` on `skip` (callers check first; see step 10), keeping toda
 | Claude-like names dialect, `tools: [read, search]`         | exact                          |
 | dialect without `shell`, `tools: [read, shell]`, no policy | skip, reason names `shell`     |
 | same, `toolPolicy: nearest`                                | nearest, warning names `shell` |
-| spec with no `toolDialect`, `tools` set                    | skip                           |
+| spec with no `tools` mapping, `tools` set                  | skip                           |
+| spec mapping `tools` with no `toolDialect` (transition)    | exact                          |
 | existing cases in the file (Copilot `disallowedTools`, …)  | same pass/fail as today        |
 
 Test: `npm test -- test/commands/tool-restriction.test.ts`.
@@ -271,7 +274,9 @@ Files: `src/targets/copilot/tool-dialect.ts` (new), `src/targets/copilot/spec/ag
 `src/targets/copilot/spec/skill.ts`.
 
 `COPILOT_TOOL_DIALECT` has two name sets: agent `tools` uses the primary aliases (`shell` → `execute`), skill
-`allowed-tools` uses `read`, `search`, `edit`, `shell`, `web`, as in the skills doc. Tests in `test/targets/copilot.test.ts`:
+`allowed-tools` uses `read`, `search`, `edit`, `shell`, `web`, as in the skills doc. Every agent spec now has a
+dialect, so remove step 6's transition fallback in `src/targets/tool-restriction.ts`: a mapped field on an agent spec
+with no `toolDialect` is now inexact (update the step 6 test row to `skip`). Tests in `test/targets/copilot.test.ts`:
 
 | Case                                 | Expected                    |
 | ------------------------------------ | --------------------------- |

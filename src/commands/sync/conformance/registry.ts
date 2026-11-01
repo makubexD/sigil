@@ -23,6 +23,7 @@ import { catalogLayoutRule } from './rules/catalog-layout';
 import { referenceLinksRule } from './rules/reference-links';
 import { providerLimitsRule } from './rules/provider-limits';
 import { familySkeletonRule } from './rules/family-skeleton';
+import { familyToolsRule } from './rules/family-tools';
 import { stackLeakRule } from './rules/stack-leak';
 import { configTargetRenderRule } from './rules/config-target-render';
 
@@ -44,6 +45,7 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   referenceLinksRule,
   providerLimitsRule,
   familySkeletonRule,
+  familyToolsRule,
   stackLeakRule,
   configTargetRenderRule,
 ];

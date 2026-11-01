@@ -8,7 +8,8 @@
  */
 import fs from 'fs';
 import path from 'path';
-import { configFormatName, parseConfig, renderConfig, replaceMerge } from '../../config-merge';
+import { renderConfig, replaceMerge } from '../../config-merge';
+import { readExistingConfig } from './read-config';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../../config-utils';
 import { previousOpFor, recordedOpsAt, sourceToRecord, upsertConfigEntry } from '../../manifest';
 import { pkg } from '../../cli-helpers';
@@ -28,26 +29,6 @@ export interface ConfigInstallOutcome {
   manifestDirty: boolean;
   /** One listing line per merged file, for the summary to print with the other writes. */
   merged: string[];
-}
-
-/** A config file's parsed content plus its raw text, for the TOML splice writer's `before`. */
-interface ReadExistingConfig {
-  existing: Record<string, unknown>;
-  before: string;
-}
-
-/** Reads the existing config at `fullPath`, or `{}`/`''` if absent; logs+skips on parse failure. */
-function readExistingConfig(fullPath: string, id: string): ReadExistingConfig | undefined {
-  if (!fs.existsSync(fullPath)) return { existing: {}, before: '' };
-  try {
-    const before = fs.readFileSync(fullPath, 'utf-8');
-    return { existing: parseConfig(fullPath, before), before };
-  } catch {
-    console.error(
-      `✗ Cannot install '${id}': ${fullPath} exists but is not valid ${configFormatName(fullPath)}. Fix it first.`,
-    );
-    return undefined;
-  }
 }
 
 /**

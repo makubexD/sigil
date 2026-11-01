@@ -121,6 +121,8 @@ function cutRemovedServers(
     const start = serverHeaderIndex(lines, key);
     if (start < 0) throw unsafeEdit();
     lines.splice(start, blockEnd(lines, start, key) - start);
+    // A last block takes the blank line appendTable put above it, so a round trip restores the file.
+    if (start === lines.length && isBlank(lines[start - 1] ?? 'x')) lines.pop();
   }
 }
 

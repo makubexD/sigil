@@ -143,6 +143,13 @@ describe('config-merge TOML file format', () => {
     assert.equal(renderConfig('a.json', merged), JSON.stringify(merged, null, 2) + '\n');
   });
 
+  it('restores the original bytes after an add and a remove', () => {
+    const original = '# mine\nmodel = "x"\n';
+    const server = { command: 'npx' };
+    const added = renderToml(original, { model: 'x', mcp_servers: { a: server } });
+    assert.equal(renderToml(added, { model: 'x' }), original);
+  });
+
   it('drops a bare [mcp_servers] header left with nothing under it', () => {
     const before = ['[mcp_servers]', '', '[mcp_servers.a]', 'command = "x"', ''].join('\n');
     assert.equal(renderToml(before, {}), '');

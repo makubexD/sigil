@@ -58,8 +58,7 @@ export function reverseMergeOneConfigFile(
   try {
     if (isHomeScopedRoot(cf.root as ConfigRoot | undefined)) ensureHomeBackup(fullPath, sigilOps);
     const before = fs.readFileSync(fullPath, 'utf-8');
-    const live = parseConfig(fullPath, before);
-    const cleaned = reverseMerge(live, buildConfigMergeOpFromEntry(cf));
+    const cleaned = reverseMerge(parseConfig(fullPath, before), buildConfigMergeOpFromEntry(cf));
     writeReversedConfigFile(fullPath, cleaned, before, displayPath);
     return true;
   } catch (err) {

@@ -22,6 +22,7 @@ import type {
 } from '../../types';
 import type { Manifest, ManifestEntry } from '../../manifest';
 import { envTokenNames } from '../../targets/env-reference';
+import { warnHookCommandsOffPath } from './hook-path-warning';
 import type { AddPlan } from './plan';
 
 export interface ConfigInstallOutcome {
@@ -213,6 +214,7 @@ async function installAllConfigArtifacts(
     if (result.upserted) manifestDirty = true;
   }
   warnMcpEnvCaveats(written, ctx.target);
+  warnHookCommandsOffPath(written);
   return { configWrittenCount, manifestDirty, merged };
 }
 

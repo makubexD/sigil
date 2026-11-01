@@ -97,3 +97,22 @@ the blocked tool.`
 - **A5: Cursor did not run the project `.claude/settings.json` hook.** `hook-claude.log` was never created. No double
   runs.
 - Trust: with `--trust` the project hook ran without a prompt. A run without `--trust` was not made (budget).
+
+### A6, MCP
+
+Fixture: `.cursor/mcp.json` with server `probe` (absolute `node` path, absolute `server.js` path, `env: {"PROBE_VALUE":
+"${env:SIGIL_PROBE}"}`); `server.js` is a dependency-free stdio server with one tool `probe_env`. Tested locally first:
+it answers `initialize` and `tools/call`.
+
+- Before any run, `agent mcp list` printed `probe: not loaded (needs approval)`. A project MCP server needs approval
+  even in a workspace that is otherwise used with `--trust`.
+- Run 1: `SIGIL_PROBE=golf-99 agent -p --trust --approve-mcps --output-format stream-json "Call probe_env and answer
+with its result only."` The server started (`getMcpToolsToolCall` returned the tool's schema; `agent mcp list` then
+  printed `probe: ready`), but both `mcpToolCall`s were `rejected`: `User rejected MCP: probe-probe_env`.
+  `--approve-mcps` approves loading the server, not calling its tools; print mode rejects the call without a prompt.
+- Run 2: the same command plus `--force`. Claude Code's auto-mode classifier denied running it from the session, so
+  the owner ran it by hand (`agent -p --trust --approve-mcps --force "Call probe_env and answer with its result
+only."`, text output). Output: `golf-99`.
+- **A6 confirmed: `${env:NAME}` in a project `.cursor/mcp.json` `env` value is expanded** from the CLI's environment.
+  Calling a project MCP tool in print mode needs three flags: `--trust`, `--approve-mcps` (load the server) and
+  `--force` (allow the call). Without `--force` the call is rejected silently and the run still exits 0.

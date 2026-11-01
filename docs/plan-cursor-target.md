@@ -17,17 +17,18 @@ Cursor is the friendliest target so far: every kind has a documented file, MCP i
 as sigil's hooks already do. Four findings shape the order:
 
 1. **Cursor also reads other tools' folders.** It loads skills from `.agents/skills/`, `.claude/skills/` and
-   `.codex/skills/`, agents from `.claude/agents/` and `.codex/agents/`, and Claude Code hooks from
+   `.codex/skills/`, agents from `.claude/agents/` and `.codex/agents/`, and (per the docs) Claude Code hooks from
    `.claude/settings.json`. A project with `claude-code` and `cursor` installed would load each skill twice unless the
-   target knows about it. That is the main design question (Decision 1), not the file formats.
+   target knows about it. That is the main design question (Decision 1), not the file formats. Phase A: a name clash
+   lists the `.cursor` skill once; whether `.claude/settings.json` hooks also run was not settled (A5).
 2. **Rules map cleanly, without a new field.** `.mdc` frontmatter has `description`, `globs` and `alwaysApply`. An
    unscoped rule (`appliesTo: ["**/*"]`) becomes `alwaysApply: true`, matching Claude's path-less rule; a scoped one
    becomes `globs` plus `alwaysApply: false`. `severity` stays unmapped, as on every target. That retires the brief's
    riskiest assumption on paper; Phase A confirms it live.
 3. **Agents may be possible, unlike Codex.** All 39 catalog agents set `tools: [Read, Grep, Glob]`. A Cursor subagent
-   has no tool list, but `readonly: true` blocks edits and state-changing shell commands. That is close to, but wider
-   than, the authored list (it still allows read-only shell and web tools). Whether that is enough is an owner call
-   (Phase E).
+   has no tool list, but `readonly: true` blocks edits and shell. Phase A found it runs the subagent in Ask mode, which
+   refused both shell calls tried (even `ls -la`) and Write, while Glob works: close to the authored list. Whether that
+   is enough is an owner call (Phase E).
 4. **Commands are being folded into skills.** Cursor 2.4+ ships `/migrate-to-skills` for slash commands, so `prompt`
    follows Codex: `none` (Decision 3).
 
@@ -39,7 +40,7 @@ Confirmed by the owner on 2026-11-01.
    double-load.** Cursor reads
    `.agents/skills/` too, so sharing Codex's files (`sharesSkillFilesWith`) is the other option. It is rejected because
    it would block `cursor` and `codex` in one project for no gain. Probe A3 checks what Cursor does with two skills of the
-   same name. If it dedupes by name, the refusal becomes a warning.
+   same name. If it dedupes by name, the refusal becomes a warning. **A3: it does (`.cursor` wins), so `add` warns.**
 2. **Rule mode:** `appliesTo` equal to `["**/*"]` (the schema default) → `alwaysApply: true`; anything else →
    `globs: <comma-joined>` + `alwaysApply: false` + `description`. Never gated on `language`. The `Apply Intelligently`
    mode (description only) is not used: no catalog field asks for it.
@@ -131,24 +132,31 @@ into `docs/decisions/cursor-target-2026-11.md`.
 
 If sign-in isn't possible, A1-A3 and A7-A8 become docs-only and Phase G carries the live risk.
 
+**Done 2026-11-01**: results and what they change are in
+[cursor-target-2026-11.md](decisions/cursor-target-2026-11.md). A1's `globs` case, A5 and A8 stayed open (A8 docs-only).
+
 ### Phase B: the target, with rules and skills
 
 New `src/targets/cursor/` (capabilities, lexicon, doc refs, `KindEmitSpec`s for `rule` and `skill`), registered in
 `index.ts`. `rule` → `.cursor/rules/<id-slug>.mdc` per Decision 2, the third `appliesTo` emitter kept in agreement with
 Claude's and Copilot's (a shared test over the 65 rules). `skill` → `.cursor/skills/<name>/` with references. Decision 1's
-double-load guard in `add`. `AGENTS.md` on `build` (Decision 4). `prompt`, `agent`, `workflow`, `settings`: `none` with
-reasons. Capability table, `capabilities.md`, `sync --check` (coverage, unemitted fields, term leaks) green.
+double-load check in `add`, a warning since A3. No home-scope `cursor` skill install offered over sigil's Claude plugin:
+Cursor already loads Claude Code's plugin skills (A3). `AGENTS.md` on `build` (Decision 4). `prompt`, `agent`,
+`workflow`, `settings`: `none` with reasons. Capability table, `capabilities.md`, `sync --check` (coverage, unemitted fields, term leaks) green.
 
 ### Phase C: hooks in `.cursor/hooks.json`
 
 Hook ops mapping Claude event names to Cursor's (`PreToolUse` → `preToolUse`, …), refusing undocumented events like
 Codex does, writing `version: 1`, joining `command` + `args` with the shared helpers. Home scope `~/.cursor/hooks.json`
 with `ensureHomeBackup`. A RED test over A4's captured payload proves `protect-config` denies a `.env` write on Cursor;
-if the field names differ, fix the hook's parser first (one commit, all targets re-tested). Document A5's result.
+A4 found `tool_input.file_path`, so the parser needs no change. A4 also found the edit's hook call named `Read`: capture
+an allowed edit's calls before choosing the matcher that `Edit|Write` maps to. A5 was inconclusive (its matcher matched
+no call): rerun it with a matcher-less `.claude` hook and document whether hooks run twice.
 
 ### Phase D: MCP in `.cursor/mcp.json`
 
-MCP ops through the existing JSON writer, `${env:NAME}` as Cursor's `EnvSyntax`, project and home scope.
+MCP ops through the existing JSON writer, `${env:NAME}` as Cursor's `EnvSyntax` (expanded, A6), project and home scope.
+The setup note says a project server needs approval, and print mode also needs `--force` to call it.
 
 ### Phase E: agents
 
@@ -161,11 +169,14 @@ tools). The ADR records what `readonly` still allows (A7).
 
 Spike: is the plugin format stable enough to emit, and can sigil's packs become `.cursor-plugin/marketplace.json`
 entries? A go adds `plugin` capability rows (the first `rule: native` on that channel) and a `dist/cursor/` build; a
-no-go records why and points users at `sigil add --target cursor`.
+no-go records why and points users at `sigil add --target cursor`. First check whether sigil's Claude marketplace plugin
+already works in Cursor: A3 and A8 showed Cursor loading Claude Code's installed plugins, while a `--plugin-dir` rule
+did not load.
 
 ### Phase G: close-out
 
-Live check in Cursor (the brief's success criterion: rules and skills load), ADR § 3 and § 6 updated, the brief and its
+Live check in Cursor (the brief's success criterion: rules and skills load, including a `globs` rule attaching once the
+agent reads a matching file, which A1 left open), ADR § 3 and § 6 updated, the brief and its
 `docs/ideas/README.md` row deleted, the Cursor version recorded, `npm run ci:local` green, then delete these plan files.
 
 ## Out of scope

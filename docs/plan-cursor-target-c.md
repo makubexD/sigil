@@ -165,6 +165,16 @@ Test: all of `cursor-hooks.test.ts`; a new case there: `resolveSelection` for `-
 `Notification` hook puts it in `skipped` with cause `unrenderable` and the reason text; `npm test` passes;
 `node dist-cli/cli.js sync --check` passes.
 
+**Done (2026-11-01)** in two commits (target wiring; skip seam). Follow-ups found in review, both still open:
+
+- The wizard's skip summary (`src/wizard/steps/add/plan-box.ts`, around line 88) and `add`'s own skip output label every
+  skip that isn't `inlined`/`overlay` as "<target> does not support <kind>", so an `unrenderable` hook is described
+  wrongly. Fix it with step 6: list `unrenderable` skips on their own line with each reason; test it beside the existing
+  plan-box/render tests.
+- `shared/reviewer-bash-guard` is `platforms: [claude]`, so step 9 case 2 can't `add` it for Cursor: use a fixture
+  hook with a `Bash` matcher there instead. Decision 1's "all three catalog hooks render" holds only for
+  `protect-config` shipping to Cursor.
+
 ## Step 6 `[worker:medium]`: `sync --check` fails on a catalog hook Cursor can't render
 
 Files: new `src/commands/sync/conformance/rules/hook-target-render.ts`, the rules index beside it, a test next to the

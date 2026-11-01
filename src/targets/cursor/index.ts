@@ -26,6 +26,7 @@ import type { KindEmitSpec } from '../spec-types';
 import { deriveContracts } from '../output-contract';
 import { emitFile, scaffoldArtifact, specFor } from '../emit-files';
 import { CURSOR_CAPABILITIES } from './capabilities';
+import { CURSOR_SKILLS_DOC } from './doc-refs';
 import { CURSOR_LEXICON } from './lexicon';
 import { CURSOR_EMIT_SPECS } from './spec';
 import { CURSOR_INIT_DIRS, CURSOR_PROJECT_MARKERS, CURSOR_VOCABULARY } from './metadata';
@@ -44,6 +45,21 @@ export class CursorTarget implements Target {
   readonly emitSpecs: readonly KindEmitSpec[] = CURSOR_EMIT_SPECS;
   readonly outputContracts: ContractEntry[] = deriveContracts(CURSOR_EMIT_SPECS);
   readonly lexicon: ProviderLexicon = CURSOR_LEXICON;
+
+  /**
+   * Cursor also reads `.claude/skills/` and `.agents/skills/`, and its own `.cursor/skills/` copy
+   * wins on a name clash: the other copy goes unused rather than loading twice (ADR
+   * docs/decisions/cursor-target-2026-11.md A3 for Claude Code, Phase B run 2 for `.agents/`).
+   */
+  readonly alsoLoads = [
+    { kind: 'skill' as const, targets: ['claude'], doc: CURSOR_SKILLS_DOC, readerWins: true },
+    {
+      kind: 'skill' as const,
+      targets: ['agents-standard', 'codex'],
+      doc: CURSOR_SKILLS_DOC,
+      readerWins: true,
+    },
+  ];
 
   /** Every artifact with a scaffold spec (skills, and rules as `.mdc`), and no AGENTS.md. */
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {

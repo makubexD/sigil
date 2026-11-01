@@ -158,6 +158,11 @@ A4 found `tool_input.file_path`, so the parser needs no change. A4 also found th
 an allowed edit's calls before choosing the matcher that `Edit|Write` maps to. A5 was inconclusive (its matcher matched
 no call): rerun it with a matcher-less `.claude` hook and document whether hooks run twice.
 
+**Done 2026-11-01** in #155 (step plan [plan-cursor-target-c.md](plan-cursor-target-c.md)): hooks in
+`.cursor/hooks.json` and `~/.cursor/hooks.json` with the home backup, unrenderable hooks skipped with a reason, the
+`hook-target-render` sync rule, and a live CLI block of a sigil-installed hook. A5's rerun: the Cursor CLI never runs
+`.claude/settings.json` hooks, so nothing runs twice. Setup: [setup/cursor.md](setup/cursor.md).
+
 ### Phase D: MCP in `.cursor/mcp.json`
 
 MCP ops through the existing JSON writer, `${env:NAME}` as Cursor's `EnvSyntax` (expanded, A6), project and home scope.

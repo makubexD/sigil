@@ -168,6 +168,12 @@ no call): rerun it with a matcher-less `.claude` hook and document whether hooks
 MCP ops through the existing JSON writer, `${env:NAME}` as Cursor's `EnvSyntax` (expanded, A6), project and home scope.
 The setup note says a project server needs approval, and print mode also needs `--force` to call it.
 
+**Done 2026-11-01** in #157 (step plan [plan-cursor-target-d.md](plan-cursor-target-d.md)): servers in
+`.cursor/mcp.json` and `~/.cursor/mcp.json` with the home backup, rendered from data (`McpDialect`) through a
+`ConfigKindTable` that Codex also adopted, and `config-target-render` replacing `hook-target-render`. `shared/ado` ships
+to Cursor. Probes: Cursor never reads `.mcp.json`, `${env:NAME}` expands in `args`, and an unknown `type` drops the
+whole file. A sigil-installed `filesystem` server ran live in the CLI. Setup: [setup/cursor.md](setup/cursor.md).
+
 ### Phase E: agents
 
 Go (Decision 5), recorded in the ADR. `tool-restriction.ts` learns that a read-only tool list maps to `readonly: true` on

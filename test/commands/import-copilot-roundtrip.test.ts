@@ -165,8 +165,8 @@ interface ImportableArtifact {
 }
 
 /**
- * The nine importable artifacts from the trust-scan plan (docs/plan-trust-scan-prose-false-positive.md,
- * Evidence). The hook there is not importable, so it is not listed.
+ * The nine importable artifacts the scanner refused. A tenth, the hook `reviewer-bash-guard`, is not
+ * importable, so it is not listed.
  */
 const IMPORTABLE: readonly ImportableArtifact[] = [
   { kind: 'agent', language: 'typescript', name: 'ts-code-reviewer' },

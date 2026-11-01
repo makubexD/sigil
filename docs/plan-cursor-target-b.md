@@ -47,6 +47,10 @@ Amend steps 3 and 4 in this file with the outcome before step 2 starts.
 
 Test: both runs recorded; this plan amended.
 
+**Outcome (2026-11-01, ADR § Phase B probes):** run 1 attached all three (`KILO BRAVO ECHO`) after the read, so step 3
+keeps the quoted, comma-joined `globs`. Run 2 answered `ECHO-42` and listed `probe-skill` once, at `.cursor/`, so step
+4 sets `readerWins: true` on the `agents-standard`/`codex` entry too.
+
 ## Step 2 `[worker:medium]`: the target folder, with skills
 
 Files: new `src/targets/cursor/{capabilities,doc-refs,lexicon,metadata,index}.ts`, `src/targets/cursor/spec/{index,skill}.ts`,
@@ -114,9 +118,7 @@ generated `docs/reference/capabilities.md` and `test/fixtures/output-snapshot/bu
 [UNTRANSLATED_TOKEN_FORBID]`; `docs: [CURSOR_RULES_DOC]`; `limits`: body 500 lines, severity `warning`,
     `CURSOR_RULES_DOC` (Cursor's "keep rules under 500 lines").
 - Add it to `CURSOR_EMIT_SPECS`; `rule` becomes `{ mode: 'native' }`.
-- If step 1 amended this step to unquoted globs: write `globs: ${appliesTo.join(',')}` without `yamlScalar`, and say
-  in the spec's header why (Cursor's parser, step 1's run). The output contract's frontmatter parse then fails on a glob
-  starting with `*`, so the spec needs a stated contract exception; stop and ask before adding one.
+- Globs stay quoted through `yamlScalar`: step 1's run 1 showed Cursor attaches a quoted, comma-joined `globs` on a read.
 
 Test cases, `test/targets/cursor.test.ts`:
 
@@ -151,8 +153,8 @@ Files: `src/types.ts`, `src/commands/status-overlaps.ts`, `src/targets/cursor/in
 - `overlapNotes`: with `readerWins`, the note reads `<Reader> also reads <Other>'s <kind>s and uses its own copy on a
 name clash, so <Other>'s copy of these goes unused there: <ids> (<doc url>).` Without it, the note is unchanged.
 - Cursor declares, citing `CURSOR_SKILLS_DOC`: `{ kind: 'skill', targets: ['claude'], readerWins: true }` and
-  `{ kind: 'skill', targets: ['agents-standard', 'codex'] }` (or `readerWins: true` on that one too, per step 1's
-  run 2).
+  `{ kind: 'skill', targets: ['agents-standard', 'codex'], readerWins: true }` (step 1's run 2: `.cursor` wins over
+  `.agents` too).
 - Export `duplicateLoadsFor(entries, targets, targetName, ids)`: the `duplicateLoads` notes where `targetName` is the
   reader or the other target and at least one listed id is in `ids`. `duplicateLoads` stays as it is.
 
@@ -161,7 +163,7 @@ Test cases, `test/commands/status-overlaps.test.ts`:
 | Case                                                                       | Expected                                       |
 | -------------------------------------------------------------------------- | ---------------------------------------------- |
 | Skill `x` installed for `cursor` and `claude`                              | One note, the `readerWins` wording, naming `x` |
-| Skill `x` installed for `cursor` and `codex`                               | One note, the wording step 1 chose             |
+| Skill `x` installed for `cursor` and `codex`                               | One note, the `readerWins` wording, naming `x` |
 | Skill `x` for `cursor` only                                                | No note                                        |
 | Existing Copilot cases                                                     | Unchanged                                      |
 | `duplicateLoadsFor(…, 'claude', ['x'])` with `x` for `cursor` and `claude` | The Cursor note (Claude is the other target)   |

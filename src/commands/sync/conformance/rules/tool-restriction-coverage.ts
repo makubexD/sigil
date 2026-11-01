@@ -1,67 +1,87 @@
 /**
  * `tool-restriction-coverage` — an agent's tool restriction (`tools`, `disallowedTools`) must reach
- * every target the agent ships to. A provider that has no mapping for one of those fields drops it,
- * and an agent with no restriction gets every tool: `disallowedTools: [Edit]` on a target that cannot
- * express it installs an agent that can edit. `declared-but-unemitted` only asks that *some* provider
- * maps a field; this rule asks it of each provider the agent actually targets (`platforms:`).
+ * every target the agent ships to. Every provider gives an agent with no restriction every tool, so
+ * an agent whose restriction a target cannot express exactly would install there with every tool.
+ * `declared-but-unemitted` only asks that *some* provider maps a field; this rule asks it of each
+ * provider the agent actually targets (`platforms:`).
  *
- * Data-driven: it reads each target's agent `KindEmitSpec` mappings, so a new target is covered the
- * moment it registers its specs. No `fix()`: the author either narrows `platforms:` or replaces the
- * restriction with a `tools` allowlist every target carries.
+ * Data-driven: each target's agent `KindEmitSpec`s go through `restrictionOutcome`, the same check
+ * `add` and `build` apply, so the rule reads the target's `ToolDialect` and honours
+ * `toolPolicy`. A `skip` (the fail-closed default) is an error; a `nearest` mapping
+ * (`toolPolicy: nearest`) is a warning with the message install would print. No `fix()`: the author
+ * either narrows `platforms:` or the tool list, or opts into `toolPolicy: nearest`.
  *
  * @module
  */
 import type { Artifact, Target } from '../../../../types';
 import type { ConformanceRule, ConformanceFinding } from '../types';
+import type { KindEmitSpec } from '../../../../targets/spec-types';
 import { allProviderSpecs } from '../../../../targets/all-emit-specs';
 import { artifactTargetsPlatform } from '../../../../select';
 import { supportsKind } from '../../../../targets/capabilities';
-import { TOOL_RESTRICTION_FIELDS } from '../../../../targets/tool-restriction';
+import { restrictionOutcome, type RestrictionOutcome } from '../../../../targets/tool-restriction';
 
-/** The agent fields `target`'s agent specs map — the restrictions it can carry. */
-function carriedFields(target: Target): Set<string> {
-  return new Set(
-    allProviderSpecs()
-      .filter(s => s.source.startsWith(`${target.name}/`) && s.spec.kind === 'agent')
-      .flatMap(s => s.spec.frontmatter)
-      .map(mapping => mapping.from),
-  );
+/** Every agent spec `target` emits — one per channel variant (Claude has scaffold and plugin). */
+function agentSpecsOf(target: Target): KindEmitSpec[] {
+  return allProviderSpecs()
+    .filter(s => s.source.startsWith(`${target.name}/`) && s.spec.kind === 'agent')
+    .map(s => s.spec);
 }
 
-/** One finding per restriction field `agent` declares that a target it ships to cannot carry. */
-function findingsForAgent(
+/** The worst outcome across `specs`: `skip` beats `nearest` beats `exact`. */
+function worstOutcome(
+  specs: readonly KindEmitSpec[],
+  frontmatter: Record<string, unknown>,
+): RestrictionOutcome {
+  let worst: RestrictionOutcome = { kind: 'exact' };
+  for (const spec of specs) {
+    const outcome = restrictionOutcome(spec, frontmatter);
+    if (outcome.kind === 'skip') return outcome;
+    if (outcome.kind === 'nearest') worst = outcome;
+  }
+  return worst;
+}
+
+/** The finding `outcome` produces for `agent` on `provider`, or `undefined` for `exact`. */
+function findingFor(
   agent: Artifact,
-  targets: readonly Target[],
-  carried: ReadonlyMap<string, Set<string>>,
-): ConformanceFinding[] {
-  const declared = TOOL_RESTRICTION_FIELDS.filter(f => agent.frontmatter[f] !== undefined);
-  return targets
-    .filter(t => artifactTargetsPlatform(agent, t.name) && supportsKind(t, 'agent'))
-    .flatMap(target =>
-      declared
-        .filter(field => !carried.get(target.name)?.has(field))
-        .map(field => droppedFieldFinding(agent, target.name, field)),
-    );
-}
-
-function droppedFieldFinding(agent: Artifact, provider: string, field: string): ConformanceFinding {
+  provider: string,
+  outcome: RestrictionOutcome,
+): ConformanceFinding | undefined {
+  if (outcome.kind === 'exact') return undefined;
   return {
     ruleId: 'tool-restriction-coverage',
-    severity: 'error',
+    severity: outcome.kind === 'skip' ? 'error' : 'warning',
     artifactId: agent.id,
     filePath: agent.filePath,
     provider,
     detail:
-      `'${field}' is dropped on ${provider}, so the agent would get every tool there — ` +
-      `set platforms: to exclude ${provider}, or use a tools allowlist instead`,
+      outcome.kind === 'skip'
+        ? `${outcome.reason} — set platforms: to exclude ${provider}, or toolPolicy: nearest`
+        : outcome.warning,
   };
 }
 
+/** At most one finding per target `agent` ships to, taking the worst spec outcome. */
+function findingsForAgent(
+  agent: Artifact,
+  targets: readonly Target[],
+  specsByTarget: ReadonlyMap<string, readonly KindEmitSpec[]>,
+): ConformanceFinding[] {
+  return targets
+    .filter(t => artifactTargetsPlatform(agent, t.name) && supportsKind(t, 'agent'))
+    .flatMap(target => {
+      const outcome = worstOutcome(specsByTarget.get(target.name) ?? [], agent.frontmatter);
+      const finding = findingFor(agent, target.name, outcome);
+      return finding ? [finding] : [];
+    });
+}
+
 function detect(ctx: Parameters<ConformanceRule['detect']>[0]): ConformanceFinding[] {
-  const carried = new Map(ctx.targets.map(t => [t.name, carriedFields(t)]));
+  const specsByTarget = new Map(ctx.targets.map(t => [t.name, agentSpecsOf(t)]));
   return ctx.catalog.artifacts
     .filter(a => a.kind === 'agent')
-    .flatMap(agent => findingsForAgent(agent, ctx.targets, carried));
+    .flatMap(agent => findingsForAgent(agent, ctx.targets, specsByTarget));
 }
 
 export const toolRestrictionCoverageRule: ConformanceRule = {

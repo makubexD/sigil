@@ -190,6 +190,42 @@ describe('tool-restriction-coverage', () => {
     const agent = agentWith({ tools: ['Read', 'Grep'] });
     assert.deepEqual(runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE }), []);
   });
+
+  it('should flag a strict restriction once, on the target whose dialect cannot carry it', () => {
+    const agent = agentWith({ tools: ['read', 'shell'] });
+    const findings = runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE });
+    assert.deepEqual(
+      findings.map(f => [f.severity, f.provider]),
+      [['error', FAKE_TARGET]],
+    );
+    assert.match(findings[0]?.detail ?? '', /shell/);
+    assert.match(findings[0]?.detail ?? '', new RegExp(`set platforms: to exclude ${FAKE_TARGET}`));
+  });
+
+  it('should pass when platforms excludes the target that cannot carry the restriction', () => {
+    const agent = agentWith({ tools: ['read', 'shell'], platforms: ['claude', 'copilot'] });
+    assert.deepEqual(runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE }), []);
+  });
+
+  it('should warn once when toolPolicy nearest accepts the nearest mapping', () => {
+    const agent = agentWith({ tools: ['read', 'shell'], toolPolicy: 'nearest' });
+    const findings = runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE });
+    assert.deepEqual(
+      findings.map(f => [f.severity, f.provider]),
+      [['warning', FAKE_TARGET]],
+    );
+    assert.match(findings[0]?.detail ?? '', /shell/);
+    assert.match(findings[0]?.detail ?? '', /nearest mapping/);
+  });
+
+  it('should report nothing for the bundled catalog on the real targets', async () => {
+    const resolved = await loadResolvedCatalog();
+    const realTargets = getAllTargets().filter(target => target.name !== FAKE_TARGET);
+    const findings = runConformance(resolved as unknown as LoadedCatalog, realTargets, {
+      ruleId: RULE,
+    });
+    assert.deepEqual(findings, []);
+  });
 });
 
 // ─── A registered target whose agent dialect cannot express `shell` ──────────

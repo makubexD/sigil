@@ -280,11 +280,11 @@ Files: `src/targets/copilot/tool-dialect.ts` (new), `src/targets/copilot/spec/ag
 dialect, so remove step 6's transition fallback in `src/targets/tool-restriction.ts`: a mapped field on an agent spec
 with no `toolDialect` is now inexact (update the step 6 test row to `skip`). Tests in `test/targets/copilot.test.ts`:
 
-| Case                                 | Expected                    |
-| ------------------------------------ | --------------------------- |
-| every catalog agent                  | `tools: ["read","search"]`  |
-| agent `tools: [Read, Bash]` (legacy) | `tools: ["read","execute"]` |
-| skill allowed-tools                  | as the step 1 record says   |
+| Case                                 | Expected                                                                                                          |
+| ------------------------------------ | ----------------------------------------------------------------------------------------------------------------- |
+| every catalog agent                  | `tools: ["read","search","execute"]`, plus `"edit"` on the 10 that list Edit (amended 2026-11-01: all carry Bash) |
+| agent `tools: [Read, Bash]` (legacy) | `tools: ["read","execute"]`                                                                                       |
+| skill allowed-tools                  | as the step 1 record says                                                                                         |
 
 Update the output snapshot. Test: `npm test -- test/targets/copilot.test.ts test/targets/output-snapshot.test.ts`.
 

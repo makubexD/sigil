@@ -63,7 +63,9 @@ export function readExistingOrWarn(
 ): Record<string, unknown> | undefined {
   const existing = readConfigFile(fullPath);
   if (existing === undefined) {
-    console.error(`  ✗  ${entryId}: ${cfFile} exists but is not valid ${configFormatName(fullPath)}. Skipped.`);
+    console.error(
+      `  ✗  ${entryId}: ${cfFile} exists but is not valid ${configFormatName(fullPath)}. Skipped.`,
+    );
   }
   return existing;
 }

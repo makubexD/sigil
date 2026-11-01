@@ -373,6 +373,12 @@ whose normalized `tools` / `toolPolicy` (absent = strict) or `allowedTools` diff
 
 Test: `npm test -- test/commands/family-skeleton.test.ts`.
 
+Amended 2026-11-01: `family-skeleton` is `editorial`, and `--apply` runs `fix()` only for `mechanical` rules
+(`fix-mechanical.ts`). So the check is a new mechanical rule, `family-tools`
+(`src/commands/sync/conformance/rules/family-tools.ts`, registered in `registry.ts`; with no family data yet it reports
+nothing), tested in `test/commands/family-tools.test.ts`. Sent in two parts: 13a the `standard.yaml` schema and comment,
+13b the rule, registry and tests.
+
 ## Step 14 `[worker:medium]`: migrate the catalog
 
 Files: `catalog/standard.yaml`, then every file `sigil sync --apply` rewrites, and the one agent with

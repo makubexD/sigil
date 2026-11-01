@@ -12,11 +12,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
 import { applyMerge } from '../../dist-cli/config-merge/index';
-import {
-  ensureHomeBackup,
-  isHomeScopedRoot,
-  resolveConfigRoot,
-} from '../../dist-cli/config-utils';
+import { ensureHomeBackup, isHomeScopedRoot, resolveConfigRoot } from '../../dist-cli/config-utils';
 import { withTempDir } from '../helpers/temp-dir';
 import type { ConfigMergeOp, ResolvedCatalog } from '../../dist-cli/types';
 

@@ -112,6 +112,18 @@ Setup, limits and what was tested: [docs/setup/copilot.md](docs/setup/copilot.md
 
 </details>
 
+<details>
+<summary><strong>OpenAI Codex: install skills</strong></summary>
+
+```bash
+sigil add --target codex <skill-or-pack>
+```
+
+Run Codex in a trusted project. Setup, limits and what was tested:
+[docs/setup/codex.md](docs/setup/codex.md).
+
+</details>
+
 ### Getting help
 
 | You want                                 | Run                                                                  |
@@ -162,8 +174,10 @@ Setup, limits and what was tested: [docs/setup/copilot.md](docs/setup/copilot.md
   as-is: GitHub Copilot and Cursor document it. Copilot reads it too, so don't install the same skills
   for both `copilot` and `agents-standard`. The open standard has no subagents, prompts, hooks,
   settings or shared MCP file, so those kinds are skipped for this target.
-- **Other tools**: dedicated Codex and Cursor targets (agents, rules, MCP) are planned
-  ([Codex](docs/ideas/codex-target.md), [Cursor](docs/ideas/cursor-target.md)); until then
+- **OpenAI Codex**: `sigil add --target codex` writes skills to `.agents/skills/`, and a full build also
+  writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are skipped: a Codex agent file
+  can't restrict tools, and Codex deprecated custom prompts. See [docs/setup/codex.md](docs/setup/codex.md).
+- **Other tools**: a dedicated [Cursor target](docs/ideas/cursor-target.md) is planned; until then
   `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
 
 ## What is in the catalog

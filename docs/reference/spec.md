@@ -331,6 +331,10 @@ reaches it inside skills, and a full build also writes repo-wide rules to a root
 ([agents.md](https://agents.md/)). Every other kind is skipped with the reason in
 [capabilities.md](capabilities.md). Specs and citations: `src/targets/agents-standard/`.
 
+**OpenAI Codex (`codex`).** Skills and `AGENTS.md` render exactly as for `agents-standard`, so the two targets share
+those files. Every other kind is skipped with the reason in [capabilities.md](capabilities.md). Specs and citations:
+`src/targets/codex/`.
+
 **Key vocabulary rules:**
 
 - Claude Code has **no "prompt" artifact** — catalog `prompt` becomes a _user-invoked skill_

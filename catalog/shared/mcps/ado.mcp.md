@@ -21,7 +21,7 @@ server:
   env:
     ADO_MCP_PERSONAL_TOKEN: "{sigil:env:ADO_MCP_PERSONAL_TOKEN}"
 tags: [mcp, azure-devops, ado, work-items, shared]
-platforms: [claude, copilot]
+platforms: [claude, copilot, cursor]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 # defaultScope: project  # recommended install scope: project | local | user

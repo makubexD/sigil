@@ -9,8 +9,10 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { AgentSchema } from '../../dist-cli/schema';
 import { renderArtifact } from '../../dist-cli/targets/emit';
+import { restrictionOutcome, toolSkipReason } from '../../dist-cli/targets/tool-restriction';
 import { CLAUDE_AGENT_SPEC } from '../../dist-cli/targets/claude-code/spec/agent';
 import { COPILOT_AGENT_SPEC } from '../../dist-cli/targets/copilot/spec/agent';
+import type { KindEmitSpec } from '../../dist-cli/targets/spec-types';
 import { runConformance } from '../../dist-cli/commands/sync/conformance/detect';
 import { getAllTargets } from '../../dist-cli/targets/index';
 import type { Artifact, LoadedCatalog, ResolvedArtifact } from '../../dist-cli/types';
@@ -70,6 +72,75 @@ describe('agent tool restriction — refused at render time', () => {
   it('should render it through a spec that carries the restriction', () => {
     const agent = makeAgent({ disallowedTools: ['Edit'] }) as unknown as ResolvedArtifact;
     assert.match(renderArtifact(CLAUDE_AGENT_SPEC, agent, {}), /^disallowedTools:/m);
+  });
+});
+
+describe('restrictionOutcome', () => {
+  const namesSpec: KindEmitSpec = {
+    ...CLAUDE_AGENT_SPEC,
+    toolDialect: {
+      kind: 'names',
+      names: {
+        read: ['Read'],
+        search: ['Grep', 'Glob'],
+        edit: ['Edit', 'Write'],
+        shell: undefined,
+        web: undefined,
+        agent: undefined,
+        todo: undefined,
+      },
+    },
+  };
+
+  it('should be exact when the dialect carries every tool', () => {
+    const agent = makeAgent({ tools: ['read', 'search'] });
+    assert.deepEqual(restrictionOutcome(namesSpec, agent.frontmatter), { kind: 'exact' });
+  });
+
+  it('should skip by default when the dialect cannot carry a tool', () => {
+    const agent = makeAgent({ tools: ['read', 'shell'] });
+    const outcome = restrictionOutcome(namesSpec, agent.frontmatter);
+    assert.equal(outcome.kind, 'skip');
+    if (outcome.kind !== 'skip') return;
+    assert.match(outcome.reason, /shell/);
+  });
+
+  it('should warn instead of skipping under toolPolicy nearest', () => {
+    const agent = makeAgent({ tools: ['read', 'shell'], toolPolicy: 'nearest' });
+    const outcome = restrictionOutcome(namesSpec, agent.frontmatter);
+    assert.equal(outcome.kind, 'nearest');
+    if (outcome.kind !== 'nearest') return;
+    assert.match(outcome.warning, /shell/);
+  });
+
+  it('should skip a field the spec does not map', () => {
+    const agent = makeAgent({ disallowedTools: ['Edit'] });
+    const outcome = restrictionOutcome(COPILOT_AGENT_SPEC, agent.frontmatter);
+    assert.equal(outcome.kind, 'skip');
+    if (outcome.kind !== 'skip') return;
+    assert.match(outcome.reason, /disallowedTools/);
+  });
+
+  it('should be exact for a mapped field on a spec with no dialect', () => {
+    const agent = makeAgent({ tools: ['Read'] });
+    assert.deepEqual(restrictionOutcome(CLAUDE_AGENT_SPEC, agent.frontmatter), { kind: 'exact' });
+  });
+
+  it('should report the skip reason and nothing for an exact render', () => {
+    const skipped = makeAgent({ tools: ['read', 'shell'] });
+    const exact = makeAgent({ tools: ['read', 'search'] });
+    assert.equal(typeof toolSkipReason(namesSpec, skipped), 'string');
+    assert.equal(toolSkipReason(namesSpec, exact), undefined);
+  });
+
+  it('should refuse an inexact render and allow a nearest one', () => {
+    const agent = makeAgent({ tools: ['read', 'shell'] }) as unknown as ResolvedArtifact;
+    assert.throws(() => renderArtifact(namesSpec, agent, {}), /shell/);
+    const nearest = makeAgent({
+      tools: ['read', 'shell'],
+      toolPolicy: 'nearest',
+    }) as unknown as ResolvedArtifact;
+    assert.equal(typeof renderArtifact(namesSpec, nearest, {}), 'string');
   });
 });
 

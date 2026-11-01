@@ -7,8 +7,10 @@
  * renderArtifact refuses to render a `skip` (build, add and update all fail closed), and
  * `sync --check`'s tool-restriction-coverage rule reports the gap earlier.
  *
- * A mapped restriction on a spec with no `toolDialect` counts as exact (the transition until every
- * agent spec has one). See docs/decisions/neutral-agent-vocabulary-2026-11.md.
+ * A mapped restriction on a spec with no `toolDialect` is inexact too: the catalog's names could
+ * only be copied into the output untranslated, which is not the provider's vocabulary. It is
+ * treated as not carried, so the agent is skipped (or mapped nearest) rather than widened.
+ * See docs/decisions/neutral-agent-vocabulary-2026-11.md.
  *
  * @module
  */
@@ -30,8 +32,10 @@ function inexactToolProblem(
   field: string,
   value: readonly unknown[],
 ): string[] {
-  // No dialect yet means the mapping carries the names as written (the transition).
-  if (!spec.toolDialect) return [];
+  // Without a dialect the mapping could only copy the names untranslated: inexact, fail closed.
+  if (!spec.toolDialect) {
+    return [`${field} (the target has no tool dialect to translate its names)`];
+  }
   const authored = value.filter((entry): entry is string => typeof entry === 'string');
   const rendered = renderTools(spec.toolDialect, authored);
   return rendered.exact ? [] : [`${field} tool(s) ${rendered.missing.join(', ')}`];

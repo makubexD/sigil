@@ -8,12 +8,13 @@ import { resolveCatalog } from '../../dist-cli/resolve';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
 import { loadResolvedCatalog, loadBundledCatalog } from '../helpers/catalog';
 import { COPILOT_RULE_SPEC } from '../../dist-cli/targets/copilot/spec/rule';
+import { COPILOT_AGENT_SPEC } from '../../dist-cli/targets/copilot/spec/agent';
 import { COPILOT_SKILL_SPEC } from '../../dist-cli/targets/copilot/spec/skill';
 import { renderArtifact } from '../../dist-cli/targets/emit';
 import { checkOutputContract } from '../../dist-cli/targets/output-contract';
 import type { ResolvedArtifact } from '../../dist-cli/types';
 
-import { makeRule, makeSkill } from '../helpers/fixtures';
+import { makeAgent, makeRule, makeSkill } from '../helpers/fixtures';
 
 /** A rule's .instructions.md, as compile and add write it. */
 const buildInstructionsFile = (rule: Parameters<typeof renderArtifact>[1]) =>
@@ -263,7 +264,7 @@ describe('full build agents', () => {
     assert.ok(!('.github/AGENTS.md' in files));
   });
 
-  it('keeps each agent tools line in its built frontmatter', async () => {
+  it('renders every agent tools line through the Copilot dialect', async () => {
     const catalog = await loadBundledCatalog();
     const resolved = resolveCatalog(catalog);
     const target = new CopilotTarget();
@@ -280,7 +281,11 @@ describe('full build agents', () => {
       assert.equal(lines[0], '---', `${path} opens with frontmatter`);
       const end = lines.indexOf('---', 1);
       assert.ok(end > 0, `${path} closes its frontmatter`);
-      const expected = `tools: ${JSON.stringify(agent.frontmatter.tools)}`;
+      // Every catalog agent lists Read, Grep, Glob, Bash; the 10 that also list Edit gain it.
+      const authored = agent.frontmatter.tools as string[];
+      const expectedTools = ['read', 'search', 'execute'];
+      if (authored.includes('Edit')) expectedTools.push('edit');
+      const expected = `tools: ${JSON.stringify(expectedTools)}`;
       assert.ok(lines.slice(1, end).includes(expected), `${path} keeps ${expected}`);
     }
   });
@@ -308,6 +313,28 @@ describe('full build agents', () => {
       assert.ok(path in files, `${path} emitted`);
       assert.ok(!files[path]!.includes('{sigil:'), `${path} has no {sigil: token`);
     }
+  });
+});
+
+describe('Copilot tool dialect', () => {
+  it('renders a legacy agent tools list as Copilot names', () => {
+    const agent = makeAgent({ tools: ['Read', 'Bash'] }) as unknown as ResolvedArtifact;
+    assert.match(renderArtifact(COPILOT_AGENT_SPEC, agent, {}), /^tools: \["read","execute"\]$/m);
+  });
+
+  it('renders skill allowedTools through the Copilot skill dialect', () => {
+    const skill = makeSkill({
+      allowedTools: ['Bash', 'Read', 'Grep', 'Glob'],
+    }) as unknown as ResolvedArtifact;
+    assert.match(
+      renderArtifact(COPILOT_SKILL_SPEC, skill, {}),
+      /^allowed-tools: "shell read search"$/m,
+    );
+  });
+
+  it('emits no allowed-tools line when a skill lists only tools Copilot cannot pre-approve', () => {
+    const skill = makeSkill({ allowedTools: ['todo'] }) as unknown as ResolvedArtifact;
+    assert.doesNotMatch(renderArtifact(COPILOT_SKILL_SPEC, skill, {}), /^allowed-tools:/m);
   });
 });
 

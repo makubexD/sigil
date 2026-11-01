@@ -121,9 +121,13 @@ describe('restrictionOutcome', () => {
     assert.match(outcome.reason, /disallowedTools/);
   });
 
-  it('should be exact for a mapped field on a spec with no dialect', () => {
+  it('should skip a mapped field on a spec with no dialect', () => {
     const agent = makeAgent({ tools: ['Read'] });
-    assert.deepEqual(restrictionOutcome(CLAUDE_AGENT_SPEC, agent.frontmatter), { kind: 'exact' });
+    const { toolDialect: _toolDialect, ...noDialect } = CLAUDE_AGENT_SPEC;
+    const outcome = restrictionOutcome(noDialect, agent.frontmatter);
+    assert.equal(outcome.kind, 'skip');
+    if (outcome.kind !== 'skip') return;
+    assert.match(outcome.reason, /tools/);
   });
 
   it('should report the skip reason and nothing for an exact render', () => {

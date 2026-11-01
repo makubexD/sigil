@@ -207,7 +207,7 @@ interface TargetCapabilities {
 | 3     | Agent Skills conformance (`name` = directory, ≤64/≤1024 chars) so `npx skills add … --skill x` works — **skipped ahead of Phase 4, checks built, install route unproven**                                                                                                                  |                   |
 | 4     | Verify the Claude-format marketplace in VS Code / Copilot CLI; Agent Plugins 1.0 output only if a gap remains — **done 2026-10-30, no new output**                                                                                                                                         |                   |
 | 5     | Codex adapter (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin) — **done 2026-10-31, without agents or a plugin emitter**                                                                                                                        |                   |
-| 6     | Cursor adapter (`.cursor/rules/*.mdc`, agents, commands, hooks, MCP; Cursor plugin — the one format that carries rules)                                                                                                                                                                    |                   |
+| 6     | Cursor adapter (`.cursor/rules/*.mdc`, agents, commands, hooks, MCP; Cursor plugin — the one format that carries rules) — **in progress: rules, skills, hooks and MCP built 2026-11-01; agents and the plugin not yet**                                                                    |                   |
 
 "No empty plugins" (Phase 0) is done as of 2026-10-30
 ([publish-claude-marketplace-2026-10](publish-claude-marketplace-2026-10.md#empty-plugins)), and

@@ -170,6 +170,14 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   kebab-case.
 - **MCP config never carries a provider's env syntax.** Catalog `server` values write `{sigil:env:NAME}`; each target
   expands it for the file it writes (`src/targets/env-reference.ts`, an `EnvSyntax` per file format).
+- **A JSON MCP server entry comes from an `McpDialect`** (`src/targets/mcp-dialect.ts`, `renderMcpServer` /
+  `mcpServerOp`): a new target supplies one dialect value, never its own builder. The portable files use
+  `PORTABLE_MCP_DIALECT`, Cursor `CURSOR_MCP_DIALECT`. Codex's TOML builder is the one exception (it forwards by name).
+- **A target with `configKinds` dispatches config only through its `ConfigKindTable`**
+  (`src/targets/config-kind-table.ts`): `configScopes`, `scaffoldConfig`, `configSkipReason` and destinations derive
+  from the table, never a `kind === 'hook'` branch. The table's kinds must equal the target's `native` config kinds
+  (`test/targets/capabilities.test.ts`). `config-target-render` fails `sync --check` when a catalog `hook` or `mcp`
+  ships to a target whose `skipReason` refuses it.
 - **Artifact bodies are provider-neutral prose — never a hardcoded provider-specific literal** (`CLAUDE.md`,
   `$ARGUMENTS`, `.claude/rules/`, …). Bodies use `{sigil:<term>}` tokens (`LEXICON_TERMS` in `src/targets/lexicon.ts`)
   and one `ProviderLexicon` per provider (`src/targets/<provider>/lexicon.ts`), applied by `renderArtifact()`

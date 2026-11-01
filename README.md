@@ -196,7 +196,8 @@ Cursor without installing them again. Setup, limits and what was tested:
   can't restrict tools, and Codex deprecated custom prompts. See [docs/setup/codex.md](docs/setup/codex.md).
 - **Cursor**: `sigil add --target cursor` writes rules to `.cursor/rules/` as `.mdc` files and skills to
   `.cursor/skills/`. A full build writes no `AGENTS.md`, because the repo-wide rules are already
-  `alwaysApply` rules. Agents, prompts, hooks and MCP are skipped for now. See
+  `alwaysApply` rules. Hooks merge into `.cursor/hooks.json` and MCP servers into `.cursor/mcp.json`. Agents and
+  prompts are skipped for now. See
   [docs/setup/cursor.md](docs/setup/cursor.md).
 - **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
 

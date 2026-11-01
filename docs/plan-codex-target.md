@@ -49,8 +49,9 @@ The owner delegated these on 2026-10-31, to be taken as recommended. Results and
 
 Amendments from the probes:
 
-- **Phase C.** `args` isn't honored, so a hook renders as one string per shell: a POSIX-quoted `command` and a `cmd.exe`
-  `commandWindows`. A hook that can't be rendered safely for a shell is refused. The Windows form is untested.
+- **Phase C.** `args` isn't honored, so a hook renders as one string. A `node -e` script is base64-encoded so it runs in every
+  shell; anything else needs a POSIX-quoted `command` and a `cmd.exe` `commandWindows`, and is refused if it can't have
+  both. Windows is untested.
 - **Phase E.** `{sigil:env:NAME}` in `env` becomes `env_vars` when the key equals `NAME`. Anything else is refused, which
   keeps `shared/ado` off Codex.
 - **Phase G.** The setup page documents the marketplace route and warns against hook plugins.

@@ -132,10 +132,8 @@ export function writeFilesSync(files: FileMap, outputDir: string): void {
 }
 
 /**
- * Partitions a FileMap into files that can be written (toWrite) and files that would
- * conflict with existing content (conflicting). A file whose existing content is byte-identical
- * is not a conflict: two targets can render the same path (.agents/skills/), and writing it again
- * changes nothing.
+ * Partitions a FileMap into files that don't exist yet (toWrite) and files that
+ * would conflict with existing content (conflicting).
  */
 export function partitionFiles(
   files: FileMap,
@@ -146,10 +144,7 @@ export function partitionFiles(
 
   for (const [relPath, content] of Object.entries(files)) {
     const fullPath = resolveContained(outputDir, relPath);
-    const existsWithOtherContent =
-      fs.existsSync(fullPath) &&
-      !(fs.lstatSync(fullPath).isFile() && fs.readFileSync(fullPath, 'utf-8') === content);
-    if (existsWithOtherContent) {
+    if (fs.existsSync(fullPath)) {
       conflicting[relPath] = content;
     } else {
       toWrite[relPath] = content;

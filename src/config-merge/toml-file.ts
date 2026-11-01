@@ -13,6 +13,7 @@ import { parse, stringify } from 'smol-toml';
 import { deepEqual, isPlainObject } from './primitives';
 import { isBlank, isComment, isHeaderLine, joinLines, splitLines } from './toml-lines';
 import { SigilError } from '../errors';
+import type { ConfigMergeOp } from '../types';
 
 const MCP_SERVERS = 'mcp_servers';
 
@@ -180,6 +181,30 @@ function assertOwnsOnlyMcpServers(
 ): void {
   if (deepEqual(withoutKey(before, MCP_SERVERS), withoutKey(merged, MCP_SERVERS))) return;
   throw unsafeEdit();
+}
+
+/**
+ * Restores in `cleaned` each server `op` installed that the user edited so far that only a fragment
+ * would remain: a table with neither `command` nor `url` stops Codex from starting. The server stays
+ * whole and becomes the user's. Returns the names kept.
+ */
+export function keepIncompleteServers(
+  live: Record<string, unknown>,
+  cleaned: Record<string, unknown>,
+  op: ConfigMergeOp,
+): string[] {
+  const servers = tableOf(cleaned[MCP_SERVERS]);
+  const liveServers = tableOf(live[MCP_SERVERS]);
+  const kept = Object.keys(tableOf(op.fragment[MCP_SERVERS])).filter(name => {
+    if (!hasKey(servers, name)) return false;
+    const rest = tableOf(servers[name]);
+    return !hasKey(rest, 'command') && !hasKey(rest, 'url');
+  });
+  if (kept.length > 0) {
+    const restored = Object.fromEntries(kept.map(name => [name, liveServers[name]]));
+    cleaned[MCP_SERVERS] = { ...servers, ...restored };
+  }
+  return kept;
 }
 
 /**

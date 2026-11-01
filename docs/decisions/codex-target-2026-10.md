@@ -37,7 +37,7 @@ Three separate routes let a write through with no error, and each needs its own 
 Codex runs a hook through `$SHELL` on Unix and `%COMSPEC%` on Windows, with `commandWindows` as the Windows override
 ([`command_runner.rs`](https://github.com/openai/codex/blob/main/codex-rs/hooks/src/engine/command_runner.rs),
 [`discovery.rs`](https://github.com/openai/codex/blob/main/codex-rs/hooks/src/engine/discovery.rs)). A multi-line
-`args` script must therefore become one quoted string for each shell.
+`args` script must therefore become one string; see [Hook command](#hook-command).
 
 ## Plugins
 
@@ -77,8 +77,22 @@ exists.
 owns whole `[mcp_servers.<key>]` tables, and `renderToml` refuses to write unless the result parses back to the merged
 object. A same-named table a user wrote is replaced, as `object-spread` does in JSON.
 
+### Skill files
+
+**A project installs skills for `codex` or `agents-standard`, not both.** They write the same files. An early version let
+both own them, and review found that one target's `update` marked the other's file as edited, different install sets
+rendered different Boundary sections, and treating identical files as no conflict adopted users' own files. `add` now
+refuses the second target (`Target.sharesSkillFilesWith`).
+
+### Hook command
+
+**A `node -e` script is stored base64-encoded in `command`.** Codex runs a hook through `$SHELL -lc`, or `%COMSPEC%`, and a
+hook that can't start lets every call through. The encoded form has no character any of those shells treats specially.
+The cost is that `/hooks` shows an unreadable string, so review means reading the catalog source. Protection across
+shells won over readability.
+
 ## Not proven
 
 - A real model picking a skill or using a hook-guarded tool. Every run used a mock model.
-- `commandWindows` on Windows. It was run through `sh` only.
+- The hook on Windows, fish, zsh, tcsh or nushell. It ran through bash and `sh` only.
 - The `/hooks` review itself. Hook runs used `--dangerously-bypass-hook-trust`.

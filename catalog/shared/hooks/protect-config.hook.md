@@ -95,8 +95,8 @@ PowerShell and a blocking exit code 2 comes back as 1, which does not block.
 - The GitHub Copilot cloud agent, which skips exec-form hooks. It protects Copilot CLI and
   VS Code only.
 - OpenAI Codex until you review the hook in `/hooks`. Codex skips a new or changed hook, and every
-  project hook in an untrusted project, with no error. On Codex this hook is one quoted command, not
-  exec form; the Windows form (`commandWindows`) hasn't been tested live.
+  project hook in an untrusted project, with no error. On Codex this script is one base64-encoded
+  command, not exec form, so it runs in any shell; it hasn't been tested live on Windows.
 - GitHub Copilot CLI in an untrusted folder. It loads repository hooks only from a trusted folder,
   so `copilot -p` there skips this hook silently. `--trust-folder` fixes that for one session.
 

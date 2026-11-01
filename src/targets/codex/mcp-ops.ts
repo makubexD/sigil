@@ -76,6 +76,7 @@ function splitEnv(env: Record<string, unknown>): {
 /** The Codex config for a stdio server: `command`, plus `args`/`env`/`cwd` as authored. */
 function buildStdioConfig(server: Record<string, unknown>): Record<string, unknown> {
   refuseUnknownFields(server, STDIO_FIELDS, 'stdio');
+  refuseEnvTokens(server.command, 'command');
   const config: Record<string, unknown> = { command: server.command };
   if (server.args !== undefined) {
     refuseEnvTokens(server.args, 'args');
@@ -96,6 +97,7 @@ function buildStdioConfig(server: Record<string, unknown>): Record<string, unkno
 /** The Codex config for a remote server: `url`, plus static `headers` as `http_headers`. */
 function buildRemoteConfig(server: Record<string, unknown>): Record<string, unknown> {
   refuseUnknownFields(server, REMOTE_FIELDS, 'remote');
+  refuseEnvTokens(server.url, 'url');
   if (server.type !== undefined && server.type !== DOCUMENTED_REMOTE_TYPE) {
     throw new SigilError(
       `Codex documents no '${String(server.type)}' MCP server type — its remote servers are ` +

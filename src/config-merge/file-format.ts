@@ -11,7 +11,9 @@
  */
 import { parse as parseToml } from 'smol-toml';
 import { serialize } from './primitives';
-import { renderToml } from './toml-file';
+import { reverseMerge } from './reverse';
+import { keepIncompleteServers, renderToml } from './toml-file';
+import type { ConfigMergeOp } from '../types';
 
 /** True when `fullPath` names a TOML config file (Codex's `config.toml`). */
 function isTomlPath(fullPath: string): boolean {
@@ -53,4 +55,22 @@ export function isEmptiedConfig(
 ): boolean {
   if (Object.keys(merged).length > 0) return false;
   return isTomlPath(fullPath) ? text.trim() === '' : true;
+}
+
+/**
+ * `reverseMerge` for the file at `fullPath`. In TOML it also returns the servers left whole because
+ * a partial one would stop Codex from starting.
+ */
+export function reverseConfig(
+  fullPath: string,
+  live: Record<string, unknown>,
+  op: ConfigMergeOp,
+): { cleaned: Record<string, unknown>; kept: string[] } {
+  const cleaned = reverseMerge(live, op);
+  return { cleaned, kept: isTomlPath(fullPath) ? keepIncompleteServers(live, cleaned, op) : [] };
+}
+
+/** True when `text` holds a comment sigil can't have written, which only TOML has. */
+export function holdsUserComments(fullPath: string, text: string): boolean {
+  return isTomlPath(fullPath) && /^\s*#/m.test(text);
 }

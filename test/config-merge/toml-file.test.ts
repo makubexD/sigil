@@ -9,6 +9,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToml } from '../../dist-cli/config-merge/toml-file';
+import { reverseConfig } from '../../dist-cli/config-merge/file-format';
 import {
   parseConfig,
   renderConfig,
@@ -153,5 +154,31 @@ describe('config-merge TOML file format', () => {
   it('drops a bare [mcp_servers] header left with nothing under it', () => {
     const before = ['[mcp_servers]', '', '[mcp_servers.a]', 'command = "x"', ''].join('\n');
     assert.equal(renderToml(before, {}), '');
+  });
+});
+
+describe('reverseConfig on TOML', () => {
+  const TOML_PATH = '/x/config.toml';
+  const op = {
+    file: 'config.toml',
+    fragment: { mcp_servers: { fs: { command: 'npx', args: ['-y'] } } },
+    strategy: { mcp_servers: 'object-spread' as const },
+  };
+
+  it('keeps a whole server the user edited, so no partial table stops Codex', () => {
+    const before = '[mcp_servers.fs]\ncommand = "npx"\nargs = ["-y"]\nstartup_timeout_sec = 60\n';
+    const { cleaned, kept } = reverseConfig(TOML_PATH, parseConfig(TOML_PATH, before), op);
+    assert.deepEqual(kept, ['fs']);
+    assert.equal(renderToml(before, cleaned), before);
+  });
+
+  it("removes an unedited server and leaves the user's empty values, dates and tables", () => {
+    const user =
+      'since = 2024-01-02\nnotify = []\n\n[tui]\n\n[mcp_servers.prod]\n# locked down\n' +
+      'url = "https://x.example/mcp"\nenabled_tools = []\n\n[mcp_servers.u]\n';
+    const before = user + '\n[mcp_servers.fs]\ncommand = "npx"\nargs = ["-y"]\n';
+    const { cleaned, kept } = reverseConfig(TOML_PATH, parseConfig(TOML_PATH, before), op);
+    assert.deepEqual(kept, []);
+    assert.equal(renderToml(before, cleaned), user);
   });
 });

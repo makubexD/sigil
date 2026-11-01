@@ -1,8 +1,7 @@
 /**
  * The Codex target's body lexicon (../lexicon.ts): the project conventions file is the root
  * `AGENTS.md`, which also carries repo-wide rules (there is no rules folder), and skills live in
- * `.agents/skills/`. A skill takes no invocation arguments under the Agent Skills format. Values
- * match the agents-standard target's, so the two render byte-identical skills.
+ * `.agents/skills/`. A skill takes no invocation arguments under the Agent Skills format.
  *
  * @module
  */

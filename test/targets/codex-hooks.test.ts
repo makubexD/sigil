@@ -97,7 +97,8 @@ describe('codex hook config — scaffoldConfig', () => {
     assert.equal(entry.type, 'command');
     assert.ok(!('args' in entry), 'Codex carries the joined command line, not an args array');
     assert.equal(typeof entry.command, 'string');
-    assert.equal(typeof entry.commandWindows, 'string');
+    assert.equal(entry.commandWindows, undefined, 'one string runs in every shell');
+    assert.doesNotMatch(entry.command as string, /[$`\\!\n]/);
   });
 
   it('user scope: hooks.json under the codex-home root', async () => {
@@ -222,12 +223,6 @@ describe(
       it(`command ${status === 2 ? 'blocks' : 'allows'} ${label}`, async () => {
         const entry = await protectConfigEntry();
         const r = runCommandLine(entry.command as string, input);
-        assert.equal(r.status, status, r.stderr);
-      });
-
-      it(`commandWindows ${status === 2 ? 'blocks' : 'allows'} ${label}`, async () => {
-        const entry = await protectConfigEntry();
-        const r = runCommandLine(entry.commandWindows as string, input);
         assert.equal(r.status, status, r.stderr);
       });
     }

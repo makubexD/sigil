@@ -12,11 +12,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New target `codex`: `sigil add --target codex` writes skills to `.agents/skills/` and merges hooks
   into `.codex/hooks.json` and MCP servers into `.codex/config.toml`, keeping your comments, and
   `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are
-  skipped, with the reason. It shares its skill files with `agents-standard`, so removing one install
-  keeps them for the other. See `docs/setup/codex.md`.
+  skipped, with the reason. It writes the same skill files as `agents-standard`, so `add` refuses
+  skills for one once the other has installed them. See `docs/setup/codex.md`.
 
 ### Changed
 
+- `sigil uninstall` and `prune` keep an entry whose config file couldn't be changed, and exit non-zero, so a
+  retry can find it. `sigil add` exits non-zero when a config artifact fails, and `sigil update` saves
+  the manifest when one does.
+- Removing a config fragment no longer drops a user's empty arrays, empty objects or other keys
+  elsewhere in the same file.
 - `sigil` has a new runtime dependency, `smol-toml`, to read `config.toml`.
 - `shared/ado` now declares `platforms: [claude, copilot]`, because Codex can't take a variable in a
   server's arguments.

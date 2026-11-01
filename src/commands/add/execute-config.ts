@@ -154,6 +154,7 @@ async function installOneConfigArtifact(
     return result;
   } catch (err) {
     console.error(`✗ Failed to install config artifact '${id}': ${(err as Error).message}`);
+    process.exitCode = 1;
     return NOTHING_WRITTEN;
   }
 }

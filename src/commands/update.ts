@@ -135,6 +135,19 @@ export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<voi
   else await applyUpdate(ids, opts);
 }
 
+/** Runs the update and saves the manifest even if a refused config edit stops it partway. */
+async function updateAndSave(
+  setup: NonNullable<Awaited<ReturnType<typeof prepareUpdateRun>>>,
+  runOpts: ConfigUpdateOptions,
+  written: WrittenConfig[],
+): Promise<UpdateRunTotals> {
+  try {
+    return await updateEachGroup(setup.groups, setup.target, runOpts, written);
+  } finally {
+    if (!runOpts.dryRun) saveManifest(runOpts.projectDir, setup.manifest);
+  }
+}
+
 /** Runs the update. Returns the run totals, or undefined when no installed artifact matched. */
 async function applyUpdate(
   ids: string[],
@@ -142,15 +155,14 @@ async function applyUpdate(
 ): Promise<UpdateRunTotals | undefined> {
   const setup = await prepareUpdateRun(ids, opts);
   if (!setup) return undefined;
-  const { target, manifest, installedIds, sigilOpsAt, groups } = setup;
+  const { target, installedIds, sigilOpsAt, groups } = setup;
 
   console.log('');
   const written: WrittenConfig[] = [];
   const runOpts: ConfigUpdateOptions = { ...opts, installedIds, sigilOpsAt };
-  const totals = await updateEachGroup(groups, target, runOpts, written);
+  const totals = await updateAndSave(setup, runOpts, written);
   warnMcpEnvCaveats(written, target);
 
-  if (!opts.dryRun) saveManifest(opts.projectDir, manifest);
   printUpdateSummary(opts, totals.updatedCount, totals.skippedDrift, totals.orphanedCount);
   await finishEachGroup(groups, target, installedIds, opts);
   return totals;

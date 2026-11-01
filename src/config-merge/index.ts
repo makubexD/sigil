@@ -17,7 +17,14 @@
 
 export type { ConfigMergeOp, MergeStrategy, ConfigRoot } from './primitives';
 export { deepEqual, pruneEmpty, canonicalize, serialize } from './primitives';
-export { configFormatName, isEmptiedConfig, parseConfig, renderConfig } from './file-format';
+export {
+  configFormatName,
+  holdsUserComments,
+  isEmptiedConfig,
+  parseConfig,
+  renderConfig,
+  reverseConfig,
+} from './file-format';
 export { applyMerge } from './apply';
 export { reverseMerge } from './reverse';
 export { replaceMerge } from './replace';

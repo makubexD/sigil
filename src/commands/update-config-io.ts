@@ -8,7 +8,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { resolveContained } from '../cli-helpers';
-import { replaceMerge, renderConfig, parseConfig } from '../config-merge';
+import { configFormatName, parseConfig, renderConfig, replaceMerge } from '../config-merge';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
 import { recordedOp } from '../manifest';
 import type { ManifestConfigMerge } from '../manifest/types';
@@ -63,7 +63,7 @@ export function readExistingOrWarn(
 ): Record<string, unknown> | undefined {
   const existing = readConfigFile(fullPath);
   if (existing === undefined) {
-    console.error(`  ✗  ${entryId}: ${cfFile} exists but is not valid JSON. Skipped.`);
+    console.error(`  ✗  ${entryId}: ${cfFile} exists but is not valid ${configFormatName(fullPath)}. Skipped.`);
   }
   return existing;
 }

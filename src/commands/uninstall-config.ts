@@ -7,7 +7,7 @@
 import fs from 'node:fs';
 import { resolveContained } from '../cli-helpers';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
-import { isEmptiedConfig, parseConfig, renderConfig, reverseMerge } from '../config-merge';
+import { isEmptiedConfig, parseConfig, renderConfig, reverseConfig } from '../config-merge';
 import type { ConfigRoot, ConfigMergeOp, MergeStrategy } from '../types';
 import { recordedOp, sameFile } from '../manifest';
 import type { ManifestEntry } from '../manifest';
@@ -42,6 +42,23 @@ function writeReversedConfigFile(
   }
 }
 
+/** Rewrites `cf`'s file without sigil's fragment, warning about a server left whole because it was edited. */
+function rewriteWithoutFragment(
+  cf: NonNullable<ManifestEntry['configFiles']>[number],
+  fullPath: string,
+  displayPath: string,
+): void {
+  const before = fs.readFileSync(fullPath, 'utf-8');
+  const live = parseConfig(fullPath, before);
+  const { cleaned, kept } = reverseConfig(fullPath, live, buildConfigMergeOpFromEntry(cf));
+  for (const name of kept) {
+    console.warn(
+      `  ⚠  ${name}: you edited this server, so it stays in ${cf.file}. It's yours now.`,
+    );
+  }
+  writeReversedConfigFile(fullPath, cleaned, before, displayPath);
+}
+
 /** Reverse-merges and removes sigil's contribution from one config-merge file; returns true
  * if it counted as removed (write succeeded or the file was deleted after emptying).
  * `sigilOps` is every fragment recorded for that file, so a file holding only those needs no backup. */
@@ -49,6 +66,7 @@ export function reverseMergeOneConfigFile(
   cf: NonNullable<ManifestEntry['configFiles']>[number],
   projectDir: string,
   sigilOps: readonly ConfigMergeOp[],
+  onFailure?: () => void,
 ): boolean {
   const rootDir = resolveConfigRoot((cf.root as ConfigRoot | undefined) ?? 'project', projectDir);
   const fullPath = resolveContained(rootDir, cf.file); // the manifest is editable: stay in root
@@ -57,12 +75,11 @@ export function reverseMergeOneConfigFile(
 
   try {
     if (isHomeScopedRoot(cf.root as ConfigRoot | undefined)) ensureHomeBackup(fullPath, sigilOps);
-    const before = fs.readFileSync(fullPath, 'utf-8');
-    const cleaned = reverseMerge(parseConfig(fullPath, before), buildConfigMergeOpFromEntry(cf));
-    writeReversedConfigFile(fullPath, cleaned, before, displayPath);
+    rewriteWithoutFragment(cf, fullPath, displayPath);
     return true;
   } catch (err) {
     console.warn(`  ⚠  Could not reverse-merge ${displayPath}: ${(err as Error).message}`);
+    onFailure?.();
     return false;
   }
 }
@@ -94,23 +111,31 @@ function sharedWith(cf: ConfigRecord, kept: readonly ManifestEntry[]): ManifestE
   return kept.find(e => (e.configFiles ?? []).some(same));
 }
 
+/** Puts back an entry whose file couldn't be changed, so a retry finds it, and fails the run. */
+function keepAfterFailure(entry: ManifestEntry, kept: ManifestEntry[]): void {
+  if (!kept.includes(entry)) kept.push(entry);
+  process.exitCode = 1;
+}
+
 /**
  * Reverse-merges and removes sigil's contribution from each config-kind entry's JSON files,
- * except a fragment an entry in `kept` (the manifest after removal) still records.
+ * except a fragment an entry in `kept` (the manifest after removal) still records. An entry whose
+ * file couldn't be changed goes back into `kept` and the run exits non-zero, so a retry can find it.
  */
 export function reverseMergeConfigEntries(
   configEntriesToRemove: ManifestEntry[],
   projectDir: string,
-  kept: readonly ManifestEntry[] = [],
+  kept: ManifestEntry[] = [],
 ): number {
   const allEntries = [...configEntriesToRemove, ...kept];
   let configRemovedCount = 0;
   for (const entry of configEntriesToRemove) {
+    const keepEntry = () => keepAfterFailure(entry, kept);
     for (const cf of entry.configFiles ?? []) {
       const owner = sharedWith(cf, kept);
       if (owner)
         console.log(`  =  ${cf.file}  (kept: still used by ${owner.id} for ${owner.target})`);
-      else if (reverseMergeOneConfigFile(cf, projectDir, sigilOpsFor(cf, allEntries)))
+      else if (reverseMergeOneConfigFile(cf, projectDir, sigilOpsFor(cf, allEntries), keepEntry))
         configRemovedCount++;
     }
   }

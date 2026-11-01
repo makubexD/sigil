@@ -24,19 +24,15 @@ Model: Codex's hook writer (`src/targets/codex/hook-ops.ts`, `config.ts`) and Co
      Add it when a catalog hook needs one.
 2. **Matchers are translated by a data table in code** (`CURSOR_TOOL_NAMES` in `hook-ops.ts`), never copied:
    `Bash`→`Shell`, `Read`, `Grep`, `Task`, `WebFetch`, `WebSearch` unchanged; `Write`, `Edit`, `MultiEdit`,
-   `NotebookEdit` → the **edit matcher** step 1 measures. `Glob` and regex matchers (`Edit.*`, `^Bash$`) can't be
-   translated, so they are skipped (Decision 1). A hook that never matches would let every call through. The edit
-   matcher is chosen fail-safe: `Write` if step 1 shows an edit's calls named `Write`; otherwise `Read|Write`, which
-   over-fires (a `.env` read is blocked too) rather than never firing. A test pins the table and the doc ref's
+   `NotebookEdit` → `Write` (step 1: an edit fires `Read`, then `Write`). `Glob` and regex matchers (`Edit.*`, `^Bash$`) can't be
+   translated, so they are skipped (Decision 1). A hook that never matches would let every call through. A test pins the table and the doc ref's
    `verifiedOn`, so `sync --stale` asks for a re-check when Cursor's docs change.
 3. **The install takes care of Cursor's hook rules itself**, warning only where it can't:
-   - **Empty stdout.** Cursor's docs say a `preToolUse` / `subagentStart` hook that exits 0 with invalid JSON blocks
-     the call, and catalog hooks print nothing. If step 1 confirms it, the Cursor writer wraps each `node -e` script
-     on those events with an exit handler that prints `{"permission":"allow"}` on exit 0, without changing the catalog.
-     A non-`node -e` hook on those events is skipped with that reason. If step 1 shows empty stdout passes, no wrapper.
+   - **Empty stdout.** Cursor's docs say a `preToolUse` hook that exits 0 with invalid JSON blocks the call; step 1
+     showed empty stdout lets it through, so the writer adds no `{"permission":"allow"}` wrapper.
    - **`node` missing.** A hook that can't start fails open on every target. `add` warns when a hook's `command` is
      not on `PATH` (step 7).
-   - **Claude Code hooks also run in Cursor** (if step 1 shows it): `add` and `status` say the hook runs twice (step 8).
+   - **Claude Code hooks don't run in the Cursor CLI** (step 1, A5), so there is no double-run note (step 8 dropped).
    - **Trusted workspace only:** the after-install hint says so.
    - **Windows runs hooks through PowerShell:** the `node -e` line works there; another command with a `'` in a word is
      skipped (Decision 1).
@@ -73,6 +69,10 @@ and update the A5 row.
 Amend steps 3, 4 and 8 with the results and commit the amendment (`docs: plan cursor hooks, step 1 results`) before
 step 2.
 
+**Results (2026-11-01, done):** each edit fired `Read` then `Write` → edit matcher `Write`. Run 1 wrote `notes.txt`
+with empty stdout → no wrapper. `hook-claude.log` was never created, also with an absolute command and no `.cursor`
+hooks → step 8 dropped. Recorded in the ADR's Phase C probes.
+
 Test: none (probe). The ADR diff and the logs are the evidence.
 
 ## Step 2 `[worker:medium]`: move the command-line helpers to a shared module
@@ -93,7 +93,7 @@ Files: new `test/targets/cursor-hooks.test.ts`.
 Use the `makeHook` / `makeCatalog` pattern from `test/targets/codex-hooks.test.ts`. Import `CursorTarget` from
 `dist-cli/targets/cursor` and `buildCursorHookOps`, `cursorHookSkipReason` from `dist-cli/targets/cursor/hook-ops`
 (not written yet: that is the RED). Every `describe` name starts with `Cursor hook`. Constants at the top:
-`EDIT_MATCHER` (step 1's value) and `WRAPS_STDOUT` (step 1: true when the wrapper is in).
+`EDIT_MATCHER = 'Write'` (step 1).
 
 1. Events: each of the eight aliases → a fragment whose only `hooks` key is the camelCase name. `SubagentStart` with no
    matcher → `subagentStart`.
@@ -107,10 +107,8 @@ Use the `makeHook` / `makeCatalog` pattern from `test/targets/codex-hooks.test.t
 4. Matchers (`PreToolUse` and `PostToolUse`): `Bash` → `Shell`; `Edit|Write` and `Edit|Write|MultiEdit|NotebookEdit` →
    `EDIT_MATCHER`; `Read|Grep` → `Read|Grep`; `Bash|Edit` → `Shell|` + `EDIT_MATCHER` (deduped, first-seen order);
    `Task|WebFetch|WebSearch` → unchanged. Absent or `*` → no `matcher` key.
-5. Command: `node -e <script>` → the decoded base64 is `<script>`, or, when `WRAPS_STDOUT` and the event is
-   `PreToolUse`/`SubagentStart`, the wrapper prefix followed by `<script>`; on `PostToolUse` never wrapped.
-   `command: ./check.sh, args: ['--strict', 'a b']` → `./check.sh --strict 'a b'`; no args → `./check.sh`. When
-   `WRAPS_STDOUT`, a non-`node -e` `PreToolUse` hook is skipped (case 2's reason list gains it).
+5. Command: `node -e <script>` → the decoded base64 is exactly `<script>` on every event (no wrapper).
+   `command: ./check.sh, args: ['--strict', 'a b']` → `./check.sh --strict 'a b'`; no args → `./check.sh`.
 6. `timeout: 30` → `timeout: 30` in the entry; absent → no key.
 7. Destination: project → `{ file: '.cursor/hooks.json', root: 'project' }`; user → `{ file: '.cursor/hooks.json',
 root: 'home' }`; local → `SigilError` naming both other scopes.
@@ -118,11 +116,11 @@ root: 'home' }`; local → `SigilError` naming both other scopes.
    option → user destination; with neither → project. `configScopes(['hook'], '/abs/project')` → `project` then
    `user`, `fullPath` `/abs/project/.cursor/hooks.json` and `<os.homedir()>/.cursor/hooks.json`, `section: 'hooks'`.
 9. Real catalog: `shared/protect-config` → matcher `EDIT_MATCHER`; `shared/reviewer-bash-guard` → `Shell`; both decode
-   to the catalog script (plus the wrapper per case 5).
+   to the catalog script.
 10. A4's payload through the real hook: write the rendered `protect-config` command to a temp script, run it with
     `spawnSync('sh', [...])`, stdin A4's payload (`tool_name: "Read"`, `tool_input.file_path: <tmp>/.env`,
     `hook_event_name: "preToolUse"`) → exit 2, stderr contains `blocked write to protected file`. With
-    `<tmp>/notes.txt` → exit 0, and stdout is `{"permission":"allow"}` when `WRAPS_STDOUT`, else empty.
+    `<tmp>/notes.txt` → exit 0, stdout empty.
 
 Test: `npm test -- --test-name-pattern='Cursor hook'` fails, every failure a missing module or `scaffoldConfig`.
 
@@ -132,12 +130,10 @@ Files: new `src/targets/cursor/config.ts`; new `src/targets/cursor/hook-ops.ts`.
 
 - `config.ts`: `resolveCursorConfigDestination(kind, scope)` per Decision 4; any kind but `hook` throws (`mcp` comes in
   Phase D). Shaped like `src/targets/codex/config.ts`.
-- `hook-ops.ts`: `CURSOR_HOOK_EVENTS` (Decision 1), `CURSOR_TOOL_NAMES` (Decision 2, step 1's edit row), the matcher
+- `hook-ops.ts`: `CURSOR_HOOK_EVENTS` (Decision 1), `CURSOR_TOOL_NAMES` (Decision 2, edits → `Write`), the matcher
   translation (split on `|`, each part a table key, map, dedupe first-seen, join `|`; `*`/absent → none; a matcher
   only on `PreToolUse`/`PostToolUse`), the command line (`nodeEvalCommandLine ?? posixCommandLine` from
-  `../shared/hook-command-line`), the stdout wrapper if step 1 kept it (a script prefix registering
-  `process.on('exit', code => { if (code === 0) process.stdout.write('{"permission":"allow"}') })`, added before
-  base64 encoding), `cursorHookSkipReason(artifact)` (every refusal, as text), and `buildCursorHookOps(artifact,
+  `../shared/hook-command-line`), no stdout wrapper (step 1), `cursorHookSkipReason(artifact)` (every refusal, as text), and `buildCursorHookOps(artifact,
 scope)`, which throws `SigilError(reason)` when there is one, else returns the step 3 case 3 op. Cite
   `CURSOR_HOOKS_DOC` and a new `CURSOR_THIRD_PARTY_HOOKS_DOC` (added here to `doc-refs.ts`:
   `https://cursor.com/docs/reference/third-party-hooks`, verifiedOn `2026-11-01`, covers the event and tool mapping).
@@ -195,9 +191,10 @@ project install may run on another machine.
 Test: with `PATH` set to an empty temp dir, `add shared/protect-config --target cursor` prints the warning and still
 writes the file; with the real `PATH`, no warning.
 
-## Step 8 `[worker:medium]`: `add` notes that Cursor also runs Claude Code hooks
+## Step 8 `[inline: dropped by step 1]`: dropped
 
-Only if step 1 found `.claude/settings.json` hooks running; otherwise dropped.
+Nothing to build: record it with `git commit --allow-empty` and this step's trailers, then go on. Step 1 found `.claude/settings.json` hooks never run in the Cursor CLI, so there is no double-run note. Kept for the
+record:
 
 Files: `src/targets/cursor/index.ts`; `test/targets/cursor.test.ts`; `src/commands/status-overlaps.ts` only if it
 can't report a config kind.
@@ -233,7 +230,7 @@ Files: `docs/setup/cursor.md`, `docs/reference/config-kinds.md`, `CHANGELOG.md`.
 
 - `setup/cursor.md`: a Hooks section replacing "Hooks and MCP servers, until later phases": the two files and scopes,
   the event aliases and what is skipped (and why), the matcher translation, trusted workspace, exit 2 denies and other
-  failures let the call through, the PATH warning, the stdout wrapper if kept, the double run if step 8 stayed. MCP
+  failures let the call through, the PATH warning, empty stdout allowed (no wrapper), and that `.claude/settings.json` hooks don't run in the CLI. MCP
   stays "until Phase D".
 - `config-kinds.md`: Cursor beside Codex in the opening paragraph and scope table; `.cursor/hooks.json` in the home
   backup section.
@@ -246,7 +243,7 @@ Test: `npx prettier --check docs CHANGELOG.md`; `npm run ci:local` green.
 In a fresh scratchpad repo: built CLI `add shared/protect-config --target cursor`, then
 `agent -p --trust --output-format stream-json "Create the file .env containing X=1, then create notes.txt containing
 ok."`. Expected: no `.env` (the block reason in the stream), `notes.txt` written. Record it in the ADR's Phase C probes
-and close its § Hooks section (edit matcher, wrapper, A5 answer).
+and close its § Hooks section (the live block confirms the `Write` matcher).
 
 Test: the two files as stated; the ADR diff.
 

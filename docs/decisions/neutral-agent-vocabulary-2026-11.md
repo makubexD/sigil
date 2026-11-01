@@ -11,7 +11,8 @@ shared skill mapping (`allowedToolsMapping`, `targets/shared/skill-sections.ts`)
 agents-standard, Codex and Cursor skills. In a Cursor or Codex skill they are a leak. Model hints exist only as
 Claude's `claude.model` / `claude.effort`.
 
-Catalog today: 39 agents with `tools: [Read, Grep, Glob]` and no `disallowedTools`; 41 skills whose `allowedTools` use
+Catalog today: 39 agents with `tools: [Read, Grep, Glob, Bash]` (10 add `Edit`, 5 of those `Write`) and no
+`disallowedTools`; 41 skills whose `allowedTools` use
 `Read` (41), `Bash` (39), `Write` (24), `Glob` (22), `Edit` (21), `Grep` (17); 3 agents with a `claude:` hint
 (`model: sonnet`, `effort: medium`, `maxTurns: 10`).
 
@@ -107,7 +108,9 @@ The owner delegated these choices on 2026-11-01. Each was checked against the so
    Write. On Claude, a skill that listed only `Grep` also pre-approves `Glob`, and one with only `Edit` also
    pre-approves `Write`. Acceptable: per Claude's skills doc, `allowed-tools` grants permission for one turn, restricts
    nothing, and permission settings still govern the rest. Grep and Glob are both read-only, and Copilot's own table
-   treats Edit and Write as one tool. Agent `tools` is unaffected (see the table's last line).
+   treats Edit and Write as one tool. On agents, the 5 `*-debugger` agents list `Edit` without `Write`, so on Claude
+   they gain `Write` (found 2026-11-01 in plan step 7). Acceptable: each already has `Bash`, which writes files, so
+   no agent gains a capability.
 2. **`shell`, not `execute`.** `shell` is Copilot's own skill example and a compatible agent alias, Cursor's word in
    `readonly`, and Codex's. Copilot agents still get `execute`, their primary alias.
 3. **Family defaults are checked, not inherited.** A family in `catalog/standard.yaml` may declare default tools and

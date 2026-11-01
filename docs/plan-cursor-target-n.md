@@ -95,8 +95,10 @@ these". This phase makes that true for tools, tool policy, and model hints.
    `edit` is Edit _and_ Write. A skill that listed only `Grep` will also pre-approve `Glob` on Claude, and one with
    only `Edit` will also pre-approve `Write` (step 7 lists each one). That's acceptable because, per Claude's skills
    doc, `allowed-tools` grants only one turn and restricts nothing, and deny and ask rules still win. Grep and Glob
-   are both read-only. Copilot's own table treats Edit and Write as one tool. Agent `tools` is unaffected: all 39 are
-   `Read, Grep, Glob`, which `read` + `search` render back exactly.
+   are both read-only. Copilot's own table treats Edit and Write as one tool. Agent `tools`: all 39 carry
+   `Read, Grep, Glob, Bash`, which render back exactly. Amended 2026-11-01 (step 7 found it): 5 also carry `Edit`
+   without `Write` (the `*-debugger` agents), so on Claude they gain `Write`. Accepted: each already has `Bash`, which
+   writes files, so no agent gains a capability. The 5 `*-refactor-specialist` agents already list both.
 2. **`shell`, not `execute`** (Design 1).
 3. **Family defaults are checked, not inherited** (Design 6). Inheriting at resolve time would mean consumer commands
    read `standard.yaml`, which today's invariant forbids. It would also make an artifact file stop saying what ships.
@@ -115,7 +117,7 @@ these". This phase makes that true for tools, tool policy, and model hints.
 
 `npm test` green with no change to existing expectations outside the files a step names.
 `test/fixtures/output-snapshot/build.json` changes only in steps 7, 8 and 9, and only as each step lists. Claude
-agent output stays byte-identical throughout.
+agent output stays byte-identical throughout, except the 5 `*-debugger` agents gaining `Write` in step 7 (Decision 1).
 
 ## Step 1 `[inline: user-facing decision record]`: the vocabulary record
 

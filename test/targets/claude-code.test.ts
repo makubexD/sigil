@@ -7,10 +7,20 @@ import fs from 'node:fs';
 
 import { parsePacksConfig } from '../../dist-cli/packs-config';
 import { resolveCatalog } from '../../dist-cli/resolve';
+import { renderArtifact } from '../../dist-cli/targets/emit';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
+import { CLAUDE_AGENT_SPEC } from '../../dist-cli/targets/claude-code/spec/agent';
 import { CLAUDE_PROMPT_SPEC } from '../../dist-cli/targets/claude-code/spec/prompt';
-import type { CompileOptions, FileMap, MarketplaceIdentity, Pack } from '../../dist-cli/types';
+import { CLAUDE_SCAFFOLD_SKILL_SPEC } from '../../dist-cli/targets/claude-code/spec/skill';
+import type {
+  CompileOptions,
+  FileMap,
+  MarketplaceIdentity,
+  Pack,
+  ResolvedArtifact,
+} from '../../dist-cli/types';
 import { loadBundledCatalog } from '../helpers/catalog';
+import { makeAgent, makeSkill } from '../helpers/fixtures';
 import { PACKS as BUNDLED_PACKS } from '../helpers/install-scenario';
 
 const VERSION = '0.1.0';
@@ -138,6 +148,32 @@ describe('Claude Code target', () => {
       'shared rule with appliesTo still gets paths: frontmatter, not dropped for lacking a language',
     );
     assert.ok(sharedRule.includes('**/*'), 'appliesTo glob present verbatim');
+  });
+});
+
+describe('Claude Code tool dialect', () => {
+  it('emits neutral agent tools as their Claude names in dialect order', () => {
+    const agent = makeAgent({ tools: ['read', 'search'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(CLAUDE_AGENT_SPEC, agent, {});
+    assert.match(out, /^tools: Read, Grep, Glob$/m);
+  });
+
+  it('emits neutral skill allowedTools as their Claude names', () => {
+    const skill = makeSkill({ allowedTools: ['shell', 'read'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(CLAUDE_SCAFFOLD_SKILL_SPEC, skill, {});
+    assert.match(out, /^allowed-tools: Bash, Read$/m);
+  });
+
+  it('emits neutral agent disallowedTools as a JSON array', () => {
+    const agent = makeAgent({ disallowedTools: ['shell'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(CLAUDE_AGENT_SPEC, agent, {});
+    assert.match(out, /^disallowedTools: \["Bash"\]$/m);
+  });
+
+  it('renders legacy catalog agent tools byte-identically', () => {
+    const agent = makeAgent({ tools: ['Read', 'Grep', 'Glob'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(CLAUDE_AGENT_SPEC, agent, {});
+    assert.match(out, /^tools: Read, Grep, Glob$/m);
   });
 });
 

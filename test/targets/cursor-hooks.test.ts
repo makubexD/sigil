@@ -18,7 +18,7 @@ import { nodeEvalCommandLine } from '../../dist-cli/targets/shared/hook-command-
 import { resolveSelection } from '../../dist-cli/select/selector-resolve';
 import { carriedKinds, installableKinds } from '../../dist-cli/targets/capabilities';
 import { SigilError } from '../../dist-cli/errors';
-import { loadResolvedCatalog } from '../helpers/catalog';
+import { CATALOG_DIR, loadResolvedCatalog } from '../helpers/catalog';
 import { withTempDir } from '../helpers/temp-dir';
 import type {
   Artifact,
@@ -487,4 +487,242 @@ describe('Cursor hook protect-config with A4 payload', () => {
       });
     },
   );
+});
+
+// ── end to end through the built CLI ──────────────────────────────────────────
+
+const CLI = path.resolve(__dirname, '../../dist-cli/cli.js');
+const HOME_VAR = process.platform === 'win32' ? 'USERPROFILE' : 'HOME';
+const PROTECT_CONFIG = 'shared/protect-config';
+const E2E_BASH_GUARD = 'shared/e2e-bash-guard';
+
+/**
+ * The Bash-matcher hook case 2 installs. `shared/reviewer-bash-guard` is `platforms: [claude]`, so
+ * it cannot be added for Cursor: this fixture copies protect-config's frontmatter shape instead.
+ */
+const E2E_HOOK_SOURCE = `---
+id: shared/e2e-bash-guard
+kind: hook
+title: "E2E Bash Guard"
+description: >-
+  A test fixture hook with a Bash matcher, so a Cursor install can carry a Shell entry.
+event: PreToolUse
+matcher: Bash
+command: node
+args:
+  - "-e"
+  - |-
+    process.exitCode = 0;
+tags: [test, fixture]
+---
+
+A fixture hook for the Cursor hook end-to-end tests.
+`;
+
+/** A project dir and a home dir, both empty. */
+function makeDirs(work: string): { project: string; home: string } {
+  const project = path.join(work, 'project');
+  const home = path.join(work, 'home');
+  fs.mkdirSync(project);
+  fs.mkdirSync(home);
+  return { project, home };
+}
+
+/** The bundled catalog, copied, plus the Bash-matcher fixture hook case 2 installs. */
+function copyCatalog(work: string): string {
+  const catalogDir = path.join(work, 'catalog');
+  fs.cpSync(CATALOG_DIR, catalogDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(catalogDir, 'shared', 'hooks', 'e2e-bash-guard.hook.md'),
+    E2E_HOOK_SOURCE,
+  );
+  return catalogDir;
+}
+
+/** Runs the built CLI in `cwd` with HOME pointed at `home`, and asserts it exited 0. */
+function sigil(cwd: string, home: string, ...args: string[]): void {
+  const done = spawnSync(process.execPath, [CLI, ...args, '--project-dir', cwd], {
+    cwd,
+    encoding: 'utf8',
+    input: '',
+    windowsHide: true,
+    env: { ...process.env, [HOME_VAR]: home },
+  });
+  assert.equal(done.status, 0, `${done.stdout ?? ''}${done.stderr ?? ''}`);
+}
+
+const addHook = (
+  project: string,
+  home: string,
+  catalogDir: string,
+  id: string,
+  scope = 'project',
+): void =>
+  sigil(
+    project,
+    home,
+    'add',
+    id,
+    '--target',
+    'cursor',
+    '--scope',
+    scope,
+    '--yes',
+    '--catalog-dir',
+    catalogDir,
+  );
+
+const uninstallHook = (project: string, home: string, id: string): void =>
+  sigil(project, home, 'uninstall', id, '--target', 'cursor', '--yes');
+
+const readJsonFile = (file: string) => JSON.parse(fs.readFileSync(file, 'utf8'));
+
+/** The top-level Cursor shape, plus the one `preToolUse` array it holds. */
+function preToolUseEntries(file: string): Record<string, unknown>[] {
+  const json = readJsonFile(file);
+  assert.deepEqual(Object.keys(json).sort(), ['hooks', 'version']);
+  assert.equal(json.version, 1);
+  assert.deepEqual(Object.keys(json.hooks), ['preToolUse']);
+  const entries = json.hooks.preToolUse as Record<string, unknown>[];
+  assert.ok(Array.isArray(entries), 'preToolUse holds an array');
+  return entries;
+}
+
+describe('Cursor hook e2e', () => {
+  it('case 1: add writes version 1 and one Write preToolUse entry', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, '.cursor', 'hooks.json');
+
+      addHook(project, home, catalogDir, PROTECT_CONFIG);
+
+      const entries = preToolUseEntries(file);
+      assert.equal(entries.length, 1);
+      assert.deepEqual(Object.keys(entries[0]!), ['type', 'command', 'matcher']);
+      assert.equal(entries[0]!.type, 'command');
+      assert.equal(typeof entries[0]!.command, 'string');
+      assert.equal(entries[0]!.matcher, EDIT_MATCHER);
+    });
+  });
+
+  it('case 2: the Bash hook adds a Shell entry and the file keeps one version key', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, '.cursor', 'hooks.json');
+
+      addHook(project, home, catalogDir, PROTECT_CONFIG);
+      addHook(project, home, catalogDir, E2E_BASH_GUARD);
+
+      const entries = preToolUseEntries(file);
+      assert.deepEqual(
+        entries.map(entry => entry.matcher),
+        [EDIT_MATCHER, 'Shell'],
+      );
+      const raw = fs.readFileSync(file, 'utf8');
+      assert.equal(raw.split('"version"').length - 1, 1, 'version appears once');
+    });
+  });
+
+  it('case 3: re-adding protect-config replaces its entry instead of stacking one', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, '.cursor', 'hooks.json');
+
+      addHook(project, home, catalogDir, PROTECT_CONFIG);
+      addHook(project, home, catalogDir, E2E_BASH_GUARD);
+      addHook(project, home, catalogDir, PROTECT_CONFIG);
+
+      const entries = preToolUseEntries(file);
+      assert.equal(entries.filter(entry => entry.matcher === EDIT_MATCHER).length, 1);
+      assert.equal(entries.length, 2);
+    });
+  });
+
+  it('case 4: uninstalling protect-config leaves the Shell entry and version 1', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, '.cursor', 'hooks.json');
+
+      addHook(project, home, catalogDir, PROTECT_CONFIG);
+      addHook(project, home, catalogDir, E2E_BASH_GUARD);
+      uninstallHook(project, home, PROTECT_CONFIG);
+
+      const entries = preToolUseEntries(file);
+      assert.equal(entries.length, 1);
+      assert.equal(entries[0]!.matcher, 'Shell');
+    });
+  });
+
+  it('case 5: uninstalling the last hook removes .cursor/hooks.json', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, '.cursor', 'hooks.json');
+
+      addHook(project, home, catalogDir, PROTECT_CONFIG);
+      addHook(project, home, catalogDir, E2E_BASH_GUARD);
+      uninstallHook(project, home, PROTECT_CONFIG);
+      uninstallHook(project, home, E2E_BASH_GUARD);
+
+      assert.equal(fs.existsSync(file), false, 'the hook file is gone');
+    });
+  });
+
+  it('case 6: user scope keeps a user hook and writes the backup once', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const userFile = path.join(home, '.cursor', 'hooks.json');
+      const backup = `${userFile}.sigil.bak`;
+      const userHook = { type: 'command', command: 'echo user-hook' };
+      fs.mkdirSync(path.dirname(userFile), { recursive: true });
+      fs.writeFileSync(userFile, JSON.stringify({ version: 1, hooks: { preToolUse: [userHook] } }));
+      const originalBytes = fs.readFileSync(userFile);
+
+      addHook(project, home, catalogDir, PROTECT_CONFIG, 'user');
+
+      const afterFirst = preToolUseEntries(userFile);
+      assert.equal(afterFirst.length, 2);
+      assert.deepEqual(afterFirst[0], userHook, 'the user hook is kept');
+      assert.equal(afterFirst[1]!.matcher, EDIT_MATCHER);
+      assert.ok(fs.existsSync(backup), 'the backup exists');
+      assert.ok(fs.readFileSync(backup).equals(originalBytes), 'the backup is the original bytes');
+
+      addHook(project, home, catalogDir, E2E_BASH_GUARD, 'user');
+
+      assert.ok(
+        fs.readFileSync(backup).equals(originalBytes),
+        'a second add leaves the backup unchanged',
+      );
+      assert.deepEqual(
+        fs.readdirSync(path.dirname(userFile)).filter(name => name.endsWith('.sigil.bak')),
+        ['hooks.json.sigil.bak'],
+        'no second backup file',
+      );
+      assert.equal(preToolUseEntries(userFile).length, 3);
+    });
+  });
+
+  it('case 7: add then uninstall restores a user-written project file exactly', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, '.cursor', 'hooks.json');
+      const original = {
+        version: 1,
+        hooks: { preToolUse: [{ type: 'command', command: 'echo user-hook' }] },
+      };
+      fs.mkdirSync(path.dirname(file), { recursive: true });
+      fs.writeFileSync(file, JSON.stringify(original));
+
+      addHook(project, home, catalogDir, PROTECT_CONFIG);
+      uninstallHook(project, home, PROTECT_CONFIG);
+
+      assert.deepEqual(readJsonFile(file), original);
+    });
+  });
 });

@@ -138,4 +138,32 @@ describe('shared/protect-config hook', () => {
       assert.equal(r.status, status, r.stderr);
     });
   }
+
+  // Codex's apply_patch sends the raw patch in tool_input.command (probe A4,
+  // docs/decisions/codex-target-2026-10.md).
+  const patchText = (...lines: string[]) => ['*** Begin Patch', ...lines, '*** End Patch', ''].join('\n');
+
+  for (const [name, input, status] of [
+    ['an added .env', { command: patchText('*** Add File: .env', '+KEY=1') }, 2],
+    [
+      'an updated secret by relative path',
+      { command: patchText('*** Update File: config/.env.local', '@@', '-a', '+b') },
+      2,
+    ],
+    ['a deleted private key', { command: patchText('*** Delete File: id_rsa') }, 2],
+    ['an added harmless file', { command: patchText('*** Add File: src/a.ts', '+x') }, 0],
+    ['a command that is not a patch', { command: 42 }, 0],
+    ['a non-patch command beside a protected file_path', { command: 'x', file_path: '.env' }, 2],
+    [
+      'a patch naming .env beside a file_path',
+      { command: patchText('*** Add File: .env', '+KEY=1'), file_path: '.env' },
+      2,
+    ],
+  ] as const) {
+    it(`${status === 2 ? 'blocks' : 'allows'} codex apply_patch: ${name}`, async () => {
+      const stdin = JSON.stringify({ tool_name: 'apply_patch', tool_input: input });
+      const r = run((await installedHook()).entry, stdin);
+      assert.equal(r.status, status, r.stderr);
+    });
+  }
 });

@@ -20,7 +20,8 @@ args:
       let files;
       try {
         const ti = JSON.parse(raw).tool_input;
-        files = typeof ti === 'string' ? patchFiles(ti) : [ti.file_path ?? ti.path];
+        const patch = typeof ti === 'string' ? ti : ti.command;
+        files = [...(typeof patch === 'string' ? patchFiles(patch) : []), ti.file_path ?? ti.path];
       } catch { return; }
       const hit = files.filter(f => typeof f === 'string').flatMap(candidates).find(isProtected);
       if (hit) {

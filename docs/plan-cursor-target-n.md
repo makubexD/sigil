@@ -396,6 +396,12 @@ steps 7-9).
 
 Test: `npm test`.
 
+Amended 2026-11-01: `[read, search]` contradicts Decision 1 (every agent carries `Bash`), so each agent family gets the
+normalized set its members carry today, which `--apply` leaves unchanged: `debugger` and `refactor-specialist`
+`[read, search, edit, shell]`, every other agent family `[read, search, shell]`, all `policy: strict`. Skill families get
+no `allowedTools` here (`document` is not uniform). `shared/code-reviewer` keeps `claude.maxTurns`, so its `claude:`
+block stays.
+
 ## Step 15 `[inline: user-facing copy]`: docs and invariants
 
 `CLAUDE.md` (a new invariant: catalog tool names and model hints are neutral, mapped only through a target's

@@ -206,9 +206,11 @@ missing }`.
 - `read-only-flag`: returns `{ readOnly: true, exact: true }` when every tool is in `readOnly`, else `{ readOnly:
 false, exact: false, missing: <the others> }`.
 
-**Open (settle before sending this step):** how a provider-specific pattern (step 3) renders. `normalizeTools` puts it
-in `unknown`. Today Claude, Copilot and agents-standard pass it through verbatim, and
-`test/targets/tool-name-injection.test.ts` pins that round-trip.
+**Patterns (settled 2026-11-01):** a provider-specific pattern (step 3) lands in `normalizeTools(...).unknown`. A
+`names` dialect passes it through verbatim, after the mapped names and in authored order, and it doesn't affect
+`exact`. That's today's behavior, and `test/targets/tool-name-injection.test.ts` pins it. A `read-only-flag` dialect
+counts it as missing (inexact). Mapped names follow the neutral tools' first-seen order, then the dialect's order
+within each one.
 
 Add `readonly toolDialect?: ToolDialect` to `KindEmitSpec` (documented: required on any agent spec, and on a skill
 spec that maps `allowedTools`).

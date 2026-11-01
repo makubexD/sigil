@@ -119,7 +119,9 @@ Setup, limits and what was tested: [docs/setup/copilot.md](docs/setup/copilot.md
 sigil add --target codex <skill-or-pack>
 ```
 
-Run Codex in a trusted project. Setup, limits and what was tested:
+Run Codex in a trusted project, and review hooks with `/hooks`: Codex skips an unreviewed hook with no
+error. Packs also load from the Claude marketplace, but not the `hook-*` plugins. Setup, limits and what
+was tested:
 [docs/setup/codex.md](docs/setup/codex.md).
 
 </details>
@@ -174,7 +176,8 @@ Run Codex in a trusted project. Setup, limits and what was tested:
   as-is: GitHub Copilot and Cursor document it. Copilot reads it too, so don't install the same skills
   for both `copilot` and `agents-standard`. The open standard has no subagents, prompts, hooks,
   settings or shared MCP file, so those kinds are skipped for this target.
-- **OpenAI Codex**: `sigil add --target codex` writes skills to `.agents/skills/`, and a full build also
+- **OpenAI Codex**: `sigil add --target codex` writes skills to `.agents/skills/` and merges hooks into
+  `.codex/hooks.json`, and a full build also
   writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are skipped: a Codex agent file
   can't restrict tools, and Codex deprecated custom prompts. See [docs/setup/codex.md](docs/setup/codex.md).
 - **Other tools**: a dedicated [Cursor target](docs/ideas/cursor-target.md) is planned; until then

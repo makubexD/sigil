@@ -143,7 +143,7 @@ catalog has a replacement destination, which `update` moves it to. When the cata
 
 ## `.sigil.bak` home-directory backup
 
-Any write or delete to a home-scoped config file (`ConfigRoot: 'home' | 'copilot-home' | 'vscode-user'`
+Any write or delete to a home-scoped config file (`ConfigRoot: 'home' | 'copilot-home' | 'codex-home' | 'vscode-user'`
 — files like `~/.claude.json` or `~/.copilot/mcp-config.json`, which affect **every** project, not just
 the current one) takes a pristine `.sigil.bak` copy before the first such write to a file that holds
 content sigil did not write, via the shared `ensureHomeBackup()` helper (`src/config-utils.ts`); each

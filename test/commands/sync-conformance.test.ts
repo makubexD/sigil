@@ -294,7 +294,7 @@ describe('conformance rule: platform-path-leak', () => {
     });
     assert.deepEqual(
       findings.map(f => f.provider),
-      ['copilot'],
+      ['copilot', 'codex'],
     );
   });
 

@@ -63,7 +63,8 @@ tags: [security, safety, shared]
 
 Fires before every Edit or Write tool call. The agent passes the call as JSON on stdin; the
 hook reads `tool_input.file_path` (or `tool_input.path`), or every file a patch names when
-`tool_input` is the raw patch text of GitHub Copilot's `apply_patch`, also resolves the real path
+`tool_input` is the raw patch text of GitHub Copilot's `apply_patch` or `tool_input.command` holds
+Codex's, also resolves the real path
 (so a symlink, a Windows short name like `ENV~1`, or an `::$DATA` stream suffix can't disguise the
 target), and checks each file name. On a match it exits with code 2, which blocks the call, and
 says why on stderr.
@@ -93,6 +94,9 @@ PowerShell and a blocking exit code 2 comes back as 1, which does not block.
   `node` starts again. Input the hook can't parse is let through.
 - The GitHub Copilot cloud agent, which skips exec-form hooks. It protects Copilot CLI and
   VS Code only.
+- OpenAI Codex until you review the hook in `/hooks`. Codex skips a new or changed hook, and every
+  project hook in an untrusted project, with no error. On Codex this hook is one quoted command, not
+  exec form; the Windows form (`commandWindows`) hasn't been tested live.
 - GitHub Copilot CLI in an untrusted folder. It loads repository hooks only from a trusted folder,
   so `copilot -p` there skips this hook silently. `--trust-folder` fixes that for one session.
 

@@ -8,10 +8,15 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
 import { applyMerge } from '../../dist-cli/config-merge/index';
-import { ensureHomeBackup } from '../../dist-cli/config-utils';
+import {
+  ensureHomeBackup,
+  isHomeScopedRoot,
+  resolveConfigRoot,
+} from '../../dist-cli/config-utils';
 import { withTempDir } from '../helpers/temp-dir';
 import type { ConfigMergeOp, ResolvedCatalog } from '../../dist-cli/types';
 
@@ -155,6 +160,55 @@ describe('ensureHomeBackup — content-aware backup for home-scoped config files
 
       assert.equal(fs.readFileSync(bakOf(fullPath), 'utf8'), 'original backup bytes');
     });
+  });
+});
+
+describe('codex-home root', () => {
+  /** Runs `fn` with `$CODEX_HOME` set to `value` (undefined unsets it), restoring it afterwards. */
+  function withCodexHome<T>(value: string | undefined, fn: () => T): T {
+    const previous = process.env.CODEX_HOME;
+    if (value === undefined) delete process.env.CODEX_HOME;
+    else process.env.CODEX_HOME = value;
+    try {
+      return fn();
+    } finally {
+      if (previous === undefined) delete process.env.CODEX_HOME;
+      else process.env.CODEX_HOME = previous;
+    }
+  }
+
+  it('resolves $CODEX_HOME when set', () => {
+    withTempDir(home =>
+      withCodexHome(home, () => {
+        assert.equal(resolveConfigRoot('codex-home', PROJECT_DIR), home);
+      }),
+    );
+  });
+
+  it('resolves ~/.codex when $CODEX_HOME is unset', () => {
+    withCodexHome(undefined, () => {
+      assert.equal(resolveConfigRoot('codex-home', PROJECT_DIR), path.join(os.homedir(), '.codex'));
+    });
+  });
+
+  it('is a home-scoped root', () => {
+    assert.equal(isHomeScopedRoot('codex-home'), true);
+  });
+
+  it('takes one .sigil.bak on the first write to a user-owned file there', () => {
+    withTempDir(home =>
+      withCodexHome(home, () => {
+        const fullPath = path.join(resolveConfigRoot('codex-home', PROJECT_DIR), 'hooks.json');
+        const original = JSON.stringify({ userSetting: true }, null, 2);
+        fs.writeFileSync(fullPath, original);
+
+        ensureHomeBackup(fullPath, []);
+        assertBackupEqualsFile(fullPath);
+
+        ensureHomeBackup(fullPath, []);
+        assert.equal(fs.readFileSync(bakOf(fullPath), 'utf8'), original);
+      }),
+    );
   });
 });
 

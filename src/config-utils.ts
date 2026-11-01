@@ -28,6 +28,12 @@ function resolveCopilotHome(): string {
   return home ? path.resolve(home) : path.join(os.homedir(), '.copilot');
 }
 
+/** $CODEX_HOME as an absolute path, else ~/.codex (an empty value counts as unset). */
+function resolveCodexHome(): string {
+  const home = process.env.CODEX_HOME;
+  return home ? path.resolve(home) : path.join(os.homedir(), '.codex');
+}
+
 /**
  * The VS Code user-profile directory, warning when it is absent. A reader (status) passes quiet:
  * the warning is about writing there, which a reader never does.
@@ -48,6 +54,7 @@ function vsCodeUserRoot(quiet: boolean): string {
  *   project    → projectDir  (default, stays inside the consumer repo)
  *   home       → os.homedir()  (user-global: ~/.claude/settings.json, ~/.claude.json)
  *   copilot-home → $COPILOT_HOME, default ~/.copilot (Copilot's user MCP file)
+ *   codex-home → $CODEX_HOME, default ~/.codex (Codex's user hooks file)
  *   vscode-user → VS Code user-profile directory (best-effort; warns when absent)
  *                 win32   : %APPDATA%/Code/User
  *                 darwin  : ~/Library/Application Support/Code/User
@@ -66,6 +73,8 @@ export function resolveConfigRoot(
       return os.homedir();
     case 'copilot-home':
       return resolveCopilotHome();
+    case 'codex-home':
+      return resolveCodexHome();
     case 'vscode-user':
       return vsCodeUserRoot(opts.quiet ?? false);
     default: // 'project' or undefined
@@ -75,7 +84,9 @@ export function resolveConfigRoot(
 
 /** True when `root` writes to a directory shared across all of the user's projects. */
 export function isHomeScopedRoot(root: ConfigRoot | undefined): boolean {
-  return root === 'home' || root === 'copilot-home' || root === 'vscode-user';
+  return (
+    root === 'home' || root === 'copilot-home' || root === 'codex-home' || root === 'vscode-user'
+  );
 }
 
 /** JSON can only parse to an object, an array or a primitive; only a non-array object is usable. */

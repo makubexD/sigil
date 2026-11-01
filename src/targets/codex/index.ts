@@ -99,11 +99,6 @@ export class CodexTarget implements Target {
   ): Promise<ConfigMergeOp[]> {
     const artifact = catalog.byId.get(artifactId);
     if (!artifact) throw new Error(`Artifact '${artifactId}' not found in the catalog`);
-    if (!this.configKinds[artifact.kind as ConfigKind]) {
-      throw new Error(
-        `Codex scaffoldConfig only supports the 'hook' and 'mcp' kinds, got '${artifact.kind}'`,
-      );
-    }
     return scaffoldConfigFrom(this.configKinds, artifact, options, 'Codex');
   }
 

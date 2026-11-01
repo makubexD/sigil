@@ -540,7 +540,7 @@ describe('config/dangerous-command patterns', () => {
 //
 // The trust scanner is the only gate on untrusted imports, so it runs on every file. The bundled
 // catalog is prose written for models with shell access; a hit there means real artifacts would be
-// refused by `sigil import` (see docs/plan-trust-scan-prose-false-positive.md step 5).
+// refused by `sigil import`.
 
 /** Every regular file under `dir`, recursively, as absolute paths. */
 function filesUnder(dir: string): string[] {

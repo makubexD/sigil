@@ -9,7 +9,9 @@ home for their merge model, provider-declared scope model, and wizard treatment.
 
 A `kind: hook` artifact (`src/schema/index.ts`, `HookSchema`) becomes one entry under
 `hooks.<event>` in Claude Code's settings (`src/targets/claude-code/config-scaffold.ts`) and in the
-Copilot hook file for its scope (scope table below).
+Copilot hook file for its scope (scope table below). On Codex it lands in `.codex/hooks.json` or `$CODEX_HOME/hooks.json`,
+and an `mcp` artifact in `config.toml` beside them ([setup](../setup/codex.md)). Only the TOML writer differs: it splices
+sigil's tables into your text (`src/config-merge/toml-file.ts`).
 
 | Field          | Meaning                                                                                                                               |
 | -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |

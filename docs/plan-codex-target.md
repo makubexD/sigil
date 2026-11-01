@@ -2,7 +2,7 @@
 
 Source: [distribution-channels-2026-09](decisions/distribution-channels-2026-09.md) § 6, Phase 5: "Codex adapter
 (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin)", and the brief
-[codex-target](ideas/codex-target.md).
+the Codex brief (deleted once this shipped).
 
 This is a phase-level roadmap, not a step plan. Each phase is one branch and one PR, and gets a step-level
 `docs/plan-codex-target-<phase>.md` when it starts. A phase that opens with a spike ends the spike in a written
@@ -307,7 +307,7 @@ Done when the route is documented with probe evidence, or the emitter ships and 
 
 ## Close-out
 
-After the last phase: update ADR § 3 and § 6, delete [codex-target](ideas/codex-target.md) and its `docs/ideas/README.md`
+After the last phase: update ADR § 3 and § 6, delete the Codex brief (deleted once this shipped) and its `docs/ideas/README.md`
 row, record the Codex version every result was measured on, and run `npm run ci:local`.
 
 ## Out of scope

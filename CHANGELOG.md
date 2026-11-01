@@ -10,12 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - New target `codex`: `sigil add --target codex` writes skills to `.agents/skills/` and merges hooks
-  into `.codex/hooks.json`, and `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are
+  into `.codex/hooks.json` and MCP servers into `.codex/config.toml`, keeping your comments, and
+  `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are
   skipped, with the reason. It shares its skill files with `agents-standard`, so removing one install
   keeps them for the other. See `docs/setup/codex.md`.
 
 ### Changed
 
+- `sigil` has a new runtime dependency, `smol-toml`, to read `config.toml`.
+- `shared/ado` now declares `platforms: [claude, copilot]`, because Codex can't take a variable in a
+  server's arguments.
 - `shared/protect-config` now also checks a patch in `tool_input.command`, which is where Codex sends
   `apply_patch`, and checks `file_path` beside it. This changes the hook `sigil add` writes for every
   target; run `sigil update`.

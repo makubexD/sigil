@@ -4,7 +4,7 @@
 > [consuming.md](../guides/consuming.md)
 
 `sigil add --target codex` writes skills to `.agents/skills/`, where Codex reads them, and merges hooks into
-`.codex/hooks.json`. A full `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules.
+`.codex/hooks.json` and MCP servers into `.codex/config.toml`. A full `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules.
 
 ## Install skills
 
@@ -43,6 +43,22 @@ Codex has no personal per-project hook file, so `--scope local` is refused.
 
 Treat hooks as a guardrail. Codex says so itself, and any exit code other than 2 lets the call through, so a hook that
 can't start protects nothing. The Windows form of the command is untested.
+
+## Install MCP servers
+
+```bash
+sigil add shared/filesystem --target codex              # .codex/config.toml
+sigil add shared/filesystem --target codex --scope user # $CODEX_HOME/config.toml
+```
+
+Sigil edits only its own `[mcp_servers.<name>]` tables, and your comments and other settings stay as they are. If a
+server is written another way, such as an inline `mcp_servers = { … }`, sigil refuses and writes nothing. A table you wrote
+with the same name as a catalog server is replaced, as in JSON config files; a user-scope file is backed up first.
+
+Project config loads only in a trusted project, and `--scope local` is refused.
+
+Codex doesn't expand `${NAME}` in MCP config. A catalog variable reaches a server only by name, through `env_vars`, so
+export it before starting Codex. `shared/ado` needs a variable in its arguments, so it's skipped on Codex.
 
 ## Plugins
 

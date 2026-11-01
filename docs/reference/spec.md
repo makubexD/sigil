@@ -333,7 +333,9 @@ reaches it inside skills, and a full build also writes repo-wide rules to a root
 
 **OpenAI Codex (`codex`).** Skills and `AGENTS.md` render exactly as for `agents-standard`, so the two targets share
 those files. A `hook` merges into `.codex/hooks.json`, or `$CODEX_HOME/hooks.json` at user scope, as one quoted
-command per shell, because Codex ignores `args`. Every other kind is skipped with the reason in [capabilities.md](capabilities.md). Specs and citations:
+command per shell, because Codex ignores `args`. An `mcp` server becomes a `[mcp_servers.<name>]` table in
+`.codex/config.toml`, or `$CODEX_HOME/config.toml` at user scope; `{sigil:env:NAME}` becomes `env_vars`, and any other use
+of it is refused. Every other kind is skipped with the reason in [capabilities.md](capabilities.md). Specs and citations:
 `src/targets/codex/`.
 
 **Key vocabulary rules:**

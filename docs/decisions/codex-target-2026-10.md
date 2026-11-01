@@ -1,6 +1,7 @@
 # Codex target (2026-10)
 
-Status: Phase A of [plan-codex-target](../plan-codex-target.md). Probed 2026-10-31 on Codex CLI 0.166.0, Linux.
+Status: shipped 2026-10-31 as ADR Phase 5, covering skills, hooks and MCP. Probed on Codex CLI 0.166.0, Linux. The
+brief it started from was deleted once this record covered it.
 
 ## How the probes ran
 
@@ -72,5 +73,12 @@ exists.
 
 ### TOML
 
-**`smol-toml` reads, and sigil writes by splicing text**, because re-serializing would drop a user's comments. Phase E
-confirms this in its spike.
+**`smol-toml` reads, and sigil writes by splicing text**, because re-serializing would drop a user's comments. Sigil
+owns whole `[mcp_servers.<key>]` tables, and `renderToml` refuses to write unless the result parses back to the merged
+object. A same-named table a user wrote is replaced, as `object-spread` does in JSON.
+
+## Not proven
+
+- A real model picking a skill or using a hook-guarded tool. Every run used a mock model.
+- `commandWindows` on Windows. It was run through `sh` only.
+- The `/hooks` review itself. Hook runs used `--dangerously-bypass-hook-trust`.

@@ -35,7 +35,9 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `src/resolve.ts` know nothing about Claude or Copilot. Platform logic lives only in `src/targets/<name>/index.ts`.
 - **`serialize()` vs `canonicalize()`** (`src/config-merge/primitives.ts`) are not interchangeable. `serialize()` is
   order-preserving and the only JSON disk writer, reached through `renderConfig` (`src/config-merge/file-format.ts`) from
-  `commands/add/execute-config.ts`, `commands/update-config-io.ts` and `commands/uninstall-config.ts`. `canonicalize()` is sorted and used only to hash fragments
+  `commands/add/execute-config.ts`, `commands/update-config-io.ts` and `commands/uninstall-config.ts`. A `.toml` path goes to
+  `renderToml` (`src/config-merge/toml-file.ts`) instead, which splices whole `[mcp_servers.<key>]` tables into the user's
+  text and refuses to write unless the result parses back to the merged object. `canonicalize()` is sorted and used only to hash fragments
   (`sha256(canonicalize(...))` in `src/manifest/mutate-config.ts`, `src/commands/update-config-catalog.ts`,
   `src/install-state-prescaffold.ts`). Never write a file with `canonicalize()`.
 - **Route every authored scalar through `serializeScalar`** (`src/authoring/frontmatter.ts`, called from

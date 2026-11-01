@@ -20,7 +20,7 @@ import {
 import { renderCapabilityMatrix } from '../../dist-cli/targets/capability-matrix';
 import { ClaudeCodeTarget, CopilotTarget, getAllTargets } from '../../dist-cli/targets';
 import { TestFixtureTarget } from '../../dist-cli/targets/test-fixture';
-import { ALL_KINDS } from '../../dist-cli/kinds';
+import { ALL_KINDS, CONFIG_KINDS } from '../../dist-cli/kinds';
 import {
   WRITABLE_PLUGIN_KINDS,
   pluginMembersByKind,
@@ -130,6 +130,23 @@ describe('target capabilities — table integrity', () => {
     assert.deepEqual(channel.skill, { mode: 'native' });
     assert.deepEqual(channel.rule, { mode: 'none', reason: 'not built' });
     assert.deepEqual(sorted(Object.keys(channel)), sorted(ALL_KINDS));
+  });
+});
+
+describe('target config kinds — the table matches the native scaffold rows', () => {
+  const nativeConfigKinds = (t: Target) => nativeKinds(t).filter(kind => CONFIG_KINDS.has(kind));
+
+  it('should declare a config kind exactly when its scaffold row is native', () => {
+    const declaring = getAllTargets().filter(target => target.configKinds !== undefined);
+
+    assert.ok(declaring.length > 0, 'no registered target declares configKinds');
+    for (const target of declaring) {
+      assert.deepEqual(
+        Object.keys(target.configKinds ?? {}).sort(),
+        sorted(nativeConfigKinds(target)),
+        `${target.name} configKinds`,
+      );
+    }
   });
 });
 

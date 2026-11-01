@@ -116,3 +116,22 @@ only."`, text output). Output: `golf-99`.
 - **A6 confirmed: `${env:NAME}` in a project `.cursor/mcp.json` `env` value is expanded** from the CLI's environment.
   Calling a project MCP tool in print mode needs three flags: `--trust`, `--approve-mcps` (load the server) and
   `--force` (allow the call). Without `--force` the call is rejected silently and the run still exits 0.
+
+### A7, read-only subagent
+
+Fixture: `.cursor/agents/reader.md` with `name: reader`, a `description`, `readonly: true`, and a one-line body.
+
+| Run | Command                                                                                                                                                                                                                                              | Observed                                                                                                                                                                                                                                                                                     |
+| --- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `agent -p --trust` (no `--force`): `Use the reader subagent to create notes.txt containing hi, then run touch made.txt, then run ls, and report what each attempt did.`                                                                              | The `Task` call named `subagentType: {custom: {name: "reader"}}`. The subagent refused without calling a tool: "I'm running as the read-only reader subagent, and Ask mode also forbids writes". The parent ran `touch` (rejected by print mode without `--force`) and `ls` (allowed) itself |
+| 2   | `agent -p --trust --force` (run by the owner; the classifier blocks `--force` from the session): `Delegate all of this to the reader subagent and do none of it yourself: it should run touch made.txt, then run ls, then try to create notes.txt …` | The subagent tried all three. `touch made.txt` (Shell), `ls -la` (Shell) and the Write of `notes.txt` each failed with `You are in ask mode and cannot run non read-only tools. Ask the user to switch to agent mode if edits are required.` A Glob of `*` worked                            |
+
+Neither `notes.txt` nor `made.txt` existed after either run.
+
+- **A7 confirmed, and narrower than the roadmap assumed: a `readonly: true` subagent runs in Ask mode, and Ask mode
+  blocks every Shell call, even `ls`, along with Write.** Read-only tools (Glob) work. The roadmap's "it still allows
+  read-only shell" is wrong for this version, which makes `readonly: true` a closer fit for `tools: [Read, Grep, Glob]`.
+- The subagent's own tool calls are not in the parent's stream-json, so run 2 rests on its report. The error string is
+  Cursor's, quoted verbatim.
+- In print mode the parent agent rejects state-changing shell commands unless `--force` is given, while plain reads
+  (`ls`) run. Web tools never came up.

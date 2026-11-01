@@ -12,12 +12,12 @@
  *   replace     — replaceMerge (reverse a previously installed fragment, then apply the new one)
  *   drift       — detectConfigDrift (detect whether sigil's keys were changed), classifyConfigDrift
  *                 (missing vs modified — see drift.ts's header for why the distinction matters)
- *   file-format — parseConfig, renderConfig (the per-path config-file format seam; JSON today)
+ *   file-format — parseConfig, renderConfig (the per-path config-file format seam: JSON and TOML)
  */
 
 export type { ConfigMergeOp, MergeStrategy, ConfigRoot } from './primitives';
 export { deepEqual, pruneEmpty, canonicalize, serialize } from './primitives';
-export { parseConfig, renderConfig } from './file-format';
+export { configFormatName, isEmptiedConfig, parseConfig, renderConfig } from './file-format';
 export { applyMerge } from './apply';
 export { reverseMerge } from './reverse';
 export { replaceMerge } from './replace';

@@ -40,8 +40,9 @@ export function writeMergedConfigFile(
 ): void {
   if (isHomeScopedRoot(ops.next.root)) ensureHomeBackup(fullPath, sigilOps);
   const merged = replaceMerge(existing, ops.previous, ops.next);
+  const before = fs.existsSync(fullPath) ? fs.readFileSync(fullPath, 'utf-8') : '';
   fs.mkdirSync(path.dirname(fullPath), { recursive: true });
-  fs.writeFileSync(fullPath, renderConfig(fullPath, merged), 'utf-8');
+  fs.writeFileSync(fullPath, renderConfig(fullPath, merged, before), 'utf-8');
 }
 
 /** Resolves the on-disk path + ConfigMergeOp for a recorded config-merge entry. */

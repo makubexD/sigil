@@ -6,7 +6,7 @@
  *
  * `build` writes no `AGENTS.md`: Cursor's native repo-wide rules become `.mdc` files in
  * `.cursor/rules/`, and Cursor also reads a root `AGENTS.md`, so writing both would load each
- * rule twice (see docs/plan-cursor-target-b.md).
+ * rule twice (docs/decisions/cursor-target-2026-11.md § Phase B).
  *
  * @module
  */

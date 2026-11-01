@@ -82,6 +82,29 @@
             "pattern": "^[A-Za-z0-9_][A-Za-z0-9_.:*()/ -]*$"
           }
         },
+        "toolPolicy": {
+          "type": "string",
+          "enum": [
+            "strict",
+            "nearest"
+          ]
+        },
+        "model": {
+          "type": "string",
+          "enum": [
+            "fast",
+            "balanced",
+            "deep"
+          ]
+        },
+        "effort": {
+          "type": "string",
+          "enum": [
+            "low",
+            "medium",
+            "high"
+          ]
+        },
         "claude": {
           "type": "object",
           "properties": {

@@ -1,7 +1,95 @@
 # Cursor target (2026-11)
 
-Status: Phase A (live probe) in progress. This file holds the raw probe log until step 8 of
-[plan-cursor-target-a.md](../plan-cursor-target-a.md) shapes it into the decision record.
+Status: Phase A (live probe) done 2026-11-01, on Cursor Agent CLI `2026.10.22-27dcf5f`, Linux. The phases are in
+[plan-cursor-target.md](../plan-cursor-target.md); this record holds what the probes found and what each finding
+changes.
+
+## How the probes ran
+
+Unlike Codex's probes, these used a real model. Cursor's CLI was signed in on the free plan, and every run was
+`agent -p` (print mode) with Cursor's default model (`Auto`) in a fresh `git init` repo built from fixture files, never
+in this repo. The budget was one or two runs per question, each asking for a short answer. `--output-format
+stream-json` shows each tool call with its arguments and result, which is how most rows below were read.
+
+Two runs needed `--force`, which lets print mode run tool calls that aren't read-only. Claude Code's auto-mode
+classifier refused to start those from the session, so the owner ran them by hand (A6 run 2, A7 run 2). The rest ran
+from the session.
+
+So this proves what Cursor's CLI loads, what reaches the model, and what blocks a tool call, on one version. It does
+not prove anything about the desktop app, Windows, or a workspace without `--trust`: that last case was never run.
+
+## Results
+
+| #   | Question                                             | Observed                                                                                                                                                                           |
+| --- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Do `.mdc` rules load by mode?                        | `alwaysApply: true` loads; a `.md` in `.cursor/rules/` is ignored. A `globs` rule did **not** attach when the prompt named a matching path. **Attaching on a file read: untested** |
+| A2  | Is a `.cursor/skills` skill picked and its ref read? | Yes: picked from its `description`, `references/value.md` read on demand                                                                                                           |
+| A3  | Same skill name in `.cursor/` and `.claude/`?        | **One listing, `.cursor` wins** (inferred from the model's listing). Cursor also lists every skill in `~/.claude/skills/` and `~/.claude/plugins/`                                 |
+| A4  | `preToolUse` payload for a write; does exit 2 deny?  | Exit 2 denies. `tool_input.file_path`, absolute. **The edit's hook call was named `Read`**, a shell write `Shell` with `tool_input.command`                                        |
+| A5  | Does a `.claude/settings.json` hook run too?         | **No.** Never ran, so no double runs                                                                                                                                               |
+| A6  | `${env:NAME}` in `.cursor/mcp.json` `env`?           | Expanded (`golf-99`). Print mode needs `--approve-mcps` to load the server and `--force` to call it; without `--force` the call fails, exit 0                                      |
+| A7  | What does a `readonly: true` subagent allow?         | It runs in Ask mode: Write and **every** Shell call (even `ls`) refused, Glob works                                                                                                |
+| A8  | Does a local plugin install, and its rule load?      | **Docs-only.** No install command; `marketplace add` takes a git URL. A rule loaded with `--plugin-dir` did not reach the model                                                    |
+
+## Skills: a warning, not a refusal
+
+Decision 1 said `add` refuses a `cursor` install that would load a skill twice, unless A3 showed Cursor dedupes by name.
+It did, for the case that matters: with `probe-skill` in both `.cursor/skills/` and `.claude/skills/`, Cursor used the
+`.cursor` body and listed the skill once. So in a project with both `claude-code` and `cursor` installed, `add` warns
+and goes on (Phase B).
+
+A3 found one more thing. Cursor's listing held every skill in `~/.claude/skills/` and in Claude Code's plugin cache
+(`~/.claude/plugins/cache/<marketplace>/<plugin>/<version>/skills/`), and A8 showed the same for those plugins' MCP
+servers. Two same-named skills in two different `~/.claude/skills/` folders were both listed, so the `.cursor`-wins
+rule is not a general dedupe by name. Phase B should not offer a home-scope `cursor` skill install to a user whose
+Claude Code already has sigil's plugin: those skills already reach Cursor.
+
+## Rules: globs need a live check
+
+The `alwaysApply: true` half of Decision 2 is confirmed. The `globs` half is not. Naming `src/app.ts` in the prompt
+didn't attach the scoped rule, but the agent never read the file in that run, so the documented behaviour (attach when a
+matching file is in context) was never exercised. Decision 2 stands on the docs. Phase B's tests can't settle it; Phase
+G's live check must run one prompt that makes the agent read a matching file, and report the scoped rule's codeword.
+
+## Hooks: the matcher and A5
+
+Exit 2 denies, and the path is in `tool_input.file_path`, which `protect-config` already reads, so the hook needs no
+parser change for Cursor (Phase C's "fix the parser first" doesn't apply). Two results change Phase C:
+
+1. **The edit tool's `preToolUse` call is named `Read`.** When asked to create `.env`, Cursor's edit fired a hook call
+   with `tool_name: "Read"` and `tool_input.file_path`, and the block there stopped the edit. Whether a second,
+   write-named call would follow is unknown. If Phase C maps Claude's `Edit|Write` matcher to a Cursor matcher such as
+   `Write`, the hook may never see an edit. Phase C's RED test must capture an allowed edit's calls (a matcher-less hook
+   that logs and exits 0) before it picks a matcher.
+2. **Cursor did not run the project `.claude/settings.json` hook** (A5), against the docs' third-party-hooks page. In
+   this CLI version a project with both targets installed gets each hook once, from `.cursor/hooks.json`. Phase C
+   documents that, and not the double run the roadmap expected.
+
+A shell write (`printf … > .env`) reaches the hook only as `tool_input.command`, the same gap `protect-config` has on
+Claude's `Bash`.
+
+## MCP: approval in print mode
+
+`${env:NAME}` is expanded, so Phase D's `EnvSyntax` for Cursor is `${env:NAME}` as documented. A project MCP server is
+`not loaded (needs approval)` until approved (`agent mcp enable <id>` or `--approve-mcps`), and in print mode a tool call
+also needs `--force`. Without it the call is rejected as `User rejected MCP: …` and the run still exits 0. Phase D's
+setup note must say both.
+
+## Agents: `readonly` is tighter than assumed
+
+The roadmap said `readonly: true` "still allows read-only shell and web tools". In this version it doesn't allow shell
+at all: the subagent runs in Ask mode, and `touch`, `ls` and Write all failed with `You are in ask mode and cannot run
+non read-only tools.` Glob worked. That is close to the catalog's `tools: [Read, Grep, Glob]`, which makes Decision 5
+safer than it looked. Web tools never came up. This rests on the subagent's own report: its tool calls aren't in the
+parent's stream, but the error text is Cursor's.
+
+## Plugins: try the Claude route first
+
+The CLI has no plugin install command, and a rule in a `--plugin-dir` plugin (`.cursor-plugin/plugin.json` plus
+`rules/hotel.mdc`, folder discovery) did not reach the model. A8 is docs-only. Since Cursor already loads skills and
+MCP from Claude Code's installed plugins, Phase F should first check whether sigil's published Claude marketplace
+plugin already works in Cursor, then decide whether a `.cursor-plugin/` build adds anything (rules are what it could
+add, and they are what failed here).
 
 ## Probe log
 

@@ -9,7 +9,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { getTarget } from '../../dist-cli/targets/index';
 import { detectProjectTarget } from '../../dist-cli/cli-helpers';
+import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
+import { renderArtifact } from '../../dist-cli/targets/emit';
+import { CODEX_SKILL_SPEC } from '../../dist-cli/targets/codex/spec/skill';
 import { loadResolvedCatalog } from '../helpers/catalog';
+import { makeSkill } from '../helpers/fixtures';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { CATALOG, PACKS, add } from '../helpers/install-scenario';
 import { buildAddPlan } from '../../dist-cli/commands/add/plan';
@@ -17,6 +21,28 @@ import { runUninstall } from '../../dist-cli/commands/uninstall';
 import { resolveSelection } from '../../dist-cli/select/selector-resolve';
 import { carriedKinds, installableKinds, kindSupport } from '../../dist-cli/targets/capabilities';
 import type { AddOpts } from '../../dist-cli/commands/add';
+import type { ResolvedArtifact } from '../../dist-cli/types';
+
+/** Claude's tool names; none may reach a Codex skill, which documents no `allowed-tools` field. */
+const CLAUDE_TOOL_NAMES = new Set([
+  'Read',
+  'Grep',
+  'Glob',
+  'Edit',
+  'Write',
+  'Bash',
+  'WebFetch',
+  'WebSearch',
+  'Agent',
+  'TodoWrite',
+]);
+
+/** Every word of a frontmatter value (strings and arrays of strings). */
+function frontmatterTokens(value: unknown): string[] {
+  if (typeof value === 'string') return value.split(/[^A-Za-z-]+/);
+  if (Array.isArray(value)) return value.flatMap(frontmatterTokens);
+  return [];
+}
 
 const TARGET = 'codex';
 const PEER = 'agents-standard';
@@ -57,14 +83,49 @@ function uninstall(dir: string, target: string): Promise<void> {
 }
 
 describe('codex target', () => {
-  it('should render a skill byte-identically to agents-standard, for every file', async () => {
+  it('should render the same skill files as agents-standard, byte-identical outside SKILL.md', async () => {
     const catalog = await loadResolvedCatalog();
     const codex = await getTarget(TARGET).scaffold!(SKILL, catalog, { projectDir: '.' });
     const peer = await getTarget(PEER).scaffold!(SKILL, catalog, { projectDir: '.' });
 
     assert.deepEqual(Object.keys(codex).sort(), Object.keys(peer).sort());
     for (const file of Object.keys(peer)) {
+      if (file.endsWith('/SKILL.md')) continue;
       assert.equal(codex[file], peer[file], `different bytes for ${file}`);
+    }
+  });
+
+  it('should differ from agents-standard only by the allowed-tools line, which Codex leaves out', async () => {
+    const catalog = await loadResolvedCatalog();
+    const codex = await getTarget(TARGET).scaffold!(SKILL, catalog, { projectDir: '.' });
+    const peer = await getTarget(PEER).scaffold!(SKILL, catalog, { projectDir: '.' });
+
+    const file = Object.keys(codex).find(f => f.endsWith('/SKILL.md'))!;
+    const withoutAllowed = peer[file]!.split('\n')
+      .filter(line => !line.startsWith('allowed-tools:'))
+      .join('\n');
+    assert.equal(codex[file], withoutAllowed);
+  });
+
+  it('should leave allowed-tools out of a skill, as Codex documents no such field', () => {
+    const skill = makeSkill({ allowedTools: ['Bash', 'Read'] }) as unknown as ResolvedArtifact;
+    assert.doesNotMatch(renderArtifact(CODEX_SKILL_SPEC, skill, {}), /^allowed-tools:/m);
+  });
+
+  it('should leave allowed-tools and every Claude tool name out of the bundled catalog SKILL.md files', async () => {
+    const catalog = await loadResolvedCatalog();
+    const files = await getTarget(TARGET).compile(catalog, { version: '0.0.0', packs: [] });
+    const skills = Object.entries(files).filter(([file]) => file.endsWith('/SKILL.md'));
+    assert.ok(skills.length > 0, 'the compile wrote skills');
+
+    for (const [file, raw] of skills) {
+      const { data } = parseFrontmatter(raw);
+      assert.ok(!('allowed-tools' in data), `${file} has an allowed-tools line`);
+      for (const token of Object.entries(data)
+        .filter(([key]) => key !== 'name' && key !== 'description')
+        .flatMap(([, value]) => frontmatterTokens(value))) {
+        assert.ok(!CLAUDE_TOOL_NAMES.has(token), `${file} carries the Claude name ${token}`);
+      }
     }
   });
 

@@ -7,11 +7,40 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { getAllTargets, getTarget } from '../../dist-cli/targets/index';
 import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
+import { renderArtifact } from '../../dist-cli/targets/emit';
+import { CURSOR_SKILL_SPEC } from '../../dist-cli/targets/cursor/spec/skill';
 import { loadResolvedCatalog } from '../helpers/catalog';
+import { makeSkill } from '../helpers/fixtures';
 import { resolveSelection } from '../../dist-cli/select/selector-resolve';
 import { carriedKinds, installableKinds, kindSupport } from '../../dist-cli/targets/capabilities';
 import { resolveCatalog } from '../../dist-cli/resolve';
-import type { Artifact, LoadedCatalog, ResolvedCatalog } from '../../dist-cli/types';
+import type {
+  Artifact,
+  LoadedCatalog,
+  ResolvedArtifact,
+  ResolvedCatalog,
+} from '../../dist-cli/types';
+
+/** Claude's tool names; none may reach a Cursor skill, which documents no `allowed-tools` field. */
+const CLAUDE_TOOL_NAMES = new Set([
+  'Read',
+  'Grep',
+  'Glob',
+  'Edit',
+  'Write',
+  'Bash',
+  'WebFetch',
+  'WebSearch',
+  'Agent',
+  'TodoWrite',
+]);
+
+/** Every word of a frontmatter value (strings and arrays of strings). */
+function frontmatterTokens(value: unknown): string[] {
+  if (typeof value === 'string') return value.split(/[^A-Za-z-]+/);
+  if (Array.isArray(value)) return value.flatMap(frontmatterTokens);
+  return [];
+}
 
 const TARGET = 'cursor';
 const CODEX = 'codex';
@@ -51,6 +80,30 @@ describe('cursor target', () => {
       parseFrontmatter(skillContent(cursor)).data,
       parseFrontmatter(skillContent(codex)).data,
     );
+  });
+
+  it('should leave allowed-tools out of a skill, as Cursor documents no such field', () => {
+    const skill = makeSkill({ allowedTools: ['Bash', 'Read'] }) as unknown as ResolvedArtifact;
+    assert.doesNotMatch(renderArtifact(CURSOR_SKILL_SPEC, skill, {}), /^allowed-tools:/m);
+  });
+
+  it('should leave allowed-tools and every Claude tool name out of the bundled catalog SKILL.md files', async () => {
+    const catalog = await loadResolvedCatalog();
+    const files = await getTarget(TARGET).compile(catalog, { version: '0.0.0', packs: [] });
+    const skills = Object.entries(files).filter(
+      ([file]) => file.startsWith('.cursor/skills/') && file.endsWith('/SKILL.md'),
+    );
+    assert.ok(skills.length > 0, 'the compile wrote skills');
+
+    for (const [file, raw] of skills) {
+      const { data } = parseFrontmatter(raw);
+      assert.ok(!('allowed-tools' in data), `${file} has an allowed-tools line`);
+      for (const token of Object.entries(data)
+        .filter(([key]) => key !== 'name' && key !== 'description')
+        .flatMap(([, value]) => frontmatterTokens(value))) {
+        assert.ok(!CLAUDE_TOOL_NAMES.has(token), `${file} carries the Claude name ${token}`);
+      }
+    }
   });
 
   it('should inline the skill rules instead of writing .cursor/rules files', async () => {

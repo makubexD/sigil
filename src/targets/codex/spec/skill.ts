@@ -1,6 +1,8 @@
 /**
  * Codex `skill` emission spec: `.agents/skills/<name>/SKILL.md`, the open-standard layout Codex
- * loads. Frontmatter, body, forbidden keys and limits match the agents-standard spec.
+ * loads. Frontmatter, body, forbidden keys and limits match the agents-standard spec, except that
+ * `allowed-tools` is left out: Codex documents no such field, and a missing pre-approval only adds
+ * permission prompts (Decision 6, docs/decisions/neutral-agent-vocabulary-2026-11.md).
  *
  * @module
  */
@@ -11,7 +13,6 @@ import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import {
   nameMapping,
   descriptionMapping,
-  allowedToolsMapping,
   whenToUseSection,
   argumentHintSection,
   boundarySection,
@@ -27,7 +28,7 @@ export const CODEX_SKILL_SPEC: KindEmitSpec = {
   kind: 'skill',
   outputPath: artifact => `.agents/skills/${artifact.frontmatter.name as string}/SKILL.md`,
   pathPattern: /\.agents\/skills\/.*\/SKILL\.md$/,
-  frontmatter: [nameMapping, descriptionMapping, allowedToolsMapping],
+  frontmatter: [nameMapping, descriptionMapping],
   emitEmptyFrontmatter: true,
   body: [boundarySection, whenToUseSection, argumentHintSection, codingGuidelinesSection],
   forbiddenKeys: ['applyTo', 'paths', 'agent', 'argument-hint'],

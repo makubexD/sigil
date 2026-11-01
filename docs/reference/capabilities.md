@@ -20,9 +20,9 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 | prompt | native | native | — (8) | — (9) | — (10) |
 | skill | native | native | native | native | native |
 | agent | native | native | — (11) | — (12) | — (13) |
-| rule | native | native | via inline (14) | via inline (15) | — (16) |
-| workflow | native | native | — (17) | — (18) | — (19) |
-| template | — (20) | — (20) | — (20) | — (20) | — (20) |
+| rule | native | native | via inline (14) | via inline (15) | native |
+| workflow | native | native | — (16) | — (17) | — (18) |
+| template | — (19) | — (19) | — (19) | — (19) | — (19) |
 
 1. the open standard (Agent Skills, AGENTS.md) defines no MCP config file shared by its tools; install it for a tool-specific target
 2. not built yet — [Cursor — Model Context Protocol (MCP)](https://cursor.com/docs/context/mcp)
@@ -39,11 +39,10 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 13. not built yet: a Cursor subagent has no tool list, so a read-only one needs `readonly: true` — [Cursor — Subagents](https://cursor.com/docs/context/subagents)
 14. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
 15. folded into each skill that `uses:` it — [OpenAI Codex — Build skills](https://learn.chatgpt.com/docs/build-skills)
-16. not built yet — [Cursor — Rules](https://cursor.com/docs/context/rules)
-17. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
-18. Codex has no workflow file
-19. Cursor has no workflow file
-20. templates are composed into other artifacts at resolve time, never emitted
+16. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
+17. Codex has no workflow file
+18. Cursor has no workflow file
+19. templates are composed into other artifacts at resolve time, never emitted
 
 ## plugin
 

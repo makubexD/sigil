@@ -1,7 +1,8 @@
 /**
- * What the Cursor target delivers: Agent Skills in `.cursor/skills/`, with each skill's rules
- * inlined. Rules (`.mdc`), subagents, commands, hooks and MCP config are not built yet; Cursor's
- * settings file is Claude Code's own vocabulary and it has no workflow file.
+ * What the Cursor target delivers: Agent Skills in `.cursor/skills/` (each skill's rules
+ * inlined) and rules as `.mdc` files in `.cursor/rules/`. Subagents, commands, hooks and MCP
+ * config are not built yet; Cursor's settings file is Claude Code's own vocabulary and it has no
+ * workflow file.
  *
  * @module
  */
@@ -10,14 +11,13 @@ import {
   CURSOR_COMMANDS_DOC,
   CURSOR_HOOKS_DOC,
   CURSOR_MCP_DOC,
-  CURSOR_RULES_DOC,
   CURSOR_SUBAGENTS_DOC,
 } from './doc-refs';
 
 export const CURSOR_CAPABILITIES: TargetCapabilities = {
   scaffold: {
     skill: { mode: 'native' },
-    rule: { mode: 'none', reason: 'not built yet', docs: [CURSOR_RULES_DOC] },
+    rule: { mode: 'native' },
     agent: {
       mode: 'none',
       reason:

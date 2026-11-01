@@ -1,8 +1,8 @@
 /**
  * The Cursor target: Agent Skills in `.cursor/skills/<name>/SKILL.md` (each skill's rules inlined
- * into it for now). Everything here is data on the shared pipeline: emit specs, lexicon,
- * capabilities and citations. It needs nothing outside this folder except its `registerTarget()`
- * line.
+ * into it) and project rules as `.mdc` files in `.cursor/rules/`. Everything here is data on the
+ * shared pipeline: emit specs, lexicon, capabilities and citations. It needs nothing outside this
+ * folder except its `registerTarget()` line.
  *
  * `build` writes no `AGENTS.md`: Cursor's native repo-wide rules become `.mdc` files in
  * `.cursor/rules/`, and Cursor also reads a root `AGENTS.md`, so writing both would load each
@@ -45,7 +45,7 @@ export class CursorTarget implements Target {
   readonly outputContracts: ContractEntry[] = deriveContracts(CURSOR_EMIT_SPECS);
   readonly lexicon: ProviderLexicon = CURSOR_LEXICON;
 
-  /** Every artifact with a scaffold spec (skills, rules inlined), and no AGENTS.md. */
+  /** Every artifact with a scaffold spec (skills, and rules as `.mdc`), and no AGENTS.md. */
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {
     const files: FileMap = {};
     const ctx = { catalog, installSet: new Set(catalog.artifacts.map(a => a.id)) };

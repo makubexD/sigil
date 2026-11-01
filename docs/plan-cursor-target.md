@@ -145,6 +145,10 @@ double-load check in `add`, a warning since A3. No home-scope `cursor` skill ins
 Cursor already loads Claude Code's plugin skills (A3). No `AGENTS.md` (Decision 4). `prompt`, `agent`,
 `workflow`, `settings`: `none` with reasons. Capability table, `capabilities.md`, `sync --check` (coverage, unemitted fields, term leaks) green.
 
+**Done 2026-11-01** in #153 (step plan [plan-cursor-target-b.md](plan-cursor-target-b.md)): `.mdc` rules and
+`.cursor/skills/`, no `AGENTS.md`, and `readerWins` overlap notes in `add` and `status`. Setup page:
+[setup/cursor.md](setup/cursor.md).
+
 ### Phase C: hooks in `.cursor/hooks.json`
 
 Hook ops mapping Claude event names to Cursor's (`PreToolUse` → `preToolUse`, …), refusing undocumented events like

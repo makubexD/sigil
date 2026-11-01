@@ -64,16 +64,15 @@ describe('cursor target', () => {
     assert.match(skillContent(files), /## Coding guidelines to apply/);
   });
 
-  it('should skip an agent, a prompt and a hook, with the reason its capability row gives', async () => {
+  it('should skip an agent and a prompt, with the reason its capability row gives', async () => {
     const catalog = await loadResolvedCatalog();
     const target = getTarget(TARGET);
 
     const reasons = {
       agent: /no tool list.*readonly: true/,
       prompt: /folding commands into skills/,
-      hook: /^not built yet$/,
     };
-    for (const kind of ['agent', 'prompt', 'hook'] as const) {
+    for (const kind of ['agent', 'prompt'] as const) {
       const artifact = catalog.artifacts.find(a => a.kind === kind);
       assert.ok(artifact, `the catalog has a ${kind}`);
 

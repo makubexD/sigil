@@ -44,12 +44,14 @@ export const CURSOR_COMMANDS_DOC: DocRef = {
   covers: 'custom commands, being folded into skills via /migrate-to-skills.',
 };
 
-/** Cursor hook files — `hooks.json`. */
+/** Cursor hook files — `.cursor/hooks.json` (project) and `~/.cursor/hooks.json` (user). */
 export const CURSOR_HOOKS_DOC: DocRef = {
   url: 'https://cursor.com/docs/agent/hooks',
   title: 'Cursor — Hooks',
   verifiedOn: '2026-11-01',
-  covers: 'Cursor hooks, configured in hooks.json.',
+  covers:
+    'Cursor hooks in .cursor/hooks.json (project) or ~/.cursor/hooks.json (user): `version: 1`, ' +
+    'camelCase event keys, a regex `matcher`, and exit code 2 denying the operation.',
 };
 
 /**

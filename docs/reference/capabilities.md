@@ -15,34 +15,33 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 | Kind | claude | copilot | agents-standard | codex | cursor |
 | --- | --- | --- | --- | --- | --- |
 | mcp | native | native | — (1) | native | — (2) |
-| hook | native | native | — (3) | native | — (4) |
-| settings | native | — (5) | — (6) | — (7) | — (7) |
-| prompt | native | native | — (8) | — (9) | — (10) |
+| hook | native | native | — (3) | native | native |
+| settings | native | — (4) | — (5) | — (6) | — (6) |
+| prompt | native | native | — (7) | — (8) | — (9) |
 | skill | native | native | native | native | native |
-| agent | native | native | — (11) | — (12) | — (13) |
-| rule | native | native | via inline (14) | via inline (15) | native |
-| workflow | native | native | — (16) | — (17) | — (18) |
-| template | — (19) | — (19) | — (19) | — (19) | — (19) |
+| agent | native | native | — (10) | — (11) | — (12) |
+| rule | native | native | via inline (13) | via inline (14) | native |
+| workflow | native | native | — (15) | — (16) | — (17) |
+| template | — (18) | — (18) | — (18) | — (18) | — (18) |
 
 1. the open standard (Agent Skills, AGENTS.md) defines no MCP config file shared by its tools; install it for a tool-specific target
 2. not built yet — [Cursor — Model Context Protocol (MCP)](https://cursor.com/docs/context/mcp)
 3. the open standard (Agent Skills, AGENTS.md) defines no hooks; install it for a tool-specific target
-4. not built yet — [Cursor — Hooks](https://cursor.com/docs/agent/hooks)
-5. this kind's schema is Claude Code's own vocabulary — sigil has no Copilot emitter for it
-6. the open standard (Agent Skills, AGENTS.md) defines no settings; install it for a tool-specific target
-7. this kind's schema is Claude Code's own vocabulary
-8. the open standard (Agent Skills, AGENTS.md) defines no user-invoked prompts with arguments; install it for a tool-specific target
-9. Codex custom prompts are deprecated in favor of skills — [OpenAI Codex — Custom prompts](https://learn.chatgpt.com/docs/custom-prompts)
-10. Cursor is folding commands into skills (/migrate-to-skills) — [Cursor — Commands](https://cursor.com/docs/context/commands)
-11. the open standard (Agent Skills, AGENTS.md) defines no subagents; install it for a tool-specific target
-12. a Codex agent file can't restrict tools, so a catalog agent would gain every tool — [OpenAI Codex — Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-13. not built yet: a Cursor subagent has no tool list, so a read-only one needs `readonly: true` — [Cursor — Subagents](https://cursor.com/docs/context/subagents)
-14. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
-15. folded into each skill that `uses:` it — [OpenAI Codex — Build skills](https://learn.chatgpt.com/docs/build-skills)
-16. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
-17. Codex has no workflow file
-18. Cursor has no workflow file
-19. templates are composed into other artifacts at resolve time, never emitted
+4. this kind's schema is Claude Code's own vocabulary — sigil has no Copilot emitter for it
+5. the open standard (Agent Skills, AGENTS.md) defines no settings; install it for a tool-specific target
+6. this kind's schema is Claude Code's own vocabulary
+7. the open standard (Agent Skills, AGENTS.md) defines no user-invoked prompts with arguments; install it for a tool-specific target
+8. Codex custom prompts are deprecated in favor of skills — [OpenAI Codex — Custom prompts](https://learn.chatgpt.com/docs/custom-prompts)
+9. Cursor is folding commands into skills (/migrate-to-skills) — [Cursor — Commands](https://cursor.com/docs/context/commands)
+10. the open standard (Agent Skills, AGENTS.md) defines no subagents; install it for a tool-specific target
+11. a Codex agent file can't restrict tools, so a catalog agent would gain every tool — [OpenAI Codex — Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
+12. not built yet: a Cursor subagent has no tool list, so a read-only one needs `readonly: true` — [Cursor — Subagents](https://cursor.com/docs/context/subagents)
+13. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
+14. folded into each skill that `uses:` it — [OpenAI Codex — Build skills](https://learn.chatgpt.com/docs/build-skills)
+15. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
+16. Codex has no workflow file
+17. Cursor has no workflow file
+18. templates are composed into other artifacts at resolve time, never emitted
 
 ## plugin
 

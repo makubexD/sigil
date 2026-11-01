@@ -61,3 +61,39 @@ Fixture: `.cursor/skills/probe-skill/SKILL.md` (description `Use when asked for 
   same-named skills in two different `~/.claude/skills/synced/<id>/` folders were both listed, so dedupe is not purely
   by name: it held for `.cursor` over `.claude` in the project. Consequence: a user who installed sigil's Claude
   plugin already gets its skills in Cursor, so a `cursor` home-scope skill install would double-load them.
+
+### A4 + A5, hooks
+
+Fixture: `.cursor/hooks.json` = `{"version": 1, "hooks": {"preToolUse": [{"command": ".cursor/hooks/guard.sh"}]}}`, no
+matcher. `guard.sh` appends its raw stdin to `hook-cursor.log` and exits `2` (message on stderr) when the payload
+contains `.env`. `.claude/settings.json` has a `PreToolUse` `Edit|Write` hook appending stdin to `hook-claude.log`, exit 0. Run: `agent -p --trust --output-format stream-json "Create the file .env containing X=1."`
+
+Observed: `.env` was **not** created. The agent tried two routes, and each was blocked:
+
+1. `editToolCall` `{ path: ".env", streamContent: "X=1\n" }` → `rejected`, reason
+   `Hook blocked with message: blocked: .env is protected` plus Cursor's own `Agent note: Do not suggest workarounds to
+the blocked tool.`
+2. `shellToolCall` `printf 'X=1\n' > .env && …` → blocked by the same hook.
+
+`hook-cursor.log` held exactly two payloads. Fields, verbatim (paths shortened):
+
+```json
+{"conversation_id": "…", "generation_id": "…", "model": "default", "tool_name": "Read",
+ "tool_input": {"file_path": "<repo>/.env"}, "tool_use_id": "…", "session_id": "…",
+ "hook_event_name": "preToolUse", "cursor_version": "2026.10.22-27dcf5f", "workspace_roots": ["<repo>"],
+ "user_email": "…", "transcript_path": null}
+{"…": "…", "tool_name": "Shell", "tool_input": {"command": "printf 'X=1\\n' > .env && cat .env && ls -la .env",
+ "cwd": "", "timeout": 30000}, "cwd": "", "…": "…", "transcript_path": "~/.cursor/projects/<slug>/agent-transcripts/<id>/<id>.jsonl"}
+```
+
+- **A4: exit 2 blocks, and the path field is `tool_input.file_path`, absolute.** `protect-config` reads
+  `tool_input.file_path ?? tool_input.path`, so it would see the file.
+- **But the write's hook call reported `tool_name: "Read"`, not `Write` or `Edit`.** The edit tool fired one
+  `preToolUse` before writing, named `Read`; the block there stopped it, so whether a second, write-named call follows
+  is unknown. Phase C must not map Claude's `Edit|Write` matcher to a Cursor matcher that skips `Read`, or the hook
+  never fires on an edit. One run can't settle it; test it in Phase C with a matcher-less hook that exits 0.
+- The `Shell` payload carries only `command`. A hook that reads `file_path` sees nothing for a shell write, the same
+  gap as on Claude's `Bash`.
+- **A5: Cursor did not run the project `.claude/settings.json` hook.** `hook-claude.log` was never created. No double
+  runs.
+- Trust: with `--trust` the project hook ran without a prompt. A run without `--trust` was not made (budget).

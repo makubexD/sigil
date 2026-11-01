@@ -17,6 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Docs: the Cursor target's live probe results are recorded in
+  `docs/decisions/cursor-target-2026-11.md`, and the Cursor roadmap is updated where they differ from it.
 - `sigil uninstall` and `prune` keep an entry whose config file couldn't be changed, and exit non-zero, so a
   retry can find it. `sigil add` exits non-zero when a config artifact fails, and `sigil update` saves
   the manifest when one does.

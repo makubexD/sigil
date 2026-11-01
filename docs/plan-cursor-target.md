@@ -20,15 +20,15 @@ as sigil's hooks already do. Four findings shape the order:
    `.codex/skills/`, agents from `.claude/agents/` and `.codex/agents/`, and (per the docs) Claude Code hooks from
    `.claude/settings.json`. A project with `claude-code` and `cursor` installed would load each skill twice unless the
    target knows about it. That is the main design question (Decision 1), not the file formats. Phase A: a name clash
-   lists the `.cursor` skill once, and the CLI did not run the `.claude/settings.json` hook.
+   lists the `.cursor` skill once; whether `.claude/settings.json` hooks also run was not settled (A5).
 2. **Rules map cleanly, without a new field.** `.mdc` frontmatter has `description`, `globs` and `alwaysApply`. An
    unscoped rule (`appliesTo: ["**/*"]`) becomes `alwaysApply: true`, matching Claude's path-less rule; a scoped one
    becomes `globs` plus `alwaysApply: false`. `severity` stays unmapped, as on every target. That retires the brief's
    riskiest assumption on paper; Phase A confirms it live.
 3. **Agents may be possible, unlike Codex.** All 39 catalog agents set `tools: [Read, Grep, Glob]`. A Cursor subagent
    has no tool list, but `readonly: true` blocks edits and shell. Phase A found it runs the subagent in Ask mode, which
-   refuses every Shell call (even `ls`) and Write, while Glob works: close to the authored list. Whether that is enough
-   is an owner call (Phase E).
+   refused both shell calls tried (even `ls -la`) and Write, while Glob works: close to the authored list. Whether that
+   is enough is an owner call (Phase E).
 4. **Commands are being folded into skills.** Cursor 2.4+ ships `/migrate-to-skills` for slash commands, so `prompt`
    follows Codex: `none` (Decision 3).
 
@@ -79,8 +79,7 @@ Sources: [rules](https://cursor.com/docs/context/rules), [skills](https://cursor
   `timeout`. Exit `2` denies; any other non-zero exit fails open. On Windows the desktop app runs hooks through
   PowerShell. Project hooks run only in a trusted workspace.
 - **Claude hooks:** Cursor also runs hooks from `.claude/settings.json` / `.claude/settings.local.json`, mapping tool
-  names (`Bash`→`Shell`, `Edit`→`Write`; `Glob` unsupported). Phase A (A5): the CLI did not run a project
-  `.claude/settings.json` hook.
+  names (`Bash`→`Shell`, `Edit`→`Write`; `Glob` unsupported).
 - **MCP:** `.cursor/mcp.json` / `~/.cursor/mcp.json`, `mcpServers` object, `${env:NAME}` interpolation in `command`,
   `args`, `env`, `url`, `headers`. JSON, so the Phase-D file-format seam needs no new format.
 - **Plugins:** `.cursor-plugin/plugin.json` (`name` required, kebab-case) with `rules`, `agents`, `skills`, `commands`,
@@ -134,7 +133,7 @@ into `docs/decisions/cursor-target-2026-11.md`.
 If sign-in isn't possible, A1-A3 and A7-A8 become docs-only and Phase G carries the live risk.
 
 **Done 2026-11-01**: results and what they change are in
-[cursor-target-2026-11.md](decisions/cursor-target-2026-11.md). A1's `globs` case and A8 stayed open (A8 docs-only).
+[cursor-target-2026-11.md](decisions/cursor-target-2026-11.md). A1's `globs` case, A5 and A8 stayed open (A8 docs-only).
 
 ### Phase B: the target, with rules and skills
 
@@ -142,8 +141,8 @@ New `src/targets/cursor/` (capabilities, lexicon, doc refs, `KindEmitSpec`s for 
 `index.ts`. `rule` → `.cursor/rules/<id-slug>.mdc` per Decision 2, the third `appliesTo` emitter kept in agreement with
 Claude's and Copilot's (a shared test over the 65 rules). `skill` → `.cursor/skills/<name>/` with references. Decision 1's
 double-load check in `add`, a warning since A3. No home-scope `cursor` skill install offered over sigil's Claude plugin:
-Cursor already loads Claude Code's plugin skills (A3). `AGENTS.md` on `build` (Decision 4). `prompt`, `agent`, `workflow`, `settings`: `none` with
-reasons. Capability table, `capabilities.md`, `sync --check` (coverage, unemitted fields, term leaks) green.
+Cursor already loads Claude Code's plugin skills (A3). `AGENTS.md` on `build` (Decision 4). `prompt`, `agent`,
+`workflow`, `settings`: `none` with reasons. Capability table, `capabilities.md`, `sync --check` (coverage, unemitted fields, term leaks) green.
 
 ### Phase C: hooks in `.cursor/hooks.json`
 
@@ -151,7 +150,8 @@ Hook ops mapping Claude event names to Cursor's (`PreToolUse` → `preToolUse`, 
 Codex does, writing `version: 1`, joining `command` + `args` with the shared helpers. Home scope `~/.cursor/hooks.json`
 with `ensureHomeBackup`. A RED test over A4's captured payload proves `protect-config` denies a `.env` write on Cursor;
 A4 found `tool_input.file_path`, so the parser needs no change. A4 also found the edit's hook call named `Read`: capture
-an allowed edit's calls before choosing the matcher that `Edit|Write` maps to. Document A5's result (no double run).
+an allowed edit's calls before choosing the matcher that `Edit|Write` maps to. A5 was inconclusive (its matcher matched
+no call): rerun it with a matcher-less `.claude` hook and document whether hooks run twice.
 
 ### Phase D: MCP in `.cursor/mcp.json`
 

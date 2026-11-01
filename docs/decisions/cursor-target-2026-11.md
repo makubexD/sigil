@@ -26,15 +26,15 @@ not prove anything about the desktop app, Windows, or a workspace without `--tru
 | A2  | Is a `.cursor/skills` skill picked and its ref read? | Yes: picked from its `description`, `references/value.md` read on demand                                                                                                           |
 | A3  | Same skill name in `.cursor/` and `.claude/`?        | **One listing, `.cursor` wins** (inferred from the model's listing). Cursor also lists every skill in `~/.claude/skills/` and `~/.claude/plugins/`                                 |
 | A4  | `preToolUse` payload for a write; does exit 2 deny?  | Exit 2 denies. `tool_input.file_path`, absolute. **The edit's hook call was named `Read`**, a shell write `Shell` with `tool_input.command`                                        |
-| A5  | Does a `.claude/settings.json` hook run too?         | **No.** Never ran, so no double runs                                                                                                                                               |
+| A5  | Does a `.claude/settings.json` hook run too?         | **Inconclusive.** It never ran, but its `Edit\|Write` matcher matched neither call Cursor made (`Read`, `Shell`)                                                                   |
 | A6  | `${env:NAME}` in `.cursor/mcp.json` `env`?           | Expanded (`golf-99`). Print mode needs `--approve-mcps` to load the server and `--force` to call it; without `--force` the call fails, exit 0                                      |
-| A7  | What does a `readonly: true` subagent allow?         | It runs in Ask mode: Write and **every** Shell call (even `ls`) refused, Glob works                                                                                                |
+| A7  | What does a `readonly: true` subagent allow?         | It runs in Ask mode: Write and both Shell calls tried (`touch`, `ls -la`) refused, Glob works                                                                                      |
 | A8  | Does a local plugin install, and its rule load?      | **Docs-only.** No install command; `marketplace add` takes a git URL. A rule loaded with `--plugin-dir` did not reach the model                                                    |
 
 ## Skills: a warning, not a refusal
 
 Decision 1 said `add` refuses a `cursor` install that would load a skill twice, unless A3 showed Cursor dedupes by name.
-It did, for the case that matters: with `probe-skill` in both `.cursor/skills/` and `.claude/skills/`, Cursor used the
+On the model's own listing it did, for the case that matters: with `probe-skill` in both `.cursor/skills/` and `.claude/skills/`, Cursor used the
 `.cursor` body and listed the skill once. So in a project with both `claude-code` and `cursor` installed, `add` warns
 and goes on (Phase B).
 
@@ -61,9 +61,10 @@ parser change for Cursor (Phase C's "fix the parser first" doesn't apply). Two r
    write-named call would follow is unknown. If Phase C maps Claude's `Edit|Write` matcher to a Cursor matcher such as
    `Write`, the hook may never see an edit. Phase C's RED test must capture an allowed edit's calls (a matcher-less hook
    that logs and exits 0) before it picks a matcher.
-2. **Cursor did not run the project `.claude/settings.json` hook** (A5), against the docs' third-party-hooks page. In
-   this CLI version a project with both targets installed gets each hook once, from `.cursor/hooks.json`. Phase C
-   documents that, and not the double run the roadmap expected.
+2. **A5 is inconclusive.** The `.claude/settings.json` hook never ran, but its matcher was `Edit|Write`, and the only
+   calls Cursor made were named `Read` and `Shell`, which match neither, even with the documented `Edit`→`Write`
+   mapping. So the run doesn't show whether Cursor ignores Claude hooks or only that the matcher never matched. Phase C
+   reruns it with a matcher-less `.claude` hook next to the `.cursor` one and counts the runs.
 
 A shell write (`printf … > .env`) reaches the hook only as `tool_input.command`, the same gap `protect-config` has on
 Claude's `Bash`.
@@ -78,7 +79,7 @@ setup note must say both.
 ## Agents: `readonly` is tighter than assumed
 
 The roadmap said `readonly: true` "still allows read-only shell and web tools". In this version it doesn't allow shell
-at all: the subagent runs in Ask mode, and `touch`, `ls` and Write all failed with `You are in ask mode and cannot run
+at all: the subagent runs in Ask mode, and both shell calls it tried (`touch made.txt`, `ls -la`) and the Write all failed with `You are in ask mode and cannot run
 non read-only tools.` Glob worked. That is close to the catalog's `tools: [Read, Grep, Glob]`, which makes Decision 5
 safer than it looked. Web tools never came up. This rests on the subagent's own report: its tool calls aren't in the
 parent's stream, but the error text is Cursor's.
@@ -182,8 +183,8 @@ the blocked tool.`
   never fires on an edit. One run can't settle it; test it in Phase C with a matcher-less hook that exits 0.
 - The `Shell` payload carries only `command`. A hook that reads `file_path` sees nothing for a shell write, the same
   gap as on Claude's `Bash`.
-- **A5: Cursor did not run the project `.claude/settings.json` hook.** `hook-claude.log` was never created. No double
-  runs.
+- **A5: inconclusive.** `hook-claude.log` was never created, but the hook's `Edit|Write` matcher matched neither call
+  Cursor made (`Read`, `Shell`), so this doesn't show that Cursor skips `.claude/settings.json` hooks.
 - Trust: with `--trust` the project hook ran without a prompt. A run without `--trust` was not made (budget).
 
 ### A6, MCP
@@ -216,8 +217,8 @@ Fixture: `.cursor/agents/reader.md` with `name: reader`, a `description`, `reado
 
 Neither `notes.txt` nor `made.txt` existed after either run.
 
-- **A7 confirmed, and narrower than the roadmap assumed: a `readonly: true` subagent runs in Ask mode, and Ask mode
-  blocks every Shell call, even `ls`, along with Write.** Read-only tools (Glob) work. The roadmap's "it still allows
+- **A7 confirmed, and narrower than the roadmap assumed: a `readonly: true` subagent runs in Ask mode, which refused
+  both shell calls tried, even `ls -la`, along with Write.** Read-only tools (Glob) work. The roadmap's "it still allows
   read-only shell" is wrong for this version, which makes `readonly: true` a closer fit for `tools: [Read, Grep, Glob]`.
 - The subagent's own tool calls are not in the parent's stream-json, so run 2 rests on its report. The error string is
   Cursor's, quoted verbatim.

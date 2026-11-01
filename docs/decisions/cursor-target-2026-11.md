@@ -1,6 +1,6 @@
 # Cursor target (2026-11)
 
-Status: Phase A (live probe) done 2026-11-01, on Cursor Agent CLI `2026.10.22-27dcf5f`, Linux. The phases are in
+Status: Phase A (live probe) and Phase B (rules and skills) done 2026-11-01. Probes ran on Cursor Agent CLI `2026.10.22-27dcf5f`, Linux. The phases are in
 [plan-cursor-target.md](../plan-cursor-target.md); this record holds what the probes found and what each finding
 changes.
 
@@ -95,6 +95,20 @@ The CLI has no plugin install command, and a rule in a `--plugin-dir` plugin (`.
 MCP from Claude Code's installed plugins, Phase F should first check whether sigil's published Claude marketplace
 plugin already works in Cursor, then decide whether a `.cursor-plugin/` build adds anything (rules are what it could
 add, and they are what failed here).
+
+## Phase B: two changes to the roadmap
+
+**No `AGENTS.md` on `build`** (amends the roadmap's Decision 4, which was written before rules were native). Every
+repo-wide rule is an `alwaysApply: true` `.mdc` file, and Cursor also reads a root `AGENTS.md`, so writing both would load
+each repo-wide rule twice. `build --target cursor` writes the skills and `.mdc` rules that `add` writes, and nothing
+else.
+
+**The overlap note says which copy wins.** `Target.alsoLoads` entries gain `readerWins`: the reader uses its own copy on
+a name clash, so the other target's copy goes unused there instead of loading twice. A3 showed that for `.claude/skills/`
+and Phase B run 2 for `.agents/skills/`, so Cursor declares both with `readerWins`. Its note reads `Cursor also reads
+<Other>'s skills and uses its own copy on a name clash, so <Other>'s copy of these goes unused there: <ids> (<doc>).`
+Copilot's existing "load twice" note is unchanged. `sigil add` now prints these notes too, after installing a skill,
+for either side of the overlap.
 
 ## Probe log
 

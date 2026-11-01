@@ -45,8 +45,9 @@ Confirmed by the owner on 2026-11-01.
    `globs: <comma-joined>` + `alwaysApply: false` + `description`. Never gated on `language`. The `Apply Intelligently`
    mode (description only) is not used: no catalog field asks for it.
 3. **`prompt: none`**, with the migration doc as the reason, like Codex.
-4. **`AGENTS.md` on `build` only**, shared with the Codex emitter if the output is the same; Cursor reads it at the root
-   and in subdirectories.
+4. **No `AGENTS.md`** (changed in Phase B, see
+   [the decision record](decisions/cursor-target-2026-11.md#phase-b-two-changes-to-the-roadmap)): with native rules,
+   every repo-wide rule is already an `alwaysApply` `.mdc` file, and an `AGENTS.md` would load each one twice.
 5. **Agents ship with `readonly: true`** (owner, 2026-11-01): acceptable for `tools: [Read, Grep, Glob]`, provided the
    mapping is implemented in `tool-restriction.ts` with tests that refuse any list holding a write tool (Phase E).
 6. **The plugin channel stays a spike** (Phase F), not an adapter task.
@@ -141,7 +142,7 @@ New `src/targets/cursor/` (capabilities, lexicon, doc refs, `KindEmitSpec`s for 
 `index.ts`. `rule` → `.cursor/rules/<id-slug>.mdc` per Decision 2, the third `appliesTo` emitter kept in agreement with
 Claude's and Copilot's (a shared test over the 65 rules). `skill` → `.cursor/skills/<name>/` with references. Decision 1's
 double-load check in `add`, a warning since A3. No home-scope `cursor` skill install offered over sigil's Claude plugin:
-Cursor already loads Claude Code's plugin skills (A3). `AGENTS.md` on `build` (Decision 4). `prompt`, `agent`,
+Cursor already loads Claude Code's plugin skills (A3). No `AGENTS.md` (Decision 4). `prompt`, `agent`,
 `workflow`, `settings`: `none` with reasons. Capability table, `capabilities.md`, `sync --check` (coverage, unemitted fields, term leaks) green.
 
 ### Phase C: hooks in `.cursor/hooks.json`

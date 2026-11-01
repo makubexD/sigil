@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- New target `cursor`: `sigil add --target cursor` writes rules to `.cursor/rules/` as `.mdc` files,
+  with `alwaysApply: true` for a rule that covers every file and quoted, comma-joined `globs` otherwise,
+  and skills to `.cursor/skills/` with their rules inlined. `sigil build --target cursor` writes the same
+  files and no `AGENTS.md`. Agents, prompts, hooks and MCP are skipped, with the reason. `sigil add` now
+  prints a note after installing a skill that another tool's copy shadows or duplicates, the same note
+  `sigil status` prints. See `docs/setup/cursor.md`.
 - New target `codex`: `sigil add --target codex` writes skills to `.agents/skills/` and merges hooks
   into `.codex/hooks.json` and MCP servers into `.codex/config.toml`, keeping your comments, and
   `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are

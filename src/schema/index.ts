@@ -386,6 +386,8 @@ export const McpSchema = z.object({
    * Default install scope recommended by the catalog author.
    * Claude: 'project' = .mcp.json; 'local' = ~/.claude.json per-project; 'user' = ~/.claude.json.
    * Copilot: 'project'/'local' = .mcp.json; 'user' = mcp-config.json under $COPILOT_HOME (default ~/.copilot).
+   * Codex: 'project' = .codex/config.toml; 'user' = config.toml under $CODEX_HOME; 'local' refused.
+   * Cursor: 'project' = .cursor/mcp.json; 'user' = ~/.cursor/mcp.json; 'local' refused.
    */
   defaultScope: z.enum(CONFIG_SCOPES).optional(),
   /**

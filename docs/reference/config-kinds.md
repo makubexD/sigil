@@ -12,7 +12,8 @@ A `kind: hook` artifact (`src/schema/index.ts`, `HookSchema`) becomes one entry 
 Copilot hook file for its scope (scope table below). On Codex it lands in `.codex/hooks.json` or `$CODEX_HOME/hooks.json`,
 and an `mcp` artifact in `config.toml` beside them ([setup](../setup/codex.md)). On Cursor it lands in
 `.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), with events and tool names translated from
-Cursor's Claude Code aliases; a hook with no equivalent is skipped with its reason ([setup](../setup/cursor.md)).
+Cursor's Claude Code aliases; a hook with no equivalent is skipped with its reason, and an `mcp` artifact
+lands in `.cursor/mcp.json` or `~/.cursor/mcp.json` ([setup](../setup/cursor.md)).
 Only the TOML writer differs: it splices sigil's tables into your text (`src/config-merge/toml-file.ts`).
 
 | Field          | Meaning                                                                                                                               |
@@ -57,7 +58,7 @@ Host and Copilot CLI all read.
 
 Reference an environment variable anywhere in `server` with the neutral token `{sigil:env:NAME}`
 (`src/targets/env-reference.ts`). Each target writes the syntax of the file it merges into:
-`${NAME}` in every file sigil writes today: Claude Code documents it for `.mcp.json`, and GitHub's
+`${NAME}` in the portable files: Claude Code documents it for `.mcp.json`, and GitHub's
 MCP JSON reference (the format Copilot CLI's MCP page points to) lists it as "Claude Code syntax"
 beside `$VAR` and `${VAR:-default}`. Live check F4 (docs/audits/2026-10-06) found Copilot CLI
 expands it, but VS Code Copilot Chat 1.125.1 passes `${NAME}` (and `${env:NAME}`) in `.mcp.json`
@@ -65,6 +66,10 @@ through as text; only its deprecated `.vscode/mcp.json` expands `${env:NAME}`. s
 the portable file, and `add` prints the target's `mcpEnvCaveat` (data on the target) for every
 installed server that reads an environment variable. Copilot CLI passes a local server only `PATH` from the
 environment, so a server lists every variable it reads under `env` (as `shared/ado` does).
+Cursor's `.cursor/mcp.json` gets `${env:NAME}`, which Cursor documents and expands in `command`,
+`args`, `env`, `url` and `headers` (measured in `args` and `env`, `docs/decisions/cursor-target-2026-11.md`
+A6 and § Phase D probes), so Cursor has no `mcpEnvCaveat`. Codex forwards a variable by name
+(`env_vars`) and refuses any other use of the token ([setup](../setup/codex.md)).
 Never write one tool's syntax in the catalog. Pin every `npx` package to an exact
 version (`@scope/pkg@1.2.3`); a test fails on a floating one.
 
@@ -264,6 +269,16 @@ Cursor hooks (2 scopes, `src/targets/cursor/config.ts`):
 Cursor has no personal per-project hook file, so `--scope local` is refused. Its events and tool names
 are translated from Claude Code's aliases, and a hook with no Cursor equivalent is skipped with its reason,
 never written to match nothing ([setup](../setup/cursor.md)).
+
+Cursor MCP (2 scopes, `src/targets/cursor/config.ts`):
+
+| Scope (precedence) | mcp                                 | Notes                                                    |
+| ------------------ | ----------------------------------- | -------------------------------------------------------- |
+| project (1)        | `.cursor/mcp.json` (`mcpServers`)   | git-committed; Cursor asks to approve a new server       |
+| user (2)           | `~/.cursor/mcp.json` (`mcpServers`) | home-scoped: one `.sigil.bak` once it holds user content |
+
+`--scope local` is refused here too. Cursor never reads `.mcp.json`, so a server installed for
+`claude` or `copilot` doesn't reach it, and the two files are written and uninstalled independently.
 
 The Copilot and Cursor hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
 hook remains in the file: uninstalling one of several hooks leaves the version in place, and

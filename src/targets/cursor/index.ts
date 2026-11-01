@@ -1,7 +1,8 @@
 /**
  * The Cursor target: Agent Skills in `.cursor/skills/<name>/SKILL.md` (each skill's rules inlined
- * into it), project rules as `.mdc` files in `.cursor/rules/`, and hooks merged into
- * `.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user). Everything here is data on the
+ * into it), project rules as `.mdc` files in `.cursor/rules/`, hooks merged into
+ * `.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), and MCP servers into
+ * `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (user). Everything here is data on the
  * shared pipeline: emit specs, lexicon, capabilities and citations. It needs nothing outside this
  * folder except its `registerTarget()` line.
  *
@@ -11,7 +12,6 @@
  *
  * @module
  */
-import path from 'path';
 import type {
   Artifact,
   ArtifactKind,
@@ -27,7 +27,7 @@ import type {
   ScaffoldOptions,
   Target,
 } from '../../types';
-import { resolveConfigRoot } from '../../config-utils';
+import { configScopesFrom, configSkipReasonFrom, scaffoldConfigFrom } from '../config-kind-table';
 import type { TargetCapabilities } from '../capability-types';
 import type { ProviderLexicon } from '../lexicon';
 import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
@@ -35,9 +35,8 @@ import { deriveContracts } from '../output-contract';
 import { emitFile, scaffoldArtifact, specFor } from '../emit-files';
 import { CURSOR_AGGREGATE_DOCS } from './aggregate-docs';
 import { CURSOR_CAPABILITIES } from './capabilities';
-import { resolveCursorConfigDestination } from './config';
+import { CURSOR_CONFIG_KINDS } from './config';
 import { CURSOR_SKILLS_DOC } from './doc-refs';
-import { buildCursorHookOps, cursorHookSkipReason } from './hook-ops';
 import { CURSOR_LEXICON } from './lexicon';
 import { CURSOR_EMIT_SPECS } from './spec';
 import { CURSOR_INIT_DIRS, CURSOR_PROJECT_MARKERS, CURSOR_VOCABULARY } from './metadata';
@@ -49,14 +48,14 @@ const CURSOR_CONFIG_SCOPES = [
     precedence: 1,
     shared: true,
     blastRadius: 'project' as const,
-    description: 'project — .cursor/hooks.json, git-committed',
+    description: 'project — .cursor/hooks.json and .cursor/mcp.json, git-committed',
   },
   {
     value: 'user' as ConfigScope,
     precedence: 2,
     shared: false,
     blastRadius: 'all-projects' as const,
-    description: 'user — ~/.cursor/hooks.json, all projects',
+    description: 'user — ~/.cursor/hooks.json and ~/.cursor/mcp.json, all projects',
   },
 ];
 
@@ -65,7 +64,7 @@ export class CursorTarget implements Target {
   readonly displayName = 'Cursor';
   readonly installHint = 'writes to .cursor/';
   readonly afterInstallHint =
-    'Cursor picks up .cursor/skills/ and .cursor/rules/ in its next chat. Project hooks run only in a trusted workspace.';
+    'Cursor picks up .cursor/skills/ and .cursor/rules/ in its next chat. Project hooks run only in a trusted workspace. A project MCP server needs approval (agent mcp enable <name>).';
 
   readonly capabilities: TargetCapabilities = CURSOR_CAPABILITIES;
   readonly initDirs: string[] = CURSOR_INIT_DIRS;
@@ -91,35 +90,22 @@ export class CursorTarget implements Target {
     },
   ];
 
+  readonly configKinds = CURSOR_CONFIG_KINDS;
+
   /**
    * Cursor config scopes, ordered by documented precedence (project overrides user). Cursor has
-   * no personal per-project hook file, so only Project and User are offered.
+   * no personal per-project config file, so only Project and User are offered.
    */
   configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
-    return CURSOR_CONFIG_SCOPES.map(sc => ({
-      ...sc,
-      label: sc.value,
-      destinations: kinds
-        .filter(kind => kind === 'hook')
-        .map(kind => {
-          const dest = resolveCursorConfigDestination(kind, sc.value);
-          return {
-            kind,
-            file: dest.file,
-            root: dest.root,
-            fullPath: path.join(resolveConfigRoot(dest.root, projectDir), dest.file),
-            section: 'hooks',
-          };
-        }),
-    }));
+    return configScopesFrom(this.configKinds, CURSOR_CONFIG_SCOPES, kinds, projectDir);
   }
 
-  // ── Config scaffold (hook only; MCP comes in a later phase) ────────────────
+  // ── Config scaffold (hook / mcp — settings is Claude Code's vocabulary) ────
 
   /**
-   * Produce the merge op for a hook artifact targeting Cursor: `.cursor/hooks.json` (project) or
-   * `~/.cursor/hooks.json` (user). The install scope is resolved in order:
-   * options.scope → fm.defaultScope → 'project'.
+   * Produce the merge ops for a hook or mcp artifact targeting Cursor: `.cursor/hooks.json` /
+   * `.cursor/mcp.json` (project) or `~/.cursor/hooks.json` / `~/.cursor/mcp.json` (user). The
+   * install scope is resolved in order: options.scope → fm.defaultScope → 'project'.
    */
   async scaffoldConfig(
     artifactId: string,
@@ -128,14 +114,7 @@ export class CursorTarget implements Target {
   ): Promise<ConfigMergeOp[]> {
     const artifact = catalog.byId.get(artifactId);
     if (!artifact) throw new Error(`Artifact '${artifactId}' not found in the catalog`);
-    if (artifact.kind !== 'hook') {
-      throw new Error(
-        `Cursor scaffoldConfig only supports the 'hook' kind, got '${artifact.kind}'`,
-      );
-    }
-    const scope: ConfigScope =
-      options.scope ?? (artifact.frontmatter.defaultScope as ConfigScope | undefined) ?? 'project';
-    return buildCursorHookOps(artifact, scope);
+    return scaffoldConfigFrom(this.configKinds, artifact, options, 'Cursor');
   }
 
   /**
@@ -143,7 +122,7 @@ export class CursorTarget implements Target {
    * event or matcher has no Cursor equivalent would match nothing.
    */
   configSkipReason(artifact: Artifact): string | undefined {
-    return artifact.kind === 'hook' ? cursorHookSkipReason(artifact) : undefined;
+    return configSkipReasonFrom(CURSOR_CONFIG_KINDS, artifact);
   }
 
   /** Every artifact with a scaffold spec (skills, and rules as `.mdc`), and no AGENTS.md. */

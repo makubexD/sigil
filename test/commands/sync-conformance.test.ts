@@ -790,7 +790,7 @@ describe('editorial pass — findings sharing one file do not race', () => {
   });
 });
 
-describe('conformance rule: hook-target-render', () => {
+describe('conformance rule: config-target-render', () => {
   function makeHookArtifact(frontmatter: Record<string, unknown> = {}): Artifact {
     return {
       id: 'shared/notify-hook',
@@ -807,9 +807,35 @@ describe('conformance rule: hook-target-render', () => {
     } as Artifact;
   }
 
+  function makeMcpArtifact(frontmatter: Record<string, unknown> = {}): Artifact {
+    return {
+      id: 'shared/probe-server',
+      kind: 'mcp',
+      filePath: '/fake/probe-server.mcp.md',
+      frontmatter: {
+        id: 'shared/probe-server',
+        kind: 'mcp',
+        server: { command: 'node', args: ['server.js'] },
+        ...frontmatter,
+      },
+      body: '',
+    } as Artifact;
+  }
+
+  /** A target that delivers `mcp` natively and refuses every server. */
+  function makeMcpRefusingTarget(): Target {
+    return {
+      name: 'fake-mcp',
+      capabilities: { scaffold: channelFromNativeKinds(['mcp'], 'no mcp') },
+      configSkipReason: artifact =>
+        artifact.kind === 'mcp' ? 'the server uses a token this target cannot expand' : undefined,
+      compile: async () => ({}),
+    };
+  }
+
   it('flags a hook with no platforms that a native-hook target cannot render', () => {
     const catalog = makeCatalog([makeHookArtifact()]);
-    const findings = runConformance(catalog, getAllTargets(), { ruleId: 'hook-target-render' });
+    const findings = runConformance(catalog, getAllTargets(), { ruleId: 'config-target-render' });
     assert.equal(findings.length, 1);
     assert.equal(findings[0]!.severity, 'error');
     assert.equal(findings[0]!.artifactId, 'shared/notify-hook');
@@ -820,13 +846,36 @@ describe('conformance rule: hook-target-render', () => {
 
   it('does not flag a hook restricted to another platform', () => {
     const catalog = makeCatalog([makeHookArtifact({ platforms: ['claude'] })]);
-    const findings = runConformance(catalog, getAllTargets(), { ruleId: 'hook-target-render' });
+    const findings = runConformance(catalog, getAllTargets(), { ruleId: 'config-target-render' });
+    assert.equal(findings.length, 0);
+  });
+
+  it('flags an mcp server a native-mcp target cannot render', () => {
+    const catalog = makeCatalog([makeMcpArtifact()]);
+    const findings = runConformance(catalog, [makeMcpRefusingTarget()], {
+      ruleId: 'config-target-render',
+    });
+    assert.equal(findings.length, 1);
+    assert.equal(findings[0]!.severity, 'error');
+    assert.equal(findings[0]!.artifactId, 'shared/probe-server');
+    assert.equal(findings[0]!.provider, 'fake-mcp');
+    assert.match(findings[0]!.detail, /^mcp 'shared\/probe-server'/);
+    assert.match(findings[0]!.detail, /fake-mcp/);
+  });
+
+  it('does not flag an mcp server restricted to another platform', () => {
+    const catalog = makeCatalog([makeMcpArtifact({ platforms: ['claude'] })]);
+    const findings = runConformance(catalog, [makeMcpRefusingTarget()], {
+      ruleId: 'config-target-render',
+    });
     assert.equal(findings.length, 0);
   });
 
   it('passes against the real catalog and registered targets', async () => {
     const catalog = await loadBundledCatalog();
-    const findings = runConformance(catalog, getAllTargets(), { ruleId: 'hook-target-render' });
+    const findings = runConformance(catalog, getAllTargets(), {
+      ruleId: 'config-target-render',
+    });
     assert.equal(findings.length, 0);
   });
 });

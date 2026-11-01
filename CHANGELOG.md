@@ -12,16 +12,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New target `cursor`: `sigil add --target cursor` writes rules to `.cursor/rules/` as `.mdc` files,
   with `alwaysApply: true` for a rule that covers every file and quoted, comma-joined `globs` otherwise,
   and skills to `.cursor/skills/` with their rules inlined. `sigil build --target cursor` writes the same
-  files and no `AGENTS.md`. Agents, prompts and MCP are skipped, with the reason. `sigil add` now
+  files and no `AGENTS.md`. Agents and prompts are skipped, with the reason. `sigil add` now
   prints a note after installing a skill that another tool's copy shadows or duplicates, the same note
   `sigil status` prints. See `docs/setup/cursor.md`.
 - Cursor hooks: `sigil add --target cursor` merges a hook into `.cursor/hooks.json` (project,
   git-committed) or `~/.cursor/hooks.json` (user), translating Claude Code events and tool names to
   Cursor's. A hook Cursor has no equivalent for is skipped with its reason. See `docs/setup/cursor.md`.
+- Cursor MCP: `sigil add --target cursor` merges an MCP server into `.cursor/mcp.json` (project,
+  git-committed) or `~/.cursor/mcp.json` (user), with `${env:NAME}` references, which Cursor expands.
+  `shared/ado` now ships to Cursor. A new project server needs approval in Cursor
+  (`agent mcp enable <name>`). See `docs/setup/cursor.md`.
 - `sigil add` warns when a hook's command is not on the PATH here, on any target, and lists a hook the
   target cannot render as skipped with its reason rather than as an unsupported kind.
-  `sigil sync --check` fails for a catalog hook that ships to a target which cannot render it
-  (`hook-target-render`).
+  `sigil sync --check` fails for a catalog hook or MCP server that ships to a target which cannot
+  render it (`config-target-render`).
 - New target `codex`: `sigil add --target codex` writes skills to `.agents/skills/` and merges hooks
   into `.codex/hooks.json` and MCP servers into `.codex/config.toml`, keeping your comments, and
   `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are

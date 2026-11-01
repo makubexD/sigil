@@ -10,7 +10,6 @@
  *
  * @module
  */
-import path from 'path';
 import type {
   ArtifactKind,
   CompileOptions,
@@ -25,7 +24,7 @@ import type {
   ScaffoldOptions,
   Target,
 } from '../../types';
-import { resolveConfigRoot } from '../../config-utils';
+import { configScopesFrom, scaffoldConfigFrom } from '../config-kind-table';
 import type { TargetCapabilities } from '../capability-types';
 import type { ProviderLexicon } from '../lexicon';
 import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
@@ -37,9 +36,7 @@ import { CODEX_LEXICON } from './lexicon';
 import { CODEX_EMIT_SPECS } from './spec';
 import { CODEX_AGGREGATE_DOCS } from './aggregate-docs';
 import { CODEX_INIT_DIRS, CODEX_PROJECT_MARKERS, CODEX_VOCABULARY } from './metadata';
-import { buildCodexHookOps } from './hook-ops';
-import { buildCodexMcpOps } from './mcp-ops';
-import { resolveCodexConfigDestination } from './config';
+import { CODEX_CONFIG_KINDS } from './config';
 
 export { CodexConfigDestination, resolveCodexConfigDestination } from './config';
 
@@ -61,12 +58,6 @@ const CODEX_CONFIG_SCOPES = [
   },
 ];
 
-/** The JSON key-path each config kind's fragment lands at, for the scope-menu hint. */
-const CONFIG_KIND_SECTIONS: Record<'hook' | 'mcp', string> = {
-  hook: 'hooks',
-  mcp: 'mcp_servers',
-};
-
 export class CodexTarget implements Target {
   readonly name = 'codex';
   readonly displayName = 'OpenAI Codex';
@@ -84,27 +75,14 @@ export class CodexTarget implements Target {
   readonly lexicon: ProviderLexicon = CODEX_LEXICON;
   readonly aggregateDocs: readonly SourcedDocRef[] = CODEX_AGGREGATE_DOCS;
 
+  readonly configKinds = CODEX_CONFIG_KINDS;
+
   /**
    * Codex config scopes, ordered by documented precedence (project overrides user). Codex has no
    * distinct "local" config file, so only Project and User are offered.
    */
   configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
-    return CODEX_CONFIG_SCOPES.map(sc => ({
-      ...sc,
-      label: sc.value,
-      destinations: kinds
-        .filter(kind => kind === 'hook' || kind === 'mcp')
-        .map(kind => {
-          const dest = resolveCodexConfigDestination(kind, sc.value);
-          return {
-            kind,
-            file: dest.file,
-            root: dest.root,
-            fullPath: path.join(resolveConfigRoot(dest.root, projectDir), dest.file),
-            section: CONFIG_KIND_SECTIONS[kind],
-          };
-        }),
-    }));
+    return configScopesFrom(this.configKinds, CODEX_CONFIG_SCOPES, kinds, projectDir);
   }
 
   // ── Config scaffold (hook / mcp — settings is Claude Code's vocabulary) ─────
@@ -121,16 +99,7 @@ export class CodexTarget implements Target {
   ): Promise<ConfigMergeOp[]> {
     const artifact = catalog.byId.get(artifactId);
     if (!artifact) throw new Error(`Artifact '${artifactId}' not found in the catalog`);
-    if (artifact.kind !== 'hook' && artifact.kind !== 'mcp') {
-      throw new Error(
-        `Codex scaffoldConfig only supports the 'hook' and 'mcp' kinds, got '${artifact.kind}'`,
-      );
-    }
-    const scope: ConfigScope =
-      options.scope ?? (artifact.frontmatter.defaultScope as ConfigScope | undefined) ?? 'project';
-    return artifact.kind === 'hook'
-      ? buildCodexHookOps(artifact, scope)
-      : buildCodexMcpOps(artifact, scope);
+    return scaffoldConfigFrom(this.configKinds, artifact, options, 'Codex');
   }
 
   /** Every skill (rules inlined, the whole catalog co-installed) and AGENTS.md with repo-wide rules. */

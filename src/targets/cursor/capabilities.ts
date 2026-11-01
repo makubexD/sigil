@@ -1,13 +1,14 @@
 /**
  * What the Cursor target delivers: Agent Skills in `.cursor/skills/` (each skill's rules
- * inlined), rules as `.mdc` files in `.cursor/rules/`, and hooks merged into `.cursor/hooks.json`
- * / `~/.cursor/hooks.json`. Subagents, commands and MCP config are not built yet; Cursor's
- * settings file is Claude Code's own vocabulary and it has no workflow file.
+ * inlined), rules as `.mdc` files in `.cursor/rules/`, hooks merged into `.cursor/hooks.json`
+ * / `~/.cursor/hooks.json`, and MCP servers into `.cursor/mcp.json` / `~/.cursor/mcp.json`.
+ * Subagents and commands are not built yet; Cursor's settings file is Claude Code's own
+ * vocabulary and it has no workflow file.
  *
  * @module
  */
 import { TEMPLATE_NOT_EMITTED, type TargetCapabilities } from '../capability-types';
-import { CURSOR_COMMANDS_DOC, CURSOR_MCP_DOC, CURSOR_SUBAGENTS_DOC } from './doc-refs';
+import { CURSOR_COMMANDS_DOC, CURSOR_SUBAGENTS_DOC } from './doc-refs';
 
 export const CURSOR_CAPABILITIES: TargetCapabilities = {
   scaffold: {
@@ -26,7 +27,7 @@ export const CURSOR_CAPABILITIES: TargetCapabilities = {
     },
     workflow: { mode: 'none', reason: 'Cursor has no workflow file' },
     hook: { mode: 'native' },
-    mcp: { mode: 'none', reason: 'not built yet', docs: [CURSOR_MCP_DOC] },
+    mcp: { mode: 'native' },
     settings: { mode: 'none', reason: "this kind's schema is Claude Code's own vocabulary" },
     template: TEMPLATE_NOT_EMITTED,
   },

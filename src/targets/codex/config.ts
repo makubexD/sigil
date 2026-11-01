@@ -1,5 +1,5 @@
 /**
- * Scope → destination resolver for Codex config files.
+ * Codex's config kinds as data (src/targets/config-kind-table.ts).
  *
  *   hook  project → .codex/hooks.json at the project root (root: project)
  *         user    → hooks.json under $CODEX_HOME, default ~/.codex (root: codex-home)
@@ -8,28 +8,57 @@
  *         user    → config.toml under $CODEX_HOME, default ~/.codex (root: codex-home)
  *         local   → refused, as for hooks: no personal per-project MCP file
  *
+ * `CODEX_CONFIG_KINDS` is the table the target dispatches every config install through;
+ * destinationFor derives each refusal from it. The builder references stay inside arrow wrappers
+ * because hook-ops.ts / mcp-ops.ts import `resolveCodexConfigDestination` back from this module —
+ * a cycle whose imported binding must only be read when an op is built, never while this module
+ * initializes.
+ *
  * @module
  */
 import type { ConfigKind, ConfigRoot, ConfigScope } from '../../types';
-import { SigilError } from '../../errors';
+import { destinationFor, type ConfigKindTable } from '../config-kind-table';
+import { buildCodexHookOps } from './hook-ops';
+import { buildCodexMcpOps } from './mcp-ops';
 
 export interface CodexConfigDestination {
   file: string;
   root: ConfigRoot;
 }
 
-/** Per-kind project/user destinations; `local` has no Codex file for either kind. */
-const DESTINATIONS: Record<
-  'hook' | 'mcp',
-  { project: CodexConfigDestination; user: CodexConfigDestination }
-> = {
+/** Codex's config kinds: hooks and MCP servers, each with a project and a $CODEX_HOME file. */
+export const CODEX_CONFIG_KINDS: ConfigKindTable = {
   hook: {
-    project: { file: '.codex/hooks.json', root: 'project' },
-    user: { file: 'hooks.json', root: 'codex-home' },
+    section: 'hooks',
+    destinations: {
+      project: {
+        file: '.codex/hooks.json',
+        root: 'project',
+        display: '.codex/hooks.json, git-committed',
+      },
+      user: {
+        file: 'hooks.json',
+        root: 'codex-home',
+        display: '$CODEX_HOME/hooks.json, default ~/.codex/hooks.json',
+      },
+    },
+    buildOps: (artifact, scope) => buildCodexHookOps(artifact, scope),
   },
   mcp: {
-    project: { file: '.codex/config.toml', root: 'project' },
-    user: { file: 'config.toml', root: 'codex-home' },
+    section: 'mcp_servers',
+    destinations: {
+      project: {
+        file: '.codex/config.toml',
+        root: 'project',
+        display: '.codex/config.toml, git-committed',
+      },
+      user: {
+        file: 'config.toml',
+        root: 'codex-home',
+        display: '$CODEX_HOME/config.toml, default ~/.codex/config.toml',
+      },
+    },
+    buildOps: (artifact, scope) => buildCodexMcpOps(artifact, scope),
   },
 };
 
@@ -37,15 +66,6 @@ export function resolveCodexConfigDestination(
   kind: ConfigKind,
   scope: ConfigScope,
 ): CodexConfigDestination {
-  if (kind !== 'hook' && kind !== 'mcp') {
-    throw new SigilError(`Codex supports only the 'hook' and 'mcp' config kinds, not '${kind}'.`);
-  }
-  const dest = DESTINATIONS[kind];
-  if (scope === 'user') return dest.user;
-  if (scope === 'project') return dest.project;
-  throw new SigilError(
-    `Codex has no personal per-project ${kind} file — install at 'project' scope ` +
-      `(${dest.project.file}, git-committed) or 'user' scope ` +
-      `($CODEX_HOME/${dest.user.file}, default ~/.codex/${dest.user.file}).`,
-  );
+  const { file, root } = destinationFor(CODEX_CONFIG_KINDS, kind, scope, 'Codex');
+  return { file, root };
 }

@@ -384,14 +384,9 @@ describe('Cursor hook destinations', () => {
 describe('Cursor hook target scaffoldConfig', () => {
   const target: Target = new CursorTarget();
 
-  it('refuses an mcp artifact', async () => {
-    await assert.rejects(
-      () => scaffold(target, 'shared/test-mcp', makeCatalog(makeMcp()), 'project'),
-      (err: Error) => {
-        assert.match(err.message, /mcp/);
-        return true;
-      },
-    );
+  it('sends an mcp artifact to .cursor/mcp.json, not the hook file', async () => {
+    const ops = await scaffold(target, 'shared/test-mcp', makeCatalog(makeMcp()), 'project');
+    assert.equal(ops[0]!.file, '.cursor/mcp.json');
   });
 
   it('uses defaultScope user when no scope option is given', async () => {

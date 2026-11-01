@@ -27,7 +27,7 @@ not prove anything about the desktop app, Windows, or a workspace without `--tru
 | A3  | Same skill name in `.cursor/` and `.claude/`?        | **One listing, `.cursor` wins** (inferred from the model's listing). Cursor also lists every skill in `~/.claude/skills/` and `~/.claude/plugins/`                                                                                                                       |
 | A4  | `preToolUse` payload for a write; does exit 2 deny?  | Exit 2 denies. `tool_input.file_path`, absolute. **An edit fires `Read` then `Write`** (Phase C run 1); a shell write is `Shell` with `tool_input.command`. Empty stdout on exit 0 lets the call through                                                                 |
 | A5  | Does a `.claude/settings.json` hook run too?         | **No, in the Linux CLI.** Phase C: a matcher-less `PreToolUse` hook never ran, with a relative or an absolute command, beside a `.cursor` hook or alone. The desktop app is unmeasured                                                                                   |
-| A6  | `${env:NAME}` in `.cursor/mcp.json` `env`?           | Expanded (`golf-99`). Print mode needs `--approve-mcps` to load the server and `--force` to call it; without `--force` the call fails, exit 0                                                                                                                            |
+| A6  | `${env:NAME}` in `.cursor/mcp.json` `env`?           | Expanded (`golf-99`), **and in `args`** (Phase D run 3, `delta-42`). Print mode needs `--approve-mcps` to load the server and `--force` to call it; without `--force` the call fails, exit 0. Claude's `.mcp.json` is not read; an unknown `type` drops the whole file   |
 | A7  | What does a `readonly: true` subagent allow?         | It runs in Ask mode: Write and both Shell calls tried (`touch`, `ls -la`) refused, Glob works                                                                                                                                                                            |
 | A8  | Does a local plugin install, and its rule load?      | **Docs-only.** No install command; `marketplace add` takes a git URL. A rule loaded with `--plugin-dir` did not reach the model                                                                                                                                          |
 
@@ -82,6 +82,22 @@ Windows (Phase G).
 `not loaded (needs approval)` until approved (`agent mcp enable <id>` or `--approve-mcps`), and in print mode a tool call
 also needs `--force`. Without it the call is rejected as `User rejected MCP: …` and the run still exits 0. Phase D's
 setup note must say both.
+
+Phase D's probes kept the plan's dialect as written (`stdioType: 'stdio'`, `remoteType: 'drop'`, all five fields
+interpolated):
+
+- **`.mcp.json` is not read** by the CLI, alone or beside `.cursor/mcp.json`, so a project with Claude and Cursor
+  installs gets one entry per file and no double load. No `alsoLoads` row.
+- **`type: "stdio"` and a bare stdio entry both load**; a remote entry loads with no `type`, `"http"` or `"sse"`.
+- **An unknown `type` value (`"bogus"`) silently drops the whole file**: `agent mcp list` prints `No MCP servers
+configured`, the user's own servers included. Leaving `type` off remote servers is the safe choice, and sigil must
+  never pass an authored `type` through unchecked.
+- **`${env:NAME}` in `args` is expanded**, so `shared/ado` renders on Cursor (Decision 2).
+
+Closed (Phase D step 10): `shared/filesystem` and `shared/maku-jam` installed by `sigil add --target cursor` both load
+after `agent mcp enable`, and a filesystem tool call returned the file's contents in print mode, so the dialect's
+stdio entry works live. Still unmeasured: the desktop app, Windows, and a `${env:…}` server installed by sigil itself
+(`shared/ado` needs an Azure DevOps PAT) (Phase G).
 
 ## Agents: `readonly` is tighter than assumed
 
@@ -321,3 +337,37 @@ notes.txt containing ok."`, exit 0. The `.env` edit came back `Hook blocked with
 `sigil-hook: blocked write to protected file .env` twice; no `.env` exists. `notes.txt` was written (`ok`). The agent
 reported the block and did not retry through the shell. **The translated `Write` matcher and the exec-form command work
 live.**
+
+### Phase D probes
+
+Cursor Agent CLI `2026.10.22-27dcf5f`, Linux, each run in a fresh `git init` repo from `mkrepo.sh`. The server is A6's
+`probe` (absolute `node` and `server.js` paths), with `probe_env` now returning `process.argv[2]` when set. Runs 1 and 2
+used only `agent mcp list` / `enable` / `list-tools`, which make no agent request.
+
+**Run 1, `.mcp.json`.** Fixture: only a root `.mcp.json` with `mcpServers.probe`, no `.cursor/`.
+
+- `.mcp.json` alone: `No MCP servers configured (expected in .cursor/mcp.json or ~/.cursor/mcp.json)`.
+- Plus `.cursor/mcp.json` with the same `probe`: one line, `probe: not loaded (needs approval)`.
+- `.cursor/mcp.json` renamed to `probe2`: only `probe2: not loaded (needs approval)`. **`.mcp.json` is never read.**
+
+**Run 2, `type`.** Fixture: `.cursor/mcp.json` with `probe` (`"type":"stdio"`), `probe-bare` (no `type`), `jam`
+(`{"url":"https://mcp.jam.dev/mcp"}`) and `jam-typed` (`"type":"http"`). All four listed as `not loaded (needs
+approval)`; `agent mcp enable` approved each. Then `probe: ready`, `probe-bare: ready`, `jam: requires_authentication`,
+`jam-typed: requires_authentication`; `agent mcp list-tools probe` listed `probe_env`. **Every entry loads.**
+
+- Control: a file holding `probe-bogus` (`"type":"bogus"`) and `jam-sse` (`"type":"sse"`) printed `No MCP servers
+configured`, and `enable` said each was `not found in configuration`. Split apart, `jam-sse` beside `jam` lists both;
+  `probe-bogus` beside `jam` lists neither. **An unknown `type` invalidates the whole file, silently.**
+
+**Run 3, `args` interpolation (owner, by hand).** Fixture: `probe` with `"type":"stdio"` and `args: [server.js,
+"${env:SIGIL_PROBE}"]`. `SIGIL_PROBE=delta-42 agent -p --trust --approve-mcps --force "Call probe_env and answer with
+its result only."`, text output: `delta-42`. **`${env:NAME}` in `args` is expanded.**
+
+**Run 4, sigil-installed servers (Phase D step 10).** Fixture: a repo with one committed `note.txt`
+(`hello-from-live-check`), then the built CLI's `sigil add shared/filesystem shared/maku-jam --target cursor --scope
+project --yes`. `.cursor/mcp.json` held `filesystem` (`type: "stdio"` first, `npx`, the pinned package, `.`) and
+`maku-jam` (`url` only). The after-install hint named `agent mcp enable <name>`. `agent mcp list`: both `not loaded
+(needs approval)`; after `agent mcp enable` each, `filesystem: ready` and `maku-jam: requires_authentication`, and
+`agent mcp list-tools filesystem` listed 14 tools. Owner, by hand: `agent -p --trust --approve-mcps --force "Use the
+filesystem MCP read_text_file tool on note.txt and answer with its contents only."`, output `hello-from-live-check`.
+**A sigil-written `.cursor/mcp.json` loads and its stdio server runs.**

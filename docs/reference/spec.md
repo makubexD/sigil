@@ -343,8 +343,11 @@ inlined. A `rule` becomes `.cursor/rules/<id-slug>.mdc` with `description` and e
 absent, empty, or only `**` / `**/*`) or `globs: "<comma-joined appliesTo>"` and `alwaysApply: false`, never gated on
 `language`. `build` writes no `AGENTS.md`: the repo-wide rules are already `alwaysApply` files. Cursor uses its own
 `.cursor/skills/` copy over a same-named skill in `.claude/skills/` or `.agents/skills/`, which `add` and `status` report
-as a note. Every other kind is skipped with the reason in [capabilities.md](capabilities.md). Specs and citations:
-`src/targets/cursor/`.
+as a note. A `hook` merges into `.cursor/hooks.json` (or `~/.cursor/hooks.json` at user scope) with events and tool
+names translated to Cursor's. An `mcp` server merges into `mcpServers` in `.cursor/mcp.json` (or `~/.cursor/mcp.json`):
+`type: "stdio"` is written first on a local server, a remote one gets no `type`, and `{sigil:env:NAME}` becomes
+`${env:NAME}`. `local` scope is refused for both. Every other kind is skipped with the reason in
+[capabilities.md](capabilities.md). Specs and citations: `src/targets/cursor/`.
 
 **Key vocabulary rules:**
 

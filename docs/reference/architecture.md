@@ -133,6 +133,20 @@ Consumer commands never read the file; `sigil move` renames a moved id in it. Se
    `renderArtifact()`** (Copilot's `copilot-instructions.md`, the open standard's `AGENTS.md` — see
    `shared/repo-wide-rules.ts`) must call `applyLexicon()` directly; it does not get the pass for
    free just by existing in the same target.
+9. **Config kinds** (`hook`, `mcp`, `settings`) are a table, not branches. Set `configKinds` on the target to a
+   `ConfigKindTable` (`src/targets/config-kind-table.ts`): one writer per kind with its `section`, a destination per
+   scope it supports, `buildOps(artifact, scope)` and an optional `skipReason(artifact)`. `configScopesFrom`,
+   `scaffoldConfigFrom`, `configSkipReasonFrom` and `destinationFor` derive the target's `configScopes`,
+   `scaffoldConfig`, `configSkipReason` and destination lookup from it, and a scope missing from the table is refused
+   with one message naming the file and the scopes that exist. A test fails when the table's kinds differ from the
+   kinds `capabilities.ts` marks `native`. For a JSON MCP file, the writer's `buildOps` is one `mcpServerOp` call with
+   an `McpDialect` (`src/targets/mcp-dialect.ts`): the servers key, the `EnvSyntax`, the fields that may hold an env
+   token, and the `type` policy for stdio and remote servers. `renderMcpServer` does the transform and returns a skip
+   reason when a token sits in a field the dialect does not interpolate. Cursor (`src/targets/cursor/config.ts`,
+   `mcp-ops.ts`) is the worked example; the portable `.mcp.json` format is `PORTABLE_MCP_DIALECT`. `sigil sync
+--check` fails when a catalog config artifact ships to a target whose `skipReason` refuses it
+   (`config-target-render`). Claude and Copilot still hand-roll their dispatch, and Codex keeps its own TOML MCP
+   builder.
 
 ### Adding a kind
 

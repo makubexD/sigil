@@ -78,6 +78,59 @@ Claude Code hooks in `.claude/settings.json` did not run in the Cursor CLI in te
 third-party hooks page lists them: a matcher-less hook never ran, with a relative or an absolute command. Install
 the hook for `cursor` instead. The desktop app was not tested.
 
+## MCP servers
+
+```bash
+sigil add shared/filesystem --target cursor              # .cursor/mcp.json
+sigil add shared/filesystem --target cursor --scope user # ~/.cursor/mcp.json
+```
+
+A project server goes in `.cursor/mcp.json`, which you commit with the repo. A user server goes in
+`~/.cursor/mcp.json` and applies to every project; as with hooks, sigil saves a one-time `.sigil.bak` copy before its
+first write to a file that holds content it did not write. `--scope local` is refused, because Cursor has no personal
+per-project MCP file. Sigil merges its servers into the `mcpServers` map and leaves your own servers and keys in place.
+
+A local server is written with `type: "stdio"` first, then the catalog's `command`, `args` and `env`. A remote server
+gets its `url` and `headers` with no `type` key. A catalog `{sigil:env:NAME}` reference becomes `${env:NAME}`, which
+Cursor expands in `command`, `args`, `env`, `url` and `headers`:
+
+```json
+{
+  "mcpServers": {
+    "ado": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@azure-devops/mcp@2.10.0",
+        "${env:ADO_ORG}",
+        "--authentication",
+        "pat",
+        "-d",
+        "core",
+        "work",
+        "work-items"
+      ],
+      "env": { "ADO_MCP_PERSONAL_TOKEN": "${env:ADO_MCP_PERSONAL_TOKEN}" }
+    }
+  }
+}
+```
+
+Cursor loads a new project server only after you approve it:
+
+```bash
+agent mcp list              # shows "not loaded (needs approval)"
+agent mcp enable filesystem # approve it once
+```
+
+In print mode (`agent -p`), `--approve-mcps` approves every server for that run, and the agent also needs `--force` to
+call a tool.
+
+Cursor does not read Claude Code's `.mcp.json`. In testing, a server in `.mcp.json` alone gave `No MCP servers
+configured`, so a server installed for `claude` doesn't reach Cursor. Install it for `cursor` as well; the two files
+stay independent, and uninstalling from one target leaves the other's file untouched.
+
 ## What is skipped
 
 These kinds are skipped with a warning, and the reason is in [capabilities.md](../reference/capabilities.md):
@@ -85,7 +138,6 @@ These kinds are skipped with a warning, and the reason is in [capabilities.md](.
 - **Agents**, until a later phase. A Cursor subagent has no tool list, so a read-only catalog agent needs
   `readonly: true`, which isn't built yet.
 - **Prompts.** Cursor is folding commands into skills.
-- **MCP servers**, until Phase D. Install them for another target meanwhile.
 - **Workflows and settings.** Cursor has no workflow file, and `settings` is Claude Code's own vocabulary.
 
 ## Skills Cursor already reads

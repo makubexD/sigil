@@ -19,3 +19,20 @@ Status: Phase A (live probe) in progress. This file holds the raw probe log unti
 - Plugins: `--plugin-dir <path>` loads a local plugin directory; `agent plugin marketplace add <gitUrl> | list |
 remove | update`. No `plugin install` command is listed.
 - Every probe runs in a fresh `git init` repo made by a scratchpad helper (`mkrepo.sh <fixture>`), never in this repo.
+
+### A1, rules
+
+Fixture: `.cursor/rules/always.mdc` (`alwaysApply: true`, ALPHA), `scoped.mdc` (`globs: "src/**/*.ts"`,
+`alwaysApply: false`, BRAVO), `both.mdc` (same glob plus `description`, `alwaysApply: false`, CHARLIE),
+`.cursor/rules/notes.md` (DELTA), and `src/app.ts`. Both runs: `agent -p --trust --output-format json "<prompt>"`.
+
+| Run | Prompt                                                                                             | Observed | Expected              |
+| --- | -------------------------------------------------------------------------------------------------- | -------- | --------------------- |
+| 1   | `List every codeword your rules give you; answer with the words only.`                             | `ALPHA`  | `ALPHA`               |
+| 2   | `I am working on src/app.ts. List every codeword your rules give you; answer with the words only.` | `ALPHA`  | `ALPHA BRAVO CHARLIE` |
+
+- `alwaysApply: true` loads; the `.md` file in `.cursor/rules/` is ignored. Confirmed.
+- **Naming a matching path in the prompt does not attach a `globs` rule**, with or without `description`. Neither run
+  made a tool call (about 3 s each), so the agent never read `src/app.ts`. Whether a glob rule attaches once the agent
+  reads or edits a matching file is **not tested**: the two-run budget was spent. Run 2 also shows the agent did not
+  fetch `both.mdc` on its `description`.

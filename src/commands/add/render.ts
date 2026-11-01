@@ -8,8 +8,11 @@
  */
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
+import { loadManifest } from '../../manifest';
 import { OVERLAYS_FILE } from '../../overlays';
+import { getAllTargets } from '../../targets';
 import { buildEquivalentCommand, printEquivalentCommand, isInteractiveTTY } from '../../wizard';
+import { duplicateLoadsFor } from '../status-overlaps';
 import type { ConfigRoot } from '../../types';
 import type { AddPlan } from './plan';
 import type { AddOutcome } from './execute';
@@ -154,5 +157,22 @@ export function renderOutcome(plan: AddPlan, outcome: AddOutcome): void {
 
   if (written > 0 || outcome.merged.length > 0) printWrittenFileListing(plan, outcome);
   printNextSteps(plan, outcome, written);
+  printOverlapNotes(plan);
   if (plan.fromWizard) printOutcomeEquivalentCommand(plan);
+}
+
+/** Skills this install picked: the only kind whose folders another target may also read. */
+function installedSkillIds(plan: AddPlan): string[] {
+  const ids = plan.wholeFileIds ?? [];
+  return ids.filter(id => plan.resolved.byId.get(id)?.kind === 'skill');
+}
+
+/** Prints the `ℹ` notes for artifacts this install makes the target load from a second folder. */
+function printOverlapNotes(plan: AddPlan): void {
+  const skillIds = installedSkillIds(plan);
+  if (skillIds.length === 0) return;
+  const { entries } = loadManifest(plan.opts.projectDir);
+  for (const note of duplicateLoadsFor(entries, getAllTargets(), plan.targetName, skillIds)) {
+    console.log(`  ℹ  ${note}`);
+  }
 }

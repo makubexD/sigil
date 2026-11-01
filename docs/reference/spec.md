@@ -338,6 +338,14 @@ command string, because Codex ignores `args`: a `node -e` script is base64-encod
 of it is refused. Every other kind is skipped with the reason in [capabilities.md](capabilities.md). Specs and citations:
 `src/targets/codex/`.
 
+**Cursor (`cursor`).** A `skill` becomes `.cursor/skills/<name>/SKILL.md`, rendered as for `codex`, with its rules
+inlined. A `rule` becomes `.cursor/rules/<id-slug>.mdc` with `description` and either `alwaysApply: true` (`appliesTo`
+absent, empty, or only `**` / `**/*`) or `globs: "<comma-joined appliesTo>"` and `alwaysApply: false`, never gated on
+`language`. `build` writes no `AGENTS.md`: the repo-wide rules are already `alwaysApply` files. Cursor uses its own
+`.cursor/skills/` copy over a same-named skill in `.claude/skills/` or `.agents/skills/`, which `add` and `status` report
+as a note. Every other kind is skipped with the reason in [capabilities.md](capabilities.md). Specs and citations:
+`src/targets/cursor/`.
+
 **Key vocabulary rules:**
 
 - Claude Code has **no "prompt" artifact** — catalog `prompt` becomes a _user-invoked skill_

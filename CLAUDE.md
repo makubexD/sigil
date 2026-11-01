@@ -55,9 +55,12 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   catalog skill ids: `validate` checks them (`src/refs.ts`), the adapter emits their names, and `add` warns when one
   is not installed (`src/commands/add/co-install.ts`). Dependencies come only from `uses:`.
 - **`appliesTo` stays unchanged in `catalog/` source and the zod schema** — adapters translate it (`paths:` for
-  Claude, `applyTo:` for Copilot `.instructions.md` only). Never gate that translation on `language`. All three
-  emitters must agree: the Claude scaffold rule spec (`targets/claude-code/spec/rule.ts`), the Claude plugin skill
-  spec's inlined rules (`spec/skill.ts`), and the Copilot rule spec (`targets/copilot/spec/rule.ts`).
+  Claude, `applyTo:` for Copilot `.instructions.md` only, `globs:` / `alwaysApply:` for Cursor `.mdc`). Never gate
+  that translation on `language`. All four emitters must agree: the Claude scaffold rule spec
+  (`targets/claude-code/spec/rule.ts`), the Claude plugin skill spec's inlined rules (`spec/skill.ts`), the Copilot rule
+  spec (`targets/copilot/spec/rule.ts`), and the Cursor rule spec (`targets/cursor/spec/rule.ts`, whose `alwaysApply`
+  test is `appliesToEveryFile` in `targets/shared/repo-wide-rules.ts`). `test/targets/rule-globs-agreement.test.ts`
+  checks Claude, Copilot and Cursor over every catalog rule.
 - **`KIND_ORDER` (`src/select/selection.ts`) is derived from `KIND_REGISTRY`'s `selectorOrder`** in `src/kinds.ts`
   (selection.ts re-exports it), the same way `ALL_KINDS` derives from `displayOrder`. Never hand-list kinds in a
   second array — a kind added to `KIND_REGISTRY` without `selectorOrder` fails to compile. The same goes for where a

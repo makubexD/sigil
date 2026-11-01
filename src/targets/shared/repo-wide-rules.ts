@@ -11,11 +11,18 @@ import { applyLexicon, type ProviderLexicon } from '../lexicon';
 
 const REPO_WIDE_GLOBS: ReadonlySet<string> = new Set(['**', '**/*']);
 
+/**
+ * True when `globs` is absent, empty, or every glob in it is `**` or `**` + `/*`. It never looks at
+ * `language`: Cursor's rule spec scopes on globs alone, and isRepoWideRule adds the language check.
+ */
+export function appliesToEveryFile(globs: readonly string[] | undefined): boolean {
+  return !globs || globs.every(glob => REPO_WIDE_GLOBS.has(glob));
+}
+
 /** True for a language-less rule with no `appliesTo`, or one scoped only to every file. */
 export function isRepoWideRule(rule: ResolvedArtifact): boolean {
   if (rule.frontmatter.language) return false;
-  const globs = rule.frontmatter.appliesTo as string[] | undefined;
-  return !globs || globs.every(glob => REPO_WIDE_GLOBS.has(glob));
+  return appliesToEveryFile(rule.frontmatter.appliesTo as string[] | undefined);
 }
 
 /**

@@ -5,7 +5,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { duplicateLoads } from '../../dist-cli/commands/status-overlaps';
+import { duplicateLoads, duplicateLoadsFor } from '../../dist-cli/commands/status-overlaps';
 import { getAllTargets } from '../../dist-cli/targets/index';
 import type { ManifestEntry } from '../../dist-cli/manifest/types';
 
@@ -41,6 +41,58 @@ describe('duplicateLoads', () => {
         entry('shared/clean-code', 'rule', 'copilot'),
       ],
       getAllTargets(),
+    );
+    assert.deepEqual(notes, []);
+  });
+});
+
+describe('duplicateLoads, Cursor readerWins', () => {
+  it('should note a skill installed for Cursor and Claude Code as unused in Cursor', () => {
+    const notes = duplicateLoads(
+      [entry('x', 'skill', 'cursor'), entry('x', 'skill', 'claude')],
+      getAllTargets(),
+    );
+    assert.equal(notes.length, 1, notes.join('\n'));
+    assert.match(notes[0] ?? '', /Cursor also reads Claude Code's skills/);
+    assert.match(notes[0] ?? '', /uses its own copy on a name clash/);
+    assert.match(notes[0] ?? '', /Claude Code's copy of these goes unused there: x/);
+  });
+
+  it('should note a skill installed for Cursor and Codex as unused in Cursor', () => {
+    const notes = duplicateLoads(
+      [entry('x', 'skill', 'cursor'), entry('x', 'skill', 'codex')],
+      getAllTargets(),
+    );
+    assert.equal(notes.length, 1, notes.join('\n'));
+    assert.match(notes[0] ?? '', /Cursor also reads OpenAI Codex's skills/);
+    assert.match(notes[0] ?? '', /uses its own copy on a name clash/);
+    assert.match(notes[0] ?? '', /goes unused there: x/);
+  });
+
+  it('should say nothing when the skill is installed for Cursor only', () => {
+    const notes = duplicateLoads([entry('x', 'skill', 'cursor')], getAllTargets());
+    assert.deepEqual(notes, []);
+  });
+});
+
+describe('duplicateLoadsFor', () => {
+  it('should return the Cursor note when Claude Code is the other target and the id is shared', () => {
+    const notes = duplicateLoadsFor(
+      [entry('x', 'skill', 'cursor'), entry('x', 'skill', 'claude')],
+      getAllTargets(),
+      'claude',
+      ['x'],
+    );
+    assert.equal(notes.length, 1, notes.join('\n'));
+    assert.match(notes[0] ?? '', /Cursor also reads Claude Code's skills/);
+  });
+
+  it('should return nothing when the shared ids do not include a listed id', () => {
+    const notes = duplicateLoadsFor(
+      [entry('x', 'skill', 'cursor'), entry('x', 'skill', 'claude')],
+      getAllTargets(),
+      'cursor',
+      ['y'],
     );
     assert.deepEqual(notes, []);
   });

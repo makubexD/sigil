@@ -512,11 +512,16 @@ export interface Target {
    * Other targets whose files this tool also loads, per kind, with the doc that says so (Copilot
    * reads `.claude/skills` and `.agents/skills`). `sigil status` notes an artifact installed for
    * both, because the tool sees it twice (src/commands/status-overlaps.ts).
+   *
+   * `readerWins` marks a reader whose own copy is used on a name clash: the other target's copy
+   * of that artifact goes unused in the reader instead of loading twice (Cursor prefers
+   * `.cursor/skills/` over `.claude/skills/` and `.agents/skills/`). The note then says so.
    */
   readonly alsoLoads?: readonly {
     readonly kind: ArtifactKind;
     readonly targets: readonly string[];
     readonly doc: DocRef;
+    readonly readerWins?: boolean;
   }[];
 
   /**

@@ -20,7 +20,7 @@ import {
   codingGuidelinesSection,
 } from '../../shared/skill-sections';
 import { AGENTS_STANDARD_LEXICON } from '../lexicon';
-import { CURSOR_SKILLS_DOC } from '../doc-refs';
+import { CURSOR_SKILLS_DOC } from '../../cursor/doc-refs';
 
 /** The Agent Skills spec's SKILL.md guidance: keep the body under 500 lines. */
 const MAX_SKILL_BODY_LINES = 500;

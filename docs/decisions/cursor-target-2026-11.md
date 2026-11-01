@@ -1,6 +1,6 @@
 # Cursor target (2026-11)
 
-Status: Phase A (live probe) done 2026-11-01, on Cursor Agent CLI `2026.10.22-27dcf5f`, Linux. The phases are in
+Status: Phase A (live probe) and Phase B (rules and skills) done 2026-11-01. Probes ran on Cursor Agent CLI `2026.10.22-27dcf5f`, Linux. The phases are in
 [plan-cursor-target.md](../plan-cursor-target.md); this record holds what the probes found and what each finding
 changes.
 
@@ -20,16 +20,16 @@ not prove anything about the desktop app, Windows, or a workspace without `--tru
 
 ## Results
 
-| #   | Question                                             | Observed                                                                                                                                                                           |
-| --- | ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A1  | Do `.mdc` rules load by mode?                        | `alwaysApply: true` loads; a `.md` in `.cursor/rules/` is ignored. A `globs` rule did **not** attach when the prompt named a matching path. **Attaching on a file read: untested** |
-| A2  | Is a `.cursor/skills` skill picked and its ref read? | Yes: picked from its `description`, `references/value.md` read on demand                                                                                                           |
-| A3  | Same skill name in `.cursor/` and `.claude/`?        | **One listing, `.cursor` wins** (inferred from the model's listing). Cursor also lists every skill in `~/.claude/skills/` and `~/.claude/plugins/`                                 |
-| A4  | `preToolUse` payload for a write; does exit 2 deny?  | Exit 2 denies. `tool_input.file_path`, absolute. **The edit's hook call was named `Read`**, a shell write `Shell` with `tool_input.command`                                        |
-| A5  | Does a `.claude/settings.json` hook run too?         | **Inconclusive.** It never ran, but its `Edit\|Write` matcher matched neither call Cursor made (`Read`, `Shell`)                                                                   |
-| A6  | `${env:NAME}` in `.cursor/mcp.json` `env`?           | Expanded (`golf-99`). Print mode needs `--approve-mcps` to load the server and `--force` to call it; without `--force` the call fails, exit 0                                      |
-| A7  | What does a `readonly: true` subagent allow?         | It runs in Ask mode: Write and both Shell calls tried (`touch`, `ls -la`) refused, Glob works                                                                                      |
-| A8  | Does a local plugin install, and its rule load?      | **Docs-only.** No install command; `marketplace add` takes a git URL. A rule loaded with `--plugin-dir` did not reach the model                                                    |
+| #   | Question                                             | Observed                                                                                                                                                                                                                                                                 |
+| --- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| A1  | Do `.mdc` rules load by mode?                        | `alwaysApply: true` loads; a `.md` in `.cursor/rules/` is ignored. A `globs` rule did **not** attach when the prompt named a matching path. **It attaches once the agent reads a matching file** (Phase B run 1: quoted, unquoted and comma-joined `globs` all attached) |
+| A2  | Is a `.cursor/skills` skill picked and its ref read? | Yes: picked from its `description`, `references/value.md` read on demand                                                                                                                                                                                                 |
+| A3  | Same skill name in `.cursor/` and `.claude/`?        | **One listing, `.cursor` wins** (inferred from the model's listing). Cursor also lists every skill in `~/.claude/skills/` and `~/.claude/plugins/`                                                                                                                       |
+| A4  | `preToolUse` payload for a write; does exit 2 deny?  | Exit 2 denies. `tool_input.file_path`, absolute. **The edit's hook call was named `Read`**, a shell write `Shell` with `tool_input.command`                                                                                                                              |
+| A5  | Does a `.claude/settings.json` hook run too?         | **Inconclusive.** It never ran, but its `Edit\|Write` matcher matched neither call Cursor made (`Read`, `Shell`)                                                                                                                                                         |
+| A6  | `${env:NAME}` in `.cursor/mcp.json` `env`?           | Expanded (`golf-99`). Print mode needs `--approve-mcps` to load the server and `--force` to call it; without `--force` the call fails, exit 0                                                                                                                            |
+| A7  | What does a `readonly: true` subagent allow?         | It runs in Ask mode: Write and both Shell calls tried (`touch`, `ls -la`) refused, Glob works                                                                                                                                                                            |
+| A8  | Does a local plugin install, and its rule load?      | **Docs-only.** No install command; `marketplace add` takes a git URL. A rule loaded with `--plugin-dir` did not reach the model                                                                                                                                          |
 
 ## Skills: a warning, not a refusal
 
@@ -50,6 +50,10 @@ The `alwaysApply: true` half of Decision 2 is confirmed. The `globs` half is not
 didn't attach the scoped rule, but the agent never read the file in that run, so the documented behaviour (attach when a
 matching file is in context) was never exercised. Decision 2 stands on the docs. Phase B's tests can't settle it; Phase
 G's live check must run one prompt that makes the agent read a matching file, and report the scoped rule's codeword.
+
+Phase B run 1 (below) did that in a probe repo: after reading `src/app.ts` the agent reported all three scoped rules'
+codewords, so a `globs` rule attaches on a read, quoted or not, and a comma-joined list matches on its second glob. Phase
+G still checks it against sigil's own `.mdc` output.
 
 ## Hooks: the matcher and A5
 
@@ -91,6 +95,20 @@ The CLI has no plugin install command, and a rule in a `--plugin-dir` plugin (`.
 MCP from Claude Code's installed plugins, Phase F should first check whether sigil's published Claude marketplace
 plugin already works in Cursor, then decide whether a `.cursor-plugin/` build adds anything (rules are what it could
 add, and they are what failed here).
+
+## Phase B: two changes to the roadmap
+
+**No `AGENTS.md` on `build`** (amends the roadmap's Decision 4, which was written before rules were native). Every
+repo-wide rule is an `alwaysApply: true` `.mdc` file, and Cursor also reads a root `AGENTS.md`, so writing both would load
+each repo-wide rule twice. `build --target cursor` writes the skills and `.mdc` rules that `add` writes, and nothing
+else.
+
+**The overlap note says which copy wins.** `Target.alsoLoads` entries gain `readerWins`: the reader uses its own copy on
+a name clash, so the other target's copy goes unused there instead of loading twice. A3 showed that for `.claude/skills/`
+and Phase B run 2 for `.agents/skills/`, so Cursor declares both with `readerWins`. Its note reads `Cursor also reads
+<Other>'s skills and uses its own copy on a name clash, so <Other>'s copy of these goes unused there: <ids> (<doc>).`
+Copilot's existing "load twice" note is unchanged. `sigil add` now prints these notes too, after installing a skill,
+for either side of the overlap.
 
 ## Probe log
 
@@ -241,3 +259,30 @@ Neither `notes.txt` nor `made.txt` existed after either run.
   the same for those plugins' skills. Phase F should test whether sigil's published Claude marketplace plugin already
   works in Cursor through this route before designing a `.cursor-plugin/` build.
 - A8 is **docs-only** for Phase F: no install path in the CLI, and the one local-load attempt failed.
+
+### Phase B probes
+
+Cursor Agent CLI `2026.10.22-27dcf5f` (`agent --version`), model `Auto`, each run in a fresh `git init` repo from
+`mkrepo.sh`. Both runs: `agent -p --trust --output-format stream-json "<prompt>"`, exit 0.
+
+**Run 1, globs on a read.** Fixture: `.cursor/rules/quoted.mdc` (`globs: "**/*.ts"`, BRAVO), `unquoted.mdc`
+(`globs: **/*.ts`, ECHO), `joined.mdc` (`globs: "docs/**/*.md,**/*.ts"`, KILO), each `alwaysApply: false` with a
+`description`, plus `src/app.ts`. Prompt: `Read src/app.ts, then list every codeword your rules give you; answer with
+the words only.`
+
+- Tool calls: one MCP tool lookup (the `context-mode` server from `~/.claude/plugins/`, as in A8), then a read of
+  `src/app.ts`. No `.mdc` file was read.
+- Answer: `KILO BRAVO ECHO`. **All three attached after the read.** Cursor's parser accepts the unquoted `**/*.ts`
+  as well as the quoted one, and a comma-joined value matches on its second glob. Since the agent never opened a
+  `.mdc` file, their bodies reached it from the read, not from the descriptions (A1 run 2 showed a described glob rule
+  does not attach without one).
+
+**Run 2, `.agents` against `.cursor`.** Fixture: `.cursor/skills/probe-skill/SKILL.md` (answer `ECHO-42`) and
+`.agents/skills/probe-skill/SKILL.md` (same name and description, answer `GOLF-3`). Prompt: `What is the probe
+checksum? Then list the skills you can use with the path of each SKILL.md.`
+
+- Tool calls: one read, `.cursor/skills/probe-skill/SKILL.md`. No glob this time.
+- Answer: `ECHO-42`. The listing named `probe-skill` **once**, under "Repo skill", at `.cursor/skills/probe-skill/`;
+  `.agents/skills/` appears nowhere in it. As with A3 (`.claude`), Cursor's own copy wins on a name clash, so the
+  `.agents` copy goes unused rather than loading twice. The listing again held every `~/.claude/skills/` and
+  `~/.claude/plugins/` skill.

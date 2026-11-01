@@ -19,7 +19,7 @@ import type {
   EditorialProposal,
 } from '../../dist-cli/commands/sync/conformance/editorial-model-client';
 import { getAllTargets } from '../../dist-cli/targets/index';
-import { channelFromNativeKinds } from '../../dist-cli/targets/capabilities';
+import { channelFromNativeKinds, supportsKind } from '../../dist-cli/targets/capabilities';
 import type { Artifact, LoadedCatalog, Target } from '../../dist-cli/types';
 
 import { loadBundledCatalog } from '../helpers/catalog';
@@ -260,10 +260,10 @@ describe('conformance rule: platform-path-leak', () => {
     };
     const catalog = makeCatalog([artifact]);
     const findings = runConformance(catalog, [], { ruleId: 'platform-path-leak' });
-    // One finding per provider other than the folder's owner (Claude): every one ships the body.
+    // One finding per provider other than the folder's owner (Claude) that delivers a rule.
     const others = getAllTargets()
-      .map(t => t.name)
-      .filter(name => name !== 'claude');
+      .filter(t => t.name !== 'claude' && supportsKind(t, 'rule'))
+      .map(t => t.name);
     assert.deepEqual(findings.map(f => f.provider).sort(), others.sort());
   });
 

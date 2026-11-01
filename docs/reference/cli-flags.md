@@ -43,7 +43,7 @@ Usage: sigil build [options]
 Compile the catalog to dist/<target>/, replacing that folder.
 
 Options:
-  --target <name>      Platform to emit (claude, copilot, agents-standard, codex, all)
+  --target <name>      Platform to emit (claude, copilot, agents-standard, codex, cursor, all)
                        (default: "all")
   --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)

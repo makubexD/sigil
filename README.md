@@ -126,6 +126,20 @@ was tested:
 
 </details>
 
+<details>
+<summary><strong>Cursor: install rules and skills</strong></summary>
+
+```bash
+sigil add --target cursor <rule-skill-or-pack>
+```
+
+Rules become `.mdc` files in `.cursor/rules/` and skills go to `.cursor/skills/`. Cursor already reads
+`.claude/skills/` and Claude Code's installed plugins, so a user of sigil's Claude plugin gets its skills in
+Cursor without installing them again. Setup, limits and what was tested:
+[docs/setup/cursor.md](docs/setup/cursor.md).
+
+</details>
+
 ### Getting help
 
 | You want                                 | Run                                                                  |
@@ -180,8 +194,11 @@ was tested:
   `.codex/hooks.json` and MCP servers into `.codex/config.toml`, and a full build also
   writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are skipped: a Codex agent file
   can't restrict tools, and Codex deprecated custom prompts. See [docs/setup/codex.md](docs/setup/codex.md).
-- **Other tools**: a dedicated [Cursor target](docs/ideas/cursor-target.md) is planned; until then
-  `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
+- **Cursor**: `sigil add --target cursor` writes rules to `.cursor/rules/` as `.mdc` files and skills to
+  `.cursor/skills/`. A full build writes no `AGENTS.md`, because the repo-wide rules are already
+  `alwaysApply` rules. Agents, prompts, hooks and MCP are skipped for now. See
+  [docs/setup/cursor.md](docs/setup/cursor.md).
+- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
 
 ## What is in the catalog
 

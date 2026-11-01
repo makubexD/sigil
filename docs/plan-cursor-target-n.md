@@ -151,9 +151,12 @@ Test: `npm test -- test/tool-vocabulary.test.ts`.
 Files: `src/schema/index.ts`, `test/schema*.test.ts` (whichever holds AgentSchema/SkillSchema tests), generated
 `schema/*.schema.json` via `npm run build`.
 
-- `tools`, `disallowedTools` (agent) and `allowedTools` (skill): each item is a neutral name or a key of
-  `LEGACY_TOOL_ALIASES`. Keep `.min(1)` and the `ToolName` regex as a second check. Update the comments: neutral
-  vocabulary, legacy names accepted for now, mapped per target.
+- `tools`, `disallowedTools` (agent) and `allowedTools` (skill): each item is a neutral name, a key of
+  `LEGACY_TOOL_ALIASES`, or a provider-specific pattern (amended 2026-11-01: contains `(` or `/`, or starts with
+  `mcp__`). Today's schema accepts patterns (`Bash(git log:*)`, `mcp__github__get_issue`) and
+  `test/targets/tool-name-injection.test.ts` pins that, so only an unknown bare name is rejected. Keep `.min(1)` and
+  the `ToolName` regex as a second check. Update the comments: neutral vocabulary, legacy names accepted for now,
+  patterns passed as provider-specific, mapped per target.
 - Agent: `toolPolicy: z.enum(['strict', 'nearest']).optional()` (absent = strict), `model: z.enum(['fast', 'balanced',
 'deep']).optional()`, `effort: z.enum(['low', 'medium', 'high']).optional()`. `claude.model` / `claude.effort` stay.
   The comment says they override the neutral ones on Claude.
@@ -202,6 +205,10 @@ Files: `src/targets/tool-dialect.ts` (new), `src/targets/spec-types.ts`, `test/t
 missing }`.
 - `read-only-flag`: returns `{ readOnly: true, exact: true }` when every tool is in `readOnly`, else `{ readOnly:
 false, exact: false, missing: <the others> }`.
+
+**Open (settle before sending this step):** how a provider-specific pattern (step 3) renders. `normalizeTools` puts it
+in `unknown`. Today Claude, Copilot and agents-standard pass it through verbatim, and
+`test/targets/tool-name-injection.test.ts` pins that round-trip.
 
 Add `readonly toolDialect?: ToolDialect` to `KindEmitSpec` (documented: required on any agent spec, and on a skill
 spec that maps `allowedTools`).

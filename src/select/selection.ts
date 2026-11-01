@@ -19,8 +19,11 @@ export interface SelectionFilters {
   language?: string | undefined;
 }
 
-/** Why an artifact is not installed: the tool lacks the kind, it is limited to other platforms, or another artifact already carries it. */
-export type SkipCause = 'kind' | 'platform' | 'inlined' | 'overlay';
+/**
+ * Why an artifact is not installed: the tool lacks the kind, it is limited to other platforms,
+ * another artifact already carries it, or the target cannot render its config.
+ */
+export type SkipCause = 'kind' | 'platform' | 'inlined' | 'overlay' | 'unrenderable';
 
 export interface SkippedArtifact {
   id: string;

@@ -164,11 +164,15 @@ const skipOf = (
 const carriedReason = (kind: string) =>
   `a ${kind} reaches this target only inside the skills that use it; pick a skill that uses it`;
 
-/** Classifies one candidate as target-unsupported or platform-restricted, else undefined. */
+/**
+ * Classifies one candidate as target-unsupported, platform-restricted, or unrenderable by the
+ * target's own config check; undefined when it installs.
+ */
 function classifySkippedArtifact(
   a: ResolvedArtifact,
   sets: { supportedSet: Set<string> | undefined; carriedSet: Set<string> },
   targetName: string | undefined,
+  skipReason: ((artifact: ResolvedArtifact) => string | undefined) | undefined,
 ): SkippedArtifact | undefined {
   if (sets.carriedSet.has(a.kind)) return skipOf(a, 'kind', carriedReason(a.kind));
   if (sets.supportedSet && !sets.supportedSet.has(a.kind)) {
@@ -178,10 +182,12 @@ function classifySkippedArtifact(
     const restricted = (a.frontmatter.platforms as string[]).join(', ');
     return skipOf(a, 'platform', `restricted to platforms: [${restricted}]`);
   }
+  const reason = skipReason?.(a);
+  if (reason !== undefined) return skipOf(a, 'unrenderable', reason);
   return undefined;
 }
 
-/** Partitions filtered candidates into target-supported ids vs. skipped (kind/platform). */
+/** Partitions filtered candidates into target-supported ids vs. skipped (kind/platform/config). */
 function partitionSupportedAndSkipped(
   candidates: ResolvedArtifact[],
   kinds: {
@@ -189,12 +195,13 @@ function partitionSupportedAndSkipped(
     carried?: readonly ArtifactKind[] | undefined;
   },
   targetName: string | undefined,
+  skipReason: ((artifact: ResolvedArtifact) => string | undefined) | undefined,
 ): SelectionResult {
   const supportedSet = kinds.supported ? new Set<string>(kinds.supported) : undefined;
   const carriedSet = new Set<string>(kinds.carried ?? []);
   const result: SelectionResult = { ids: [], skipped: [] };
   for (const a of candidates) {
-    const skip = classifySkippedArtifact(a, { supportedSet, carriedSet }, targetName);
+    const skip = classifySkippedArtifact(a, { supportedSet, carriedSet }, targetName, skipReason);
     if (skip) result.skipped.push(skip);
     else result.ids.push(a.id);
   }
@@ -220,6 +227,11 @@ export interface ResolveSelectionOptions {
   carriedKinds?: readonly ArtifactKind[] | undefined;
   /** Optional platform name — used to apply platform restriction. */
   targetName?: string;
+  /**
+   * The target's own check for a config artifact it cannot render: the target renders the
+   * artifact only if this returns undefined. Omit for no check.
+   */
+  skipReason?: ((artifact: ResolvedArtifact) => string | undefined) | undefined;
 }
 
 /** Resolve a list of selector strings + filters into a concrete set of artifact IDs. */
@@ -234,7 +246,7 @@ export function resolveSelection(options: ResolveSelectionOptions): SelectionRes
     .filter((a): a is ResolvedArtifact => a !== undefined);
   const filtered = applySelectionFilters(candidates, filters);
   const kinds = { supported: supportedKinds, carried: carriedKinds };
-  const partitioned = partitionSupportedAndSkipped(filtered, kinds, targetName);
+  const partitioned = partitionSupportedAndSkipped(filtered, kinds, targetName, options.skipReason);
   const deduped = dropInlinedBaseRules(partitioned.ids, catalog);
   return { ids: deduped.ids, skipped: [...partitioned.skipped, ...deduped.skipped] };
 }

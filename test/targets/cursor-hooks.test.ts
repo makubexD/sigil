@@ -15,6 +15,8 @@ import path from 'node:path';
 import { CursorTarget } from '../../dist-cli/targets/cursor';
 import { buildCursorHookOps, cursorHookSkipReason } from '../../dist-cli/targets/cursor/hook-ops';
 import { nodeEvalCommandLine } from '../../dist-cli/targets/shared/hook-command-line';
+import { resolveSelection } from '../../dist-cli/select/selector-resolve';
+import { carriedKinds, installableKinds } from '../../dist-cli/targets/capabilities';
 import { SigilError } from '../../dist-cli/errors';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import { withTempDir } from '../helpers/temp-dir';
@@ -219,6 +221,44 @@ describe('Cursor hook skip reasons', () => {
       const artifact = asArtifact(makeHook(overrides));
       assert.equal(cursorHookSkipReason(artifact), undefined, JSON.stringify(overrides));
     }
+  });
+});
+
+// ── selection ─────────────────────────────────────────────────────────────────
+
+describe('Cursor hook selection', () => {
+  const target = new CursorTarget();
+
+  /** Resolves one hook selector the way `sigil add --target cursor` does. */
+  const select = (artifact: FakeArtifact) =>
+    resolveSelection({
+      selectors: [`hook:${artifact.id}`],
+      filters: {},
+      catalog: makeCatalog(artifact),
+      packs: [],
+      supportedKinds: installableKinds(target),
+      carriedKinds: carriedKinds(target),
+      targetName: 'cursor',
+      skipReason: a => target.configSkipReason?.(a),
+    });
+
+  it('skips a hook Cursor cannot render, with its reason and cause', () => {
+    const artifact = makeHook({ event: 'Notification', matcher: undefined });
+    const result = select(artifact);
+
+    assert.deepEqual(result.ids, []);
+    assert.equal(result.skipped.length, 1);
+    const skipped = result.skipped[0]!;
+    assert.equal(skipped.cause, 'unrenderable');
+    assert.equal(skipped.reason, cursorHookSkipReason(asArtifact(artifact)));
+  });
+
+  it('selects a PreToolUse hook Cursor can render', () => {
+    const artifact = makeHook({ event: 'PreToolUse', matcher: undefined });
+    const result = select(artifact);
+
+    assert.deepEqual(result.ids, ['shared/test-hook']);
+    assert.deepEqual(result.skipped, []);
   });
 });
 

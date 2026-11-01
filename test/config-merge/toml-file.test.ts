@@ -10,6 +10,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToml } from '../../dist-cli/config-merge/toml-file';
 import { reverseConfig } from '../../dist-cli/config-merge/file-format';
+import { replaceMerge } from '../../dist-cli/config-merge/replace';
 import {
   parseConfig,
   renderConfig,
@@ -180,5 +181,20 @@ describe('reverseConfig on TOML', () => {
     const { cleaned, kept } = reverseConfig(TOML_PATH, parseConfig(TOML_PATH, before), op);
     assert.deepEqual(kept, []);
     assert.equal(renderToml(before, cleaned), user);
+  });
+});
+
+describe('replaceMerge on TOML', () => {
+  it('keeps a whole edited server when the catalog renames it', () => {
+    const server = { command: 'npx', args: ['-y'] };
+    const previous = {
+      file: 'config.toml',
+      fragment: { mcp_servers: { fs: server } },
+      strategy: { mcp_servers: 'object-spread' as const },
+    };
+    const next = { ...previous, fragment: { mcp_servers: { files: server } } };
+    const edited = { ...server, startup_timeout_sec: 30 };
+    const merged = replaceMerge({ mcp_servers: { fs: edited } }, previous, next);
+    assert.deepEqual(merged.mcp_servers, { fs: edited, files: server });
   });
 });

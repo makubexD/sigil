@@ -21,7 +21,7 @@ Agents and prompts are skipped, with a warning:
 - **Prompts.** Codex [deprecated custom prompts](https://learn.chatgpt.com/docs/custom-prompts) in favor of skills.
 
 `agents-standard` writes the same files as `codex`, so a project uses one of them for skills. `add` refuses the second
-one; to switch, run `sigil uninstall --target agents-standard` first.
+one; to switch, remove its skills with `sigil uninstall <ids> --target agents-standard` first.
 
 ## Trust the project
 
@@ -41,8 +41,9 @@ For automation that already vets its hooks, `--dangerously-bypass-hook-trust` ru
 
 Codex has no personal per-project hook file, so `--scope local` is refused.
 
-On Codex a hook script is stored base64-encoded, so that one command works in every shell, including fish, nushell and
-`cmd.exe`. `/hooks` therefore shows an encoded string. To read it, see the hook's source in `catalog/shared/hooks/`.
+On Codex a hook script is stored base64-encoded, so that one command works in the shell Codex uses: your login shell on
+macOS and Linux, and `cmd.exe` on Windows. If your login shell is PowerShell, the hook can't block, because PowerShell turns
+exit code 2 into 1. `/hooks` therefore shows an encoded string. To read it, see the hook's source in `catalog/shared/hooks/`.
 
 Treat hooks as a guardrail. Codex says so itself, and any exit code other than 2 lets the call through, so a hook that
 can't start protects nothing. The Windows form of the command is untested.

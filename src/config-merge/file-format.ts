@@ -70,7 +70,10 @@ export function reverseConfig(
   return { cleaned, kept: isTomlPath(fullPath) ? keepIncompleteServers(live, cleaned, op) : [] };
 }
 
-/** True when `text` holds a comment sigil can't have written, which only TOML has. */
+/**
+ * True when `text` may hold a comment, which sigil never writes and only TOML has. A `#` inside a
+ * string also counts: the cost is one extra backup.
+ */
 export function holdsUserComments(fullPath: string, text: string): boolean {
-  return isTomlPath(fullPath) && /^\s*#/m.test(text);
+  return isTomlPath(fullPath) && text.includes('#');
 }

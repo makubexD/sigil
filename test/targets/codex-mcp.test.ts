@@ -7,7 +7,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CodexTarget } from '../../dist-cli/targets/codex';
@@ -318,6 +318,34 @@ describe('codex mcp — CLI round trip', () => {
         sigilWithEnv(dir, env, 'add', MCP, '--target', 'codex', '--scope', 'user', '--yes');
         assert.equal(fs.readFileSync(bakOf(fullPath), 'utf8'), original);
       });
+    });
+  });
+});
+
+describe('codex mcp — a refused edit', () => {
+  it('keeps the entry, exits non-zero and prints no success line, with the hint', () => {
+    withTempDir(dir => {
+      sigil(dir, 'add', MCP, '--target', 'codex', '--yes');
+      const file = path.join(dir, '.codex/config.toml');
+      const args = /^args = (.*)$/m.exec(fs.readFileSync(file, 'utf-8'))![1];
+      // The same server, written inline: it must be removed, and it can't be spliced.
+      fs.writeFileSync(
+        file,
+        `mcp_servers = { filesystem = { command = "npx", args = ${args} } }\n`,
+      );
+
+      const cli = [CLI, 'uninstall', MCP, '--target', 'codex', '--yes', '--project-dir', dir];
+      const r = spawnSync(process.execPath, cli, { cwd: dir, encoding: 'utf-8' });
+
+      assert.equal(r.status, 1);
+      assert.doesNotMatch(r.stdout, /✓ Uninstalled/);
+      assert.match(r.stderr, /Not removed: shared\/filesystem/);
+      assert.match(`${r.stdout}${r.stderr}`, /Keep MCP servers in/);
+      const manifest = JSON.parse(fs.readFileSync(path.join(dir, '.sigil/manifest.json'), 'utf-8'));
+      assert.deepEqual(
+        manifest.entries.map((e: { id: string }) => e.id),
+        [MCP],
+      );
     });
   });
 });

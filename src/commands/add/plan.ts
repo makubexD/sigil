@@ -112,7 +112,9 @@ function refuseSharedSkillFiles(ctx: PlanCtx, ids: readonly string[]): void {
   if (peer === undefined) return;
   throw new SigilError(
     `${peer} already installed skills in this project, and ${ctx.target.name} writes the same files.`,
-    { hint: `Keep ${peer}, or run sigil uninstall --target ${peer} first.` },
+    {
+      hint: `Keep ${peer}, or remove its skills with sigil uninstall <ids> --target ${peer} first.`,
+    },
   );
 }
 

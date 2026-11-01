@@ -8,6 +8,7 @@
  */
 import { applyMerge } from './apply';
 import { reverseMerge } from './reverse';
+import { keepIncompleteServers } from './toml-file';
 import type { ConfigMergeOp } from './primitives';
 
 export function replaceMerge(
@@ -15,6 +16,8 @@ export function replaceMerge(
   previous: ConfigMergeOp | undefined,
   next: ConfigMergeOp,
 ): Record<string, unknown> {
-  const withoutPrevious = previous ? reverseMerge(existing, previous) : existing;
+  if (!previous) return applyMerge(existing, next);
+  const withoutPrevious = reverseMerge(existing, previous);
+  keepIncompleteServers(existing, withoutPrevious, previous);
   return applyMerge(withoutPrevious, next);
 }

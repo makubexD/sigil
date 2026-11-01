@@ -7,6 +7,7 @@
  * @module
  */
 
+import { loadManifest } from './manifest/io';
 import fs from 'fs';
 import path from 'path';
 import { parsePacksConfig } from './packs-config';
@@ -173,6 +174,17 @@ function logDefaultTarget(defaultTarget: string, targets: Target[]): void {
 }
 
 /**
+ * `detected`, or the target that shares its skill files and is the one this project installed for:
+ * `.agents/skills` alone can't say which of them wrote it, but the manifest can.
+ */
+function targetOwningSkillFiles(detected: Target, targets: Target[], projectDir: string): Target {
+  const entries = loadManifest(projectDir)?.entries ?? [];
+  if (entries.some(e => e.target === detected.name)) return detected;
+  const owner = detected.sharesSkillFilesWith?.find(n => entries.some(e => e.target === n));
+  return targets.find(t => t.name === owner) ?? detected;
+}
+
+/**
  * Auto-detect the installed target from each registered target's `projectMarkers`: the first
  * target (registration order, claude then copilot) with any marker present. Falls back to the
  * first registered target when none match.
@@ -184,7 +196,8 @@ export function detectProjectTarget(
 ): string {
   const targets = getAllTargets();
   const [found] = detectedTargetsIn(projectDir);
-  const target = targets.find(t => t.name === found);
+  const detected = targets.find(t => t.name === found);
+  const target = detected && targetOwningSkillFiles(detected, targets, projectDir);
   if (target) {
     if (opts.verbose) logDetectedTarget(target, projectDir, targets);
     return target.name;

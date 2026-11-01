@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { SigilError } from '../errors';
 import fs from 'node:fs';
 import { resolveContained } from '../cli-helpers';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../config-utils';
@@ -59,6 +60,12 @@ function rewriteWithoutFragment(
   writeReversedConfigFile(fullPath, cleaned, before, displayPath);
 }
 
+/** `err`'s message, plus its hint when it has one. */
+function withHint(err: unknown): string {
+  const hint = err instanceof SigilError && err.hint ? ` ${err.hint}` : '';
+  return `${(err as Error).message}${hint}`;
+}
+
 /** Reverse-merges and removes sigil's contribution from one config-merge file; returns true
  * if it counted as removed (write succeeded or the file was deleted after emptying).
  * `sigilOps` is every fragment recorded for that file, so a file holding only those needs no backup. */
@@ -78,7 +85,7 @@ export function reverseMergeOneConfigFile(
     rewriteWithoutFragment(cf, fullPath, displayPath);
     return true;
   } catch (err) {
-    console.warn(`  ⚠  Could not reverse-merge ${displayPath}: ${(err as Error).message}`);
+    console.warn(`  ⚠  Could not reverse-merge ${displayPath}: ${withHint(err)}`);
     onFailure?.();
     return false;
   }
@@ -109,6 +116,16 @@ function sharedWith(cf: ConfigRecord, kept: readonly ManifestEntry[]): ManifestE
     (k.root ?? 'project') === (cf.root ?? 'project') &&
     k.fragmentSha256 === cf.fragmentSha256;
   return kept.find(e => (e.configFiles ?? []).some(same));
+}
+
+/** The ids of `removing` a failed reversal put back into `kept`, each reported as not removed. */
+export function notRemoved(
+  removing: readonly ManifestEntry[],
+  kept: readonly ManifestEntry[],
+): string[] {
+  const failed = removing.filter(entry => kept.includes(entry)).map(entry => entry.id);
+  for (const id of failed) console.error(`✗ Not removed: ${id}. It stays installed.`);
+  return failed;
 }
 
 /** Puts back an entry whose file couldn't be changed, so a retry finds it, and fails the run. */

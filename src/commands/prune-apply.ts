@@ -13,7 +13,7 @@ import { requireManifest } from './shared/manifest';
 import { isInteractiveTTY } from '../wizard';
 import type { ManifestEntry } from '../manifest';
 import { SigilError } from '../errors';
-import { configEntriesOf, reverseMergeConfigEntries } from './uninstall-config';
+import { configEntriesOf, notRemoved, reverseMergeConfigEntries } from './uninstall-config';
 import type { PruneCandidates, PruneOptions } from './prune';
 
 /** Finds paths whose on-disk content no longer matches the manifest-recorded hash — same check
@@ -140,8 +140,9 @@ function performRemoval(
   const computed = { pathsToDelete, driftedPaths, removedEntries };
   const configRemovedCount = writeRemoval(manifest, computed, opts);
   const driftedKept = opts.force ? 0 : driftedPaths.length;
+  const failed = notRemoved(configEntriesOf(removedEntries), manifest.entries);
   return {
-    removedCount: removableIds.length,
+    removedCount: removableIds.length - failed.length,
     pathsDeleted: pathsToDelete.length - driftedKept,
     configRemovedCount,
     driftedKept,
@@ -150,6 +151,7 @@ function performRemoval(
 
 /** Prints the post-apply summary line + the deprecated-still-installed reminder. */
 function printApplySummary(outcome: ApplyOutcome, deprecatedCount: number): void {
+  if (outcome.removedCount === 0) return;
   console.log(
     `\n✓ Pruned ${outcome.removedCount} artifact(s)` +
       `  (${outcome.pathsDeleted} file(s) removed` +

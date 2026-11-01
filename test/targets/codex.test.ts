@@ -8,6 +8,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { getTarget } from '../../dist-cli/targets/index';
+import { detectProjectTarget } from '../../dist-cli/cli-helpers';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { CATALOG, PACKS, add } from '../helpers/install-scenario';
@@ -76,6 +77,13 @@ describe('codex target', () => {
     await withTempDirAsync(async dir => {
       await add(dir, TARGET, [`skill:${SKILL}`]);
       await assert.rejects(() => add(dir, PEER, [`skill:${SKILL}`]), /writes the same files/);
+    });
+  });
+
+  it('should detect codex, not agents-standard, in a project that installed for codex', async () => {
+    await withTempDirAsync(async dir => {
+      await add(dir, TARGET, [`skill:${SKILL}`]);
+      assert.equal(detectProjectTarget(dir), TARGET);
     });
   });
 

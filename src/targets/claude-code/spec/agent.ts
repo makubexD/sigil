@@ -43,6 +43,41 @@ function claudeHintMapping(key: 'model' | 'effort' | 'maxTurns' | 'isolation'): 
 }
 
 /**
+ * Neutral model tier → Claude's documented model alias (CLAUDE_AGENTS_DOC lists `haiku`,
+ * `sonnet`, `opus` and `fable`). `fable` gets no tier: the docs give it no place in a
+ * cost/strength order, so no neutral tier maps to it (Decision 5, plan-cursor-target-n.md).
+ */
+export const CLAUDE_MODEL_TIERS: Readonly<Record<'fast' | 'balanced' | 'deep', string>> = {
+  fast: 'haiku',
+  balanced: 'sonnet',
+  deep: 'opus',
+};
+
+/**
+ * Neutral `model: fast | balanced | deep` — CLAUDE_MODEL_TIERS in the same frontmatter position
+ * as `claude.model`, which wins whenever that override is authored.
+ */
+const neutralModelMapping: FieldMapping = {
+  from: 'model',
+  to: 'model',
+  required: false,
+  when: fm => (fm.claude as { model?: string } | undefined)?.model === undefined,
+  serialize: v => `model: ${CLAUDE_MODEL_TIERS[v as keyof typeof CLAUDE_MODEL_TIERS]}`,
+};
+
+/**
+ * Neutral `effort: low | medium | high` — emitted as written, next to `claude.effort`, which
+ * wins whenever that override is authored.
+ */
+const neutralEffortMapping: FieldMapping = {
+  from: 'effort',
+  to: 'effort',
+  required: false,
+  when: fm => (fm.claude as { effort?: string } | undefined)?.effort === undefined,
+  serialize: v => `effort: ${v as string}`,
+};
+
+/**
  * `claude.skills` — catalog skill ids, emitted as Claude's subagent `skills:` preload list of skill
  * *names*. `validate` rejects an unknown or non-skill id and a preloaded skill whose name isn't its
  * id's last segment (src/refs.ts), so no catalog lookup is needed here.
@@ -88,7 +123,9 @@ const AGENT_FRONTMATTER: readonly FieldMapping[] = [
   nameMapping,
   descriptionMapping,
   claudeHintMapping('model'),
+  neutralModelMapping,
   claudeHintMapping('effort'),
+  neutralEffortMapping,
   claudeHintMapping('maxTurns'),
   claudeHintMapping('isolation'),
   claudeSkillsMapping,

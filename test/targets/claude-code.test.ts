@@ -177,6 +177,42 @@ describe('Claude Code tool dialect', () => {
   });
 });
 
+describe('Claude Code agent model and effort hints', () => {
+  it('maps a neutral model tier to its Claude alias', () => {
+    const agent = makeAgent({ model: 'balanced' }) as unknown as ResolvedArtifact;
+    assert.match(renderArtifact(CLAUDE_AGENT_SPEC, agent, {}), /^model: sonnet$/m);
+  });
+
+  it('lets claude.model win, emitting only one model line', () => {
+    const agent = makeAgent({
+      model: 'fast',
+      claude: { model: 'opus' },
+    }) as unknown as ResolvedArtifact;
+    const modelLines = renderArtifact(CLAUDE_AGENT_SPEC, agent, {}).match(/^model:.*$/gm) ?? [];
+    assert.deepEqual(modelLines, ['model: opus']);
+  });
+
+  it('emits a neutral effort as written', () => {
+    const agent = makeAgent({ effort: 'high' }) as unknown as ResolvedArtifact;
+    assert.match(renderArtifact(CLAUDE_AGENT_SPEC, agent, {}), /^effort: high$/m);
+  });
+
+  it('lets claude.effort win, emitting only one effort line', () => {
+    const agent = makeAgent({
+      effort: 'low',
+      claude: { effort: 'medium' },
+    }) as unknown as ResolvedArtifact;
+    const effortLines = renderArtifact(CLAUDE_AGENT_SPEC, agent, {}).match(/^effort:.*$/gm) ?? [];
+    assert.deepEqual(effortLines, ['effort: medium']);
+  });
+
+  it('emits no model or effort line without hints', () => {
+    const out = renderArtifact(CLAUDE_AGENT_SPEC, makeAgent() as unknown as ResolvedArtifact, {});
+    assert.doesNotMatch(out, /^model:/m);
+    assert.doesNotMatch(out, /^effort:/m);
+  });
+});
+
 describe('Claude scaffold: prompt with args', () => {
   it('emits description, argument-hint, arguments frontmatter and $name body', async () => {
     const catalog = await loadBundledCatalog();

@@ -336,6 +336,13 @@ describe('Copilot tool dialect', () => {
     const skill = makeSkill({ allowedTools: ['todo'] }) as unknown as ResolvedArtifact;
     assert.doesNotMatch(renderArtifact(COPILOT_SKILL_SPEC, skill, {}), /^allowed-tools:/m);
   });
+
+  it('leaves neutral model and effort hints out of agent frontmatter', () => {
+    const agent = makeAgent({ model: 'balanced', effort: 'high' }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(COPILOT_AGENT_SPEC, agent, {});
+    assert.doesNotMatch(out, /^model:/m);
+    assert.doesNotMatch(out, /^effort:/m);
+  });
 });
 
 describe('Copilot scaffold: prompt with args', () => {

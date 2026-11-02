@@ -56,9 +56,8 @@ always_on`). A scoped rule is skipped by the same `skipReason` as on the scaffol
      `.agents/hooks.json`. The command is a self-contained `node -e` line, so it runs no matter which `cwd` the plugin
      root gives it.
    - `mcp_config.json` holds the server that `buildAntigravityMcpOps` writes: `{ mcpServers: { <key>: <config> } }`.
-     It keeps the `inherited` env handling if F1f shows that a plugin's server inherits `agy`'s environment. If it
-     does not, the plugin writes `${NAME}` plus one `variables` entry per env name (`name`, `title` = the name), the
-     only expansion the docs give a plugin.
+     It keeps the `inherited` env handling and writes no `variables`: F1f showed that a plugin's server inherits
+     `agy`'s environment. Antigravity registers the server as `<plugin>_<key>`; the setup page says so.
    - An artifact whose `skipReason` refuses it gets no plugin.
 7. **Manifest.** The fields are `$schema` (`https://antigravity.google/schemas/v1/plugin.json`), `name`, `displayName`,
    `version` (`pkg.version`, passed in as for Claude), `description`, `author` (`{name, url}`, from the configured
@@ -72,8 +71,8 @@ always_on`). A scoped rule is skipped by the same `skipReason` as on the scaffol
    is regenerated.
 9. **Conformance.** `scripts/validate-antigravity-plugins.cjs` runs `agy plugin validate --strict` on every
    `dist/antigravity/plugins/*`. It is wired into `ci:local` after `catalog:build`. It skips with a notice when `agy`
-   is not on PATH, in CI too, because CI has no `agy` (and if F1g shows validate needs a sign-in, it skips when signed
-   out). Unlike the Claude script, it never fails CI for a missing binary.
+   is not on PATH, in CI too, because CI has no `agy`. F1g showed validate needs no sign-in, and that `--strict` fails
+   on an unknown manifest key. Unlike the Claude script, it never fails CI for a missing binary.
 10. **Distribution.** The documented routes are `agy plugin install dist/antigravity/plugins/<name>` (user) and copying
     the folder to `.agents/plugins/<name>/` (workspace). Publishing a branch for the GitHub-URL route is release work,
     left to Phase G or later. F1h records whether a URL can point at a subfolder.
@@ -265,8 +264,8 @@ Files: `scripts/validate-antigravity-plugins.cjs` (new), `package.json`.
 
 - Modelled on `scripts/validate-claude-plugins.cjs`. It runs `agy plugin validate --strict <dir>` for each
   `dist/antigravity/plugins/*`, prints one line per plugin, and exits 1 on any failure, printing that plugin's output.
-- When `agy --version` fails, it prints a skip notice and exits 0, even with `CI=true` (decision 9). If F1g showed that
-  validate needs a sign-in, it also skips, with that reason, when `agy` reports it is signed out.
+- When `agy --version` fails, it prints a skip notice and exits 0, even with `CI=true` (decision 9). There is no
+  signed-out skip (F1g).
 - `package.json`: add `"validate:antigravity-plugins": "node scripts/validate-antigravity-plugins.cjs"`, and append
   `&& npm run validate:antigravity-plugins` to `ci:local` right after `validate:claude-plugins`.
 

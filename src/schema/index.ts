@@ -416,6 +416,7 @@ export const McpSchema = z.object({
    * Copilot: 'project'/'local' = .mcp.json; 'user' = mcp-config.json under $COPILOT_HOME (default ~/.copilot).
    * Codex: 'project' = .codex/config.toml; 'user' = config.toml under $CODEX_HOME; 'local' refused.
    * Cursor: 'project' = .cursor/mcp.json; 'user' = ~/.cursor/mcp.json; 'local' refused.
+   * Antigravity: 'project' = .agents/mcp_config.json; 'user' = ~/.gemini/config/mcp_config.json; 'local' refused.
    */
   defaultScope: z.enum(CONFIG_SCOPES).optional(),
   /**

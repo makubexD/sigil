@@ -168,7 +168,8 @@ use the same key, whichever server is already running keeps it
 - **Env references:** in a plugin, `${NAME}` expands from a declared `mcpServers.<key>.variables` entry (in `command`,
   `args`, `env`, `url`, `headers`, `oauth`), and `${PLUGIN_ROOT}` / `${PLUGIN_DATA}` expand in `args`, `cwd` and `env`
   ([Build plugins](https://antigravity.google/docs/build-plugins#plugin-path-variables)). **For the workspace and user
-  files no env syntax is documented**: whether `${NAME}` there reads the process environment is a P5 question. A plugin
+  files no env syntax is documented**: whether `${NAME}` there reads the process environment is a P5 question
+  (answered: it doesn't, but the server inherits `agy`'s environment; P5, C1). A plugin
   that declares `variables` installs disabled until the user fills them in.
 - **Trust and approval:** an unconfigured MCP tool runs in Ask mode. Approval is a permission rule, `mcp(server/tool)`,
   `mcp(server/*)` or `mcp(*)` ([MCP](https://antigravity.google/docs/mcp#mcp-permissions-and-access-control)). In print

@@ -354,6 +354,15 @@ names translated to Cursor's. An `mcp` server merges into `mcpServers` in `.curs
 `${env:NAME}`. `local` scope is refused for both. Every other kind is skipped with the reason in
 [capabilities.md](capabilities.md). Specs and citations: `src/targets/cursor/`.
 
+**Antigravity (`antigravity`).** A `skill` becomes `.agents/skills/<name>/SKILL.md`, the same file `codex` and
+`agents-standard` write (so `add` refuses a second owner), with its rules inlined. A repo-wide `rule` becomes
+`.agents/rules/<id-slug>.md` with `trigger: always_on`; a scoped rule is skipped, since no glob rule attached in
+testing. `build` writes no `AGENTS.md`. An `mcp` server merges into `mcpServers` in `.agents/mcp_config.json` (or
+`~/.gemini/config/mcp_config.json` at user scope) with no `type`; the file expands no env references, so an identity
+`env` entry is dropped (the server inherits `agy`'s environment) and any other `{sigil:env:NAME}` token skips the
+server. `local` scope is refused. Every other kind is skipped with the reason in [capabilities.md](capabilities.md).
+Specs and citations: `src/targets/antigravity/`.
+
 **Key vocabulary rules:**
 
 - Claude Code has **no "prompt" artifact** — catalog `prompt` becomes a _user-invoked skill_

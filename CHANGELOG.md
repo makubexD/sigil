@@ -11,6 +11,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `--target antigravity`: skills in `.agents/skills/` and repo-wide rules in `.agents/rules/`; scoped rules are
   skipped until Antigravity attaches glob rules. See `docs/setup/antigravity.md`.
+- `--target antigravity` installs MCP servers into `.agents/mcp_config.json` (project) or
+  `~/.gemini/config/mcp_config.json` (user). These files expand no env references, so a server that uses a
+  variable other than through an identity `env` entry is skipped with the reason.
+- `McpDialect` takes `envSyntax: 'inherited'`, for a target whose MCP file expands no references but whose servers
+  inherit the client's environment.
 
 ### Changed
 

@@ -121,8 +121,8 @@ Files: new `src/targets/antigravity/mcp-ops.ts`, new `src/targets/antigravity/co
   syntax documented for these files (P5: none expanded)". `ANTIGRAVITY_SETTINGS_DOC` =
   `https://antigravity.google/docs/settings#other-configuration-files`, covers: "on a key in both MCP files, the
   server already running keeps it".
-- `mcp-ops.ts`, modelled on `src/targets/cursor/mcp-ops.ts`: `ANTIGRAVITY_MCP_DIALECT` per Decision 2 (as amended by
-  step 1), with a module comment citing `ANTIGRAVITY_MCP_DOC` and P5 / C1; `antigravityMcpSkipReason(artifact)` and
+- `mcp-ops.ts`, modelled on `src/targets/cursor/mcp-ops.ts`: `ANTIGRAVITY_MCP_DIALECT: McpDialect<'inherited'>` per
+  Decision 2 (as amended by step 1; step 2 made `McpDialect` generic in its env syntax), with a module comment citing `ANTIGRAVITY_MCP_DOC` and P5 / C1; `antigravityMcpSkipReason(artifact)` and
   `buildAntigravityMcpOps(artifact, scope)`, the same shape as Cursor's.
 - `config.ts`, modelled on `src/targets/cursor/config.ts` with only the `mcp` row: `ANTIGRAVITY_CONFIG_KINDS` with
   `section: 'mcpServers'`, Decision 4's destinations (displays `.agents/mcp_config.json, git-committed` and

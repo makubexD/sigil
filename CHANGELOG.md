@@ -20,9 +20,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `docs/setup/antigravity.md`.
 - `McpDialect` takes `envSyntax: 'inherited'`, for a target whose MCP file expands no references but whose servers
   inherit the client's environment.
+- A neutral hook vocabulary: a hook names a neutral `event` (`before-tool`, `after-tool`, `prompt-submit`,
+  `session-start`, `stop`, `subagent-stop`, `notification`) and a neutral `matcher` (`*`, or neutral tool names
+  joined with `|`, such as `edit` or `shell|edit`). Each hook target writes its own event and tool names. The
+  PascalCase events and Claude's tool names still load as legacy aliases, flagged by `sigil sync --check`
+  (`legacy-tool-name`), and `sync --apply` rewrites them. See `docs/decisions/neutral-hook-contract-2026-11.md`.
+- A hook that reads its input is a `script:`: the body of a Node.js function sigil calls with one argument,
+  `input`, holding `event`, `tool`, `files`, `command`, `agent` and `cwd`. A script denies by setting
+  `process.exitCode = 2` and writing the reason to stderr; every hook target blocks on exit 2. A script installs
+  as `node -e`, and `sigil add` warns when `node` is not on PATH.
 
 ### Changed
 
+- Every installed hook's command changes once. `sigil status` shows one outdated, and `sigil update`
+  replaces it.
+- A hook `matcher` must be `*` or neutral tool names joined with `|`. A regex, an `mcp__…` pattern or an unknown
+  name is a schema error, so an overlay catalog with one no longer loads.
 - `KindEmitSpec.skipReason` and a `bytes` limit unit for targets.
 
 ### Documentation

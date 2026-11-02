@@ -11,8 +11,10 @@ import { CONFIG_SCOPES } from '../types';
 import { LEGACY_TOOL_ALIASES, isNeutralTool } from '../tool-vocabulary';
 import { BaseFields, KEBAB_NAME_RE } from './shared';
 import { TemplateSchema } from './template';
+import { HookSchema } from './hook';
 
 export { TemplateSchema } from './template';
+export { HookSchema } from './hook';
 export type { TemplateFrontmatter } from './template';
 export { DocRefSchema, DeprecatedSchema } from './shared';
 export type { DocRef, Deprecated } from './shared';
@@ -301,56 +303,6 @@ export const WorkflowSchema = z.object({
       }),
     )
     .min(1),
-});
-
-// ─── Hook ─────────────────────────────────────────────────────────────────────
-
-const HOOK_EVENTS = [
-  'PreToolUse',
-  'PostToolUse',
-  'UserPromptSubmit',
-  'SubagentStop',
-  'Stop',
-  'SessionStart',
-  'Notification',
-] as const;
-
-export const HookSchema = z.object({
-  ...BaseFields,
-  kind: z.literal('hook'),
-  /** Optional: language scope for this hook. Omit for shared/all-language hooks. */
-  language: z.string().optional(),
-  /**
-   * Default install scope recommended by the catalog author.
-   * Overridable by --scope flag or wizard selection at install time.
-   * 'project' (default) = .claude/settings.json (git-committed).
-   * 'local'             = .claude/settings.local.json (gitignored).
-   * 'user'              = ~/.claude/settings.json (user-global).
-   */
-  defaultScope: z.enum(CONFIG_SCOPES).optional(),
-  /**
-   * Claude Code lifecycle event that triggers this hook.
-   * Maps directly to the settings.json hooks key.
-   */
-  event: z.enum(HOOK_EVENTS),
-  /**
-   * Tool-name regex filter — Claude Code `matcher` field.
-   * Only used for PreToolUse/PostToolUse. Defaults to '*' (all tools).
-   */
-  matcher: z.string().optional().default('*'),
-  /**
-   * Shell command to run when the hook fires, or — with `args` — the executable to spawn.
-   */
-  command: z.string().min(1, 'command is required'),
-  /**
-   * Exec form: when set, `command` is spawned directly with these arguments and no shell
-   * (code.claude.com/docs/en/hooks, "Exec form and shell form"). Prefer it for any hook whose
-   * exit code matters: on Windows without Git Bash, shell-form hooks run through PowerShell,
-   * which reports a native command's exit code 2 as 1, so a blocking hook stops blocking.
-   */
-  args: z.array(z.string()).optional(),
-  /** Optional timeout in seconds for the hook command (copied verbatim into Claude settings, where the unit is seconds). */
-  timeout: z.number().int().positive().optional(),
 });
 
 // ─── Settings ─────────────────────────────────────────────────────────────────

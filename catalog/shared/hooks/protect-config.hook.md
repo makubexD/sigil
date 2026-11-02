@@ -3,73 +3,54 @@ id: shared/protect-config
 kind: hook
 title: "Protect Config Files"
 description: >-
-  Blocks Edit/Write tool calls that target secret-bearing files (.env and .env.*, .envrc,
+  Blocks file edits that target secret-bearing files (.env and .env.*, .envrc,
   private keys, certificates, credential and secrets data files). Templates such as
   .env.example stay editable.
-event: PreToolUse
-matcher: "Edit|Write"
-command: node
-args:
-  - "-e"
-  - |-
-    const fs = require('fs');
-    const path = require('path');
-    let raw = '';
-    process.stdin.setEncoding('utf8');
-    process.stdin.on('data', chunk => (raw += chunk)).on('end', () => {
-      let files;
-      try {
-        const ti = JSON.parse(raw).tool_input;
-        const patch = typeof ti === 'string' ? ti : ti.command;
-        files = [...(typeof patch === 'string' ? patchFiles(patch) : []), ti.file_path ?? ti.path];
-      } catch { return; }
-      const hit = files.filter(f => typeof f === 'string').flatMap(candidates).find(isProtected);
-      if (hit) {
-        process.stderr.write('sigil-hook: blocked write to protected file ' + hit + '\n');
-        process.exitCode = 2;
-      }
-    });
-    function patchFiles(patch) {
-      const header = /^\s*\*\*\*\s*(?:add file|update file|delete file|move to):[ \t]*(.+)$/gim;
-      return [...patch.matchAll(header)].map(m => m[1].trim());
+event: before-tool
+matcher: edit
+script: |-
+  const fs = require('fs');
+  const path = require('path');
+  if (!input) return;
+  const hit = input.files.flatMap(candidates).find(isProtected);
+  if (hit) {
+    process.stderr.write('sigil-hook: blocked write to protected file ' + hit + '\n');
+    process.exitCode = 2;
+  }
+  function candidates(file) {
+    const full = path.resolve(file);
+    const names = [file, full];
+    try { names.push(fs.realpathSync.native(full)); } catch {
+      try { names.push(path.join(fs.realpathSync.native(path.dirname(full)), path.basename(full))); } catch {}
     }
-    function candidates(file) {
-      const full = path.resolve(file);
-      const names = [file, full];
-      try { names.push(fs.realpathSync.native(full)); } catch {
-        try { names.push(path.join(fs.realpathSync.native(path.dirname(full)), path.basename(full))); } catch {}
-      }
-      return names.flatMap(baseNames);
-    }
-    function baseNames(p) {
-      const b = p.split(/[\\/]/).pop().toLowerCase().replace(/[. ]+$/, '');
-      return [b, b.split(':')[0]];
-    }
-    function isProtected(b) {
-      if (/\.(example|sample|template)$/.test(b)) return false;
-      if (/^\.env([.-]|rc$|$)/.test(b) || b.endsWith('.env')) return true;
-      if (/^id_(rsa|dsa|ecdsa|ed25519)/.test(b)) return !b.endsWith('.pub');
-      if (/\.(pem|key|p12|pfx|ppk|jks|keystore)$/.test(b)) return true;
-      const exact = ['credentials', '.git-credentials', 'secrets', '.secrets', '.netrc', '.pgpass'];
-      if (exact.includes(b)) return true;
-      return /^(secrets|credentials)\.(json|ya?ml|toml|ini|env|txt|xml)$/.test(b);
-    }
+    return names.flatMap(baseNames);
+  }
+  function baseNames(p) {
+    const b = p.split(/[\\/]/).pop().toLowerCase().replace(/[. ]+$/, '');
+    return [b, b.split(':')[0]];
+  }
+  function isProtected(b) {
+    if (/\.(example|sample|template)$/.test(b)) return false;
+    if (/^\.env([.-]|rc$|$)/.test(b) || b.endsWith('.env')) return true;
+    if (/^id_(rsa|dsa|ecdsa|ed25519)/.test(b)) return !b.endsWith('.pub');
+    if (/\.(pem|key|p12|pfx|ppk|jks|keystore)$/.test(b)) return true;
+    const exact = ['credentials', '.git-credentials', 'secrets', '.secrets', '.netrc', '.pgpass'];
+    if (exact.includes(b)) return true;
+    return /^(secrets|credentials)\.(json|ya?ml|toml|ini|env|txt|xml)$/.test(b);
+  }
 tags: [security, safety, shared]
 # version:       # per-artifact semver (optional; package version is the default)
 # platforms:     # omit to propagate to ALL supporting AIs (DRY default)
 ---
 
-<!-- Describe what this hook does and when it fires. The command: above is executed. -->
+<!-- Describe what this hook does and when it fires. The script: above is executed. -->
 
-Fires before every Edit or Write tool call. The agent passes the call as JSON on stdin; the
-hook reads `tool_input.file_path` (or `tool_input.path`), or every file a patch names when
-`tool_input` is the raw patch text of GitHub Copilot's `apply_patch` or `tool_input.command` holds
-Codex's, also resolves the real path
-(so a symlink, a Windows short name like `ENV~1`, or an `::$DATA` stream suffix can't disguise the
-target), and checks each file name. On a match it exits with code 2, which blocks the call, and
-says why on stderr.
+Fires before every file edit. The hook reads the files the call names (sigil's hook input),
+resolves the real path (so a symlink, a Windows short name like `ENV~1`, or an `::$DATA` stream
+suffix can't disguise the target), and checks each file name. On a match it exits with code 2,
+which blocks the call, and says why on stderr.
 
-It runs in exec form (`command: node` with `args`), so no shell sits between the agent and the
+Where the agent allows it, sigil installs it in exec form (`node -e` with arguments), so no shell sits between the agent and the
 exit code. That matters on Windows without Git Bash, where shell-form hooks run through
 PowerShell and a blocking exit code 2 comes back as 1, which does not block.
 

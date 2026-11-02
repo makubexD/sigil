@@ -1,6 +1,9 @@
 /**
  * `sigil add` — warns when a hook's command is not on the PATH the install runs under.
  *
+ * A `script:` hook has no command of its own: every hook target installs it as `node -e`, so
+ * the command to check for one is `node`.
+ *
  * A hook that cannot start fails open: the agent lets the call through. sigil cannot check the
  * machine the hook will eventually run on, so this is a warning, never an error.
  *
@@ -53,15 +56,23 @@ function isBareCommand(command: unknown): command is string {
   return typeof command === 'string' && !command.includes('/') && !command.includes('\\');
 }
 
+/** The command a hook runs through: its own `command`, or `node` for a `script:` hook. */
+function hookCommand(frontmatter: Record<string, unknown>): unknown {
+  if (typeof frontmatter.command === 'string') return frontmatter.command;
+  if (typeof frontmatter.script === 'string') return 'node';
+  return undefined;
+}
+
 /**
- * Warns for each written hook whose bare `command` is not on this machine's PATH.
+ * Warns for each written hook whose bare `command` (or the `node` a `script:` hook runs through)
+ * is not on this machine's PATH.
  *
  * A project install may run on another machine, so this never sets `process.exitCode`.
  */
 export function warnHookCommandsOffPath(written: WrittenConfig[]): void {
   for (const { id, artifact } of written) {
     if (artifact.kind !== 'hook') continue;
-    const command = artifact.frontmatter.command;
+    const command = hookCommand(artifact.frontmatter);
     if (!isBareCommand(command) || commandOnPath(command)) continue;
     console.warn(
       `  ⚠  hook ${id}: '${command}' is not on PATH here, and a hook that can't start lets every call through`,

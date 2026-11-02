@@ -8,13 +8,20 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
+import { hookFragment } from '../../dist-cli/targets/copilot/hook-ops';
+import {
+  COPILOT_HOOK_EVENTS,
+  COPILOT_HOOK_INPUT,
+  COPILOT_HOOK_TOOL_DIALECT,
+} from '../../dist-cli/targets/copilot/hook-dialect';
 import { applyMerge, reverseMerge } from '../../dist-cli/config-merge/index';
 import { withTempDir } from '../helpers/temp-dir';
 import type { ResolvedCatalog } from '../../dist-cli/types';
+import type { ToolDialect } from '../../dist-cli/targets/tool-dialect';
 
 const CLI = path.resolve(__dirname, '../../dist-cli/cli.js');
 const PROJECT_DIR = '/abs/project';
@@ -130,20 +137,30 @@ describe('copilot hook config — scaffoldConfig', () => {
     assert.equal(ops[0]!.root, 'copilot-home');
   });
 
-  for (const event of ['Stop', 'SubagentStop', 'Notification']) {
-    it(`refuses event ${event} with an error naming it and Copilot`, async () => {
+  for (const [event, provider] of [
+    ['stop', 'Stop'],
+    ['subagent-stop', 'SubagentStop'],
+  ] as const) {
+    it(`renders the neutral ${event} event as ${provider}`, async () => {
       const catalog = makeCatalog(makeHook({ event }));
+      const ops = await scaffold(target, 'shared/test-hook', catalog, 'project');
 
-      await assert.rejects(
-        () => scaffold(target, 'shared/test-hook', catalog, 'project'),
-        (err: Error) => {
-          assert.match(err.message, new RegExp(event));
-          assert.match(err.message, /Copilot/);
-          return true;
-        },
-      );
+      assert.equal(hookEntries(ops[0]!.fragment, provider).length, 1);
     });
   }
+
+  it('refuses notification with an error naming it and Copilot', async () => {
+    const catalog = makeCatalog(makeHook({ event: 'notification' }));
+
+    await assert.rejects(
+      () => scaffold(target, 'shared/test-hook', catalog, 'project'),
+      (err: Error) => {
+        assert.match(err.message, /notification/);
+        assert.match(err.message, /Copilot/);
+        return true;
+      },
+    );
+  });
 });
 
 describe('copilot hook config — two hooks share version', () => {
@@ -265,5 +282,100 @@ describe('copilot hooks — CLI round trip', () => {
         assert.equal(fs.existsSync(path.join(dir, '.github/hooks/sigil.json')), false);
       });
     });
+  });
+});
+
+// ── The neutral hook contract ──────────────────────────────────────────────────
+
+/** A fixture script hook: deny any call that names a `.env` file. */
+const DENY_ENV_SCRIPT = [
+  "const hit = input && input.files.find(file => file.split('/').pop().startsWith('.env'));",
+  'if (hit) {',
+  "  process.stderr.write('sigil-test: blocked ' + hit + '\\n');",
+  '  process.exitCode = 2;',
+  '}',
+].join('\n');
+
+/** Copilot's table with `todo` removed, to exercise the missing-tool refusal. */
+const COPILOT_NAMES = (COPILOT_HOOK_TOOL_DIALECT as Extract<ToolDialect, { kind: 'names' }>).names;
+const WITHOUT_TODO: ToolDialect = { kind: 'names', names: { ...COPILOT_NAMES, todo: undefined } };
+
+describe('copilot hook contract', () => {
+  it('should render a neutral script hook as exec-form node -e', () => {
+    const { event, entry } = hookFragment({
+      event: 'before-tool',
+      matcher: 'edit',
+      script: 'return;',
+    });
+
+    assert.equal(event, 'PreToolUse', 'the neutral event becomes PreToolUse');
+    assert.equal(entry.matcher, 'Edit|Write');
+    assert.equal(entry.exec, 'node');
+    assert.deepEqual((entry.args as string[]).slice(0, 1), ['-e']);
+    assert.match((entry.args as string[])[1] ?? '', /normalizeHookInput/);
+    assert.match((entry.args as string[])[1] ?? '', /"before-tool"/);
+  });
+
+  it('should keep a legacy command hook’s event and matcher', () => {
+    const { event, entry } = hookFragment({
+      event: 'PreToolUse',
+      matcher: 'Edit|Write',
+      command: 'node',
+      args: ['-e', 'x'],
+    });
+
+    assert.equal(event, 'PreToolUse');
+    assert.deepEqual(entry, {
+      type: 'command',
+      matcher: 'Edit|Write',
+      exec: 'node',
+      args: ['-e', 'x'],
+    });
+  });
+
+  it('should refuse notification with a message naming it', () => {
+    assert.throws(
+      () => hookFragment({ event: 'notification', matcher: '*', script: 'return;' }),
+      (err: Error) => {
+        assert.match(err.message, /notification/);
+        assert.match(err.message, /Copilot/);
+        return true;
+      },
+    );
+  });
+
+  it('should refuse a matcher naming a tool its table cannot write', () => {
+    assert.throws(
+      () =>
+        hookFragment(
+          { event: 'before-tool', matcher: 'todo', script: 'return;' },
+          { tools: WITHOUT_TODO, events: COPILOT_HOOK_EVENTS, input: COPILOT_HOOK_INPUT },
+        ),
+      (err: Error) => {
+        assert.match(err.message, /todo/);
+        assert.match(err.message, /Copilot/);
+        return true;
+      },
+    );
+  });
+
+  it('should deny a Copilot raw apply_patch string touching .env with exit 2', () => {
+    const { entry } = hookFragment({
+      event: 'before-tool',
+      matcher: 'edit',
+      script: DENY_ENV_SCRIPT,
+    });
+    assert.ok(entry.args, 'the script hook renders node -e arguments');
+
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'apply_patch',
+      tool_input: '*** Begin Patch\n*** Update File: /repo/.env\n@@\n-X=1\n+X=2\n*** End Patch',
+    });
+    const result = spawnSync(process.execPath, entry.args as string[], {
+      input: payload,
+      encoding: 'utf8',
+    });
+    assert.equal(result.status, 2, result.stderr);
   });
 });

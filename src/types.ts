@@ -7,6 +7,7 @@ import type { ConfigScopeDestination, ConfigScopeInfo } from './config-scope-typ
 import type { ConfigKindTable } from './targets/config-kind-table';
 import type { DocRef, KindEmitSpec, SourcedDocRef } from './targets/spec-types';
 import type { ProviderLexicon } from './targets/lexicon';
+import type { HookInputDialect } from './targets/hook-input';
 
 // ─── Artifact kinds ──────────────────────────────────────────────────────────
 
@@ -451,6 +452,9 @@ export interface Target {
 
   /** The literal each `{sigil:<term>}` body token becomes on this provider (src/targets/lexicon.ts). */
   readonly lexicon?: ProviderLexicon;
+
+  /** The data that normalizes this provider's hook stdin (src/targets/hook-input.ts). */
+  readonly hookInput?: HookInputDialect;
 
   /**
    * Citations for files no KindEmitSpec renders (aggregates such as AGENTS.md, plugin.json, and

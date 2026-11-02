@@ -8,10 +8,12 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { commandOnPath } from '../../dist-cli/commands/add/hook-path-warning';
+import { CATALOG_DIR } from '../helpers/catalog';
 import { withTempDir } from '../helpers/temp-dir';
 
 const CLI = path.resolve(__dirname, '../../dist-cli/cli.js');
-const HOOK = 'shared/protect-config';
+const SCRIPT_HOOK = 'shared/protect-config';
+const COMMAND_HOOK = 'shared/e2e-path-hook';
 const HOME_VAR = process.platform === 'win32' ? 'USERPROFILE' : 'HOME';
 
 interface CliResult {
@@ -19,30 +21,65 @@ interface CliResult {
   output: string;
 }
 
-/** Runs `add` for the hook in a temp project, with `PATH` and the home directory overridden. */
-function addHook(project: string, home: string, pathValue: string): CliResult {
-  const done = spawnSync(
-    process.execPath,
-    [
-      CLI,
-      'add',
-      HOOK,
-      '--target',
-      'cursor',
-      '--scope',
-      'project',
-      '--yes',
-      '--project-dir',
-      project,
-    ],
-    {
-      cwd: project,
-      encoding: 'utf8',
-      input: '',
-      windowsHide: true,
-      env: { ...process.env, [HOME_VAR]: home, PATH: pathValue },
-    },
+/** A catalog hook with a `command:`, which is the one whose command the warning checks. */
+const COMMAND_HOOK_SOURCE = `---
+id: ${COMMAND_HOOK}
+kind: hook
+title: "E2E Path Hook"
+description: >-
+  A test fixture hook with a command, so the add PATH warning test checks the command form.
+event: before-tool
+matcher: edit
+command: node
+args:
+  - "-e"
+  - |-
+    process.exitCode = 0;
+tags: [test, fixture]
+---
+
+A fixture hook for the add PATH warning tests.
+`;
+
+/** The bundled catalog, copied, plus the `command:` fixture hook. */
+function copyCatalog(work: string): string {
+  const catalogDir = path.join(work, 'catalog');
+  fs.cpSync(CATALOG_DIR, catalogDir, { recursive: true });
+  fs.writeFileSync(
+    path.join(catalogDir, 'shared', 'hooks', 'e2e-path-hook.hook.md'),
+    COMMAND_HOOK_SOURCE,
   );
+  return catalogDir;
+}
+
+/** Runs `add` for the hook in a temp project, with `PATH` and the home directory overridden. */
+function addHook(
+  project: string,
+  home: string,
+  pathValue: string,
+  id = SCRIPT_HOOK,
+  catalogDir?: string,
+): CliResult {
+  const args = [
+    CLI,
+    'add',
+    id,
+    '--target',
+    'cursor',
+    '--scope',
+    'project',
+    '--yes',
+    '--project-dir',
+    project,
+  ];
+  if (catalogDir !== undefined) args.push('--catalog-dir', catalogDir);
+  const done = spawnSync(process.execPath, args, {
+    cwd: project,
+    encoding: 'utf8',
+    input: '',
+    windowsHide: true,
+    env: { ...process.env, [HOME_VAR]: home, PATH: pathValue },
+  });
   return { status: done.status, output: `${done.stdout ?? ''}${done.stderr ?? ''}` };
 }
 
@@ -56,7 +93,26 @@ function makeDirs(work: string): { project: string; home: string; emptyBin: stri
 }
 
 describe('add hook PATH warning', () => {
-  it('warns when the hook command is not on PATH, and still writes the file', () => {
+  it('warns when a command hook’s command is not on PATH, and still writes the file', () => {
+    withTempDir(work => {
+      const { project, home, emptyBin } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+
+      const result = addHook(project, home, emptyBin, COMMAND_HOOK, catalogDir);
+
+      assert.equal(result.status, 0, result.output);
+      assert.match(
+        result.output,
+        /hook shared\/e2e-path-hook: 'node' is not on PATH here, and a hook that can't start lets every call through/,
+      );
+      assert.ok(
+        fs.existsSync(path.join(project, '.cursor', 'hooks.json')),
+        'the hook file was written',
+      );
+    });
+  });
+
+  it('warns naming node when a script hook is installed and node is not on PATH', () => {
     withTempDir(work => {
       const { project, home, emptyBin } = makeDirs(work);
 
@@ -69,7 +125,7 @@ describe('add hook PATH warning', () => {
       );
       assert.ok(
         fs.existsSync(path.join(project, '.cursor', 'hooks.json')),
-        'the hook file was written',
+        'the script hook was written',
       );
     });
   });

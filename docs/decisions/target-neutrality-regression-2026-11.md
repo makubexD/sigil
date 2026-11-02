@@ -115,9 +115,9 @@ platform target). It is listed here so the regression has the full picture.
 
 | #   | Fix                                                      | Where                                                    | Size                 | Status                                     |
 | --- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------- | ------------------------------------------ |
-| V1  | Neutral hook events and matchers, a table per target     | schema, catalog hooks, each `hook-ops.ts`                | phase                | open, roadmap Phase H                      |
+| V1  | Neutral hook events and matchers, a table per target     | schema, catalog hooks, each `hook-ops.ts`                | phase                | fixed, `docs/plan-antigravity-target-h.md` |
 | V1  | Correct "each hook target already translates them"       | `docs/decisions/neutral-agent-vocabulary-2026-11.md:136` | one line             | fixed, `docs/plan-antigravity-target-a.md` |
-| V2  | Neutral hook I/O contract                                | catalog hooks, each hook target                          | phase (with V1)      | open, roadmap Phase H                      |
+| V2  | Neutral hook I/O contract                                | catalog hooks, each hook target                          | phase (with V1)      | fixed, `docs/plan-antigravity-target-h.md` |
 | V3  | Neutral MCP descriptions, no per-target destination list | 4 `catalog/shared/mcps/*.mcp.md`                         | small                | fixed, `docs/plan-antigravity-target-a.md` |
 | V4  | Point the prompt at the capability table                 | `author-artifact.prompt.md`                              | small                | fixed, `docs/plan-antigravity-target-a.md` |
 | V5  | Decide neutral prose or a new concept, then apply        | `feature` skill and its reference                        | decision, then small | fixed, `docs/plan-antigravity-target-a.md` |

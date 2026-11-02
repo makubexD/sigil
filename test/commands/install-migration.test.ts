@@ -32,7 +32,9 @@ const USER_EDIT = '\n<!-- the user wrote this line -->\n';
 const STALE_HASH = '0'.repeat(64);
 const SETTINGS = '.claude/settings.json';
 const HOOK_ID = 'shared/protect-config';
-const CURRENT_MATCHER = 'Edit|Write';
+/** The protect-config matcher the frozen install wrote, and the one the current catalog renders. */
+const FROZEN_MATCHER = 'Edit|Write';
+const CURRENT_MATCHER = 'Edit|Write|NotebookEdit';
 const OLDER_MATCHER = 'Edit';
 const JSON_INDENT = 2;
 const EDITED_FILE: Record<string, string> = {
@@ -103,7 +105,7 @@ function simulateOlderHook(dir: string): void {
   saveManifest(dir, manifest);
   const settings = readJson(dir, SETTINGS);
   const onDisk = (settings.hooks as Record<string, HookItem[]>).PreToolUse!;
-  onDisk.find(item => item.matcher === CURRENT_MATCHER)!.matcher = OLDER_MATCHER;
+  onDisk.find(item => item.matcher === FROZEN_MATCHER)!.matcher = OLDER_MATCHER;
   fs.writeFileSync(path.join(dir, SETTINGS), JSON.stringify(settings, null, JSON_INDENT) + '\n');
 }
 

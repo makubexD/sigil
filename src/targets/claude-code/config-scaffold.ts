@@ -6,28 +6,84 @@
  * @module
  */
 import type { Artifact, ConfigMergeOp, MergeStrategy } from '../../types';
+import { SigilError } from '../../errors';
+import { normalizeHookEvent, parseHookMatcher } from '../../hook-vocabulary';
+import type { HookEvent } from '../../hook-vocabulary';
+import type { NeutralTool } from '../../tool-vocabulary';
+import { composeHookScript } from '../hook-input';
+import { hookCommand, hookEventFor, renderHookMatcher } from '../hook-render';
+import type { HookCommandFields } from '../hook-render';
+import { CLAUDE_HOOK_EVENTS, CLAUDE_HOOK_INPUT, CLAUDE_HOOK_TOOL_DIALECT } from './hook-dialect';
 import { CLAUDE_MCP_SERVERS_KEY } from './config';
 import { portableMcpOp, portableMcpServer } from '../portable-mcp';
 import type { ConfigDestination } from './config';
 
-/** Builds the single hook entry ({type, command, args?, timeout?}) from an artifact's frontmatter. */
-function buildHookEntry(fm: Artifact['frontmatter']): Record<string, unknown> {
-  const command = fm.command as string;
-  const args = fm.args as string[] | undefined;
+/** The hook's execution fields, built with only the keys the frontmatter sets. */
+function commandFields(fm: Artifact['frontmatter']): HookCommandFields {
+  return {
+    ...(typeof fm.script === 'string' ? { script: fm.script } : {}),
+    ...(typeof fm.command === 'string' ? { command: fm.command } : {}),
+    ...(Array.isArray(fm.args) ? { args: fm.args as string[] } : {}),
+  };
+}
+
+/**
+ * Builds the single hook entry ({type, command, args?, timeout?}). A `script` hook is the exec
+ * form `node -e <composed>`; a `command` hook keeps its command and args.
+ */
+function buildHookEntry(
+  fm: Artifact['frontmatter'],
+  event: HookEvent,
+  tools?: readonly NeutralTool[],
+): Record<string, unknown> {
+  const execution = hookCommand(commandFields(fm));
+  const hookEntry: Record<string, unknown> =
+    execution.kind === 'script'
+      ? {
+          type: 'command',
+          command: 'node',
+          args: ['-e', composeHookScript(execution.script, CLAUDE_HOOK_INPUT, event, tools)],
+        }
+      : { type: 'command', command: execution.command };
+  if (execution.kind === 'command' && execution.args !== undefined) hookEntry.args = execution.args;
   const timeout = fm.timeout as number | undefined;
-  const hookEntry: Record<string, unknown> = { type: 'command', command };
-  if (args !== undefined) hookEntry.args = args;
   if (timeout !== undefined) hookEntry.timeout = timeout;
   return hookEntry;
 }
 
+/** Claude Code's event name for a catalog event, refusing one it does not document. */
+function providerEvent(authored: string): { event: string; neutral: HookEvent } {
+  const normalized = normalizeHookEvent(authored);
+  const event = hookEventFor(CLAUDE_HOOK_EVENTS, authored);
+  if (normalized === undefined || event === undefined)
+    throw new SigilError(`Claude Code has no '${authored}' hook event.`);
+  return { event, neutral: normalized.event };
+}
+
+/** Claude Code's matcher and the neutral tools it names, refusing a tool it cannot name. */
+function providerMatcher(authored: string | undefined): {
+  matcher: string;
+  tools: NeutralTool[] | undefined;
+} {
+  const rendered = renderHookMatcher(CLAUDE_HOOK_TOOL_DIALECT, authored);
+  if (rendered.kind === 'missing')
+    throw new SigilError(
+      `Claude Code has no hook tool name for ${rendered.tools.map(tool => `'${tool}'`).join(', ')}.`,
+    );
+  const parsed = parseHookMatcher(authored);
+  return {
+    matcher: rendered.kind === 'all' ? '*' : rendered.matcher,
+    tools: parsed.kind === 'tools' ? parsed.tools : undefined,
+  };
+}
+
 export function hookFragment(fm: Artifact['frontmatter']): Record<string, unknown> {
-  const event = fm.event as string;
-  const matcher = (fm.matcher as string | undefined) ?? '*';
+  const { event, neutral } = providerEvent(fm.event as string);
+  const { matcher, tools } = providerMatcher(fm.matcher as string | undefined);
 
   // Claude Code hooks format:
   // { hooks: { [event]: [{ matcher: "...", hooks: [{type: "command", command: "..."}] }] } }
-  return { hooks: { [event]: [{ matcher, hooks: [buildHookEntry(fm)] }] } };
+  return { hooks: { [event]: [{ matcher, hooks: [buildHookEntry(fm, neutral, tools)] }] } };
 }
 
 export function buildHookConfigOps(artifact: Artifact, dest: ConfigDestination): ConfigMergeOp[] {

@@ -63,7 +63,7 @@ function collapsed(value: unknown): string {
 
 describe('shared/reviewer-bash-guard hook', () => {
   it('matches Bash only', async () => {
-    assert.equal((await installedHook()).matcher, 'Bash');
+    assert.equal((await installedHook()).matcher, 'Bash|PowerShell');
   });
 
   for (const command of [

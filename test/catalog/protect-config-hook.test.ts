@@ -40,7 +40,7 @@ const write = (filePath: string) => JSON.stringify({ tool_name: 'Write', tool_in
 
 describe('shared/protect-config hook', () => {
   it('matches the current write tools only', async () => {
-    assert.equal((await installedHook()).matcher, 'Edit|Write');
+    assert.equal((await installedHook()).matcher, 'Edit|Write|NotebookEdit');
   });
 
   for (const p of [

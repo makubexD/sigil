@@ -3,12 +3,14 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 
 import { parsePacksConfig } from '../../dist-cli/packs-config';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { renderArtifact } from '../../dist-cli/targets/emit';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
+import { hookFragment } from '../../dist-cli/targets/claude-code/config-scaffold';
 import { CLAUDE_AGENT_SPEC } from '../../dist-cli/targets/claude-code/spec/agent';
 import { CLAUDE_PROMPT_SPEC } from '../../dist-cli/targets/claude-code/spec/prompt';
 import { CLAUDE_SCAFFOLD_SKILL_SPEC } from '../../dist-cli/targets/claude-code/spec/skill';
@@ -433,5 +435,101 @@ describe('empty packs', () => {
       names.includes('essentials'),
       'essentials is listed — its plugin carries explain-diff',
     );
+  });
+});
+
+/** The rendered hook entry and group shapes these contract cases inspect. */
+interface RenderedEntry {
+  type: string;
+  command: string;
+  args?: string[];
+  timeout?: number;
+}
+interface RenderedGroup {
+  matcher: string;
+  hooks: RenderedEntry[];
+}
+interface RenderedFragment {
+  hooks: Record<string, RenderedGroup[]>;
+}
+
+/** Renders one hook fragment from the neutral frontmatter fields under test. */
+function renderHook(fm: Record<string, unknown>): RenderedFragment {
+  return hookFragment(fm) as unknown as RenderedFragment;
+}
+
+/** A fixture script hook: deny any call that names a `.env` file. */
+const DENY_ENV_SCRIPT = [
+  "const hit = input && input.files.find(file => file.split('/').pop().startsWith('.env'));",
+  'if (hit) {',
+  "  process.stderr.write('sigil-test: blocked ' + hit + '\\n');",
+  '  process.exitCode = 2;',
+  '}',
+].join('\n');
+
+describe('Claude Code hook contract', () => {
+  it('should render a neutral script hook as exec-form node -e', () => {
+    const fragment = renderHook({ event: 'before-tool', matcher: 'edit', script: 'return;' });
+    const groups = fragment.hooks.PreToolUse;
+    assert.ok(groups, 'the neutral event becomes PreToolUse');
+    assert.equal(groups.length, 1);
+    assert.equal(groups[0]!.matcher, 'Edit|Write|NotebookEdit');
+    assert.equal(groups[0]!.hooks.length, 1, 'one hook entry');
+
+    const entry = groups[0]!.hooks[0]!;
+    assert.equal(entry.type, 'command');
+    assert.equal(entry.command, 'node');
+    assert.deepEqual(entry.args?.slice(0, 1), ['-e']);
+    assert.match(entry.args?.[1] ?? '', /normalizeHookInput/, 'the composed script is embedded');
+    assert.match(entry.args?.[1] ?? '', /"before-tool"/, 'the neutral event reaches the script');
+  });
+
+  it('should keep a legacy command hook’s event and render its matcher', () => {
+    const fragment = renderHook({
+      event: 'PreToolUse',
+      matcher: 'Edit|Write',
+      command: 'node',
+      args: ['-e', 'x'],
+    });
+    const groups = fragment.hooks.PreToolUse;
+    assert.ok(groups, 'the legacy event resolves to PreToolUse');
+    assert.equal(groups[0]!.matcher, 'Edit|Write|NotebookEdit');
+    assert.deepEqual(groups[0]!.hooks[0], { type: 'command', command: 'node', args: ['-e', 'x'] });
+  });
+
+  it('should render every current catalog hook', async () => {
+    const catalog = await loadBundledCatalog();
+    const hooks = catalog.artifacts.filter(artifact => artifact.kind === 'hook');
+    assert.equal(hooks.length, 3, 'the bundled catalog has three hooks');
+
+    const matchers = new Map<string, string>();
+    for (const hook of hooks) {
+      const groups = renderHook(hook.frontmatter).hooks.PreToolUse;
+      assert.ok(groups, `${hook.id} renders a PreToolUse group`);
+      assert.equal(groups.length, 1, `${hook.id} renders one group`);
+      matchers.set(hook.id, groups[0]!.matcher);
+    }
+    assert.equal(matchers.get('shared/protect-config'), 'Edit|Write|NotebookEdit');
+    assert.equal(matchers.get('shared/worker-mode-guard'), 'Edit|Write|NotebookEdit');
+    assert.equal(matchers.get('shared/reviewer-bash-guard'), 'Bash|PowerShell');
+  });
+
+  it('should deny a Claude Write payload on a .env path with exit 2', () => {
+    const groups = renderHook({
+      event: 'before-tool',
+      matcher: 'edit',
+      script: DENY_ENV_SCRIPT,
+    }).hooks.PreToolUse;
+    assert.ok(groups);
+    const entry = groups[0]!.hooks[0]!;
+    assert.ok(entry.args, 'the script hook renders node -e arguments');
+
+    const payload = JSON.stringify({
+      hook_event_name: 'PreToolUse',
+      tool_name: 'Write',
+      tool_input: { file_path: '/repo/.env', content: 'SECRET=1' },
+    });
+    const result = spawnSync(process.execPath, entry.args, { input: payload, encoding: 'utf8' });
+    assert.equal(result.status, 2, result.stderr);
   });
 });

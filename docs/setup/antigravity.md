@@ -260,7 +260,8 @@ npm run build && npm run probe:antigravity
 
 It installs or builds one probe artifact per kind from sigil's real output, runs one `agy -p` for each in a throwaway
 repo, and compares the answer with the result recorded in the ADR. Each probe is a model call on the lowest Flash tier
-(`--model` picks another). A `CHANGED` line names the ADR row to revisit, and the command exits 1. Without `agy` on
+(`npm run probe:antigravity -- --model <id>` picks another). A `CHANGED` line names the ADR row to revisit; an `ERROR` line means the probe got no
+result (setup or `agy` failed). Either makes the command exit 1. Without `agy` on
 your PATH it prints a notice and exits 0.
 
 ## What was tested

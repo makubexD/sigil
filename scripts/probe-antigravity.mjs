@@ -9,6 +9,9 @@
  * or `ci:local`. Without `agy` on PATH it prints a skip notice and exits 0.
  *
  * Usage: node scripts/probe-antigravity.mjs [--model <id>] [--only <id,...>] [--dry-run] [--keep]
+ *
+ * Each line ends `OK`, `CHANGED` (the result moved: revisit that ADR row) or `ERROR` (setup,
+ * `agy` or teardown failed, so there is no result). Anything but `OK` exits 1.
  */
 import { spawnSync } from 'node:child_process';
 import {
@@ -416,10 +419,6 @@ function oneLine(text) {
     .slice(0, MAX_EVIDENCE);
 }
 
-/**
- * The verdict for probes that pass when the final answer contains `codeword`. Evidence is the
- * answer, or the reason there is none.
- */
 /** Whether any tool call in the stream names `needle` in its parameters. */
 function toolCallsTouch(stream, needle) {
   return stream.some(event => {
@@ -428,6 +427,10 @@ function toolCallsTouch(stream, needle) {
   });
 }
 
+/**
+ * The verdict for probes that pass when the final answer contains `codeword`. Evidence is the
+ * answer, or the reason there is none.
+ */
 function answerVerdict(stream, codeword) {
   const answer = finalAnswer(stream);
   if (answer === null) return { verdict: 'fail', evidence: 'no result event in stream' };
@@ -501,10 +504,11 @@ function runProbe(probe, ctx, options) {
     };
     return outcome;
   } catch (error) {
+    // An error is never a result, even for a probe that expects `fail`.
     outcome = {
       probe,
-      got: 'fail',
-      mark: probe.expect === 'fail' ? 'OK' : 'CHANGED',
+      got: 'error',
+      mark: 'ERROR',
       evidence: `error: ${oneLine(error.message)}`,
       failed: true,
       repo,
@@ -557,8 +561,8 @@ function main() {
       } catch (error) {
         outcome = {
           probe,
-          got: 'fail',
-          mark: 'CHANGED',
+          got: 'error',
+          mark: 'ERROR',
           evidence: `teardown failed: ${oneLine(error.message)}`,
           failed: true,
         };

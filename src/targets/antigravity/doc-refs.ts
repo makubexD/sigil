@@ -51,6 +51,17 @@ export const ANTIGRAVITY_PLUGIN_SUBAGENTS_DOC: DocRef = {
     '`model` tiers include `flash_lite`; omit file-edit and shell tools for a read-only agent',
 };
 
+/** Antigravity's hook files, their named-hook keying, and the two entry shapes. */
+export const ANTIGRAVITY_HOOKS_DOC: DocRef = {
+  url: 'https://antigravity.google/docs/hooks',
+  title: 'Antigravity — Hooks',
+  verifiedOn: '2026-11-02',
+  covers:
+    '.agents/hooks.json and ~/.gemini/config/hooks.json, a map from hook name to event; ' +
+    'PreToolUse / PostToolUse take [{matcher, hooks: [{type, command, timeout}]}], ' +
+    'SessionStart / PreInvocation / PostInvocation / Stop take the handlers directly',
+};
+
 /** Antigravity's MCP files and the server shapes they accept. */
 export const ANTIGRAVITY_MCP_DOC: DocRef = {
   url: 'https://antigravity.google/docs/mcp#mcp-configuration-structure',

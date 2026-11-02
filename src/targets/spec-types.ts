@@ -11,6 +11,7 @@
  */
 import type { ArtifactKind, ResolvedArtifact, ResolvedCatalog } from '../types';
 import type { ProviderLexicon } from './lexicon';
+import type { ToolDialect } from './tool-dialect';
 
 /** One DocRef paired with a human-readable label identifying what cites it. */
 export interface SourcedDocRef {
@@ -101,6 +102,12 @@ export interface KindEmitSpec {
   readonly frontmatter: readonly FieldMapping[];
   /** When false and no `frontmatter` mapping produced output, omit the `---…---` block entirely. */
   readonly emitEmptyFrontmatter: boolean;
+  /**
+   * How this target writes the provider-neutral tool vocabulary (./tool-dialect.ts): `tools` and
+   * `disallowedTools` on an agent, `allowedTools` on a skill. Required on every agent spec and on
+   * a skill spec that maps `allowedTools`; a spec without it can carry neither field.
+   */
+  readonly toolDialect?: ToolDialect;
   readonly body: readonly BodySectionSpec[];
   /**
    * This provider's body-lexicon table (see ./lexicon.ts) — applied unconditionally by

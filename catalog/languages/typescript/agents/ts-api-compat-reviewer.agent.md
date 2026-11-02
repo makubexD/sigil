@@ -11,11 +11,6 @@ description: >-
   release that could affect downstream consumers (TypeScript).
 name: ts-api-compat-reviewer
 language: typescript
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - typescript
   - api
@@ -32,6 +27,10 @@ relatedArtifacts:
     reason: >-
       ts-architecture-reviewer analyzes internal module coupling; this agent
       analyzes the published surface
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a public API compatibility reviewer. Your sole output is a tiered compatibility report and

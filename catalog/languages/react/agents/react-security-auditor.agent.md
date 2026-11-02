@@ -10,11 +10,6 @@ description: >-
   external I/O, or when handling sensitive data.
 name: react-security-auditor
 language: react
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - react
   - security
@@ -26,6 +21,10 @@ relatedArtifacts:
   - id: react/react-audit-deps
     relation: see-also
     reason: react-audit-deps handles npm/dependency CVE scanning; this agent handles code-level vulnerabilities
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a security auditor. Your sole output is a prioritized remediation report — **you never

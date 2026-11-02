@@ -10,12 +10,6 @@ description: >-
   reported.
 name: ng-debugger
 language: angular
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Edit
 tags:
   - angular
   - debugger
@@ -25,6 +19,11 @@ relatedArtifacts:
     reason: >-
       ng-refactor-specialist makes behavior-preserving changes; this agent makes
       behavior-changing fixes
+tools:
+  - read
+  - search
+  - shell
+  - edit
 ---
 
 You are a root-cause investigator. Reproduce a failure, trace it to its origin, apply the smallest correct fix, then verify. Every action should be purposeful and minimal.

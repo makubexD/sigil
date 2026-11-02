@@ -11,11 +11,6 @@ description: >-
   between frameworks, refactoring boundaries, or when the codebase feels tangled.
 name: py-architecture-reviewer
 language: python
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - python
   - architecture
@@ -32,6 +27,10 @@ relatedArtifacts:
   - id: python/py-api-compat-reviewer
     relation: complements
     reason: py-api-compat-reviewer covers the public API surface; this agent covers internal structure
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a software architect. Your output is a prioritized structural findings report, or — when

@@ -8,6 +8,7 @@
 import { z } from 'zod';
 import type { ArtifactKind } from '../types';
 import { CONFIG_SCOPES } from '../types';
+import { LEGACY_TOOL_ALIASES, isNeutralTool } from '../tool-vocabulary';
 import { BaseFields, KEBAB_NAME_RE } from './shared';
 import { TemplateSchema } from './template';
 
@@ -41,15 +42,30 @@ const RelatedArtifactSchema = z.object({
 export type RelatedArtifact = z.infer<typeof RelatedArtifactSchema>;
 
 /**
- * A tool name or permission pattern: `Read`, `Bash(git log:*)`, `mcp__github__get_issue`. Tool lists
- * are emitted as one comma-separated frontmatter line, so a newline, `#`, quote, comma or bracket in a
- * name could end that line or add a key (`permissionMode: …`); none of those is allowed.
+ * A tool name in one of three forms: a neutral capability (`read`, `search`, `edit`, `shell`,
+ * `web`, `agent`, `todo`), a legacy provider name accepted for now (`Read`, `Grep`, …), or a
+ * provider-specific permission pattern (`Bash(git log:*)`, `mcp__github__get_issue`,
+ * `Read(./src/**)`) passed through as written. Each target maps neutral and legacy names to its
+ * own tools (src/tool-vocabulary.ts, docs/decisions/neutral-agent-vocabulary-2026-11.md).
+ *
+ * Tool lists are emitted as one comma-separated frontmatter line, so a newline, `#`, quote, comma
+ * or bracket in a name could end that line or add a key (`permissionMode: …`); the regex rejects
+ * each of those. The refinement rejects an unknown bare name, which no target could map.
  */
 const ToolName = z
   .string()
   .regex(
     /^[A-Za-z0-9_][A-Za-z0-9_.:*()/ -]*$/,
     'a tool name may use letters, digits, spaces and _ . : * ( ) / - only',
+  )
+  .refine(
+    name =>
+      isNeutralTool(name) ||
+      Object.hasOwn(LEGACY_TOOL_ALIASES, name) ||
+      name.includes('(') ||
+      name.includes('/') ||
+      name.startsWith('mcp__'),
+    'unknown tool: use a neutral name (read, search, edit, shell, web, agent, todo), a legacy alias, or a provider pattern like Bash(git *) or mcp__server__tool',
   );
 
 // ─── Skill ───────────────────────────────────────────────────────────────────
@@ -89,9 +105,10 @@ export const SkillSchema = z.object({
     // leave `uses` as {} instead of { rules: [], agents: [] }. prefault parses {} as zod 3 did.
     .prefault({}),
   /**
-   * Tool capabilities the skill is allowed to use (platform-specific invocation).
-   * Emitted as `allowed-tools:` in Claude Code SKILL.md frontmatter.
-   * Absent = platform default (no restriction).
+   * Tools the skill pre-approves, in the neutral vocabulary (`read`, `search`, `edit`, `shell`,
+   * `web`, `agent`, `todo`) or a legacy/provider-specific name (see ToolName). Each target maps
+   * them to its own tools; one that documents no `allowed-tools` field leaves it out.
+   * Absent = platform default (no pre-approval).
    */
   allowedTools: z.array(ToolName).optional(),
   /**
@@ -158,19 +175,30 @@ export const AgentSchema = z.object({
    */
   language: z.string().optional(),
   /**
-   * Vendor-neutral list of tool capabilities the agent may use.
-   * Adapters map these to platform-specific tool names.
-   * Examples: "codebase", "terminal", "web-search", "file-read"
+   * Tools the agent may use, in the neutral vocabulary (`read`, `search`, `edit`, `shell`, `web`,
+   * `agent`, `todo`) or a legacy/provider-specific name (see ToolName). Each target maps them to
+   * its own tools.
    */
   tools: z.array(ToolName).min(1, EMPTY_TOOL_LIST).optional(),
   /**
-   * Vendor-neutral list of tools this agent must NOT use.
-   * Examples: "file-write", "file-delete"
+   * Tools the agent must NOT use, in the same forms as `tools`. Each target maps them; one that
+   * cannot express the restriction handles it per `toolPolicy`.
    */
   disallowedTools: z.array(ToolName).min(1, EMPTY_TOOL_LIST).optional(),
   /**
+   * How an inexact mapping of this agent's tool restriction is handled on a target that cannot
+   * express it exactly. `strict` (the default when absent): the target skips the agent with a
+   * reason. `nearest`: the closest mapping is written and a warning is reported.
+   */
+  toolPolicy: z.enum(['strict', 'nearest']).optional(),
+  /** Neutral model tier hint; each target maps it to its own model aliases. */
+  model: z.enum(['fast', 'balanced', 'deep']).optional(),
+  /** Neutral reasoning-effort hint; each target maps it to its own effort levels. */
+  effort: z.enum(['low', 'medium', 'high']).optional(),
+  /**
    * Claude Code-specific hints. Namespaced so other adapters can ignore them.
    * Adapter reads these and applies them to the agent's Markdown frontmatter.
+   * `claude.model` / `claude.effort` override the neutral `model` / `effort` on Claude.
    */
   claude: z
     .object({

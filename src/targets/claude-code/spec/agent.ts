@@ -7,7 +7,8 @@
  *                  PLUGIN_IGNORED_AGENT_KEYS), so the plugin variant forbids them and the build
  *                  fails rather than shipping a field that does nothing.
  * `claude:` namespace hints (model/effort/maxTurns/isolation/skills) are flattened to top-level
- * frontmatter keys, and `disallowedTools` is emitted as a JSON array when present.
+ * frontmatter keys. `tools` and `disallowedTools` are neutral vocabulary rendered through
+ * CLAUDE_TOOL_DIALECT; `disallowedTools` is emitted as a JSON array when present.
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { yamlList, yamlScalar } from '../../yaml-util';
@@ -15,6 +16,7 @@ import { renderBoundarySection } from '../../shared/boundary';
 import { CLAUDE_AGENTS_DOC, CLAUDE_PLUGIN_COMPONENTS_DOC } from '../../doc-refs';
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
+import { CLAUDE_TOOL_DIALECT, claudeToolNames } from '../tool-dialect';
 
 const nameMapping: FieldMapping = {
   from: 'name',
@@ -41,6 +43,41 @@ function claudeHintMapping(key: 'model' | 'effort' | 'maxTurns' | 'isolation'): 
 }
 
 /**
+ * Neutral model tier → Claude's documented model alias (CLAUDE_AGENTS_DOC lists `haiku`,
+ * `sonnet`, `opus` and `fable`). `fable` gets no tier: the docs give it no place in a
+ * cost/strength order, so no neutral tier maps to it (Decision 5, plan-cursor-target-n.md).
+ */
+export const CLAUDE_MODEL_TIERS: Readonly<Record<'fast' | 'balanced' | 'deep', string>> = {
+  fast: 'haiku',
+  balanced: 'sonnet',
+  deep: 'opus',
+};
+
+/**
+ * Neutral `model: fast | balanced | deep` — CLAUDE_MODEL_TIERS in the same frontmatter position
+ * as `claude.model`, which wins whenever that override is authored.
+ */
+const neutralModelMapping: FieldMapping = {
+  from: 'model',
+  to: 'model',
+  required: false,
+  when: fm => (fm.claude as { model?: string } | undefined)?.model === undefined,
+  serialize: v => `model: ${CLAUDE_MODEL_TIERS[v as keyof typeof CLAUDE_MODEL_TIERS]}`,
+};
+
+/**
+ * Neutral `effort: low | medium | high` — emitted as written, next to `claude.effort`, which
+ * wins whenever that override is authored.
+ */
+const neutralEffortMapping: FieldMapping = {
+  from: 'effort',
+  to: 'effort',
+  required: false,
+  when: fm => (fm.claude as { effort?: string } | undefined)?.effort === undefined,
+  serialize: v => `effort: ${v as string}`,
+};
+
+/**
  * `claude.skills` — catalog skill ids, emitted as Claude's subagent `skills:` preload list of skill
  * *names*. `validate` rejects an unknown or non-skill id and a preloaded skill whose name isn't its
  * id's last segment (src/refs.ts), so no catalog lookup is needed here.
@@ -63,14 +100,15 @@ const disallowedToolsMapping: FieldMapping = {
   to: 'disallowedTools',
   required: false,
   when: fm => Array.isArray(fm.disallowedTools) && (fm.disallowedTools as string[]).length > 0,
-  serialize: v => `disallowedTools: ${JSON.stringify(v)}`,
+  serialize: v => `disallowedTools: ${JSON.stringify(claudeToolNames(v as string[]))}`,
 };
 
 /**
- * Vendor-neutral `tools` (schema/index.ts's AgentSchema) mapped straight through — catalog authors
- * already write Claude-native tool names (Read, Grep, Bash, …) here. Omitted = "Inherits every
- * tool available to subagents" per CLAUDE_AGENTS_DOC; an authored, non-empty list scopes it down.
- * This was authored on ~26 agents but unmapped for a full release cycle — see the
+ * Vendor-neutral `tools` (schema/index.ts's AgentSchema) rendered through CLAUDE_TOOL_DIALECT:
+ * a neutral name (`read`, `search`, …) becomes the Claude tool(s) it stands for, a legacy Claude
+ * name maps through the same table, and a provider pattern passes through verbatim. Omitted =
+ * "Inherits every tool available to subagents" per CLAUDE_AGENTS_DOC; an authored, non-empty list
+ * scopes it down. This was authored on ~26 agents but unmapped for a full release cycle — see the
  * declared-but-unemitted conformance rule that now guards against a repeat.
  */
 const toolsMapping: FieldMapping = {
@@ -78,14 +116,16 @@ const toolsMapping: FieldMapping = {
   to: 'tools',
   required: false,
   when: fm => Array.isArray(fm.tools) && (fm.tools as string[]).length > 0,
-  serialize: v => `tools: ${yamlList(v as string[])}`,
+  serialize: v => `tools: ${yamlList(claudeToolNames(v as string[]))}`,
 };
 
 const AGENT_FRONTMATTER: readonly FieldMapping[] = [
   nameMapping,
   descriptionMapping,
   claudeHintMapping('model'),
+  neutralModelMapping,
   claudeHintMapping('effort'),
+  neutralEffortMapping,
   claudeHintMapping('maxTurns'),
   claudeHintMapping('isolation'),
   claudeSkillsMapping,
@@ -117,6 +157,7 @@ export const CLAUDE_AGENT_SPEC: KindEmitSpec = {
   pathPattern: /\.claude\/agents\/.*\.md$/,
   frontmatter: AGENT_FRONTMATTER,
   emitEmptyFrontmatter: true,
+  toolDialect: CLAUDE_TOOL_DIALECT,
   body: [boundarySection],
   forbiddenKeys: ['applyTo', 'paths'],
   lexicon: CLAUDE_LEXICON,

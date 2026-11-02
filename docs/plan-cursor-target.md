@@ -50,7 +50,14 @@ Confirmed by the owner on 2026-11-01.
    every repo-wide rule is already an `alwaysApply` `.mdc` file, and an `AGENTS.md` would load each one twice.
 5. **Agents ship with `readonly: true`** (owner, 2026-11-01): acceptable for `tools: [Read, Grep, Glob]`, provided the
    mapping is implemented in `tool-restriction.ts` with tests that refuse any list holding a write tool (Phase E).
-6. **The plugin channel stays a spike** (Phase F), not an adapter task.
+   Refined by Decision 7: the refusal depends on the agent's `toolPolicy`.
+6. **The catalog's agent vocabulary is provider-neutral** (owner, 2026-11-01, Phase N): tool names (`read`,
+   `search`, `edit`, `shell`, `web`, `agent`), a `toolPolicy` (`strict`: a target that can't express the
+   restriction exactly skips the agent with a reason; `nearest`: it gets the closest mapping and a warning), and model
+   hints (`model: fast | balanced | deep`, `effort`). Each target's emit layer maps them to what it really takes, and
+   leaves out what it can't use. Families in `catalog/standard.yaml` set the default tools and policy for their members.
+   The `claude:` namespace stays as an optional Claude-only override.
+7. **The plugin channel stays a spike** (Phase F), not an adapter task.
 
 ## What is true today (checked 2026-11-01)
 
@@ -108,11 +115,12 @@ Sources: [rules](https://cursor.com/docs/context/rules), [skills](https://cursor
 | B     | `--target cursor`: rules (`.mdc`) and skills         | A1-A3                          |
 | C     | Hooks in `.cursor/hooks.json`                        | A4-A5                          |
 | D     | MCP in `.cursor/mcp.json`                            | A6                             |
-| E     | Agents in `.cursor/agents/` with `readonly: true`    | Decided: go (Decision 5); A7   |
+| N     | Provider-neutral tools, tool policy and model hints  | Decision 7                     |
+| E     | Agents in `.cursor/agents/` with `readonly: true`    | N; Decisions 5 and 7; A7       |
 | F     | Cursor plugin channel (`.cursor-plugin/`)            | Research spike, A8             |
 | G     | Live check in Cursor, the ADR updated, the brief cut | B-D merged                     |
 
-Order: A → B, then C, D (independent of each other), then E and F, which only depend on B. G closes.
+Order: A → B, then C, D (independent of each other), then N → E, and F, which only depends on B. G closes.
 
 ### Phase A: live probe
 
@@ -174,12 +182,28 @@ The setup note says a project server needs approval, and print mode also needs `
 to Cursor. Probes: Cursor never reads `.mcp.json`, `${env:NAME}` expands in `args`, and an unknown `type` drops the
 whole file. A sigil-installed `filesystem` server ran live in the CLI. Setup: [setup/cursor.md](setup/cursor.md).
 
+### Phase N: provider-neutral agent vocabulary
+
+Catalog-wide, not Cursor-only (Decision 7). Step plan [plan-cursor-target-n.md](plan-cursor-target-n.md). Tool names in
+agents' `tools` / `disallowedTools` and skills' `allowedTools` become neutral (Copilot's alias set: `read`, `search`,
+`edit`, `shell`, `web`, `agent`). Today's Claude names are accepted as legacy aliases with a `validate` warning. Each
+target gets a `ToolDialect` that says how a neutral list is written and whether it is exact. A `toolPolicy`
+(`strict` / `nearest`, family default in `standard.yaml`) decides what an inexact mapping does. Neutral `model` /
+`effort` hints map per target. The catalog's 39 agents and 41 skills migrate.
+
+**Done 2026-11-01** on branch `feat/neutral-agent-vocabulary`: the vocabulary, Claude, Copilot and open-standard
+dialects, `toolPolicy` skips, Claude model tiers, family tool defaults (`family-tools`), and the catalog migrated. Legacy
+names are a `sync --check` error (`legacy-tool-name`), not a `validate` warning. Follow-up: hook `matcher`s
+(`Edit|Write`, `Bash`) still use Claude names, translated per target in `hook-ops.ts`.
+
 ### Phase E: agents
 
-Go (Decision 5), recorded in the ADR. `tool-restriction.ts` learns that a read-only tool list maps to `readonly: true` on
-Cursor and refuses any list with a write tool, plus the agent `KindEmitSpec`. Tests: every catalog agent renders with
-`readonly: true`; a list with `Write`, `Edit` or `Bash` is refused; an absent `tools` is refused (it would mean all
-tools). The ADR records what `readonly` still allows (A7).
+Go (Decision 5), recorded in the ADR, built on Phase N. Cursor's `ToolDialect` expresses only a list within
+`read` + `search`, as `readonly: true`. A `strict` agent asking for more is skipped on Cursor with a reason, and a
+`nearest` one gets no `readonly` line and a warning. The agent `KindEmitSpec` goes in `.cursor/agents/`, and a model
+tier maps to `inherit` until Cursor ids are chosen. Tests: every catalog agent renders with `readonly: true`; a
+`strict` agent with `edit` or `shell` is skipped; a `nearest` one warns. The ADR records what `readonly` still allows
+(A7), and the live check runs on a free Cursor model.
 
 ### Phase F: Cursor plugin channel
 

@@ -13,6 +13,8 @@ import { runImport } from '../../dist-cli/commands/import';
 import { loadCatalog } from '../../dist-cli/load';
 import { validateCatalog } from '../../dist-cli/validate';
 import { getTarget } from '../../dist-cli/targets/index';
+import { normalizeTools } from '../../dist-cli/tool-vocabulary';
+import type { NeutralTool } from '../../dist-cli/tool-vocabulary';
 import { add, PACKS } from '../helpers/install-scenario';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
@@ -22,6 +24,14 @@ import type {
   ResolvedArtifact,
   ResolvedCatalog,
 } from '../../dist-cli/types';
+
+/** An authored tool list in neutral form, for comparing across Copilot's coarser names. */
+function neutral(tools: unknown): NeutralTool[] {
+  assert.ok(Array.isArray(tools), 'expected a tool list');
+  const { tools: names, unknown } = normalizeTools(tools as string[]);
+  assert.deepEqual(unknown, []);
+  return names;
+}
 
 const RULE = 'typescript/ts-async';
 const AGENT = 'typescript/ts-debugger';
@@ -214,7 +224,11 @@ describe('Copilot import round trip', () => {
       assert.equal(imported.frontmatter.name, sourceArtifact.frontmatter.name);
       assert.equal(imported.frontmatter.title, sourceArtifact.frontmatter.title);
       assert.equal(imported.frontmatter.description, sourceArtifact.frontmatter.description);
-      assert.deepEqual(imported.frontmatter.tools, sourceArtifact.frontmatter.tools);
+      // Copilot writes coarse neutral names (Grep and Glob are both `search`), so compare neutral forms.
+      assert.deepEqual(
+        neutral(imported.frontmatter.tools),
+        neutral(sourceArtifact.frontmatter.tools),
+      );
       assert.equal(imported.body.trim(), sourceBody(sourceArtifact));
       assert.match(imported.body, /\{sigil:[a-z-]+\}/);
     });
@@ -230,7 +244,7 @@ describe('Copilot import round trip', () => {
       assert.equal(imported.frontmatter.description, src.description);
       assert.equal(imported.frontmatter.whenToUse, src.whenToUse);
       assert.equal(imported.frontmatter.argumentHint, src.argumentHint);
-      assert.deepEqual(imported.frontmatter.allowedTools, src.allowedTools);
+      assert.deepEqual(neutral(imported.frontmatter.allowedTools), neutral(src.allowedTools));
       const body = imported.body.trim();
       assert.ok(body.startsWith(sourceBody(sourceArtifact)), 'body should start with the source');
       assert.ok(body.includes('## Coding guidelines to apply'));

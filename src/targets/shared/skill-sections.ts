@@ -1,8 +1,8 @@
 /**
  * Skill emission pieces shared by every target that writes an Agent Skills SKILL.md without a
  * native field for the catalog's `whenToUse` / `argumentHint` (Copilot, the open-standard target):
- * the required `name` / `description` mappings, the spec's `allowed-tools` form, and the body
- * sections that carry the rest, plus
+ * the required `name` / `description` mappings, a factory for the spec's `allowed-tools` form
+ * (rendered through the target's tool dialect), and the body sections that carry the rest, plus
  * the inlined rules. One definition, so those targets' SKILL.md files can't drift apart.
  *
  * @module
@@ -10,6 +10,8 @@
 import type { BodySectionSpec, FieldMapping } from '../spec-types';
 import type { ResolvedArtifact } from '../../types';
 import { yamlScalar } from '../yaml-util';
+import { renderTools } from '../tool-dialect';
+import type { ToolDialect } from '../tool-dialect';
 import { renderBoundarySection } from './boundary';
 
 export const nameMapping: FieldMapping = {
@@ -27,13 +29,34 @@ export const descriptionMapping: FieldMapping = {
 };
 
 /**
- * `allowed-tools` as the Agent Skills spec writes it: one space-separated string, quoted. The
- * field pre-approves tools; it doesn't restrict them. A tool name with whitespace can't be carried
- * (it would split into other names), so rendering refuses it rather than pre-approve the wrong
- * tools or drop the field.
+ * `allowed-tools` as the Agent Skills spec writes it: one space-separated string, quoted, rendered
+ * through `dialect`. The field pre-approves tools; it doesn't restrict them. A tool name with
+ * whitespace can't be carried (it would split into other names), so rendering refuses it rather
+ * than pre-approve the wrong tools or drop the field. The mapping is absent when the dialect
+ * renders no names at all (a skill naming only tools the target cannot pre-approve).
  */
-function serializeSpecAllowedTools(value: unknown): string {
-  const tools = value as string[];
+export function allowedToolsMappingFor(dialect: ToolDialect): FieldMapping {
+  return {
+    from: 'allowedTools',
+    to: 'allowed-tools',
+    required: false,
+    when: fm => Array.isArray(fm.allowedTools) && dialectNames(dialect, fm.allowedTools).length > 0,
+    serialize: v => serializeSpecAllowedTools(dialect, v),
+  };
+}
+
+/** The target's names for an authored list; `allowed-tools` has no non-`names` form. */
+function dialectNames(dialect: ToolDialect, value: unknown): string[] {
+  const rendered = renderTools(dialect, value as string[]);
+  if (rendered.kind !== 'names') {
+    throw new Error('allowed-tools requires a names tool dialect');
+  }
+  return rendered.names;
+}
+
+/** The spec's single space-separated line, refusing a name the form cannot carry. */
+function serializeSpecAllowedTools(dialect: ToolDialect, value: unknown): string {
+  const tools = dialectNames(dialect, value);
   const spaced = tools.filter(tool => /\s/.test(tool));
   if (spaced.length > 0) {
     throw new Error(
@@ -43,14 +66,6 @@ function serializeSpecAllowedTools(value: unknown): string {
   }
   return `allowed-tools: ${yamlScalar(tools.join(' '))}`;
 }
-
-export const allowedToolsMapping: FieldMapping = {
-  from: 'allowedTools',
-  to: 'allowed-tools',
-  required: false,
-  when: fm => Array.isArray(fm.allowedTools) && (fm.allowedTools as string[]).length > 0,
-  serialize: serializeSpecAllowedTools,
-};
 
 /**
  * Renders the catalog's `whenToUse` frontmatter field as a leading body section, since Copilot

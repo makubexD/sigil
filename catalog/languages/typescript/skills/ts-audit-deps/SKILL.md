@@ -5,11 +5,6 @@ title: "Audit Dependencies (TypeScript)"
 description: "Audit npm dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance (TypeScript)"
 name: ts-audit-deps
 language: typescript
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "(no arguments)"
 skillContext: fork
 whenToUse: >-
@@ -29,6 +24,10 @@ tags:
   - audit
   - dependencies
   - security
+allowedTools:
+  - read
+  - shell
+  - search
 ---
 
 # Audit Dependencies

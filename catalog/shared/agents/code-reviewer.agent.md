@@ -21,15 +21,14 @@ relatedArtifacts:
   - id: shared/wizard-auditor
     relation: escalates-to
     reason: flag parity, terminal contract, and cancel-safety audit when the change touches a setup wizard
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
+model: balanced
+effort: medium
 claude:
-  model: sonnet
-  effort: medium
   maxTurns: 10
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a senior code reviewer with broad expertise across languages and paradigms.

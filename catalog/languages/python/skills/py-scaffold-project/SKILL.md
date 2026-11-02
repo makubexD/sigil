@@ -5,11 +5,6 @@ title: "New Project (Python)"
 description: "Scaffold a new Python package in an empty directory with src layout, pyproject.toml, uv-managed venv, ruff/mypy config, and a starter test"
 name: py-scaffold-project
 language: python
-allowedTools:
-  - Read
-  - Write
-  - Bash
-  - Glob
 argumentHint: "<package-name>"
 uses:
   rules:
@@ -20,6 +15,11 @@ tags:
   - scaffold
   - new-project
 whenToUse: "Use when starting a brand-new Python package from scratch. Fires for \"scaffold a new Python package\", \"create a new Python project\", or \"set up a Python package called X\". Not for adding a package to an existing repo or monorepo (use py-add-project) or a feature to an existing project."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Scaffold Project

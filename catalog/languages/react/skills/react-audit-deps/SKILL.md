@@ -5,11 +5,6 @@ title: "Audit Dependencies (React)"
 description: "Audit npm dependencies for a React project — known CVEs (npm audit), outdated versions, unused packages, bundle-size outliers, and license compliance"
 name: react-audit-deps
 language: react
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "(no arguments)"
 uses:
   rules:
@@ -25,6 +20,10 @@ tags:
   - security
 skillContext: fork
 whenToUse: "Use to check for known CVEs, outdated packages, and bundle-size outliers in a React project's npm dependencies. Fires for \"are there any known CVEs\", \"audit dependencies\", \"check for vulnerable packages\", or before a release."
+allowedTools:
+  - read
+  - shell
+  - search
 ---
 
 # Audit Dependencies

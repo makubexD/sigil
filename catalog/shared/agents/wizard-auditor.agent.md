@@ -17,14 +17,13 @@ relatedArtifacts:
   - id: shared/cli-auditor
     relation: complements
     reason: audits the command grammar and contract the wizard runs underneath
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 claude:
   skills:
     - shared/wizard
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You audit interactive setup wizards. You do not edit, create, or delete project files. Run the

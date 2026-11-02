@@ -20,6 +20,7 @@ import { KEBAB_ID_RE, KEBAB_NAME_RE } from './schema/shared';
 import { SigilError } from './errors';
 import { readRegularFile } from './safe-read';
 import { sectionKey } from './markdown-headings';
+import { NEUTRAL_TOOLS, type NeutralTool } from './tool-vocabulary';
 import type { ArtifactKind } from './types';
 
 /** The file's name, at the catalog root. */
@@ -47,6 +48,15 @@ const ReferencesSchema = z.object({
   members: z.record(z.string(), ReferenceFilesSchema).default({}),
 });
 
+/** The neutral tools an agent family's members all need, and how a target that cannot match them exactly renders the gap. */
+const FamilyToolsSchema = z
+  .object({
+    allow: z.array(z.enum(NEUTRAL_TOOLS)).min(1),
+    /** `strict` (the default) renders only what a target can carry exactly; `nearest` allows its closest tools. */
+    policy: z.enum(['strict', 'nearest']).optional(),
+  })
+  .strict();
+
 const FamilySchema = z.object({
   id: z.string().regex(KEBAB_NAME_RE, KEBAB),
   /** A language member's title is `<title> (<language displayName>)`. */
@@ -59,6 +69,14 @@ const FamilySchema = z.object({
   absent: z.record(z.string(), z.string().min(1)).optional(),
   /** The reference files members carry; absent means `SKILL.md` only. */
   references: ReferencesSchema.optional(),
+  /** Agent families: the neutral tools every member needs (absent: the family sets none). */
+  tools: FamilyToolsSchema.optional(),
+  /** Skill families: the pre-approved neutral tools every member names (absent: the family sets none). */
+  allowedTools: z.array(z.enum(NEUTRAL_TOOLS)).min(1).optional(),
+  /** Member id → why it may differ from the family's `tools` or `allowedTools`. */
+  toolExceptions: z
+    .record(z.string().regex(KEBAB_ID_RE, 'must be an artifact id'), z.string().min(1))
+    .optional(),
 });
 
 const StackSchema = z.object({
@@ -96,6 +114,15 @@ export interface FamilyDef {
   readonly keys: readonly string[];
   readonly absent: Readonly<Record<string, string>>;
   readonly references?: FamilyReferences;
+  /** Agent families: the neutral tools every member needs; absent when the family sets none. */
+  readonly tools?: {
+    readonly allow: readonly NeutralTool[];
+    readonly policy?: 'strict' | 'nearest';
+  };
+  /** Skill families: the pre-approved neutral tools every member names; absent when the family sets none. */
+  readonly allowedTools?: readonly NeutralTool[];
+  /** Member id → why it may differ from the family's `tools` or `allowedTools`. */
+  readonly toolExceptions: Readonly<Record<string, string>>;
 }
 
 export interface StackDef {
@@ -123,9 +150,9 @@ export function parseCatalogStandard(raw: string, source: string): CatalogStanda
   }
   const { stacks, severities, bases } = result.data;
   const standard = { stacks, severities, bases, families: result.data.families.map(toFamilyDef) };
-  const duplicates = duplicateProblems(standard.families);
-  if (duplicates.length > 0) {
-    throw new SigilError(`${source} is invalid:\n  ${duplicates.join('\n  ')}`);
+  const problems = [...duplicateProblems(standard.families), ...toolProblems(standard.families)];
+  if (problems.length > 0) {
+    throw new SigilError(`${source} is invalid:\n  ${problems.join('\n  ')}`);
   }
   return standard;
 }
@@ -158,13 +185,46 @@ function duplicateProblems(families: readonly FamilyDef[]): string[] {
   return problems;
 }
 
+/**
+ * `tools` is an agent family's field and `allowedTools` a skill family's; a tool exception must
+ * name one of its family's members.
+ */
+function toolProblems(families: readonly FamilyDef[]): string[] {
+  const problems: string[] = [];
+  for (const family of families) {
+    if (family.tools && family.kind !== 'agent') {
+      problems.push(`family '${family.id}': 'tools' is only valid on an agent family`);
+    }
+    if (family.allowedTools && family.kind !== 'skill') {
+      problems.push(`family '${family.id}': 'allowedTools' is only valid on a skill family`);
+    }
+    const members = new Set(family.members);
+    for (const id of Object.keys(family.toolExceptions)) {
+      if (!members.has(id)) {
+        problems.push(`family '${family.id}': toolExceptions names '${id}', not a member`);
+      }
+    }
+  }
+  return problems;
+}
+
+/** Drop an explicit `undefined` policy so the result fits `FamilyDef` under exactOptionalPropertyTypes. */
+function toolDef(
+  t: NonNullable<z.infer<typeof FamilySchema>['tools']>,
+): NonNullable<FamilyDef['tools']> {
+  return t.policy ? { allow: t.allow, policy: t.policy } : { allow: t.allow };
+}
+
 function toFamilyDef(f: z.infer<typeof FamilySchema>): FamilyDef {
   const base = { id: f.id, kind: f.kind, members: f.members, keys: f.keys ?? [] };
   const family = {
     ...base,
     absent: f.absent ?? {},
+    toolExceptions: f.toolExceptions ?? {},
     ...(f.title ? { title: f.title } : {}),
     ...(f.references ? { references: f.references } : {}),
+    ...(f.tools ? { tools: toolDef(f.tools) } : {}),
+    ...(f.allowedTools ? { allowedTools: f.allowedTools } : {}),
   };
   if (!f.sections) return family;
   const sections = f.sections.map(s =>

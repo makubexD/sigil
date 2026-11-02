@@ -1,6 +1,12 @@
 /**
  * Copilot `agent` emission spec — the per-file `.github/agents/<name>.agent.md` that `build` and
  * `add` both write. Frontmatter is `name`, `description` and `tools`.
+ *
+ * `tools` is the provider-neutral vocabulary rendered through `COPILOT_AGENT_TOOL_DIALECT`:
+ * a neutral name (`read`, `search`, …) becomes Copilot's primary alias (`execute` for `shell`), a
+ * legacy Claude name maps through the same table, and a provider pattern passes through verbatim.
+ * Copilot has no denylist field, so a `disallowedTools` restriction cannot be carried and the
+ * spec's missing mapping makes `restrictionOutcome` skip the agent (fail closed).
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
 import { yamlScalar } from '../../yaml-util';
@@ -12,6 +18,7 @@ import {
 } from '../../doc-refs';
 import { COPILOT_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
+import { COPILOT_AGENT_TOOL_DIALECT, copilotAgentToolNames } from '../tool-dialect';
 
 const nameMapping: FieldMapping = {
   from: 'name',
@@ -28,16 +35,17 @@ const descriptionMapping: FieldMapping = {
 };
 
 /**
- * Vendor-neutral `tools` (schema/index.ts's AgentSchema), same source field the Claude spec
- * consumes. Copilot's docs accept both a comma-separated string and a YAML array — a JSON array
- * literal satisfies the YAML-array form. Omitted = "defaults to all tools" per COPILOT_AGENTS_DOC.
+ * Vendor-neutral `tools` (schema/index.ts's AgentSchema) rendered through
+ * `COPILOT_AGENT_TOOL_DIALECT`, same source field the Claude spec consumes. Copilot's docs accept
+ * both a comma-separated string and a YAML array — a JSON array literal satisfies the YAML-array
+ * form. Omitted = "defaults to all tools" per COPILOT_AGENTS_DOC.
  */
 const toolsMapping: FieldMapping = {
   from: 'tools',
   to: 'tools',
   required: false,
   when: fm => Array.isArray(fm.tools) && (fm.tools as string[]).length > 0,
-  serialize: v => `tools: ${JSON.stringify(v)}`,
+  serialize: v => `tools: ${JSON.stringify(copilotAgentToolNames(v as string[]))}`,
 };
 
 const titleAndBoundarySection: BodySectionSpec = {
@@ -58,6 +66,7 @@ export const COPILOT_AGENT_SPEC: KindEmitSpec = {
   pathPattern: /\.github\/agents\/.*\.agent\.md$/,
   frontmatter: [nameMapping, descriptionMapping, toolsMapping],
   emitEmptyFrontmatter: true,
+  toolDialect: COPILOT_AGENT_TOOL_DIALECT,
   body: [titleAndBoundarySection],
   forbiddenKeys: ['applyTo'],
   lexicon: COPILOT_LEXICON,

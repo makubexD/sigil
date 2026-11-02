@@ -11,13 +11,6 @@ description: >-
   improvement without risk.
 name: react-refactor-specialist
 language: react
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Edit
-  - Write
 tags:
   - react
   - refactoring
@@ -33,6 +26,11 @@ relatedArtifacts:
   - id: react/react-architecture-reviewer
     relation: complements
     reason: react-architecture-reviewer identifies structural problems at app scale; this agent fixes them
+tools:
+  - read
+  - search
+  - shell
+  - edit
 ---
 
 You perform behavior-preserving refactors. Every change you make must leave rendered output and

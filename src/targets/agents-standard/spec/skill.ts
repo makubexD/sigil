@@ -1,7 +1,8 @@
 /**
  * Open-standard `skill` emission spec: `.agents/skills/<name>/SKILL.md` per the Agent Skills spec.
  * Frontmatter is the spec's own fields (`name`, `description`, and `allowed-tools` as the spec's
- * space-separated list); `whenToUse`, `argumentHint`, the Boundary and the skill's rules become
+ * space-separated list, rendered through `AGENTS_STANDARD_TOOL_DIALECT`); `whenToUse`,
+ * `argumentHint`, the Boundary and the skill's rules become
  * body sections, shared with Copilot (../../shared/skill-sections.ts).
  *
  * @module
@@ -13,13 +14,14 @@ import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import {
   nameMapping,
   descriptionMapping,
-  allowedToolsMapping,
+  allowedToolsMappingFor,
   whenToUseSection,
   argumentHintSection,
   boundarySection,
   codingGuidelinesSection,
 } from '../../shared/skill-sections';
 import { AGENTS_STANDARD_LEXICON } from '../lexicon';
+import { AGENTS_STANDARD_TOOL_DIALECT } from '../tool-dialect';
 import { CURSOR_SKILLS_DOC } from '../../cursor/doc-refs';
 
 /** The Agent Skills spec's SKILL.md guidance: keep the body under 500 lines. */
@@ -29,8 +31,13 @@ export const AGENTS_STANDARD_SKILL_SPEC: KindEmitSpec = {
   kind: 'skill',
   outputPath: artifact => `.agents/skills/${artifact.frontmatter.name as string}/SKILL.md`,
   pathPattern: /\.agents\/skills\/.*\/SKILL\.md$/,
-  frontmatter: [nameMapping, descriptionMapping, allowedToolsMapping],
+  frontmatter: [
+    nameMapping,
+    descriptionMapping,
+    allowedToolsMappingFor(AGENTS_STANDARD_TOOL_DIALECT),
+  ],
   emitEmptyFrontmatter: true,
+  toolDialect: AGENTS_STANDARD_TOOL_DIALECT,
   body: [boundarySection, whenToUseSection, argumentHintSection, codingGuidelinesSection],
   forbiddenKeys: ['applyTo', 'paths', 'agent', 'argument-hint'],
   lexicon: AGENTS_STANDARD_LEXICON,

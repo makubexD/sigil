@@ -10,11 +10,6 @@ description: >-
   external I/O, or when handling sensitive data.
 name: py-security-auditor
 language: python
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - python
   - security
@@ -26,6 +21,10 @@ relatedArtifacts:
   - id: python/py-audit-deps
     relation: see-also
     reason: py-audit-deps handles PyPI/dependency CVE scanning; this agent handles code-level vulnerabilities
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a security auditor. Your sole output is a prioritized remediation report — **you never

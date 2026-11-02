@@ -121,28 +121,33 @@ kind: agent
 name: code-reviewer
 title: Code Reviewer
 description: Thorough code review agent for any language.
-claude: # Claude-namespaced hints; other adapters ignore this block
-  model: sonnet
-  effort: medium
+tools: [read, search, shell] # neutral names; each target writes its own (see Tool vocabulary)
+model: balanced # neutral tier: fast | balanced | deep
+effort: medium
+claude: # Claude-only hints; other adapters ignore this block
   maxTurns: 10
   skills: [shared/cli] # preloaded into the subagent at startup; emitted as a `skills:` list of names
 ---
 ```
 
-Agent-specific fields (`AgentSchema`, beyond the shared fields above). A tool name in `tools`,
-`disallowedTools` (and a skill's `allowedTools`) may use letters, digits, spaces and `_ . : * ( ) / -`
-only, so it can't end or add a frontmatter key; permission patterns like `Bash(git log:*)` fit.
+Agent-specific fields (`AgentSchema`, beyond the shared fields above). `tools`, `disallowedTools`
+(and a skill's `allowedTools`) take the neutral tool names in [Tool vocabulary](#tool-vocabulary).
+A name may use letters, digits, spaces and `_ . : * ( ) / -` only, so it can't end or add a
+frontmatter key.
 
-| Field              | Meaning                                                                                                                                                                                                          |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tools`            | Allow-list of tool names, at least one. Emitted by both providers; absent means the provider default of all tools, so an authored read-only agent must declare it.                                               |
-| `disallowedTools`  | Tools the agent must not use, at least one. Emitted on Claude only, so an agent that sets it and also ships to Copilot is refused by `build`/`add` and reported by `sync --check` (`tool-restriction-coverage`). |
-| `claude.model`     | `haiku`, `sonnet`, or `opus`.                                                                                                                                                                                    |
-| `claude.effort`    | `low`, `medium`, or `high`.                                                                                                                                                                                      |
-| `claude.maxTurns`  | Positive integer turn cap.                                                                                                                                                                                       |
-| `claude.isolation` | `worktree` (run the subagent in an isolated git worktree).                                                                                                                                                       |
-| `claude.skills`    | Catalog skill ids to preload (see below).                                                                                                                                                                        |
-| `relatedArtifacts` | Sibling cross-references rendered as a Boundary section; see the shared-fields table.                                                                                                                            |
+| Field              | Meaning                                                                                                                                                                                            |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `tools`            | Allow-list of neutral tool names, at least one. Absent means the provider default of all tools, so an authored read-only agent must declare it.                                                    |
+| `disallowedTools`  | Neutral tools the agent must not use, at least one. Only Claude has a denylist field, so on any other target the restriction is inexact and `toolPolicy` decides.                                  |
+| `toolPolicy`       | What a target does when it can't write the restriction exactly. `strict` (the default when absent): it skips the agent with the reason. `nearest`: it writes the closest mapping and warns.        |
+| `model`            | Neutral tier: `fast`, `balanced`, or `deep`. Mapped only where a target has a tier table (Claude: `haiku`, `sonnet`, `opus`); elsewhere the line is left out and the tool's default model applies. |
+| `effort`           | `low`, `medium`, or `high`. Written on Claude; left out elsewhere.                                                                                                                                 |
+| `claude.model`     | `haiku`, `sonnet`, or `opus`. Overrides the neutral `model` on Claude.                                                                                                                             |
+| `claude.effort`    | `low`, `medium`, or `high`. Overrides the neutral `effort` on Claude.                                                                                                                              |
+| `claude.maxTurns`  | Positive integer turn cap.                                                                                                                                                                         |
+| `claude.isolation` | `worktree` (run the subagent in an isolated git worktree).                                                                                                                                         |
+| `claude.skills`    | Catalog skill ids to preload (see below).                                                                                                                                                          |
+| `relatedArtifacts` | Sibling cross-references rendered as a Boundary section; see the shared-fields table.                                                                                                              |
 
 Agents have no `whenToUse`; they dispatch on `description` alone.
 
@@ -394,14 +399,15 @@ names translated to Cursor's. An `mcp` server merges into `mcpServers` in `.curs
   only. Workflows have `steps:`, not `args:`, so this spec does not emit `argument-hint` or
   `arguments`. `steps:` render as a `## Steps` checklist (`src/targets/claude-code/spec/workflow.ts`).
 - **Claude agent (subagent):** `name:`, `description:` (double-quoted), then each present `claude:`
-  hint flattened to a top-level key (`model`, `effort`, `maxTurns`, `isolation`), `skills:` as a list
-  of skill names (from the `claude.skills` ids), `tools: <csv>` (from `tools`), and `disallowedTools`
-  as a JSON array. An absent `tools` means the subagent inherits every tool. Same layout for plugin
-  and scaffold (`src/targets/claude-code/spec/agent.ts`).
+  hint flattened to a top-level key (`model`, `effort`, `maxTurns`, `isolation`; a neutral `model` /
+  `effort` fills the same key when `claude:` sets none), `skills:` as a list of skill names (from the
+  `claude.skills` ids), `tools: <csv>` and `disallowedTools` as a JSON array, both in Claude's tool
+  names. An absent `tools` means the subagent inherits every tool. Same layout for plugin and
+  scaffold (`src/targets/claude-code/spec/agent.ts`).
 - **Copilot agent files:** require the `.agent.md` extension and `description:` frontmatter.
   Frontmatter is `name`, `description`, and `tools` as a **JSON array** literal (a valid YAML array)
-  when `tools` is authored; `disallowedTools` and the `claude:` block are not emitted
-  (`src/targets/copilot/spec/agent.ts`).
+  in Copilot's primary aliases when `tools` is authored. `model`, `effort` and the `claude:` block
+  are not emitted. An agent with `disallowedTools` is inexact here (`src/targets/copilot/spec/agent.ts`).
 - **Copilot instructions (`.instructions.md`, from scoped rules):** `applyTo: "<globs>"`
   (comma-joined from `appliesTo`, falling back to `**` when absent) and a single-line
   `description:`; no `name` or `agent` (`src/targets/copilot/spec/rule.ts`).
@@ -411,6 +417,33 @@ names translated to Cursor's. An `mcp` server merges into `mcpServers` in `.curs
   set. **Skills never had a valid use for `appliesTo`** on either platform and the field was removed
   from `SkillSchema` — see the [skill-dispatch audit](../decisions/skill-dispatch-audit-2026-08.md).
 - **Flat `marketplace.json`** (`name`/`owner`/`plugins[]`) is emitted only by the Claude Code plugin build (`dist/claude/`). Sigil emits no Copilot manifest; Copilot reads this one ([setup](../setup/copilot.md)).
+
+### Tool vocabulary
+
+Catalog tool lists and model hints are provider-neutral. Each target writes them through its own
+`ToolDialect` (`src/targets/<provider>/tool-dialect.ts`) and tier table, and never copies a catalog
+name unchanged. The record is [neutral-agent-vocabulary-2026-11](../decisions/neutral-agent-vocabulary-2026-11.md).
+
+Neutral tools: `read`, `search`, `edit`, `shell`, `web`, `agent`, `todo`. Claude's names are still
+accepted as legacy aliases (`Read` → `read`; `Grep`, `Glob` → `search`; `Edit`, `Write` → `edit`;
+`Bash` → `shell`; `WebFetch`, `WebSearch` → `web`; `Agent`, `Task` → `agent`; `TodoWrite` → `todo`),
+and `sigil sync --check` reports them (`legacy-tool-name`); `sync --apply` rewrites them.
+
+| Field                   | Claude                                                                                                                         | Copilot                                                     | agents-standard    | Codex     | Cursor    |
+| ----------------------- | ------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | ------------------ | --------- | --------- |
+| agent `tools`           | `read`→Read, `search`→Grep, Glob, `edit`→Edit, Write, `shell`→Bash, `web`→WebFetch, WebSearch, `agent`→Agent, `todo`→TodoWrite | `read`, `search`, `edit`, `execute`, `web`, `agent`, `todo` | no agents          | no agents | no agents |
+| agent `disallowedTools` | same names                                                                                                                     | not carried (inexact)                                       | —                  | —         | —         |
+| skill `allowedTools`    | same names                                                                                                                     | `read`, `search`, `edit`, `shell`, `web`                    | Claude-style names | left out  | left out  |
+| `model`                 | `fast`→haiku, `balanced`→sonnet, `deep`→opus                                                                                   | left out (inherits)                                         | —                  | —         | —         |
+| `effort`                | as written                                                                                                                     | left out                                                    | —                  | —         | —         |
+
+An agent restriction a target can't write exactly follows `toolPolicy`. Under `strict` (the
+default) `add` and the wizard list the agent as skipped with the reason, `build` leaves it out, and
+`sync --check` fails (`tool-restriction-coverage`) until `platforms:` excludes the target. Under
+`nearest` the closest mapping is written with a warning. A skill's `allowedTools` only pre-approves
+tools, so a target that can't write it leaves it out and the tool asks for permission instead.
+Neutral names are coarse: `search` pre-approves both Grep and Glob on Claude, and `edit` both Edit
+and Write.
 
 ---
 

@@ -10,13 +10,6 @@ whenToUse: >-
   "create a new lib/app/cli", "bootstrap a package for X". Pass the package name and optional
   type. Never overwrites existing files; confirms before editing the root workspace config. For
   an empty directory with no workspace, use ts-new-project instead.
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "<name> [--type=lib|app|cli|test]"
 uses:
   rules:
@@ -27,6 +20,11 @@ tags:
   - typescript
   - scaffold
   - project
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Scaffold Project

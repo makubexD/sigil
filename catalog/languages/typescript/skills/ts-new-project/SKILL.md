@@ -5,11 +5,6 @@ title: "New Project (TypeScript)"
 description: "Create a new Node.js TypeScript project in an empty directory — ESM package.json, strict tsconfig, ESLint + Prettier, a test runner, and a starter test; use ts-scaffold-project when a workspace already exists (TypeScript)"
 name: ts-new-project
 language: typescript
-allowedTools:
-  - Read
-  - Write
-  - Bash
-  - Glob
 argumentHint: "<package-name> [--runner=node|vitest]"
 uses:
   rules:
@@ -20,6 +15,11 @@ tags:
   - scaffold
   - new-project
 whenToUse: "Use when starting a brand-new Node.js TypeScript project in an empty directory. Fires for \"create a new TypeScript project\", \"start a Node TS package from scratch\", or \"set up a TypeScript CLI called X\". Not for adding a package to an existing repo or monorepo — when a package.json or workspace config is already present, use `ts-scaffold-project` instead."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # New Project

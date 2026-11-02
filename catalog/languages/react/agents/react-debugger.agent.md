@@ -10,12 +10,6 @@ description: >-
   reported.
 name: react-debugger
 language: react
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Edit
 tags:
   - react
   - debugging
@@ -23,6 +17,11 @@ relatedArtifacts:
   - id: react/react-code-reviewer
     relation: see-also
     reason: react-code-reviewer reviews new code; react-debugger fixes broken existing behavior
+tools:
+  - read
+  - search
+  - shell
+  - edit
 ---
 
 You fix bugs. Your job is root cause plus a minimal, verified fix — not a rewrite.

@@ -5,11 +5,6 @@ title: "Release Preparation (TypeScript)"
 description: "Prepare a release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification (TypeScript)"
 name: ts-release
 language: typescript
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "<version> (e.g. 2.1.0)"
 disableModelInvocation: true
 template: shared/templates/release-skill
@@ -23,7 +18,12 @@ tags:
   - release
   - publish
 whenToUse: "Run manually via `/ts-release <version>` before cutting a release tag — e.g. \"prepare a release\", \"cut version 2.1.0\", \"generate a release checklist\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review. Complements ts-api-compat-reviewer, which determines the correct SemVer bump from the public API diff."
+allowedTools:
+  - read
+  - shell
+  - search
 ---
+
 <!-- slot: quality-gates -->
 Discover the combined gate from `package.json` scripts (`check`/`validate`/`ci`/`prepublishOnly`) and run it; fall back to the type checker, linter, and `scripts.test` separately only if none exists. Run the formatter check too if one is configured (`.prettierrc*` / `biome.json`); otherwise note "formatter not configured".
 

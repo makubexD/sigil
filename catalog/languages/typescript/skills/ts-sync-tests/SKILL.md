@@ -11,13 +11,6 @@ whenToUse: >-
   "sync the tests", "clean up orphaned tests", or "make sure tests match the current source". Not
   for a single untested file with no drift to reconcile (see ts-generate-tests for that — it's
   cheaper for the one-file case).
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[--scope=changed|all] (default: changed)"
 uses:
   rules:
@@ -28,6 +21,11 @@ tags:
   - typescript
   - sync
   - tests
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Sync Tests

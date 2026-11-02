@@ -5,12 +5,6 @@ title: "Add Package (TypeScript)"
 description: "Vet and wire a new npm package — CVEs, types, license, ESM/CJS compatibility (TypeScript)"
 name: ts-add-package
 language: typescript
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
-  - Edit
 argumentHint: "<package-id> [version] [--dev]"
 whenToUse: >-
   Use any time a new npm package needs adding — "add <package>", "install <package>", "I need
@@ -27,6 +21,11 @@ tags:
   - add
   - package
   - npm
+allowedTools:
+  - read
+  - shell
+  - search
+  - edit
 ---
 
 # Add Package

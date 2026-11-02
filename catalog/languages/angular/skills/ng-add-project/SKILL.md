@@ -5,13 +5,6 @@ title: "Add Project (Angular)"
 description: "Add an application or library to an existing Angular workspace with its standards pre-wired — newProjectRoot, prefix, standalone, test runner, tsconfig path mapping — then build and test it (Angular)"
 name: ng-add-project
 language: angular
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "<name> [--type=app|lib]"
 uses:
   rules:
@@ -23,6 +16,11 @@ tags:
   - scaffold
   - project
 whenToUse: "Run via `/ng-add-project <name>` when an Angular workspace (an `angular.json`) already exists and needs another project in it — e.g. \"add a shared-ui library to the workspace\", \"generate an admin application next to the main app\". Pass the project name and optional `--type`. Requires an existing workspace; to create a brand-new workspace in an empty directory use ng-new-project instead. Never overwrites existing files; confirms before editing workspace config."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Add Project

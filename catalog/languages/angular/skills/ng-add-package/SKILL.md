@@ -5,12 +5,6 @@ title: "Add Package (Angular)"
 description: "Vet and add a dependency — prefer ng add for Angular-aware packages, npm install otherwise, with peer-range and supply-chain checks"
 name: ng-add-package
 language: angular
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
-  - Edit
 argumentHint: "<package> [version] [--dev]"
 uses:
   rules:
@@ -23,6 +17,11 @@ tags:
   - package
   - npm
 whenToUse: "Run via `/ng-add-package <package>` when a new dependency is needed — e.g. \"add ngx-toastr\", \"install this package as a dev dependency\". Vets for CVEs, types, ESM compatibility, Angular peer compatibility, and license before installing; undoes the change if the gate fails afterward."
+allowedTools:
+  - read
+  - shell
+  - search
+  - edit
 ---
 
 # Add Package

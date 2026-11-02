@@ -7,8 +7,10 @@
  */
 import { hasUsesClosure } from '../../kinds';
 import { isInstallableDependency } from '../../targets/capabilities';
+import { specFor } from '../../targets/emit-files';
+import { toolWarning, wholeFileSkipReason } from '../../targets/tool-restriction';
 import { currentTemplateOf as templateOf } from '../../manifest/template-of';
-import type { ResolvedCatalog, Target } from '../../types';
+import type { ResolvedArtifact, ResolvedCatalog, Target } from '../../types';
 import type { AddPlan } from './plan';
 
 export interface FilesByArtifact {
@@ -26,6 +28,14 @@ interface ScaffoldCtx {
   writtenPaths: Set<string>;
 }
 
+/** Warns when a written agent's `toolPolicy: nearest` produced an inexact tool mapping. */
+function warnNearestToolMapping(target: Target, artifact: ResolvedArtifact | undefined): void {
+  if (artifact?.kind !== 'agent') return;
+  const spec = specFor(target.emitSpecs ?? [], 'agent', 'scaffold');
+  const warning = spec ? toolWarning(spec, artifact) : undefined;
+  if (warning) console.warn(`  ⚠  ${artifact.id}: ${warning}`);
+}
+
 /** Scaffolds one artifact (deps excluded) and records the subset of paths actually written. */
 async function scaffoldWrittenFiles(
   id: string,
@@ -33,12 +43,18 @@ async function scaffoldWrittenFiles(
   ctx: ScaffoldCtx,
   template: FilesByArtifact['template'],
 ): Promise<FilesByArtifact | undefined> {
+  const artifact = ctx.resolved.byId.get(id);
+  // A dependency the target's spec cannot carry (a strict agent): selection skips a top-level
+  // pick's kind, but a skill's dependency reaches this loop on its own, so skip it here too.
+  if (artifact && wholeFileSkipReason(ctx.target, artifact) !== undefined) return undefined;
   const scaffolded = await ctx.target.scaffold!(id, ctx.resolved, {
     ...ctx.plan.scaffoldOpts,
     includeDeps: false,
   });
   const relPaths = Object.keys(scaffolded).filter(p => ctx.writtenPaths.has(p));
-  return relPaths.length > 0 ? { relPaths, kind, template } : undefined;
+  if (relPaths.length === 0) return undefined;
+  warnNearestToolMapping(ctx.target, artifact);
+  return { relPaths, kind, template };
 }
 
 /** Scaffolds each primary pick (deps excluded) and records the subset of paths actually written. */

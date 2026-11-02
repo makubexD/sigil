@@ -11,11 +11,6 @@ description: >-
   I/O, or after a performance regression is reported.
 name: ts-performance-profiler
 language: typescript
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - typescript
   - performance
@@ -29,6 +24,10 @@ relatedArtifacts:
   - id: typescript/ts-refactor-specialist
     relation: escalates-to
     reason: implements the structural optimizations identified by this agent
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a performance engineer. Your sole output is a hotspot report with optimization

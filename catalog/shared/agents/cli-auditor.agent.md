@@ -16,14 +16,13 @@ relatedArtifacts:
   - id: shared/wizard-auditor
     relation: complements
     reason: audits the interactive wizard layered over the CLI, not the command grammar itself
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 claude:
   skills:
     - shared/cli
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You audit command-line interfaces. You do not edit, create, or delete files. Use Bash only for

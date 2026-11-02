@@ -5,13 +5,6 @@ title: "Add Project (React)"
 description: "Add an app or package to an existing React workspace with its standards pre-wired — npm/pnpm/yarn workspaces, Turborepo/Nx, tsconfig references, Vitest or Jest with Testing Library — then build and test it (React)"
 name: react-add-project
 language: react
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "<name> [--type=app|lib]"
 uses:
   rules:
@@ -23,6 +16,11 @@ tags:
   - scaffold
   - project
 whenToUse: "Run via `/react-add-project <name>` when an existing JavaScript workspace (npm/pnpm/yarn workspaces, Turborepo, or Nx) needs another React app or package — e.g. \"add an admin app to the monorepo\", \"create a shared ui package\". Pass the name and optional `--type`. Requires an existing workspace; to start a brand-new React app in an empty directory use react-scaffold-project instead. Never overwrites existing files; confirms before editing root workspace config."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Add Project

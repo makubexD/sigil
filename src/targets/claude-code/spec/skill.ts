@@ -13,6 +13,7 @@ import { AGENT_SKILLS_LIMITS } from '../../agent-skills-limits';
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import { renderBoundarySection } from '../../shared/boundary';
+import { CLAUDE_TOOL_DIALECT, claudeToolNames } from '../tool-dialect';
 
 const MAX_SKILL_BODY_LINES = 500;
 /** Claude Code truncates `description` + `when_to_use` at this length in the skill listing. */
@@ -44,7 +45,7 @@ const allowedToolsMapping: FieldMapping = {
   to: 'allowed-tools',
   required: false,
   when: fm => Array.isArray(fm.allowedTools) && (fm.allowedTools as string[]).length > 0,
-  serialize: v => `allowed-tools: ${yamlList(v as string[])}`,
+  serialize: v => `allowed-tools: ${yamlList(claudeToolNames(v as string[]))}`,
 };
 
 const argumentHintMapping: FieldMapping = {
@@ -134,6 +135,7 @@ export const CLAUDE_PLUGIN_SKILL_SPEC: KindEmitSpec = {
   pathPattern: /plugins\/[^/]+\/skills\/.*\/SKILL\.md$/,
   frontmatter: SKILL_FRONTMATTER,
   emitEmptyFrontmatter: true, // name/description are always present
+  toolDialect: CLAUDE_TOOL_DIALECT,
   body: [boundarySection, appliedRulesSection],
   forbiddenKeys: ['applyTo', 'paths', 'agent'],
   lexicon: CLAUDE_LEXICON,

@@ -5,13 +5,6 @@ title: "Document (Angular)"
 description: "Generate or update TSDoc and module-level documentation for Angular code, following the project's documented documentation style"
 name: ng-document
 language: angular
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[file-or-module] (optional)"
 uses:
   rules:
@@ -23,6 +16,11 @@ tags:
   - document
   - documentation
 whenToUse: "Run via `/ng-document [file]` when public symbols, components, or services are missing TSDoc — e.g. \"document this service\", \"find undocumented public API\". Omit the argument to scan the whole source for undocumented symbols."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Document

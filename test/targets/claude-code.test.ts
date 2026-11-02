@@ -7,10 +7,20 @@ import fs from 'node:fs';
 
 import { parsePacksConfig } from '../../dist-cli/packs-config';
 import { resolveCatalog } from '../../dist-cli/resolve';
+import { renderArtifact } from '../../dist-cli/targets/emit';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
+import { CLAUDE_AGENT_SPEC } from '../../dist-cli/targets/claude-code/spec/agent';
 import { CLAUDE_PROMPT_SPEC } from '../../dist-cli/targets/claude-code/spec/prompt';
-import type { CompileOptions, FileMap, MarketplaceIdentity, Pack } from '../../dist-cli/types';
+import { CLAUDE_SCAFFOLD_SKILL_SPEC } from '../../dist-cli/targets/claude-code/spec/skill';
+import type {
+  CompileOptions,
+  FileMap,
+  MarketplaceIdentity,
+  Pack,
+  ResolvedArtifact,
+} from '../../dist-cli/types';
 import { loadBundledCatalog } from '../helpers/catalog';
+import { makeAgent, makeSkill } from '../helpers/fixtures';
 import { PACKS as BUNDLED_PACKS } from '../helpers/install-scenario';
 
 const VERSION = '0.1.0';
@@ -138,6 +148,68 @@ describe('Claude Code target', () => {
       'shared rule with appliesTo still gets paths: frontmatter, not dropped for lacking a language',
     );
     assert.ok(sharedRule.includes('**/*'), 'appliesTo glob present verbatim');
+  });
+});
+
+describe('Claude Code tool dialect', () => {
+  it('emits neutral agent tools as their Claude names in dialect order', () => {
+    const agent = makeAgent({ tools: ['read', 'search'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(CLAUDE_AGENT_SPEC, agent, {});
+    assert.match(out, /^tools: Read, Grep, Glob$/m);
+  });
+
+  it('emits neutral skill allowedTools as their Claude names', () => {
+    const skill = makeSkill({ allowedTools: ['shell', 'read'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(CLAUDE_SCAFFOLD_SKILL_SPEC, skill, {});
+    assert.match(out, /^allowed-tools: Bash, Read$/m);
+  });
+
+  it('emits neutral agent disallowedTools as a JSON array', () => {
+    const agent = makeAgent({ disallowedTools: ['shell'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(CLAUDE_AGENT_SPEC, agent, {});
+    assert.match(out, /^disallowedTools: \["Bash"\]$/m);
+  });
+
+  it('renders legacy catalog agent tools byte-identically', () => {
+    const agent = makeAgent({ tools: ['Read', 'Grep', 'Glob'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(CLAUDE_AGENT_SPEC, agent, {});
+    assert.match(out, /^tools: Read, Grep, Glob$/m);
+  });
+});
+
+describe('Claude Code agent model and effort hints', () => {
+  it('maps a neutral model tier to its Claude alias', () => {
+    const agent = makeAgent({ model: 'balanced' }) as unknown as ResolvedArtifact;
+    assert.match(renderArtifact(CLAUDE_AGENT_SPEC, agent, {}), /^model: sonnet$/m);
+  });
+
+  it('lets claude.model win, emitting only one model line', () => {
+    const agent = makeAgent({
+      model: 'fast',
+      claude: { model: 'opus' },
+    }) as unknown as ResolvedArtifact;
+    const modelLines = renderArtifact(CLAUDE_AGENT_SPEC, agent, {}).match(/^model:.*$/gm) ?? [];
+    assert.deepEqual(modelLines, ['model: opus']);
+  });
+
+  it('emits a neutral effort as written', () => {
+    const agent = makeAgent({ effort: 'high' }) as unknown as ResolvedArtifact;
+    assert.match(renderArtifact(CLAUDE_AGENT_SPEC, agent, {}), /^effort: high$/m);
+  });
+
+  it('lets claude.effort win, emitting only one effort line', () => {
+    const agent = makeAgent({
+      effort: 'low',
+      claude: { effort: 'medium' },
+    }) as unknown as ResolvedArtifact;
+    const effortLines = renderArtifact(CLAUDE_AGENT_SPEC, agent, {}).match(/^effort:.*$/gm) ?? [];
+    assert.deepEqual(effortLines, ['effort: medium']);
+  });
+
+  it('emits no model or effort line without hints', () => {
+    const out = renderArtifact(CLAUDE_AGENT_SPEC, makeAgent() as unknown as ResolvedArtifact, {});
+    assert.doesNotMatch(out, /^model:/m);
+    assert.doesNotMatch(out, /^effort:/m);
   });
 });
 

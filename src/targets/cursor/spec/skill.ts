@@ -1,7 +1,10 @@
 /**
  * Cursor `skill` emission spec: `.cursor/skills/<name>/SKILL.md`, the folder Cursor loads
  * project skills from. Frontmatter, body, forbidden keys and limits match the agents-standard spec,
- * with the Codex spec's body sections (so a skill's rules are inlined into it).
+ * except that `allowed-tools` is left out: Cursor documents no such field, and a missing
+ * pre-approval only adds permission prompts (Decision 6,
+ * docs/decisions/neutral-agent-vocabulary-2026-11.md). The body sections are the Codex spec's, so
+ * a skill's rules are inlined into it.
  *
  * @module
  */
@@ -12,7 +15,6 @@ import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import {
   nameMapping,
   descriptionMapping,
-  allowedToolsMapping,
   whenToUseSection,
   argumentHintSection,
   boundarySection,
@@ -28,7 +30,7 @@ export const CURSOR_SKILL_SPEC: KindEmitSpec = {
   kind: 'skill',
   outputPath: artifact => `.cursor/skills/${artifact.frontmatter.name as string}/SKILL.md`,
   pathPattern: /\.cursor\/skills\/.*\/SKILL\.md$/,
-  frontmatter: [nameMapping, descriptionMapping, allowedToolsMapping],
+  frontmatter: [nameMapping, descriptionMapping],
   emitEmptyFrontmatter: true,
   body: [boundarySection, whenToUseSection, argumentHintSection, codingGuidelinesSection],
   forbiddenKeys: ['applyTo', 'paths', 'agent', 'argument-hint'],

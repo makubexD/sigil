@@ -9,13 +9,17 @@ import path from 'node:path';
 import { getTarget } from '../../dist-cli/targets/index';
 import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
 import { renderArtifact } from '../../dist-cli/targets/emit';
+import { AGENTS_STANDARD_SKILL_SPEC } from '../../dist-cli/targets/agents-standard/spec/skill';
+import { agentsStandardToolNames } from '../../dist-cli/targets/agents-standard/tool-dialect';
 import { loadResolvedCatalog } from '../helpers/catalog';
+import { makeSkill } from '../helpers/fixtures';
 import { withTempDirAsync } from '../helpers/temp-dir';
 import { CATALOG, PACKS } from '../helpers/install-scenario';
 import { runAdd } from '../../dist-cli/commands/add';
 import { resolveSelection } from '../../dist-cli/select/selector-resolve';
 import { computeClosure } from '../../dist-cli/select/closure';
 import { carriedKinds, installableKinds } from '../../dist-cli/targets/capabilities';
+import type { ResolvedArtifact } from '../../dist-cli/types';
 
 const TARGET = 'agents-standard';
 const SKILL = 'typescript/ts-generate-tests'; // uses rules, so they get inlined
@@ -62,10 +66,17 @@ describe('agents-standard target', () => {
     )!;
     const files = await getTarget(TARGET).scaffold!(withTools.id, catalog, { projectDir: '.' });
     const skill = Object.entries(files).find(([f]) => f.endsWith('/SKILL.md'))![1];
-    const tools = (withTools.frontmatter.allowedTools as string[]).join(' ');
+    const tools = agentsStandardToolNames(withTools.frontmatter.allowedTools as string[]).join(' ');
     // One space-separated string, quoted so a value starting with `*` or holding `:` stays valid YAML.
     assert.ok(skill.split('\n').includes(`allowed-tools: "${tools}"`), skill.slice(0, 300));
     assert.equal(parseFrontmatter(skill).data['allowed-tools'], tools);
+  });
+
+  it('should render allowedTools through the open-standard tool dialect', () => {
+    const skill = makeSkill({ allowedTools: ['Bash', 'Read'] }) as unknown as ResolvedArtifact;
+    const out = renderArtifact(AGENTS_STANDARD_SKILL_SPEC, skill, {});
+    assert.match(out, /^allowed-tools: "Bash Read"$/m);
+    assert.equal(parseFrontmatter(out).data['allowed-tools'], 'Bash Read');
   });
 
   it('should refuse a tool name the space-separated list cannot carry', async () => {

@@ -5,13 +5,6 @@ title: "Generate Component (Angular)"
 description: "Scaffold an Angular component, directive, service, pipe, or guard plus its spec, following the project's discovered era and conventions"
 name: ng-generate-component
 language: angular
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "<name> [--type=component|directive|service|pipe|guard]"
 uses:
   rules:
@@ -24,6 +17,11 @@ tags:
   - generate
   - component
 whenToUse: "Run via `/ng-generate-component <name>` when scaffolding a new component, directive, service, pipe, or guard — e.g. \"generate a UserProfile component\", \"scaffold a new auth guard\". Discovers the project's selector prefix, era (standalone vs NgModule), and test layout; prefers the Angular CLI when present and never overwrites existing files."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Generate Component

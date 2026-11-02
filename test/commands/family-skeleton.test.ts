@@ -170,4 +170,71 @@ describe('parseCatalogStandard', () => {
       /families\.0\.kind/,
     );
   });
+
+  it('should parse an agent family tool default', () => {
+    const standard = parseCatalogStandard(
+      'families:\n  - id: x\n    kind: agent\n    members: [a/b]\n' +
+        '    tools:\n      allow: [read, search]\n      policy: strict\n',
+      's',
+    );
+    assert.deepEqual(standard.families[0]!.tools, { allow: ['read', 'search'], policy: 'strict' });
+    assert.deepEqual(standard.families[0]!.toolExceptions, {});
+  });
+
+  it('should reject a legacy tool name in a family default', () => {
+    assert.throws(
+      () =>
+        parseCatalogStandard(
+          'families:\n  - id: x\n    kind: agent\n    members: [a/b]\n' +
+            '    tools:\n      allow: [Read]\n',
+          's',
+        ),
+      /families\.0\.tools\.allow\.0/,
+    );
+  });
+
+  it('should reject tools on a skill family', () => {
+    assert.throws(
+      () =>
+        parseCatalogStandard(
+          'families:\n  - id: x\n    kind: skill\n    members: [a/b]\n' +
+            '    tools:\n      allow: [read]\n',
+          's',
+        ),
+      /family 'x'.*tools.*agent family/,
+    );
+  });
+
+  it('should reject allowedTools on an agent family', () => {
+    assert.throws(
+      () =>
+        parseCatalogStandard(
+          'families:\n  - id: x\n    kind: agent\n    members: [a/b]\n    allowedTools: [read]\n',
+          's',
+        ),
+      /family 'x'.*allowedTools.*skill family/,
+    );
+  });
+
+  it('should reject a tool exception that names a non-member', () => {
+    assert.throws(
+      () =>
+        parseCatalogStandard(
+          'families:\n  - id: x\n    kind: agent\n    members: [a/b]\n' +
+            '    toolExceptions:\n      a/c: because\n',
+          's',
+        ),
+      /family 'x'.*a\/c.*not a member/,
+    );
+  });
+
+  it('should leave the tool fields unset and the exception map empty by default', () => {
+    const standard = parseCatalogStandard(
+      'families:\n  - id: x\n    kind: agent\n    members: [a/b]\n',
+      's',
+    );
+    assert.equal(standard.families[0]!.tools, undefined);
+    assert.equal(standard.families[0]!.allowedTools, undefined);
+    assert.deepEqual(standard.families[0]!.toolExceptions, {});
+  });
 });

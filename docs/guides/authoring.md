@@ -159,6 +159,41 @@ An agent can preload skills on Claude Code with `claude: { skills: [<skill id>] 
 rejects an id that isn't a skill, or a skill whose `name` isn't its id's last segment, and
 `sigil add` warns when the agent is installed without it.
 
+### Tools and model hints
+
+Write tool lists in the neutral vocabulary: `read`, `search`, `edit`, `shell`, `web`, `agent`,
+`todo`. Each target writes its own names, so never write a provider's (`Read`, `Bash`, `execute`).
+`sigil sync --check` reports one as `legacy-tool-name`, and `sigil sync --apply` rewrites it.
+
+```yaml
+tools: [read, search, shell] # agent: what it may use
+toolPolicy: strict # or nearest; absent means strict
+model: balanced # fast | balanced | deep
+effort: medium # low | medium | high
+allowedTools: [read, edit] # skill: tools pre-approved while it runs
+```
+
+- **`tools` on an agent restricts it.** Declare it on every agent that must not edit, because no
+  list means every tool. Add `disallowedTools` only when an allow-list can't say it: only Claude
+  carries a denylist.
+- **`toolPolicy` says what happens when a target can't write the list exactly.** `strict` skips the
+  agent on that target with the reason. Keep it for a read-only agent, where a wider mapping would
+  grant write access. `nearest` writes the closest mapping and warns. On an agent restricted only by
+  `disallowedTools`, the closest mapping on a target with no denylist (Copilot) is no restriction at
+  all. Never pair `nearest` with a denylist-only agent. The per-target table is in
+  [spec.md § Tool vocabulary](../reference/spec.md#tool-vocabulary).
+- **`allowedTools` on a skill only pre-approves.** A target that can't write it leaves it out, and
+  the tool asks for permission instead. `search` pre-approves both Grep and Glob on Claude, and
+  `edit` both Edit and Write.
+- **`model` and `effort` are hints.** Claude maps `fast` / `balanced` / `deep` to `haiku` /
+  `sonnet` / `opus`; other targets leave them out and use the tool's default model. Use
+  `claude.model` / `claude.effort` only to override the neutral hint on Claude.
+
+A family in `catalog/standard.yaml` may set `tools: { allow: [...], policy: strict }` for its agent
+members, or `allowedTools: [...]` for its skill members. Each member still writes its own value, so
+the file shows what ships. `sync --check` (`family-tools`) reports a member that differs, unless
+the family lists it under `toolExceptions: { <id>: <reason> }`, and `sync --apply` fills a missing one.
+
 ---
 
 ## Add a rule that extends the shared baseline (DRY)
@@ -288,7 +323,8 @@ Check these after an import:
   report lists both fields as dropped on every prompt.
 - **A rule with no `applyTo` applies to every file.** It is imported with the glob `**/*`, and the
   report notes each one.
-- **Agent `tools` are copied as written.** Other targets may not know Copilot's tool names.
+- **Agent `tools` are copied as written.** Copilot's names (`execute`, …) are legacy aliases here:
+  run `sigil sync --apply` to rewrite them to the neutral vocabulary.
 - **`extends`, templates and `uses.rules` are already flattened** in rendered files. A generated
   `## Coding guidelines to apply` section stays in the body with a note, and so does `## Boundary`.
   Wire `uses.rules` with `sigil patch` and set `relatedArtifacts` in the catalog file.

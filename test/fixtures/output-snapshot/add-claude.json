@@ -20,10 +20,10 @@
   ".claude/skills/cli/references/stack-python.md": "a371e8a559bc63f0f4fa705d9b3d7e317a71dd0004973212d78b6139a9ffc1c3",
   ".claude/skills/cli/references/stack-rust.md": "caec8e889d44cad66c61e383ef105edac99facb5b97abf6f0d0af302110a6943",
   ".claude/skills/cli/references/testing.md": "d42c4e985555244ee508e439616e0acc62c3dd806bc2db4abde742b83db64eb4",
-  ".claude/skills/cs-generate-tests/SKILL.md": "b0e836e3c35ff4c740720d980bcc80e98df0244135ef9184b0c07dc2b172552c",
+  ".claude/skills/cs-generate-tests/SKILL.md": "cc02f537ebb599864e7f4f196ff37ff01568be58c86f9f1b5a74e46b00995347",
   ".claude/skills/shared-explain-diff/SKILL.md": "02800e7c98d7ad21040948a5e3b84f36aa6bdd2dd7daf075aa0c6732f82ad679",
-  ".claude/skills/ts-release/SKILL.md": "ab41c08cf142a7171b99fab25d670d58c85b6a4fbc9d5e16bd8fd8821f2835a3",
+  ".claude/skills/ts-release/SKILL.md": "211cdc5fa38bb716028be4aba4b3adc637e7550783df59291d5890bc40086b1a",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "5bd97e5675ffeddc7d113f99f7748c189e0a266f4d0ae42a03d4d5b61e0ff0c5",
+  ".sigil/manifest.json": "f1cb1c979435cb63175a121d9c916ddd4328f731b9ca8680a18f626a91aeffa0",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

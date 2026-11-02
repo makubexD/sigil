@@ -11,11 +11,6 @@ description: >-
   package that could affect downstream consumers.
 name: react-api-compat-reviewer
 language: react
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - react
   - api
@@ -28,6 +23,10 @@ relatedArtifacts:
   - id: react/react-architecture-reviewer
     relation: complements
     reason: react-architecture-reviewer analyzes internal coupling; this agent analyzes the published surface
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a public API compatibility reviewer for a shared React component/hook library. Your sole

@@ -5,11 +5,6 @@ title: "New Project (.NET / C#)"
 description: "Create a new .NET solution in an empty directory — sln, a console/webapi/classlib project, src/tests layout, xUnit tests, Directory.Build.props, .editorconfig, global.json; use cs-scaffold-project when a solution already exists (.NET / C#)"
 name: cs-new-project
 language: csharp
-allowedTools:
-  - Read
-  - Write
-  - Bash
-  - Glob
 argumentHint: "<SolutionName> [--type=console|webapi|classlib]"
 uses:
   rules:
@@ -20,6 +15,11 @@ tags:
   - scaffold
   - new-project
 whenToUse: "Use when starting a brand-new .NET solution in an empty directory. Fires for \"create a new .NET solution\", \"start a new C# project from scratch\", or \"set up a webapi called X\". Not for adding a project to an existing solution — when a .sln or .slnx is already present, use `cs-scaffold-project` instead."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # New Project

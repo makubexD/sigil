@@ -9,12 +9,6 @@ description: >-
   proactively when tests fail or an error is reported.
 name: ts-debugger
 language: typescript
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Edit
 tags:
   - typescript
   - debugger
@@ -24,6 +18,11 @@ relatedArtifacts:
     reason: >-
       ts-refactor-specialist makes behavior-preserving changes; this agent makes
       behavior-changing fixes
+tools:
+  - read
+  - search
+  - shell
+  - edit
 ---
 
 You are a root-cause investigator. Reproduce a failure, trace it to its origin, apply the smallest

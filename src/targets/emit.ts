@@ -6,7 +6,8 @@
 import type { ResolvedArtifact } from '../types';
 import type { KindEmitSpec, EmitContext, FieldMapping } from './spec-types';
 import { applyLexicon } from './lexicon';
-import { assertRestrictionsCarried } from './tool-restriction';
+import { restrictionOutcome } from './tool-restriction';
+import { SigilError } from '../errors';
 
 /**
  * Renders one FieldMapping's `key: value` line(s), or `''` to omit it entirely.
@@ -73,6 +74,16 @@ export function renderReference(spec: KindEmitSpec, content: string): string {
   return applyLexicon(content, spec.lexicon);
 }
 
+/** Throws when `spec` cannot carry the restriction `artifact` declares instead of rendering it. */
+export function assertRestrictionCarried(spec: KindEmitSpec, artifact: ResolvedArtifact): void {
+  const outcome = restrictionOutcome(spec, artifact.frontmatter);
+  if (outcome.kind === 'skip') {
+    throw new SigilError(`${artifact.id}: ${outcome.reason}`, {
+      hint: 'Exclude this tool with platforms:, or set toolPolicy: nearest.',
+    });
+  }
+}
+
 /**
  * Renders one artifact through its KindEmitSpec: frontmatter block, `before` sections, the
  * artifact's own body (`resolvedBody ?? body` — see resolve.ts for what populates resolvedBody),
@@ -85,7 +96,7 @@ export function renderArtifact(
   artifact: ResolvedArtifact,
   ctx: EmitContext,
 ): string {
-  assertRestrictionsCarried(spec, artifact);
+  assertRestrictionCarried(spec, artifact);
   const frontmatterBlock = renderFrontmatterBlock(spec, artifact.frontmatter);
   const beforeLines = renderSections(spec, artifact, ctx, 'before');
   const rawBody = artifact.resolvedBody ?? artifact.body;

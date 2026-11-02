@@ -5,13 +5,6 @@ title: "Generate Tests (Angular)"
 description: "Generate a Vitest + TestBed suite for an Angular file or component, following the project's documented test conventions"
 name: ng-generate-tests
 language: angular
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[file-or-component] (optional)"
 uses:
   rules:
@@ -23,6 +16,11 @@ tags:
   - generate
   - tests
 whenToUse: "Run via `/ng-generate-tests [file]` when a source file lacks a spec or a new public member has no test coverage — e.g. \"generate tests for user.service.ts\", \"write a spec for this component\". Omit the argument to scan for untested files and choose interactively. Complements ng-sync-tests, which syncs the whole spec suite rather than one target."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Generate Tests

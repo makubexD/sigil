@@ -14,11 +14,15 @@
 #           brief: an agent's hand-off, examples); `stacks: true` wants one stack-<id>.md per
 #           declared stack, all with one H2 skeleton. No `references` = SKILL.md only.
 #           Members load rules and agents from the same families (`uses`).
+#           `tools` (agent families only) fixes every member's neutral tools: {allow: [read, search],
+#           policy: strict|nearest} (absent policy = strict); `allowedTools` does the same for skill
+#           families; `toolExceptions` maps a member id to its reason. A member still carries its own
+#           values: family-tools reports a difference, and --apply writes the family value when none.
 # bases:    shared rules other rules extend; a base belongs to no family.
 # severities: the one scale every report template grades findings on, highest first. A tier heading
 #           (`#### Major`, `#### Low / Informational`) off this scale fails catalog-layout.
 #
-# Checked by `sigil sync --check` (family-skeleton, catalog-layout, catalog-symmetry). Author-only:
+# Checked by `sigil sync --check` (family-skeleton, family-tools, catalog-layout, catalog-symmetry). Author-only:
 # consumer commands never read this file.
 
 stacks:
@@ -53,6 +57,12 @@ families:
     title: API Compatibility Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine the public surface"
       - "Diff against the previous release"
@@ -69,6 +79,12 @@ families:
     title: Architecture Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine scope"
       - "Discover architecture intent"
@@ -86,6 +102,12 @@ families:
     title: Code Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine scope"
       - "Discover conventions"
@@ -102,6 +124,13 @@ families:
     title: Debugger
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - edit
+        - shell
+      policy: strict
     sections: [Reproduce, Isolate, Fix, Verify, Output]
     members:
       - angular/ng-debugger
@@ -113,6 +142,12 @@ families:
     title: Performance Profiler
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine scope"
       - "Discover context"
@@ -129,6 +164,13 @@ families:
     title: Refactor Specialist
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - edit
+        - shell
+      policy: strict
     sections:
       - "Establish baseline"
       - "Identify and plan the refactor"
@@ -145,6 +187,12 @@ families:
     title: Security Auditor
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine scope"
       - "Discover conventions and security baseline"
@@ -161,6 +209,12 @@ families:
     title: Template Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     members: [angular/ng-template-reviewer]
 
   # ── Rules ───────────────────────────────────────────────────────────────────────────────────
@@ -458,6 +512,12 @@ families:
   - id: skill-auditor
     kind: agent
     keys: [tools, relatedArtifacts, claude]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     members: [shared/cli-auditor, shared/wizard-auditor]
   - id: skill-rules
     kind: rule
@@ -466,7 +526,13 @@ families:
   # A reviewer for languages with no namespace (layout standard, case a).
   - id: generic-code-reviewer
     kind: agent
-    keys: [tools, relatedArtifacts, claude]
+    keys: [tools, model, effort, relatedArtifacts, claude]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     members: [shared/code-reviewer]
   - id: feature
     kind: skill

@@ -11,11 +11,6 @@ description: >-
   sensitive data.
 name: ng-security-auditor
 language: angular
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - angular
   - security
@@ -31,6 +26,10 @@ relatedArtifacts:
     reason: >-
       ng-audit-deps handles dependency inventory and CVE scanning; this agent
       handles code-level vulnerabilities
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a security auditor. Your sole output is a prioritized remediation report — **you never modify files**.

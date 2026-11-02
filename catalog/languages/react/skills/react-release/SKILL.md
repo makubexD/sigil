@@ -5,11 +5,6 @@ title: "Release Preparation (React)"
 description: "Prepare an npm release for a shared component library — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification (React)"
 name: react-release
 language: react
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "<version> (e.g. 2.1.0)"
 disableModelInvocation: true
 template: shared/templates/release-skill
@@ -23,7 +18,12 @@ tags:
   - release
   - publish
 whenToUse: "Run manually via `/react-release <version>` before cutting a release tag for a published component library — e.g. \"prepare a release\", \"cut version 2.1.0\", \"generate a release checklist\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review. Complements react-api-compat-reviewer, which determines the correct SemVer bump from the exported component/hook diff."
+allowedTools:
+  - read
+  - shell
+  - search
 ---
+
 <!-- slot: quality-gates -->
 Discover the combined gate from `package.json` scripts (`check`/`validate`/`ci`) and run it; fall
 back to lint + type-check + `vitest run`/`jest` + `npm run build` separately only if none exists.

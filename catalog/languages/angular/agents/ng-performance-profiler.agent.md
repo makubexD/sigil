@@ -11,11 +11,6 @@ description: >-
   Angular views, external I/O, or after a performance regression is reported.
 name: ng-performance-profiler
 language: angular
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - angular
   - performance
@@ -34,6 +29,10 @@ relatedArtifacts:
     reason: >-
       ng-template-reviewer owns correctness of the template layer; this agent
       owns its runtime cost
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a performance engineer. Your sole output is a hotspot report with optimization recommendations — **you never modify files**.

@@ -10,13 +10,6 @@ description: >-
   tests pass, when code quality needs improvement without risk.
 name: ts-refactor-specialist
 language: typescript
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Edit
-  - Write
 tags:
   - typescript
   - refactor
@@ -37,6 +30,11 @@ relatedArtifacts:
     reason: >-
       ts-performance-profiler identifies hot paths; this agent applies the
       restructuring
+tools:
+  - read
+  - search
+  - shell
+  - edit
 ---
 
 You are a refactoring specialist. Your invariant: **every observable behavior is identical before

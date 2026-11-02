@@ -39,9 +39,11 @@ Test: the A1 row is in the ADR with the version; `npx prettier --check docs/deci
 A new setup page in the shape of `docs/setup/cursor.md` (H1 `# Antigravity: use Sigil rules and skills today`).
 Sections:
 
-- **What reaches Antigravity today:** `sigil add --target agents-standard` (or `--target codex`) writes `AGENTS.md`
-  with the repo-wide rules and `.agents/skills/`, and Antigravity loads both with no settings (ADR P1, P2, step 1's
-  A1). The two targets share `.agents/skills/`, so pick one. Cite
+- **What reaches Antigravity today:** `sigil add --target agents-standard` (or `--target codex`) writes
+  `.agents/skills/` with each skill's rules inlined. `add` writes no `AGENTS.md` (A1): the root file with the
+  repo-wide rules comes from `sigil build --target agents-standard`, copied from `dist/agents-standard/AGENTS.md` to
+  the repo root. Antigravity loads both with no settings (ADR P1, P2, A1). The two targets share `.agents/skills/`,
+  so pick one. Cite
   [Rules](https://antigravity.google/docs/rules#where-rules-are-stored) and
   [Agent skills](https://antigravity.google/docs/skills#cli-skill-locations).
 - **What does not reach it:** nothing written for Claude Code (`CLAUDE.md`, `.claude/`, ADR P6). Rules scoped by

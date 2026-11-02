@@ -12,7 +12,12 @@ import { CURSOR_SKILL_SPEC } from '../../dist-cli/targets/cursor/spec/skill';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import { makeSkill } from '../helpers/fixtures';
 import { resolveSelection } from '../../dist-cli/select/selector-resolve';
-import { carriedKinds, installableKinds, kindSupport } from '../../dist-cli/targets/capabilities';
+import {
+  carriedKinds,
+  installableKinds,
+  kindSupport,
+  supportsKind,
+} from '../../dist-cli/targets/capabilities';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import type {
   Artifact,
@@ -117,15 +122,39 @@ describe('cursor target', () => {
     assert.match(skillContent(files), /## Coding guidelines to apply/);
   });
 
-  it('should skip an agent and a prompt, with the reason its capability row gives', async () => {
+  it('should write an agent', async () => {
+    const catalog = await loadResolvedCatalog();
+    const target = getTarget(TARGET);
+
+    assert.ok(supportsKind(target, 'agent'), 'agent is supported');
+    assert.ok(installableKinds(target).includes('agent'), 'agent is installable on its own');
+
+    const result = resolveSelection({
+      selectors: ['agent:shared/code-reviewer'],
+      filters: {},
+      catalog,
+      packs: [],
+      supportedKinds: installableKinds(target),
+      carriedKinds: carriedKinds(target),
+      targetName: TARGET,
+    });
+    assert.deepEqual(result.ids, ['shared/code-reviewer']);
+    assert.deepEqual(result.skipped, []);
+
+    const files = await target.compile(catalog, { version: '0.0.0', packs: [] });
+    const raw = files['.cursor/agents/code-reviewer.md'];
+    assert.ok(raw, 'the compile wrote .cursor/agents/code-reviewer.md');
+    assert.match(raw, /^readonly: true$/m);
+  });
+
+  it('should skip a prompt, with the reason its capability row gives', async () => {
     const catalog = await loadResolvedCatalog();
     const target = getTarget(TARGET);
 
     const reasons = {
-      agent: /no tool list.*readonly: true/,
       prompt: /folding commands into skills/,
     };
-    for (const kind of ['agent', 'prompt'] as const) {
+    for (const kind of ['prompt'] as const) {
       const artifact = catalog.artifacts.find(a => a.kind === kind);
       assert.ok(artifact, `the catalog has a ${kind}`);
 

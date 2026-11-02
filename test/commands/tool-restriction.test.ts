@@ -177,7 +177,10 @@ describe('tool-restriction-coverage', () => {
     const findings = runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE });
     assert.deepEqual(
       findings.map(f => [f.severity, f.provider]),
-      [['error', 'copilot']],
+      [
+        ['error', 'copilot'],
+        ['error', 'cursor'],
+      ],
     );
   });
 
@@ -191,15 +194,19 @@ describe('tool-restriction-coverage', () => {
     assert.deepEqual(runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE }), []);
   });
 
-  it('should flag a strict restriction once, on the target whose dialect cannot carry it', () => {
+  it('should flag a strict restriction on each target whose dialect cannot carry it', () => {
     const agent = agentWith({ tools: ['read', 'shell'] });
     const findings = runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE });
     assert.deepEqual(
       findings.map(f => [f.severity, f.provider]),
-      [['error', FAKE_TARGET]],
+      [
+        ['error', 'cursor'],
+        ['error', FAKE_TARGET],
+      ],
     );
-    assert.match(findings[0]?.detail ?? '', /shell/);
-    assert.match(findings[0]?.detail ?? '', new RegExp(`set platforms: to exclude ${FAKE_TARGET}`));
+    const fake = findings.find(f => f.provider === FAKE_TARGET);
+    assert.match(fake?.detail ?? '', /shell/);
+    assert.match(fake?.detail ?? '', new RegExp(`set platforms: to exclude ${FAKE_TARGET}`));
   });
 
   it('should pass when platforms excludes the target that cannot carry the restriction', () => {
@@ -207,24 +214,36 @@ describe('tool-restriction-coverage', () => {
     assert.deepEqual(runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE }), []);
   });
 
-  it('should warn once when toolPolicy nearest accepts the nearest mapping', () => {
+  it('should warn per inexact target when toolPolicy nearest accepts the nearest mapping', () => {
     const agent = agentWith({ tools: ['read', 'shell'], toolPolicy: 'nearest' });
     const findings = runConformance(catalogOf([agent]), getAllTargets(), { ruleId: RULE });
     assert.deepEqual(
       findings.map(f => [f.severity, f.provider]),
-      [['warning', FAKE_TARGET]],
+      [
+        ['warning', 'cursor'],
+        ['warning', FAKE_TARGET],
+      ],
     );
-    assert.match(findings[0]?.detail ?? '', /shell/);
-    assert.match(findings[0]?.detail ?? '', /nearest mapping/);
+    for (const finding of findings) {
+      assert.match(finding.detail, /shell/);
+      assert.match(finding.detail, /nearest mapping/);
+    }
   });
 
-  it('should report nothing for the bundled catalog on the real targets', async () => {
+  it('should report only Cursor nearest warnings for the bundled catalog', async () => {
+    // Every catalog agent is toolPolicy: nearest; Claude and Copilot carry each list exactly, and
+    // Cursor's readonly switch is inexact for all of them (docs/plan-cursor-target-e.md).
     const resolved = await loadResolvedCatalog();
     const realTargets = getAllTargets().filter(target => target.name !== FAKE_TARGET);
     const findings = runConformance(resolved as unknown as LoadedCatalog, realTargets, {
       ruleId: RULE,
     });
-    assert.deepEqual(findings, []);
+    const agents = resolved.artifacts.filter(a => a.kind === 'agent').length;
+    assert.equal(findings.length, agents);
+    assert.deepEqual(
+      [...new Set(findings.map(f => `${f.severity} ${f.provider}`))],
+      ['warning cursor'],
+    );
   });
 });
 

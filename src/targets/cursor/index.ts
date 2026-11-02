@@ -1,10 +1,11 @@
 /**
  * The Cursor target: Agent Skills in `.cursor/skills/<name>/SKILL.md` (each skill's rules inlined
- * into it), project rules as `.mdc` files in `.cursor/rules/`, hooks merged into
- * `.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), and MCP servers into
- * `.cursor/mcp.json` (project) or `~/.cursor/mcp.json` (user). Everything here is data on the
- * shared pipeline: emit specs, lexicon, capabilities and citations. It needs nothing outside this
- * folder except its `registerTarget()` line.
+ * into it), project rules as `.mdc` files in `.cursor/rules/`, subagents as
+ * `.cursor/agents/<name>.md`, hooks merged into `.cursor/hooks.json` (project) or
+ * `~/.cursor/hooks.json` (user), and MCP servers into `.cursor/mcp.json` (project) or
+ * `~/.cursor/mcp.json` (user). Everything here is data on the shared pipeline: emit specs,
+ * lexicon, capabilities and citations. It needs nothing outside this folder except its
+ * `registerTarget()` line.
  *
  * `build` writes no `AGENTS.md`: Cursor's native repo-wide rules become `.mdc` files in
  * `.cursor/rules/`, and Cursor also reads a root `AGENTS.md`, so writing both would load each
@@ -36,7 +37,7 @@ import { emitFile, scaffoldArtifact, specFor } from '../emit-files';
 import { CURSOR_AGGREGATE_DOCS } from './aggregate-docs';
 import { CURSOR_CAPABILITIES } from './capabilities';
 import { CURSOR_CONFIG_KINDS } from './config';
-import { CURSOR_SKILLS_DOC } from './doc-refs';
+import { CURSOR_SKILLS_DOC, CURSOR_SUBAGENTS_DOC } from './doc-refs';
 import { CURSOR_LEXICON } from './lexicon';
 import { CURSOR_EMIT_SPECS } from './spec';
 import { CURSOR_INIT_DIRS, CURSOR_PROJECT_MARKERS, CURSOR_VOCABULARY } from './metadata';
@@ -64,7 +65,7 @@ export class CursorTarget implements Target {
   readonly displayName = 'Cursor';
   readonly installHint = 'writes to .cursor/';
   readonly afterInstallHint =
-    'Cursor picks up .cursor/skills/ and .cursor/rules/ in its next chat. Project hooks run only in a trusted workspace. A project MCP server needs approval (agent mcp enable <name>).';
+    'Cursor picks up .cursor/skills/, .cursor/rules/ and .cursor/agents/ in its next chat. Project hooks run only in a trusted workspace. A project MCP server needs approval (agent mcp enable <name>).';
 
   readonly capabilities: TargetCapabilities = CURSOR_CAPABILITIES;
   readonly initDirs: string[] = CURSOR_INIT_DIRS;
@@ -88,6 +89,9 @@ export class CursorTarget implements Target {
       doc: CURSOR_SKILLS_DOC,
       readerWins: true,
     },
+    // Cursor reads `.claude/agents/` too, and its own `.cursor/agents/` copy wins on a name
+    // clash (docs/plan-cursor-target-e.md Decision 7, CURSOR_SUBAGENTS_DOC).
+    { kind: 'agent' as const, targets: ['claude'], doc: CURSOR_SUBAGENTS_DOC, readerWins: true },
   ];
 
   readonly configKinds = CURSOR_CONFIG_KINDS;
@@ -125,7 +129,7 @@ export class CursorTarget implements Target {
     return configSkipReasonFrom(CURSOR_CONFIG_KINDS, artifact);
   }
 
-  /** Every artifact with a scaffold spec (skills, and rules as `.mdc`), and no AGENTS.md. */
+  /** Every artifact with a scaffold spec (skills, rules as `.mdc`, and agents), no AGENTS.md. */
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {
     const files: FileMap = {};
     const ctx = { catalog, installSet: new Set(catalog.artifacts.map(a => a.id)) };

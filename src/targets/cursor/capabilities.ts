@@ -1,25 +1,20 @@
 /**
  * What the Cursor target delivers: Agent Skills in `.cursor/skills/` (each skill's rules
- * inlined), rules as `.mdc` files in `.cursor/rules/`, hooks merged into `.cursor/hooks.json`
- * / `~/.cursor/hooks.json`, and MCP servers into `.cursor/mcp.json` / `~/.cursor/mcp.json`.
- * Subagents and commands are not built yet; Cursor's settings file is Claude Code's own
- * vocabulary and it has no workflow file.
+ * inlined), rules as `.mdc` files in `.cursor/rules/`, subagents in `.cursor/agents/`, hooks
+ * merged into `.cursor/hooks.json` / `~/.cursor/hooks.json`, and MCP servers into
+ * `.cursor/mcp.json` / `~/.cursor/mcp.json`. Commands are not built yet; Cursor's settings file
+ * is Claude Code's own vocabulary and it has no workflow file.
  *
  * @module
  */
 import { TEMPLATE_NOT_EMITTED, type TargetCapabilities } from '../capability-types';
-import { CURSOR_COMMANDS_DOC, CURSOR_SUBAGENTS_DOC } from './doc-refs';
+import { CURSOR_COMMANDS_DOC } from './doc-refs';
 
 export const CURSOR_CAPABILITIES: TargetCapabilities = {
   scaffold: {
     skill: { mode: 'native' },
     rule: { mode: 'native' },
-    agent: {
-      mode: 'none',
-      reason:
-        'not built yet: a Cursor subagent has no tool list, so a read-only one needs `readonly: true`',
-      docs: [CURSOR_SUBAGENTS_DOC],
-    },
+    agent: { mode: 'native' },
     prompt: {
       mode: 'none',
       reason: 'Cursor is folding commands into skills (/migrate-to-skills)',

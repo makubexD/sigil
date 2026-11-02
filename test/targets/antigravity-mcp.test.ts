@@ -1,7 +1,7 @@
 /**
  * Antigravity MCP config: the target writes an `mcpServers` map into `.agents/mcp_config.json`
  * (project) and `~/.gemini/config/mcp_config.json` (user) through the same merge machinery as
- * Cursor's MCP file (docs/plan-antigravity-target-c.md step 3).
+ * Cursor's MCP file (docs/decisions/antigravity-target-2026-11.md, probe C1).
  *
  * Antigravity's dialect expands no environment references: an identity env entry is dropped and
  * any other token skips the server (P5 and C1 in docs/decisions/antigravity-target-2026-11.md).

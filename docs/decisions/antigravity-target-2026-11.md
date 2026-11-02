@@ -263,27 +263,27 @@ The brief's TOML question is answered by D4: commands are gone, so no TOML is wr
 
 Every Antigravity difference from steps 2 and 3, and the ground rule 1 layer that absorbs it.
 
-| Difference                                                                                     | Layer                                                                   |
-| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| Paths under `.agents/` and `~/.gemini/config/`                                                 | `KindEmitSpec.outputPath`; config destinations in the `ConfigKindTable` |
-| Skill and agent frontmatter fields                                                             | `KindEmitSpec` field mappings                                           |
-| Agent tool names (`view_file`, `run_command`, …)                                               | `ToolDialect` (`names`)                                                 |
-| Model tiers (`flash_lite`, `flash`, `pro`)                                                     | Tier table                                                              |
-| Rule `trigger` and comma-separated `globs`                                                     | Rule `KindEmitSpec`, with `appliesToEveryFile`                          |
-| 24,000-byte rule file limit                                                                    | `KindEmitSpec.limits`                                                   |
-| 20,000-token rules budget; MCP Ask approval; print-mode soft-deny                              | Setup docs (ground rule 3)                                              |
-| Context file `AGENTS.md`, `.agents/rules/`, `.agents/skills/`                                  | `ProviderLexicon` (`conventions-file`, `rules-dir`, `skills-dir`)       |
-| Argument syntax for a skill run as a command                                                   | `ProviderLexicon` `arguments`, once U1 is known                         |
-| No prompt kind                                                                                 | `capabilities.ts`                                                       |
-| Hook event names (`PreInvocation`, `PostInvocation` have no catalog equivalent)                | Hook translation table in the target                                    |
-| Hook matcher tool names                                                                        | Hook translation table, from Claude's names (known debt, below)         |
-| **Hook stdin shape (`toolCall.args.TargetFile`) and deny protocol (exit 0 + JSON `decision`)** | **None.** A needed neutral concept, below                               |
-| MCP server map and fields                                                                      | `McpDialect`                                                            |
-| MCP env reference                                                                              | `EnvSyntax` (after U2)                                                  |
-| Plugin MCP `variables` declaration                                                             | Plugin build in the target                                              |
-| Plugin manifest and folder layout                                                              | Plugin build in the target                                              |
-| Shared `.agents/skills/` with Codex and `agents-standard`                                      | `Target.sharesSkillFilesWith`                                           |
-| Settings file owned by the CLI                                                                 | `capabilities.ts` (`none`)                                              |
+| Difference                                                                      | Layer                                                                   |
+| ------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Paths under `.agents/` and `~/.gemini/config/`                                  | `KindEmitSpec.outputPath`; config destinations in the `ConfigKindTable` |
+| Skill and agent frontmatter fields                                              | `KindEmitSpec` field mappings                                           |
+| Agent tool names (`view_file`, `run_command`, …)                                | `ToolDialect` (`names`)                                                 |
+| Model tiers (`flash_lite`, `flash`, `pro`)                                      | Tier table                                                              |
+| Rule `trigger` and comma-separated `globs`                                      | Rule `KindEmitSpec`, with `appliesToEveryFile`                          |
+| 24,000-byte rule file limit                                                     | `KindEmitSpec.limits`                                                   |
+| 20,000-token rules budget; MCP Ask approval; print-mode soft-deny               | Setup docs (ground rule 3)                                              |
+| Context file `AGENTS.md`, `.agents/rules/`, `.agents/skills/`                   | `ProviderLexicon` (`conventions-file`, `rules-dir`, `skills-dir`)       |
+| Argument syntax for a skill run as a command                                    | `ProviderLexicon` `arguments`, once U1 is known                         |
+| No prompt kind                                                                  | `capabilities.ts`                                                       |
+| Hook event names (`PreInvocation`, `PostInvocation` have no catalog equivalent) | Hook translation table in the target                                    |
+| Hook matcher tool names                                                         | Hook translation table, from Claude's names (known debt, below)         |
+| **Hook stdin shape (`toolCall.args.Path` observed, `TargetFile` documented)**   | **None.** A needed neutral concept, below                               |
+| MCP server map and fields                                                       | `McpDialect`                                                            |
+| MCP env reference                                                               | `EnvSyntax` (after U2)                                                  |
+| Plugin MCP `variables` declaration                                              | Plugin build in the target                                              |
+| Plugin manifest and folder layout                                               | Plugin build in the target                                              |
+| Shared `.agents/skills/` with Codex and `agents-standard`                       | `Target.sharesSkillFilesWith`                                           |
+| Settings file owned by the CLI                                                  | `capabilities.ts` (`none`)                                              |
 
 No row needs a change to `catalog/` or the zod schema except the two hook rows:
 
@@ -356,7 +356,7 @@ cover them.
 - **Hook (run 13).** A `.env` write went through: `write_file` returned "Created file." and no hook message
   appeared, as expected. The matcher names Claude tools, and the script reads `tool_input`, which this stdin does not
   have (P4).
-- **Permissions.** Here a plain print run had its `write_file` (and a `git` `run_command`) auto-denied, unlike step 4.
+- **Permissions (run 11).** Here a plain print run had its `write_file` (and a `git` `run_command`) auto-denied, unlike step 4.
   The writes ran with a session-only `--settings '{"permissions":{"allow":["write_file(*)"]}}'`. The cause was not
   isolated.
 - **Clean-up.** `agy plugin uninstall` for each plugin, after which `agy plugin list --json` is `[]`. Uninstall left

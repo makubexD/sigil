@@ -89,17 +89,16 @@ the documented tool names load and work, one per tool (`multi_replace_file_conte
 check (D2) ran a sigil-installed `typescript/ts-code-reviewer`: it reviewed and wrote no file. Plan:
 [plan-antigravity-target-d.md](plan-antigravity-target-d.md).
 
-### Phase H: neutral hook contract (all hook targets)
+### Phase H: neutral hook contract (all hook targets) (done 2026-11-02)
 
-The neutral concept the ADR's neutrality table names, and the regression's V1 and V2:
-
-- A named hook input shape that catalog hook bodies read, and an adapter each hook target puts in front of the command
-  (identity for Claude, Copilot, Codex and Cursor; a rewrite of `toolCall.name` / `toolCall.args` for Antigravity).
-- Matchers in the neutral tool vocabulary (`edit`, `shell`, …), mapped by each target's `ToolDialect`; event names
-  with a table per target. Copilot and Codex stop copying Claude names through.
-- The three catalog hooks rewritten against it, and a regression test per target that a deny really denies.
-
-This phase touches every hook target, so it ships ahead of Phase E and on its own.
+Every hook target now takes one neutral contract (`docs/decisions/neutral-hook-contract-2026-11.md`). A catalog hook
+names a neutral `event` and `matcher` (`*`, or neutral tools joined with `|`), and each target maps both through its
+own hook tool table; the PascalCase events and Claude's tool names still load as legacy aliases, flagged by
+`sync --check`. A hook that reads its input is a `script:` called with one `input` argument (`event`, `tool`,
+`files`, `command`, `agent`, `cwd`), built by each target's `HookInputDialect`, so catalog scripts no longer read a
+provider's stdin. The three catalog hooks are rewritten against it, and a deny regression test runs per target.
+Every installed hook's command changes once: run `sigil update`. Plan:
+[plan-antigravity-target-h.md](plan-antigravity-target-h.md).
 
 ### Phase E: Antigravity hooks
 

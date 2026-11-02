@@ -194,6 +194,30 @@ members, or `allowedTools: [...]` for its skill members. Each member still write
 the file shows what ships. `sync --check` (`family-tools`) reports a member that differs, unless
 the family lists it under `toolExceptions: { <id>: <reason> }`, and `sync --apply` fills a missing one.
 
+### Hooks
+
+A hook names a neutral event and a neutral matcher; each hook target writes its own names.
+
+```yaml
+event: before-tool # before-tool | after-tool | prompt-submit | session-start | stop | subagent-stop | notification
+matcher: 'edit|shell' # `*`, or neutral tools joined with |
+script: |-
+  if (!input) return;
+  const hit = input.files.find(file => file.endsWith('.env'));
+  if (hit) {
+    process.stderr.write('blocked write to ' + hit + '\n');
+    process.exitCode = 2;
+  }
+```
+
+A hook that reads its input is a `script:`: the body of a Node.js function sigil calls with one
+argument, `input` (`event`, `tool`, `files`, `command`, `agent`, `cwd`). Never read a provider's
+stdin field (`tool_input`, `toolCall.args`, …); `hook-provider-input` fails `sigil sync --check`.
+`command` / `args` are for a hook that reads no input; exactly one of `script` and `command` is
+set. Legacy events and tool names still load, but `legacy-tool-name` flags them. A `script:` hook
+installs as `node -e`, so `node` must be on PATH where the hook runs; `sigil add` warns when it is
+not. A regex or `mcp__…` matcher is a schema error.
+
 ---
 
 ## Add a rule that extends the shared baseline (DRY)

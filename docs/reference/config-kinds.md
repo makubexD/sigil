@@ -7,28 +7,48 @@ home for their merge model, provider-declared scope model, and wizard treatment.
 
 ## Hook fields
 
-A `kind: hook` artifact (`src/schema/index.ts`, `HookSchema`) becomes one entry under
-`hooks.<event>` in Claude Code's settings (`src/targets/claude-code/config-scaffold.ts`) and in the
+A `kind: hook` artifact (`src/schema/index.ts`, `HookSchema`) becomes one entry under the neutral
+event's name in Claude Code's settings (`src/targets/claude-code/config-scaffold.ts`) and in the
 Copilot hook file for its scope (scope table below). On Codex it lands in `.codex/hooks.json` or `$CODEX_HOME/hooks.json`,
 and an `mcp` artifact in `config.toml` beside them ([setup](../setup/codex.md)). On Cursor it lands in
-`.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), with events and tool names translated from
-Cursor's Claude Code aliases; a hook with no equivalent is skipped with its reason, and an `mcp` artifact
+`.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), with its events and tool names written from
+the neutral vocabulary; a hook with no equivalent is skipped with its reason, and an `mcp` artifact
 lands in `.cursor/mcp.json` or `~/.cursor/mcp.json` ([setup](../setup/cursor.md)). On Antigravity only `mcp` is
 built: it lands in `.agents/mcp_config.json` or `~/.gemini/config/mcp_config.json` ([setup](../setup/antigravity.md)).
 Only the TOML writer differs: it splices sigil's tables into your text (`src/config-merge/toml-file.ts`).
 
-| Field          | Meaning                                                                                                                               |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| `event`        | Claude Code lifecycle event (`PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `SubagentStop`, `Stop`, `SessionStart`, `Notification`) |
-| `matcher`      | Tool-name pattern, for tool events; defaults to `*`                                                                                   |
-| `command`      | Shell command to run or, with `args`, the executable to spawn                                                                         |
-| `args`         | Exec form: `command` is spawned with these arguments and no shell                                                                     |
-| `timeout`      | Optional timeout in **seconds** (copied verbatim into Claude settings) (`z.number().int().positive()`)                                |
-| `defaultScope` | Recommended install scope: `project` (default), `local`, or `user`. Overridable with `--scope`                                        |
-| `language`     | Optional language scope. Omit for a hook that applies to every language                                                               |
+| Field          | Meaning                                                                                                                                                      |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `event`        | Neutral lifecycle event (`before-tool`, `after-tool`, `prompt-submit`, `session-start`, `stop`, `subagent-stop`, `notification`); each target writes its own |
+| `matcher`      | `*` for every tool, or neutral tool names joined with `\|` (`edit`, `shell\|edit`); defaults to `*`                                                          |
+| `script`       | Body of a Node.js function that reads the hook's `input` (see below)                                                                                         |
+| `command`      | Shell command to run or, with `args`, the executable to spawn                                                                                                |
+| `args`         | Exec form: `command` is spawned with these arguments and no shell                                                                                            |
+| `timeout`      | Optional timeout in **seconds** (`z.number().int().positive()`); written as `timeout`, or `timeoutSec` on Copilot                                            |
+| `defaultScope` | Recommended install scope: `project` (default), `local`, or `user`. Overridable with `--scope`                                                               |
+| `language`     | Optional language scope. Omit for a hook that applies to every language                                                                                      |
+
+**Neutral events and matchers.** A catalog hook names a neutral event and a neutral matcher
+(`src/hook-vocabulary.ts`). Each hook target maps both through its own hook tool table. A matcher
+naming a tool the target has no entry for is refused with its reason, never rendered narrower.
+The old PascalCase events and Claude's tool names still load as legacy aliases; `sigil sync --check`
+reports them (`legacy-tool-name`) and `--apply` rewrites them. A regex, an `mcp__…` pattern, or an
+unknown name is a schema error.
+
+**`script:` vs `command`.** A hook that reads its input is a `script:`: the body of a Node.js
+function sigil calls with one argument, `input`, holding `event`, `tool`, `files`, `command`, `agent`
+and `cwd`. Deny by setting `process.exitCode = 2` and writing the reason to stderr; every hook target
+blocks on exit 2. sigil installs a script as `node -e`, so `node` must be on PATH where the hook runs,
+and `sigil add` warns when it is missing. `command` (with optional `args`) is for a hook that reads no
+input; it gets the provider's raw stdin, and `hook-provider-input` fails `sigil sync --check` when one
+names a provider's input field. Exactly one of `script` and `command` is set.
 
 Use exec form for any hook whose exit code matters. On Windows without Git Bash, shell-form hooks
 run through PowerShell, which reports exit code 2 (block) as 1 (no block).
+
+VS Code's legacy "Local" hook parser ignores `matcher`, so a `before-tool` hook runs for every tool
+there. The composed script re-checks the authored matcher against `input.tool`, so a `script` hook
+keeps its meaning; a `command` hook still runs on every tool.
 
 ## Settings fields
 
@@ -273,7 +293,7 @@ Cursor hooks (2 scopes, `src/targets/cursor/config.ts`):
 | user (2)           | `~/.cursor/hooks.json` | home-scoped: one `.sigil.bak` once it holds user content |
 
 Cursor has no personal per-project hook file, so `--scope local` is refused. Its events and tool names
-are translated from Claude Code's aliases, and a hook with no Cursor equivalent is skipped with its reason,
+come from the neutral vocabulary, and a hook with no Cursor equivalent is skipped with its reason,
 never written to match nothing ([setup](../setup/cursor.md)).
 
 Cursor MCP (2 scopes, `src/targets/cursor/config.ts`):
@@ -309,9 +329,9 @@ Copilot CLI loads repository hooks only from a trusted folder. `copilot -p` in a
 skips them silently, so nothing guards that session; `--trust-folder` trusts the folder for that one
 session.
 
-A hook on `Stop`, `SubagentStop` or `Notification` makes `sigil add --target copilot` stop with an
-error (refused, not skipped): Copilot documents no PascalCase alias for those events. Give such
-hooks `platforms: [claude]`.
+A hook on `notification` makes `sigil add --target copilot` stop with an error (refused, not
+skipped): Copilot documents no compatible input for that event. Give such hooks
+`platforms: [claude]`.
 
 **Moving an older install.** Installs made before this recorded the VS Code files. `sigil update`
 moves each recorded server to its portable file and takes sigil's entry out of the old one (deleting

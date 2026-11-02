@@ -156,7 +156,8 @@ export interface SpecLimit {
    */
   readonly field: 'name' | 'description' | 'listing' | 'body';
   readonly max: number;
-  readonly unit: 'chars' | 'lines';
+  /** `bytes` is the UTF-8 length of the emitted text. */
+  readonly unit: 'chars' | 'lines' | 'bytes';
   /** `error` when the provider rejects or drops the file past the limit, `warning` for guidance. */
   readonly severity: 'error' | 'warning';
   /** The documentation that states the limit. */

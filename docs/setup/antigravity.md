@@ -109,7 +109,7 @@ matcher; a matcher on another event is skipped with the reason rather than run o
 So a matcher names both sets, as above. A `todo` matcher is skipped: Antigravity has no task-list tool.
 
 **Deny.** A hook that exits 2 blocks the call and the model sees its stderr reason. The plugins page says a non-zero
-exit is ignored, but on `agy` 1.4.12 exit 2 denied the write in every test (ADR P4, E1). **A `stop` hook can't
+exit is ignored, but on `agy` 1.4.12 exit 2 denied the write in every test (ADR P4, E1, E2). **A `stop` hook can't
 block here:** a `Stop` hook that exited 2 ran once and the session ended anyway (ADR E1). Antigravity keeps a
 session going only on a JSON answer, which sigil's hook contract doesn't write.
 
@@ -237,3 +237,5 @@ account, in throwaway repos. The Antigravity desktop app, Windows and macOS were
 - **P4, E1:** a hook in `.agents/hooks.json`, keyed by hook name, that exits 2 on a `.env` write blocked it, and the
   model saw the reason. A matcher listing the edit tools caught every edit and no read. `SessionStart` and
   `PostToolUse` fired, a subagent's calls reached the hook, and a `Stop` hook's exit 2 didn't keep the session going.
+- **E2:** `sigil add shared/protect-config --target antigravity`, then a `.env` write through the file tool: blocked,
+  with the reason in the stream; `notes.txt` was written; `sigil uninstall` deleted the emptied `.agents/hooks.json`.

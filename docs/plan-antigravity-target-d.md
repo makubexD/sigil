@@ -21,17 +21,22 @@ Antigravity differs in three places:
 
 ## Decisions (settled from the docs and the probes; step 1 may amend 1 and 3)
 
-1. **`ANTIGRAVITY_AGENT_TOOL_DIALECT`, a `names` dialect, proposed from the docs:**
+1. **`ANTIGRAVITY_AGENT_TOOL_DIALECT`, a `names` dialect, settled by D1:**
 
-   | Neutral  | Antigravity names                                                     |
-   | -------- | --------------------------------------------------------------------- |
-   | `read`   | `view_file`                                                           |
-   | `search` | `grep_search`, `find_by_name`, `list_dir`                             |
-   | `edit`   | `write_to_file`, `replace_file_content`, `multi_replace_file_content` |
-   | `shell`  | `run_command`                                                         |
-   | `web`    | `search_web`, `read_url_content`                                      |
-   | `agent`  | `invoke_subagent`                                                     |
-   | `todo`   | none (`undefined`: no task-list tool is documented)                   |
+   | Neutral  | Antigravity names                                   |
+   | -------- | --------------------------------------------------- |
+   | `read`   | `view_file`                                         |
+   | `search` | `grep_search`, `find_by_name`, `list_dir`           |
+   | `edit`   | `write_to_file`, `replace_file_content`             |
+   | `shell`  | `run_command`                                       |
+   | `web`    | `search_web`, `read_url_content`                    |
+   | `agent`  | `invoke_subagent`                                   |
+   | `todo`   | none (`undefined`: no task-list tool is documented) |
+
+   **Amended by D1:** every documented name above loaded and worked in a project agent on `agy 1.4.12`.
+   `multi_replace_file_content` is dropped: it was never granted, alone or next to the other edit names (runs 10, 11).
+   The observed `read_file`, `write_file` and `edit_file` load too, as a parallel set under their own names, so the
+   documented ones stay.
 
    **One name per Antigravity tool, never a documented and an observed alias side by side.** The documented name stays
    when step 1 shows it loads and grants the tool; the observed name (`read_file`, `write_file`, `edit_file`) replaces
@@ -50,7 +55,8 @@ Antigravity differs in three places:
    (passed through verbatim, as on every `names` dialect).
 3. **`ANTIGRAVITY_MODEL_TIERS`: `fast` → `flash_lite`, `balanced` → `flash`, `deep` → `pro`**, written only from the
    neutral `model` (the `claude:` namespace is Claude's). An absent `model` writes nothing (`inherit` is the default).
-   If step 1 shows `flash_lite` is not accepted in a project agent, `fast` maps to `flash`.
+   **Kept by D1:** `flash_lite` and `pro` both load (run 8). A value outside the tiers drops the agent with no
+   warning, so the table is closed: never write anything but these three.
 4. **`disallowedTools` is not mapped**: Antigravity has no denylist (D3). `restrictionOutcome` already fails closed on
    an agent that authors one (skip, or `nearest` with a warning). No catalog agent does.
 5. **Frontmatter:** `name`, `description`, `model`, `tools` (a YAML block list: a string makes the loader skip the

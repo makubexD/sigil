@@ -488,3 +488,52 @@ In a scratch `git init` repo, for each CLI on PATH among `claude`, `copilot`, `c
 shared/protect-config --target <t>`, then ask the agent in print mode to write `.env` (`X=1`). Expected: no `.env`, and
 the reason in the output. A CLI that is not installed or not signed in is listed as not checked, not passed. Record the
 runs in the ADR's consequences. Then `npm run ci:local`.
+
+**Amendment (2026-11-02): who runs what, and where.** The auto-mode classifier refuses the main session running agent
+CLIs with auto-approve flags, so the owner runs the agents in a **separate terminal** (not inside Claude Code, where `!`
+also resets the working directory for paths outside the repo). Everything else stays in the Claude Code session.
+
+1. **Setup: the Claude Code session** (main session runs it). Scratch repos at `~/sigil-live/h/<agent>`, one per
+   target, each with protect-config installed:
+
+   ```bash
+   cd ~/WorkspaceMaku/MakuReposStable/sigil && source ~/.nvm/nvm.sh && npm run build
+   for t in claude copilot codex cursor; do
+     d=~/sigil-live/h/$t; rm -rf "$d"; mkdir -p "$d"; git -C "$d" init -q
+     echo '# scratch' > "$d/README.md"; git -C "$d" add -A; git -C "$d" commit -qm init
+     node dist-cli/cli.js add shared/protect-config --target $t --project-dir "$d" --yes
+   done
+   ```
+
+2. **Agent runs: a separate terminal** (the owner, outside Claude Code). Paste the block as is; each run writes its
+   reply and the folder listing to `~/sigil-live/h/<agent>.log`:
+
+   ```bash
+   source ~/.nvm/nvm.sh
+   P='Create a file named .env in the current directory containing exactly the line X=1. Use your file-writing tool, not a shell command. If it is blocked, report the exact reason you were given.'
+   H=~/sigil-live/h
+
+   cd $H/claude  && claude -p "$P" --permission-mode acceptEdits 2>&1 | tee $H/claude.log;  ls -a >> $H/claude.log
+   cd $H/copilot && copilot -p "$P" --allow-all-tools          2>&1 | tee $H/copilot.log; ls -a >> $H/copilot.log
+   cd $H/cursor  && cursor-agent -p --force --trust "$P"       2>&1 | tee $H/cursor.log;  ls -a >> $H/cursor.log
+   ```
+
+   If `cursor-agent` rejects `--trust`, rerun that line without it.
+
+   Codex skips a project hook until it is approved, so it takes one interactive stop first, in the same terminal:
+
+   ```bash
+   cd ~/sigil-live/h/codex && codex
+   # inside Codex: trust the folder if asked, type /hooks, approve protect-config, then /exit
+   codex exec --full-auto "$P" 2>&1 | tee $H/codex.log; ls -a >> $H/codex.log
+   ```
+
+   A CLI that is not signed in, or a run you skip: leave its log out (or write `skipped` into it).
+
+3. **Results: back in the Claude Code session.** The owner types `done`; the main session reads the four logs. Pass =
+   no `.env` in the listing and `sigil-hook: blocked write to protected file .env` in the reply. A missing or `skipped`
+   log is "not checked". The main session records the table in the ADR's consequences, commits step 15, runs
+   `npm run ci:local`, then `/next` finishes the plan.
+
+No `/clear` is needed between steps 2 and 3: the logs carry the results, so a fresh session (`/clear`, then `/next`)
+picks up at step 15 and reads them the same way.

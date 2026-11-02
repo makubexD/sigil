@@ -58,7 +58,8 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
 - **Catalog tool names and model hints are neutral** (`read`, `search`, `edit`, `shell`, `web`, `agent`, `todo` in
   `src/tool-vocabulary.ts`; `model: fast | balanced | deep`). A target writes them only through its `ToolDialect`
   (`src/targets/<provider>/tool-dialect.ts`, run by `renderTools` in `src/targets/tool-dialect.ts`) and its tier table
-  (`CLAUDE_MODEL_TIERS`). Never copy a catalog tool name into output unchanged. A spec with no dialect leaves a
+  (`CLAUDE_MODEL_TIERS`). Never copy a neutral or legacy tool name into output unchanged. Provider patterns
+  (`Bash(git log:*)`, `mcp__…`) are the one pass-through, verbatim, until a neutral pattern form exists. A spec with no dialect leaves a
   skill's `allowed-tools` out and makes an agent restriction inexact. `legacy-tool-name` fails `sync --check` on a
   provider name in catalog source. (see `docs/decisions/neutral-agent-vocabulary-2026-11.md`)
 - **`appliesTo` stays unchanged in `catalog/` source and the zod schema** — adapters translate it (`paths:` for

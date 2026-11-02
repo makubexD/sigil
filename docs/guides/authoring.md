@@ -178,7 +178,9 @@ allowedTools: [read, edit] # skill: tools pre-approved while it runs
   carries a denylist.
 - **`toolPolicy` says what happens when a target can't write the list exactly.** `strict` skips the
   agent on that target with the reason. Keep it for a read-only agent, where a wider mapping would
-  grant write access. `nearest` writes the closest mapping and warns. The per-target table is in
+  grant write access. `nearest` writes the closest mapping and warns. On an agent restricted only by
+  `disallowedTools`, the closest mapping on a target with no denylist (Copilot) is no restriction at
+  all. Never pair `nearest` with a denylist-only agent. The per-target table is in
   [spec.md § Tool vocabulary](../reference/spec.md#tool-vocabulary).
 - **`allowedTools` on a skill only pre-approves.** A target that can't write it leaves it out, and
   the tool asks for permission instead. `search` pre-approves both Grep and Glob on Claude, and

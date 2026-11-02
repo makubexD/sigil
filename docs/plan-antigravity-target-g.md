@@ -118,9 +118,9 @@ scripts/probe-antigravity.mjs"` in `package.json` scripts:
   `node <repo>/dist-cli/cli.js` (fail with "run npm run build first" if it is missing).
 - **Per probe:** a fresh `mkdtemp` repo with `git init -q`; `setup(repo)`; then `agy` per decision 4 with the
   probe's prompt and allow list, `cwd: repo`, `env` = process env plus the probe's own; collect stdout lines, parse
-  each as JSON (skip lines that don't parse); the final answer is the concatenated text of the assistant message
-  events (read one `--dry-run`-free run's stream to confirm the event shape and write it down in a comment).
-  `check()` per decision 5. A probe's `teardown()` runs in `finally`.
+  each as JSON (skip lines that don't parse); the final answer is `result.response` of the event whose `event` is
+  `"result"` (G1: the stream's last line is `{"event":"result","result":{"status":"SUCCESS","response":"…",…}}`);
+  no such event means the probe got no answer. `check()` per decision 5. A probe's `teardown()` runs in `finally`.
 - **Output:** one line per probe, `<id>  <adr>  expect=<pass|fail>  got=<pass|fail>  OK|CHANGED  <evidence>`, then
   `agy <version>, model <model>`. Write each stream to `<tmp>/<id>.jsonl` and print that folder. Exit 1 if any
   `CHANGED` or any `agy` exit that is not 0, else 0.

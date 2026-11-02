@@ -249,6 +249,20 @@ global rules share a 20,000-token budget; past it, the largest are replaced by a
 description ([Rules](https://antigravity.google/docs/rules#size-limits-and-token-budgets)). The budget covers every
 always-on rule at once, so no single file check can enforce it: install only the repo-wide rules you want.
 
+## After an `agy` update
+
+Antigravity has contradicted its own docs before (tool names, the hook exit code, the agent `tools` default), so
+re-check the target after each `agy` update. In a sigil checkout, with `agy` signed in:
+
+```bash
+npm run build && npm run probe:antigravity
+```
+
+It installs or builds one probe artifact per kind from sigil's real output, runs one `agy -p` for each in a throwaway
+repo, and compares the answer with the result recorded in the ADR. Each probe is a model call on the lowest Flash tier
+(`--model` picks another). A `CHANGED` line names the ADR row to revisit, and the command exits 1. Without `agy` on
+your PATH it prints a notice and exits 0.
+
 ## What was tested
 
 Antigravity CLI `agy 1.4.12` on Linux, in print mode (`agy -p`) on `gemini-3.8-flash-low`, signed in with a Google

@@ -35,16 +35,16 @@ starts from them:
 
 ## Phases
 
-| Phase | Ships                                                                 | Gate                                                           |
-| ----- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
-| A     | Setup note: what reaches Antigravity today with no target             | none (P1, P6)                                                  |
-| B     | `--target antigravity`: skills and rules (done 2026-11-02)            | P1, P2, U5; B1 (scoped rules skipped)                          |
-| C     | MCP in `.agents/mcp_config.json` and the user file                    | P5                                                             |
-| D     | Agents in `.agents/agents/`                                           | U3, and tool names re-probed                                   |
-| H     | Neutral hook I/O contract, events and matchers, for every hook target | V1, V2; owner signs off the contract                           |
-| E     | Antigravity hooks in `.agents/hooks.json`                             | H merged; P4 re-run                                            |
-| F     | Antigravity plugin channel, sigil's own builder                       | U7; a probe that an installed plugin's skill reaches a session |
-| G     | Live check, the ADR updated, the brief cut, the probe script kept     | B-F merged                                                     |
+| Phase | Ships                                                                               | Gate                                                           |
+| ----- | ----------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| A     | Setup note: what reaches Antigravity today with no target                           | none (P1, P6)                                                  |
+| B     | `--target antigravity`: skills and rules (done 2026-11-02)                          | P1, P2, U5; B1 (scoped rules skipped)                          |
+| C     | MCP in `.agents/mcp_config.json` and the user file                                  | P5                                                             |
+| D     | Agents in `.agents/agents/`                                                         | U3, and tool names re-probed                                   |
+| H     | Neutral hook I/O contract, events and matchers, for every hook target               | V1, V2; owner signs off the contract                           |
+| E     | Antigravity hooks in `.agents/hooks.json`                                           | H merged; P4 re-run                                            |
+| F     | Antigravity plugin channel, sigil's own builder                                     | U7; a probe that an installed plugin's skill reaches a session |
+| G     | Live check, the ADR updated, the brief cut, the probe script kept (done 2026-11-02) | B-F merged                                                     |
 
 ### Phase A: setup note (done 2026-11-02)
 
@@ -118,11 +118,14 @@ installed and as a workspace copy. `npm run ci:local` runs `agy plugin validate`
 warnings except the machine-dependent PATH one, and skips where `agy` is absent (CI). Prompts stay `none`, settings
 stays `none`. Plan: [plan-antigravity-target-f.md](plan-antigravity-target-f.md).
 
-### Phase G: close-out
+### Phase G: close-out (done 2026-11-02)
 
-A live check of each shipped kind on the current `agy`, the ADR's status updated, the brief
-`docs/ideas/antigravity-cli-target.md` deleted and its row removed. The probe fixtures stay as a script, so the probes
-re-run in one command on each `agy` update (the ADR's maintenance-cost note). F1h is answered (G1): a
-`https://github.com/<owner>/<repo>/tree/<branch>/<path>` URL installs one plugin from a subfolder (observed, not
-documented), so release work can publish the built plugins on a branch. Plan:
-[plan-antigravity-target-g.md](plan-antigravity-target-g.md).
+F1h is answered (G1): a `https://github.com/<owner>/<repo>/tree/<branch>/<path>` URL installs one plugin from a
+subfolder (observed, not documented), so release work can publish the built plugins on a branch. The probes are kept
+as one command, `npm run probe:antigravity` (`scripts/probe-antigravity.mjs`): it installs or builds one probe artifact
+per kind from sigil's real output, runs `agy -p` in a throwaway repo, and prints `CHANGED` with the ADR row when a
+result moves. G2 ran it on `agy 1.4.12`: all eight probes matched, and B1 still holds (a scoped rule never attaches),
+so the scoped-rule skip stays. The ADR is marked shipped, the brief is deleted, and the setup page says to re-run the
+probes after an `agy` update. Plan: [plan-antigravity-target-g.md](plan-antigravity-target-g.md).
+
+The plan files are deleted in a follow-up PR after merge.

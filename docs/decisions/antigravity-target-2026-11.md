@@ -1,8 +1,9 @@
 # Antigravity CLI target (2026-11)
 
-Status: **go, staged** (decided 2026-11-01). Docs pass, reuse map and live probes done against Antigravity CLI
-`1.4.12`, Linux. The steps are in [plan-antigravity-eval.md](../plan-antigravity-eval.md); the brief is
-[antigravity-cli-target.md](../ideas/antigravity-cli-target.md).
+Status: **shipped 2026-11-02 (Phases A-H)**: skills, rules (always-on), MCP, agents and hooks on the scaffold and
+plugin channels. Probed on Antigravity CLI `1.4.12`, Linux. The steps are in
+[plan-antigravity-eval.md](../plan-antigravity-eval.md). The brief it started from was deleted once this record
+covered it.
 
 ## How the docs pass ran
 
@@ -599,8 +600,8 @@ product, not the binary or the CLI alone.
 - **Maintenance cost.** Higher than Cursor's. In three places the binary contradicted a doc page: tool names
   (`read_file` / `write_file` vs `view_file` / `write_to_file`), the hook exit code, and the agent `tools` default. So
   every `agy` update needs the live probes re-run, not only `sync --check`. The probes are cheap: ten print-mode runs
-  on the lowest Flash tier, with no special flags. The roadmap should keep the probe fixtures as a script so a re-run
-  is one command. Per catalog change, conformance is the same as any target: emit specs, `provider-limits`, the
+  on the lowest Flash tier, with no special flags. The re-run is one command, `npm run probe:antigravity`
+  (`scripts/probe-antigravity.mjs`, G2); a `CHANGED` line names the row to revisit. Per catalog change, conformance is the same as any target: emit specs, `provider-limits`, the
   `appliesTo` agreement test. The only extra per-change cost is a new agent tool or hook matcher needing an
   observed name.
 - **Hooks wait.** They ship only after the neutral hook I/O contract (neutrality table), together with neutral

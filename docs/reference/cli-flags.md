@@ -43,8 +43,8 @@ Usage: sigil build [options]
 Compile the catalog to dist/<target>/, replacing that folder.
 
 Options:
-  --target <name>      Platform to emit (claude, copilot, agents-standard, codex, cursor, all)
-                       (default: "all")
+  --target <name>      Platform to emit (claude, copilot, agents-standard,
+                       codex, cursor, antigravity, all) (default: "all")
   --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
   --out-dir <dir>      Output root (default: <package>/dist)
@@ -305,9 +305,9 @@ Options:
 Usage: sigil prune [options]
 
 Report (default) / --apply (write) cleanup of a project's manifest: removes
-orphaned artifacts (no longer in the bundled catalog) and dependency copies a
-skill already carries inline; reports deprecated ones and inline copies you may
-have picked.
+orphaned artifacts (no longer in the catalog each was installed from) and
+dependency copies a skill already carries inline; reports deprecated ones and
+inline copies you may have picked.
 
 Options:
   --project-dir <dir>  Consumer project root (default: <cwd>)

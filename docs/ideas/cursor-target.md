@@ -19,7 +19,7 @@ carries rules; matrix in section 3). This brief does not restate it.
 
 ## Out of scope
 
-- Codex and Antigravity ([codex-target](codex-target.md), [antigravity-cli-target](antigravity-cli-target.md)).
+- Codex and Antigravity ([codex-target](codex-target.md), [antigravity-target ADR](../decisions/antigravity-target-2026-11.md)).
 - Anything else in the ADR.
 
 ## Success criteria

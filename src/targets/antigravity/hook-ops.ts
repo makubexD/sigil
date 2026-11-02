@@ -6,7 +6,7 @@
  * The entry is rendered from the provider-neutral hook contract (docs/decisions/
  * neutral-hook-contract-2026-11.md): the event and matcher go through ./hook-dialect.ts, and a
  * `script` hook becomes one base64 `node -e` command line, exactly as the Cursor writer does.
- * Antigravity differs in two places (docs/plan-antigravity-target-e.md, decision 4):
+ * Antigravity differs in two places (probe E1 in docs/decisions/antigravity-target-2026-11.md):
  *
  * - The fragment is keyed by hook name, `{ "<hook name>": { "<Event>": [<entry>] } }`, with the
  *   default object-spread strategy on that key, so a user's other hooks are never touched.

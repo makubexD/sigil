@@ -1,8 +1,8 @@
 # Antigravity CLI target (2026-11)
 
-Status: **go, staged** (decided 2026-11-01). Docs pass, reuse map and live probes done against Antigravity CLI
-`1.4.12`, Linux. The steps are in [plan-antigravity-eval.md](../plan-antigravity-eval.md); the brief is
-[antigravity-cli-target.md](../ideas/antigravity-cli-target.md).
+Status: **shipped 2026-11-02 (Phases A-H)**: skills, rules (always-on), MCP, agents and hooks on the scaffold and
+plugin channels. Probed on Antigravity CLI `1.4.12`, Linux. The eval's steps are recorded in the probe log below.
+The brief it started from was deleted once this record covered it.
 
 ## How the docs pass ran
 
@@ -122,7 +122,7 @@ matters for sigil's invariant that an unmapped read-only list must never grant w
 (Answered: `[]` holds; a subagent without an edit tool wrote nothing (U3, D1 run 9). The tool names in the docs load
 and work, except `multi_replace_file_content`; the binary's `read_file` / `write_file` / `edit_file` are a second,
 parallel set (D1). Phase D writes the documented names, one per tool, and the full list for an agent with no `tools`;
-see [plan-antigravity-target-d.md](../plan-antigravity-target-d.md).)
+see Phase D in the probe log below.)
 
 ### D4. Commands and prompts
 
@@ -393,7 +393,7 @@ What this changes:
 
 ### Phase A
 
-Step 1 of [plan-antigravity-target-a.md](../plan-antigravity-target-a.md), 2026-11-01, `agy 1.4.12`, Linux, signed in
+Phase A, step 1, 2026-11-01, `agy 1.4.12`, Linux, signed in
 with a Google account, `agy -p` on `gemini-3.8-flash-low` with `--output-format stream-json`, in a fresh `git init`
 repo under the scratchpad. Unlike step 4, the files are sigil's own output, not hand-written fixtures.
 
@@ -409,7 +409,7 @@ the Decision's first bullet were wrong about `add`: through `add`, a rule reache
 
 ### Phase B
 
-Written with [plan-antigravity-target-b.md](../plan-antigravity-target-b.md), 2026-11-02, `agy 1.4.12`, Linux, signed
+Written in Phase B, 2026-11-02, `agy 1.4.12`, Linux, signed
 in, `agy --model gemini-3.8-flash-low --output-format stream-json`, in a fresh `git init` repo under the scratchpad
 holding `src/app.ts` and `.agents/rules/ts-style.md` (`trigger: glob`, a `description`, `globs: "src/**/*.ts"`,
 codeword DELTA-58).
@@ -420,7 +420,7 @@ codeword DELTA-58).
 
 ### Phase C
 
-Step 1 of [plan-antigravity-target-c.md](../plan-antigravity-target-c.md), 2026-11-02, `agy 1.4.12`, Linux, signed
+Phase C, step 1, 2026-11-02, `agy 1.4.12`, Linux, signed
 in, `agy --model gemini-3.8-flash-low --output-format stream-json` with a session-only
 `--settings '{"permissions":{"allow":["mcp(*)"]}}'`, in a fresh `git init` repo under the scratchpad. Two probe
 servers, both Node scripts: a stdio one whose one tool returns its argv and `PROBE_ID`, and a Streamable HTTP one on
@@ -433,7 +433,7 @@ servers, both Node scripts: a stdio one whose one tool returns its argv and `PRO
 
 ### Phase D
 
-Step 1 of [plan-antigravity-target-d.md](../plan-antigravity-target-d.md), 2026-11-02, `agy 1.4.12`, Linux, signed
+Phase D, step 1, 2026-11-02, `agy 1.4.12`, Linux, signed
 in, `agy --agent <name> --model gemini-3.8-flash-low --output-format stream-json --print-timeout 90s -p`, in a fresh
 `git init` repo under the scratchpad holding `notes.txt` (codeword OSCAR-91) and one agent per run in
 `.agents/agents/`, `tools` written as a YAML block list. **`agy agents` printed nothing in every run**, with or without a
@@ -456,7 +456,7 @@ tier table is closed.
 
 ### Phase E
 
-Step 1 of [plan-antigravity-target-e.md](../plan-antigravity-target-e.md), 2026-11-02, `agy 1.4.12`, Linux, signed in,
+Phase E, step 1, 2026-11-02, `agy 1.4.12`, Linux, signed in,
 `agy --model gemini-3.8-flash-low --output-format stream-json --print-timeout 90s` with a session-only
 `--settings '{"permissions":{"allow":["command(*)"]}}'` (run 1 without it), in fresh `git init` repos under the
 scratchpad holding `notes.txt` (codeword PAPA-64), `.env.local` and a hand-written `.agents/hooks.json` in the plan's
@@ -476,7 +476,7 @@ says so.
 
 ### Phase F
 
-Step 1 of [plan-antigravity-target-f.md](../plan-antigravity-target-f.md), 2026-11-02, `agy 1.4.12`, Linux, signed in,
+Phase F, step 1, 2026-11-02, `agy 1.4.12`, Linux, signed in,
 `agy --model gemini-3.8-flash-low --output-format stream-json --print-timeout 90s`, in fresh `git init` repos under the
 scratchpad. The fixture plugin `sigil-probe` was written by hand in the plan's decision 2-7 shape: a root `plugin.json`
 holding only decision 7's keys, `skills/probe-skill/SKILL.md` (SKILL-F1), `rules/probe-rule.md` with
@@ -534,6 +534,51 @@ F2c used `python-starter` (one skill, one agent) instead.
 Cleanup: both plugins uninstalled, `agy plugin list --json` was `[]`, and the empty `~/.gemini/config/plugins/` and
 `import_manifest.json` that install left were removed.
 
+### Phase G
+
+**G1, a GitHub URL to one plugin's subfolder (F1h; 2026-11-02, `agy 1.4.12`, Linux, signed in).**
+[Plugins](https://antigravity.google/docs/plugins) documents one GitHub form, `agy plugin install
+https://github.com/<owner>/<repo>`, with the plugin at the repo root; `agy plugin install --help` prints no help (it
+reads `--help` as a path). The fixture was a throwaway branch `probe/antigravity-plugin-url` of `makubexD/sigil`
+holding only `probe/plugins/sigil-url-probe/` (`plugin.json` with `name`, and one skill answering `URL-G1`). The branch
+was deleted after the runs.
+
+| #   | Form                                                                                                | Observed                                                                                                                                                                                                                                                                            |
+| --- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1a | the documented repo-root form                                                                       | Not applicable: no plugin sits at a repo root here; G1c is that form with a branch.                                                                                                                                                                                                 |
+| G1b | `https://github.com/makubexD/sigil/tree/probe/antigravity-plugin-url/probe/plugins/sigil-url-probe` | **Installs.** "Cloning plugin from https://github.com/makubexD/sigil.git...", 1 skill, copied to `~/.gemini/config/plugins/sigil-url-probe`. The subfolder exists only on that branch, so the branch was honoured. A print run read the installed `SKILL.md` and answered `URL-G1`. |
+| G1c | `https://github.com/makubexD/sigil/tree/probe/antigravity-plugin-url` (branch, no subfolder)        | Exit 1: `could not detect plugin structure`.                                                                                                                                                                                                                                        |
+| G1d | `https://github.com/makubexD/sigil.git#probe/antigravity-plugin-url:probe/plugins/sigil-url-probe`  | Exit 1: `could not detect plugin structure` (the fragment is ignored).                                                                                                                                                                                                              |
+
+So a published branch can serve each built plugin by its `/tree/<branch>/<path>` URL, undocumented but observed. The
+stream's last line is `{"event":"result","result":{…,"response":"<final answer>"}}`, which the probe script reads.
+Cleanup: uninstalled, `agy plugin list --json` was `[]`, and the empty `plugins/` folder and `import_manifest.json`
+were removed.
+
+**G2, the probe run (2026-11-02, `agy 1.4.12`, model `gemini-3.8-flash-low`, Linux, signed in).**
+`npm run build && npm run probe:antigravity` re-checks every finding against sigil's real output (decision 2 of the
+phase): each probe installs or builds its artifact from a copy of the catalog, runs one `agy -p` in a fresh repo, and
+compares the verdict with the recorded one. Every line came back `OK`, exit 0, and `agy plugin list --json` was `[]`
+afterwards.
+
+| Probe        | Re-checks | Expect | Got  | Evidence                                                                                   |
+| ------------ | --------- | ------ | ---- | ------------------------------------------------------------------------------------------ |
+| `G-skill`    | P1/B      | pass   | pass | answer: `SKILL-G`                                                                          |
+| `G-rule`     | B         | pass   | pass | answer: `RULE-G`                                                                           |
+| `G-glob`     | B1        | fail   | fail | `src/app.ts` edited with one `write_file`, no tool call touched `.agents/`, answer: `NONE` |
+| `G-agent`    | D1/D2     | pass   | pass | answer: `AGENT-G FILE-G`                                                                   |
+| `G-mcp`      | C1/P5     | pass   | pass | answer quotes `PROBE_G=g-ok` from the `probe_env` tool                                     |
+| `G-hook`     | E1        | pass   | pass | no `.env` in the repo; `blocked write to protected file` in the stream                     |
+| `G-plugin`   | F1/F2     | pass   | pass | built plugin installed from a local path, answer: `SKILL-G`; uninstalled, list `[]`        |
+| `G-validate` | F2d       | pass   | pass | `validate-antigravity-plugins.cjs` exit 0 over the built plugins                           |
+
+`G-glob` needed two fixes before its verdict meant anything. In the first full run the model tried `run_command`
+(denied), stopped, and never edited `src/app.ts`, so its `fail` proved nothing. With shell allowed it ran `find`, then
+read `.agents/rules/probe-glob.md` itself and answered `GLOB-G` (twice), which is a leak, not an attach. The probe now
+allows only the edit tools, tells the model not to open other files, and returns `inconclusive` (printed `CHANGED`)
+unless the edit happened and no tool call touched `.agents/`. Three runs after the fix: `NONE` each time. B1 stands,
+and the scoped-rule `skipReason` stays.
+
 ## Decision
 
 **Go, staged, with target id `antigravity`.** The docs call the product Antigravity CLI and the binary `agy`, and
@@ -554,14 +599,14 @@ product, not the binary or the CLI alone.
 - **Maintenance cost.** Higher than Cursor's. In three places the binary contradicted a doc page: tool names
   (`read_file` / `write_file` vs `view_file` / `write_to_file`), the hook exit code, and the agent `tools` default. So
   every `agy` update needs the live probes re-run, not only `sync --check`. The probes are cheap: ten print-mode runs
-  on the lowest Flash tier, with no special flags. The roadmap should keep the probe fixtures as a script so a re-run
-  is one command. Per catalog change, conformance is the same as any target: emit specs, `provider-limits`, the
+  on the lowest Flash tier, with no special flags. The re-run is one command, `npm run probe:antigravity`
+  (`scripts/probe-antigravity.mjs`, G2); a `CHANGED` line names the row to revisit. Per catalog change, conformance is the same as any target: emit specs, `provider-limits`, the
   `appliesTo` agreement test. The only extra per-change cost is a new agent tool or hook matcher needing an
   observed name.
 - **Hooks wait.** They ship only after the neutral hook I/O contract (neutrality table), together with neutral
   matchers, as their own phase ahead of the hook phase. Until then `hook` is `none` for this target, because a
-  Claude-shaped hook would install, look active, and block nothing. **Shipped in Phase E** (2026-11-02,
-  [plan-antigravity-target-e.md](../plan-antigravity-target-e.md)): after Phase H's contract, hooks go to
+  Claude-shaped hook would install, look active, and block nothing. **Shipped in Phase E** (2026-11-02): after Phase H's
+  contract, hooks go to
   `.agents/hooks.json` / `~/.gemini/config/hooks.json`, one named entry per hook, with the observed and documented tool
   names both in the matcher; exit 2 denies (E1), and a `Stop` hook cannot block.
 - **Gates by probe.** Agents ship on the U3 result (no `tools` means no writes, so an "all tools" agent must list
@@ -576,4 +621,4 @@ product, not the binary or the CLI alone.
   channel needs its own builder, not `agy plugin import` (U7), and goes last, after a probe shows an installed
   plugin's skill reaching a session.
 
-The phases are in the roadmap, [plan-antigravity-target.md](../plan-antigravity-target.md).
+The phases are summarized in the [probe log](#probe-log).

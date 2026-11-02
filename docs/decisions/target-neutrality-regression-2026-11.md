@@ -1,13 +1,14 @@
 # Target neutrality regression (2026-11)
 
-Status: audit, 2026-11-01. Step 7 of `docs/plan-antigravity-eval.md`. It checks the five shipped targets
+Status: audit, 2026-11-01. Step 7 of the Antigravity eval
+([antigravity-target-2026-11.md](antigravity-target-2026-11.md)). It checks the five shipped targets
 (`claude-code`, `copilot`, `codex`, `agents-standard`, `cursor`) against
 [Rules for every target](../reference/architecture.md#rules-for-every-target). Antigravity is not shipped, so it is
 out of scope. The fixes below are follow-up work, not part of that plan.
 
 ## How it ran
 
-On the `docs/plan-antigravity-eval` branch at `0622bba`: `sigil sync --check` (exit 0: 0 errors, 47 advisory warnings,
+At commit `0622bba`: `sigil sync --check` (exit 0: 0 errors, 47 advisory warnings,
 39 `tool-restriction-coverage` and 8 `body-density`), then a grep over `catalog/`, `src/load.ts`, `src/resolve.ts`,
 `src/validate/`, `src/schema/` and `src/targets/` for each check below, read by hand. `provider-term-leak` covers only
 lexicon literals in whole-file kinds, so product names (`Claude Code`, `Copilot`) and config-kind bodies were grepped
@@ -113,13 +114,13 @@ platform target). It is listed here so the regression has the full picture.
 
 ## Fix list
 
-| #   | Fix                                                      | Where                                                    | Size                 | Status                                     |
-| --- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------- | ------------------------------------------ |
-| V1  | Neutral hook events and matchers, a table per target     | schema, catalog hooks, each `hook-ops.ts`                | phase                | fixed, `docs/plan-antigravity-target-h.md` |
-| V1  | Correct "each hook target already translates them"       | `docs/decisions/neutral-agent-vocabulary-2026-11.md:136` | one line             | fixed, `docs/plan-antigravity-target-a.md` |
-| V2  | Neutral hook I/O contract                                | catalog hooks, each hook target                          | phase (with V1)      | fixed, `docs/plan-antigravity-target-h.md` |
-| V3  | Neutral MCP descriptions, no per-target destination list | 4 `catalog/shared/mcps/*.mcp.md`                         | small                | fixed, `docs/plan-antigravity-target-a.md` |
-| V4  | Point the prompt at the capability table                 | `author-artifact.prompt.md`                              | small                | fixed, `docs/plan-antigravity-target-a.md` |
-| V5  | Decide neutral prose or a new concept, then apply        | `feature` skill and its reference                        | decision, then small | fixed, `docs/plan-antigravity-target-a.md` |
-| V6  | Reword the reason                                        | 2 rules                                                  | one line each        | fixed, `docs/plan-antigravity-target-a.md` |
-| V7  | `ConfigKindTable` for Claude and Copilot                 | `claude-code/config.ts`, `copilot/config.ts`             | medium               | open                                       |
+| #   | Fix                                                      | Where                                                    | Size                 | Status                                    |
+| --- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------- | ----------------------------------------- |
+| V1  | Neutral hook events and matchers, a table per target     | schema, catalog hooks, each `hook-ops.ts`                | phase                | fixed, `neutral-hook-contract-2026-11.md` |
+| V1  | Correct "each hook target already translates them"       | `docs/decisions/neutral-agent-vocabulary-2026-11.md:136` | one line             | fixed, `antigravity-target-2026-11.md`    |
+| V2  | Neutral hook I/O contract                                | catalog hooks, each hook target                          | phase (with V1)      | fixed, `neutral-hook-contract-2026-11.md` |
+| V3  | Neutral MCP descriptions, no per-target destination list | 4 `catalog/shared/mcps/*.mcp.md`                         | small                | fixed, `antigravity-target-2026-11.md`    |
+| V4  | Point the prompt at the capability table                 | `author-artifact.prompt.md`                              | small                | fixed, `antigravity-target-2026-11.md`    |
+| V5  | Decide neutral prose or a new concept, then apply        | `feature` skill and its reference                        | decision, then small | fixed, `antigravity-target-2026-11.md`    |
+| V6  | Reword the reason                                        | 2 rules                                                  | one line each        | fixed, `antigravity-target-2026-11.md`    |
+| V7  | `ConfigKindTable` for Claude and Copilot                 | `claude-code/config.ts`, `copilot/config.ts`             | medium               | open                                      |

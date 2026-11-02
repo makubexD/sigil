@@ -2,7 +2,7 @@
  * HookSchema: the neutral event vocabulary (with its legacy aliases), the neutral tool matcher
  * and the exec form, plus the object-level rule that a hook sets exactly one of `script` and
  * `command` and that `args` needs `command`.
- * See docs/plan-antigravity-target-h.md step 3.
+ * See docs/decisions/neutral-hook-contract-2026-11.md.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

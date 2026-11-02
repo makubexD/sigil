@@ -1,7 +1,7 @@
 /**
  * The Antigravity plugin build: `compile()` writes `plugins/<name>/` folders over the real catalog
  * and `packs.yaml` — one plugin per pack with its skills, agents and rules, plus one generated
- * plugin per hook and MCP artifact (docs/plan-antigravity-target-f.md steps 6 and 7).
+ * plugin per hook and MCP artifact (docs/decisions/antigravity-target-2026-11.md, probe F1).
  *
  * The real build holds no rule file, because every language rule is scoped and the scoped-rule
  * `skipReason` leaves it out; the rule-trigger case therefore adds a fixture pack over the real

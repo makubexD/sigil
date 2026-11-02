@@ -17,7 +17,7 @@
  * `.agents/rules/` file, which Antigravity loads, and Antigravity also reads a root `AGENTS.md`,
  * so writing both would load each rule twice. Per-file rules are also tracked by the manifest,
  * and an `AGENTS.md` written by `add` would not be
- * (docs/plan-antigravity-target-b.md Decision 3, probe A1).
+ * (docs/decisions/antigravity-target-2026-11.md, probe A1).
  *
  * @module
  */
@@ -110,9 +110,9 @@ export class AntigravityTarget implements Target {
   /**
    * Antigravity config scopes, by the configuration files' documented resolution. Neither file
    * overrides the other: on a server name present in both, the server already running keeps it
-   * (ANTIGRAVITY_SETTINGS_DOC, docs/plan-antigravity-target-c.md Decision 4). Hooks follow the
-   * same project/user split. Antigravity has no personal per-project hooks or MCP file, so only
-   * project and user are offered.
+   * (ANTIGRAVITY_SETTINGS_DOC, probe C1 in docs/decisions/antigravity-target-2026-11.md). Hooks
+   * follow the same project/user split. Antigravity has no personal per-project hooks or MCP
+   * file, so only project and user are offered.
    */
   configScopes(kinds: ConfigKind[], projectDir: string): ConfigScopeInfo[] {
     return configScopesFrom(this.configKinds, ANTIGRAVITY_CONFIG_SCOPES, kinds, projectDir);

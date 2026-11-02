@@ -3,8 +3,8 @@
  * `~/.cursor/hooks.json` (user) through the same merge machinery as Claude Code's settings hooks,
  * Codex's hook files and Copilot's hook files.
  *
- * The entry is rendered from the provider-neutral hook contract (docs/plan-antigravity-target-h.md
- * step 10, docs/decisions/neutral-hook-contract-2026-11.md): neutral events and matchers, a
+ * The entry is rendered from the provider-neutral hook contract
+ * (docs/decisions/neutral-hook-contract-2026-11.md): neutral events and matchers, a
  * composed `node -e` source for a `script` hook, and a skip reason for anything Cursor cannot
  * express.
  */

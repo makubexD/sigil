@@ -196,6 +196,10 @@ agy plugin install dist/antigravity/plugins/typescript-tooling        # user: co
 cp -r dist/antigravity/plugins/typescript-tooling .agents/plugins/    # workspace: this project only
 ```
 
+`agy plugin install` also takes a GitHub URL. The documented form is a repo whose root is the plugin. A URL to one
+plugin's folder on a branch, `https://github.com/<owner>/<repo>/tree/<branch>/<path>`, also installed in a probe (G1
+in the ADR), but no page documents it. sigil does not publish its built plugins on a branch yet.
+
 To remove one, run `agy plugin uninstall <name>`, or delete its `.agents/plugins/<name>/` folder.
 
 **MCP servers in a plugin.** Antigravity names a plugin's server `<plugin>_<key>`, so the `filesystem` server from
@@ -245,6 +249,21 @@ global rules share a 20,000-token budget; past it, the largest are replaced by a
 description ([Rules](https://antigravity.google/docs/rules#size-limits-and-token-budgets)). The budget covers every
 always-on rule at once, so no single file check can enforce it: install only the repo-wide rules you want.
 
+## After an `agy` update
+
+Antigravity has contradicted its own docs before (tool names, the hook exit code, the agent `tools` default), so
+re-check the target after each `agy` update. In a sigil checkout, with `agy` signed in:
+
+```bash
+npm run build && npm run probe:antigravity
+```
+
+It installs or builds one probe artifact per kind from sigil's real output, runs one `agy -p` for each in a throwaway
+repo, and compares the answer with the result recorded in the ADR. Each probe is a model call on the lowest Flash tier
+(`npm run probe:antigravity -- --model <id>` picks another). A `CHANGED` line names the ADR row to revisit; an `ERROR` line means the probe got no
+result (setup or `agy` failed). Either makes the command exit 1. Without `agy` on
+your PATH it prints a notice and exits 0.
+
 ## What was tested
 
 Antigravity CLI `agy 1.4.12` on Linux, in print mode (`agy -p`) on `gemini-3.8-flash-low`, signed in with a Google
@@ -270,3 +289,6 @@ account, in throwaway repos. The Antigravity desktop app, Windows and macOS were
 - **F1:** a hand-built plugin in this layout, installed with `agy plugin install` and as a workspace copy in
   `.agents/plugins/`: its skill, `always_on` rule, agent and hook each worked, and its MCP server ran as
   `<plugin>_<key>` with `agy`'s environment. `agy plugin validate --strict` passed, signed in or not.
+- **G1:** a plugin in a subfolder of a branch installed from its `/tree/<branch>/<path>` GitHub URL, and its skill
+  answered; a branch URL without the subfolder, or a `#branch:path` fragment, failed with "could not detect plugin
+  structure".

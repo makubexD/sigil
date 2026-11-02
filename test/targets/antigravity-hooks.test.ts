@@ -2,7 +2,8 @@
  * Antigravity hook config: the target writes hooks into `.agents/hooks.json` (project) and
  * `~/.gemini/config/hooks.json` (user) through the same merge machinery as Cursor's hooks, but
  * with Antigravity's own shape — a fragment keyed by hook name, and two entry shapes
- * (docs/plan-antigravity-target-e.md, decision 4).
+ * (docs/decisions/antigravity-target-2026-11.md, probe E1). Keying the fragment by hook name lets the shared
+ * replace/reverse merge leave a user's other hooks untouched.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

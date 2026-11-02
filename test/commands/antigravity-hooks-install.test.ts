@@ -3,8 +3,8 @@
  * `.agents/hooks.json` (project) or `~/.gemini/config/hooks.json` (user) without touching a user's
  * other hooks, a second `add` does not stack a second entry, `uninstall` reverses only sigil's
  * fragment, a home-scoped write takes one `.sigil.bak`, and `status` / `update` classify a
- * hand-edited command as modified and a deleted key as restorable (docs/plan-antigravity-target-e.md
- * step 5; F14 / F23 in docs/decisions/catalog-usage-audit-2026-08-21.md).
+ * hand-edited command as modified and a deleted key as restorable (docs/decisions/antigravity-target-2026-11.md,
+ * probe E1; F14 / F23 in docs/decisions/catalog-usage-audit-2026-08-21.md).
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

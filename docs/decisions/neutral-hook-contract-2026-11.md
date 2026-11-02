@@ -1,7 +1,6 @@
 # A provider-neutral hook contract (2026-11-02)
 
-Status: accepted. Roadmap: [plan-antigravity-target.md](../plan-antigravity-target.md) § Phase H. Step plan:
-[plan-antigravity-target-h.md](../plan-antigravity-target-h.md); steps 2-14 take their tables from this record.
+Status: accepted. Roadmap: the Antigravity target's Phase H. The implementation took its tables from this record.
 
 ## Context
 
@@ -164,8 +163,8 @@ Codex A3 refuses `args`).
 ### 6. Scope
 
 Claude, Copilot, Codex and Cursor, both scaffold and the Claude plugin (`hookFragment` is shared). Hook kind support
-rows don't change. Amended by Phase E ([plan-antigravity-target-e.md](../plan-antigravity-target-e.md)): Antigravity
-renders hooks on the scaffold channel, and its hook kind row turned native.
+rows don't change. Amended by Phase E ([antigravity-target-2026-11.md](antigravity-target-2026-11.md), probe E1):
+Antigravity renders hooks on the scaffold channel, and its hook kind row turned native.
 
 ## Consequences
 

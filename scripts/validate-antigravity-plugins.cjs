@@ -7,7 +7,7 @@
  *
  * Needs `agy` on PATH and a prior `npm run catalog:build`. It needs no sign-in and no API key.
  * When `agy` is missing it skips with a notice and exits 0, in CI too, because the CI job has no
- * `agy` (decision 9 in docs/plan-antigravity-target-f.md).
+ * `agy` (probe F2 in docs/decisions/antigravity-target-2026-11.md).
  *
  * SIGIL_ANTIGRAVITY_DIST overrides the plugins root (default dist/antigravity/plugins under the
  * package root), so a deliberately broken copy can be validated without touching dist/.

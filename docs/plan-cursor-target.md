@@ -25,7 +25,8 @@ as sigil's hooks already do. Four findings shape the order:
    unscoped rule (`appliesTo: ["**/*"]`) becomes `alwaysApply: true`, matching Claude's path-less rule; a scoped one
    becomes `globs` plus `alwaysApply: false`. `severity` stays unmapped, as on every target. That retires the brief's
    riskiest assumption on paper; Phase A confirms it live.
-3. **Agents may be possible, unlike Codex.** All 39 catalog agents set `tools: [Read, Grep, Glob]`. A Cursor subagent
+3. **Agents may be possible, unlike Codex.** This said all 39 catalog agents set `tools: [Read, Grep, Glob]`; they never
+   did. 29 list `read, search, shell` and 10 add `edit` (corrected 2026-11-01, plan-cursor-target-e.md). A Cursor subagent
    has no tool list, but `readonly: true` blocks edits and shell. Phase A found it runs the subagent in Ask mode, which
    refused both shell calls tried (even `ls -la`) and Write, while Glob works: close to the authored list. Whether that
    is enough is an owner call (Phase E).
@@ -50,7 +51,10 @@ Confirmed by the owner on 2026-11-01.
    every repo-wide rule is already an `alwaysApply` `.mdc` file, and an `AGENTS.md` would load each one twice.
 5. **Agents ship with `readonly: true`** (owner, 2026-11-01): acceptable for `tools: [Read, Grep, Glob]`, provided the
    mapping is implemented in `tool-restriction.ts` with tests that refuse any list holding a write tool (Phase E).
-   Refined by Decision 7: the refusal depends on the agent's `toolPolicy`.
+   Refined by Decision 7: the refusal depends on the agent's `toolPolicy`. Since no catalog agent is read-only alone,
+   the owner chose on 2026-11-01 to make every agent family `nearest`: reviewers ship `readonly: true` and lose `shell`,
+   edit agents ship with no flag and gain every tool, each with a warning
+   ([plan-cursor-target-e.md](plan-cursor-target-e.md) Decisions 1–4).
 6. **The catalog's agent vocabulary is provider-neutral** (owner, 2026-11-01, Phase N): tool names (`read`,
    `search`, `edit`, `shell`, `web`, `agent`), a `toolPolicy` (`strict`: a target that can't express the
    restriction exactly skips the agent with a reason; `nearest`: it gets the closest mapping and a warning), and model
@@ -200,9 +204,10 @@ names are a `sync --check` error (`legacy-tool-name`), not a `validate` warning.
 
 Go (Decision 5), recorded in the ADR, built on Phase N. Cursor's `ToolDialect` expresses only a list within
 `read` + `search`, as `readonly: true`. A `strict` agent asking for more is skipped on Cursor with a reason, and a
-`nearest` one gets no `readonly` line and a warning. The agent `KindEmitSpec` goes in `.cursor/agents/`, and a model
-tier maps to `inherit` until Cursor ids are chosen. Tests: every catalog agent renders with `readonly: true`; a
-`strict` agent with `edit` or `shell` is skipped; a `nearest` one warns. The ADR records what `readonly` still allows
+`nearest` one gets `readonly: true` unless its list holds `edit` (then no line), with a warning. The agent
+`KindEmitSpec` goes in `.cursor/agents/`, and `model` is left out (Cursor's default is `inherit`). Tests: every catalog
+agent without `edit` renders with `readonly: true`; a `strict` agent with `shell` is skipped; a `nearest` one warns.
+Steps: [plan-cursor-target-e.md](plan-cursor-target-e.md). The ADR records what `readonly` still allows
 (A7), and the live check runs on a free Cursor model.
 
 ### Phase F: Cursor plugin channel

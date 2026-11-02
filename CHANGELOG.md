@@ -12,9 +12,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - New target `cursor`: `sigil add --target cursor` writes rules to `.cursor/rules/` as `.mdc` files,
   with `alwaysApply: true` for a rule that covers every file and quoted, comma-joined `globs` otherwise,
   and skills to `.cursor/skills/` with their rules inlined. `sigil build --target cursor` writes the same
-  files and no `AGENTS.md`. Agents and prompts are skipped, with the reason. `sigil add` now
+  files and no `AGENTS.md`. Prompts are skipped, with the reason. `sigil add` now
   prints a note after installing a skill that another tool's copy shadows or duplicates, the same note
   `sigil status` prints. See `docs/setup/cursor.md`.
+- Cursor agents: `sigil add --target cursor` writes agents to `.cursor/agents/`. Cursor has no tool
+  list, only `readonly: true`, so every catalog agent family is now `toolPolicy: nearest`: reviewers and
+  auditors get `readonly: true` and lose the shell, and debuggers and refactor specialists get no flag and
+  every Cursor tool, each with a warning. Claude and Copilot output is unchanged. When an agent is also
+  installed for `claude`, `sigil add` and `sigil status` note that Cursor uses its own copy. See
+  `docs/setup/cursor.md`.
 - Cursor hooks: `sigil add --target cursor` merges a hook into `.cursor/hooks.json` (project,
   git-committed) or `~/.cursor/hooks.json` (user), translating Claude Code events and tool names to
   Cursor's. A hook Cursor has no equivalent for is skipped with its reason. See `docs/setup/cursor.md`.

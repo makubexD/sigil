@@ -107,6 +107,12 @@ non read-only tools.` Glob worked. That is close to the catalog's `tools: [Read,
 safer than it looked. Web tools never came up. This rests on the subagent's own report: its tool calls aren't in the
 parent's stream, but the error text is Cursor's.
 
+That premise was wrong too: the catalog's agents list `shell` (29 reviewers) or `edit` and `shell` (10 debuggers and
+refactor specialists), so none is read-only alone. Phase E (2026-11-01) ships them `nearest`: a list without `edit`
+gets `readonly: true` and loses `shell`, a list with `edit` gets no flag and every Cursor tool, and `add` warns for
+both. `disallowedTools` is not carried; a `strict` agent that sets it is skipped. Cursor also reads `.claude/agents/`,
+and its own `.cursor/agents/` copy wins on a name clash (from the docs; the live check is Phase E step 7).
+
 ## Plugins: try the Claude route first
 
 The CLI has no plugin install command, and a rule in a `--plugin-dir` plugin (`.cursor-plugin/plugin.json` plus

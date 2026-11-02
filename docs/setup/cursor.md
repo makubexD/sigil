@@ -131,12 +131,28 @@ Cursor does not read Claude Code's `.mcp.json`. In testing, a server in `.mcp.js
 configured`, so a server installed for `claude` doesn't reach Cursor. Install it for `cursor` as well; the two files
 stay independent, and uninstalling from one target leaves the other's file untouched.
 
+## Agents
+
+An agent is written to `.cursor/agents/<name>.md` with its `name`, `description` and, for a read-only agent,
+`readonly: true`. A Cursor subagent has no tool list, so that one line is all of the agent's `tools` Cursor gets.
+`model` is left out, so the subagent uses the model of the chat that calls it.
+
+In testing, a `readonly: true` subagent runs in Ask mode: it can read and search files, but writing a file and running
+shell commands are both refused, even read-only ones like `ls`. So the mapping is never exact, and `add` prints a warning
+for each agent:
+
+- **Reviewers and auditors lose the shell.** They list `read`, `search` and `shell`, and are written with
+  `readonly: true`, so on Cursor they can't run `git diff` or the tests. They review what they can read.
+- **Debuggers and refactor specialists gain every tool.** They list `edit`, so no `readonly` line is written, and
+  Cursor gives them all of its tools, including web and subagent calls their tool list doesn't name.
+
+Cursor also reads `.claude/agents/`. When the same agent is installed for both `cursor` and `claude`, Cursor uses its
+own copy in `.cursor/agents/`, and `sigil add` and `sigil status` print a note naming the agent.
+
 ## What is skipped
 
 These kinds are skipped with a warning, and the reason is in [capabilities.md](../reference/capabilities.md):
 
-- **Agents**, until a later phase. A Cursor subagent has no tool list, so a read-only catalog agent needs
-  `readonly: true`, which isn't built yet.
 - **Prompts.** Cursor is folding commands into skills.
 - **Workflows and settings.** Cursor has no workflow file, and `settings` is Claude Code's own vocabulary.
 

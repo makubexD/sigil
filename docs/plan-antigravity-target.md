@@ -23,22 +23,22 @@ starts from them:
 
 ## Capability rows (target for the end of the roadmap)
 
-| Kind     | Scaffold                               | Plugin            | Phase |
-| -------- | -------------------------------------- | ----------------- | ----- |
-| skill    | native                                 | native            | B, F  |
-| rule     | native (`AGENTS.md`, `.agents/rules/`) | native (`rules/`) | B, F  |
-| mcp      | native                                 | native            | C, F  |
-| agent    | native                                 | native            | D, F  |
-| hook     | native, after Phase H                  | native, after H   | E, F  |
-| prompt   | none (P3: no argument substitution)    | none              | n/a   |
-| settings | none (the CLI owns its settings file)  | none              | n/a   |
+| Kind     | Scaffold                                  | Plugin            | Phase |
+| -------- | ----------------------------------------- | ----------------- | ----- |
+| skill    | native                                    | native            | B, F  |
+| rule     | native (`.agents/rules/`, always_on only) | native (`rules/`) | B, F  |
+| mcp      | native                                    | native            | C, F  |
+| agent    | native                                    | native            | D, F  |
+| hook     | native, after Phase H                     | native, after H   | E, F  |
+| prompt   | none (P3: no argument substitution)       | none              | n/a   |
+| settings | none (the CLI owns its settings file)     | none              | n/a   |
 
 ## Phases
 
 | Phase | Ships                                                                 | Gate                                                           |
 | ----- | --------------------------------------------------------------------- | -------------------------------------------------------------- |
 | A     | Setup note: what reaches Antigravity today with no target             | none (P1, P6)                                                  |
-| B     | `--target antigravity`: skills and rules                              | P1, P2, U5; scoped rules also need a multi-turn glob probe     |
+| B     | `--target antigravity`: skills and rules (done 2026-11-02)            | P1, P2, U5; B1 (scoped rules skipped)                          |
 | C     | MCP in `.agents/mcp_config.json` and the user file                    | P5                                                             |
 | D     | Agents in `.agents/agents/`                                           | U3, and tool names re-probed                                   |
 | H     | Neutral hook I/O contract, events and matchers, for every hook target | V1, V2; owner signs off the contract                           |
@@ -54,19 +54,21 @@ the repo-wide rules (`add` does not, A1). Antigravity loads both (P1, P2, A1). N
 (P6). The page carries the print-mode approval note and the 20,000-token rules budget; MCP's Ask approval waits for
 Phase C, since no MCP reaches Antigravity yet. Plan: [plan-antigravity-target-a.md](plan-antigravity-target-a.md).
 
-### Phase B: the target, with skills and rules
+### Phase B: the target, with skills and rules (done 2026-11-02)
 
-- `src/targets/antigravity/`: `index.ts`, `capabilities.ts`, a `ProviderLexicon` (`conventions-file: AGENTS.md`,
-  `rules-dir`, `skills-dir`), metadata and `aggregateDocs`, registered with `registerTarget()`.
-- Skills: the Agent Skills spec in `.agents/skills/`, which Codex and `agents-standard` also write. `add` must refuse
-  the second owner through `Target.sharesSkillFilesWith`, as it does for those two. A second workspace level does not
-  shadow the root (U5).
-- Rules: repo-wide rules in `AGENTS.md`; other rules in `.agents/rules/<id>.md` with `trigger: always_on`. `trigger:
-glob` did not attach in P1's single-turn runs, so scoped rules ship only after a multi-turn probe shows they do.
-  Until then a scoped rule is skipped with its reason, or inlined into the skills that use it. The 24,000-byte file
-  limit goes on `KindEmitSpec.limits`. `appliesTo` translates in the rule spec, and the rule-globs agreement test
-  grows a fourth row.
-- Prompts: `none`. Revisit only if a later `agy` substitutes skill arguments (U1, P3).
+Shipped `--target antigravity` (`src/targets/antigravity/`). Skills go to `.agents/skills/` through the open-standard
+skill spec with Antigravity's lexicon, and `codex`, `agents-standard` and `antigravity` refuse a second owner of those
+files (`sharesSkillFilesWith`). Copilot's and Cursor's overlap notes cover them. Repo-wide rules go to
+`.agents/rules/<id>.md` with `trigger: always_on`, with the 24,000-byte limit as an error on a new `bytes` limit unit.
+**No `AGENTS.md`**, on `add` or `build`: Antigravity also loads a root `AGENTS.md`, so a rule in both would load twice,
+and the manifest tracks the rule files (this amends the earlier "repo-wide rules in `AGENTS.md`").
+
+**Scoped rules are skipped.** B1 found no `trigger: glob` rule attaching after a read, an edit or a later turn, so the
+rule spec's new `KindEmitSpec.skipReason` skips one, with that reason, and the skills that use it carry it inline. The
+spec still renders the documented `trigger: glob` form, and the rule-globs agreement test checks it, so a later `agy`
+that attaches glob rules needs only `skipReason` deleted, after a re-run of B1. Prompts stay `none` (U1, P3). A live
+check after the phase returned the codewords of an installed rule and skill. Plan:
+[plan-antigravity-target-b.md](plan-antigravity-target-b.md).
 
 ### Phase C: MCP
 

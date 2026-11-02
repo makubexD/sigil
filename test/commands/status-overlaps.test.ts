@@ -34,10 +34,7 @@ describe('duplicateLoads', () => {
 
   it('should note a skill installed for Copilot and Antigravity as loading twice in Copilot', () => {
     const notes = duplicateLoads(
-      [
-        entry('shared/cli', 'skill', 'antigravity'),
-        entry('shared/cli', 'skill', 'copilot'),
-      ],
+      [entry('shared/cli', 'skill', 'antigravity'), entry('shared/cli', 'skill', 'copilot')],
       getAllTargets(),
     );
     assert.equal(notes.length, 1, notes.join('\n'));

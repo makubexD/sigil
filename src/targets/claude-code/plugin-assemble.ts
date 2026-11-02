@@ -20,6 +20,7 @@ import type { ArtifactKind } from '../../types';
 import { nativeKinds } from '../capabilities';
 import { CLAUDE_CAPABILITIES } from './capabilities';
 import { configPluginName } from './plugin-build';
+import { computeSharedAgentIds } from '../shared/plugin-packs';
 import type { TargetCapabilities } from '../capability-types';
 
 const PLUGIN_MANIFEST_SCHEMA = 'https://json.schemastore.org/claude-code-plugin-manifest.json';
@@ -118,33 +119,6 @@ function configuredPluginManifest(
     keywords: pack.languages ?? [],
     ...manifestDependencies(pack, catalog),
   };
-}
-
-/**
- * Compute the shared-agent ids referenced by `skills` that aren't already part of `agents`,
- * and add them to `packInstallSet` (mutated in place) so each file's conditional Boundary
- * section sees them as co-present. An id in `excluded` stays out even when a skill uses it.
- */
-function computeSharedAgentIds(
-  skills: ResolvedArtifact[],
-  agents: ResolvedArtifact[],
-  excluded: ReadonlySet<string>,
-  packInstallSet: Set<string>,
-): Set<string> {
-  // Set lookup instead of agents.some() per (skill, resolvedAgentId) pair below — was
-  // O(skills * resolvedAgentIds * agents); fixed in the 2026-08-26 round after a dogfooded
-  // ts-performance-profiler run flagged it (see docs/audits/2026-08-25/register.md's backlog).
-  const agentIds = new Set(agents.map(a => a.id));
-  const sharedAgentIds = new Set<string>();
-  for (const skill of skills) {
-    for (const agentId of skill.resolvedAgentIds ?? []) {
-      if (!agentIds.has(agentId) && !excluded.has(agentId)) {
-        sharedAgentIds.add(agentId);
-        packInstallSet.add(agentId);
-      }
-    }
-  }
-  return sharedAgentIds;
 }
 
 /**

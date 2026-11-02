@@ -1,9 +1,8 @@
 # Antigravity CLI target (2026-11)
 
-Status: evaluation in progress. Step 2 (docs pass) done 2026-11-01 against Antigravity CLI `1.4.12`, Linux. The steps
-are in [plan-antigravity-eval.md](../plan-antigravity-eval.md); the brief is
-[antigravity-cli-target.md](../ideas/antigravity-cli-target.md). The reuse map (step 3), the live probes (step 4) and
-the decision (step 5) are still to come.
+Status: **go, staged** (decided 2026-11-01). Docs pass, reuse map and live probes done against Antigravity CLI
+`1.4.12`, Linux. The steps are in [plan-antigravity-eval.md](../plan-antigravity-eval.md); the brief is
+[antigravity-cli-target.md](../ideas/antigravity-cli-target.md).
 
 ## How the docs pass ran
 
@@ -348,4 +347,32 @@ What this changes:
 
 ## Decision
 
-Step 5.
+**Go, staged, with target id `antigravity`.** The docs call the product Antigravity CLI and the binary `agy`, and
+the folders it reads (`.agents/`, `~/.gemini/config/`) are shared with the Antigravity App, so the id names the
+product, not the binary or the CLI alone.
+
+- **Demand.** The owner moved from Gemini CLI to Antigravity as the Google tool sigil will use (Why Antigravity, in
+  the plan), and Gemini CLI no longer serves individual accounts. That makes this the only Google agent sigil can
+  serve for its owner. No outside demand is recorded.
+- **What already works with no target (P1, P6).** `sigil add --target agents-standard` (or `codex`) writes the root
+  `AGENTS.md` with repo-wide rules and `.agents/skills/`, and Antigravity loads both as-is. So skills and repo-wide
+  rules reach Antigravity today. The first deliverable is a setup note saying so, at no code cost. Nothing written for
+  Claude reaches it.
+- **What a target adds.** Custom agents (`.agents/agents/`), MCP servers (`.agents/mcp_config.json`, user and
+  workspace scope), scoped rules (`.agents/rules/` with `trigger: glob`, once the multi-turn check passes), and a
+  plugin, the one channel besides Cursor's that ships rules as files. `prompt` and `settings` stay `none`.
+- **Maintenance cost.** Higher than Cursor's. In three places the binary contradicted a doc page: tool names
+  (`read_file` / `write_file` vs `view_file` / `write_to_file`), the hook exit code, and the agent `tools` default. So
+  every `agy` update needs the live probes re-run, not only `sync --check`. The probes are cheap: ten print-mode runs
+  on the lowest Flash tier, with no special flags. The roadmap should keep the probe fixtures as a script so a re-run
+  is one command. Per catalog change, conformance is the same as any target: emit specs, `provider-limits`, the
+  `appliesTo` agreement test. The only extra per-change cost is a new agent tool or hook matcher needing an
+  observed name.
+- **Hooks wait.** They ship only after the neutral hook I/O contract (neutrality table), together with neutral
+  matchers, as their own phase ahead of the hook phase. Until then `hook` is `none` for this target, because a
+  Claude-shaped hook would install, look active, and block nothing.
+- **Gates by probe.** Agents ship on the U3 result (no `tools` means no writes, so an "all tools" agent must list
+  them). MCP ships with identity env entries only (P5). Scoped rules wait for a multi-turn glob probe. The plugin
+  channel waits for U7, which the owner runs, since it writes to the home profile.
+
+The phases go in the roadmap (step 7).

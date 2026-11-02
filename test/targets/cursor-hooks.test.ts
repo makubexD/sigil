@@ -3,8 +3,10 @@
  * `~/.cursor/hooks.json` (user) through the same merge machinery as Claude Code's settings hooks,
  * Codex's hook files and Copilot's hook files.
  *
- * These are the RED tests for the emitter: `dist-cli/targets/cursor/hook-ops` does not exist yet,
- * so the file fails to compile with "cannot find module" until it is written.
+ * The entry is rendered from the provider-neutral hook contract (docs/plan-antigravity-target-h.md
+ * step 10, docs/decisions/neutral-hook-contract-2026-11.md): neutral events and matchers, a
+ * composed `node -e` source for a `script` hook, and a skip reason for anything Cursor cannot
+ * express.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -29,7 +31,8 @@ import type {
 } from '../../dist-cli/types';
 
 const PROJECT_DIR = '/abs/project';
-const EDIT_MATCHER = 'Write';
+// Cursor's `edit` covers both Write and Delete (docs/decisions/neutral-hook-contract-2026-11.md).
+const EDIT_MATCHER = 'Write|Delete';
 const HOOK_FILE = '.cursor/hooks.json';
 
 interface FakeArtifact {
@@ -126,7 +129,17 @@ function decodeNodeEval(command: string): string {
   return Buffer.from(match[1]!, 'base64').toString('utf8');
 }
 
-/** The eight Claude Code events Cursor documents as aliases, and Cursor's own spelling. */
+/** The neutral events with a Cursor name, and Cursor's own spelling. */
+const NEUTRAL_EVENTS: readonly (readonly [string, string])[] = [
+  ['before-tool', 'preToolUse'],
+  ['after-tool', 'postToolUse'],
+  ['prompt-submit', 'beforeSubmitPrompt'],
+  ['session-start', 'sessionStart'],
+  ['stop', 'stop'],
+  ['subagent-stop', 'subagentStop'],
+];
+
+/** The same events by their legacy Claude Code names, which the schema still accepts. */
 const EVENT_ALIASES: readonly (readonly [string, string])[] = [
   ['PreToolUse', 'preToolUse'],
   ['PostToolUse', 'postToolUse'],
@@ -134,48 +147,49 @@ const EVENT_ALIASES: readonly (readonly [string, string])[] = [
   ['Stop', 'stop'],
   ['SubagentStop', 'subagentStop'],
   ['SessionStart', 'sessionStart'],
-  ['SessionEnd', 'sessionEnd'],
-  ['PreCompact', 'preCompact'],
 ];
 
 /** Every event a renderable hook can use. */
-const RENDERABLE_EVENTS = [...EVENT_ALIASES.map(([event]) => event), 'SubagentStart'];
+const RENDERABLE_EVENTS = [
+  ...NEUTRAL_EVENTS.map(([event]) => event),
+  ...EVENT_ALIASES.map(([event]) => event),
+];
 
 // ── events ────────────────────────────────────────────────────────────────────
 
 describe('Cursor hook events', () => {
-  for (const [event, camel] of EVENT_ALIASES) {
-    it(`maps ${event} to ${camel}`, () => {
-      const artifact = asArtifact(makeHook({ event, matcher: undefined }));
-      assert.equal(eventName(onlyOp(artifact)), camel);
-    });
+  for (const [label, events] of [
+    ['neutral', NEUTRAL_EVENTS],
+    ['legacy', EVENT_ALIASES],
+  ] as const) {
+    for (const [event, camel] of events) {
+      it(`maps ${label} ${event} to ${camel}`, () => {
+        const artifact = asArtifact(makeHook({ event, matcher: undefined }));
+        assert.equal(eventName(onlyOp(artifact)), camel);
+      });
+    }
   }
-
-  it('maps SubagentStart without a matcher to subagentStart', () => {
-    const artifact = asArtifact(makeHook({ event: 'SubagentStart', matcher: undefined }));
-    assert.equal(eventName(onlyOp(artifact)), 'subagentStart');
-  });
 });
 
 // ── skipped hooks ─────────────────────────────────────────────────────────────
 
 const SKIP_CASES: readonly { name: string; overrides: Record<string, unknown> }[] = [
   { name: 'the Notification event', overrides: { event: 'Notification', matcher: undefined } },
+  { name: 'the notification event', overrides: { event: 'notification', matcher: undefined } },
   {
     name: 'the PermissionRequest event',
     overrides: { event: 'PermissionRequest', matcher: undefined },
   },
   { name: 'an undocumented event', overrides: { event: 'Bogus', matcher: undefined } },
+  { name: 'SessionEnd', overrides: { event: 'SessionEnd', matcher: undefined } },
+  { name: 'PreCompact', overrides: { event: 'PreCompact', matcher: undefined } },
+  { name: 'SubagentStart', overrides: { event: 'SubagentStart', matcher: undefined } },
+  { name: 'a matcher naming todo', overrides: { matcher: 'todo' } },
+  { name: 'a matcher naming todo beside another tool', overrides: { matcher: 'edit|todo' } },
   {
-    name: 'SubagentStart with a matcher',
-    overrides: { event: 'SubagentStart', matcher: 'reviewer' },
+    name: 'SessionStart with a matcher',
+    overrides: { event: 'SessionStart', matcher: 'startup' },
   },
-  { name: 'the Glob matcher', overrides: { matcher: 'Glob' } },
-  { name: 'the Glob|Read matcher', overrides: { matcher: 'Glob|Read' } },
-  { name: 'an undocumented matcher', overrides: { matcher: 'Unknown' } },
-  { name: 'the regex matcher Edit.*', overrides: { matcher: 'Edit.*' } },
-  { name: 'the anchored matcher ^Bash$', overrides: { matcher: '^Bash$' } },
-  { name: 'SessionStart with a matcher', overrides: { event: 'SessionStart', matcher: 'startup' } },
   {
     name: 'a command word containing a single quote',
     overrides: { command: './c.sh', args: ["it's"] },
@@ -183,14 +197,16 @@ const SKIP_CASES: readonly { name: string; overrides: Record<string, unknown> }[
 ];
 
 const RENDERABLE_OVERRIDES: readonly Record<string, unknown>[] = [
+  ...NEUTRAL_EVENTS.map(([event]) => ({ event, matcher: undefined })),
   ...EVENT_ALIASES.map(([event]) => ({ event, matcher: undefined })),
-  { event: 'SubagentStart', matcher: undefined },
+  { event: 'before-tool', matcher: 'shell|edit' },
   { matcher: 'Bash' },
   { matcher: 'Edit|Write' },
   { matcher: 'Edit|Write|MultiEdit|NotebookEdit' },
   { matcher: 'Read|Grep' },
   { matcher: 'Bash|Edit' },
   { matcher: 'Task|WebFetch|WebSearch' },
+  { matcher: 'shell|edit' },
   { matcher: undefined },
   { matcher: '*' },
   { command: './check.sh', args: ['--strict', 'a b'] },
@@ -214,6 +230,23 @@ describe('Cursor hook skip reasons', () => {
   it('names PowerShell when a command word contains a single quote', () => {
     const artifact = asArtifact(makeHook({ command: './c.sh', args: ["it's"] }));
     assert.match(cursorHookSkipReason(artifact) ?? '', /PowerShell/);
+  });
+
+  it('names the neutral tool Cursor has no hook name for', () => {
+    const artifact = asArtifact(makeHook({ matcher: 'todo' }));
+    assert.match(cursorHookSkipReason(artifact) ?? '', /'todo'/);
+  });
+
+  it('names the event Cursor has no hook event for', () => {
+    const artifact = asArtifact(makeHook({ event: 'notification', matcher: undefined }));
+    assert.match(cursorHookSkipReason(artifact) ?? '', /'notification'/);
+  });
+
+  it('does not refuse a script hook for a PowerShell quoting hazard', () => {
+    const artifact = asArtifact(
+      makeHook({ command: undefined, args: undefined, script: "const x = 'quoted';" }),
+    );
+    assert.equal(cursorHookSkipReason(artifact), undefined);
   });
 
   it('returns undefined for every renderable hook', () => {
@@ -294,14 +327,17 @@ const MATCHER_CASES: readonly (readonly [string | undefined, string | undefined]
   ['Edit|Write', EDIT_MATCHER],
   ['Edit|Write|MultiEdit|NotebookEdit', EDIT_MATCHER],
   ['Read|Grep', 'Read|Grep'],
+  ['Glob|Read', 'Grep|Read'],
   ['Bash|Edit', `Shell|${EDIT_MATCHER}`],
   ['Task|WebFetch|WebSearch', 'Task|WebFetch|WebSearch'],
+  ['shell|edit', `Shell|${EDIT_MATCHER}`],
+  ['read|search', 'Read|Grep'],
   [undefined, undefined],
   ['*', undefined],
 ];
 
 describe('Cursor hook matcher translation', () => {
-  for (const event of ['PreToolUse', 'PostToolUse']) {
+  for (const event of ['before-tool', 'after-tool', 'PreToolUse', 'PostToolUse']) {
     for (const [matcher, expected] of MATCHER_CASES) {
       it(`${event} ${matcher ?? 'without a matcher'} renders ${expected ?? 'no matcher'}`, () => {
         const artifact = asArtifact(makeHook({ event, matcher }));
@@ -334,6 +370,97 @@ describe('Cursor hook command line', () => {
   it('keeps a command with no args as written', () => {
     const artifact = asArtifact(makeHook({ command: './check.sh', args: undefined }));
     assert.equal(hookEntry(onlyOp(artifact)).command, './check.sh');
+  });
+});
+
+// ── The neutral hook contract ──────────────────────────────────────────────────
+
+/** A fixture script hook: deny any call that names a `.env` file. */
+const DENY_ENV_SCRIPT = [
+  "const hit = input && input.files.find(file => file.split('/').pop().startsWith('.env'));",
+  'if (hit) {',
+  "  process.stderr.write('sigil-test: blocked ' + hit + '\\n');",
+  '  process.exitCode = 2;',
+  '}',
+].join('\n');
+
+/** A neutral script hook with Cursor's `edit` matcher. */
+const scriptHook = (overrides: Record<string, unknown> = {}) =>
+  asArtifact(
+    makeHook({
+      event: 'before-tool',
+      matcher: 'edit',
+      command: undefined,
+      args: undefined,
+      script: DENY_ENV_SCRIPT,
+      ...overrides,
+    }),
+  );
+
+/** Runs a hook command string through `sh -c`, with the test's own node first on PATH. */
+function runCommandLine(
+  commandLine: string,
+  stdin: string,
+): { status: number | null; stderr: string } {
+  const nodeDir = path.dirname(process.execPath);
+  const env = { ...process.env, PATH: `${nodeDir}${path.delimiter}${process.env.PATH ?? ''}` };
+  const r = spawnSync('sh', ['-c', commandLine], { input: stdin, encoding: 'utf8', env });
+  return { status: r.status, stderr: r.stderr };
+}
+
+describe('Cursor hook contract', () => {
+  it('should render a neutral script hook as one node -e command line', () => {
+    const op = onlyOp(scriptHook({ matcher: 'shell|edit' }));
+    assert.equal(eventName(op), 'preToolUse');
+    const entry = hookEntry(op);
+    assert.equal(entry.matcher, 'Shell|Write|Delete');
+
+    const source = decodeNodeEval(entry.command as string);
+    assert.match(source, /normalizeHookInput/);
+    assert.match(source, /"before-tool"/);
+    assert.ok(!('args' in entry), 'Cursor has no args field');
+  });
+
+  it('should run a rendered command through sh -c and deny an A4 .env write with exit 2', () => {
+    const entry = hookEntry(onlyOp(scriptHook()));
+    const payload = JSON.stringify({
+      hook_event_name: 'preToolUse',
+      tool_name: 'Write',
+      tool_input: { file_path: '/repo/.env' },
+    });
+    const blocked = runCommandLine(entry.command as string, payload);
+    assert.equal(blocked.status, 2, blocked.stderr);
+    assert.match(blocked.stderr, /sigil-test: blocked/);
+
+    const allowed = runCommandLine(
+      entry.command as string,
+      JSON.stringify({
+        hook_event_name: 'preToolUse',
+        tool_name: 'Write',
+        tool_input: { file_path: '/repo/notes.txt' },
+      }),
+    );
+    assert.equal(allowed.status, 0, allowed.stderr);
+  });
+
+  it('should keep a legacy command hook’s event and matcher', () => {
+    const artifact = asArtifact(
+      makeHook({ event: 'PreToolUse', matcher: 'Edit|Write', command: 'node', args: ['-e', 'x'] }),
+    );
+    const op = onlyOp(artifact);
+    assert.equal(eventName(op), 'preToolUse');
+    assert.equal(hookEntry(op).matcher, EDIT_MATCHER);
+    assert.equal(
+      hookEntry(op).command,
+      nodeEvalCommandLine('node', ['-e', 'x']),
+      'a command hook keeps its own command line',
+    );
+  });
+
+  it('should render a non-tool event with the schema default matcher', () => {
+    const artifact = asArtifact(makeHook({ event: 'session-start', matcher: '*', command: 'x' }));
+    assert.equal(new CursorTarget().configSkipReason?.(artifact), undefined);
+    assert.equal(eventName(onlyOp(artifact)), 'sessionStart');
   });
 });
 
@@ -421,7 +548,7 @@ describe('Cursor hook target scaffoldConfig', () => {
 // ── the real catalog ──────────────────────────────────────────────────────────
 
 describe('Cursor hook real catalog', () => {
-  it('protect-config maps Edit|Write to the Write matcher and decodes to its script', async () => {
+  it('protect-config maps Edit|Write to the edit matcher and decodes to its script', async () => {
     const catalog = await loadResolvedCatalog();
     const artifact = catalog.byId.get('shared/protect-config')!;
     assert.equal(cursorHookSkipReason(artifact), undefined);
@@ -584,7 +711,7 @@ function preToolUseEntries(file: string): Record<string, unknown>[] {
 }
 
 describe('Cursor hook e2e', () => {
-  it('case 1: add writes version 1 and one Write preToolUse entry', () => {
+  it('case 1: add writes version 1 and one edit preToolUse entry', () => {
     withTempDir(work => {
       const { project, home } = makeDirs(work);
       const catalogDir = copyCatalog(work);

@@ -103,6 +103,17 @@ export function toolSkipReason(
   return outcome.kind === 'skip' ? outcome.reason : undefined;
 }
 
+/**
+ * The reason `add`/`status` skip `artifact` for `spec`, or `undefined` when it renders: the spec's
+ * own `skipReason` when it has one, otherwise its tool restriction's.
+ */
+export function specSkipReason(
+  spec: KindEmitSpec,
+  artifact: { frontmatter: Record<string, unknown> },
+): string | undefined {
+  return spec.skipReason?.(artifact.frontmatter) ?? toolSkipReason(spec, artifact);
+}
+
 /** The warning a `nearest` outcome reports, or `undefined` when the outcome is not `nearest`. */
 export function toolWarning(
   spec: KindEmitSpec,
@@ -126,5 +137,5 @@ export function wholeFileSkipReason(
       candidate.kind === artifact.kind &&
       (candidate.variant === undefined || candidate.variant === 'scaffold'),
   );
-  return spec ? toolSkipReason(spec, artifact) : undefined;
+  return spec ? specSkipReason(spec, artifact) : undefined;
 }

@@ -16,6 +16,7 @@ import { CopilotTarget } from './copilot';
 import { AgentsStandardTarget } from './agents-standard';
 import { CodexTarget } from './codex';
 import { CursorTarget } from './cursor';
+import { AntigravityTarget } from './antigravity';
 
 const registry = new Map<string, Target>();
 
@@ -24,6 +25,7 @@ registerTarget(new CopilotTarget());
 registerTarget(new AgentsStandardTarget());
 registerTarget(new CodexTarget());
 registerTarget(new CursorTarget());
+registerTarget(new AntigravityTarget());
 
 export function registerTarget(target: Target): void {
   if (registry.has(target.name)) {
@@ -62,4 +64,11 @@ export function defaultTargetName(): string {
   return first.name;
 }
 
-export { ClaudeCodeTarget, CopilotTarget, AgentsStandardTarget, CodexTarget, CursorTarget };
+export {
+  ClaudeCodeTarget,
+  CopilotTarget,
+  AgentsStandardTarget,
+  CodexTarget,
+  CursorTarget,
+  AntigravityTarget,
+};

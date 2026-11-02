@@ -10,7 +10,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { loadCatalog } from '../../dist-cli/load';
 import { runConformance } from '../../dist-cli/commands/sync/conformance/detect';
-import { getAllTargets } from '../../dist-cli/targets/index';
+import { getAllTargets, registerTarget } from '../../dist-cli/targets/index';
+import { COPILOT_PROMPT_SPEC } from '../../dist-cli/targets/copilot/spec/prompt';
+import { channelFromNativeKinds } from '../../dist-cli/targets/capabilities';
+import type { KindEmitSpec } from '../../dist-cli/targets/spec-types';
+import type { Target } from '../../dist-cli/types';
 import { allProviderSpecs } from '../../dist-cli/targets/all-emit-specs';
 import { loadBundledCatalog } from '../helpers/catalog';
 import { withTempDirAsync } from '../helpers/temp-dir';
@@ -62,6 +66,34 @@ function declaringAtLeast(kind: string, field: string, floor: string[]): string[
   return found;
 }
 const head = (finding: string) => finding.split(' ').slice(0, 2).join(' ');
+
+const PROBE_DOC = {
+  url: 'https://example.test/probe',
+  title: 'Probe',
+  verifiedOn: '2026-11-02',
+  covers: 'probe',
+};
+
+/**
+ * A body limit in UTF-8 bytes, which no shipped spec declares yet (Antigravity's rule file
+ * limit will). Reuses Copilot's prompt shape, since only the limit is under test.
+ */
+const BYTES_PROMPT_SPEC = {
+  ...COPILOT_PROMPT_SPEC,
+  limits: [{ field: 'body', max: 10, unit: 'bytes', severity: 'error', doc: PROBE_DOC }],
+} satisfies KindEmitSpec;
+
+const bytesTarget = {
+  name: 'probe-bytes',
+  capabilities: { scaffold: channelFromNativeKinds(['prompt'], 'probe target') },
+  emitSpecs: [BYTES_PROMPT_SPEC],
+  async compile() {
+    return {};
+  },
+} as unknown as Target;
+
+const prompt = (body: string) =>
+  `---\nid: shared/probe\nkind: prompt\nname: probe\ntitle: P\ndescription: A probe prompt.\n---\n\n${body}\n`;
 
 describe('provider-limits', () => {
   it('should find no error in the bundled catalog', async () => {
@@ -121,5 +153,16 @@ describe('provider-limits', () => {
     assert.deepEqual(await findings('shared/agents/probe.agent.md', agent('x'.repeat(29_000))), []);
     const over = await findings('shared/agents/probe.agent.md', agent('x'.repeat(31_000)));
     assert.deepEqual(over.map(head).sort(), declaringAtLeast('agent', 'body', ['error copilot']));
+  });
+
+  it('should measure a bytes limit as the UTF-8 length', async () => {
+    // Registered only here: no shipped spec declares a bytes limit, and this probe would flag
+    // every bundled prompt if it ran alongside the tests above.
+    registerTarget(bytesTarget);
+    const file = 'shared/prompts/probe.prompt.md';
+    assert.deepEqual(await findings(file, prompt('ééééé')), []);
+    const over = await findings(file, prompt('éééééé'));
+    assert.deepEqual(over.map(head), ['error probe-bytes']);
+    assert.ok(over[0]!.includes('is 12 bytes'), over.join('\n'));
   });
 });

@@ -400,6 +400,17 @@ reaches this target only inside the skills that use it"), for `agents-standard` 
 `dist/<target>/AGENTS.md`. A1 used that file, copied to the repo root with the codeword appended. So the P6 line and
 the Decision's first bullet were wrong about `add`: through `add`, a rule reaches Antigravity only inlined in a skill.
 
+### Phase B
+
+Written with [plan-antigravity-target-b.md](../plan-antigravity-target-b.md), 2026-11-02, `agy 1.4.12`, Linux, signed
+in, `agy --model gemini-3.8-flash-low --output-format stream-json`, in a fresh `git init` repo under the scratchpad
+holding `src/app.ts` and `.agents/rules/ts-style.md` (`trigger: glob`, a `description`, `globs: "src/**/*.ts"`,
+codeword DELTA-58).
+
+| #   | Question                                                       | Expected | Observed                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --- | -------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| B1  | Does a `trigger: glob` rule attach after a read, edit or turn? | yes      | **No, in every run.** Run 1: `-p "Read src/app.ts and summarize it in one line."`, then a `--continue -p` turn asking for a rule's review codeword; the model read the file, and the second turn found none (it tried `run_command`, which was denied). Run 2: `--continue -p` "Without using any tools, answer only from your context": `NONE`. Run 3: with `--settings` allowing the edit tools, an `edit_file` of `src/app.ts` (two `read_file` and two `edit_file` calls; the line was added), then the codeword: `NONE`, and `NONE` again in a `--continue` turn. Control: the same file with `trigger: always_on` returned DELTA-58. Live check after Phase B: `sigil add shared/clean-code shared/cli --target antigravity`, a codeword appended to each installed file, one `-p` run: both came back (KILO-73, LIMA-29); the rule with no read, the skill after a `read_file` of its `SKILL.md` |
+
 ## Decision
 
 **Go, staged, with target id `antigravity`.** The docs call the product Antigravity CLI and the binary `agy`, and
@@ -415,7 +426,7 @@ product, not the binary or the CLI alone.
   rules reach Antigravity today. The first deliverable is a setup note saying so, at no code cost. Nothing written for
   Claude reaches it.
 - **What a target adds.** Custom agents (`.agents/agents/`), MCP servers (`.agents/mcp_config.json`, user and
-  workspace scope), scoped rules (`.agents/rules/` with `trigger: glob`, once the multi-turn check passes), and a
+  workspace scope), scoped rules (`.agents/rules/` with `trigger: glob`, once a glob rule attaches; B1 found none yet), and a
   plugin, the one channel besides Cursor's that ships rules as files. `prompt` and `settings` stay `none`.
 - **Maintenance cost.** Higher than Cursor's. In three places the binary contradicted a doc page: tool names
   (`read_file` / `write_file` vs `view_file` / `write_to_file`), the hook exit code, and the agent `tools` default. So
@@ -428,7 +439,8 @@ product, not the binary or the CLI alone.
   matchers, as their own phase ahead of the hook phase. Until then `hook` is `none` for this target, because a
   Claude-shaped hook would install, look active, and block nothing.
 - **Gates by probe.** Agents ship on the U3 result (no `tools` means no writes, so an "all tools" agent must list
-  them). MCP ships with identity env entries only (P5). Scoped rules wait for a multi-turn glob probe. The plugin
+  them). MCP ships with identity env entries only (P5). B1 found no attach after a read, an edit or a later turn, so
+  Phase B skips scoped rules. The plugin
   channel needs its own builder, not `agy plugin import` (U7), and goes last, after a probe shows an installed
   plugin's skill reaching a session.
 

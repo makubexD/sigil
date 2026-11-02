@@ -108,6 +108,13 @@ export interface KindEmitSpec {
    * a skill spec that maps `allowedTools`; a spec without it can carry neither field.
    */
   readonly toolDialect?: ToolDialect;
+  /**
+   * A reason this provider can't use the artifact as written (a probe showed it ignores the file),
+   * or undefined to write it. `add` and the wizard skip it with this reason, `build` and a skill's
+   * dependency closure leave it out, and a direct `scaffoldArtifact` call throws. `renderArtifact`
+   * still renders it, so conformance checks see the documented form.
+   */
+  readonly skipReason?: (frontmatter: Record<string, unknown>) => string | undefined;
   readonly body: readonly BodySectionSpec[];
   /**
    * This provider's body-lexicon table (see ./lexicon.ts) — applied unconditionally by
@@ -149,7 +156,8 @@ export interface SpecLimit {
    */
   readonly field: 'name' | 'description' | 'listing' | 'body';
   readonly max: number;
-  readonly unit: 'chars' | 'lines';
+  /** `bytes` is the UTF-8 length of the emitted text. */
+  readonly unit: 'chars' | 'lines' | 'bytes';
   /** `error` when the provider rejects or drops the file past the limit, `warning` for guidance. */
   readonly severity: 'error' | 'warning';
   /** The documentation that states the limit. */

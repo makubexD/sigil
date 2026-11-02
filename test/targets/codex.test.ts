@@ -141,6 +141,23 @@ describe('codex target', () => {
     });
   });
 
+  it('should refuse antigravity skills once codex installed skills, and the reverse with agents-standard', async () => {
+    await withTempDirAsync(async dir => {
+      await add(dir, TARGET, ['skill:shared/cli']);
+      await assert.rejects(
+        () => add(dir, 'antigravity', ['skill:shared/cli']),
+        /codex already installed skills in this project, and antigravity writes the same files\./,
+      );
+    });
+    await withTempDirAsync(async dir => {
+      await add(dir, 'antigravity', ['skill:shared/cli']);
+      await assert.rejects(
+        () => add(dir, PEER, ['skill:shared/cli']),
+        /antigravity already installed skills in this project, and agents-standard writes the same files\./,
+      );
+    });
+  });
+
   it('should detect codex, not agents-standard, in a project that installed for codex', async () => {
     await withTempDirAsync(async dir => {
       await add(dir, TARGET, [`skill:${SKILL}`]);

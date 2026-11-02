@@ -13,6 +13,7 @@ import { computeStatus, loadManifest } from '../../dist-cli/manifest';
 import { OVERLAYS_FILE } from '../../dist-cli/overlays';
 import { getAllTargets, getTarget } from '../../dist-cli/targets/index';
 import { installableKinds, isInstallableDependency } from '../../dist-cli/targets/capabilities';
+import { wholeFileSkipReason } from '../../dist-cli/targets/tool-restriction';
 import { CATALOG, PACKS } from '../helpers/install-scenario';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
@@ -25,8 +26,17 @@ const DEP = {
   title: 'Security (TypeScript)',
   globs: ['**/*.ts', '**/*.tsx'],
 };
+/**
+ * Targets that write a scoped rule as its own file. An overlay narrows a rule to a scope, so a
+ * target that skips scoped rules (Antigravity, ADR probe B1) has nothing to narrow.
+ */
 const TARGETS = getAllTargets()
   .filter(t => installableKinds(t).includes('rule'))
+  .filter(
+    t =>
+      wholeFileSkipReason(t, { kind: 'rule', frontmatter: { appliesTo: SCOPED.globs } }) ===
+      undefined,
+  )
   .map(t => t.name);
 
 function writeOverlays(dir: string, rules: Record<string, string[]>): void {

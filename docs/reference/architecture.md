@@ -195,8 +195,11 @@ Consumer commands never read the file; `sigil move` renames a moved id in it. Se
 (provider, kind) pairing: its output path, which frontmatter fields map to which provider keys, which
 body sections wrap the artifact body, and which contract (required/forbidden keys, forbidden body
 patterns) the emitted file must satisfy, and the size limits the provider documents (`limits`:
-name, description, the skill listing (description plus `when_to_use`) and body, each with its doc and an error or warning severity; the shared Agent
-Skills limits live in `src/targets/agent-skills-limits.ts`). `renderArtifact(spec, artifact, ctx)`
+name, description, the skill listing (description plus `when_to_use`) and body, in chars, lines or UTF-8 bytes, each
+with its doc and an error or warning severity; the shared Agent Skills limits live in
+`src/targets/agent-skills-limits.ts`). A spec's optional `skipReason` names an artifact the provider can't use as
+written (a probe showed it ignores the file): `add` skips it with that reason and `build` leaves it out, while
+`renderArtifact` still renders the documented form for conformance. `renderArtifact(spec, artifact, ctx)`
 (`src/targets/emit.ts`) is the single renderer every spec runs through — there is one emission
 function in the whole codebase, not one per platform. `src/targets/emit-files.ts` is the single
 writer: `emitFile` puts the rendered file at `spec.outputPath(artifact, ctx)` (and a skill's

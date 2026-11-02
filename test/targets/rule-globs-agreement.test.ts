@@ -1,14 +1,19 @@
 /**
- * Every catalog rule must reach Claude, Copilot and Cursor with the same glob list, or a project
- * using more than one target silently loads different rules on different files. Claude writes a
- * `paths:` YAML list (a rule with no `appliesTo` has no frontmatter and applies everywhere),
- * Copilot writes a comma-joined `applyTo:`, and Cursor writes either `alwaysApply: true` for a
- * repo-wide rule or `globs:` + `alwaysApply: false`.
+ * Every catalog rule must reach Claude, Copilot, Cursor and Antigravity with the same glob list, or
+ * a project using more than one target silently loads different rules on different files. Claude
+ * writes a `paths:` YAML list (a rule with no `appliesTo` has no frontmatter and applies
+ * everywhere), Copilot writes a comma-joined `applyTo:`, Cursor writes either `alwaysApply: true`
+ * for a repo-wide rule or `globs:` + `alwaysApply: false`, and Antigravity writes either
+ * `trigger: always_on` for a repo-wide rule or `trigger: glob` + `globs:` (though a scoped rule is
+ * skipped on install, since probe B1 found `agy` never attaches one).
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { getTarget } from '../../dist-cli/targets/index';
 import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
+import { renderArtifact } from '../../dist-cli/targets/emit';
+import { ANTIGRAVITY_RULE_SPEC } from '../../dist-cli/targets/antigravity/spec/rule';
+import { SigilError } from '../../dist-cli/errors';
 import { loadResolvedCatalog } from '../helpers/catalog';
 
 const REPO_WIDE_GLOBS: ReadonlySet<string> = new Set(['**', '**/*']);
@@ -132,5 +137,68 @@ describe('rule glob agreement', () => {
     }
 
     assert.equal(checked, rules.length, 'every catalog rule was checked');
+  });
+
+  it('should agree with Claude on every rule Antigravity writes', async () => {
+    const catalog = await loadResolvedCatalog();
+    const rules = catalog.artifacts.filter(a => a.kind === 'rule');
+    assert.ok(rules.length > 0, 'the catalog has rules');
+
+    const claude = getTarget('claude');
+    const antigravity = getTarget('antigravity');
+    const options = { projectDir: '.' };
+
+    const claudeByRule = new Map<string, string[]>();
+    for (const rule of rules) {
+      const data = parseFrontmatter(
+        ruleFile(
+          await claude.scaffold!(rule.id, catalog, options),
+          '.claude/rules/',
+          '.md',
+          'claude',
+        ),
+      ).data;
+      claudeByRule.set(rule.id, claudeGlobs(data));
+    }
+
+    let repoWide = 0;
+    let scoped = 0;
+    for (const rule of rules) {
+      const globs = claudeByRule.get(rule.id)!;
+
+      if (globs.every(g => REPO_WIDE_GLOBS.has(g))) {
+        const files = await antigravity.scaffold!(rule.id, catalog, options);
+        const path = `.agents/rules/${rule.id.replace(/\//g, '-')}.md`;
+        assert.ok(path in files, `Antigravity writes ${path} for ${rule.id}`);
+        assert.deepEqual(
+          Object.keys(files),
+          [path],
+          `Antigravity writes only ${path} for ${rule.id}`,
+        );
+
+        const data = parseFrontmatter(files[path]!).data;
+        assert.equal(data.trigger, 'always_on', `Antigravity writes always_on for ${rule.id}`);
+        assert.equal(data.globs, undefined, `Antigravity writes no globs for ${rule.id}`);
+        repoWide++;
+      } else {
+        await assert.rejects(
+          () => antigravity.scaffold!(rule.id, catalog, options),
+          (err: unknown) => err instanceof SigilError && /ADR probe B1/.test(err.message),
+          `Antigravity refuses the scoped rule ${rule.id}`,
+        );
+
+        const data = parseFrontmatter(renderArtifact(ANTIGRAVITY_RULE_SPEC, rule, {})).data;
+        assert.equal(data.trigger, 'glob', `Antigravity renders glob for ${rule.id}`);
+        assert.deepEqual(
+          String(data.globs).split(','),
+          globs,
+          `Antigravity and Claude globs disagree for ${rule.id}`,
+        );
+        scoped++;
+      }
+    }
+
+    assert.ok(repoWide > 0, 'at least one repo-wide rule was checked');
+    assert.ok(scoped > 0, 'at least one scoped rule was checked');
   });
 });

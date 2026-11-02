@@ -60,8 +60,16 @@ function emitted(
   };
 }
 
-const measure = (text: string, limit: SpecLimit) =>
-  limit.unit === 'lines' ? text.split('\n').length : text.length;
+const measure = (text: string, limit: SpecLimit): number => {
+  switch (limit.unit) {
+    case 'lines':
+      return text.split('\n').length;
+    case 'bytes':
+      return Buffer.byteLength(text, 'utf8');
+    case 'chars':
+      return text.length;
+  }
+};
 
 /** The specs of `target` for `artifact`'s kind that declare limits. */
 function limitedSpecs(target: Target, artifact: ResolvedArtifact): KindEmitSpec[] {

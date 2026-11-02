@@ -9,6 +9,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { emitFile, scaffoldArtifact, specFor } from '../../dist-cli/targets/emit-files';
 import { getAllTargets } from '../../dist-cli/targets/index';
+import { wholeFileSkipReason } from '../../dist-cli/targets/tool-restriction';
 import { loadResolvedCatalog } from '../helpers/catalog';
 
 const TARGETS_SRC = path.resolve(__dirname, '../../src/targets');
@@ -71,8 +72,11 @@ describe('emit-files', () => {
   it('should scaffold every file of every target at a path its own specs declare', async () => {
     const catalog = await loadResolvedCatalog();
     for (const target of getAllTargets().filter(t => t.emitSpecs)) {
-      for (const artifact of catalog.artifacts.filter(a =>
-        specFor(target.emitSpecs!, a.kind, 'scaffold'),
+      // An artifact the target skips (add reports it, build leaves it out) is never scaffolded.
+      for (const artifact of catalog.artifacts.filter(
+        a =>
+          specFor(target.emitSpecs!, a.kind, 'scaffold') &&
+          wholeFileSkipReason(target, a) === undefined,
       )) {
         const files = scaffoldArtifact({
           specs: target.emitSpecs!,

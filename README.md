@@ -140,6 +140,19 @@ Cursor without installing them again. Setup, limits and what was tested:
 
 </details>
 
+<details>
+<summary><strong>Antigravity: install rules and skills</strong></summary>
+
+```bash
+sigil add --target antigravity <rule-skill-or-pack>
+```
+
+Skills go to `.agents/skills/` and repo-wide rules to `.agents/rules/` as `always_on` rules. Scoped rules are
+skipped, because Antigravity did not attach a glob rule in testing, but they still arrive inlined in the skills
+that use them. Setup, limits and what was tested: [docs/setup/antigravity.md](docs/setup/antigravity.md).
+
+</details>
+
 ### Getting help
 
 | You want                                 | Run                                                                  |
@@ -199,8 +212,11 @@ Cursor without installing them again. Setup, limits and what was tested:
   `alwaysApply` rules. Hooks merge into `.cursor/hooks.json` and MCP servers into `.cursor/mcp.json`. Agents and
   prompts are skipped for now. See
   [docs/setup/cursor.md](docs/setup/cursor.md).
-- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`. Antigravity reads them
-  today, before its target ships: see [docs/setup/antigravity.md](docs/setup/antigravity.md).
+- **Antigravity**: `sigil add --target antigravity` writes skills to `.agents/skills/` and repo-wide rules to
+  `.agents/rules/` as `always_on` rules. Scoped rules are skipped until Antigravity attaches glob rules; the skills
+  that use them carry them inline. A full build writes no `AGENTS.md`. Agents, MCP and hooks are planned. See
+  [docs/setup/antigravity.md](docs/setup/antigravity.md).
+- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
 
 ## What is in the catalog
 

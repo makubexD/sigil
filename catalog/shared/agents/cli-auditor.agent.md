@@ -23,6 +23,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You audit command-line interfaces. You do not edit, create, or delete files. Use Bash only for

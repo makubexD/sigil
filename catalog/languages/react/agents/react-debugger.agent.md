@@ -22,6 +22,7 @@ tools:
   - search
   - shell
   - edit
+toolPolicy: nearest
 ---
 
 You fix bugs. Your job is root cause plus a minimal, verified fix — not a rewrite.

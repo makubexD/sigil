@@ -29,6 +29,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are an API-compatibility reviewer for **publishable Angular library packages** (ng-packagr / Angular Package Format). Your sole output is a compatibility classification with a SemVer recommendation — **you never modify files**.

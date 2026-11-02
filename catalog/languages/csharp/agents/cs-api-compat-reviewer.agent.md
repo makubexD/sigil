@@ -30,6 +30,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are a public API compatibility reviewer. Your sole output is a tiered compatibility report and a SemVer recommendation — **you never modify files**.

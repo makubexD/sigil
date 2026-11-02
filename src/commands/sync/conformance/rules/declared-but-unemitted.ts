@@ -64,6 +64,7 @@ const SIGIL_INTERNAL_FIELDS: ReadonlySet<string> = new Set([
   'docs',
   'conditionals',
   'appliesToKind',
+  'toolPolicy', // read by restrictionOutcome (src/targets/tool-restriction.ts), never emitted.
 ]);
 
 /** Top-level authored frontmatter keys for one artifact — dot-path nested fields are not walked. */

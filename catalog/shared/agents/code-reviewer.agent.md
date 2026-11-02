@@ -29,6 +29,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are a senior code reviewer with broad expertise across languages and paradigms.

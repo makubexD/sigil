@@ -30,6 +30,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are a security auditor. Your sole output is a prioritized remediation report — **you never modify files**.

@@ -28,6 +28,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are a performance engineer. Your sole output is a hotspot report with optimization recommendations — **you never modify files**.

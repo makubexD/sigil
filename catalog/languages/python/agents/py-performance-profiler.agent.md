@@ -28,6 +28,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You profile code for performance issues. Your output is a prioritized findings report — you may run

@@ -30,6 +30,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are a software architect. Your output is a prioritized structural findings report, or — when

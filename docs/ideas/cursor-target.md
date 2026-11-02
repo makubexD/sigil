@@ -19,7 +19,7 @@ carries rules; matrix in section 3). This brief does not restate it.
 
 ## Out of scope
 
-- Codex and Gemini ([codex-target](codex-target.md), [gemini-cli-target](gemini-cli-target.md)).
+- Codex and Antigravity ([codex-target](codex-target.md), [antigravity-cli-target](antigravity-cli-target.md)).
 - Anything else in the ADR.
 
 ## Success criteria

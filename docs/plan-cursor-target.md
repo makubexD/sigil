@@ -237,5 +237,5 @@ agent reads a matching file, which A1 left open), ADR § 3 and § 6 updated, the
 
 ## Out of scope
 
-Codex and Gemini, a Cursor `settings` kind, Cursor Tab, team or enterprise distribution (dashboard hooks, team
+Codex and Antigravity, a Cursor `settings` kind, Cursor Tab, team or enterprise distribution (dashboard hooks, team
 marketplaces), Cloud Agents, and the `Apply Intelligently` rule mode.

@@ -106,21 +106,22 @@ Conclusions:
 
 ## 3. What a plugin can carry, per ecosystem
 
-| sigil kind | Claude plugin                                                      | Copilot plugin (CLI + VS Code)                                                                   | Codex plugin                       | Cursor plugin    | Gemini extension             |
-| ---------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------- | ---------------- | ---------------------------- |
-| skill      | ✅                                                                 | ✅ as `/<plugin>:<skill>`                                                                        | ✅                                 | ✅               | ✅                           |
-| agent      | ✅ (ignores `hooks`/`mcpServers`/`permissionMode`/`initialPrompt`) | ✅ `.md` files load, as `<plugin>:<agent>`, and `tools` holds                                    | ❌ (native `.codex/agents/*.toml`) | ✅               | ✅ (preview)                 |
-| prompt     | ✅ as skill / command                                              | ⚠ as skill: `$ARGUMENTS` filled by slash only, named arguments stay literal                      | ❌ (prompts deprecated → skills)   | ✅               | ✅ `commands/*.toml`         |
-| hook       | ✅                                                                 | ⚠ needs `exec`: Copilot drops `args` from Claude's `command` + `args` (VS Code ignores matchers) | ✅                                 | ✅               | ✅                           |
-| mcp        | ✅                                                                 | ⚠ `.` is the plugin folder, not the session directory                                            | ✅                                 | ✅               | ✅                           |
-| rule       | ❌ (write it as a skill)                                           | ⚠ AP1.0 `com.github.copilot/rules/` — format undocumented                                        | ❌                                 | ✅ `rules/*.mdc` | ⚠ one always-on context file |
-| settings   | ❌ (only `agent`, `subagentStatusLine`)                            | ❌                                                                                               | ❌                                 | ❌               | ⚠ env vars / tool excludes   |
+| sigil kind | Claude plugin                                                      | Copilot plugin (CLI + VS Code)                                                                   | Codex plugin                       | Cursor plugin    | Antigravity plugin                                      |
+| ---------- | ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ | ---------------------------------- | ---------------- | ------------------------------------------------------- |
+| skill      | ✅                                                                 | ✅ as `/<plugin>:<skill>`                                                                        | ✅                                 | ✅               | ✅                                                      |
+| agent      | ✅ (ignores `hooks`/`mcpServers`/`permissionMode`/`initialPrompt`) | ✅ `.md` files load, as `<plugin>:<agent>`, and `tools` holds                                    | ❌ (native `.codex/agents/*.toml`) | ✅               | ✅ (`tools` allowlist, tier `model`)                    |
+| prompt     | ✅ as skill / command                                              | ⚠ as skill: `$ARGUMENTS` filled by slash only, named arguments stay literal                      | ❌ (prompts deprecated → skills)   | ✅               | ❌ (a skill is the command; workflows ended 2026-10-19) |
+| hook       | ✅                                                                 | ⚠ needs `exec`: Copilot drops `args` from Claude's `command` + `args` (VS Code ignores matchers) | ✅                                 | ✅               | ✅ (`toolCall` stdin, not Claude's)                     |
+| mcp        | ✅                                                                 | ⚠ `.` is the plugin folder, not the session directory                                            | ✅                                 | ✅               | ✅ (`${VAR}` only if declared in `variables`)           |
+| rule       | ❌ (write it as a skill)                                           | ⚠ AP1.0 `com.github.copilot/rules/` — format undocumented                                        | ❌                                 | ✅ `rules/*.mdc` | ✅ `rules/*.md`, `rules/AGENTS.md`                      |
+| settings   | ❌ (only `agent`, `subagentStatusLine`)                            | ❌                                                                                               | ❌                                 | ❌               | ❌                                                      |
 
 Sources: [Claude — plugin manifest reference](https://code.claude.com/docs/en/plugins/manifest-reference),
 [GitHub — CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference),
 [OpenAI — build plugins](https://developers.openai.com/plugins/build/plugins),
 [Cursor — plugins reference](https://cursor.com/docs/reference/plugins),
-[Gemini CLI — extensions reference](https://geminicli.com/docs/extensions/reference).
+[Antigravity — build plugins](https://antigravity.google/docs/build-plugins).
+The last column was a "Gemini extension" column until 2026-11-01. Gemini CLI stopped serving individual Google accounts on 2026-06-18 ([Google Developers Blog](https://developers.googleblog.com/an-important-update-transitioning-gemini-cli-to-antigravity-cli/)), and its successor, Antigravity CLI, replaces extensions with plugins. The column is now built from the [Antigravity evaluation](antigravity-target-2026-11.md) docs pass and live probes.
 The Copilot column's skill, agent, prompt, hook and MCP cells were corrected on 2026-10-30 from a live
 test of sigil's Claude-format plugins ([results and causes](copilot-plugin-channel-2026-10.md)).
 The cross-vendor [Agent Plugins](https://agent-plugins.org/) standard makes only skills and MCP
@@ -193,7 +194,7 @@ interface TargetCapabilities {
 - Adding a target stays "one folder + `registerTarget()`"; each omission is a compile error or a
   failing conformance rule.
 
-## 6. Roadmap (each phase built separately; suggested order 1a → 1c → 1b → 0 → 1 → 2 → 2b → 3 → 4 → 5 → 6)
+## 6. Roadmap (each phase built separately; suggested order 1a → 1c → 1b → 0 → 1 → 2 → 2b → 3 → 4 → 5 → 6 → 7)
 
 | Phase | Scope                                                                                                                                                                                                                                                                                      | ⚠                 |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
@@ -208,6 +209,7 @@ interface TargetCapabilities {
 | 4     | Verify the Claude-format marketplace in VS Code / Copilot CLI; Agent Plugins 1.0 output only if a gap remains — **done 2026-10-30, no new output**                                                                                                                                         |                   |
 | 5     | Codex adapter (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin) — **done 2026-10-31, without agents or a plugin emitter**                                                                                                                        |                   |
 | 6     | Cursor adapter (`.cursor/rules/*.mdc`, agents, commands, hooks, MCP; Cursor plugin — the one format that carries rules) — **in progress: rules, skills, hooks and MCP built 2026-11-01; agents and the plugin not yet**                                                                    |                   |
+| 7     | Antigravity CLI adapter (`AGENTS.md` and `.agents/skills/` shared with Codex, `.agents/agents/`, `.agents/mcp_config.json`, `.agents/rules/`; Antigravity plugin; hooks after a neutral hook I/O contract) — **planned 2026-11-01**, [ADR](antigravity-target-2026-11.md)                  |                   |
 
 "No empty plugins" (Phase 0) is done as of 2026-10-30
 ([publish-claude-marketplace-2026-10](publish-claude-marketplace-2026-10.md#empty-plugins)), and

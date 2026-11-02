@@ -56,6 +56,10 @@ scopes (project and user), and a docs link. Answer:
 - D6. MCP: `mcpServers` in `.gemini/settings.json`, the env-reference syntax, and the trust or approval rules.
 - D7. Settings: which keys are user-owned config that sigil could merge, if any.
 - D8. Extensions: project-scoped install, or user only? Can an extension ship rules or context?
+- D9. Support status: on 2026-11-01 the Google-account sign-in in 0.66.0 failed with "This client is no longer
+  supported for Gemini Code Assist for individuals… migrate to the Antigravity suite of products". Find out from
+  Google's official docs which auth routes are still supported (Gemini API key, Vertex AI, Code Assist Standard or
+  Enterprise), and whether the CLI itself is still maintained. This weighs on the decision in step 4.
 
 Test: `npx prettier --check docs/decisions/gemini-target-2026-11.md`. Every row has a docs link that resolves today.
 
@@ -79,8 +83,11 @@ for it.
 
 ### 3. Live probe in Gemini CLI `[inline: probes Gemini's own loader and model behavior]`
 
-Gate: the owner runs `! npm i -g @google/gemini-cli@0.66.0` and signs in once with `! gemini` (free Google-account
-tier). If sign-in isn't possible, these become docs-only and the ADR says the live risk is still open, as Cursor A did.
+Gate: `@google/gemini-cli@0.66.0` is installed. The Google-account sign-in was refused (D9), so the owner
+authenticates with a Gemini API key: they create it at aistudio.google.com, export `GEMINI_API_KEY` in their own
+shell profile, and pick "Use Gemini API key" in `! gemini`. The key is never pasted into the session, a file, or a
+worker spec. If the free API tier refuses too, these probes become docs-only, and the ADR records the live risk as
+open, as Cursor's Phase A did.
 Keep each probe to one or two short `gemini -p` runs in a throwaway repo under the scratchpad. Each probe records its
 expected and observed results in the ADR:
 

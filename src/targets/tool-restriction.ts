@@ -3,7 +3,9 @@
  * every provider gives an agent with no restriction every tool, so a restriction a spec cannot carry
  * would silently widen the agent. `restrictionOutcome` classifies that per spec: `exact` when the
  * restriction is carried as written, `skip` when it cannot be (the default, fail-closed), and
- * `nearest` when the agent opts into the closest mapping with `toolPolicy: nearest`, which warns.
+ * `nearest` when the agent opts into the closest mapping with `toolPolicy: nearest`, which warns;
+ * on a `read-only-flag` target the warning also names the direction, since the absent flag either
+ * narrows the agent to read-only or leaves it every tool.
  * `add` and the wizard skip a `skip` agent at selection time (`wholeFileSkipReason`), emitFile
  * leaves it out of a build, and renderArtifact refuses to render one as a backstop.
  * `sync --check`'s tool-restriction-coverage rule reports the gap earlier.
@@ -55,6 +57,23 @@ function restrictionProblems(spec: KindEmitSpec, frontmatter: Record<string, unk
 }
 
 /**
+ * What the nearest mapping meant on a `read-only-flag` target, as a warning suffix: the agent
+ * ends up read-only (losing the tools the flag cannot express) or keeps every tool this target
+ * has. Empty for any other spec, so `nearest` keeps its current wording everywhere else.
+ */
+function nearestDirection(spec: KindEmitSpec, frontmatter: Record<string, unknown>): string {
+  const dialect = spec.toolDialect;
+  const value = frontmatter.tools;
+  if (dialect?.kind !== 'read-only-flag' || !Array.isArray(value)) return '';
+  const authored = value.filter((entry): entry is string => typeof entry === 'string');
+  const rendered = renderTools(dialect, authored);
+  if (rendered.kind !== 'read-only-flag') return '';
+  return rendered.readOnly
+    ? ' (read-only, so the agent loses those tools)'
+    : ' (no read-only flag, so the agent gets every tool this target has)';
+}
+
+/**
  * Classifies whether `spec` can carry the restrictions `frontmatter` declares. Non-agent specs
  * carry no such field, so they are always `exact`.
  */
@@ -69,7 +88,7 @@ export function restrictionOutcome(
   if (frontmatter.toolPolicy === 'nearest') {
     return {
       kind: 'nearest',
-      warning: `this tool cannot express ${parts} exactly; the nearest mapping is written`,
+      warning: `this tool cannot express ${parts} exactly; the nearest mapping is written${nearestDirection(spec, frontmatter)}`,
     };
   }
   return { kind: 'skip', reason: `this tool cannot express ${parts}` };

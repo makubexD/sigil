@@ -115,6 +115,15 @@ describe('restrictionOutcome', () => {
     },
   };
 
+  const readOnlySpec: KindEmitSpec = {
+    ...CLAUDE_AGENT_SPEC,
+    toolDialect: {
+      kind: 'read-only-flag',
+      readOnly: ['read', 'search'],
+      writes: ['edit'],
+    },
+  };
+
   it('should be exact when the dialect carries every tool', () => {
     const agent = makeAgent({ tools: ['read', 'search'] });
     assert.deepEqual(restrictionOutcome(namesSpec, agent.frontmatter), { kind: 'exact' });
@@ -134,6 +143,36 @@ describe('restrictionOutcome', () => {
     assert.equal(outcome.kind, 'nearest');
     if (outcome.kind !== 'nearest') return;
     assert.match(outcome.warning, /shell/);
+  });
+
+  it('should say the read-only flag narrows under toolPolicy nearest', () => {
+    const agent = makeAgent({ tools: ['read', 'search', 'shell'], toolPolicy: 'nearest' });
+    const outcome = restrictionOutcome(readOnlySpec, agent.frontmatter);
+    assert.equal(outcome.kind, 'nearest');
+    if (outcome.kind !== 'nearest') return;
+    assert.equal(
+      outcome.warning,
+      'this tool cannot express tools tool(s) shell exactly; the nearest mapping is written (read-only, so the agent loses those tools)',
+    );
+  });
+
+  it('should say the missing flag leaves every tool under toolPolicy nearest', () => {
+    const agent = makeAgent({
+      tools: ['read', 'search', 'edit', 'shell'],
+      toolPolicy: 'nearest',
+    });
+    const outcome = restrictionOutcome(readOnlySpec, agent.frontmatter);
+    assert.equal(outcome.kind, 'nearest');
+    if (outcome.kind !== 'nearest') return;
+    assert.equal(
+      outcome.warning,
+      'this tool cannot express tools tool(s) edit, shell exactly; the nearest mapping is written (no read-only flag, so the agent gets every tool this target has)',
+    );
+  });
+
+  it('should stay exact for a read-only list the flag carries', () => {
+    const agent = makeAgent({ tools: ['read', 'search'], toolPolicy: 'nearest' });
+    assert.deepEqual(restrictionOutcome(readOnlySpec, agent.frontmatter), { kind: 'exact' });
   });
 
   it('should skip a field the spec does not map', () => {

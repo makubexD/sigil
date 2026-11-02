@@ -11,8 +11,19 @@
  * Usage: node scripts/probe-antigravity.mjs [--model <id>] [--only <id,...>] [--dry-run] [--keep]
  */
 import { spawnSync } from 'node:child_process';
-import { cpSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import {
+  cpSync,
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  rmdirSync,
+  unlinkSync,
+  writeFileSync,
+} from 'node:fs';
+import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -20,7 +31,11 @@ const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOG = join(REPO, 'catalog');
 const FIXTURES = join(REPO, 'scripts', 'antigravity-probe');
 const CLI = join(REPO, 'dist-cli', 'cli.js');
+const VALIDATOR = join(REPO, 'scripts', 'validate-antigravity-plugins.cjs');
 const PROBE_SERVER = join(FIXTURES, 'mcp-server.mjs');
+const GEMINI_CONFIG = join(homedir(), '.gemini', 'config');
+const PLUGINS_DIR = join(GEMINI_CONFIG, 'plugins');
+const IMPORT_MANIFEST = join(GEMINI_CONFIG, 'import_manifest.json');
 const DEFAULT_MODEL = 'gemini-3.8-flash-low';
 const PRINT_TIMEOUT = '90s';
 const AGY_KILL_TIMEOUT_MS = 180_000;
@@ -30,8 +45,10 @@ const MAX_EVIDENCE = 300;
  * The probes, in run order. Each plain object is one probe record: `id`, `adr` (the ADR row it
  * re-checks), `expect` (`pass` or `fail`, the result recorded on `1.4.12`), `setup(repo, ctx)`,
  * `prompt`, `args` (extra `agy` flags), `allow` (session-only `permissions.allow` rules), `env`
- * (extra process env), `check(stream, repo)` returning `{ verdict, evidence }`, and optional
- * `teardown(repo, ctx)`. Later steps append their probes here.
+ * (extra process env), `check(stream, repo, stdout)` returning `{ verdict, evidence }`, and
+ * optional `teardown(repo, ctx)`. A probe with `command(repo, ctx)` runs that instead of `agy`
+ * and returns `{ verdict, evidence }` itself; `commandLine(ctx)` is what `--dry-run` prints for
+ * it.
  */
 const PROBES = [
   {
@@ -55,6 +72,108 @@ const PROBES = [
     allow: [],
     env: {},
     check: stream => answerVerdict(stream, 'RULE-G'),
+  },
+  {
+    id: 'G-glob',
+    adr: 'B1',
+    expect: 'fail',
+    setup: (repo, ctx) => {
+      mkdirSync(join(repo, '.agents', 'rules'), { recursive: true });
+      cpSync(join(FIXTURES, 'glob-rule.md'), join(repo, '.agents', 'rules', 'probe-glob.md'));
+      mkdirSync(join(repo, 'src'), { recursive: true });
+      writeFileSync(join(repo, 'src', 'app.ts'), 'export const a = 1;\n');
+    },
+    prompt:
+      'Add the line `export const b = 2;` to src/app.ts, then tell me the probe-glob marker, or NONE.',
+    args: [],
+    allow: ['write_file(*)', 'edit_file(*)'],
+    env: {},
+    check: stream => answerVerdict(stream, 'GLOB-G'),
+  },
+  {
+    id: 'G-agent',
+    adr: 'D1/D2',
+    expect: 'pass',
+    setup: (repo, ctx) => {
+      addProbe(ctx, repo, 'shared/probe-agent');
+      writeFileSync(join(repo, 'note.txt'), 'FILE-G\n');
+    },
+    prompt: 'Say your marker, then read note.txt and repeat its content.',
+    args: ['--agent', 'probe-agent'],
+    allow: [],
+    env: {},
+    check: stream => {
+      const answer = finalAnswer(stream);
+      if (answer === null) return { verdict: 'fail', evidence: 'no result event in stream' };
+      const verdict = answer.includes('AGENT-G') && answer.includes('FILE-G') ? 'pass' : 'fail';
+      return { verdict, evidence: `answer: ${oneLine(answer)}` };
+    },
+  },
+  {
+    id: 'G-mcp',
+    adr: 'C1/P5',
+    expect: 'pass',
+    setup: (repo, ctx) => addProbe(ctx, repo, 'shared/probe-env', 'project'),
+    prompt: 'Call the probe_env tool of the probe-env MCP server and repeat its result.',
+    args: [],
+    allow: ['mcp(*)'],
+    env: { PROBE_G: 'g-ok' },
+    check: stream => answerVerdict(stream, 'PROBE_G=g-ok'),
+  },
+  {
+    id: 'G-hook',
+    adr: 'E1',
+    expect: 'pass',
+    setup: (repo, ctx) => addProbe(ctx, repo, 'shared/protect-config', 'project'),
+    prompt: 'Use your file-writing tool to create .env holding A=1.',
+    args: [],
+    allow: ['write_file(*)'],
+    env: {},
+    check: (stream, repo, stdout) => {
+      const wroteEnv = existsSync(join(repo, '.env'));
+      const blocked = stdout.includes('blocked write to protected file');
+      return {
+        verdict: !wroteEnv && blocked ? 'pass' : 'fail',
+        evidence: `.env present: ${wroteEnv}; blocked in stream: ${blocked}`,
+      };
+    },
+  },
+  {
+    id: 'G-plugin',
+    adr: 'F1/F2',
+    expect: 'pass',
+    setup: (repo, ctx) => {
+      ensureProbeBuild(ctx);
+      if (!ctx.dryRun) {
+        run('agy', ['plugin', 'install', join(pluginRoot(ctx), 'probe')], { cwd: repo });
+      }
+    },
+    prompt: 'What is the probe-skill marker? Answer with the marker only.',
+    args: [],
+    allow: [],
+    env: {},
+    check: stream => answerVerdict(stream, 'SKILL-G'),
+    teardown: () => uninstallPlugin(),
+  },
+  {
+    id: 'G-validate',
+    adr: 'F2d',
+    expect: 'pass',
+    setup: (_repo, ctx) => ensureProbeBuild(ctx),
+    command: (_repo, ctx) => {
+      const result = spawnSync(process.execPath, [VALIDATOR], {
+        encoding: 'utf8',
+        env: { ...process.env, SIGIL_ANTIGRAVITY_DIST: pluginRoot(ctx) },
+      });
+      const detail = oneLine(result.stdout || result.stderr);
+      if (result.error) throw result.error;
+      return {
+        verdict: result.status === 0 ? 'pass' : 'fail',
+        evidence: `validator exit ${result.status}: ${detail}`,
+      };
+    },
+    commandLine: ctx =>
+      `SIGIL_ANTIGRAVITY_DIST=${pluginRoot(ctx)} ${formatCommand(process.execPath, [VALIDATOR])}`,
   },
 ];
 
@@ -122,8 +241,12 @@ function run(command, args, options) {
   return result;
 }
 
-/** Installs one catalog artifact into the probe repo with `sigil add`. */
-function addProbe(ctx, repo, id) {
+/**
+ * Installs one catalog artifact into the probe repo with `sigil add`. `local` is the default;
+ * Antigravity's config kinds (mcp, hook) have no personal per-project file, so those probes ask
+ * for `project` (`.agents/`) instead.
+ */
+function addProbe(ctx, repo, id, scope = 'local') {
   run(
     process.execPath,
     [
@@ -133,13 +256,79 @@ function addProbe(ctx, repo, id) {
       '--target',
       'antigravity',
       '--scope',
-      'local',
+      scope,
       '--yes',
       '--catalog-dir',
       ctx.catalogDir,
     ],
     { cwd: repo },
   );
+}
+
+/**
+ * Builds the `probe` pack once per run into `<runDir>/dist` and caches it on `ctx`, so G-plugin
+ * and G-validate share one build.
+ */
+function ensureProbeBuild(ctx) {
+  if (ctx.probeDist !== undefined) return ctx.probeDist;
+  const dist = join(ctx.runDir, 'dist');
+  run(
+    process.execPath,
+    [
+      CLI,
+      'build',
+      '--target',
+      'antigravity',
+      '--catalog-dir',
+      ctx.catalogDir,
+      '--packs',
+      join(FIXTURES, 'packs.yaml'),
+      '--out-dir',
+      dist,
+    ],
+    { cwd: REPO },
+  );
+  ctx.probeDist = dist;
+  return dist;
+}
+
+/** The plugins root of the run's one build. */
+function pluginRoot(ctx) {
+  return join(ensureProbeBuild(ctx), 'antigravity', 'plugins');
+}
+
+/**
+ * Uninstalls the probe plugin and checks that `agy` kept no trace: `agy plugin list --json` must
+ * be `[]`, which throws (failing the run) otherwise. Then removes only what an empty `agy`
+ * config leaves behind (decision 4): the plugins folder when it is empty, and the import
+ * manifest when its whole content is `{"imports": null}`. Nothing else under `~/.gemini/`.
+ */
+function uninstallPlugin() {
+  run('agy', ['plugin', 'uninstall', 'probe']);
+  const listed = spawnSync('agy', ['plugin', 'list', '--json'], { encoding: 'utf8' });
+  let plugins;
+  try {
+    plugins = JSON.parse(listed.stdout);
+  } catch {
+    throw new Error(`agy plugin list --json did not parse: ${oneLine(listed.stdout)}`);
+  }
+  if (!Array.isArray(plugins) || plugins.length !== 0) {
+    throw new Error(`agy plugin list --json is not []: ${oneLine(listed.stdout)}`);
+  }
+  try {
+    if (readdirSync(PLUGINS_DIR).length === 0) rmdirSync(PLUGINS_DIR);
+  } catch {
+    // Absent or not empty: nothing this probe may remove.
+  }
+  try {
+    const manifest = JSON.parse(readFileSync(IMPORT_MANIFEST, 'utf8'));
+    const keys = Object.keys(manifest ?? {});
+    if (keys.length === 1 && keys[0] === 'imports' && manifest.imports === null) {
+      unlinkSync(IMPORT_MANIFEST);
+    }
+  } catch {
+    // Absent or holding anything else: leave it alone.
+  }
 }
 
 /** Makes the probe's own fresh `git init` repo in its own `os.tmpdir()` folder. */
@@ -237,6 +426,29 @@ function runProbe(probe, ctx, options) {
   let outcome;
   try {
     probe.setup?.(repo, ctx);
+    if (probe.command) {
+      if (options.dryRun) {
+        outcome = {
+          probe,
+          got: '-',
+          mark: 'DRY-RUN',
+          evidence: probe.commandLine?.(ctx) ?? 'command',
+          failed: false,
+          repo,
+        };
+        return outcome;
+      }
+      const checked = probe.command(repo, ctx);
+      outcome = {
+        probe,
+        got: checked.verdict,
+        mark: checked.verdict === probe.expect ? 'OK' : 'CHANGED',
+        evidence: checked.evidence,
+        failed: false,
+        repo,
+      };
+      return outcome;
+    }
     if (options.dryRun) {
       outcome = {
         probe,
@@ -256,7 +468,7 @@ function runProbe(probe, ctx, options) {
     });
     const stdout = result.stdout ?? '';
     writeFileSync(join(ctx.runDir, `${probe.id}.jsonl`), stdout);
-    const checked = probe.check(parseStream(stdout), repo);
+    const checked = probe.check(parseStream(stdout), repo, stdout);
     const agyFailed = result.status !== 0;
     const exitNote = agyFailed ? ` (agy exit ${result.status ?? result.signal ?? 'unknown'})` : '';
     outcome = {
@@ -314,7 +526,7 @@ function main() {
 
   const probes = selectProbes(PROBES, options.only);
   const runDir = mkdtempSync(join(tmpdir(), 'sigil-probe-run-'));
-  const ctx = { runDir, repos: [], catalogDir: prepareCatalog(runDir) };
+  const ctx = { runDir, repos: [], catalogDir: prepareCatalog(runDir), dryRun: options.dryRun };
   let bad = false;
 
   try {

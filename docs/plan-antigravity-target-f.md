@@ -73,6 +73,9 @@ always_on`). A scoped rule is skipped by the same `skipReason` as on the scaffol
    `dist/antigravity/plugins/*`. It is wired into `ci:local` after `catalog:build`. It skips with a notice when `agy`
    is not on PATH, in CI too, because CI has no `agy`. F1g showed validate needs no sign-in, and that `--strict` fails
    on an unknown manifest key. Unlike the Claude script, it never fails CI for a missing binary.
+   Step 8 found that `--strict` also fails on "command … isn't on this machine's PATH" (an MCP server whose tool is
+   not installed where the validator runs), so the script reads `--json` and fails on every error and warning except
+   that one.
 10. **Distribution.** The documented routes are `agy plugin install dist/antigravity/plugins/<name>` (user) and copying
     the folder to `.agents/plugins/<name>/` (workspace). Publishing a branch for the GitHub-URL route is release work,
     left to Phase G or later. F1h records whether a URL can point at a subfolder.

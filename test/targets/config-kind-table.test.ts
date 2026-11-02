@@ -203,6 +203,56 @@ describe('destinationFor', () => {
       },
     );
   });
+
+  it('a missing user scope says user-level, naming the project scope it has', () => {
+    const projectOnlyHook: ConfigKindWriter = {
+      ...HOOK_WRITER,
+      destinations: {
+        project: {
+          file: '.cursor/hooks.json',
+          root: 'project',
+          display: '.cursor/hooks.json, git-committed',
+        },
+      },
+    };
+    assert.throws(
+      () => destinationFor({ hook: projectOnlyHook }, 'hook', 'user', 'Cursor'),
+      (err: Error) => {
+        assert.ok(err instanceof SigilError);
+        assert.ok(
+          err.message.startsWith(
+            "Cursor has no user-level hook file — install at 'project' scope (",
+          ),
+          err.message,
+        );
+        return true;
+      },
+    );
+  });
+
+  it('a missing project scope says project, naming the user scope it has', () => {
+    const userOnlyHook: ConfigKindWriter = {
+      ...HOOK_WRITER,
+      destinations: {
+        user: {
+          file: 'hooks.json',
+          root: 'codex-home',
+          display: '$CODEX_HOME/hooks.json, default ~/.codex/hooks.json',
+        },
+      },
+    };
+    assert.throws(
+      () => destinationFor({ hook: userOnlyHook }, 'hook', 'project', 'Codex'),
+      (err: Error) => {
+        assert.ok(err instanceof SigilError);
+        assert.ok(
+          err.message.startsWith("Codex has no project hook file — install at 'user' scope ("),
+          err.message,
+        );
+        return true;
+      },
+    );
+  });
 });
 
 describe('scaffoldConfigFrom', () => {

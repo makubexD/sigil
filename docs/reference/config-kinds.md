@@ -13,8 +13,9 @@ Copilot hook file for its scope (scope table below). On Codex it lands in `.code
 and an `mcp` artifact in `config.toml` beside them ([setup](../setup/codex.md)). On Cursor it lands in
 `.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), with its events and tool names written from
 the neutral vocabulary; a hook with no equivalent is skipped with its reason, and an `mcp` artifact
-lands in `.cursor/mcp.json` or `~/.cursor/mcp.json` ([setup](../setup/cursor.md)). On Antigravity only `mcp` is
-built: it lands in `.agents/mcp_config.json` or `~/.gemini/config/mcp_config.json` ([setup](../setup/antigravity.md)).
+lands in `.cursor/mcp.json` or `~/.cursor/mcp.json` ([setup](../setup/cursor.md)). On Antigravity a hook lands in
+`.agents/hooks.json` or `~/.gemini/config/hooks.json` under its own hook name, and an `mcp` artifact in
+`.agents/mcp_config.json` or `~/.gemini/config/mcp_config.json` ([setup](../setup/antigravity.md)).
 Only the TOML writer differs: it splices sigil's tables into your text (`src/config-merge/toml-file.ts`).
 
 | Field          | Meaning                                                                                                                                                      |
@@ -33,7 +34,8 @@ Only the TOML writer differs: it splices sigil's tables into your text (`src/con
 naming a tool the target has no entry for is refused with its reason, never rendered narrower.
 The old PascalCase events and Claude's tool names still load as legacy aliases; `sigil sync --check`
 reports them (`legacy-tool-name`) and `--apply` rewrites them. A regex, an `mcp__…` pattern, or an
-unknown name is a schema error.
+unknown name is a schema error. An event a target has no equivalent for is refused the same way: Antigravity
+has only `before-tool`, `after-tool`, `session-start` and `stop`, and no hook tool name for `todo`.
 
 **`script:` vs `command`.** A hook that reads its input is a `script:`: the body of a Node.js
 function sigil calls with one argument, `input`, holding `event`, `tool`, `files`, `command`, `agent`
@@ -305,6 +307,17 @@ Cursor MCP (2 scopes, `src/targets/cursor/config.ts`):
 
 `--scope local` is refused here too. Cursor never reads `.mcp.json`, so a server installed for
 `claude` or `copilot` doesn't reach it, and the two files are written and uninstalled independently.
+
+Antigravity hooks (2 scopes, `src/targets/antigravity/config.ts`):
+
+| Scope (precedence) | Hook file                     | Notes                                                    |
+| ------------------ | ----------------------------- | -------------------------------------------------------- |
+| project (1)        | `.agents/hooks.json`          | keyed by hook name, no `version`; git-committed          |
+| user (2)           | `~/.gemini/config/hooks.json` | home-scoped: one `.sigil.bak` once it holds user content |
+
+`--scope local` is refused. Each hook is one top-level key named after its id (`shared/protect-config` →
+`shared-protect-config`), so your other hooks are never touched, and a hook of your own with that name is replaced.
+Hooks in Antigravity's `settings.json` are not loaded, so sigil writes none there.
 
 Antigravity MCP (2 scopes, `src/targets/antigravity/config.ts`):
 

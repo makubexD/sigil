@@ -100,11 +100,14 @@ provider's stdin. The three catalog hooks are rewritten against it, and a deny r
 Every installed hook's command changes once: run `sigil update`. Plan:
 [plan-antigravity-target-h.md](plan-antigravity-target-h.md).
 
-### Phase E: Antigravity hooks
+### Phase E: Antigravity hooks (done 2026-11-02)
 
-`.agents/hooks.json` and `~/.gemini/config/hooks.json`, named hooks at the top level (U7's validate note), events and
-matchers from Phase H's tables. Exit 2 and `{"decision": "deny"}` both deny on `1.4.12` though a docs page says a
-non-zero exit fails open (P4), so the regression test keeps checking it.
+`.agents/hooks.json` and `~/.gemini/config/hooks.json`, one top-level key per hook named after its id, with the
+default object-spread merge so a user's other hooks are never touched. Events and matchers come from Phase H's
+tables: `before-tool`, `after-tool`, `session-start` and `stop` map, the rest are skipped with the reason. E1 showed a
+default session reports `write_file` / `edit_file` / `read_file`, so the hook table names those and the documented
+names both. Exit 2 denies on `1.4.12` (P4, E1), though a docs page says a non-zero exit fails open, so the deny test
+keeps checking it; a `Stop` hook's exit 2 does not block. Plan: [plan-antigravity-target-e.md](plan-antigravity-target-e.md).
 
 ### Phase F: plugin channel
 

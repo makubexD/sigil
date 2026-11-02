@@ -498,7 +498,10 @@ product, not the binary or the CLI alone.
   observed name.
 - **Hooks wait.** They ship only after the neutral hook I/O contract (neutrality table), together with neutral
   matchers, as their own phase ahead of the hook phase. Until then `hook` is `none` for this target, because a
-  Claude-shaped hook would install, look active, and block nothing.
+  Claude-shaped hook would install, look active, and block nothing. **Shipped in Phase E** (2026-11-02,
+  [plan-antigravity-target-e.md](../plan-antigravity-target-e.md)): after Phase H's contract, hooks go to
+  `.agents/hooks.json` / `~/.gemini/config/hooks.json`, one named entry per hook, with the observed and documented tool
+  names both in the matcher; exit 2 denies (E1), and a `Stop` hook cannot block.
 - **Gates by probe.** Agents ship on the U3 result (no `tools` means no writes, so an "all tools" agent must list
   them). MCP ships with identity env entries only (P5). C1 settles the MCP dialect: `serversKey: 'mcpServers'`,
   `envSyntax: 'inherited'`, `interpolatedFields: []`, `stdioType` unset, `remoteType: 'drop'`, with the catalog's

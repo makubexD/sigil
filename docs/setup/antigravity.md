@@ -1,47 +1,57 @@
-# Antigravity: use Sigil rules and skills today
+# Antigravity: install rules and skills
 
 > **Back to:** [README](../../README.md) · [Documentation index](../index.md) ·
 > [consuming.md](../guides/consuming.md)
 
-Sigil has no `antigravity` target yet. Antigravity already reads two files that sigil writes for other tools: the
-skills folder `.agents/skills/` and a root `AGENTS.md`. This page says how to use them now, and what doesn't come
-across.
-
-## What reaches Antigravity today
-
 ```bash
-sigil add --target agents-standard <skill-or-pack>                # .agents/skills/<name>/, rules inlined
-sigil build --target agents-standard --out-dir /tmp/sigil-out     # repo-wide rules in AGENTS.md
-cp -n /tmp/sigil-out/agents-standard/AGENTS.md ./AGENTS.md        # only if you have none
+sigil add --target antigravity <rule-skill-or-pack>
 ```
 
-- **Skills.** `sigil add --target agents-standard` writes each skill to `.agents/skills/<name>/SKILL.md`, with the rules
-  it uses inlined. Antigravity lists a skill from that folder and picks it from its description, with no settings
-  ([Agent skills](https://antigravity.google/docs/skills#cli-skill-locations);
-  [ADR](../decisions/antigravity-target-2026-11.md) P2, A1).
-- **Repo-wide rules.** `sigil add` writes no `AGENTS.md`: a rule reaches this target only inside the skills that use
-  it. The root `AGENTS.md` with every repo-wide rule comes from `sigil build`. Pass `--out-dir`: without it, `build` writes
-  into sigil's own package folder, not your project. If your repo has no `AGENTS.md`, copy the file to its root. If it
-  has one, it is yours: paste the generated sections into it instead of replacing it. Antigravity
-  loads a root `AGENTS.md` into every session, with no settings
-  ([Rules](https://antigravity.google/docs/rules#where-rules-are-stored); ADR P1, A1).
+This page covers what the `antigravity` target writes, what it skips and why, and what was tested.
 
-`--target codex` writes the same `.agents/skills/` files and the same kind of `AGENTS.md`, so it works too. The two
-targets share that folder, so install skills for one of them, not both: `sigil add` refuses the second.
+## What the target writes
 
-Each was checked with sigil's own output, not hand-written files: a skill from `sigil add` and the `AGENTS.md` from
-`sigil build`, each with a codeword the model had to return (ADR A1).
+- **Skills** go to `.agents/skills/<name>/SKILL.md`, in the Agent Skills layout, with the rules each skill uses
+  inlined. Antigravity lists a skill from that folder and picks it from its description, with no settings
+  ([Skills](https://antigravity.google/docs/skills#cli-skill-locations); [ADR](../decisions/antigravity-target-2026-11.md)
+  P2, A1).
+- **Repo-wide rules** go to `.agents/rules/<id>.md` with `trigger: always_on`, so they are in every session
+  ([Rules](https://antigravity.google/docs/rules#where-rules-are-stored); ADR P1, and the B1 control run).
+- **Scoped rules are skipped**, with the reason. A rule whose `appliesTo` is narrower than every file would be a
+  `trigger: glob` file, and on `agy` 1.4.12 a glob rule never reached the model: not after a read of a matching file,
+  not after an edit of it, and not in a later turn of the same conversation (ADR B1). The rule still reaches
+  Antigravity inside the skills that use it, since each skill carries its rules inlined. `sigil add` lists the
+  skipped rule and its reason.
+
+`sigil build --target antigravity` writes the same files and **no `AGENTS.md`**. Antigravity also loads a root
+`AGENTS.md`, so a repo-wide rule written both there and in `.agents/rules/` would load twice. If you used the
+`agents-standard` route before (below), don't also keep its built `AGENTS.md` copy: remove the sections that are now
+`.agents/rules/` files.
+
+**One owner for `.agents/skills/`.** `codex`, `agents-standard` and `antigravity` write the same skill files, so install
+skills for one of them: `sigil add` refuses the second. GitHub Copilot and Cursor also read `.agents/skills/`.
+`sigil add` and `sigil status` say so when a skill is installed for one of them too: Copilot shows it twice, and
+Cursor uses its own copy.
 
 ## What doesn't reach it
 
+- **Agents, MCP servers and hooks.** Not built yet; they are later phases of the
+  [roadmap](../plan-antigravity-target.md#phases). `sigil add` skips them with that reason.
+- **Prompts and workflows.** Antigravity has no prompt files: workflows stopped working, and a skill is the slash
+  command ([Migrating workflows to skills](https://antigravity.google/docs/migration/workflows-to-skills)).
 - **Anything written for Claude Code.** Antigravity doesn't read `CLAUDE.md` or `.claude/` (ADR P6), so
   `--target claude` installs don't come across.
-- **Scoped rules as their own files.** A rule with a narrower `appliesTo` only arrives inlined in the skills that use
-  it.
 - **Sigil's Claude plugins, through `agy plugin import`.** Don't run `agy plugin import claude`: it imports every
   Claude plugin you have. Importing sigil's plugins one by one doesn't work either: the skills were listed but never
-  reached a session, the agent was skipped, and the hook loads but can't fire, because its tool names and input are Claude Code's (ADR U7).
-- **Agents, MCP servers and hooks.** `agents-standard` doesn't write them; the target will (below).
+  reached a session, the agent was skipped, and the hook loads but can't fire, because its tool names and input are
+  Claude Code's (ADR U7).
+
+## Without the target
+
+Before this target, the route was `sigil add --target agents-standard` for skills (the same files) and a copy of the
+`AGENTS.md` that `sigil build --target agents-standard` writes, for repo-wide rules (ADR A1). It still works, but
+`--target antigravity` replaces both, and the manifest tracks its rule files where it never tracked a copied
+`AGENTS.md`. Don't combine the two: the copied `AGENTS.md` and the `.agents/rules/` files would load each rule twice.
 
 ## Approvals in print mode
 
@@ -60,21 +70,18 @@ user-wide; there is no documented project settings file, and the CLI rewrites it
 
 ## Limits
 
-Each rule file is cut off at 24,000 bytes, and all always-on and global rules share a 20,000-token budget.
-Past it, the largest are replaced by a pointer with their path and description
-([Rules](https://antigravity.google/docs/rules#size-limits-and-token-budgets)). The `AGENTS.md` that `sigil build` writes holds
-every repo-wide rule in the catalog, whatever you installed (about 6.5 KB today, well under the budget). To make it
-smaller, delete the sections you don't want by hand.
-
-## What the target will add
-
-An `antigravity` target will write skills and rules on its own (rules in `.agents/rules/`, scoped ones once a probe
-shows they attach), MCP servers in `.agents/mcp_config.json`, agents in `.agents/agents/`, hooks once sigil has a
-neutral hook contract, and a plugin. The phases and their gates are in the
-[roadmap](../plan-antigravity-target.md#phases).
+Each rule file is cut off at 24,000 bytes, and `sigil sync --check` fails a rule that would pass it. All always-on and
+global rules share a 20,000-token budget; past it, the largest are replaced by a pointer with their path and
+description ([Rules](https://antigravity.google/docs/rules#size-limits-and-token-budgets)). The budget covers every
+always-on rule at once, so no single file check can enforce it: install only the repo-wide rules you want.
 
 ## What was tested
 
 Antigravity CLI `agy 1.4.12` on Linux, in print mode (`agy -p`) on `gemini-3.8-flash-low`, signed in with a Google
 account, in throwaway repos. The Antigravity desktop app, Windows and macOS were not checked. Results:
 [antigravity-target-2026-11](../decisions/antigravity-target-2026-11.md#probe-log).
+
+- **P1, P2, A1:** `AGENTS.md`, an `always_on` rule and a `.agents/skills/` skill each returned their codeword.
+- **B1:** a `trigger: glob` rule with `globs: "src/**/*.ts"` returned `NONE` after a read of `src/app.ts`, after an
+  `edit_file` of it, and in a `--continue` turn after each. The same file with `trigger: always_on` returned its
+  codeword. This is why scoped rules are skipped.

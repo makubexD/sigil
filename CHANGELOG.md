@@ -7,10 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `--target antigravity`: skills in `.agents/skills/` and repo-wide rules in `.agents/rules/`; scoped rules are
+  skipped until Antigravity attaches glob rules. See `docs/setup/antigravity.md`.
+
+### Changed
+
+- `KindEmitSpec.skipReason` and a `bytes` limit unit for targets.
+
 ### Documentation
 
-- New `docs/setup/antigravity.md`: how to use the skills and `AGENTS.md` that `agents-standard`
-  writes in Antigravity today, before its target ships, and what doesn't reach it.
+- New `docs/setup/antigravity.md`: installing for Antigravity, what is skipped and why, and what was
+  tested.
 
 ## [0.5.0] - 2026-11-02
 

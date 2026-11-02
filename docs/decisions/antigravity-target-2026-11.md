@@ -67,8 +67,8 @@ the plugin root.
   or `tmp/` at the top of `~/.gemini/`, which are Gemini CLI's. The migration guide confirms that Gemini CLI kept MCP
   servers in `~/.gemini/settings.json` and that Antigravity does not
   ([Migrating from Gemini CLI](https://antigravity.google/docs/cli/gcli-migration#mcp-config-formatting-changes)). That
-  closes step 1: those nine are Gemini-CLI-only and safe to remove. They were left in place; removing them is the
-  owner's call.
+  closes step 1: those nine are Gemini-CLI-only and safe to remove. On 2026-11-01 the owner had them removed, by name
+  and nothing else; `agy -p "Reply ok"` still signed in and answered afterwards.
 
 ### D1. Context files
 
@@ -242,7 +242,7 @@ it still lacks.
 | mcp, scaffold      | A new `McpDialect` value (`src/targets/mcp-dialect.ts:26`): `serversKey: 'mcpServers'`, and `url` is accepted, so no field rename. The `EnvSyntax` (`src/targets/env-reference.ts:22`) is `PORTABLE_MCP_ENV_SYNTAX` (`:17`) if **U2** shows `${NAME}` expands                                                                                            | If U2 shows no expansion, `interpolatedFields` is empty and a server with an env token is skipped with the reason, as the dialect already allows                                                                                                                                            |
 | mcp, plugin        | Same dialect                                                                                                                                                                                                                                                                                                                                             | `${NAME}` works only for a name declared in `variables`, so the plugin build must emit that declaration. Target layer, new code                                                                                                                                                             |
 | settings, both     | none                                                                                                                                                                                                                                                                                                                                                     | `none` (D7)                                                                                                                                                                                                                                                                                 |
-| plugin manifest    | Claude's plugin build writes `plugin.json` with `pkg.version` (`src/targets/claude-code/plugin-assemble.ts`)                                                                                                                                                                                                                                             | `.antigravity-plugin/plugin.json` lets one repo ship both, but the manifest schema is closed, so a separate builder. **U7** may make it unnecessary                                                                                                                                         |
+| plugin manifest    | Claude's plugin build writes `plugin.json` with `pkg.version` (`src/targets/claude-code/plugin-assemble.ts`)                                                                                                                                                                                                                                             | `.antigravity-plugin/plugin.json` lets one repo ship both, but the manifest schema is closed, so a separate builder. **U7** showed it is needed                                                                                                                                             |
 
 The brief's TOML question is answered by D4: commands are gone, so no TOML is written. Codex's splice merge
 (`renderToml`, `src/config-merge/toml-file.ts:215`) stays Codex's alone.
@@ -315,8 +315,8 @@ fixture files, never in this repo. Each fixture carried a codeword so an answer 
 `--dangerously-skip-permissions`: workspace writes are auto-allowed in print mode, and the MCP runs passed a
 session-only `--settings '{"permissions":{"allow":["mcp(probe/*)"]}}'`. The stream shows each tool call with its
 arguments, and `~/.gemini/antigravity-cli/brain/<id>/.system_generated/logs/transcript.jsonl` shows the exact text the
-model got. U6 needs no probe (a docs gap). U7 was not run: `agy plugin import claude` writes into the owner's home
-profile, so it waits for the owner.
+model got. U6 needs no probe (a docs gap). U7 writes into the owner's home profile, so it ran later, in step 6 of the
+plan, with the owner's approval (below the table).
 
 | #   | Question                                                  | Expected          | Observed                                                                                                                                                                                                                                                            |
 | --- | --------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -328,6 +328,40 @@ profile, so it waits for the owner.
 | P5  | `${NAME}` in a workspace `mcp_config.json`?               | undocumented (U2) | **Not expanded**, in `env` or `args`: the server got the literal `${PROBE_SECRET}`. **The server inherits `agy`'s environment** (`INHERITED=[golf-77]`). The tool runs as `call_mcp_tool` with `ServerName` and `ToolName` (runs 7, 8)                              |
 | U3  | Agent with no `tools`: what can it do?                    | conflict          | No write tool: the agent run with `--agent notools` said so, and no file appeared. Same for a `tools: [view_file, grep_search]` agent. The `init` event lists the session's 44 tools in both cases, so it is not the agent's set (run 10)                           |
 | P6  | Does `agy` read `.claude/`, `CLAUDE.md`?                  | no                | **No**: `CLAUDE.md`, `.claude/rules/` and `.claude/skills/` never reached the model (run 1), and the D0 trace never opened them                                                                                                                                     |
+| U7  | What does `agy plugin import` make of a sigil plugin?     | undocumented (D8) | **Imported and listed, but nothing reached the model, and the hook could not have worked.** Details below the table (runs 11-13)                                                                                                                                    |
+
+**U7**, 2026-11-01, `agy 1.4.12`, run by plan step 6. `npm run catalog:build`, then `agy plugin import <path>` for
+three sigil plugins from `dist/claude/plugins/`, never the bare `agy plugin import claude`: `essentials` (one skill),
+`hook-protect-config` (one `PreToolUse` hook) and `typescript-starter` (three skills with inlined rules under
+`## Applied Rules`, one agent). `essentials` carries no inlined rules or agent, so `typescript-starter` was added to
+cover them.
+
+- **Import.** Each copied the Claude folder as-is to `~/.gemini/config/plugins/<name>/`, added a root `plugin.json`
+  (name, version, description, `author` flattened to a string) and, for the hook, a copy of `hooks/hooks.json` at the
+  root. It also wrote `~/.gemini/config/import_manifest.json`. Output: `essentials` skills 1, `hook-protect-config`
+  hooks 1, `typescript-starter` skills 3 and agents 1, then "Staged to ~/.gemini/config".
+- **`agy plugin list --json`.** All three `enabled`, `source: "claude-code"`, version `0.5.0`. Skills are listed, the
+  hook is listed as one hook named `hooks`, and **the agent is missing**. No rules and no MCP: the inlined rules are
+  skill body text, not a component.
+- **`agy plugin validate --strict`** on each imported folder. `essentials`: passes, one note (no `logo`).
+  `hook-protect-config`: fails on 3 warnings. `Edit` and `Write` are "Claude Code's name for a tool, so it never
+  matches; match `replace_file_content` or `edit_file`" (and `write_to_file` or `write_file`). `hooks/hooks.json` is
+  "never loaded: plugin hooks are read only from hooks.json at the plugin root". A note says the `"hooks"` wrapper
+  loads as one hook named `hooks`; Antigravity names each hook at the top level. `typescript-starter`: fails with one
+  error. The agent's `tools: Read, Grep, Glob, Bash` is a string where a YAML list is expected, so "the loader skips
+  this agent". `agy agents` lists none.
+- **Skill by name (run 12).** `agy -p` in a scratchpad repo, asking for `explain-diff` on a diff file. The model
+  answered `NONE`, and its thinking in the transcript says "the `explain-diff` skill isn't available". The imported
+  skills never reached a print-mode session.
+- **Hook (run 13).** A `.env` write went through: `write_file` returned "Created file." and no hook message
+  appeared, as expected. The matcher names Claude tools, and the script reads `tool_input`, which this stdin does not
+  have (P4).
+- **Permissions.** Here a plain print run had its `write_file` (and a `git` `run_command`) auto-denied, unlike step 4.
+  The writes ran with a session-only `--settings '{"permissions":{"allow":["write_file(*)"]}}'`. The cause was not
+  isolated.
+- **Clean-up.** `agy plugin uninstall` for each plugin, after which `agy plugin list --json` is `[]`. Uninstall left
+  an empty `plugins/` folder and `import_manifest.json` with `"imports": null`. Both were removed, so
+  `~/.gemini/config/` holds only what it held before (`.migrated`, `mcp_config.json`, `projects/`).
 
 What this changes:
 
@@ -344,6 +378,11 @@ What this changes:
 - **Skills:** the shared `.agents/skills/` works as documented. A second workspace level does not shadow the root.
 - **P6:** nothing sigil writes for Claude reaches Antigravity, but the `AGENTS.md` and `.agents/skills/` that Codex
   and `agents-standard` write do, with no target.
+- **U7: importing the Claude plugin is not a channel.** Skills import but were not offered to the model, the agent is
+  skipped for a string `tools`, and the hook is never loaded and could not match. A plugin channel needs its own
+  builder (`hooks.json` at the root with named hooks, list-valued agent `tools`, observed tool names), and a live
+  check that an installed plugin's skill reaches a session. `agy plugin validate --strict` is a free conformance check
+  for that builder's output.
 
 ## Decision
 
@@ -373,6 +412,7 @@ product, not the binary or the CLI alone.
   Claude-shaped hook would install, look active, and block nothing.
 - **Gates by probe.** Agents ship on the U3 result (no `tools` means no writes, so an "all tools" agent must list
   them). MCP ships with identity env entries only (P5). Scoped rules wait for a multi-turn glob probe. The plugin
-  channel waits for U7, which the owner runs, since it writes to the home profile.
+  channel needs its own builder, not `agy plugin import` (U7), and goes last, after a probe shows an installed
+  plugin's skill reaching a session.
 
 The phases go in the roadmap (step 7).

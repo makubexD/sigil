@@ -224,6 +224,11 @@ no-go records why and points users at `sigil add --target cursor`. First check w
 already works in Cursor: A3 and A8 showed Cursor loading Claude Code's installed plugins, while a `--plugin-dir` rule
 did not load.
 
+**Paused 2026-11-01** (step plan [plan-cursor-target-f.md](plan-cursor-target-f.md), § Status): Cursor's free usage
+limit stopped the probes partway through. So far a CLI-loaded Cursor plugin loads skills and agents but not rules, and
+doesn't enforce `readonly`. Meanwhile [plan-cursor-followups.md](plan-cursor-followups.md) clears the deferred review
+items, none of which needs Cursor usage.
+
 ### Phase G: close-out
 
 Live check in Cursor (the brief's success criterion: rules and skills load, including a `globs` rule attaching once the

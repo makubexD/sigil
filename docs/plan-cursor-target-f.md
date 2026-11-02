@@ -1,9 +1,30 @@
 # Plan: Cursor target, Phase F (plugin channel spike)
 
 Roadmap: [plan-cursor-target.md](plan-cursor-target.md) § Phase F, Decision 7 (the plugin channel stays a spike).
-Probe results so far: [cursor-target-2026-11.md](decisions/cursor-target-2026-11.md) § A3, § A8. Branch
-`docs/cursor-plugin-spike`, one PR. This phase writes no code: it ends in a recorded go or no-go. A go gets its own
-step plan (`docs/plan-cursor-target-f2.md`) for the `plugin` capability rows and the `dist/cursor/` build.
+Probe results so far: [cursor-target-2026-11.md](decisions/cursor-target-2026-11.md) § A3, § A8, § Phase F probes.
+This phase writes no code: it ends in a recorded go or no-go. A go gets its own step plan
+(`docs/plan-cursor-target-f2.md`) for the `plugin` capability rows and the `dist/cursor/` build.
+
+## Status (2026-11-01): paused on Cursor usage
+
+Cursor's free usage limit stopped the probes partway through. Step 1 is done, and step 2 and 3 are partly done. The
+results so far are merged in the ADR (§ Phase F probes, first PR `docs/cursor-plugin-spike`). Meanwhile, development
+goes on with [plan-cursor-followups.md](plan-cursor-followups.md), which needs no Cursor usage.
+
+- **Done:** F1a-F1e, F2a-F2c, F2e, F3a.
+- **Open:** F2d (Agent Plugin format), F2f (a `globs` rule after a file read), F3b (marketplace from a `file://` URL),
+  F3c (failure scope), then steps 4 and 5.
+- **Resume gate:** `agent -p --trust "say ok"` in any scratch repo answers without `ActionRequiredError` (the limit
+  reset, or the plan changed). Resume with `/next docs/plan-cursor-target-f.md` on a new branch `docs/cursor-plugin-spike-2`
+  from `master`. `plan-next` then picks step 2. Run only its open cases, then step 3's.
+- **Fixtures** are not in the repo (the scratchpad is per session). Rebuild them from step 2's description and the
+  ADR's fixture paragraph, which also lists the variants: `probe-glob` (`rules/india.mdc`, `globs: "**/*.py"`,
+  `alwaysApply: false`, codeword `INDIA-F2`), `probe-bad` (an extra `rules/bad.mdc` with broken frontmatter and an
+  unknown `sigilUnknownField` in `plugin.json`), `probe-agentplugin` (root `plugin.json`, `skills/probe-skill` with
+  marker `SKILL-F2D`, plus `rules/hotel.mdc`). Run them through `--plugin-dir`, which behaves like the local folder
+  (F3a) and leaves nothing to clean up.
+- **Budget:** each run is one agent call; the open cases need about 5 runs. Run them in the order F2f, F3c, F2d, F3b, so
+  the cases most likely to change the verdict (whether a rule ever loads) come first.
 
 ## Sources (re-read 2026-11-01)
 
@@ -103,8 +124,8 @@ Stop here for the owner's call if the evidence is mixed (for example, rules load
 
 ## Step 5 `[inline: user-facing copy]`: docs
 
-- `docs/setup/cursor.md`: what sigil's Claude plugin already gives a Cursor user (step 1's holding cases), and the
-  verdict's one-line consequence.
+- `docs/setup/cursor.md`: the follow-ups plan already adds what sigil's Claude plugin gives a Cursor user (step 1).
+  Add the verdict's one-line consequence there.
 - Roadmap § Phase F: a `**Done 2026-11-01**` paragraph with the verdict, and Phase G's line updated if the verdict
   defers anything to it.
 - `npx prettier --write` on every touched doc; `npm run check` green.

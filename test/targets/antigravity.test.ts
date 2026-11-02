@@ -93,7 +93,7 @@ describe('antigravity target', () => {
     assert.match(skipped.reason, /ADR probe B1/);
   });
 
-  it('should skip an agent, a prompt, a hook and an mcp, with the reason its capability row gives', async () => {
+  it('should skip an agent, a prompt and a hook, with the reason its capability row gives', async () => {
     const catalog = await loadResolvedCatalog();
     const target = getTarget(TARGET);
 
@@ -101,7 +101,6 @@ describe('antigravity target', () => {
       agent: /Phase D/,
       prompt: /no prompt files/,
       hook: /Phase E/,
-      mcp: /Phase C/,
     };
     for (const kind of Object.keys(reasons) as ArtifactKind[]) {
       const artifact = catalog.artifacts.find(a => a.kind === kind);

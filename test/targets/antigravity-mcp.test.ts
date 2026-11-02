@@ -8,6 +8,8 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import path from 'node:path';
+import { getTarget } from '../../dist-cli/targets/index';
 import {
   antigravityMcpSkipReason,
   buildAntigravityMcpOps,
@@ -16,6 +18,7 @@ import { SigilError } from '../../dist-cli/errors';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import type { ConfigMergeOp, ResolvedCatalog } from '../../dist-cli/types';
 
+const PROJECT_DIR = '/abs/project';
 const PROJECT_FILE = '.agents/mcp_config.json';
 const USER_FILE = '.gemini/config/mcp_config.json';
 const FILESYSTEM = 'shared/filesystem';
@@ -113,5 +116,68 @@ describe('Antigravity MCP skip reasons', () => {
     for (const id of [FILESYSTEM, 'shared/context-mode', 'shared/maku-jam']) {
       assert.equal(antigravityMcpSkipReason(catalog.byId.get(id)!), undefined, id);
     }
+  });
+});
+
+describe('Antigravity target MCP wiring', () => {
+  it('skips ado with the dialect reason', async () => {
+    const catalog = await loadResolvedCatalog();
+    const artifact = catalog.byId.get('shared/ado')!;
+
+    assert.equal(
+      getTarget('antigravity').configSkipReason!(artifact),
+      antigravityMcpSkipReason(artifact),
+    );
+    assert.match(antigravityMcpSkipReason(artifact)!, /\{sigil:env:ADO_ORG\}/);
+  });
+
+  it('renders the other catalog servers, so they have no skip reason', async () => {
+    const catalog = await loadResolvedCatalog();
+
+    for (const id of [FILESYSTEM, 'shared/context-mode', 'shared/maku-jam']) {
+      assert.equal(
+        getTarget('antigravity').configSkipReason!(catalog.byId.get(id)!),
+        undefined,
+        id,
+      );
+    }
+  });
+
+  it('offers project then user, section mcpServers and the two display strings', () => {
+    const scopes = getTarget('antigravity').configScopes!(['mcp'], PROJECT_DIR);
+
+    assert.deepEqual(
+      scopes.map(scope => scope.value),
+      ['project', 'user'],
+    );
+    assert.deepEqual(
+      scopes.map(scope => scope.description),
+      [
+        'project — .agents/mcp_config.json, git-committed',
+        'user — ~/.gemini/config/mcp_config.json, all projects',
+      ],
+    );
+    for (const scope of scopes) {
+      assert.deepEqual(
+        scope.destinations.map(destination => destination.kind),
+        ['mcp'],
+      );
+      assert.equal(scope.destinations[0]!.section, 'mcpServers');
+    }
+    assert.equal(scopes[0]!.destinations[0]!.file, PROJECT_FILE);
+    assert.equal(scopes[0]!.destinations[0]!.fullPath, path.join(PROJECT_DIR, PROJECT_FILE));
+    assert.equal(scopes[1]!.destinations[0]!.file, USER_FILE);
+  });
+
+  it('scaffolds the user-scope op the dialect builds', async () => {
+    const catalog = await loadResolvedCatalog();
+
+    assert.deepEqual(
+      await getTarget('antigravity').scaffoldConfig!(FILESYSTEM, catalog, {
+        scope: 'user',
+        projectDir: PROJECT_DIR,
+      }),
+      buildAntigravityMcpOps(catalog.byId.get(FILESYSTEM)!, 'user'),
+    );
   });
 });

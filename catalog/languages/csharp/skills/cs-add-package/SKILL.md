@@ -5,12 +5,6 @@ title: "Add Package (.NET / C#)"
 description: "Vet and wire a NuGet package through Central Package Management — checks CVEs, maintenance, transitive footprint, and license before adding (.NET / C#)"
 name: cs-add-package
 language: csharp
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
-  - Edit
 argumentHint: "<package-id> [version] [--dev]"
 uses:
   rules:
@@ -23,6 +17,11 @@ tags:
   - package
   - nuget
 whenToUse: "Use any time you need to add a new NuGet dependency. Pass the package ID; optionally pin a version and add --dev for analyzer/test-only packages (PrivateAssets=\"all\"). Confirms before adding if vetting flags risk."
+allowedTools:
+  - read
+  - shell
+  - search
+  - edit
 ---
 
 # Add Package

@@ -57,6 +57,12 @@ families:
     title: API Compatibility Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine the public surface"
       - "Diff against the previous release"
@@ -73,6 +79,12 @@ families:
     title: Architecture Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine scope"
       - "Discover architecture intent"
@@ -90,6 +102,12 @@ families:
     title: Code Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine scope"
       - "Discover conventions"
@@ -106,6 +124,13 @@ families:
     title: Debugger
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - edit
+        - shell
+      policy: strict
     sections: [Reproduce, Isolate, Fix, Verify, Output]
     members:
       - angular/ng-debugger
@@ -117,6 +142,12 @@ families:
     title: Performance Profiler
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine scope"
       - "Discover context"
@@ -133,6 +164,13 @@ families:
     title: Refactor Specialist
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - edit
+        - shell
+      policy: strict
     sections:
       - "Establish baseline"
       - "Identify and plan the refactor"
@@ -149,6 +187,12 @@ families:
     title: Security Auditor
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     sections:
       - "Determine scope"
       - "Discover conventions and security baseline"
@@ -165,6 +209,12 @@ families:
     title: Template Reviewer
     kind: agent
     keys: [tools, relatedArtifacts]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     members: [angular/ng-template-reviewer]
 
   # ── Rules ───────────────────────────────────────────────────────────────────────────────────
@@ -462,6 +512,12 @@ families:
   - id: skill-auditor
     kind: agent
     keys: [tools, relatedArtifacts, claude]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     members: [shared/cli-auditor, shared/wizard-auditor]
   - id: skill-rules
     kind: rule
@@ -470,7 +526,13 @@ families:
   # A reviewer for languages with no namespace (layout standard, case a).
   - id: generic-code-reviewer
     kind: agent
-    keys: [tools, relatedArtifacts, claude]
+    keys: [tools, model, effort, relatedArtifacts, claude]
+    tools:
+      allow:
+        - read
+        - search
+        - shell
+      policy: strict
     members: [shared/code-reviewer]
   - id: feature
     kind: skill

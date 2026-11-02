@@ -11,11 +11,6 @@ description: >-
   after a performance regression is reported.
 name: react-performance-profiler
 language: react
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - react
   - performance
@@ -28,6 +23,10 @@ relatedArtifacts:
   - id: react/react-refactor-specialist
     relation: complements
     reason: react-performance-profiler diagnoses hot paths; react-refactor-specialist can apply the fix
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You profile React code for performance issues. Your output is a prioritized findings report — you

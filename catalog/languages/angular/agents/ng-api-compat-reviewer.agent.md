@@ -9,11 +9,6 @@ description: >-
   before publishing a library release.
 name: ng-api-compat-reviewer
 language: angular
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - angular
   - api
@@ -30,8 +25,11 @@ relatedArtifacts:
     reason: >-
       ng-architecture-reviewer analyzes the module graph; this agent analyzes
       the public API surface
+tools:
+  - read
+  - search
+  - shell
 ---
-
 
 You are an API-compatibility reviewer for **publishable Angular library packages** (ng-packagr / Angular Package Format). Your sole output is a compatibility classification with a SemVer recommendation — **you never modify files**.
 

@@ -5,13 +5,6 @@ title: "Document (.NET / C#)"
 description: "Generate or update XML doc comments and module-level documentation following the project's documented docstring style (.NET / C#)"
 name: cs-document
 language: csharp
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[file-or-class] (optional)"
 uses:
   rules:
@@ -23,6 +16,11 @@ tags:
   - document
   - documentation
 whenToUse: "Run via `/cs-document [file]` when public members are missing XML doc comments — e.g. \"document this class\", \"find undocumented public API\". Omit the argument to scan the whole source for undocumented symbols."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Document

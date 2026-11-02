@@ -9,11 +9,6 @@ description: >-
   after non-trivial Angular changes.
 name: ng-code-reviewer
 language: angular
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - angular
   - code
@@ -34,6 +29,10 @@ relatedArtifacts:
   - id: angular/ng-api-compat-reviewer
     relation: escalates-to
     reason: published library API surface compatibility before releases
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are an independent code reviewer. Audit code objectively, surface issues by severity, and **never make edits or writes**. Return a structured report only.

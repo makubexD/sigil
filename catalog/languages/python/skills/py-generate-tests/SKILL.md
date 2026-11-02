@@ -16,14 +16,12 @@ tags:
   - pytest
   - mocking
 whenToUse: "Use when adding, updating, or reviewing tests in a Python project — e.g. \"write tests for this service\", \"add pytest fixtures\", \"review my test coverage\". Covers project layout, fixtures, parametrize, mocking, and async test patterns."
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[file-or-module] (optional)"
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Generate Tests (Python)

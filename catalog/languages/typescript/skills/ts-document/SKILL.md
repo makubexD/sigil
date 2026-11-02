@@ -5,13 +5,6 @@ title: "Document (TypeScript)"
 description: "Generate or update TSDoc on exported symbols following the project's documented documentation style (TypeScript)"
 name: ts-document
 language: typescript
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[file-or-module] (optional)"
 whenToUse: >-
   Use when exported functions, classes, interfaces, or type aliases are missing TSDoc, or after
@@ -26,6 +19,11 @@ tags:
   - typescript
   - document
   - documentation
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Document

@@ -9,11 +9,6 @@ description: >-
   proactively after non-trivial React component changes.
 name: react-code-reviewer
 language: react
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - react
   - code-review
@@ -24,6 +19,10 @@ relatedArtifacts:
   - id: react/react-refactor-specialist
     relation: see-also
     reason: react-code-reviewer flags issues; react-refactor-specialist applies structural fixes
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a React code reviewer. Your sole output is a severity-ranked report — **you never modify

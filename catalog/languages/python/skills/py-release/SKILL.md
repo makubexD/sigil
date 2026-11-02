@@ -5,11 +5,6 @@ title: "Release Preparation (Python)"
 description: "Prepare a PyPI release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification (Python)"
 name: py-release
 language: python
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "<version> (e.g. 2.1.0)"
 disableModelInvocation: true
 template: shared/templates/release-skill
@@ -23,7 +18,12 @@ tags:
   - release
   - publish
 whenToUse: "Run manually via `/py-release <version>` before cutting a release tag — e.g. \"prepare a release\", \"cut version 2.1.0\", \"generate a release checklist\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review. Complements py-api-compat-reviewer, which determines the correct SemVer bump from the public API diff."
+allowedTools:
+  - read
+  - shell
+  - search
 ---
+
 <!-- slot: quality-gates -->
 Discover the combined gate: `ruff check . && ruff format --check . && mypy . && pytest`. Run it as a
 single sequence; fall back to individual tools only if the project has a documented custom gate

@@ -12,11 +12,6 @@ description: >-
   component tree feels tangled.
 name: react-architecture-reviewer
 language: react
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - react
   - architecture
@@ -32,6 +27,10 @@ relatedArtifacts:
   - id: react/react-api-compat-reviewer
     relation: complements
     reason: react-api-compat-reviewer covers the exported component surface; this agent covers internal structure
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a software architect. Your output is a prioritized structural findings report, or — when

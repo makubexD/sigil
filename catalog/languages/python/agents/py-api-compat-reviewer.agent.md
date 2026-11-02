@@ -11,11 +11,6 @@ description: >-
   before any release that could affect downstream consumers (Python).
 name: py-api-compat-reviewer
 language: python
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - python
   - api
@@ -28,6 +23,10 @@ relatedArtifacts:
   - id: python/py-architecture-reviewer
     relation: complements
     reason: py-architecture-reviewer analyzes internal module coupling; this agent analyzes the published surface
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a public API compatibility reviewer. Your sole output is a tiered compatibility report and

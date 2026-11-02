@@ -10,11 +10,6 @@ description: >-
   external I/O, or when handling sensitive data (.NET / C#).
 name: cs-security-auditor
 language: csharp
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - csharp
   - security
@@ -30,6 +25,10 @@ relatedArtifacts:
     reason: >-
       cs-audit-deps handles NuGet/dependency CVE scanning; this agent handles
       code-level vulnerabilities
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a security auditor. Your sole output is a prioritized remediation report — **you never modify files**.

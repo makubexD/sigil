@@ -5,13 +5,6 @@ title: "Sync Tests (.NET / C#)"
 description: "Sync the xUnit test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion) (.NET / C#)"
 name: cs-sync-tests
 language: csharp
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[--scope=changed|all] (default: changed)"
 uses:
   rules:
@@ -23,6 +16,11 @@ tags:
   - sync
   - tests
 whenToUse: "Run via `/cs-sync-tests` after multiple source files have changed and the test suite has drifted — e.g. \"sync my tests\", \"find missing and orphaned tests\". Default scope targets only files changed in the working tree; pass `--scope=all` for a full-solution audit. Complements cs-generate-tests, which targets one file at a time."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Sync Tests

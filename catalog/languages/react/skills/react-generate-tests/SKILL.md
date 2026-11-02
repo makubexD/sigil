@@ -17,14 +17,12 @@ tags:
   - vitest
   - jest
 whenToUse: "Use when adding, updating, or reviewing tests for a React component — e.g. \"write tests for UserCard\", \"test this form submission\", \"check accessibility in this component's tests\". Covers React Testing Library queries, user-event interactions, async queries, mocking, and accessibility assertions."
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[component-file] (optional)"
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Generate Tests (React)

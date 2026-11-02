@@ -10,13 +10,6 @@ whenToUse: >-
   or the user says "write tests for", "add test coverage", "generate tests", or "this file isn't
   tested". Not for fixing an existing failing test (that's debugging, not generation) or for
   reconciling tests with source that already has partial coverage (see ts-sync-tests for that).
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[file-or-module] (optional)"
 uses:
   rules:
@@ -27,6 +20,11 @@ tags:
   - typescript
   - generate
   - tests
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Generate Tests

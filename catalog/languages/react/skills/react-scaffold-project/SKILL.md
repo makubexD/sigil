@@ -5,11 +5,6 @@ title: "New Project (React)"
 description: "Scaffold a new React application in an empty directory with Vite, TypeScript, feature-based layout, ESLint/Vitest config, and a starter test"
 name: react-scaffold-project
 language: react
-allowedTools:
-  - Read
-  - Write
-  - Bash
-  - Glob
 argumentHint: "<app-name>"
 uses:
   rules:
@@ -20,6 +15,11 @@ tags:
   - scaffold
   - new-project
 whenToUse: "Use when starting a brand-new React application from scratch. Fires for \"scaffold a new React app\", \"create a new React project\", or \"set up a React app called X\". Not for adding an app or package to an existing workspace (use react-add-project) or a feature to an existing project."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Scaffold Project

@@ -9,12 +9,6 @@ description: >-
   restructuring. Use proactively when pytest fails or an error is reported.
 name: py-debugger
 language: python
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Edit
 tags:
   - python
   - debugging
@@ -22,6 +16,11 @@ relatedArtifacts:
   - id: python/py-code-reviewer
     relation: see-also
     reason: py-code-reviewer reviews new code; py-debugger fixes broken existing behavior
+tools:
+  - read
+  - search
+  - shell
+  - edit
 ---
 
 You fix bugs. Your job is root cause plus a minimal, verified fix — not a rewrite.

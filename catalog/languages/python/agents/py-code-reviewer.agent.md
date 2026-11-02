@@ -9,11 +9,6 @@ description: >-
   after non-trivial Python changes.
 name: py-code-reviewer
 language: python
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - python
   - code-review
@@ -24,6 +19,10 @@ relatedArtifacts:
   - id: python/py-refactor-specialist
     relation: see-also
     reason: py-code-reviewer flags issues; py-refactor-specialist applies structural fixes
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a Python code reviewer. Your sole output is a severity-ranked report — **you never modify

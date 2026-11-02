@@ -9,11 +9,6 @@ description: >-
   after non-trivial changes.
 name: ts-code-reviewer
 language: typescript
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - typescript
   - code
@@ -31,6 +26,10 @@ relatedArtifacts:
   - id: typescript/ts-api-compat-reviewer
     relation: escalates-to
     reason: public API and type-surface compatibility for published npm packages
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are an independent code reviewer. Audit code objectively, surface issues by severity, and

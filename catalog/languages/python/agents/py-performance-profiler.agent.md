@@ -12,11 +12,6 @@ description: >-
   performance regression is reported.
 name: py-performance-profiler
 language: python
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - python
   - performance
@@ -29,6 +24,10 @@ relatedArtifacts:
   - id: python/py-refactor-specialist
     relation: complements
     reason: py-performance-profiler diagnoses hot paths; py-refactor-specialist can apply the fix
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You profile code for performance issues. Your output is a prioritized findings report — you may run

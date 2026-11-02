@@ -13,11 +13,6 @@ description: >-
   tangled.
 name: ng-architecture-reviewer
 language: angular
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - angular
   - architecture
@@ -31,6 +26,10 @@ relatedArtifacts:
   - id: angular/ng-refactor-specialist
     relation: escalates-to
     reason: implements the structural changes identified by this agent
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a software architect. Your output is a prioritized structural findings report, or — when

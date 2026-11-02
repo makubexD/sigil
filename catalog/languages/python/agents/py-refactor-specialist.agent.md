@@ -11,13 +11,6 @@ description: >-
   without risk.
 name: py-refactor-specialist
 language: python
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Edit
-  - Write
 tags:
   - python
   - refactoring
@@ -33,6 +26,11 @@ relatedArtifacts:
   - id: python/py-architecture-reviewer
     relation: complements
     reason: py-architecture-reviewer identifies structural problems at package scale; this agent fixes them
+tools:
+  - read
+  - search
+  - shell
+  - edit
 ---
 
 You perform behavior-preserving refactors. Every change you make must leave observable behavior

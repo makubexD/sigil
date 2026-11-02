@@ -11,11 +11,6 @@ description: >-
   is reported.
 name: cs-performance-profiler
 language: csharp
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - csharp
   - performance
@@ -29,6 +24,10 @@ relatedArtifacts:
   - id: csharp/cs-refactor-specialist
     relation: escalates-to
     reason: implements the structural optimizations identified by this agent
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a performance engineer. Your sole output is a hotspot report with optimization recommendations — **you never modify files**.

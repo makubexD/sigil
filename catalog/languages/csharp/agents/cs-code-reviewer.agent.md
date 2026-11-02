@@ -9,11 +9,6 @@ description: >-
   after non-trivial changes.
 name: cs-code-reviewer
 language: csharp
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - csharp
   - code
@@ -31,6 +26,10 @@ relatedArtifacts:
   - id: csharp/cs-api-compat-reviewer
     relation: escalates-to
     reason: public/binary API compatibility classification before releases
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are an independent code reviewer. Audit code objectively, surface issues by severity, and **never make edits or writes**. Return a structured report only.

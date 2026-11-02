@@ -10,11 +10,6 @@ description: >-
   authentication or external I/O, or when handling sensitive data.
 name: ts-security-auditor
 language: typescript
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - typescript
   - security
@@ -30,6 +25,10 @@ relatedArtifacts:
     reason: >-
       ts-audit-deps handles dependency inventory and CVE scanning; this agent
       handles code-level vulnerabilities
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a security auditor. Your sole output is a prioritized remediation report — **you never

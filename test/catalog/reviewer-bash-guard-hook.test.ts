@@ -191,9 +191,8 @@ describe('shared/reviewer-bash-guard catalog coverage', () => {
     const readOnlyReviewers = agents.filter(a => {
       const tools = toolsOf(a);
       return (
-        tools.includes('Bash') &&
-        !tools.includes('Edit') &&
-        !tools.includes('Write') &&
+        tools.includes('shell') &&
+        !tools.includes('edit') &&
         /makes no edits/i.test(collapsed(a.frontmatter.description))
       );
     });
@@ -212,7 +211,7 @@ describe('shared/reviewer-bash-guard catalog coverage', () => {
 
     for (const artifact of agents) {
       const tools = toolsOf(artifact);
-      if (!tools.includes('Edit') && !tools.includes('Write')) continue;
+      if (!tools.includes('edit')) continue;
       const name = collapsed(artifact.frontmatter.name);
       assert.equal(run(entry, bash('echo x > out.txt', name)).status, 0, name);
     }

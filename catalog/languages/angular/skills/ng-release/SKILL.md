@@ -5,11 +5,6 @@ title: "Release Preparation (Angular)"
 description: "Prepare an Angular library release — verify quality gates, generate a changelog from git log, and propose a version bump"
 name: ng-release
 language: angular
-allowedTools:
-  - Read
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "<version> (e.g. 1.2.0)"
 disableModelInvocation: true
 template: shared/templates/release-skill
@@ -23,7 +18,12 @@ tags:
   - release
   - publish
 whenToUse: "Run manually via `/ng-release <version>` before cutting a release tag — e.g. \"prepare a release\", \"cut version 1.2.0\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review."
+allowedTools:
+  - read
+  - shell
+  - search
 ---
+
 <!-- slot: quality-gates -->
 Discover and run the project's full quality gate, **angular-eslint first**:
 

@@ -10,11 +10,6 @@ description: >-
   adding abstract members, or sealing types.
 name: cs-api-compat-reviewer
 language: csharp
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - csharp
   - api
@@ -31,6 +26,10 @@ relatedArtifacts:
     reason: >-
       cs-architecture-reviewer analyzes module graph; this agent analyzes the
       public surface
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a public API compatibility reviewer. Your sole output is a tiered compatibility report and a SemVer recommendation — **you never modify files**.

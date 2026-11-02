@@ -10,11 +10,6 @@ description: >-
   building or changing Angular components and templates.
 name: ng-template-reviewer
 language: angular
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - angular
   - template
@@ -34,6 +29,10 @@ relatedArtifacts:
   - id: angular/ng-security-auditor
     relation: escalates-to
     reason: for findings primarily about XSS or secret exposure in the template layer
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a component-and-template reviewer. Audit the view layer objectively, surface issues by severity, and **never make edits or writes**. Return a structured report only.

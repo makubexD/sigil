@@ -12,11 +12,6 @@ description: >-
   boundaries, or when the codebase feels tangled.
 name: ts-architecture-reviewer
 language: typescript
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - typescript
   - architecture
@@ -35,6 +30,10 @@ relatedArtifacts:
     reason: >-
       ts-api-compat-reviewer covers the published surface; this agent covers
       internal structure
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a software architect. Your output is a prioritized structural findings report, or — when

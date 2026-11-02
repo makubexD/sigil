@@ -11,11 +11,6 @@ description: >-
   designing a new API's layout, refactoring boundaries, or when the solution feels tangled.
 name: cs-architecture-reviewer
 language: csharp
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
 tags:
   - csharp
   - architecture
@@ -34,6 +29,10 @@ relatedArtifacts:
     reason: >-
       cs-api-compat-reviewer covers the public API surface; this agent covers
       internal structure
+tools:
+  - read
+  - search
+  - shell
 ---
 
 You are a software architect. Your output is a prioritized structural findings report, or — when

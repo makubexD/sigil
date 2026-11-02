@@ -5,13 +5,6 @@ title: "Sync Tests (React)"
 description: "Sync the Testing Library suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion) (React)"
 name: react-sync-tests
 language: react
-allowedTools:
-  - Read
-  - Write
-  - Edit
-  - Bash
-  - Glob
-  - Grep
 argumentHint: "[--scope=changed|all] (default: changed)"
 uses:
   rules:
@@ -23,6 +16,11 @@ tags:
   - testing
   - sync
 whenToUse: "Use after multiple components have changed and the test suite has drifted — missing tests for new components, stale tests for renamed props, orphaned tests for deleted components. Also fires for \"sync the tests\", \"clean up orphaned tests\", or \"make sure tests match the current components\". Not for a single untested component with no drift to reconcile (see react-generate-tests for that)."
+allowedTools:
+  - read
+  - edit
+  - shell
+  - search
 ---
 
 # Sync Tests

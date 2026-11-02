@@ -11,13 +11,6 @@ description: >-
   quality needs improvement without risk.
 name: ng-refactor-specialist
 language: angular
-tools:
-  - Read
-  - Grep
-  - Glob
-  - Bash
-  - Edit
-  - Write
 tags:
   - angular
   - refactor
@@ -38,6 +31,11 @@ relatedArtifacts:
     reason: >-
       ng-performance-profiler identifies hot paths; this agent applies the
       restructuring
+tools:
+  - read
+  - search
+  - shell
+  - edit
 ---
 
 You are a refactoring specialist. Your invariant: **every observable behavior is identical before and after**. If a refactor requires a behavior change, stop and report — do not proceed.

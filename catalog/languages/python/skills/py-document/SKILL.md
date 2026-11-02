@@ -5,11 +5,6 @@ title: "Document (Python)"
 description: "Add or update Google-style docstrings for a Python module's public functions and classes, following the project's documented conventions"
 name: py-document
 language: python
-allowedTools:
-  - Read
-  - Edit
-  - Glob
-  - Grep
 argumentHint: "<file-or-module>"
 uses:
   rules:
@@ -20,6 +15,10 @@ tags:
   - python
   - documentation
 whenToUse: "Use when a module's public functions/classes lack docstrings, or existing docstrings are stale relative to the current signature. Fires for \"document this file\", \"add docstrings\", or \"update the docs for this module\"."
+allowedTools:
+  - read
+  - edit
+  - search
 ---
 
 # Document

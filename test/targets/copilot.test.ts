@@ -281,10 +281,10 @@ describe('full build agents', () => {
       assert.equal(lines[0], '---', `${path} opens with frontmatter`);
       const end = lines.indexOf('---', 1);
       assert.ok(end > 0, `${path} closes its frontmatter`);
-      // Every catalog agent lists Read, Grep, Glob, Bash; the 10 that also list Edit gain it.
+      // Every catalog agent lists read, search, shell; the 10 that also list edit gain it.
       const authored = agent.frontmatter.tools as string[];
       const expectedTools = ['read', 'search', 'execute'];
-      if (authored.includes('Edit')) expectedTools.push('edit');
+      if (authored.includes('edit')) expectedTools.push('edit');
       const expected = `tools: ${JSON.stringify(expectedTools)}`;
       assert.ok(lines.slice(1, end).includes(expected), `${path} keeps ${expected}`);
     }

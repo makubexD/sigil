@@ -214,9 +214,10 @@ protect. A first version would leave it `none`.
   would be a GitHub URL ([Marketplace](https://antigravity.google/docs/marketplace),
   [Build plugins](https://antigravity.google/docs/build-plugins#publish-to-the-antigravity-marketplace)).
 - **Claude import:** `agy plugin import claude` converts plugins from `~/.claude/plugins/`
-  ([Plugins](https://antigravity.google/docs/plugins#cli-shell-subcommands-agy-plugin)). That may make sigil's existing
-  `dist/claude/` plugin usable with no new build, but how it converts sigil's inlined rules and hooks is a step 4
-  question.
+  ([Plugins](https://antigravity.google/docs/plugins#cli-shell-subcommands-agy-plugin)). It is not a channel for
+  sigil's `dist/claude/` plugins: imported skills were not offered to the model, the agent was skipped for a string
+  `tools`, and the hook could not load (U7). A plugin sigil builds in Antigravity's own shape delivers skill, rule,
+  agent, hook and MCP server, installed or as a workspace folder (F1), so the plugin channel gets its own builder.
 
 ## Open for step 4
 
@@ -255,15 +256,15 @@ The brief's TOML question is answered by D4: commands are gone, so no TOML is wr
 
 ### Capability rows (draft)
 
-| Kind     | Scaffold                         | Plugin                           |
-| -------- | -------------------------------- | -------------------------------- |
-| skill    | native                           | native                           |
-| agent    | native                           | native                           |
-| prompt   | none (revisit after U1)          | none                             |
-| rule     | native                           | native                           |
-| hook     | native, blocked on the I/O layer | native, blocked on the I/O layer |
-| mcp      | native                           | native                           |
-| settings | none                             | none                             |
+| Kind     | Scaffold                     | Plugin                                         |
+| -------- | ---------------------------- | ---------------------------------------------- |
+| skill    | native                       | native (pack plugins, F1a, F1b)                |
+| agent    | native                       | native (pack plugins, F1d)                     |
+| prompt   | none (revisit after U1)      | none                                           |
+| rule     | native (`always_on` only)    | native (`rules/`, `always_on` only, F1c)       |
+| hook     | native                       | native (one `hook-<name>` plugin each, F1e)    |
+| mcp      | native                       | native (one `mcp-<name>` plugin each, F1f)     |
+| settings | none (the CLI owns its file) | none (the manifest schema has no settings key) |
 
 ### Neutrality table
 
@@ -472,6 +473,66 @@ showed an agent whose `tools` list the documented names calls them under those n
 both sets. No new edit-shaped name was seen. `Path` is the path key of every observed file tool, and `TargetFile` stays
 for the documented ones. No `agentField` and no `cwdField`. A `Stop` hook cannot block with exit 2, so the setup page
 says so.
+
+### Phase F
+
+Step 1 of [plan-antigravity-target-f.md](../plan-antigravity-target-f.md), 2026-11-02, `agy 1.4.12`, Linux, signed in,
+`agy --model gemini-3.8-flash-low --output-format stream-json --print-timeout 90s`, in fresh `git init` repos under the
+scratchpad. The fixture plugin `sigil-probe` was written by hand in the plan's decision 2-7 shape: a root `plugin.json`
+holding only decision 7's keys, `skills/probe-skill/SKILL.md` (SKILL-F1), `rules/probe-rule.md` with
+`trigger: always_on` (RULE-F1), `agents/probe-agent.md` with `tools: [read_file]` and `model: flash` (AGENT-F1),
+`hooks.json` holding the exact `shared-protect-config` fragment that `sigil add` writes (renamed
+`probe-protect-config`), and `mcp_config.json` with one stdio server, `probe`, whose `probe_env` tool returns
+`$PROBE_F1`, with no `variables`.
+
+| #   | Question                                    | Expected                | Observed                                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | ------------------------------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F1  | Does a plugin in the planned shape deliver? | the skill reaches a run | **Yes, every component, on both routes.** `agy plugin install <path>` reported all five components and copied the plugin to `~/.gemini/config/plugins/sigil-probe/`. Skill, rule, agent and hook worked as installed and as a workspace folder; the MCP server inherits `agy`'s environment. `agy plugin validate --strict` passes with only a `logo` note, signed in or not. Details below (runs 1-8) |
+
+- **F1a, the gate (run 1), installed:** "What is the probe-skill marker?" The model read
+  `~/.gemini/config/plugins/sigil-probe/skills/probe-skill/SKILL.md` and answered `SKILL-F1`.
+- **F1b (runs 7, 8), workspace:** after uninstalling, the fixture copied to `.agents/plugins/sigil-probe/` of a fresh
+  repo, with nothing installed. The same question read that copy's `SKILL.md` and answered `SKILL-F1`; the codeword
+  question answered `RULE-F1`.
+- **F1c (run 2):** "List every codeword your rules give you" answered `RULE-F1` with no tool call: an `always_on` plugin
+  rule is in the context from the start.
+- **F1d (run 3):** `agy --agent probe-agent -p "say your marker"` answered `AGENT-F1` with no tool call. The list-valued
+  `tools` and `model: flash` loaded.
+- **F1e (run 4):** "create `.env` holding `A=1`" with a session-only `write_file(*)` allow: no `.env`. The stream shows
+  `sigil-hook: blocked write to protected file .env`, and the model named the hook
+  `jsonhook__probe-protect-config_PreToolUse_0_0`. The fragment `sigil add` writes works unchanged from a plugin root.
+- **F1f (runs 5, 6):** `PROBE_F1=x agy …` with `mcp(*)` allowed. The server is registered as **`sigil-probe_probe`**
+  (`<plugin>_<key>`, as the docs say), and its tool list was cached in `~/.gemini/antigravity-cli/mcp/sigil-probe_probe/`.
+  Run 5, asking for "the probe server's tool", made the model look for it with `run_command` (denied); run 6, naming the
+  server `sigil-probe_probe`, called `call_mcp_tool` and got **`PROBE_F1=x`**: a plugin's server inherits `agy`'s
+  environment, as P5 found for a workspace server. The CLI log also said "Not reloading plugin MCP servers: … not logged
+  into Antigravity", yet the server ran.
+- **F1g:** `agy plugin validate --strict` with `HOME` at an empty folder: exit 0, the one note "no logo: the plugin shows
+  a generic icon", the same output as signed in. **Validate needs no sign-in.** A copy with an extra manifest key
+  (`bogus`) gives the warning `unknown field "bogus" is ignored`, and `--strict` turns it into exit 1.
+- **F1h: not run.** No plugin folder exists in the repo yet, so no GitHub URL could point at one. Decision 10 stays as
+  written.
+- **Cleanup:** `agy plugin uninstall sigil-probe`, then `agy plugin list --json` was `[]`. Install had created
+  `~/.gemini/config/import_manifest.json` (`{"imports": null}`) and an empty `~/.gemini/config/plugins/`; both were
+  removed. The MCP tool cache `~/.gemini/antigravity-cli/mcp/sigil-probe_probe/` stays, outside the cleanup rule.
+
+What F1 changes in the plan: decisions 3 and 5 stand as written. Decision 6 keeps the `inherited` env handling, with no
+`variables`. The setup page names the namespaced server key (`<plugin>_<key>`), since a model asked for the bare key
+did not find it. Decision 9's validator needs no signed-out skip.
+
+**F2, a sigil-built plugin (2026-11-02, `agy 1.4.12`).** From a fresh `npm run catalog:build`, in a scratch repo, on
+`gemini-3.8-flash-low`. `essentials` holds only a prompt, a hook and MCP servers, so it gets no pack plugin; F2a and
+F2c used `python-starter` (one skill, one agent) instead.
+
+| #   | Action                                                                                                                        | Observed                                                                                                                                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F2a | `agy plugin install dist/antigravity/plugins/python-starter`; ask what `py-generate-tests` advises                            | **Pass.** Install reported 1 skill and 1 agent. The model read `~/.gemini/config/plugins/python-starter/skills/py-generate-tests/SKILL.md`, named the skill and answered from it (pytest fixtures, `conftest.py`). |
+| F2b | `agy plugin install dist/antigravity/plugins/hook-protect-config`; "create `.env` holding `A=1`" with `write_file(*)` allowed | **Pass.** No `.env`. The stream shows `sigil-hook: blocked write to protected file .env` from `jsonhook__shared-protect-config_PreToolUse_0_0`.                                                                    |
+| F2c | `agy --agent py-code-reviewer -p "Say your name and your role"`                                                               | **Pass.** No unknown-agent error; it answered as "a Python code reviewer", from the agent's body.                                                                                                                  |
+| F2d | `agy plugin validate --strict` on both plugins                                                                                | **Pass.** Exit 0 on each. Across all 17 built plugins, only `mcp-context-mode` warns, because its `context-mode` command is not on this machine's PATH.                                                            |
+
+Cleanup: both plugins uninstalled, `agy plugin list --json` was `[]`, and the empty `~/.gemini/config/plugins/` and
+`import_manifest.json` that install left were removed.
 
 ## Decision
 

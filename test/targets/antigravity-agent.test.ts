@@ -421,13 +421,14 @@ describe('antigravity agents — end to end', () => {
     });
   });
 
-  it('case 6: build writes one agent file per catalog agent', async () => {
+  it('case 6: build writes agent files inside pack plugins', async () => {
     const catalog = await loadResolvedCatalog();
-    const expected = catalog.artifacts
-      .filter(a => a.kind === 'agent')
-      .map(a => `${String(a.frontmatter.name)}.md`)
-      .sort();
-    assert.ok(expected.length > 0, 'the catalog has agents');
+    const catalogAgents = new Set(
+      catalog.artifacts
+        .filter(a => a.kind === 'agent')
+        .map(a => `${String(a.frontmatter.name)}.md`),
+    );
+    assert.ok(catalogAgents.size > 0, 'the catalog has agents');
 
     withTempDir(work => {
       const { project, home } = makeDirs(work);
@@ -446,12 +447,20 @@ describe('antigravity agents — end to end', () => {
       );
       assert.equal(done.status, 0, `${done.stdout ?? ''}${done.stderr ?? ''}`);
 
-      const agentDir = path.join(outDir, TARGET, '.agents', 'agents');
-      const written = fs
-        .readdirSync(agentDir)
-        .filter(name => name.endsWith('.md'))
-        .sort();
-      assert.deepEqual(written, expected);
+      const pluginsDir = path.join(outDir, TARGET, 'plugins');
+      const written = fs.readdirSync(pluginsDir).flatMap(plugin => {
+        const agentDir = path.join(pluginsDir, plugin, 'agents');
+        return fs.existsSync(agentDir)
+          ? fs.readdirSync(agentDir).filter(name => name.endsWith('.md'))
+          : [];
+      });
+      assert.ok(written.length > 0, 'the build writes agent files');
+      for (const name of written) assert.ok(catalogAgents.has(name), `${name} is a catalog agent`);
+      assert.equal(
+        fs.existsSync(path.join(outDir, TARGET, '.agents')),
+        false,
+        'no scaffold layout',
+      );
     });
   });
 

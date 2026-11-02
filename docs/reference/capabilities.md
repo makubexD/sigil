@@ -45,18 +45,20 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 
 ## plugin
 
-| Kind | claude |
-| --- | --- |
-| mcp | native |
-| hook | native |
-| settings | — (1) |
-| prompt | native |
-| skill | native |
-| agent | native |
-| rule | via inline (2) |
-| workflow | native |
-| template | — (3) |
+| Kind | claude | antigravity |
+| --- | --- | --- |
+| mcp | native | native |
+| hook | native | native |
+| settings | — (1) | — (2) |
+| prompt | native | — (3) |
+| skill | native | native |
+| agent | native | native |
+| rule | via inline (4) | native |
+| workflow | native | — (3) |
+| template | — (5) | — (5) |
 
 1. a plugin settings.json applies only `agent` and `subagentStatusLine` — [Claude Code — Plugin components](https://code.claude.com/docs/en/plugins/components)
-2. folded into each skill that `uses:` it — [Claude Code — Plugin components](https://code.claude.com/docs/en/plugins/components)
-3. templates are composed into other artifacts at resolve time, never emitted
+2. the manifest schema has no settings field — [Antigravity — Build plugins](https://antigravity.google/docs/build-plugins)
+3. Antigravity has no prompt files: workflows stopped working and a skill is the slash command — [Antigravity — Migrating workflows to skills](https://antigravity.google/docs/migration/workflows-to-skills)
+4. folded into each skill that `uses:` it — [Claude Code — Plugin components](https://code.claude.com/docs/en/plugins/components)
+5. templates are composed into other artifacts at resolve time, never emitted

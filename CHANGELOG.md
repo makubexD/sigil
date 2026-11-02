@@ -22,6 +22,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (user), one entry per hook named after its id. `before-tool`, `after-tool`, `session-start` and `stop` are
   supported; other events, and a `todo` matcher, are skipped with the reason. A `stop` hook cannot block on
   Antigravity. See `docs/setup/antigravity.md`.
+- `sigil build --target antigravity` writes Antigravity plugins under `dist/antigravity/plugins/<name>/`: one per
+  pack with its skills, agents and repo-wide rules, and one per hook and MCP server. Install one with
+  `agy plugin install <folder>`. `npm run ci:local` checks them with `agy plugin validate`, when `agy` is installed.
+  See `docs/setup/antigravity.md`.
 - `McpDialect` takes `envSyntax: 'inherited'`, for a target whose MCP file expands no references but whose servers
   inherit the client's environment.
 - A neutral hook vocabulary: a hook names a neutral `event` (`before-tool`, `after-tool`, `prompt-submit`,

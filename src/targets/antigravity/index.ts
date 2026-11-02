@@ -1,9 +1,15 @@
 /**
- * The Antigravity target: Agent Skills in `.agents/skills/<name>/SKILL.md`, the same files the
- * open-standard and Codex targets write, with each skill's rules inlined; repo-wide rules as
- * `.agents/rules/` files; subagents as `.agents/agents/` files; hooks merged into
- * `.agents/hooks.json` (project) or `~/.gemini/config/hooks.json` (user); and MCP servers merged
- * into `.agents/mcp_config.json` (project) or `~/.gemini/config/mcp_config.json` (user).
+ * The Antigravity target.
+ *
+ * `build` (compile) writes the plugin layout under `dist/antigravity/plugins/<name>/`: one folder
+ * per pack plus one generated plugin per hook and MCP artifact (./plugin-assemble.ts).
+ *
+ * `add` (scaffold) writes the same artifacts into the consumer project: Agent Skills in
+ * `.agents/skills/<name>/SKILL.md`, the same files the open-standard and Codex targets write, with
+ * each skill's rules inlined; repo-wide rules as `.agents/rules/` files; subagents as
+ * `.agents/agents/` files; hooks merged into `.agents/hooks.json` (project) or
+ * `~/.gemini/config/hooks.json` (user); and MCP servers merged into `.agents/mcp_config.json`
+ * (project) or `~/.gemini/config/mcp_config.json` (user).
  * Everything here is data on the shared pipeline: emit specs, lexicon, capabilities and citations.
  * It needs nothing outside this folder except its `registerTarget()` line.
  *
@@ -36,13 +42,14 @@ import type { ProviderLexicon } from '../lexicon';
 import type { HookInputDialect } from '../hook-input';
 import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
 import { deriveContracts } from '../output-contract';
-import { emitFile, scaffoldArtifact, specFor } from '../emit-files';
+import { scaffoldArtifact } from '../emit-files';
 import { ANTIGRAVITY_AGGREGATE_DOCS } from './aggregate-docs';
 import { ANTIGRAVITY_CAPABILITIES } from './capabilities';
 import { ANTIGRAVITY_CONFIG_KINDS } from './config';
 import { ANTIGRAVITY_HOOK_INPUT } from './hook-dialect';
 import { ANTIGRAVITY_LEXICON } from './lexicon';
 import { ANTIGRAVITY_EMIT_SPECS } from './spec';
+import { buildAntigravityPlugins } from './plugin-assemble';
 import {
   ANTIGRAVITY_INIT_DIRS,
   ANTIGRAVITY_PROJECT_MARKERS,
@@ -68,6 +75,10 @@ const ANTIGRAVITY_CONFIG_SCOPES = [
   },
 ];
 
+/**
+ * The Antigravity adapter. `compile` builds the plugin layout under
+ * `dist/antigravity/plugins/<name>/`; `scaffold` writes project files under `.agents/`.
+ */
 export class AntigravityTarget implements Target {
   readonly name = 'antigravity';
   readonly displayName = 'Antigravity';
@@ -133,15 +144,9 @@ export class AntigravityTarget implements Target {
     return configSkipReasonFrom(this.configKinds, artifact);
   }
 
-  /** Every artifact with a scaffold spec (skills and rule files), no AGENTS.md. */
-  async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {
-    const files: FileMap = {};
-    const ctx = { catalog, installSet: new Set(catalog.artifacts.map(a => a.id)) };
-    for (const artifact of catalog.artifacts) {
-      const spec = specFor(this.emitSpecs, artifact.kind, 'scaffold');
-      if (spec) emitFile(spec, artifact, ctx, files);
-    }
-    return files;
+  /** The plugin layout: one folder per pack, plus one generated plugin per hook and MCP artifact. */
+  async compile(catalog: ResolvedCatalog, options: CompileOptions): Promise<FileMap> {
+    return buildAntigravityPlugins(catalog, options);
   }
 
   async scaffold(

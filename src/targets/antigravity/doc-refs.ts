@@ -42,6 +42,14 @@ export const ANTIGRAVITY_SUBAGENTS_DOC: DocRef = {
     '(a list), `model` (`inherit`, `flash`, `pro`); an absent `tools` grants no write tool (U3)',
 };
 
+/** Antigravity's plugin layout and its closed `plugin.json` schema. */
+export const ANTIGRAVITY_BUILD_PLUGINS_DOC: DocRef = {
+  url: 'https://antigravity.google/docs/build-plugins',
+  title: 'Antigravity — Build plugins',
+  verifiedOn: '2026-11-02',
+  covers: 'the plugin folder layout and the closed plugin.json schema, which has no settings field',
+};
+
 /** Antigravity plugin subagents: the extra `flash_lite` tier and read-only tool guidance. */
 export const ANTIGRAVITY_PLUGIN_SUBAGENTS_DOC: DocRef = {
   url: 'https://antigravity.google/docs/build-plugins#subagents',

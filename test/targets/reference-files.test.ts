@@ -50,7 +50,8 @@ describe('reference files', () => {
         const spec = specFor(target.emitSpecs!, 'skill', channel);
         if (!spec) continue;
         const files: Record<string, string> = {};
-        emitFile(spec, skill, { catalog, installSet: new Set([skill.id]) }, files);
+        const packName = spec.variant === 'plugin' ? 'probe-pack' : undefined;
+        emitFile(spec, skill, { catalog, installSet: new Set([skill.id]), packName }, files);
         const [refPath, content] = Object.entries(files).find(([p]) => p.endsWith('/probe.md'))!;
         assert.doesNotMatch(content, /\{sigil:/, `${target.name}/${channel}: ${refPath}`);
       }

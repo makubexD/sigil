@@ -1,7 +1,8 @@
 /**
- * Antigravity `agent` emission spec — a subagent file at `.agents/agents/<name>.md`. Frontmatter is
- * `name`, `description`, `model` and `tools`, in that order, with the title and Boundary section in
- * the body as Copilot and Cursor write them.
+ * Antigravity `agent` emission spec — a subagent file at `.agents/agents/<name>.md`, in a scaffold
+ * and a plugin variant (`plugins/<pack>/agents/<name>.md`). Frontmatter is `name`, `description`,
+ * `model` and `tools`, in that order, with the title and Boundary section in the body as Copilot
+ * and Cursor write them.
  *
  * `tools` always writes a list (decision 2): an authored non-empty list renders through
  * ANTIGRAVITY_AGENT_TOOL_DIALECT, and an absent or empty one writes ANTIGRAVITY_ALL_TOOL_NAMES.
@@ -19,6 +20,7 @@
  * writes none of them (decision 5).
  */
 import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
+import { SigilError } from '../../../errors';
 import { yamlScalar } from '../../yaml-util';
 import { renderBoundarySection } from '../../shared/boundary';
 import { ANTIGRAVITY_PLUGIN_SUBAGENTS_DOC, ANTIGRAVITY_SUBAGENTS_DOC } from '../doc-refs';
@@ -88,6 +90,7 @@ const titleAndBoundarySection: BodySectionSpec = {
 
 export const ANTIGRAVITY_AGENT_SPEC: KindEmitSpec = {
   kind: 'agent',
+  variant: 'scaffold',
   outputPath: artifact => `.agents/agents/${artifact.frontmatter.name as string}.md`,
   pathPattern: /\.agents\/agents\/[^/]+\.md$/,
   frontmatter: [nameMapping, descriptionMapping, modelMapping, toolsMapping],
@@ -98,4 +101,17 @@ export const ANTIGRAVITY_AGENT_SPEC: KindEmitSpec = {
   lexicon: ANTIGRAVITY_LEXICON,
   bodyForbids: [UNTRANSLATED_TOKEN_FORBID],
   docs: [ANTIGRAVITY_SUBAGENTS_DOC, ANTIGRAVITY_PLUGIN_SUBAGENTS_DOC],
+};
+
+/** The plugin variant: the same agent file under its pack's `agents/` folder. */
+export const ANTIGRAVITY_PLUGIN_AGENT_SPEC: KindEmitSpec = {
+  ...ANTIGRAVITY_AGENT_SPEC,
+  variant: 'plugin',
+  outputPath: (artifact, ctx) => {
+    if (ctx.packName === undefined) {
+      throw new SigilError('the Antigravity plugin variant needs a pack name');
+    }
+    return `plugins/${ctx.packName}/agents/${artifact.frontmatter.name as string}.md`;
+  },
+  pathPattern: /plugins\/[^/]+\/agents\/[^/]+\.md$/,
 };

@@ -210,6 +210,12 @@ agent without `edit` renders with `readonly: true`; a `strict` agent with `shell
 Steps: [plan-cursor-target-e.md](plan-cursor-target-e.md). The ADR records what `readonly` still allows
 (A7), and the live check runs on a free Cursor model.
 
+**Done 2026-11-01** in #161 (step plan [plan-cursor-target-e.md](plan-cursor-target-e.md)): agents in `.cursor/agents/`
+through Cursor's `read-only-flag` dialect, whose nearest rule narrows to `readonly: true` unless the list holds one of
+its `writes`. Every agent family is `toolPolicy: nearest`. Live: a sigil-installed reviewer ran in Ask mode and could
+not write (A7 holds), and on a name clash the `.cursor/agents/` copy beat `.claude/agents/` (`readerWins: true`).
+Follow-up: the nearest warning for an edit agent doesn't say it gains every Cursor tool.
+
 ### Phase F: Cursor plugin channel
 
 Spike: is the plugin format stable enough to emit, and can sigil's packs become `.cursor-plugin/marketplace.json`

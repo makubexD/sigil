@@ -119,6 +119,10 @@ Custom agents are Markdown with YAML frontmatter, documented as a normal feature
 
 **Conflict:** the default for an absent `tools` is `[]` on the subagents page and "All tools" on the plugins page. This
 matters for sigil's invariant that an unmapped read-only list must never grant write access. P-probe in step 4.
+(Answered: `[]` holds; a subagent without an edit tool wrote nothing (U3, D1 run 9). The tool names in the docs load
+and work, except `multi_replace_file_content`; the binary's `read_file` / `write_file` / `edit_file` are a second,
+parallel set (D1). Phase D writes the documented names, one per tool, and the full list for an agent with no `tools`;
+see [plan-antigravity-target-d.md](../plan-antigravity-target-d.md).)
 
 ### D4. Commands and prompts
 

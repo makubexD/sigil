@@ -156,8 +156,8 @@ describe('Antigravity target MCP wiring', () => {
     assert.deepEqual(
       scopes.map(scope => scope.description),
       [
-        'project — .agents/mcp_config.json, git-committed',
-        'user — ~/.gemini/config/mcp_config.json, all projects',
+        'project — .agents/hooks.json and .agents/mcp_config.json, git-committed',
+        'user — ~/.gemini/config/hooks.json and ~/.gemini/config/mcp_config.json, all projects',
       ],
     );
     for (const scope of scopes) {

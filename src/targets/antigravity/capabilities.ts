@@ -1,11 +1,12 @@
 /**
  * What the Antigravity target delivers: Agent Skills in `.agents/skills/`, with each skill's
  * rules inlined, repo-wide rules as always-on `.agents/rules/` files, subagents in
- * `.agents/agents/`, and MCP servers merged into `.agents/mcp_config.json` (project) or
- * `~/.gemini/config/mcp_config.json` (user). A scoped rule is skipped per artifact by the rule
- * spec's `skipReason` (ADR probe B1 found no glob trigger attaches). Prompts, workflows and hooks
- * are not built yet; a prompt and a workflow have no Antigravity file at all, since workflows
- * stopped working and a skill is the slash command. The CLI owns its settings file.
+ * `.agents/agents/`, hooks merged into `.agents/hooks.json` (project) or
+ * `~/.gemini/config/hooks.json` (user), and MCP servers merged into `.agents/mcp_config.json`
+ * (project) or `~/.gemini/config/mcp_config.json` (user). A scoped rule is skipped per artifact by
+ * the rule spec's `skipReason` (ADR probe B1 found no glob trigger attaches). Prompts and
+ * workflows are not built yet; a prompt and a workflow have no Antigravity file at all, since
+ * workflows stopped working and a skill is the slash command. The CLI owns its settings file.
  *
  * @module
  */
@@ -30,7 +31,7 @@ export const ANTIGRAVITY_CAPABILITIES: TargetCapabilities = {
       docs: [ANTIGRAVITY_WORKFLOWS_DOC],
     },
     mcp: { mode: 'native' },
-    hook: { mode: 'none', reason: 'not built yet (roadmap Phase E)' },
+    hook: { mode: 'native' },
     settings: { mode: 'none', reason: 'the CLI owns its settings file' },
     template: TEMPLATE_NOT_EMITTED,
   },

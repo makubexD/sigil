@@ -10,7 +10,12 @@ import { getAllTargets, getTarget } from '../../dist-cli/targets/index';
 import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import { resolveSelection } from '../../dist-cli/select/selector-resolve';
-import { carriedKinds, installableKinds, kindSupport } from '../../dist-cli/targets/capabilities';
+import {
+  carriedKinds,
+  installableKinds,
+  kindSupport,
+  supportsKind,
+} from '../../dist-cli/targets/capabilities';
 import { wholeFileSkipReason } from '../../dist-cli/targets/tool-restriction';
 import { appliesToEveryFile } from '../../dist-cli/targets/shared/repo-wide-rules';
 import type { ArtifactKind } from '../../dist-cli/types';
@@ -21,6 +26,9 @@ const SKILL = 'typescript/ts-generate-tests'; // uses rules, so they get inlined
 const SHARED_SKILL = 'shared/cli'; // carries reference files and inlined rules
 const REPO_WIDE_RULE = 'shared/clean-code';
 const SCOPED_RULE = 'shared/cli-rules';
+const PROJECT_DIR = '/abs/project';
+const PROTECT_CONFIG = 'shared/protect-config';
+const WORKER_GUARD = 'shared/worker-mode-guard';
 
 /** The SKILL.md content a scaffold wrote. */
 function skillContent(files: Record<string, string>): string {
@@ -98,13 +106,12 @@ describe('antigravity target', () => {
     assert.match(skipped.reason, /ADR probe B1/);
   });
 
-  it('should skip a prompt and a hook, with the reason its capability row gives', async () => {
+  it('should skip a prompt, with the reason its capability row gives', async () => {
     const catalog = await loadResolvedCatalog();
     const target = getTarget(TARGET);
 
     const reasons: Record<string, RegExp> = {
       prompt: /no prompt files/,
-      hook: /Phase E/,
     };
     for (const kind of Object.keys(reasons) as ArtifactKind[]) {
       const artifact = catalog.artifacts.find(a => a.kind === kind);
@@ -134,6 +141,81 @@ describe('antigravity target', () => {
       assert.equal(support?.mode, 'none');
       assert.match(support.mode === 'none' ? support.reason : '', reasons[kind]!);
     }
+  });
+
+  it('should support hooks on the scaffold channel', () => {
+    assert.equal(supportsKind(getTarget(TARGET), 'hook'), true);
+  });
+
+  it('should offer project then user for hooks, naming both config files', () => {
+    const scopes = getTarget(TARGET).configScopes!(['hook'], PROJECT_DIR);
+
+    assert.deepEqual(
+      scopes.map(scope => scope.value),
+      ['project', 'user'],
+    );
+    assert.deepEqual(
+      scopes.map(scope => scope.description),
+      [
+        'project — .agents/hooks.json and .agents/mcp_config.json, git-committed',
+        'user — ~/.gemini/config/hooks.json and ~/.gemini/config/mcp_config.json, all projects',
+      ],
+    );
+    assert.deepEqual(
+      scopes.map(scope => scope.destinations[0]!.file),
+      ['.agents/hooks.json', '.gemini/config/hooks.json'],
+    );
+    assert.deepEqual(
+      scopes.map(scope => scope.destinations[0]!.root),
+      ['project', 'home'],
+    );
+    for (const scope of scopes) {
+      assert.deepEqual(
+        scope.destinations.map(destination => destination.kind),
+        ['hook'],
+      );
+      assert.equal(scope.destinations[0]!.section, '(hook name)');
+    }
+  });
+
+  it('should scaffold shared/protect-config as one named hook entry', async () => {
+    const catalog = await loadResolvedCatalog();
+    const ops = await getTarget(TARGET).scaffoldConfig!(PROTECT_CONFIG, catalog, {
+      projectDir: PROJECT_DIR,
+      scope: 'project',
+    });
+
+    assert.equal(ops.length, 1);
+    const op = ops[0]!;
+    assert.equal(op.file, '.agents/hooks.json');
+    assert.equal(op.root, 'project');
+    assert.deepEqual(Object.keys(op.fragment), ['shared-protect-config']);
+    assert.ok((op.fragment['shared-protect-config'] as Record<string, unknown>).PreToolUse);
+  });
+
+  it('should render shared/worker-mode-guard but never offer it, since it is Claude-only', async () => {
+    const catalog = await loadResolvedCatalog();
+    const target = getTarget(TARGET);
+
+    assert.equal(target.configSkipReason!(catalog.byId.get(WORKER_GUARD)!), undefined);
+
+    const result = resolveSelection({
+      selectors: [`hook:${WORKER_GUARD}`],
+      filters: {},
+      catalog,
+      packs: [],
+      supportedKinds: installableKinds(target),
+      carriedKinds: carriedKinds(target),
+      targetName: TARGET,
+      skipReason: a => wholeFileSkipReason(target, a),
+    });
+
+    assert.deepEqual(result.ids, []);
+    assert.deepEqual(
+      result.skipped.map(s => s.id),
+      [WORKER_GUARD],
+    );
+    assert.equal(result.skipped[0]!.cause, 'platform');
   });
 
   it('should compile .agents/skills and no other target’s files', async () => {

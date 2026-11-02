@@ -150,8 +150,8 @@ Files: new `src/targets/antigravity/spec/agent.ts`, `src/targets/antigravity/spe
   `tools` with `alwaysEmit: true`, serializing an authored non-empty list through `antigravityAgentToolNames` and an
   absent or empty one as `ANTIGRAVITY_ALL_TOOL_NAMES`, always as a YAML block list (`tools:` then `  - <name>` lines).
   Module comment: decisions 2, 4 and 5.
-- `spec/index.ts`: add the spec to `ANTIGRAVITY_EMIT_SPECS`. Not wired into capabilities yet (step 4), so `add`
-  still skips agents here.
+- `spec/index.ts` is left alone: registering the spec in `ANTIGRAVITY_EMIT_SPECS` already makes `build` write
+  agents and `add` co-install them, so it moves to step 4 (found while reviewing this step).
 
 Cases (render through `renderArtifact` with the real catalog, as the Copilot agent spec test does):
 
@@ -173,10 +173,14 @@ Test: `npm test -- test/targets/antigravity-agent.test.ts`, then `npm test`.
 
 ## Step 4 `[worker:medium]`: wire agents into the target
 
-Files: `src/targets/antigravity/{capabilities,metadata,index}.ts`, `test/targets/antigravity-agent.test.ts`;
+Files: `src/targets/antigravity/{capabilities,metadata,index}.ts`, `src/targets/antigravity/spec/index.ts`,
+`test/targets/antigravity-agent.test.ts`, `test/targets/antigravity.test.ts`;
 regenerated `docs/reference/capabilities.md` and `test/fixtures/output-snapshot/build.json`.
 
+- `spec/index.ts`: add `ANTIGRAVITY_AGENT_SPEC` to `ANTIGRAVITY_EMIT_SPECS` (moved here from step 3).
 - `capabilities.ts`: `agent: { mode: 'native' }`; module comment names `.agents/agents/`.
+- `test/targets/antigravity.test.ts`: its "same skill files as agents-standard, byte for byte" case compares only the
+  skill files, since Antigravity now also co-installs agents into `.agents/agents/`.
 - `metadata.ts`: `'.agents/agents'` in `ANTIGRAVITY_INIT_DIRS`; an `agent` vocabulary entry (`agent`, `Agents`,
   `subagents in .agents/agents/`).
 - `index.ts`: module comment and `afterInstallHint` name `.agents/agents/` (`Antigravity picks up .agents/skills/,

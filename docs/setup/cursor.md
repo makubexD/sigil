@@ -139,7 +139,8 @@ An agent is written to `.cursor/agents/<name>.md` with its `name`, `description`
 
 In testing, a `readonly: true` subagent runs in Ask mode: it can read and search files, but writing a file and running
 shell commands are both refused, even read-only ones like `ls`. So the mapping is never exact, and `add` prints a warning
-for each agent:
+for each agent that says which way it went: `(read-only, so the agent loses those tools)` or `(no read-only flag, so the
+agent gets every tool this target has)`.
 
 - **Reviewers and auditors lose the shell.** They list `read`, `search` and `shell`, and are written with
   `readonly: true`, so on Cursor they can't run `git diff` or the tests. They review what they can read.
@@ -156,11 +157,22 @@ These kinds are skipped with a warning, and the reason is in [capabilities.md](.
 - **Prompts.** Cursor is folding commands into skills.
 - **Workflows and settings.** Cursor has no workflow file, and `settings` is Claude Code's own vocabulary.
 
-## Skills Cursor already reads
+## What Cursor already reads from Claude Code
 
 Cursor also reads skills from other tools' folders: `.claude/skills/`, `.agents/skills/`, `~/.claude/skills/`, and the
-skills of the plugins installed in Claude Code. So if you use sigil's Claude plugin, its skills already reach Cursor,
-and you don't need to install them again.
+plugins installed in Claude Code. A sigil Claude plugin installed at user or project scope reaches Cursor with its skills,
+the rules inlined in them included, and its agents. So you don't need to install those skills again.
+
+Two things don't come across:
+
+- **Hooks.** A plugin's hooks did not fire in Cursor: a `protect-config` hook from the Claude plugin let the agent write
+  `.env`. Install hooks with `sigil add --target cursor` (see [Hooks](#hooks)).
+- **An agent's tool list.** Cursor ignores a Claude agent's `tools:` line, so a sigil reviewer from the Claude plugin can
+  edit files in Cursor. Install agents with `sigil add --target cursor`, which writes `readonly: true` for a read-only
+  agent (see [Agents](#agents)).
+
+Each of these was one run, with Cursor CLI `2026.10.22-27dcf5f`
+([Phase F probes](../decisions/cursor-target-2026-11.md#phase-f-probes)).
 
 When the same skill is installed both for `cursor` and for `claude`, `agents-standard` or `codex`, Cursor uses its own
 copy in `.cursor/skills/` and lists the skill once. The other copy goes unused in Cursor, though the other tool still

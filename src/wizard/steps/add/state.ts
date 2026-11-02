@@ -52,6 +52,8 @@ export function chosenTarget(s: AddWizardState): Target | undefined {
 export function visibleArtifacts(s: AddWizardState) {
   const ct = chosenTarget(s);
   return ct
-    ? s.ctx.catalog.artifacts.filter(a => isInstallable(ct, a.kind))
+    ? s.ctx.catalog.artifacts.filter(
+        a => isInstallable(ct, a.kind) && ct.configSkipReason?.(a) === undefined,
+      )
     : s.ctx.catalog.artifacts;
 }

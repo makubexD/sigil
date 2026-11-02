@@ -91,6 +91,13 @@ function requireWriter(
   return writer;
 }
 
+/** The phrase naming a refused scope; exhaustive so a new scope fails to compile. */
+const SCOPE_PHRASES: Record<ConfigScope, string> = {
+  local: 'personal per-project',
+  project: 'project',
+  user: 'user-level',
+};
+
 /** `'project' scope (.cursor/hooks.json, git-committed) or 'user' scope (~/…)`, in scope order. */
 function scopeChoices(writer: ConfigKindWriter): string {
   return CONFIG_SCOPES.flatMap(scope => {
@@ -114,7 +121,7 @@ export function destinationFor(
   const destination = writer.destinations[scope];
   if (destination) return destination;
   throw new SigilError(
-    `${targetName} has no personal per-project ${kind} file — install at ${scopeChoices(writer)}.`,
+    `${targetName} has no ${SCOPE_PHRASES[scope]} ${kind} file — install at ${scopeChoices(writer)}.`,
   );
 }
 

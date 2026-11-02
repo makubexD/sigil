@@ -119,15 +119,16 @@ async function updateConfigOutcome(
   const freshOps = await catalogConfigOps(entry.id, ctx, opts.projectDir);
   const retired = ctx.target.retiredConfigDestinations ?? [];
   const moved = moveRetiredFragments(entry, opts, freshOps, retired);
-  const applied = applyConfigEntry(entry, opts, freshOps, cf =>
-    isAtRetiredDestination(cf, retired),
-  );
-  const wrote = moved.wrote || applied.wrote;
-  const skipped = moved.skipped + applied.skipped;
-  const pending = wrote && !!opts.dryRun;
   const artifact = ctx.resolved.byId.get(entry.id);
+  const applied = applyConfigEntry(entry, opts, freshOps, {
+    isRetired: cf => isAtRetiredDestination(cf, retired),
+    skipReason: artifact && ctx.target.configSkipReason?.(artifact),
+  });
+  const wrote = moved.wrote || applied.wrote;
+  const pending = wrote && !!opts.dryRun;
   if (wrote && !opts.dryRun && artifact) ctx.written.push({ id: entry.id, artifact });
-  return { updated: wrote, pending, skippedDriftCount: skipped, orphaned: false };
+  const skippedDriftCount = moved.skipped + applied.skipped;
+  return { updated: wrote, pending, skippedDriftCount, orphaned: false };
 }
 
 /** Updates one manifest entry: orphan check, then config-kind or whole-file update. */

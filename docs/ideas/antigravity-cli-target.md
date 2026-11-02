@@ -9,7 +9,7 @@ The deliverable is an evaluation of what Antigravity's project files and plugins
 seven kinds, ending in a go/no-go. On a go, a phased roadmap follows. The install route if built would be
 `sigil add --target antigravity`.
 
-The work plan is [plan-antigravity-eval.md](../plan-antigravity-eval.md).
+The eval plan was [plan-antigravity-eval.md](../plan-antigravity-eval.md); its verdict is go, staged, and the roadmap is [plan-antigravity-target.md](../plan-antigravity-target.md).
 
 ## Evidence
 

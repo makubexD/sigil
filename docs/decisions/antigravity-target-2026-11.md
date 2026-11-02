@@ -415,4 +415,4 @@ product, not the binary or the CLI alone.
   channel needs its own builder, not `agy plugin import` (U7), and goes last, after a probe shows an installed
   plugin's skill reaching a session.
 
-The phases go in the roadmap (step 7).
+The phases are in the roadmap, [plan-antigravity-target.md](../plan-antigravity-target.md).

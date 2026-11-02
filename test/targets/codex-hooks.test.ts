@@ -14,6 +14,7 @@ import path from 'node:path';
 import { CodexTarget } from '../../dist-cli/targets/codex';
 import {
   buildCodexHookOps,
+  hookFragment,
   posixCommandLine,
   windowsCommandLine,
 } from '../../dist-cli/targets/codex/hook-ops';
@@ -284,5 +285,87 @@ describe('codex hooks — CLI round trip', () => {
       assert.equal(left[0]!.matcher, 'Edit');
       assert.equal(left[0]!.hooks[0]!.command, 'echo user-hook');
     });
+  });
+});
+
+// ── The neutral hook contract ──────────────────────────────────────────────────
+
+/** A fixture script hook: deny any call that names a `.env` file. */
+const DENY_ENV_SCRIPT = [
+  "const hit = input && input.files.find(file => file.split('/').pop().startsWith('.env'));",
+  'if (hit) {',
+  "  process.stderr.write('sigil-test: blocked ' + hit + '\\n');",
+  '  process.exitCode = 2;',
+  '}',
+].join('\n');
+
+describe('codex hook contract', () => {
+  it('should render a neutral script hook as one base64 node -e command', () => {
+    const { event, group } = hookFragment({
+      event: 'before-tool',
+      matcher: 'edit',
+      script: 'return;',
+    });
+
+    assert.equal(event, 'PreToolUse', 'the neutral event becomes PreToolUse');
+    assert.equal(group.matcher, 'Edit|Write');
+    const hooks = group.hooks as Record<string, unknown>[];
+    const command = hooks[0]!.command as string;
+    assert.match(command, /^node -e "eval\(Buffer\.from\('/);
+    assert.ok(!('commandWindows' in hooks[0]!), 'the one line runs in every shell');
+
+    const encoded = /Buffer\.from\('([^']+)'/.exec(command)?.[1];
+    assert.ok(encoded, 'the composed source is base64-encoded');
+    const source = Buffer.from(encoded, 'base64').toString('utf8');
+    assert.match(source, /normalizeHookInput/);
+    assert.match(source, /"before-tool"/);
+  });
+
+  it('should keep a legacy command hook’s event and matcher', () => {
+    const { event, group } = hookFragment({
+      event: 'PreToolUse',
+      matcher: 'Edit|Write',
+      command: 'echo hi',
+    });
+
+    assert.equal(event, 'PreToolUse');
+    assert.equal(group.matcher, 'Edit|Write');
+    assert.deepEqual(group.hooks, [{ type: 'command', command: 'echo hi' }]);
+  });
+
+  it('should refuse notification with a message naming it', () => {
+    assert.throws(
+      () => hookFragment({ event: 'notification', matcher: '*', script: 'return;' }),
+      (err: Error) => {
+        assert.match(err.message, /notification/);
+        assert.match(err.message, /Codex/);
+        assert.match(err.message, /before-tool/);
+        return true;
+      },
+    );
+  });
+
+  it('should refuse a matcher naming a tool Codex cannot write', () => {
+    assert.throws(
+      () => hookFragment({ event: 'before-tool', matcher: 'read', script: 'return;' }),
+      (err: Error) => {
+        assert.match(err.message, /read/);
+        assert.match(err.message, /Codex/);
+        return true;
+      },
+    );
+  });
+
+  it('should deny an A4 apply_patch touching .env with exit 2', () => {
+    const { group } = hookFragment({
+      event: 'before-tool',
+      matcher: 'edit',
+      script: DENY_ENV_SCRIPT,
+    });
+    const hooks = group.hooks as Record<string, unknown>[];
+    const command = hooks[0]!.command as string;
+
+    const result = runCommandLine(command, codexPatch('*** Add File: .env', '+X=1'));
+    assert.equal(result.status, 2, result.stderr);
   });
 });

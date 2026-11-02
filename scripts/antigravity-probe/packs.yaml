@@ -1,0 +1,10 @@
+# The Antigravity probe's one pack. scripts/probe-antigravity.mjs overlays
+# scripts/antigravity-probe/catalog/ onto a copy of catalog/ and builds this pack.
+packs:
+  - name: probe
+    displayName: Probe
+    description: Skills, rules and agents the Antigravity probe asks for a codeword from.
+    artifacts:
+      - shared/probe-skill
+      - shared/probe-rule
+      - shared/probe-agent

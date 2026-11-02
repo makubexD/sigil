@@ -96,7 +96,10 @@ Consumer commands never read the file; `sigil move` renames a moved id in it. Se
    ```
    `scaffold` is usually one call to `scaffoldArtifact` (`src/targets/emit-files.ts`) with
    `this.emitSpecs`; `compile` decides which artifacts go where and writes each one with
-   `emitFile`, directly or through a helper. Neither builds a file path itself. The optional
+   `emitFile`, directly or through a helper. Neither builds a file path itself. A target with a
+   `plugin` channel compiles to plugins only: Claude writes `dist/claude/plugins/`, and Antigravity
+   writes `dist/antigravity/plugins/<name>/` (`src/targets/antigravity/plugin-assemble.ts`), while
+   `add` stays the scaffold route. The optional
    `lexicon`, `aggregateDocs` and `privateDirs` fields are covered in step 8.
 2. Register in `src/targets/index.ts` with `registerTarget(new YourTarget())`.
 3. The `--target <name>` CLI flag and `dist/<name>/` output directory work automatically.

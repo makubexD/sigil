@@ -109,18 +109,19 @@ default session reports `write_file` / `edit_file` / `read_file`, so the hook ta
 names both. Exit 2 denies on `1.4.12` (P4, E1), though a docs page says a non-zero exit fails open, so the deny test
 keeps checking it; a `Stop` hook's exit 2 does not block. Plan: [plan-antigravity-target-e.md](plan-antigravity-target-e.md).
 
-### Phase F: plugin channel
+### Phase F: plugin channel (done 2026-11-02)
 
-U7 showed `agy plugin import` of a Claude plugin is not a channel: the skills imported but never reached a print
-session, the agent was skipped for a string `tools`, and the hook was never loaded (`hooks/hooks.json` is ignored, and
-`Edit|Write` matches no Antigravity tool). So sigil builds the plugin itself: the manifest (closed schema), `skills/`,
-`rules/` as files (no inlining needed), `agents/` with list-valued `tools`, `hooks.json` at the root, and
-`mcp_config.json` with `variables`. `agy plugin validate --strict` runs on every built plugin as a conformance check.
-Before this phase ships, a probe must show an installed plugin's skill reaching a session; if it never does, the
-channel stays `none` and this phase is cut.
+`sigil build --target antigravity` now writes `dist/antigravity/plugins/<name>/`: one plugin per pack with its
+skills, agents and repo-wide rules, and one `hook-<name>` / `mcp-<name>` plugin per hook and MCP server, each with a
+closed-schema `plugin.json`. The F1 probe showed a hand-built plugin of that shape delivering every component, both
+installed and as a workspace copy. `npm run ci:local` runs `agy plugin validate` on every built plugin, failing on
+warnings except the machine-dependent PATH one, and skips where `agy` is absent (CI). Prompts stay `none`, settings
+stays `none`. Plan: [plan-antigravity-target-f.md](plan-antigravity-target-f.md).
 
 ### Phase G: close-out
 
 A live check of each shipped kind on the current `agy`, the ADR's status updated, the brief
 `docs/ideas/antigravity-cli-target.md` deleted and its row removed. The probe fixtures stay as a script, so the probes
-re-run in one command on each `agy` update (the ADR's maintenance-cost note).
+re-run in one command on each `agy` update (the ADR's maintenance-cost note). F1h is still open: whether
+`agy plugin install` can take a GitHub URL that points at one plugin's subfolder. Phase G answers it before any
+release work publishes the plugins on a branch.

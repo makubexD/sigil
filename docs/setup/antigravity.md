@@ -25,10 +25,9 @@ This page covers what the `antigravity` target writes, what it skips and why, an
   narrowed, it is a scoped rule. If it is already installed, `sigil update` refuses to rewrite it and leaves the
   `always_on` file as it was, so remove the overlay or `sigil uninstall` the rule.
 
-`sigil build --target antigravity` writes the same files and **no `AGENTS.md`**. Antigravity also loads a root
-`AGENTS.md`, so a repo-wide rule written both there and in `.agents/rules/` would load twice. If you used the
-`agents-standard` route before (below), don't also keep its built `AGENTS.md` copy: remove the sections that are now
-`.agents/rules/` files.
+Sigil writes **no `AGENTS.md`** for Antigravity. Antigravity also loads a root `AGENTS.md`, so a repo-wide rule
+written both there and in `.agents/rules/` would load twice. If you used the `agents-standard` route before (below),
+don't also keep its built `AGENTS.md` copy: remove the sections that are now `.agents/rules/` files.
 
 **One owner for `.agents/skills/`.** `codex`, `agents-standard` and `antigravity` write the same skill files, so install
 skills for one of them: `sigil add` refuses the second. GitHub Copilot and Cursor also read `.agents/skills/`.
@@ -175,6 +174,35 @@ agy --agent ts-code-reviewer -p "<prompt>" --settings '{"permissions":{"allow":[
 Agents go to project scope only. No other target writes `.agents/agents/`, and Antigravity reads no other tool's agent
 folder, so an agent installed for `cursor` or `claude` as well is a separate copy.
 
+## Plugins
+
+`sigil build --target antigravity` writes Antigravity plugins, not the project files above: one folder per plugin
+under `dist/antigravity/plugins/<name>/`, each with `plugin.json` at its root
+([Build plugins](https://antigravity.google/docs/build-plugins)).
+
+- **Pack plugins.** Each pack in `packs.yaml` that holds a skill, an agent or a repo-wide rule becomes a plugin named
+  after the pack, with `skills/<name>/SKILL.md`, `agents/<name>.md` and `rules/<id>.md`. The files are the same as
+  `sigil add` writes: skills carry their rules inlined, agents get Antigravity's tool names and model tiers, and rules
+  are `always_on`. Scoped rules are skipped, as above.
+- **Hook and MCP plugins.** Each hook and MCP server gets a plugin of its own, `hook-<name>` or `mcp-<name>`, holding
+  `hooks.json` or `mcp_config.json`. A pack plugin never carries a hook or a server, and it can't depend on one, since
+  `plugin.json` has no dependencies field. If a pack's skills rely on a hook, such as `protect-config`, install its
+  `hook-<name>` plugin as well.
+
+Install one for your user, or copy it into one project:
+
+```bash
+agy plugin install dist/antigravity/plugins/typescript-tooling        # user: copied to ~/.gemini/config/plugins/
+cp -r dist/antigravity/plugins/typescript-tooling .agents/plugins/    # workspace: this project only
+```
+
+To remove one, run `agy plugin uninstall <name>`, or delete its `.agents/plugins/<name>/` folder.
+
+**MCP servers in a plugin.** Antigravity names a plugin's server `<plugin>_<key>`, so the `filesystem` server from
+`mcp-filesystem` is `mcp-filesystem_filesystem`. Use that name in a prompt and in a permission rule
+(`mcp(mcp-filesystem_filesystem/*)`). As in a project file, the server inherits `agy`'s environment: export a variable
+before you start `agy` (ADR F1f).
+
 ## What doesn't reach it
 
 - **Hooks Antigravity has no event for** (`prompt-submit`, `subagent-stop`, `notification`), and a matcher on a
@@ -239,3 +267,6 @@ account, in throwaway repos. The Antigravity desktop app, Windows and macOS were
   `PostToolUse` fired, a subagent's calls reached the hook, and a `Stop` hook's exit 2 didn't keep the session going.
 - **E2:** `sigil add shared/protect-config --target antigravity`, then a `.env` write through the file tool: blocked,
   with the reason in the stream; `notes.txt` was written; `sigil uninstall` deleted the emptied `.agents/hooks.json`.
+- **F1:** a hand-built plugin in this layout, installed with `agy plugin install` and as a workspace copy in
+  `.agents/plugins/`: its skill, `always_on` rule, agent and hook each worked, and its MCP server ran as
+  `<plugin>_<key>` with `agy`'s environment. `agy plugin validate --strict` passed, signed in or not.

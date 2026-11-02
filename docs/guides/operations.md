@@ -105,7 +105,11 @@ both install that version. GitHub Actions are pinned to full commit SHAs (the ta
 
 **Run the same thing locally before you push.** `npm run ci:local` chains every step above (except
 `npm ci`) in the same order, plus the plugin validation, which it skips with a notice when `claude`
-is not on PATH. It is the full local equivalent of CI.
+is not on PATH. It is the full local equivalent of CI. It also runs
+`npm run validate:antigravity-plugins`: `agy plugin validate` over every plugin in
+`dist/antigravity/plugins/`, failing on errors and warnings as `--strict` does, except the warning that
+an MCP server's command is not on this machine's PATH. CI has no `agy`, so there and on any machine
+without it the step skips with a notice.
 
 `npm run check` is a faster **subset**: lint, format check, `check-doc-comments`, and tests. It skips
 the audit, `validate`, `sync --check`, `catalog:build`, and the smoke test, so a green `check` does not
@@ -141,7 +145,7 @@ mean a green CI.
 ## Build every target and inspect output
 
 ```bash
-sigil build --target all       # dist/claude/, dist/copilot/, dist/agents-standard/, dist/codex/ and dist/cursor/
+sigil build --target all       # dist/claude/, dist/copilot/, dist/agents-standard/, dist/codex/, dist/cursor/, dist/antigravity/
 sigil build --target claude    # a single target
 sigil build --target copilot
 
@@ -149,6 +153,7 @@ sigil build --target copilot
 ls dist/claude/plugins/dotnet-tooling/skills/cs-generate-tests/                       # SKILL.md
 grep "Applied Rules" dist/claude/plugins/dotnet-tooling/skills/cs-generate-tests/SKILL.md
 cat dist/claude/plugins/dotnet-tooling/.claude-plugin/plugin.json                     # version = package version
+ls dist/antigravity/plugins/                                                          # one folder per plugin
 
 # Regenerate JSON Schemas from the zod source (also part of npm run build)
 node dist-cli/schema/emit.js

@@ -256,15 +256,15 @@ The brief's TOML question is answered by D4: commands are gone, so no TOML is wr
 
 ### Capability rows (draft)
 
-| Kind     | Scaffold                         | Plugin                           |
-| -------- | -------------------------------- | -------------------------------- |
-| skill    | native                           | native                           |
-| agent    | native                           | native                           |
-| prompt   | none (revisit after U1)          | none                             |
-| rule     | native                           | native                           |
-| hook     | native, blocked on the I/O layer | native, blocked on the I/O layer |
-| mcp      | native                           | native                           |
-| settings | none                             | none                             |
+| Kind     | Scaffold                     | Plugin                                         |
+| -------- | ---------------------------- | ---------------------------------------------- |
+| skill    | native                       | native (pack plugins, F1a, F1b)                |
+| agent    | native                       | native (pack plugins, F1d)                     |
+| prompt   | none (revisit after U1)      | none                                           |
+| rule     | native (`always_on` only)    | native (`rules/`, `always_on` only, F1c)       |
+| hook     | native                       | native (one `hook-<name>` plugin each, F1e)    |
+| mcp      | native                       | native (one `mcp-<name>` plugin each, F1f)     |
+| settings | none (the CLI owns its file) | none (the manifest schema has no settings key) |
 
 ### Neutrality table
 

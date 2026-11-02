@@ -88,6 +88,11 @@ authenticates with a Gemini API key: they create it at aistudio.google.com, expo
 shell profile, and pick "Use Gemini API key" in `! gemini`. The key is never pasted into the session, a file, or a
 worker spec. If the free API tier refuses too, these probes become docs-only, and the ADR records the live risk as
 open, as Cursor's Phase A did.
+Checked 2026-11-02 with a free-tier key: `gemini -m gemini-flash-latest -p …` answers. The default model hangs, likely
+on retries because the free tier doesn't serve Pro. `gemini-2.5-flash` returns 404 "no longer available to new
+users". So every probe passes `-m gemini-flash-latest` and runs in a folder Gemini trusts
+(`GEMINI_CLI_TRUST_WORKSPACE=true` in a throwaway dir; headless refuses an untrusted folder). The key goes in that
+command's env only, never in a file.
 Keep each probe to one or two short `gemini -p` runs in a throwaway repo under the scratchpad. Each probe records its
 expected and observed results in the ADR:
 

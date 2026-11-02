@@ -67,6 +67,15 @@ describe('sigil add — overlap notes', () => {
     });
   });
 
+  it('should report the unused Claude copy when adding an agent for Cursor', async () => {
+    await withTempDirAsync(async dir => {
+      await install(dir, 'claude', 'agent:shared/code-reviewer');
+      const out = await install(dir, 'cursor', 'agent:shared/code-reviewer');
+      assert.match(out, /Cursor also reads Claude Code's agents/);
+      assert.match(out, /shared\/code-reviewer/);
+    });
+  });
+
   it('should report the overlap from the Claude install when Cursor came first', async () => {
     await withTempDirAsync(async dir => {
       await install(dir, 'cursor', SKILL);

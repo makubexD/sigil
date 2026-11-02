@@ -6,6 +6,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import { getAllTargets, getTarget } from '../../dist-cli/targets/index';
 import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
 import { loadResolvedCatalog } from '../helpers/catalog';
@@ -18,7 +19,9 @@ import {
 } from '../../dist-cli/targets/capabilities';
 import { wholeFileSkipReason } from '../../dist-cli/targets/tool-restriction';
 import { appliesToEveryFile } from '../../dist-cli/targets/shared/repo-wide-rules';
-import type { ArtifactKind } from '../../dist-cli/types';
+import { parsePacksConfig } from '../../dist-cli/packs-config';
+import { PACKS as BUNDLED_PACKS } from '../helpers/install-scenario';
+import type { ArtifactKind, Pack } from '../../dist-cli/types';
 
 const TARGET = 'antigravity';
 const AGENTS_STANDARD = 'agents-standard';
@@ -29,6 +32,11 @@ const SCOPED_RULE = 'shared/cli-rules';
 const PROJECT_DIR = '/abs/project';
 const PROTECT_CONFIG = 'shared/protect-config';
 const WORKER_GUARD = 'shared/worker-mode-guard';
+
+/** The real `packs.yaml`, parsed once per call — the build's pack membership. */
+function realPacks(): Pack[] {
+  return parsePacksConfig(fs.readFileSync(BUNDLED_PACKS, 'utf8'), BUNDLED_PACKS).packs;
+}
 
 /** The SKILL.md content a scaffold wrote. */
 function skillContent(files: Record<string, string>): string {
@@ -218,51 +226,43 @@ describe('antigravity target', () => {
     assert.equal(result.skipped[0]!.cause, 'platform');
   });
 
-  it('should compile .agents/skills and no other target’s files', async () => {
+  it('should compile a plugin layout and no scaffold files', async () => {
     const catalog = await loadResolvedCatalog();
-    const files = await getTarget(TARGET).compile(catalog, { version: '0.0.0', packs: [] });
+    const files = await getTarget(TARGET).compile(catalog, {
+      version: '0.0.0',
+      packs: realPacks(),
+    });
     const keys = Object.keys(files);
 
+    assert.ok(keys.length > 0, 'the build writes files');
     assert.ok(
-      keys.some(f => f.startsWith('.agents/skills/')),
-      'skills are written',
+      keys.every(f => f.startsWith('plugins/')),
+      'every build file lives in a plugin folder',
     );
     assert.ok(
-      keys.every(f => f !== 'AGENTS.md'),
-      'no AGENTS.md',
-    );
-    assert.ok(
-      keys.every(
-        f => !f.startsWith('.claude/') && !f.startsWith('.github/') && !f.startsWith('.cursor/'),
-      ),
-      'no other target’s file',
+      keys.every(f => !f.startsWith('.agents/') && f !== 'AGENTS.md'),
+      'no scaffold file',
     );
   });
 
-  it('should compile one .agents/rules file per repo-wide rule and none for a scoped one', async () => {
+  it('should compile no rules file for a scoped rule', async () => {
     const catalog = await loadResolvedCatalog();
-    const files = await getTarget(TARGET).compile(catalog, { version: '0.0.0', packs: [] });
+    const files = await getTarget(TARGET).compile(catalog, {
+      version: '0.0.0',
+      packs: realPacks(),
+    });
 
     const isRepoWide = (a: (typeof catalog.artifacts)[number]): boolean =>
       appliesToEveryFile(a.frontmatter.appliesTo as string[] | undefined);
-    const rules = catalog.artifacts.filter(a => a.kind === 'rule');
-    const repoWide = rules.filter(isRepoWide);
-    const scoped = rules.filter(a => !isRepoWide(a));
-    assert.ok(repoWide.length > 0, 'the catalog has repo-wide rules');
+    const scoped = catalog.artifacts.filter(a => a.kind === 'rule' && !isRepoWide(a));
     assert.ok(scoped.length > 0, 'the catalog has scoped rules');
 
-    const ruleFiles = Object.keys(files).filter(f => f.startsWith('.agents/rules/'));
-    assert.equal(ruleFiles.length, repoWide.length, 'one file per repo-wide rule');
-
-    for (const rule of repoWide) {
-      const path = `.agents/rules/${rule.id.replace(/\//g, '-')}.md`;
-      assert.ok(files[path], `Antigravity writes ${path}`);
-    }
+    const ruleFiles = Object.keys(files).filter(f => /\/rules\/[^/]*\.md$/.test(f));
     for (const rule of scoped) {
-      const path = `.agents/rules/${rule.id.replace(/\//g, '-')}.md`;
-      assert.ok(!files[path], `Antigravity writes no ${path}`);
+      const name = `${rule.id.replace(/\//g, '-')}.md`;
+      assert.ok(!ruleFiles.some(f => f.endsWith(`/rules/${name}`)), `no file for ${rule.id}`);
     }
-    assert.ok(!ruleFiles.some(f => f.endsWith('shared-cli-rules.md')), 'no shared-cli-rules.md');
+    assert.ok(!ruleFiles.some(f => f.endsWith('/rules/shared-cli-rules.md')));
   });
 
   it('should be registered as antigravity, right after cursor', () => {

@@ -124,8 +124,8 @@ call is denied and the run ends with no output (ADR D2):
 agy --agent ts-code-reviewer -p "<prompt>" --settings '{"permissions":{"allow":["command(*)"]}}'
 ```
 
-Agents go to project scope only. Antigravity writes no shared agent folder with another target, so an agent installed
-for `cursor` or `claude` as well is a separate copy.
+Agents go to project scope only. No other target writes `.agents/agents/`, and Antigravity reads no other tool's agent
+folder, so an agent installed for `cursor` or `claude` as well is a separate copy.
 
 ## What doesn't reach it
 

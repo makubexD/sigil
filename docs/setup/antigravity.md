@@ -68,10 +68,69 @@ server's tools, add a rule such as `mcp(filesystem/*)` (`mcp(<server>/<tool>)` f
 agy -p "<prompt>" --settings '{"permissions":{"allow":["mcp(filesystem/*)"]}}'
 ```
 
+## Agents
+
+```bash
+sigil add --target antigravity typescript/ts-code-reviewer   # .agents/agents/ts-code-reviewer.md
+agy --agent ts-code-reviewer -p "Review src/app.ts"
+```
+
+An agent goes to `.agents/agents/<name>.md` with `name`, `description`, `tools` and, when the catalog agent sets a
+model hint, `model` ([Custom subagents](https://antigravity.google/docs/subagents#custom-subagents)). Start a session
+as the agent with `agy --agent <name>`; the main agent can also hand it a task through its `invoke_subagent` tool.
+`agy agents` printed nothing in testing, even with agents present, so check an install with `agy --agent <name>`
+(ADR D1).
+
+**Tools.** The catalog writes neutral tool names, and the target turns each into Antigravity's own:
+
+| Catalog  | Antigravity `tools`                       |
+| -------- | ----------------------------------------- |
+| `read`   | `view_file`                               |
+| `search` | `grep_search`, `find_by_name`, `list_dir` |
+| `edit`   | `write_to_file`, `replace_file_content`   |
+| `shell`  | `run_command`                             |
+| `web`    | `search_web`, `read_url_content`          |
+| `agent`  | `invoke_subagent`                         |
+| `todo`   | none                                      |
+
+Only names a probe saw load and work are written, because a misspelt name "may cause the subagent process to hang"
+(a known issue on the subagents page). The docs' `multi_replace_file_content` never reached an agent, so it is left
+out (ADR D1). An agent that lists `todo` is skipped with the reason, or written without it and a warning under
+`toolPolicy: nearest`; the same goes for `disallowedTools`, since Antigravity has no denylist. No catalog agent uses
+either.
+
+**An agent with no `tools` gets the full list above.** In Antigravity an absent `tools` means no tools at all: a
+subagent given only read tools could not write a file (ADR U3, D1 run 9). On every other target an absent list means
+every tool, so sigil writes the whole list to keep that meaning. Browser, image and MCP tools are not in the catalog's
+vocabulary and are never written. A reviewer that lists `read`, `search` and `shell` gets no edit tool, but
+`run_command` can still change files.
+
+**Model.** The catalog's `model` hint becomes a tier: `fast` → `flash_lite`, `balanced` → `flash`, `deep` → `pro`
+([Build plugins](https://antigravity.google/docs/build-plugins#subagents) lists `flash_lite`). No hint writes no
+`model` line, so the agent inherits the session's model. A `claude:` model override applies to Claude only. Antigravity
+drops an agent whose `model` is not a tier, with no warning, so sigil never writes anything else.
+
+**Shell commands.** sigil writes no `commandExecutionPolicy`, so the documented default, `sandbox`, applies to
+`run_command`. In testing `agy 1.4.12` reported a run as "unsandboxed" anyway (ADR D1, run 6), so don't rely on the
+sandbox to contain an agent's commands.
+
+**Approval in print mode.** An agent's writes and shell commands go through the same approvals as the main agent's
+([Approvals in print mode](#approvals-in-print-mode)). In testing, workspace writes were allowed and shell commands
+and URL reads were denied until an allow rule named the permission, not the tool: `command(*)`, `read_url(*)`
+(`run_command(*)` was still denied). A catalog reviewer starts with `git status`, so without `command(*)` its first
+call is denied and the run ends with no output (ADR D2):
+
+```bash
+agy --agent ts-code-reviewer -p "<prompt>" --settings '{"permissions":{"allow":["command(*)"]}}'
+```
+
+Agents go to project scope only. No other target writes `.agents/agents/`, and Antigravity reads no other tool's agent
+folder, so an agent installed for `cursor` or `claude` as well is a separate copy.
+
 ## What doesn't reach it
 
-- **Agents and hooks.** Not built yet; they are later phases of the
-  [roadmap](../plan-antigravity-target.md#phases). `sigil add` skips them with that reason.
+- **Hooks.** Not built yet; they are a later phase of the [roadmap](../plan-antigravity-target.md#phases).
+  `sigil add` skips them with that reason.
 - **Prompts and workflows.** Antigravity has no prompt files: workflows stopped working, and a skill is the slash
   command ([Migrating workflows to skills](https://antigravity.google/docs/migration/workflows-to-skills)).
 - **Anything written for Claude Code.** Antigravity doesn't read `CLAUDE.md` or `.claude/` (ADR P6), so
@@ -124,3 +183,6 @@ account, in throwaway repos. The Antigravity desktop app, Windows and macOS were
   given as `url` (with or without `type: "http"`) or `serverUrl`, were each loaded and called. `${NAME}` reached the
   server as literal text, and a variable exported to `agy` reached it with no `env` entry. A server only in
   `.mcp.json` was not loaded.
+- **U3, D1:** in a project agent each `tools` name in the table above loaded and was called;
+  `multi_replace_file_content` never did. An agent with only `view_file` and `grep_search` refused to write a file.
+  `model: flash_lite` and `model: pro` loaded; a made-up tier dropped the agent.

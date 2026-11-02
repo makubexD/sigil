@@ -32,6 +32,25 @@ export const ANTIGRAVITY_WORKFLOWS_DOC: DocRef = {
   covers: 'workflows stopped working on 2026-10-19; a skill is the slash command',
 };
 
+/** Antigravity subagent files, their frontmatter, and the absent-`tools` default (U3). */
+export const ANTIGRAVITY_SUBAGENTS_DOC: DocRef = {
+  url: 'https://antigravity.google/docs/subagents#custom-subagents',
+  title: 'Antigravity — Custom subagents',
+  verifiedOn: '2026-11-02',
+  covers:
+    '`.agents/agents/<name>.md`, Markdown with YAML frontmatter: `name`, `description`, `tools` ' +
+    '(a list), `model` (`inherit`, `flash`, `pro`); an absent `tools` grants no write tool (U3)',
+};
+
+/** Antigravity plugin subagents: the extra `flash_lite` tier and read-only tool guidance. */
+export const ANTIGRAVITY_PLUGIN_SUBAGENTS_DOC: DocRef = {
+  url: 'https://antigravity.google/docs/build-plugins#subagents',
+  title: 'Antigravity — Build plugins',
+  verifiedOn: '2026-11-02',
+  covers:
+    '`model` tiers include `flash_lite`; omit file-edit and shell tools for a read-only agent',
+};
+
 /** Antigravity's MCP files and the server shapes they accept. */
 export const ANTIGRAVITY_MCP_DOC: DocRef = {
   url: 'https://antigravity.google/docs/mcp#mcp-configuration-structure',

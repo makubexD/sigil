@@ -6,7 +6,11 @@
 import type { ArtifactKind, KindVocabulary } from '../../types';
 
 /** Directories `sigil init` creates. */
-export const ANTIGRAVITY_INIT_DIRS: string[] = ['.agents/skills', '.agents/rules'];
+export const ANTIGRAVITY_INIT_DIRS: string[] = [
+  '.agents/skills',
+  '.agents/rules',
+  '.agents/agents',
+];
 
 /** A project already set up for this target. */
 export const ANTIGRAVITY_PROJECT_MARKERS: string[] = ['.agents/rules'];
@@ -21,5 +25,10 @@ export const ANTIGRAVITY_VOCABULARY: Partial<Record<ArtifactKind, KindVocabulary
     noun: 'rule',
     plural: 'Rules',
     hint: 'rules in .agents/rules/',
+  },
+  agent: {
+    noun: 'agent',
+    plural: 'Agents',
+    hint: 'subagents in .agents/agents/',
   },
 };

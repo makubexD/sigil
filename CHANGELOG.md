@@ -14,6 +14,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `--target antigravity` installs MCP servers into `.agents/mcp_config.json` (project) or
   `~/.gemini/config/mcp_config.json` (user). These files expand no env references, so a server that uses a
   variable other than through an identity `env` entry is skipped with the reason.
+- `--target antigravity` installs agents into `.agents/agents/`, with the neutral tools written as Antigravity's
+  tool names (`view_file`, `grep_search`, `run_command`, …) and `model` as `flash_lite`, `flash` or `pro`. An agent
+  with no `tools` gets the full list, since Antigravity reads an absent list as no tools. See
+  `docs/setup/antigravity.md`.
 - `McpDialect` takes `envSyntax: 'inherited'`, for a target whose MCP file expands no references but whose servers
   inherit the client's environment.
 

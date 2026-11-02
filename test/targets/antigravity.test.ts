@@ -37,7 +37,12 @@ describe('antigravity target', () => {
       projectDir: '.',
     });
 
-    assert.deepEqual(antigravity, standard);
+    const skillFiles = (files: Record<string, string>): Record<string, string> =>
+      Object.fromEntries(
+        Object.entries(files).filter(([file]) => !file.startsWith('.agents/agents/')),
+      );
+
+    assert.deepEqual(skillFiles(antigravity), standard);
   });
 
   it('should inline the skill rules instead of writing .agents/rules files', async () => {
@@ -93,12 +98,11 @@ describe('antigravity target', () => {
     assert.match(skipped.reason, /ADR probe B1/);
   });
 
-  it('should skip an agent, a prompt and a hook, with the reason its capability row gives', async () => {
+  it('should skip a prompt and a hook, with the reason its capability row gives', async () => {
     const catalog = await loadResolvedCatalog();
     const target = getTarget(TARGET);
 
     const reasons: Record<string, RegExp> = {
-      agent: /Phase D/,
       prompt: /no prompt files/,
       hook: /Phase E/,
     };

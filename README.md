@@ -150,7 +150,7 @@ sigil add --target antigravity <rule-skill-or-pack>
 Skills go to `.agents/skills/` and repo-wide rules to `.agents/rules/` as `always_on` rules. Scoped rules are
 skipped, because Antigravity did not attach a glob rule in testing, but they still arrive inlined in the skills
 that use them. MCP servers merge into `.agents/mcp_config.json` (or `~/.gemini/config/mcp_config.json` with
-`--scope user`). Setup, limits and what was tested: [docs/setup/antigravity.md](docs/setup/antigravity.md).
+`--scope user`), and agents go to `.agents/agents/`, with Antigravity's own tool names and model tiers. Setup, limits and what was tested: [docs/setup/antigravity.md](docs/setup/antigravity.md).
 
 </details>
 
@@ -215,8 +215,8 @@ that use them. MCP servers merge into `.agents/mcp_config.json` (or `~/.gemini/c
   [docs/setup/cursor.md](docs/setup/cursor.md).
 - **Antigravity**: `sigil add --target antigravity` writes skills to `.agents/skills/` and repo-wide rules to
   `.agents/rules/` as `always_on` rules. Scoped rules are skipped until Antigravity attaches glob rules; the skills
-  that use them carry them inline. MCP servers merge into `.agents/mcp_config.json`. A full build writes no
-  `AGENTS.md`. Agents and hooks are planned. See
+  that use them carry them inline. MCP servers merge into `.agents/mcp_config.json` and agents go to
+  `.agents/agents/`. A full build writes no `AGENTS.md`. Hooks are planned. See
   [docs/setup/antigravity.md](docs/setup/antigravity.md).
 - **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
 

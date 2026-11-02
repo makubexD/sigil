@@ -21,7 +21,9 @@ This page covers what the `antigravity` target writes, what it skips and why, an
   `trigger: glob` file, and on `agy` 1.4.12 a glob rule never reached the model: not after a read of a matching file,
   not after an edit of it, and not in a later turn of the same conversation (ADR B1). The rule still reaches
   Antigravity inside the skills that use it, since each skill carries its rules inlined. `sigil add` lists the
-  skipped rule and its reason.
+  skipped rule and its reason. The same goes for a repo-wide rule you narrow with a `scope` in `.sigil/overlays.yaml`:
+  narrowed, it is a scoped rule. If it is already installed, `sigil update` refuses to rewrite it and leaves the
+  `always_on` file as it was, so remove the overlay or `sigil uninstall` the rule.
 
 `sigil build --target antigravity` writes the same files and **no `AGENTS.md`**. Antigravity also loads a root
 `AGENTS.md`, so a repo-wide rule written both there and in `.agents/rules/` would load twice. If you used the

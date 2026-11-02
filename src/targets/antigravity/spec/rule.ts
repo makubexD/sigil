@@ -11,12 +11,16 @@
  * renders the documented `trigger: glob` form, so deleting `skipReason` is the only change once a
  * release attaches glob rules.
  */
-import type { KindEmitSpec, FieldMapping, BodySectionSpec } from '../../spec-types';
+import type { KindEmitSpec, FieldMapping } from '../../spec-types';
 import { ANTIGRAVITY_RULES_DOC } from '../doc-refs';
 import { ANTIGRAVITY_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
 import { appliesToEveryFile } from '../../shared/repo-wide-rules';
-import { globsMapping, descriptionMapping } from '../../cursor/spec/rule';
+import {
+  commaGlobsMapping,
+  ruleDescriptionMapping,
+  ruleTitleHeading,
+} from '../../shared/rule-frontmatter';
 
 /** The mode key: `always_on` for a repo-wide rule, `glob` for a scoped one. */
 const triggerMapping: FieldMapping = {
@@ -26,13 +30,6 @@ const triggerMapping: FieldMapping = {
   alwaysEmit: true, // decides the mode when appliesTo is unauthored
   serialize: v =>
     `trigger: ${appliesToEveryFile(v as readonly string[] | undefined) ? 'always_on' : 'glob'}`,
-};
-
-/** `# <title>` heading — rules render it as a body-level heading, not frontmatter. */
-const titleHeading: BodySectionSpec = {
-  id: 'title',
-  position: 'before',
-  render: artifact => [`# ${artifact.frontmatter.title as string}`, ''],
 };
 
 /** Antigravity truncates a rule file past 24,000 bytes (its rules doc). */
@@ -47,13 +44,13 @@ export const ANTIGRAVITY_RULE_SPEC: KindEmitSpec = {
   kind: 'rule',
   outputPath: artifact => `.agents/rules/${artifact.id.replace(/\//g, '-')}.md`,
   pathPattern: /\.agents\/rules\/[^/]*\.md$/,
-  frontmatter: [triggerMapping, descriptionMapping, globsMapping],
+  frontmatter: [triggerMapping, ruleDescriptionMapping, commaGlobsMapping],
   emitEmptyFrontmatter: false,
   skipReason: frontmatter =>
     appliesToEveryFile(frontmatter.appliesTo as readonly string[] | undefined)
       ? undefined
       : SCOPED_RULE_SKIP_REASON,
-  body: [titleHeading],
+  body: [ruleTitleHeading],
   forbiddenKeys: ['name', 'applyTo', 'paths', 'agent', 'alwaysApply'],
   lexicon: ANTIGRAVITY_LEXICON,
   bodyForbids: [UNTRANSLATED_TOKEN_FORBID],

@@ -18,16 +18,28 @@ import type { EnvSyntax } from './env-reference';
 /** The field names a catalog `mcp` artifact can author inside `server:` (src/schema/index.ts). */
 export type McpField = 'command' | 'args' | 'env' | 'url' | 'headers';
 
+/** How a dialect writes an env reference: a syntax, or `'inherited'` (see `McpDialect`). */
+export type McpEnvSyntax = EnvSyntax | 'inherited';
+
 /**
  * The data one target's MCP file needs to render a catalog server. A new target with a JSON MCP
  * file supplies one constant, not a builder; the portable format (`PORTABLE_MCP_DIALECT` in
  * ./portable-mcp.ts) is one value, Cursor's `.cursor/mcp.json` is another.
+ *
+ * The type parameter defaults to a real `EnvSyntax`, so a dialect constant annotated plain
+ * `McpDialect` keeps a callable `envSyntax.format`; a dialect that passes env references through
+ * the client's environment instantiates it with `'inherited'` (or the full `McpEnvSyntax`).
  */
-export interface McpDialect {
+export interface McpDialect<S extends McpEnvSyntax = EnvSyntax> {
   /** The JSON key that holds the server map (e.g. `mcpServers`). */
   readonly serversKey: string;
-  /** How a `{sigil:env:NAME}` token is written in this file (EnvSyntax, ./env-reference.ts). */
-  readonly envSyntax: EnvSyntax;
+  /**
+   * How a `{sigil:env:NAME}` token is written in this file (EnvSyntax, ./env-reference.ts).
+   * `'inherited'`: the file expands no references, and the server inherits the client's
+   * environment. An identity `env` entry (`NAME: {sigil:env:NAME}`) is dropped, since the server
+   * already sees `NAME`; any other token skips the server.
+   */
+  readonly envSyntax: S;
   /** The server fields in which an env token may appear; a token elsewhere skips the server. */
   readonly interpolatedFields: readonly McpField[];
   /** Write `type: 'stdio'` first on a stdio server; omit to leave the authored object untouched. */
@@ -53,15 +65,45 @@ function omitKey(value: Record<string, unknown>, key: string): Record<string, un
   return out;
 }
 
+/**
+ * Removes every identity `env` entry (`K: '{sigil:env:K}'`) from `authored`, other keys in
+ * authored order; `env` itself is omitted when that empties it. Any other `authored` is returned
+ * unchanged. Only meaningful when the dialect's `envSyntax` is `'inherited'`: the server already
+ * sees those variables through the inherited environment.
+ */
+function dropIdentityEnv(authored: Record<string, unknown>): Record<string, unknown> {
+  const env = authored.env;
+  if (env === null || typeof env !== 'object' || Array.isArray(env)) return authored;
+  const kept: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(env as Record<string, unknown>)) {
+    if (value === `{sigil:env:${key}}`) continue;
+    kept[key] = value;
+  }
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(authored)) {
+    if (key === 'env') {
+      if (Object.keys(kept).length > 0) out.env = kept;
+    } else {
+      out[key] = value;
+    }
+  }
+  return out;
+}
+
 /** The skip reason when a token appears in a field the dialect does not interpolate, else undefined. */
-function skipReason(authored: Record<string, unknown>, dialect: McpDialect): string | undefined {
+function skipReason(
+  authored: Record<string, unknown>,
+  dialect: McpDialect<McpEnvSyntax>,
+): string | undefined {
   const interpolated = new Set<string>(dialect.interpolatedFields);
   for (const [field, value] of Object.entries(authored)) {
     if (interpolated.has(field)) continue;
     const tokens = envTokenNames(value);
     if (tokens.length > 0) {
       const names = tokens.map(token => `{sigil:env:${token}}`).join(', ');
-      return `${names} in ${field} is not expanded by this target`;
+      return dialect.envSyntax === 'inherited'
+        ? `${names} in ${field} is not carried by this target: it expands no environment references, and only an identity env entry (NAME: {sigil:env:NAME}) is passed through the inherited environment`
+        : `${names} in ${field} is not expanded by this target`;
     }
   }
   return undefined;
@@ -72,7 +114,7 @@ function applyTypePolicy(
   authored: Record<string, unknown>,
   isStdio: boolean,
   isRemote: boolean,
-  dialect: McpDialect,
+  dialect: McpDialect<McpEnvSyntax>,
 ): Record<string, unknown> {
   if (isStdio && dialect.stdioType === 'stdio') {
     // `type: 'stdio'` first, any authored `type` removed so there is exactly one type key.
@@ -95,7 +137,7 @@ function applyTypePolicy(
  */
 export function renderMcpServer(
   artifact: Pick<Artifact, 'id' | 'frontmatter'>,
-  dialect: McpDialect,
+  dialect: McpDialect<McpEnvSyntax>,
 ): McpServerRender {
   const fm = artifact.frontmatter;
   const name = (fm.name as string | undefined) ?? basenameOfId(artifact.id);
@@ -103,10 +145,13 @@ export function renderMcpServer(
   const { description: _d, ...authored } = (fm.server ?? {}) as Record<string, unknown>;
   void _d;
 
-  const reason = skipReason(authored, dialect);
+  const source = dialect.envSyntax === 'inherited' ? dropIdentityEnv(authored) : authored;
+
+  const reason = skipReason(source, dialect);
   if (reason !== undefined) return { skip: reason };
 
-  const config = applyTypePolicy(authored, 'command' in authored, 'url' in authored, dialect);
+  const config = applyTypePolicy(source, 'command' in source, 'url' in source, dialect);
+  if (dialect.envSyntax === 'inherited') return { name, config };
   return { name, config: expandEnvTokens(config, dialect.envSyntax) };
 }
 
@@ -117,7 +162,7 @@ export function renderMcpServer(
  */
 export function mcpServerOp(
   artifact: Pick<Artifact, 'id' | 'frontmatter'>,
-  dialect: McpDialect,
+  dialect: McpDialect<McpEnvSyntax>,
   dest: { file: string; root: ConfigRoot },
 ): ConfigMergeOp {
   const rendered = renderMcpServer(artifact, dialect);

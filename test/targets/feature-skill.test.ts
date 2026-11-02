@@ -48,15 +48,17 @@ describe('shared/feature skill', () => {
     assert.ok('.github/skills/feature/references/examples.md' in files, 'examples scaffolded');
   });
 
-  it('body: install lines add the marketplace first; plan phases stay write-free', async () => {
+  it('body: setup points at the agent-skills guide; plan phases stay write-free', async () => {
     const files = await new CopilotTarget().scaffold!(
       'shared/feature',
       await loadResolvedCatalog(),
       OPTS,
     );
     const skill = files['.github/skills/feature/SKILL.md'] ?? '';
-    assert.ok(skill.includes('claude plugin marketplace add addyosmani/agent-skills'));
-    assert.ok(skill.includes('copilot plugin install addyosmani/agent-skills'));
+    assert.ok(skill.includes('https://github.com/addyosmani/agent-skills#quick-start'));
+    for (const literal of ['claude plugin', 'copilot plugin']) {
+      assert.ok(!skill.includes(literal), `no per-tool install command (${literal})`);
+    }
     assert.match(skill, /written only after GATE 3/, 'planning files wait for edit permission');
   });
 

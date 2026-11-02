@@ -10,9 +10,9 @@ across.
 ## What reaches Antigravity today
 
 ```bash
-sigil add --target agents-standard <skill-or-pack>   # .agents/skills/<name>/, rules inlined
-sigil build --target agents-standard                 # dist/agents-standard/AGENTS.md, repo-wide rules
-cp dist/agents-standard/AGENTS.md ./AGENTS.md
+sigil add --target agents-standard <skill-or-pack>                # .agents/skills/<name>/, rules inlined
+sigil build --target agents-standard --out-dir /tmp/sigil-out     # repo-wide rules in AGENTS.md
+cp -n /tmp/sigil-out/agents-standard/AGENTS.md ./AGENTS.md        # only if you have none
 ```
 
 - **Skills.** `sigil add --target agents-standard` writes each skill to `.agents/skills/<name>/SKILL.md`, with the rules
@@ -20,7 +20,9 @@ cp dist/agents-standard/AGENTS.md ./AGENTS.md
   ([Agent skills](https://antigravity.google/docs/skills#cli-skill-locations);
   [ADR](../decisions/antigravity-target-2026-11.md) P2, A1).
 - **Repo-wide rules.** `sigil add` writes no `AGENTS.md`: a rule reaches this target only inside the skills that use
-  it. The root `AGENTS.md` with every repo-wide rule comes from `sigil build`; copy it to your repo root. Antigravity
+  it. The root `AGENTS.md` with every repo-wide rule comes from `sigil build`. Pass `--out-dir`: without it, `build` writes
+  into sigil's own package folder, not your project. If your repo has no `AGENTS.md`, copy the file to its root. If it
+  has one, it is yours: paste the generated sections into it instead of replacing it. Antigravity
   loads a root `AGENTS.md` into every session, with no settings
   ([Rules](https://antigravity.google/docs/rules#where-rules-are-stored); ADR P1, A1).
 
@@ -38,7 +40,7 @@ Each was checked with sigil's own output, not hand-written files: a skill from `
   it.
 - **Sigil's Claude plugins, through `agy plugin import`.** Don't run `agy plugin import claude`: it imports every
   Claude plugin you have. Importing sigil's plugins one by one doesn't work either: the skills were listed but never
-  reached a session, the agent was skipped, and the hook is never loaded (ADR U7).
+  reached a session, the agent was skipped, and the hook loads but can't fire, because its tool names and input are Claude Code's (ADR U7).
 - **Agents, MCP servers and hooks.** `agents-standard` doesn't write them; the target will (below).
 
 ## Approvals in print mode
@@ -52,15 +54,17 @@ write was denied too (ADR U7, run 11). To allow a tool for one run:
 agy -p "<prompt>" --settings '{"permissions":{"allow":["write_file(*)"]}}'
 ```
 
-Put the same `permissions.allow` list in `settings.json` to keep it
+Put the same `permissions.allow` list in `~/.gemini/antigravity-cli/settings.json` to keep it. That file is
+user-wide; there is no documented project settings file, and the CLI rewrites it at start but keeps `permissions`
 ([Settings](https://antigravity.google/docs/settings#setting-up-preferences)).
 
 ## Limits
 
 Each rule file is cut off at 24,000 bytes, and all always-on and global rules share a 20,000-token budget.
 Past it, the largest are replaced by a pointer with their path and description
-([Rules](https://antigravity.google/docs/rules#size-limits-and-token-budgets)). Keep `AGENTS.md` lean: install the packs
-you use, not the whole catalog.
+([Rules](https://antigravity.google/docs/rules#size-limits-and-token-budgets)). The `AGENTS.md` that `sigil build` writes holds
+every repo-wide rule in the catalog, whatever you installed (about 6.5 KB today, well under the budget). To make it
+smaller, delete the sections you don't want by hand.
 
 ## What the target will add
 

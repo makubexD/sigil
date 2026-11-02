@@ -18,4 +18,4 @@ Installs the `context-mode` MCP server. The `context-mode` binary must be availa
 on your system PATH (install it separately before using this artifact).
 
 **Install target:** `sigil add` merges the server into each tool's MCP file and prints where. The files and
-scopes per tool are in docs/reference/config-kinds.md.
+scopes per tool are in https://github.com/makubexD/sigil/blob/master/docs/reference/config-kinds.md.

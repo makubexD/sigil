@@ -18,4 +18,4 @@ tags: [mcp, remote, http, jam, shared]
 Installs the MakuJam remote MCP server, connecting via HTTP to `https://mcp.jam.dev/mcp`.
 
 **Install target:** `sigil add` merges the server into each tool's MCP file and prints where. The files and
-scopes per tool are in docs/reference/config-kinds.md.
+scopes per tool are in https://github.com/makubexD/sigil/blob/master/docs/reference/config-kinds.md.

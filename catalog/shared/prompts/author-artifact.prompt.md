@@ -36,7 +36,7 @@ Suggest the best fit and briefly explain why. If unsure, suggest a skill (most f
 
 Explain to the user:
 > "By default, this artifact will propagate to ALL AIs that support its kind — that's the DRY rule.
-> Which AIs support which kind is listed in docs/reference/capabilities.md.
+> Which AIs support which kind is listed in https://github.com/makubexD/sigil/blob/master/docs/reference/capabilities.md.
 > You can restrict it with `--platforms claude` if you only want it on one AI.
 > You can always widen it later with: `sigil retarget <id> --add <platform>`"
 

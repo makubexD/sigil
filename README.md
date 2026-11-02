@@ -199,7 +199,8 @@ Cursor without installing them again. Setup, limits and what was tested:
   `alwaysApply` rules. Hooks merge into `.cursor/hooks.json` and MCP servers into `.cursor/mcp.json`. Agents and
   prompts are skipped for now. See
   [docs/setup/cursor.md](docs/setup/cursor.md).
-- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
+- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`. Antigravity reads them
+  today, before its target ships: see [docs/setup/antigravity.md](docs/setup/antigravity.md).
 
 ## What is in the catalog
 

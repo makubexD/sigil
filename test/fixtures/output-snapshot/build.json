@@ -398,7 +398,7 @@
   "copilot/.github/instructions/typescript-ts-project-layout.instructions.md": "7c3f812895070ec0800911263d9953dcc1d6a5a904a0970f64338161527e5d3d",
   "copilot/.github/instructions/typescript-ts-security.instructions.md": "0eb8dbd80216c18e6a413d57c1cd47d37212e89516ba44cb3b2a8907d2b2e887",
   "copilot/.github/instructions/typescript-ts-testing.instructions.md": "68ec434ef4190b05f37df314310d8666feb67087262b78cfac58cef5e2735eef",
-  "copilot/.github/prompts/shared-author-artifact.prompt.md": "46da51d6271fd115a9d05e2ab0daa02b8c51b8db4adf09985ed3720df28f6bc6",
+  "copilot/.github/prompts/shared-author-artifact.prompt.md": "ba9aed2ead5b4c6fb90ae45c4c170b89acd89a68dd8f826e8b216cec50f95a64",
   "copilot/.github/prompts/shared-explain-diff.prompt.md": "cb069c425ec23b81fbf039c9b66fee78a892ecd8fa7673b219757c62eb02b380",
   "copilot/.github/skills/cli/SKILL.md": "edf711b6fa97a63f4d2502d5fa117099913813a0207bc594e0abea9cde2dd9b7",
   "copilot/.github/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
@@ -643,5 +643,5 @@
   "cursor/.cursor/skills/wizard/references/stack-python.md": "118d9d12cb7ad5315aed9c2ad87afcdf0897f2b961330eef4d7cf08314d83cde",
   "cursor/.cursor/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "cursor/.cursor/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
-  "registry.json": "81bd31b6412f2cf7f61a28c10cdc620f947afe7f140fe388c0a6651b41ee7512"
+  "registry.json": "5676f63a8eab0f50da888ee9ef729071e66004682cb832b35875a36c263b1186"
 }

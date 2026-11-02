@@ -24,7 +24,7 @@ the current directory (`.`).
 - `search_files` / `get_file_info`
 
 **Install target:** `sigil add` merges the server into each tool's MCP file and prints where. The files and
-scopes per tool are in docs/reference/config-kinds.md.
+scopes per tool are in https://github.com/makubexD/sigil/blob/master/docs/reference/config-kinds.md.
 
 **Security note:** The server has access to the directory path you pass as its argument.
 Scope it to a specific subdirectory if you want to restrict access (replace `.` with

@@ -191,7 +191,7 @@ target gets a `ToolDialect` that says how a neutral list is written and whether 
 (`strict` / `nearest`, family default in `standard.yaml`) decides what an inexact mapping does. Neutral `model` /
 `effort` hints map per target. The catalog's 39 agents and 41 skills migrate.
 
-**Done 2026-11-01** on branch `feat/neutral-agent-vocabulary`: the vocabulary, Claude, Copilot and open-standard
+**Done 2026-11-01** in #159 (step plan [plan-cursor-target-n.md](plan-cursor-target-n.md)): the vocabulary, Claude, Copilot and open-standard
 dialects, `toolPolicy` skips, Claude model tiers, family tool defaults (`family-tools`), and the catalog migrated. Legacy
 names are a `sync --check` error (`legacy-tool-name`), not a `validate` warning. Follow-up: hook `matcher`s
 (`Edit|Write`, `Bash`) still use Claude names, translated per target in `hook-ops.ts`.

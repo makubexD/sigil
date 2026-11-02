@@ -146,6 +146,29 @@ sigil add skill:csharp/cs-generate-tests --overwrite --yes
 
 ---
 
+## An agent is skipped with "this tool cannot express …"
+
+The target can't write the agent's `tools` or `disallowedTools` exactly. One example is
+`disallowedTools` on Copilot, which has no denylist field. The agent's `toolPolicy` is `strict`
+(the default), so `add` and the wizard list it as skipped with that reason, and `build` leaves it
+out. Writing a wider list could give a read-only agent write access. `sigil sync --check` reports
+the same gap as `tool-restriction-coverage`. Fix it in the catalog, in one of three ways:
+
+- Express the restriction as a `tools` allow-list, which every agent target carries.
+- Exclude the target with `platforms:`.
+- Set `toolPolicy: nearest` to accept the closest mapping with a warning.
+
+The table of what each target carries is in [spec.md § Tool vocabulary](spec.md#tool-vocabulary).
+
+## `sync --check` reports `legacy-tool-name`
+
+A `tools`, `disallowedTools` or `allowedTools` entry uses a provider's tool name (`Read`, `Grep`,
+`Bash`, `execute`, …) instead of the neutral vocabulary. `sigil sync --apply` rewrites each one to
+its neutral name (`read`, `search`, `shell`, …) and leaves permission patterns such as
+`Bash(git log:*)` as written.
+
+---
+
 ## `sigil validate` / `sigil check` report violations
 
 `sigil validate` prints `✗ <n> error(s) found.` and one `✗  [<id>] <problem>` line per error.

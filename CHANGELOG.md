@@ -31,8 +31,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `sigil build --target codex` also writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are
   skipped, with the reason. It writes the same skill files as `agents-standard`, so `add` refuses
   skills for one once the other has installed them. See `docs/setup/codex.md`.
+- A neutral tool vocabulary for catalog agents and skills: `read`, `search`, `edit`, `shell`, `web`,
+  `agent`, `todo`. Each target writes its own tool names, so Codex and Cursor skills no longer get
+  Claude Code's names. Claude's names (`Read`, `Grep`, `Bash`, …) and Copilot's `execute` are still
+  accepted as legacy aliases. `sigil sync --check` reports them (`legacy-tool-name`), and
+  `sync --apply` rewrites them. Agents gain `toolPolicy: strict | nearest` (absent means `strict`):
+  a target that can't write an agent's tool restriction exactly skips it with the reason, or, with
+  `nearest`, writes the closest mapping and warns. Agents also gain neutral `model: fast | balanced | deep`
+  and `effort` hints, mapped to `haiku` / `sonnet` / `opus` on Claude and left out elsewhere;
+  `claude.model` / `claude.effort` still override them on Claude. A family in `standard.yaml` may set
+  its members' tools, and `sync --check` (`family-tools`) reports a member that differs. See
+  `docs/reference/spec.md#tool-vocabulary`.
 
 ### Changed
+
+- Copilot agent files now list tools by Copilot's primary aliases (`read`, `search`, `execute`,
+  `edit`) instead of Claude's names, and Copilot skills write `allowed-tools` with the skills doc's
+  names (`shell`, not `Bash`). The agents-standard skill keeps Claude-style names; Codex and Cursor
+  skills leave `allowed-tools` out, since neither tool documents it.
+- On Claude Code, the coarser neutral names widen a few pre-approvals. A skill that listed only
+  `Grep` now also pre-approves `Glob`, and one that listed only `Edit` also pre-approves `Write`.
+  The five `*-debugger` agents gain `Write`; each already had `Bash`. A skill's `allowed-tools`
+  grants permission only for the turn it runs and restricts nothing.
+- An agent whose tool restriction a target can't carry is now skipped on `add` and `build`, with the
+  reason, instead of stopping the whole command.
 
 - Docs: the Cursor target's live probe results are recorded in
   `docs/decisions/cursor-target-2026-11.md`, and the Cursor roadmap is updated where they differ from it.

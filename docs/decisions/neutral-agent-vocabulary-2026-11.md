@@ -114,7 +114,7 @@ The owner delegated these choices on 2026-11-01. Each was checked against the so
 2. **`shell`, not `execute`.** `shell` is Copilot's own skill example and a compatible agent alias, Cursor's word in
    `readonly`, and Codex's. Copilot agents still get `execute`, their primary alias.
 3. **Family defaults are checked, not inherited.** A family in `catalog/standard.yaml` may declare default tools and
-   policy; `family-skeleton` fails `sync --check` on a member that differs, unless the family lists it in
+   policy; `family-tools` fails `sync --check` on a member that differs, unless the family lists it in
    `toolExceptions`. Inheriting at resolve time would make consumer commands read `standard.yaml`, which the
    family-skeleton invariant forbids, and an artifact file would stop saying what ships.
 4. **Absent `toolPolicy` means `strict`** (fail closed). A target that can't express an agent's restriction exactly

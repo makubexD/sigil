@@ -436,6 +436,16 @@ commands".
 
 Test: `npm run validate`, `node dist-cli/cli.js sync --check` (after `npm run build`), `npm test`.
 
+**Amendment (2026-11-02), part 2 of step 12 `[worker:medium]`:** moving the hooks to `script:` broke tests the plan
+did not list, and one real behaviour. Fix them in the same step:
+
+- `src/commands/add/hook-path-warning.ts`: a `script:` hook is installed as `node -e …`, so `warnHookCommandsOffPath`
+  checks `node` for it (today it reads only `frontmatter.command`, so a `script` hook never warns).
+  `test/commands/add-hook-path.test.ts` covers both forms.
+- `test/targets/cursor-hooks.test.ts`, `test/commands/status-outdated.test.ts`, `test/commands/update-config.test.ts`:
+  update what they assert or edit (old `args` payloads, `matcher: "Edit|Write"` source edits) to the new hook source,
+  keeping what each test proves. `test/catalog/protect-config-hook.test.ts` stays for step 13.
+
 ## Step 13 `[worker:medium]`: the deny regression tests and snapshots
 
 Files: `test/catalog/protect-config-hook.test.ts`, `test/catalog/reviewer-bash-guard-hook.test.ts`, new

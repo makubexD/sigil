@@ -7,25 +7,15 @@
  */
 import type { Artifact, ConfigMergeOp, MergeStrategy } from '../../types';
 import { SigilError } from '../../errors';
-import { normalizeHookEvent, parseHookMatcher } from '../../hook-vocabulary';
+import { normalizeHookEvent } from '../../hook-vocabulary';
 import type { HookEvent } from '../../hook-vocabulary';
 import type { NeutralTool } from '../../tool-vocabulary';
 import { composeHookScript } from '../hook-input';
-import { hookCommand, hookEventFor, renderHookMatcher } from '../hook-render';
-import type { HookCommandFields } from '../hook-render';
+import { hookCommand, hookCommandFields, hookEventFor, hookMatcherFor } from '../hook-render';
 import { CLAUDE_HOOK_EVENTS, CLAUDE_HOOK_INPUT, CLAUDE_HOOK_TOOL_DIALECT } from './hook-dialect';
 import { CLAUDE_MCP_SERVERS_KEY } from './config';
 import { portableMcpOp, portableMcpServer } from '../portable-mcp';
 import type { ConfigDestination } from './config';
-
-/** The hook's execution fields, built with only the keys the frontmatter sets. */
-function commandFields(fm: Artifact['frontmatter']): HookCommandFields {
-  return {
-    ...(typeof fm.script === 'string' ? { script: fm.script } : {}),
-    ...(typeof fm.command === 'string' ? { command: fm.command } : {}),
-    ...(Array.isArray(fm.args) ? { args: fm.args as string[] } : {}),
-  };
-}
 
 /**
  * Builds the single hook entry ({type, command, args?, timeout?}). A `script` hook is the exec
@@ -36,7 +26,7 @@ function buildHookEntry(
   event: HookEvent,
   tools?: readonly NeutralTool[],
 ): Record<string, unknown> {
-  const execution = hookCommand(commandFields(fm));
+  const execution = hookCommand(hookCommandFields(fm));
   const hookEntry: Record<string, unknown> =
     execution.kind === 'script'
       ? {
@@ -60,26 +50,13 @@ function providerEvent(authored: string): { event: string; neutral: HookEvent } 
   return { event, neutral: normalized.event };
 }
 
-/** Claude Code's matcher and the neutral tools it names, refusing a tool it cannot name. */
-function providerMatcher(authored: string | undefined): {
-  matcher: string;
-  tools: NeutralTool[] | undefined;
-} {
-  const rendered = renderHookMatcher(CLAUDE_HOOK_TOOL_DIALECT, authored);
-  if (rendered.kind === 'missing')
-    throw new SigilError(
-      `Claude Code has no hook tool name for ${rendered.tools.map(tool => `'${tool}'`).join(', ')}.`,
-    );
-  const parsed = parseHookMatcher(authored);
-  return {
-    matcher: rendered.kind === 'all' ? '*' : rendered.matcher,
-    tools: parsed.kind === 'tools' ? parsed.tools : undefined,
-  };
-}
-
 export function hookFragment(fm: Artifact['frontmatter']): Record<string, unknown> {
   const { event, neutral } = providerEvent(fm.event as string);
-  const { matcher, tools } = providerMatcher(fm.matcher as string | undefined);
+  const { matcher, tools } = hookMatcherFor(
+    CLAUDE_HOOK_TOOL_DIALECT,
+    fm.matcher as string | undefined,
+    'Claude Code',
+  );
 
   // Claude Code hooks format:
   // { hooks: { [event]: [{ matcher: "...", hooks: [{type: "command", command: "..."}] }] } }

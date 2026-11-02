@@ -6,9 +6,11 @@
  *
  * @module
  */
+import { SigilError } from '../errors';
 import { normalizeHookEvent, parseHookMatcher } from '../hook-vocabulary';
 import type { HookEvent } from '../hook-vocabulary';
 import type { HookFrontmatter } from '../schema';
+import type { Artifact } from '../types';
 import type { NeutralTool } from '../tool-vocabulary';
 import { renderTools } from './tool-dialect';
 import type { ToolDialect } from './tool-dialect';
@@ -71,4 +73,37 @@ export function hookCommand(
   return fm.args === undefined
     ? { kind: 'command', command: fm.command }
     : { kind: 'command', command: fm.command, args: fm.args };
+}
+
+/** The hook's execution fields from raw artifact frontmatter, with only the keys it sets. */
+export function hookCommandFields(fm: Artifact['frontmatter']): HookCommandFields {
+  return {
+    ...(typeof fm.script === 'string' ? { script: fm.script } : {}),
+    ...(typeof fm.command === 'string' ? { command: fm.command } : {}),
+    ...(Array.isArray(fm.args) ? { args: fm.args as string[] } : {}),
+  };
+}
+
+/**
+ * A target's matcher (`'*'` for every tool) and the neutral tools it names (`undefined` for
+ * every tool), refusing a tool the target's table cannot name. `provider` names the target in
+ * the error; `hint` is passed through.
+ */
+export function hookMatcherFor(
+  dialect: ToolDialect,
+  authored: string | undefined,
+  provider: string,
+  hint?: string,
+): { matcher: string; tools: NeutralTool[] | undefined } {
+  const rendered = renderHookMatcher(dialect, authored);
+  if (rendered.kind === 'missing')
+    throw new SigilError(
+      `${provider} has no hook tool name for ${rendered.tools.map(tool => `'${tool}'`).join(', ')}.`,
+      hint === undefined ? {} : { hint },
+    );
+  const parsed = parseHookMatcher(authored);
+  return {
+    matcher: rendered.kind === 'all' ? '*' : rendered.matcher,
+    tools: parsed.kind === 'tools' ? parsed.tools : undefined,
+  };
 }

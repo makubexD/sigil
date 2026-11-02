@@ -48,8 +48,10 @@ import { COPILOT_EMIT_SPECS } from './spec';
 import { COPILOT_RETIRED_MCP_DESTINATIONS } from './config';
 import { COPILOT_AGENT_SKILLS_DOC } from '../doc-refs';
 import { COPILOT_LEXICON } from './lexicon';
+import { COPILOT_HOOK_INPUT } from './hook-dialect';
 import { COPILOT_AGGREGATE_DOCS } from './aggregate-docs';
 import type { ProviderLexicon } from '../lexicon';
+import type { HookInputDialect } from '../hook-input';
 import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
 import { scaffoldArtifact } from '../emit-files';
 import { COPILOT_CAPABILITIES } from './capabilities';
@@ -94,6 +96,7 @@ export class CopilotTarget implements Target {
   readonly outputContracts: ContractEntry[] = COPILOT_OUTPUT_CONTRACTS;
   readonly emitSpecs: readonly KindEmitSpec[] = COPILOT_EMIT_SPECS;
   readonly lexicon: ProviderLexicon = COPILOT_LEXICON;
+  readonly hookInput: HookInputDialect = COPILOT_HOOK_INPUT;
   readonly aggregateDocs: readonly SourcedDocRef[] = COPILOT_AGGREGATE_DOCS;
   /** Probed on VS Code 1.125.1 (docs/audits/2026-10-06): `${NAME}` reaches the server as text. */
   readonly mcpEnvCaveat =

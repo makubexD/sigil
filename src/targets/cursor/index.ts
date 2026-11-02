@@ -31,6 +31,7 @@ import type {
 import { configScopesFrom, configSkipReasonFrom, scaffoldConfigFrom } from '../config-kind-table';
 import type { TargetCapabilities } from '../capability-types';
 import type { ProviderLexicon } from '../lexicon';
+import type { HookInputDialect } from '../hook-input';
 import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
 import { deriveContracts } from '../output-contract';
 import { emitFile, scaffoldArtifact, specFor } from '../emit-files';
@@ -39,6 +40,7 @@ import { CURSOR_CAPABILITIES } from './capabilities';
 import { CURSOR_CONFIG_KINDS } from './config';
 import { CURSOR_SKILLS_DOC, CURSOR_SUBAGENTS_DOC } from './doc-refs';
 import { CURSOR_LEXICON } from './lexicon';
+import { CURSOR_HOOK_INPUT } from './hook-dialect';
 import { CURSOR_EMIT_SPECS } from './spec';
 import { CURSOR_INIT_DIRS, CURSOR_PROJECT_MARKERS, CURSOR_VOCABULARY } from './metadata';
 
@@ -74,6 +76,7 @@ export class CursorTarget implements Target {
   readonly emitSpecs: readonly KindEmitSpec[] = CURSOR_EMIT_SPECS;
   readonly outputContracts: ContractEntry[] = deriveContracts(CURSOR_EMIT_SPECS);
   readonly lexicon: ProviderLexicon = CURSOR_LEXICON;
+  readonly hookInput: HookInputDialect = CURSOR_HOOK_INPUT;
   readonly aggregateDocs: readonly SourcedDocRef[] = CURSOR_AGGREGATE_DOCS;
 
   /**

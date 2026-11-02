@@ -27,12 +27,14 @@ import type {
 import { configScopesFrom, scaffoldConfigFrom } from '../config-kind-table';
 import type { TargetCapabilities } from '../capability-types';
 import type { ProviderLexicon } from '../lexicon';
+import type { HookInputDialect } from '../hook-input';
 import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
 import { deriveContracts } from '../output-contract';
 import { emitFile, scaffoldArtifact, specFor } from '../emit-files';
 import { isRepoWideRule, renderRulesDocument } from '../shared/repo-wide-rules';
 import { CODEX_CAPABILITIES } from './capabilities';
 import { CODEX_LEXICON } from './lexicon';
+import { CODEX_HOOK_INPUT } from './hook-dialect';
 import { CODEX_EMIT_SPECS } from './spec';
 import { CODEX_AGGREGATE_DOCS } from './aggregate-docs';
 import { CODEX_INIT_DIRS, CODEX_PROJECT_MARKERS, CODEX_VOCABULARY } from './metadata';
@@ -73,6 +75,7 @@ export class CodexTarget implements Target {
   readonly emitSpecs: readonly KindEmitSpec[] = CODEX_EMIT_SPECS;
   readonly outputContracts: ContractEntry[] = deriveContracts(CODEX_EMIT_SPECS);
   readonly lexicon: ProviderLexicon = CODEX_LEXICON;
+  readonly hookInput: HookInputDialect = CODEX_HOOK_INPUT;
   readonly aggregateDocs: readonly SourcedDocRef[] = CODEX_AGGREGATE_DOCS;
 
   readonly configKinds = CODEX_CONFIG_KINDS;

@@ -11,6 +11,8 @@ import { spawnSync } from 'node:child_process';
 import type { SpawnSyncReturns } from 'node:child_process';
 import { composeHookScript, normalizeHookInput } from '../../dist-cli/targets/hook-input';
 import type { HookInputDialect } from '../../dist-cli/targets/hook-input';
+import { getAllTargets } from '../../dist-cli/targets/index';
+import { supportsKind } from '../../dist-cli/targets/capabilities';
 
 /** A dialect shaped like Claude's, plus the raw-`apply_patch` patch tools. */
 const CLAUDE_LIKE: HookInputDialect = {
@@ -300,5 +302,14 @@ describe('composeHookScript', () => {
       JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/r/.env' } }),
     );
     assert.equal(result.status, 2);
+  });
+});
+
+describe('Target.hookInput', () => {
+  it('should be set on every target with a native hook kind', () => {
+    for (const target of getAllTargets()) {
+      if (!supportsKind(target, 'hook', 'scaffold')) continue;
+      assert.notEqual(target.hookInput, undefined, `${target.name} has no hookInput`);
+    }
   });
 });

@@ -227,7 +227,82 @@ protect. A first version would leave it `none`.
 
 ## Reuse map
 
-Step 3.
+Step 3, 2026-11-01. Each row names the sigil piece an `antigravity` target would use for one kind table row, with what
+it still lacks.
+
+| Row                | sigil piece                                                                                                                                                                                                                                                                                                                                              | Gap                                                                                                                                                                                                                                                                                         |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| skill, scaffold    | A skill `KindEmitSpec` writing `.agents/skills/<name>/SKILL.md`, like Codex's (`src/targets/codex/spec/skill.ts:38` limits). The folder is shared, so `sharesSkillFilesWith` (`src/types.ts:499`) names `codex` and `agents-standard`, as those two already name each other (`src/targets/codex/index.ts:68`, `src/targets/agents-standard/index.ts:46`) | A three-way share: `add` must refuse the second and third owner of one file (`src/cli-helpers.ts:183`). No new layer                                                                                                                                                                        |
+| skill, plugin      | Same spec under `skills/`; `AGENT_SKILLS_LIMITS` (`src/targets/agent-skills-limits.ts:15`) for the 64 / 1,024 limits                                                                                                                                                                                                                                     | `name` must equal the folder name in a plugin (sigil ids already are kebab-case, so a check, not a change)                                                                                                                                                                                  |
+| agent, both        | An agent spec with a `names` `ToolDialect` (`src/targets/tool-dialect.ts:32`, Cursor's at `src/targets/cursor/tool-dialect.ts:21`) and a tier table like `CLAUDE_MODEL_TIERS` (`src/targets/claude-code/spec/agent.ts:50`). `restrictionOutcome` (`src/targets/tool-restriction.ts:80`) handles lists the dialect can't carry                            | No `disallowedTools`: an agent with one is `nearest` or `skip`. **U3** decides what an agent with no `tools` gets; if the default is none, the spec must write the full list for "all tools"                                                                                                |
+| prompt, both       | none                                                                                                                                                                                                                                                                                                                                                     | No file form. **U1** decides whether a prompt could become a skill with `disable-model-invocation: true` and a lexicon `arguments` value (`src/targets/lexicon.ts:32`); until then `none`                                                                                                   |
+| rule, scaffold     | A rule spec writing `.agents/rules/<id>.md`, modelled on Cursor's (`src/targets/cursor/spec/rule.ts:24` globs mapping, `:76` limits): `trigger: glob` + `globs` for a scoped rule, `trigger: always_on` when `appliesToEveryFile` (`src/targets/shared/repo-wide-rules.ts:18`)                                                                           | A fifth emitter for `appliesTo`, so `test/targets/rule-globs-agreement.test.ts` must cover it. The 24,000-byte file limit goes on `limits`. The 20,000-token budget is over all rules at once, which no per-file `limits` entry can check: it goes in the setup docs                        |
+| rule, context file | `renderRulesDocument` (`src/targets/shared/repo-wide-rules.ts:32`), which Codex (`src/targets/codex/index.ts:115`), `agents-standard` (`src/targets/agents-standard/index.ts:66`) and Copilot (`src/targets/copilot/build-helpers.ts:9`) already call for the root `AGENTS.md`                                                                           | Pick one carrier per repo-wide rule. If a target also writes it to `.agents/rules/` as `always_on`, a project with Codex installed loads it twice (both files add up). Decision for the roadmap, no new layer                                                                               |
+| rule, plugin       | Same rule spec under the plugin's `rules/`                                                                                                                                                                                                                                                                                                               | Claude's plugin inlines rules into each skill; this channel ships them as files. Target layer only                                                                                                                                                                                          |
+| hook, both         | A `ConfigKindTable` entry (`src/targets/config-kind-table.ts:64`) writing `.agents/hooks.json`, and a hook-ops builder with an event table like Cursor's (`src/targets/cursor/hook-ops.ts:18`) and matcher translation (`:91`). `nodeEvalCommandLine` (`src/targets/shared/hook-command-line.ts:17`) builds the command                                  | **No layer carries the hook's I/O.** The catalog hook reads Claude's stdin (`tool_input`, `catalog/shared/hooks/protect-config.hook.md:22`) and denies with exit 2 (`:29`). Antigravity sends `toolCall.args` and ignores a non-zero exit, so the hook fails open. See the neutrality table |
+| mcp, scaffold      | A new `McpDialect` value (`src/targets/mcp-dialect.ts:26`): `serversKey: 'mcpServers'`, and `url` is accepted, so no field rename. The `EnvSyntax` (`src/targets/env-reference.ts:22`) is `PORTABLE_MCP_ENV_SYNTAX` (`:17`) if **U2** shows `${NAME}` expands                                                                                            | If U2 shows no expansion, `interpolatedFields` is empty and a server with an env token is skipped with the reason, as the dialect already allows                                                                                                                                            |
+| mcp, plugin        | Same dialect                                                                                                                                                                                                                                                                                                                                             | `${NAME}` works only for a name declared in `variables`, so the plugin build must emit that declaration. Target layer, new code                                                                                                                                                             |
+| settings, both     | none                                                                                                                                                                                                                                                                                                                                                     | `none` (D7)                                                                                                                                                                                                                                                                                 |
+| plugin manifest    | Claude's plugin build writes `plugin.json` with `pkg.version` (`src/targets/claude-code/plugin-assemble.ts`)                                                                                                                                                                                                                                             | `.antigravity-plugin/plugin.json` lets one repo ship both, but the manifest schema is closed, so a separate builder. **U7** may make it unnecessary                                                                                                                                         |
+
+The brief's TOML question is answered by D4: commands are gone, so no TOML is written. Codex's splice merge
+(`renderToml`, `src/config-merge/toml-file.ts:215`) stays Codex's alone.
+
+### Capability rows (draft)
+
+| Kind     | Scaffold                         | Plugin                           |
+| -------- | -------------------------------- | -------------------------------- |
+| skill    | native                           | native                           |
+| agent    | native                           | native                           |
+| prompt   | none (revisit after U1)          | none                             |
+| rule     | native                           | native                           |
+| hook     | native, blocked on the I/O layer | native, blocked on the I/O layer |
+| mcp      | native                           | native                           |
+| settings | none                             | none                             |
+
+### Neutrality table
+
+Every Antigravity difference from steps 2 and 3, and the ground rule 1 layer that absorbs it.
+
+| Difference                                                                                     | Layer                                                                   |
+| ---------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| Paths under `.agents/` and `~/.gemini/config/`                                                 | `KindEmitSpec.outputPath`; config destinations in the `ConfigKindTable` |
+| Skill and agent frontmatter fields                                                             | `KindEmitSpec` field mappings                                           |
+| Agent tool names (`view_file`, `run_command`, …)                                               | `ToolDialect` (`names`)                                                 |
+| Model tiers (`flash_lite`, `flash`, `pro`)                                                     | Tier table                                                              |
+| Rule `trigger` and comma-separated `globs`                                                     | Rule `KindEmitSpec`, with `appliesToEveryFile`                          |
+| 24,000-byte rule file limit                                                                    | `KindEmitSpec.limits`                                                   |
+| 20,000-token rules budget; MCP Ask approval; print-mode soft-deny                              | Setup docs (ground rule 3)                                              |
+| Context file `AGENTS.md`, `.agents/rules/`, `.agents/skills/`                                  | `ProviderLexicon` (`conventions-file`, `rules-dir`, `skills-dir`)       |
+| Argument syntax for a skill run as a command                                                   | `ProviderLexicon` `arguments`, once U1 is known                         |
+| No prompt kind                                                                                 | `capabilities.ts`                                                       |
+| Hook event names (`PreInvocation`, `PostInvocation` have no catalog equivalent)                | Hook translation table in the target                                    |
+| Hook matcher tool names                                                                        | Hook translation table, from Claude's names (known debt, below)         |
+| **Hook stdin shape (`toolCall.args.TargetFile`) and deny protocol (exit 0 + JSON `decision`)** | **None.** A needed neutral concept, below                               |
+| MCP server map and fields                                                                      | `McpDialect`                                                            |
+| MCP env reference                                                                              | `EnvSyntax` (after U2)                                                  |
+| Plugin MCP `variables` declaration                                                             | Plugin build in the target                                              |
+| Plugin manifest and folder layout                                                              | Plugin build in the target                                              |
+| Shared `.agents/skills/` with Codex and `agents-standard`                                      | `Target.sharesSkillFilesWith`                                           |
+| Settings file owned by the CLI                                                                 | `capabilities.ts` (`none`)                                              |
+
+No row needs a change to `catalog/` or the zod schema except the two hook rows:
+
+- **Needed neutral concept: a hook I/O contract.** Today the catalog's hook bodies are written against Claude's payload
+  and exit codes, and every shipped hook target accepts that: Cursor imports Claude hooks through its third-party table,
+  and Codex sends `tool_input` and honours exit 2 (`docs/decisions/codex-target-2026-10.md:22`). Antigravity is the first target that doesn't. The two documented differences are
+  the stdin (`toolCall.name` / `toolCall.args`, with `TargetFile` and `CommandLine` instead of `file_path` and
+  `command`) and the verdict (`{"decision": "deny"}` on stdout with exit 0, where any non-zero exit fails open). The
+  fix is a neutral contract, a named input shape and a neutral verdict, that each hook target adapts, for example
+  with a small adapter the target puts in front of the hook's command. **Cost:** a schema field or a body convention
+  for the verdict, rewriting the three catalog hooks against it, an adapter per target (Claude, Cursor, Codex become
+  identity mappings), and a regression test per target that a deny really denies. Until then a first version must ship
+  `hook` as `none`: shipping it would install guards that look active and block nothing.
+- **Known debt: neutral matchers.** Catalog matchers are Claude names (`Edit|Write`,
+  `catalog/shared/hooks/protect-config.hook.md:10`; the follow-up named in
+  `docs/decisions/neutral-agent-vocabulary-2026-11.md:136`). Cursor translates them with a fixed table; Antigravity
+  would be the third table. Since the I/O contract already touches every hook, the two belong in one phase: matchers
+  written in the neutral tool vocabulary (`edit`, `shell`, …) that each target's `ToolDialect` already maps.
 
 ## Probe log
 

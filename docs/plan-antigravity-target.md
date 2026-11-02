@@ -122,6 +122,7 @@ stays `none`. Plan: [plan-antigravity-target-f.md](plan-antigravity-target-f.md)
 
 A live check of each shipped kind on the current `agy`, the ADR's status updated, the brief
 `docs/ideas/antigravity-cli-target.md` deleted and its row removed. The probe fixtures stay as a script, so the probes
-re-run in one command on each `agy` update (the ADR's maintenance-cost note). F1h is still open: whether
-`agy plugin install` can take a GitHub URL that points at one plugin's subfolder. Phase G answers it before any
-release work publishes the plugins on a branch.
+re-run in one command on each `agy` update (the ADR's maintenance-cost note). F1h is answered (G1): a
+`https://github.com/<owner>/<repo>/tree/<branch>/<path>` URL installs one plugin from a subfolder (observed, not
+documented), so release work can publish the built plugins on a branch. Plan:
+[plan-antigravity-target-g.md](plan-antigravity-target-g.md).

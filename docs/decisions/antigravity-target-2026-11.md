@@ -534,6 +534,27 @@ F2c used `python-starter` (one skill, one agent) instead.
 Cleanup: both plugins uninstalled, `agy plugin list --json` was `[]`, and the empty `~/.gemini/config/plugins/` and
 `import_manifest.json` that install left were removed.
 
+### Phase G
+
+**G1, a GitHub URL to one plugin's subfolder (F1h; 2026-11-02, `agy 1.4.12`, Linux, signed in).**
+[Plugins](https://antigravity.google/docs/plugins) documents one GitHub form, `agy plugin install
+https://github.com/<owner>/<repo>`, with the plugin at the repo root; `agy plugin install --help` prints no help (it
+reads `--help` as a path). The fixture was a throwaway branch `probe/antigravity-plugin-url` of `makubexD/sigil`
+holding only `probe/plugins/sigil-url-probe/` (`plugin.json` with `name`, and one skill answering `URL-G1`). The branch
+was deleted after the runs.
+
+| #   | Form                                                                                                | Observed                                                                                                                                                                                                                                                                            |
+| --- | --------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| G1a | the documented repo-root form                                                                       | Not applicable: no plugin sits at a repo root here; G1c is that form with a branch.                                                                                                                                                                                                 |
+| G1b | `https://github.com/makubexD/sigil/tree/probe/antigravity-plugin-url/probe/plugins/sigil-url-probe` | **Installs.** "Cloning plugin from https://github.com/makubexD/sigil.git...", 1 skill, copied to `~/.gemini/config/plugins/sigil-url-probe`. The subfolder exists only on that branch, so the branch was honoured. A print run read the installed `SKILL.md` and answered `URL-G1`. |
+| G1c | `https://github.com/makubexD/sigil/tree/probe/antigravity-plugin-url` (branch, no subfolder)        | Exit 1: `could not detect plugin structure`.                                                                                                                                                                                                                                        |
+| G1d | `https://github.com/makubexD/sigil.git#probe/antigravity-plugin-url:probe/plugins/sigil-url-probe`  | Exit 1: `could not detect plugin structure` (the fragment is ignored).                                                                                                                                                                                                              |
+
+So a published branch can serve each built plugin by its `/tree/<branch>/<path>` URL, undocumented but observed. The
+stream's last line is `{"event":"result","result":{…,"response":"<final answer>"}}`, which the probe script reads.
+Cleanup: uninstalled, `agy plugin list --json` was `[]`, and the empty `plugins/` folder and `import_manifest.json`
+were removed.
+
 ## Decision
 
 **Go, staged, with target id `antigravity`.** The docs call the product Antigravity CLI and the binary `agy`, and

@@ -196,6 +196,10 @@ agy plugin install dist/antigravity/plugins/typescript-tooling        # user: co
 cp -r dist/antigravity/plugins/typescript-tooling .agents/plugins/    # workspace: this project only
 ```
 
+`agy plugin install` also takes a GitHub URL. The documented form is a repo whose root is the plugin. A URL to one
+plugin's folder on a branch, `https://github.com/<owner>/<repo>/tree/<branch>/<path>`, also installed in a probe (G1
+in the ADR), but no page documents it. sigil does not publish its built plugins on a branch yet.
+
 To remove one, run `agy plugin uninstall <name>`, or delete its `.agents/plugins/<name>/` folder.
 
 **MCP servers in a plugin.** Antigravity names a plugin's server `<plugin>_<key>`, so the `filesystem` server from
@@ -270,3 +274,6 @@ account, in throwaway repos. The Antigravity desktop app, Windows and macOS were
 - **F1:** a hand-built plugin in this layout, installed with `agy plugin install` and as a workspace copy in
   `.agents/plugins/`: its skill, `always_on` rule, agent and hook each worked, and its MCP server ran as
   `<plugin>_<key>` with `agy`'s environment. `agy plugin validate --strict` passed, signed in or not.
+- **G1:** a plugin in a subfolder of a branch installed from its `/tree/<branch>/<path>` GitHub URL, and its skill
+  answered; a branch URL without the subfolder, or a `#branch:path` fragment, failed with "could not detect plugin
+  structure".

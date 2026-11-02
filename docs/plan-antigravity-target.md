@@ -80,12 +80,14 @@ every documented entry shape loads (a `type` is accepted but not written) and th
 (C2) ran a sigil-installed `shared/filesystem` and removed it with `uninstall`. `shared/ado` stays off this target: its
 organization is a token in `args`. Plan: [plan-antigravity-target-c.md](plan-antigravity-target-c.md).
 
-### Phase D: agents
+### Phase D: agents (done 2026-11-02)
 
-`.agents/agents/<name>.md`. Tool names come from the binary, not the docs (`read_file` / `write_file` observed,
-`view_file` / `write_to_file` documented), through a `names` `ToolDialect` and a tier table (`flash_lite`, `flash`,
-`pro`). An agent with no `tools` gets no write tool (U3), so an "all tools" catalog agent must list them. Agent `tools`
-is a YAML list (U7: a string makes the loader skip the agent).
+`.agents/agents/<name>.md` through a `names` `ToolDialect` and a tier table (`flash_lite`, `flash`, `pro`). D1 showed
+the documented tool names load and work, one per tool (`multi_replace_file_content` excepted), with the binary's
+`read_file` / `write_file` / `edit_file` a parallel set, so the dialect writes the documented names. An agent with no
+`tools` gets no write tool (U3), so an absent catalog list writes the full one. `tools` is a YAML block list (U7). A live
+check (D2) ran a sigil-installed `typescript/ts-code-reviewer`: it reviewed and wrote no file. Plan:
+[plan-antigravity-target-d.md](plan-antigravity-target-d.md).
 
 ### Phase H: neutral hook contract (all hook targets)
 

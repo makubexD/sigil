@@ -117,7 +117,8 @@ sandbox to contain an agent's commands.
 **Approval in print mode.** An agent's writes and shell commands go through the same approvals as the main agent's
 ([Approvals in print mode](#approvals-in-print-mode)). In testing, workspace writes were allowed and shell commands
 and URL reads were denied until an allow rule named the permission, not the tool: `command(*)`, `read_url(*)`
-(`run_command(*)` was still denied):
+(`run_command(*)` was still denied). A catalog reviewer starts with `git status`, so without `command(*)` its first
+call is denied and the run ends with no output (ADR D2):
 
 ```bash
 agy --agent ts-code-reviewer -p "<prompt>" --settings '{"permissions":{"allow":["command(*)"]}}'

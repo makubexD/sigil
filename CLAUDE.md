@@ -33,6 +33,7 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   `test/cli-startup.test.ts` fails when a command module loads during `--version` or `--help`.
 - **The 4-stage pipeline stays platform-neutral**: `src/load.ts`, `src/validate/` (`validateCatalog`), and
   `src/resolve.ts` know nothing about Claude or Copilot. Platform logic lives only in `src/targets/<name>/index.ts`.
+  Every target follows [Rules for every target](docs/reference/architecture.md#rules-for-every-target).
 - **`serialize()` vs `canonicalize()`** (`src/config-merge/primitives.ts`) are not interchangeable. `serialize()` is
   order-preserving and the only JSON disk writer, reached through `renderConfig` (`src/config-merge/file-format.ts`) from
   `commands/add/execute-config.ts`, `commands/update-config-io.ts` and `commands/uninstall-config.ts`. A `.toml` path goes to

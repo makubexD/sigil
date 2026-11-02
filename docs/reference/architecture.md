@@ -18,6 +18,34 @@ Two extension points keep the axes from leaking into each other — see them wor
 **frontmatter namespaces** (a provider's own fields never touch the neutral schema) and **template
 slots** (a provider can rearrange a body without a catalog-side change).
 
+### Rules for every target
+
+Every target, new or shipped, and every review of one follows these rules. A regression pass over all targets checks
+them (the first is `docs/decisions/target-neutrality-regression-2026-11.md`).
+
+1. **The catalog stays provider-neutral.** A provider difference is resolved in the layer that parses or emits it,
+   never in `catalog/` source, the zod schema, or `load` / `validate` / `resolve`:
+   - paths and frontmatter → a `KindEmitSpec` in `src/targets/<provider>/spec/<kind>.ts`;
+   - tool names and model hints → a `ToolDialect` and a tier table;
+   - body terms (context file name, command argument syntax, folder names) → a `ProviderLexicon` with
+     `{sigil:<term>}` tokens;
+   - env references → an `EnvSyntax`; MCP entries → an `McpDialect`; config kinds → a `ConfigKindTable`;
+   - hook events and matchers → the target's translation. The neutral catalog form is the input, never Claude's names
+     copied through;
+   - which kinds ship → `src/targets/<provider>/capabilities.ts` only.
+
+   A difference no existing layer can carry is a finding. The fix is a new neutral concept, decided in its own phase
+   (as the neutral tool vocabulary was for Cursor). It is never a provider field or a provider literal in a body.
+
+2. **Official sources only.** Every capability claim cites the provider's own docs, or its source at a named release,
+   through `docs:` on the `KindEmitSpec` or the target's `aggregateDocs`. Where the docs and the shipped binary
+   disagree, the binary decides. Blog posts and third-party issues can raise a question but never answer one.
+   Anything the docs don't cover is recorded as "undocumented", never assumed, and a live probe decides it.
+3. **The provider's documented best practices are carried over as data:** size or listing limits go on
+   `KindEmitSpec.limits`, and the recommended scopes and trust and approval rules go in the setup docs. sigil's own
+   rules hold on every target too: a `.sigil.bak` backup before the first write to a home file, merging into
+   user-owned config, and never overwriting it.
+
 ### Adding a language
 
 1. Create `catalog/languages/<lang>/language.yaml`.

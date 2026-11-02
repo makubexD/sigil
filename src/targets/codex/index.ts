@@ -5,8 +5,8 @@
  * / `$CODEX_HOME/config.toml`. Everything here is data on the shared pipeline: emit specs, lexicon,
  * capabilities and citations. It needs nothing outside this folder except its `registerTarget()` line.
  *
- * The agents-standard target writes the same `.agents/skills/` files, so a project uses one of the
- * two for skills (Target.sharesSkillFilesWith).
+ * The agents-standard and antigravity targets write the same `.agents/skills/` files, so a project
+ * uses one of the three for skills (Target.sharesSkillFilesWith).
  *
  * @module
  */
@@ -65,7 +65,7 @@ export class CodexTarget implements Target {
   readonly afterInstallHint =
     'Codex picks up .agents/skills/ in its next session. Run it in a trusted project: an untrusted one skips AGENTS.md and .codex/ config. Review hooks with /hooks before they run — Codex skips a hook until then.';
 
-  readonly sharesSkillFilesWith = ['agents-standard'];
+  readonly sharesSkillFilesWith = ['agents-standard', 'antigravity'];
   readonly capabilities: TargetCapabilities = CODEX_CAPABILITIES;
   readonly initDirs: string[] = CODEX_INIT_DIRS;
   readonly projectMarkers: string[] = CODEX_PROJECT_MARKERS;

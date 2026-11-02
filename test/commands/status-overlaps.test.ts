@@ -32,6 +32,19 @@ describe('duplicateLoads', () => {
     );
   });
 
+  it('should note a skill installed for Copilot and Antigravity as loading twice in Copilot', () => {
+    const notes = duplicateLoads(
+      [
+        entry('shared/cli', 'skill', 'antigravity'),
+        entry('shared/cli', 'skill', 'copilot'),
+      ],
+      getAllTargets(),
+    );
+    assert.equal(notes.length, 1, notes.join('\n'));
+    assert.match(notes[0] ?? '', /GitHub Copilot also loads Antigravity's skills/);
+    assert.match(notes[0] ?? '', /load twice there: shared\/cli/);
+  });
+
   it('should say nothing when no reader shares an artifact with a target it reads', () => {
     const notes = duplicateLoads(
       [
@@ -67,6 +80,17 @@ describe('duplicateLoads, Cursor readerWins', () => {
     assert.match(notes[0] ?? '', /Cursor also reads OpenAI Codex's skills/);
     assert.match(notes[0] ?? '', /uses its own copy on a name clash/);
     assert.match(notes[0] ?? '', /goes unused there: x/);
+  });
+
+  it('should note a skill installed for Cursor and Antigravity as unused in Cursor', () => {
+    const notes = duplicateLoads(
+      [entry('x', 'skill', 'cursor'), entry('x', 'skill', 'antigravity')],
+      getAllTargets(),
+    );
+    assert.equal(notes.length, 1, notes.join('\n'));
+    assert.match(notes[0] ?? '', /Cursor also reads Antigravity's skills/);
+    assert.match(notes[0] ?? '', /uses its own copy on a name clash/);
+    assert.match(notes[0] ?? '', /Antigravity's copy of these goes unused there: x/);
   });
 
   it('should say nothing when the skill is installed for Cursor only', () => {

@@ -106,7 +106,7 @@ export class CopilotTarget implements Target {
   readonly alsoLoads = [
     {
       kind: 'skill' as const,
-      targets: ['claude', 'agents-standard', 'codex'],
+      targets: ['claude', 'agents-standard', 'codex', 'antigravity'],
       doc: COPILOT_AGENT_SKILLS_DOC,
     },
   ];

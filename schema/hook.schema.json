@@ -69,18 +69,29 @@
         "event": {
           "type": "string",
           "enum": [
+            "before-tool",
+            "after-tool",
+            "prompt-submit",
+            "session-start",
+            "stop",
+            "subagent-stop",
+            "notification",
             "PreToolUse",
             "PostToolUse",
             "UserPromptSubmit",
-            "SubagentStop",
-            "Stop",
             "SessionStart",
+            "Stop",
+            "SubagentStop",
             "Notification"
           ]
         },
         "matcher": {
           "default": "*",
           "type": "string"
+        },
+        "script": {
+          "type": "string",
+          "minLength": 1
         },
         "command": {
           "type": "string",
@@ -103,8 +114,7 @@
         "kind",
         "title",
         "description",
-        "event",
-        "command"
+        "event"
       ],
       "additionalProperties": false
     }

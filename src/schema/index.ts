@@ -9,6 +9,7 @@ import { z } from 'zod';
 import type { ArtifactKind } from '../types';
 import { CONFIG_SCOPES } from '../types';
 import { LEGACY_TOOL_ALIASES, isNeutralTool } from '../tool-vocabulary';
+import { HOOK_EVENTS, LEGACY_HOOK_EVENT_ALIASES, parseHookMatcher } from '../hook-vocabulary';
 import { BaseFields, KEBAB_NAME_RE } from './shared';
 import { TemplateSchema } from './template';
 
@@ -305,15 +306,16 @@ export const WorkflowSchema = z.object({
 
 // ─── Hook ─────────────────────────────────────────────────────────────────────
 
-const HOOK_EVENTS = [
-  'PreToolUse',
-  'PostToolUse',
-  'UserPromptSubmit',
-  'SubagentStop',
-  'Stop',
-  'SessionStart',
-  'Notification',
-] as const;
+/** Why a matcher name is rejected; the name itself is quoted before it. */
+const HINT =
+  'is not a neutral tool name: a matcher is `*` or neutral tools (read, search, edit, shell, web, agent, todo) joined with |';
+
+/** Adds one issue per matcher name that is neither a neutral tool nor a legacy alias. */
+function refineMatcher(value: string, ctx: z.RefinementCtx): void {
+  const parsed = parseHookMatcher(value);
+  for (const name of parsed.kind === 'tools' ? parsed.unknown : [])
+    ctx.addIssue({ code: 'custom', message: `${name === '' ? "''" : `\`${name}\``} ${HINT}` });
+}
 
 export const HookSchema = z.object({
   ...BaseFields,
@@ -323,25 +325,35 @@ export const HookSchema = z.object({
   /**
    * Default install scope recommended by the catalog author.
    * Overridable by --scope flag or wizard selection at install time.
-   * 'project' (default) = .claude/settings.json (git-committed).
-   * 'local'             = .claude/settings.local.json (gitignored).
-   * 'user'              = ~/.claude/settings.json (user-global).
+   * 'project' (default) = the target's project config (git-committed).
+   * 'local'             = the target's local, gitignored config.
+   * 'user'              = the target's user-global config.
    */
   defaultScope: z.enum(CONFIG_SCOPES).optional(),
   /**
-   * Claude Code lifecycle event that triggers this hook.
-   * Maps directly to the settings.json hooks key.
+   * The neutral lifecycle event (src/hook-vocabulary.ts); each hook target maps it.
+   * The PascalCase names are legacy aliases.
    */
-  event: z.enum(HOOK_EVENTS),
+  event: z.enum([...HOOK_EVENTS, ...Object.keys(LEGACY_HOOK_EVENT_ALIASES)]),
   /**
-   * Tool-name regex filter — Claude Code `matcher` field.
-   * Only used for PreToolUse/PostToolUse. Defaults to '*' (all tools).
+   * Neutral tool matcher: `*` for every tool, or neutral tool names joined with `|`
+   * (`edit`, `shell|edit`). Each hook target maps the names to its provider's tool names;
+   * legacy provider names are accepted and flagged. Defaults to '*' (all tools).
    */
-  matcher: z.string().optional().default('*'),
+  matcher: z.string().optional().default('*').superRefine(refineMatcher),
+  /**
+   * Body of a Node.js function that reads the hook's input: sigil calls it with one
+   * argument, `input` (the neutral HookInput, `undefined` when the provider's stdin is not
+   * a JSON object). Deny by setting `process.exitCode = 2` and writing the reason to
+   * stderr — every hook target blocks on exit 2. Exactly one of `script` and `command`
+   * is set.
+   */
+  script: z.string().min(1).optional(),
   /**
    * Shell command to run when the hook fires, or — with `args` — the executable to spawn.
+   * Exactly one of `script` and `command` is set; `args` needs `command`.
    */
-  command: z.string().min(1, 'command is required'),
+  command: z.string().min(1).optional(),
   /**
    * Exec form: when set, `command` is spawned directly with these arguments and no shell
    * (code.claude.com/docs/en/hooks, "Exec form and shell form"). Prefer it for any hook whose

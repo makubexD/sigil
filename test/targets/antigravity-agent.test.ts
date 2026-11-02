@@ -6,6 +6,9 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import fs from 'node:fs';
+import path from 'node:path';
 import { renderTools } from '../../dist-cli/targets/tool-dialect';
 import { restrictionOutcome } from '../../dist-cli/targets/tool-restriction';
 import { renderArtifact } from '../../dist-cli/targets/emit';
@@ -18,8 +21,9 @@ import {
 } from '../../dist-cli/targets/antigravity/tool-dialect';
 import { ANTIGRAVITY_AGENT_SPEC } from '../../dist-cli/targets/antigravity/spec/agent';
 import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
-import { loadResolvedCatalog } from '../helpers/catalog';
+import { CATALOG_DIR, loadResolvedCatalog } from '../helpers/catalog';
 import { makeAgent } from '../helpers/fixtures';
+import { withTempDir } from '../helpers/temp-dir';
 import type { ResolvedArtifact, ResolvedCatalog } from '../../dist-cli/types';
 
 describe('antigravityAgentToolNames', () => {
@@ -247,5 +251,237 @@ describe('antigravity agent spec — in-memory', () => {
     if (outcome.kind !== 'skip') return;
     assert.match(outcome.reason, /todo/);
     assert.throws(() => renderInMemory({ tools: ['read', 'todo'] }), /todo/);
+  });
+});
+
+// ── end to end through the built CLI ──────────────────────────────────────────
+// Same setup as `antigravity-mcp.test.ts`: a temp project and a temp HOME, and the bundled
+// catalog copied so a test can change what "the catalog" holds.
+
+const CLI = path.resolve(__dirname, '../../dist-cli/cli.js');
+const HOME_VAR = process.platform === 'win32' ? 'USERPROFILE' : 'HOME';
+const TARGET = 'antigravity';
+const AGENT_ID = 'typescript/ts-code-reviewer';
+const AGENT_NAME = 'ts-code-reviewer';
+const AGENT_FILE = path.posix.join('.agents', 'agents', `${AGENT_NAME}.md`);
+const CATALOG_AGENT = path.join('languages', 'typescript', 'agents', `${AGENT_NAME}.agent.md`);
+
+/** A project dir and a home dir, both empty. */
+function makeDirs(work: string): { project: string; home: string } {
+  const project = path.join(work, 'project');
+  const home = path.join(work, 'home');
+  fs.mkdirSync(project);
+  fs.mkdirSync(home);
+  return { project, home };
+}
+
+/** The bundled catalog, copied so a test can edit what the catalog holds. */
+function copyCatalog(work: string): string {
+  const catalogDir = path.join(work, 'catalog');
+  fs.cpSync(CATALOG_DIR, catalogDir, { recursive: true });
+  return catalogDir;
+}
+
+/** Runs the built CLI and returns the spawn result, for cases expected to fail. */
+function sigilResult(cwd: string, home: string, ...args: string[]) {
+  return spawnSync(process.execPath, [CLI, ...args, '--project-dir', cwd], {
+    cwd,
+    encoding: 'utf8',
+    input: '',
+    windowsHide: true,
+    env: { ...process.env, [HOME_VAR]: home },
+  });
+}
+
+/** Runs the built CLI in `cwd` with HOME pointed at `home`, and asserts it exited 0. */
+function sigil(cwd: string, home: string, ...args: string[]): void {
+  const done = sigilResult(cwd, home, ...args);
+  assert.equal(done.status, 0, `${done.stdout ?? ''}${done.stderr ?? ''}`);
+}
+
+/** `sigil add --target antigravity typescript/ts-code-reviewer`. */
+const addAgent = (project: string, home: string, catalogDir: string): void =>
+  sigil(project, home, 'add', AGENT_ID, '--target', TARGET, '--yes', '--catalog-dir', catalogDir);
+
+/** `sigil update --target antigravity`. */
+const updateAgents = (project: string, home: string, catalogDir: string): void =>
+  sigil(project, home, 'update', '--target', TARGET, '--yes', '--catalog-dir', catalogDir);
+
+/** `sigil uninstall typescript/ts-code-reviewer --target <target>`. */
+const uninstallAgent = (project: string, home: string, target = TARGET): void =>
+  sigil(project, home, 'uninstall', AGENT_ID, '--target', target, '--yes');
+
+const readJson = (file: string): Record<string, any> => JSON.parse(fs.readFileSync(file, 'utf8'));
+
+describe('antigravity agents — end to end', () => {
+  it('case 1: add writes .agents/agents/<name>.md and records it in the manifest', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, AGENT_FILE);
+
+      addAgent(project, home, catalogDir);
+
+      assert.ok(fs.existsSync(file), 'the agent file is written');
+      const manifest = readJson(path.join(project, '.sigil', 'manifest.json'));
+      const entry = manifest.entries.find(
+        (e: { id: string; target: string }) => e.id === AGENT_ID && e.target === TARGET,
+      );
+      assert.ok(entry, 'the manifest lists the agent for antigravity');
+      assert.equal(entry.kind, 'agent');
+      assert.deepEqual(
+        entry.files.map((f: { path: string }) => f.path),
+        [AGENT_FILE],
+      );
+    });
+  });
+
+  it('case 2: add again leaves the file byte-identical', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, AGENT_FILE);
+
+      addAgent(project, home, catalogDir);
+      const afterFirst = fs.readFileSync(file);
+      addAgent(project, home, catalogDir);
+
+      assert.ok(fs.readFileSync(file).equals(afterFirst), 'a second add writes nothing');
+    });
+  });
+
+  it('case 3: update rewrites the agent after its catalog description changes', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, AGENT_FILE);
+      addAgent(project, home, catalogDir);
+
+      const source = path.join(catalogDir, CATALOG_AGENT);
+      const original = fs.readFileSync(source, 'utf8');
+      const edited = original.replace(
+        'Use to review a TypeScript/Node.js diff',
+        'Updated end-to-end description',
+      );
+      assert.notEqual(edited, original, 'the description edit applied');
+      fs.writeFileSync(source, edited);
+
+      updateAgents(project, home, catalogDir);
+
+      assert.match(fs.readFileSync(file, 'utf8'), /Updated end-to-end description/);
+    });
+  });
+
+  it('case 4: uninstall removes the agent file', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const file = path.join(project, AGENT_FILE);
+
+      addAgent(project, home, catalogDir);
+      assert.ok(fs.existsSync(file), 'the agent file is written');
+
+      uninstallAgent(project, home);
+
+      assert.equal(fs.existsSync(file), false);
+    });
+  });
+
+  it('case 5: an agent with disallowedTools is skipped, naming the reason, writing nothing', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const source = path.join(catalogDir, CATALOG_AGENT);
+      const original = fs.readFileSync(source, 'utf8');
+      // Antigravity has no denylist: with `toolPolicy` dropped the skip is fail-closed.
+      const edited = original.replace(
+        'toolPolicy: nearest\n---',
+        'disallowedTools:\n  - edit\n---',
+      );
+      assert.notEqual(edited, original, 'the fixture edit applied');
+      fs.writeFileSync(source, edited);
+
+      const done = sigilResult(
+        project,
+        home,
+        'add',
+        AGENT_ID,
+        '--target',
+        TARGET,
+        '--yes',
+        '--catalog-dir',
+        catalogDir,
+      );
+
+      assert.equal(done.status, 0, `${done.stdout ?? ''}${done.stderr ?? ''}`);
+      const output = `${done.stdout ?? ''}${done.stderr ?? ''}`;
+      assert.match(output, /skipped/);
+      assert.match(output, /disallowedTools/);
+      assert.equal(fs.existsSync(path.join(project, AGENT_FILE)), false, 'nothing written');
+    });
+  });
+
+  it('case 6: build writes one agent file per catalog agent', async () => {
+    const catalog = await loadResolvedCatalog();
+    const expected = catalog.artifacts
+      .filter(a => a.kind === 'agent')
+      .map(a => `${String(a.frontmatter.name)}.md`)
+      .sort();
+    assert.ok(expected.length > 0, 'the catalog has agents');
+
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const outDir = path.join(work, 'out');
+
+      const done = spawnSync(
+        process.execPath,
+        [CLI, 'build', '--target', TARGET, '--out-dir', outDir],
+        {
+          cwd: project,
+          encoding: 'utf8',
+          input: '',
+          windowsHide: true,
+          env: { ...process.env, [HOME_VAR]: home },
+        },
+      );
+      assert.equal(done.status, 0, `${done.stdout ?? ''}${done.stderr ?? ''}`);
+
+      const agentDir = path.join(outDir, TARGET, '.agents', 'agents');
+      const written = fs
+        .readdirSync(agentDir)
+        .filter(name => name.endsWith('.md'))
+        .sort();
+      assert.deepEqual(written, expected);
+    });
+  });
+
+  it('case 7: cursor and antigravity each write the agent; uninstalling one leaves the other', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const cursorFile = path.join(project, '.cursor', 'agents', `${AGENT_NAME}.md`);
+      const antigravityFile = path.join(project, AGENT_FILE);
+
+      sigil(
+        project,
+        home,
+        'add',
+        AGENT_ID,
+        '--target',
+        'cursor',
+        '--yes',
+        '--catalog-dir',
+        catalogDir,
+      );
+      addAgent(project, home, catalogDir);
+
+      assert.ok(fs.existsSync(cursorFile), 'the cursor agent is written');
+      assert.ok(fs.existsSync(antigravityFile), 'the antigravity agent is written');
+
+      uninstallAgent(project, home);
+
+      assert.equal(fs.existsSync(antigravityFile), false, 'the antigravity file is removed');
+      assert.ok(fs.existsSync(cursorFile), 'the cursor file stays');
+    });
   });
 });

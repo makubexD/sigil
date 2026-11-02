@@ -555,6 +555,30 @@ stream's last line is `{"event":"result","result":{…,"response":"<final answer
 Cleanup: uninstalled, `agy plugin list --json` was `[]`, and the empty `plugins/` folder and `import_manifest.json`
 were removed.
 
+**G2, the probe run (2026-11-02, `agy 1.4.12`, model `gemini-3.8-flash-low`, Linux, signed in).**
+`npm run build && npm run probe:antigravity` re-checks every finding against sigil's real output (decision 2 of the
+phase): each probe installs or builds its artifact from a copy of the catalog, runs one `agy -p` in a fresh repo, and
+compares the verdict with the recorded one. Every line came back `OK`, exit 0, and `agy plugin list --json` was `[]`
+afterwards.
+
+| Probe        | Re-checks | Expect | Got  | Evidence                                                                                   |
+| ------------ | --------- | ------ | ---- | ------------------------------------------------------------------------------------------ |
+| `G-skill`    | P1/B      | pass   | pass | answer: `SKILL-G`                                                                          |
+| `G-rule`     | B         | pass   | pass | answer: `RULE-G`                                                                           |
+| `G-glob`     | B1        | fail   | fail | `src/app.ts` edited with one `write_file`, no tool call touched `.agents/`, answer: `NONE` |
+| `G-agent`    | D1/D2     | pass   | pass | answer: `AGENT-G FILE-G`                                                                   |
+| `G-mcp`      | C1/P5     | pass   | pass | answer quotes `PROBE_G=g-ok` from the `probe_env` tool                                     |
+| `G-hook`     | E1        | pass   | pass | no `.env` in the repo; `blocked write to protected file` in the stream                     |
+| `G-plugin`   | F1/F2     | pass   | pass | built plugin installed from a local path, answer: `SKILL-G`; uninstalled, list `[]`        |
+| `G-validate` | F2d       | pass   | pass | `validate-antigravity-plugins.cjs` exit 0 over the built plugins                           |
+
+`G-glob` needed two fixes before its verdict meant anything. In the first full run the model tried `run_command`
+(denied), stopped, and never edited `src/app.ts`, so its `fail` proved nothing. With shell allowed it ran `find`, then
+read `.agents/rules/probe-glob.md` itself and answered `GLOB-G` (twice), which is a leak, not an attach. The probe now
+allows only the edit tools, tells the model not to open other files, and returns `inconclusive` (printed `CHANGED`)
+unless the edit happened and no tool call touched `.agents/`. Three runs after the fix: `NONE` each time. B1 stands,
+and the scoped-rule `skipReason` stays.
+
 ## Decision
 
 **Go, staged, with target id `antigravity`.** The docs call the product Antigravity CLI and the binary `agy`, and

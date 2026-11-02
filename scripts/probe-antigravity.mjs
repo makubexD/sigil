@@ -84,11 +84,23 @@ const PROBES = [
       writeFileSync(join(repo, 'src', 'app.ts'), 'export const a = 1;\n');
     },
     prompt:
-      'Add the line `export const b = 2;` to src/app.ts, then tell me the probe-glob marker, or NONE.',
+      'Add the line `export const b = 2;` to src/app.ts. Do not open, list or search any other file. ' +
+      'Then, if your instructions name a probe-glob marker, tell me it; otherwise answer NONE.',
     args: [],
     allow: ['write_file(*)', 'edit_file(*)'],
     env: {},
-    check: stream => answerVerdict(stream, 'GLOB-G'),
+    // The verdict means "attached or not" only when the edit happened and the model never
+    // opened the rule file itself (with a shell it finds `.agents/rules/` and reads it).
+    check: (stream, repo) => {
+      const edited = readFileSync(join(repo, 'src', 'app.ts'), 'utf8').includes(
+        'export const b = 2;',
+      );
+      if (!edited) return { verdict: 'inconclusive', evidence: 'src/app.ts was not edited' };
+      if (toolCallsTouch(stream, '.agents')) {
+        return { verdict: 'inconclusive', evidence: 'the model opened .agents/ itself' };
+      }
+      return answerVerdict(stream, 'GLOB-G');
+    },
   },
   {
     id: 'G-agent',
@@ -408,6 +420,14 @@ function oneLine(text) {
  * The verdict for probes that pass when the final answer contains `codeword`. Evidence is the
  * answer, or the reason there is none.
  */
+/** Whether any tool call in the stream names `needle` in its parameters. */
+function toolCallsTouch(stream, needle) {
+  return stream.some(event => {
+    const info = event.step_update?.tool_info;
+    return info !== undefined && JSON.stringify(info.parameters ?? {}).includes(needle);
+  });
+}
+
 function answerVerdict(stream, codeword) {
   const answer = finalAnswer(stream);
   if (answer === null) return { verdict: 'fail', evidence: 'no result event in stream' };

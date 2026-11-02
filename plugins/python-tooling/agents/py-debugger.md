@@ -1,7 +1,7 @@
 ---
 name: py-debugger
 description: "Use to investigate a failing Python test, traceback, or unexpected runtime behaviour in isolation and return the root cause plus a verified minimal fix. Makes behavior-changing fixes; does not do behavior-preserving restructuring. Use proactively when pytest fails or an error is reported."
-tools: Read, Grep, Glob, Bash, Edit
+tools: Read, Grep, Glob, Bash, Edit, Write
 ---
 
 ## Boundary

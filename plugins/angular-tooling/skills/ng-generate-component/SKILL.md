@@ -2,7 +2,7 @@
 name: ng-generate-component
 description: "Scaffold an Angular component, directive, service, pipe, or guard plus its spec, following the project's discovered era and conventions"
 when_to_use: "Run via `/ng-generate-component <name>` when scaffolding a new component, directive, service, pipe, or guard — e.g. \"generate a UserProfile component\", \"scaffold a new auth guard\". Discovers the project's selector prefix, era (standalone vs NgModule), and test layout; prefers the Angular CLI when present and never overwrites existing files."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "<name> [--type=component|directive|service|pipe|guard]"
 ---
 

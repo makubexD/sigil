@@ -2,7 +2,7 @@
 name: ts-scaffold-project
 description: "Scaffold a new package with the workspace's standards pre-wired — tsconfig, ESLint, ESM exports map, src/test layout, seed test — and add it to the workspace (TypeScript)"
 when_to_use: "Use when adding a new package to an existing workspace or monorepo — \"scaffold a new package\", \"create a new lib/app/cli\", \"bootstrap a package for X\". Pass the package name and optional type. Never overwrites existing files; confirms before editing the root workspace config. For an empty directory with no workspace, use ts-new-project instead."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "<name> [--type=lib|app|cli|test]"
 ---
 

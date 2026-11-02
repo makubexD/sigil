@@ -2,7 +2,7 @@
 name: react-add-package
 description: "Vet and wire a new npm package for a React project — checks CVEs, bundle-size impact, types, and peer-dependency range before adding"
 when_to_use: "Use any time you need to add a new npm dependency to a React project — fires for \"add the zustand package\", \"install react-hook-form\", or \"add zod as a dependency\". Pass the package name; optionally pin a version and add --dev for build/test-only packages. Confirms before adding if vetting flags risk (large bundle impact, peer-dependency mismatch, CVE). Not for updating an already-installed package's version — see react-audit-deps for checking existing dependencies."
-allowed-tools: Read, Bash, Glob, Grep, Edit
+allowed-tools: Read, Bash, Grep, Glob, Edit, Write
 argument-hint: "<package-name> [version] [--dev]"
 ---
 

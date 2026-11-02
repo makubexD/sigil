@@ -2,7 +2,7 @@
 name: cs-document
 description: "Generate or update XML doc comments and module-level documentation following the project's documented docstring style (.NET / C#)"
 when_to_use: "Run via `/cs-document [file]` when public members are missing XML doc comments — e.g. \"document this class\", \"find undocumented public API\". Omit the argument to scan the whole source for undocumented symbols."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[file-or-class] (optional)"
 ---
 

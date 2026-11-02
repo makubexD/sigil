@@ -1,7 +1,7 @@
 ---
 name: react-debugger
 description: "Use to investigate a failing React test, console error, or unexpected UI behaviour in isolation and return the root cause plus a verified minimal fix. Makes behavior-changing fixes; does not do behavior-preserving restructuring. Use proactively when a test fails or a rendering bug is reported."
-tools: Read, Grep, Glob, Bash, Edit
+tools: Read, Grep, Glob, Bash, Edit, Write
 ---
 
 ## Boundary

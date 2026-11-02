@@ -2,7 +2,7 @@
 name: ts-audit-deps
 description: "Audit npm dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance (TypeScript)"
 when_to_use: "Use before releases, when adding new dependencies, or as a periodic maintenance check — or when the user asks \"are my dependencies up to date\", \"any known CVEs\", \"audit my deps\", or \"check for outdated packages\". Produces a read-only report; no dependency changes are made. Complements ts-security-auditor, which handles code-level (not dependency-level) vulnerabilities."
-allowed-tools: Read, Bash, Glob, Grep
+allowed-tools: Read, Bash, Grep, Glob
 argument-hint: "(no arguments)"
 context: fork
 ---
@@ -362,7 +362,7 @@ const execFileAsync = promisify(execFile);
 const { stdout } = await execFileAsync("git", ["log", "--oneline", branch]);
 
 // Avoid — shell interpolation, command injection
-const { stdout } = await exec(`git log --oneline ${branch}`);  // branch could be "; rm -rf /"
+const { stdout } = await exec(`git log --oneline ${branch}`);  // branch could be "; touch /tmp/pwned"
 ```
 
 Avoid `child_process.exec` and `child_process.execSync` with any untrusted input, and never pass

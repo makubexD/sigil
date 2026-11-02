@@ -2,7 +2,7 @@
 name: py-add-package
 description: "Vet and wire a new PyPI package via uv/pip — checks CVEs, maintenance, license, and py.typed before adding (Python)"
 when_to_use: "Use any time you need to add a new PyPI dependency — fires for \"add the httpx package\", \"install requests\", or \"add pytest-mock as a dev dependency\". Pass the package name; optionally pin a version and add --dev for test/lint-only packages (dependency-groups). Confirms before adding if vetting flags risk. Not for updating an already-installed package's version — see py-audit-deps for checking existing dependencies."
-allowed-tools: Read, Bash, Glob, Grep, Edit
+allowed-tools: Read, Bash, Grep, Glob, Edit, Write
 argument-hint: "<package-name> [version] [--dev]"
 ---
 

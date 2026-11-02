@@ -2,7 +2,7 @@
 name: ts-sync-tests
 description: "Sync the test suite with source code — add missing tests, update stale ones, and remove orphaned tests (with confirmation before deletion) (TypeScript)"
 when_to_use: "Use after multiple source files have changed and the test suite has drifted — missing tests for new exports, stale tests for renamed symbols, orphaned tests for deleted files. Also fires for \"sync the tests\", \"clean up orphaned tests\", or \"make sure tests match the current source\". Not for a single untested file with no drift to reconcile (see ts-generate-tests for that — it's cheaper for the one-file case)."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[--scope=changed|all] (default: changed)"
 ---
 

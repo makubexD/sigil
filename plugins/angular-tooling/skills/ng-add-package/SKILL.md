@@ -2,7 +2,7 @@
 name: ng-add-package
 description: "Vet and add a dependency — prefer ng add for Angular-aware packages, npm install otherwise, with peer-range and supply-chain checks"
 when_to_use: "Run via `/ng-add-package <package>` when a new dependency is needed — e.g. \"add ngx-toastr\", \"install this package as a dev dependency\". Vets for CVEs, types, ESM compatibility, Angular peer compatibility, and license before installing; undoes the change if the gate fails afterward."
-allowed-tools: Read, Bash, Glob, Grep, Edit
+allowed-tools: Read, Bash, Grep, Glob, Edit, Write
 argument-hint: "<package> [version] [--dev]"
 ---
 

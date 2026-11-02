@@ -2,7 +2,7 @@
 name: cs-release
 description: "Prepare a .NET release — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification"
 when_to_use: "Run manually via `/cs-release <version>` before cutting a release tag — e.g. \"prepare a release\", \"cut version 2.1.0\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review."
-allowed-tools: Read, Bash, Glob, Grep
+allowed-tools: Read, Bash, Grep, Glob
 argument-hint: "<version> (e.g. 2.1.0)"
 disable-model-invocation: true
 ---

@@ -2,7 +2,7 @@
 name: ts-add-package
 description: "Vet and wire a new npm package — CVEs, types, license, ESM/CJS compatibility (TypeScript)"
 when_to_use: "Use any time a new npm package needs adding — \"add <package>\", \"install <package>\", \"I need a library for X\". Confirms before adding if vetting flags risk. Scoped to bringing in a package that is not yet installed — not for bumping an existing package to a newer release, which needs no vetting workflow."
-allowed-tools: Read, Bash, Glob, Grep, Edit
+allowed-tools: Read, Bash, Grep, Glob, Edit, Write
 argument-hint: "<package-id> [version] [--dev]"
 ---
 

@@ -2,7 +2,7 @@
 name: py-add-project
 description: "Add a package to an existing Python repo or monorepo with its standards pre-wired — uv/hatch/pdm/poetry workspace, src layout, pyproject.toml, tests — then lint, type-check and test it (Python)"
 when_to_use: "Run via `/py-add-project <name>` when an existing Python repo or monorepo needs another package — e.g. \"add a reporting package to the workspace\", \"create a new lib under packages/\". Pass the package name and optional `--type`. Requires an existing root `pyproject.toml`; to start a brand-new package in an empty directory use py-scaffold-project instead. Never overwrites existing files; confirms before editing the root workspace config."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "<name> [--type=lib|app]"
 ---
 

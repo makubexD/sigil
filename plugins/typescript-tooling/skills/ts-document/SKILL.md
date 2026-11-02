@@ -2,7 +2,7 @@
 name: ts-document
 description: "Generate or update TSDoc on exported symbols following the project's documented documentation style (TypeScript)"
 when_to_use: "Use when exported functions, classes, interfaces, or type aliases are missing TSDoc, or after adding new public API surface — \"document this\", \"add TSDoc\", \"write docs for this module\". Pass a target file; omit to scan for undocumented public exports across the source."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[file-or-module] (optional)"
 ---
 

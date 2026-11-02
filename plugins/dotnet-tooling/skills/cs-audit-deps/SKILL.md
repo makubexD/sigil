@@ -2,7 +2,7 @@
 name: cs-audit-deps
 description: "Audit NuGet dependencies — known CVEs, outdated versions, deprecated packages, unused references, and license compliance (.NET / C#)"
 when_to_use: "Run via `/cs-audit-deps` before a release or as a periodic maintenance check — e.g. \"audit my NuGet dependencies\", \"check for known CVEs in my packages\". Produces a read-only report; no dependency changes are made. Complements cs-security-auditor, which handles code-level vulnerabilities rather than dependency CVEs."
-allowed-tools: Read, Bash, Glob, Grep
+allowed-tools: Read, Bash, Grep, Glob
 argument-hint: "(no arguments)"
 context: fork
 ---

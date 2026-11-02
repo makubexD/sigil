@@ -2,7 +2,7 @@
 name: react-document
 description: "Add or update TSDoc comments for a React component's exported components/hooks and their props, following the project's documented conventions"
 when_to_use: "Use when a component or hook's exported symbols lack TSDoc, or existing docs are stale relative to the current props/return shape. Fires for \"document this component\", \"add docs\", or \"update the docs for this hook\"."
-allowed-tools: Read, Edit, Glob, Grep
+allowed-tools: Read, Edit, Write, Grep, Glob
 argument-hint: "<file-or-component>"
 ---
 

@@ -2,7 +2,7 @@
 name: py-generate-tests
 description: "Use when adding or reviewing unit and integration tests in a Python project. Covers project layout, fixtures, parametrize, mocking, and async test patterns."
 when_to_use: "Use when adding, updating, or reviewing tests in a Python project — e.g. \"write tests for this service\", \"add pytest fixtures\", \"review my test coverage\". Covers project layout, fixtures, parametrize, mocking, and async test patterns."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[file-or-module] (optional)"
 ---
 

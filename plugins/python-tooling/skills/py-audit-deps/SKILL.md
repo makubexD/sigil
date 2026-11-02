@@ -2,7 +2,7 @@
 name: py-audit-deps
 description: "Audit PyPI dependencies — known CVEs (pip-audit), outdated versions, unmaintained packages, unused imports, and license compliance (Python)"
 when_to_use: "Use to check for known CVEs, outdated packages, and license issues in a Python project's dependencies. Fires for \"are there any known CVEs\", \"audit dependencies\", \"check for vulnerable packages\", or before a release."
-allowed-tools: Read, Bash, Glob, Grep
+allowed-tools: Read, Bash, Grep, Glob
 argument-hint: "(no arguments)"
 context: fork
 ---

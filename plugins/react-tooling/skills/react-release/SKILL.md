@@ -2,7 +2,7 @@
 name: react-release
 description: "Prepare an npm release for a shared component library — verify quality gates, generate a changelog from git log, and propose a version bump with SemVer classification (React)"
 when_to_use: "Run manually via `/react-release <version>` before cutting a release tag for a published component library — e.g. \"prepare a release\", \"cut version 2.1.0\", \"generate a release checklist\". Pass the target version number as the argument; omit it to get a suggested bump from recent commits. Does not tag, push, or publish — produces a checklist and changelog draft for human review. Complements react-api-compat-reviewer, which determines the correct SemVer bump from the exported component/hook diff."
-allowed-tools: Read, Bash, Glob, Grep
+allowed-tools: Read, Bash, Grep, Glob
 argument-hint: "<version> (e.g. 2.1.0)"
 disable-model-invocation: true
 ---

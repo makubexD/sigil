@@ -2,7 +2,7 @@
 name: cs-add-package
 description: "Vet and wire a NuGet package through Central Package Management — checks CVEs, maintenance, transitive footprint, and license before adding (.NET / C#)"
 when_to_use: "Use any time you need to add a new NuGet dependency. Pass the package ID; optionally pin a version and add --dev for analyzer/test-only packages (PrivateAssets=\"all\"). Confirms before adding if vetting flags risk."
-allowed-tools: Read, Bash, Glob, Grep, Edit
+allowed-tools: Read, Bash, Grep, Glob, Edit, Write
 argument-hint: "<package-id> [version] [--dev]"
 ---
 

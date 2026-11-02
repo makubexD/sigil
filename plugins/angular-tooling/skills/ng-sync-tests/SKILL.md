@@ -2,7 +2,7 @@
 name: ng-sync-tests
 description: "Sync an Angular spec suite with source code — add missing specs, update stale ones, and remove orphaned specs (with confirmation before deletion)"
 when_to_use: "Run via `/ng-sync-tests` after multiple source files have changed and the spec suite has drifted — e.g. \"sync my tests\", \"find missing and orphaned specs\". Default scope targets only files changed in the working tree; pass `--scope=all` for a full-project audit. Complements ng-generate-tests, which targets one file at a time."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[--scope=changed|all] (default: changed)"
 ---
 

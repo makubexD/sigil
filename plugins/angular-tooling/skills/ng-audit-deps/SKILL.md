@@ -2,7 +2,7 @@
 name: ng-audit-deps
 description: "Audit project dependencies — outdated versions, known CVEs, unused packages, Angular lockstep, and license compliance"
 when_to_use: "Run via `/ng-audit-deps` before a release or as a periodic maintenance check — e.g. \"audit my dependencies\", \"are any packages out of date or vulnerable\". Produces a read-only report covering CVEs, outdated versions, Angular lockstep, and license compliance; makes no changes."
-allowed-tools: Read, Bash, Glob, Grep
+allowed-tools: Read, Bash, Grep, Glob
 argument-hint: "(no arguments)"
 context: fork
 ---

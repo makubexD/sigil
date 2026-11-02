@@ -2,7 +2,7 @@
 name: py-document
 description: "Add or update Google-style docstrings for a Python module's public functions and classes, following the project's documented conventions"
 when_to_use: "Use when a module's public functions/classes lack docstrings, or existing docstrings are stale relative to the current signature. Fires for \"document this file\", \"add docstrings\", or \"update the docs for this module\"."
-allowed-tools: Read, Edit, Glob, Grep
+allowed-tools: Read, Edit, Write, Grep, Glob
 argument-hint: "<file-or-module>"
 ---
 

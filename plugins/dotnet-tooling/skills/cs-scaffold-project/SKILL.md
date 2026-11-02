@@ -2,7 +2,7 @@
 name: cs-scaffold-project
 description: "Scaffold a new .NET project with the solution's standards pre-wired — NRT, analyzers, CPM, file-scoped namespaces, correct src/tests layout — and add it to the .sln"
 when_to_use: "Run via `/cs-scaffold-project <name>` when adding a new project to an existing .NET solution — e.g. \"scaffold a new library project\", \"add a Reporting project to the solution\". Pass the project name and optional `--type`. Never overwrites existing files; confirms before editing the .sln. For an empty directory with no solution, use cs-new-project instead."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "<name> [--type=lib|console|web|test]"
 ---
 

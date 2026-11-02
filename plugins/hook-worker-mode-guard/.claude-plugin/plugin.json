@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "hook-worker-mode-guard",
   "displayName": "Worker Mode Guard",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "While worker mode is on (the file ~/.claude/state/worker-mode exists), blocks Edit, Write, MultiEdit and NotebookEdit calls so code changes go through a delegated worker instead of the main session. Plan files and anything under ~/.claude stay editable. Does nothing while worker mode is off. As a plugin, this is for Claude Code only.",
   "author": {
     "name": "Sigil",

@@ -2,7 +2,7 @@
 name: ng-new-project
 description: "Create a new Angular workspace in an empty directory with ng new — standalone, routing, strict, SSR choice — plus angular-eslint, the CLI's default test runner, and a starter test (Angular)"
 when_to_use: "Use when starting a brand-new Angular workspace in an empty directory. Fires for \"create a new Angular app\", \"ng new a project called X\", or \"set up an Angular workspace from scratch\". Not for adding an application or library to an existing Angular workspace (use ng-add-project there) or for adding a feature to an existing app."
-allowed-tools: Read, Write, Bash, Glob
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "<app-name>"
 ---
 

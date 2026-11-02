@@ -2,7 +2,7 @@
 name: react-generate-tests
 description: "Use when adding or reviewing tests for React components. Covers React Testing Library, user-event, async queries, mocking, and accessibility assertions."
 when_to_use: "Use when adding, updating, or reviewing tests for a React component — e.g. \"write tests for UserCard\", \"test this form submission\", \"check accessibility in this component's tests\". Covers React Testing Library queries, user-event interactions, async queries, mocking, and accessibility assertions."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[component-file] (optional)"
 ---
 

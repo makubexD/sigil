@@ -2,7 +2,7 @@
 name: ts-generate-tests
 description: "Generate a test suite for a source file or module, in whatever runner the project already uses (TypeScript)"
 when_to_use: "Use when a source file has no tests, when new exported functions were added without coverage, or the user says \"write tests for\", \"add test coverage\", \"generate tests\", or \"this file isn't tested\". Not for fixing an existing failing test (that's debugging, not generation) or for reconciling tests with source that already has partial coverage (see ts-sync-tests for that)."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[file-or-module] (optional)"
 ---
 

@@ -2,7 +2,7 @@
 name: cs-generate-tests
 description: "Generate an xUnit + Moq test suite for a C# file or class following the project's documented test conventions"
 when_to_use: "Run via `/cs-generate-tests [file]` when a source file lacks tests or a new public member has no coverage — e.g. \"generate tests for CalendarParser\", \"write xUnit tests for this class\". Omit the argument to scan for untested files and choose interactively. Complements cs-sync-tests, which syncs the whole test suite rather than one target."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[file-or-class] (optional)"
 ---
 

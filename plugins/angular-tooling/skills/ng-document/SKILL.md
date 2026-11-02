@@ -2,7 +2,7 @@
 name: ng-document
 description: "Generate or update TSDoc and module-level documentation for Angular code, following the project's documented documentation style"
 when_to_use: "Run via `/ng-document [file]` when public symbols, components, or services are missing TSDoc — e.g. \"document this service\", \"find undocumented public API\". Omit the argument to scan the whole source for undocumented symbols."
-allowed-tools: Read, Write, Edit, Bash, Glob, Grep
+allowed-tools: Read, Edit, Write, Bash, Grep, Glob
 argument-hint: "[file-or-module] (optional)"
 ---
 

@@ -70,6 +70,14 @@ export class AntigravityTarget implements Target {
   readonly installHint = 'writes to .agents/';
   readonly afterInstallHint =
     'Antigravity picks up .agents/skills/ and .agents/rules/ in its next session. An MCP tool runs only after approval or an allow rule such as mcp(<server>/*).';
+  /**
+   * Antigravity's MCP files expand no references, so an identity env entry is dropped and the
+   * server reads the variable from `agy`'s own environment (ADR P5, C1).
+   */
+  readonly mcpEnvCaveat =
+    'Antigravity expands no variables in its MCP files; the server inherits agy’s environment, ' +
+    'so export each of these before you start agy. Do not write a secret into the file instead: ' +
+    '.agents/mcp_config.json is usually committed.';
 
   readonly sharesSkillFilesWith = ['agents-standard', 'codex'];
   readonly capabilities: TargetCapabilities = ANTIGRAVITY_CAPABILITIES;

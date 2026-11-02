@@ -26,6 +26,11 @@ export interface EnvSyntax {
 const ENV_TOKEN_RE = /\{sigil:env:([^}]*)\}/g;
 const ENV_NAME_RE = /^[A-Za-z_][A-Za-z0-9_]*$/;
 
+/** Whether `name` is a well-formed environment variable name (letters, digits and `_`, no leading digit). */
+export function isEnvName(name: string): boolean {
+  return ENV_NAME_RE.test(name);
+}
+
 function expandString(value: string, syntax: EnvSyntax): string {
   return value.replace(ENV_TOKEN_RE, (token, name: string) => {
     if (!ENV_NAME_RE.test(name)) {

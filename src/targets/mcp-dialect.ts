@@ -12,7 +12,7 @@
 import type { Artifact, ConfigMergeOp, ConfigRoot } from '../types';
 import { SigilError } from '../errors';
 import { basenameOfId } from '../paths';
-import { envTokenNames, expandEnvTokens } from './env-reference';
+import { envTokenNames, expandEnvTokens, isEnvName } from './env-reference';
 import type { EnvSyntax } from './env-reference';
 
 /** The field names a catalog `mcp` artifact can author inside `server:` (src/schema/index.ts). */
@@ -76,7 +76,8 @@ function dropIdentityEnv(authored: Record<string, unknown>): Record<string, unkn
   if (env === null || typeof env !== 'object' || Array.isArray(env)) return authored;
   const kept: Record<string, unknown> = {};
   for (const [key, value] of Object.entries(env as Record<string, unknown>)) {
-    if (value === `{sigil:env:${key}}`) continue;
+    // A malformed name is never an identity entry: it stays, so the server is skipped with its reason.
+    if (isEnvName(key) && value === `{sigil:env:${key}}`) continue;
     kept[key] = value;
   }
   const out: Record<string, unknown> = {};

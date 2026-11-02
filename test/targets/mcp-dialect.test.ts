@@ -289,4 +289,13 @@ describe("renderMcpServer with envSyntax: 'inherited'", () => {
     assert.ok(isMcpSkip(rendered));
     assert.match(rendered.skip, /\{sigil:env:1BAD\}/);
   });
+
+  it('should skip, not drop, an identity-shaped entry whose name is malformed', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', env: { '1BAD': '{sigil:env:1BAD}' } }),
+      inherited,
+    );
+    assert.ok(isMcpSkip(rendered));
+    assert.match(rendered.skip, /\{sigil:env:1BAD\}/);
+  });
 });

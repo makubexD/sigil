@@ -632,4 +632,36 @@ describe('Antigravity MCP e2e', () => {
       assert.deepEqual(serversOf(path.join(project, PROJECT_FILE)).filesystem, CATALOG_SERVER);
     });
   });
+
+  it('names a server whose identity env entry was dropped and prints the env caveat', () => {
+    withTempDir(work => {
+      const { project, home } = makeDirs(work);
+      const catalogDir = copyCatalog(work);
+      const catalogFile = path.join(catalogDir, CATALOG_FILESYSTEM);
+      const source = fs.readFileSync(catalogFile, 'utf8');
+      fs.writeFileSync(
+        catalogFile,
+        source.replace(/^tags:/m, '  env:\n    FS_TOKEN: "{sigil:env:FS_TOKEN}"\ntags:'),
+      );
+
+      const done = sigilResult(
+        project,
+        home,
+        'add',
+        FILESYSTEM,
+        '--target',
+        CLI_TARGET,
+        '--scope',
+        'project',
+        '--yes',
+        '--catalog-dir',
+        catalogDir,
+      );
+      const output = `${done.stdout ?? ''}${done.stderr ?? ''}`;
+      assert.equal(done.status, 0, output);
+      assert.match(output, /shared\/filesystem reads FS_TOKEN from the environment/);
+      assert.match(output, /export each of these before you start agy/);
+      assert.equal(serversOf(path.join(project, PROJECT_FILE)).filesystem?.env, undefined);
+    });
+  });
 });

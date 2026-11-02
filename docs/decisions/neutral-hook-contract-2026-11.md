@@ -37,15 +37,15 @@ Checked 2026-11-02:
 
 Kebab-case like the rest of the neutral vocabulary (`src/hook-vocabulary.ts`), one table per target:
 
-| Neutral         | Claude             | Copilot (PascalCase alias) | Codex              | Cursor               |
-| --------------- | ------------------ | -------------------------- | ------------------ | -------------------- |
-| `before-tool`   | `PreToolUse`       | `PreToolUse`               | `PreToolUse`       | `preToolUse`         |
-| `after-tool`    | `PostToolUse`      | `PostToolUse`              | `PostToolUse`      | `postToolUse`        |
-| `prompt-submit` | `UserPromptSubmit` | `UserPromptSubmit`         | `UserPromptSubmit` | `beforeSubmitPrompt` |
-| `session-start` | `SessionStart`     | `SessionStart`             | `SessionStart`     | `sessionStart`       |
-| `stop`          | `Stop`             | `Stop`                     | `Stop`             | `stop`               |
-| `subagent-stop` | `SubagentStop`     | `SubagentStop`             | `SubagentStop`     | `subagentStop`       |
-| `notification`  | `Notification`     | refused                    | refused            | refused              |
+| Neutral         | Claude             | Copilot (PascalCase alias) | Codex              | Cursor               | Antigravity    |
+| --------------- | ------------------ | -------------------------- | ------------------ | -------------------- | -------------- |
+| `before-tool`   | `PreToolUse`       | `PreToolUse`               | `PreToolUse`       | `preToolUse`         | `PreToolUse`   |
+| `after-tool`    | `PostToolUse`      | `PostToolUse`              | `PostToolUse`      | `postToolUse`        | `PostToolUse`  |
+| `prompt-submit` | `UserPromptSubmit` | `UserPromptSubmit`         | `UserPromptSubmit` | `beforeSubmitPrompt` | refused        |
+| `session-start` | `SessionStart`     | `SessionStart`             | `SessionStart`     | `sessionStart`       | `SessionStart` |
+| `stop`          | `Stop`             | `Stop`                     | `Stop`             | `stop`               | `Stop`         |
+| `subagent-stop` | `SubagentStop`     | `SubagentStop`             | `SubagentStop`     | `subagentStop`       | refused        |
+| `notification`  | `Notification`     | refused                    | refused            | refused              | refused        |
 
 Evidence per column:
 
@@ -56,6 +56,10 @@ Evidence per column:
   with `hook_event_name: "Notification"` and has no compatible form, so it stays refused.
 - **Codex.** The documented event list has no notification event.
 - **Cursor.** The third-party mapping, where `Notification` is "No".
+- **Antigravity.** The hooks page lists `SessionStart`, `PreToolUse`, `PostToolUse`, `PreInvocation`,
+  `PostInvocation` and `Stop`. `PreInvocation` fires before every model call, not once per prompt, so `prompt-submit`
+  is refused; there is no subagent-stop or notification event. E1 saw `SessionStart`, `PostToolUse` and `Stop` fire,
+  and a `Stop` hook's exit 2 did not keep the session going.
 
 The seven PascalCase names stay accepted as legacy aliases (`LEGACY_HOOK_EVENT_ALIASES`), so an overlay catalog keeps
 loading. `legacy-tool-name` fails `sync --check` on one in catalog source, and `--apply` rewrites it. Cursor's extra
@@ -71,15 +75,15 @@ Each target renders the matcher through its own hook tool table, a `names` `Tool
 `<P>_HOOK_TOOL_DIALECT`, separate from its agent dialect. Cursor's agent dialect is a read-only flag, and Antigravity's
 hook calls report `write_file` where its agents take `write_to_file`.
 
-| Neutral  | Claude                          | Copilot (PascalCase)    | Codex           | Cursor                  |
-| -------- | ------------------------------- | ----------------------- | --------------- | ----------------------- |
-| `read`   | `Read`                          | `Read`                  | none            | `Read`                  |
-| `search` | `Grep`, `Glob`                  | `Grep`, `Glob`          | none            | `Grep`                  |
-| `edit`   | `Edit`, `Write`, `NotebookEdit` | `Edit`, `Write`         | `Edit`, `Write` | `Write`, `Delete`       |
-| `shell`  | `Bash`, `PowerShell`            | `Bash`                  | `Bash`          | `Shell`                 |
-| `web`    | `WebFetch`, `WebSearch`         | `WebFetch`, `WebSearch` | none            | `WebFetch`, `WebSearch` |
-| `agent`  | `Agent`                         | `Agent`                 | `Agent`         | `Task`                  |
-| `todo`   | `TodoWrite`                     | `TodoWrite`             | `update_plan`   | none                    |
+| Neutral  | Claude                          | Copilot (PascalCase)    | Codex           | Cursor                  | Antigravity (Phase E)                                                                            |
+| -------- | ------------------------------- | ----------------------- | --------------- | ----------------------- | ------------------------------------------------------------------------------------------------ |
+| `read`   | `Read`                          | `Read`                  | none            | `Read`                  | `view_file`, `read_file`                                                                         |
+| `search` | `Grep`, `Glob`                  | `Grep`, `Glob`          | none            | `Grep`                  | `grep_search`, `find_by_name`, `list_dir`                                                        |
+| `edit`   | `Edit`, `Write`, `NotebookEdit` | `Edit`, `Write`         | `Edit`, `Write` | `Write`, `Delete`       | `write_to_file`, `replace_file_content`, `multi_replace_file_content`, `write_file`, `edit_file` |
+| `shell`  | `Bash`, `PowerShell`            | `Bash`                  | `Bash`          | `Shell`                 | `run_command`                                                                                    |
+| `web`    | `WebFetch`, `WebSearch`         | `WebFetch`, `WebSearch` | none            | `WebFetch`, `WebSearch` | `search_web`, `read_url_content`                                                                 |
+| `agent`  | `Agent`                         | `Agent`                 | `Agent`         | `Task`                  | `invoke_subagent`                                                                                |
+| `todo`   | `TodoWrite`                     | `TodoWrite`             | `update_plan`   | none                    | none                                                                                             |
 
 Evidence per column, and what changed from the plan's starting table:
 
@@ -98,6 +102,9 @@ Evidence per column, and what changed from the plan's starting table:
 - **Cursor.** The hooks page lists `Shell`, `Read`, `Write`, `Grep`, `Delete`, `Task` for `preToolUse`. The
   third-party mapping adds `WebFetch` and `WebSearch`, and maps `Edit` to `Write` (`Glob`: "No"). `Delete` changes a
   file, so `edit` gains it. A4 confirmed `Write` live.
+- **Antigravity.** The hooks page lists the documented names; a default session reports `read_file`, `write_file`
+  and `edit_file` instead (P4, E1), and an agent whose `tools` name the documented ones calls those (D1). A matcher
+  naming one set lets the other through, so `read` and `edit` name both. No task-list tool is documented or seen.
 
 A matcher naming a tool the target's table has no entry for is refused with its reason, never rendered narrower. A
 guard that matches fewer calls than authored looks active and lets the rest through. `*` writes `*` (Cursor: no
@@ -145,19 +152,20 @@ current regex.
 | Copilot     | `tool_name` / `tool_input`        | `file_path`, `path`                  | `command`     | `Edit`, `Write`, `apply_patch`: the raw string | none         |
 | Codex       | `tool_name` / `tool_input`        | none                                 | `command`     | `apply_patch`, in `command` (A4)               | `agent_type` |
 | Cursor      | `tool_name` / `tool_input`        | `file_path`                          | `command`     | none                                           | none         |
-| Antigravity | `toolCall.name` / `toolCall.args` | `Path`, `TargetFile` (Phase E)       | `CommandLine` | Phase E                                        | Phase E      |
+| Antigravity | `toolCall.name` / `toolCall.args` | `TargetFile`, `Path`, `AbsolutePath` | `CommandLine` | none                                           | none (E1)    |
 
 ### 5. Script rendering
 
 The installed command is `node -e <composed>`: the normalizer source, the dialect and neutral event as JSON
 literals, a stdin reader, and `(function (input) { <script> })(normalized)`. Claude and Copilot write it in exec form
-(`command: node`, `args` / `exec` + `args`). Codex and Cursor use `nodeEvalCommandLine` (base64, no shell quoting;
+(`command: node`, `args` / `exec` + `args`). Codex, Cursor and Antigravity use `nodeEvalCommandLine` (base64, no shell quoting;
 Codex A3 refuses `args`).
 
 ### 6. Scope
 
-Claude, Copilot, Codex and Cursor, both scaffold and the Claude plugin (`hookFragment` is shared). Antigravity hook
-rendering is Phase E. Hook kind support rows don't change.
+Claude, Copilot, Codex and Cursor, both scaffold and the Claude plugin (`hookFragment` is shared). Hook kind support
+rows don't change. Amended by Phase E ([plan-antigravity-target-e.md](../plan-antigravity-target-e.md)): Antigravity
+renders hooks on the scaffold channel, and its hook kind row turned native.
 
 ## Consequences
 

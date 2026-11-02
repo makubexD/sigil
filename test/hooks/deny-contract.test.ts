@@ -1,8 +1,8 @@
 /**
  * The deny contract every hook target installs for `shared/protect-config`: the entry sigil writes
  * is run exactly the way that agent runs it — Claude Code and Copilot as the exec form (`command`/
- * `exec` + `args`, no shell — code.claude.com/docs/en/hooks "Exec form and shell form"), Codex and
- * Cursor as their one-line `node -e` command through `sh -c` (docs/decisions/
+ * `exec` + `args`, no shell — code.claude.com/docs/en/hooks "Exec form and shell form"), Codex,
+ * Cursor and Antigravity as their one-line `node -e` command through `sh -c` (docs/decisions/
  * neutral-hook-contract-2026-11.md decision 5). A `.env` write must block with exit 2 and the
  * reason on stderr whatever the host; a normal source file and unparseable input must both pass.
  */
@@ -10,6 +10,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import path from 'node:path';
+import { AntigravityTarget } from '../../dist-cli/targets/antigravity';
 import { ClaudeCodeTarget } from '../../dist-cli/targets/claude-code';
 import { CopilotTarget } from '../../dist-cli/targets/copilot';
 import { CodexTarget } from '../../dist-cli/targets/codex';
@@ -19,10 +20,11 @@ import type { Target } from '../../dist-cli/types';
 
 const ARTIFACT = 'shared/protect-config';
 
-type TargetName = 'claude' | 'copilot' | 'codex' | 'cursor';
+type TargetName = 'antigravity' | 'claude' | 'copilot' | 'codex' | 'cursor';
 
 /** Every hook target that installs this artifact, with the way it spawns the entry. */
 const TARGETS: readonly { name: TargetName; target: Target; form: 'exec' | 'command-line' }[] = [
+  { name: 'antigravity', target: new AntigravityTarget(), form: 'command-line' },
   { name: 'claude', target: new ClaudeCodeTarget(), form: 'exec' },
   { name: 'copilot', target: new CopilotTarget(), form: 'exec' },
   { name: 'codex', target: new CodexTarget(), form: 'command-line' },
@@ -80,6 +82,11 @@ async function render(name: TargetName, form: 'exec' | 'command-line'): Promise<
   assert.equal(ops.length, 1, 'one op per hook install');
   const fragment = ops[0]!.fragment;
   switch (name) {
+    case 'antigravity': {
+      const entry = (fragment['shared-protect-config'] as Record<string, HookGroup[]>)
+        .PreToolUse![0]!.hooks[0]!;
+      return { run: stdin => runCommandLine(entry.command!, stdin) };
+    }
     case 'claude': {
       const entry = (fragment.hooks as Record<string, HookGroup[]>).PreToolUse![0]!.hooks[0]!;
       return { run: stdin => runExec(entry.command!, entry.args, stdin) };
@@ -106,6 +113,10 @@ const patch = (filePath: string) =>
 /** One file write in the stdin shape `name` really sends (hook-dialect.ts per target). */
 function writePayload(name: TargetName, filePath: string): string {
   switch (name) {
+    case 'antigravity':
+      return JSON.stringify({
+        toolCall: { name: 'write_file', args: { Path: filePath, Content: 'x' } },
+      });
     case 'claude':
     case 'cursor':
       return JSON.stringify({ tool_name: 'Write', tool_input: { file_path: filePath } });
@@ -136,4 +147,15 @@ describe('shared/protect-config deny contract', () => {
       });
     });
   }
+
+  describe('rendered for antigravity with the documented tool name', () => {
+    it('denies a .env write named write_to_file with TargetFile', async () => {
+      const payload = JSON.stringify({
+        toolCall: { name: 'write_to_file', args: { TargetFile: '.env', CodeContent: 'x' } },
+      });
+      const r = (await render('antigravity', 'command-line')).run(payload);
+      assert.equal(r.status, 2, r.stderr);
+      assert.match(r.stderr, /sigil-hook: blocked write to protected file \.env/);
+    });
+  });
 });

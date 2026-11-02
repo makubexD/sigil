@@ -294,7 +294,7 @@ describe('conformance rule: platform-path-leak', () => {
     });
     assert.deepEqual(
       findings.map(f => f.provider),
-      ['copilot', 'codex', 'cursor'],
+      ['copilot', 'codex', 'cursor', 'antigravity'],
     );
   });
 
@@ -836,12 +836,16 @@ describe('conformance rule: config-target-render', () => {
   it('flags a hook with no platforms that a native-hook target cannot render', () => {
     const catalog = makeCatalog([makeHookArtifact()]);
     const findings = runConformance(catalog, getAllTargets(), { ruleId: 'config-target-render' });
-    assert.equal(findings.length, 1);
-    assert.equal(findings[0]!.severity, 'error');
-    assert.equal(findings[0]!.artifactId, 'shared/notify-hook');
-    assert.equal(findings[0]!.provider, 'cursor');
-    assert.match(findings[0]!.detail, /shared\/notify-hook/);
-    assert.match(findings[0]!.detail, /platforms/);
+    assert.deepEqual(
+      findings.map(f => f.provider),
+      ['cursor', 'antigravity'],
+    );
+    for (const finding of findings) {
+      assert.equal(finding.severity, 'error');
+      assert.equal(finding.artifactId, 'shared/notify-hook');
+      assert.match(finding.detail, /shared\/notify-hook/);
+      assert.match(finding.detail, /platforms/);
+    }
   });
 
   it('does not flag a hook restricted to another platform', () => {

@@ -13,6 +13,11 @@ import { composeHookScript, normalizeHookInput } from '../../dist-cli/targets/ho
 import type { HookInputDialect } from '../../dist-cli/targets/hook-input';
 import { getAllTargets } from '../../dist-cli/targets/index';
 import { supportsKind } from '../../dist-cli/targets/capabilities';
+import {
+  ANTIGRAVITY_HOOK_INPUT,
+  ANTIGRAVITY_HOOK_TOOL_DIALECT,
+} from '../../dist-cli/targets/antigravity/hook-dialect';
+import type { ToolDialect } from '../../dist-cli/targets/tool-dialect';
 
 /** A dialect shaped like Claude's, plus the raw-`apply_patch` patch tools. */
 const CLAUDE_LIKE: HookInputDialect = {
@@ -311,6 +316,96 @@ describe('composeHookScript', () => {
       JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/r/.env' } }),
     );
     assert.equal(result.status, 2);
+  });
+});
+
+describe('Antigravity hook input', () => {
+  it('should read the observed write_file call and its Path', () => {
+    assert.deepEqual(
+      normalizeHookInput(
+        JSON.stringify({
+          toolCall: { name: 'write_file', args: { Path: '/r/.env', Content: 'x' } },
+        }),
+        ANTIGRAVITY_HOOK_INPUT,
+        'before-tool',
+      ),
+      { event: 'before-tool', tool: 'edit', files: ['/r/.env'] },
+    );
+  });
+
+  it('should read the documented write_to_file call and its TargetFile', () => {
+    assert.deepEqual(
+      normalizeHookInput(
+        JSON.stringify({ toolCall: { name: 'write_to_file', args: { TargetFile: '/r/a.ts' } } }),
+        ANTIGRAVITY_HOOK_INPUT,
+        'before-tool',
+      ),
+      { event: 'before-tool', tool: 'edit', files: ['/r/a.ts'] },
+    );
+  });
+
+  it('should read multi_replace_file_content with TargetFile', () => {
+    assert.deepEqual(
+      normalizeHookInput(
+        JSON.stringify({
+          toolCall: {
+            name: 'multi_replace_file_content',
+            args: { TargetFile: '/r/a.ts', ReplacementChunks: [] },
+          },
+        }),
+        ANTIGRAVITY_HOOK_INPUT,
+        'before-tool',
+      ),
+      { event: 'before-tool', tool: 'edit', files: ['/r/a.ts'] },
+    );
+  });
+
+  it('should read the shell command and no cwd from run_command', () => {
+    assert.deepEqual(
+      normalizeHookInput(
+        JSON.stringify({
+          toolCall: { name: 'run_command', args: { CommandLine: 'npm test', Cwd: '/r' } },
+        }),
+        ANTIGRAVITY_HOOK_INPUT,
+        'before-tool',
+      ),
+      { event: 'before-tool', tool: 'shell', files: [], command: 'npm test' },
+    );
+  });
+
+  it('should leave the tool undefined for an unlisted name', () => {
+    assert.deepEqual(
+      normalizeHookInput(
+        JSON.stringify({ toolCall: { name: 'browser_click', args: {} } }),
+        ANTIGRAVITY_HOOK_INPUT,
+        'before-tool',
+      ),
+      { event: 'before-tool', files: [] },
+    );
+  });
+
+  it('should not read a Claude-shaped payload', () => {
+    assert.deepEqual(
+      normalizeHookInput(
+        JSON.stringify({ tool_name: 'Write', tool_input: { file_path: '/r/.env' } }),
+        ANTIGRAVITY_HOOK_INPUT,
+        'before-tool',
+      ),
+      { event: 'before-tool', files: [] },
+    );
+  });
+
+  it('should return undefined for stdin that is not JSON', () => {
+    assert.equal(normalizeHookInput('not json', ANTIGRAVITY_HOOK_INPUT, 'before-tool'), undefined);
+  });
+
+  it('should map every listed name back to its neutral tool, and todo to none', () => {
+    const names = (ANTIGRAVITY_HOOK_TOOL_DIALECT as Extract<ToolDialect, { kind: 'names' }>).names;
+    for (const [tool, providerNames] of Object.entries(names)) {
+      for (const name of providerNames ?? [])
+        assert.equal(ANTIGRAVITY_HOOK_INPUT.toolNames[name], tool, name);
+    }
+    assert.equal(names.todo, undefined);
   });
 });
 

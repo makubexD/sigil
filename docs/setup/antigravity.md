@@ -68,6 +68,54 @@ server's tools, add a rule such as `mcp(filesystem/*)` (`mcp(<server>/<tool>)` f
 agy -p "<prompt>" --settings '{"permissions":{"allow":["mcp(filesystem/*)"]}}'
 ```
 
+## Hooks
+
+```bash
+sigil add --target antigravity shared/protect-config                # .agents/hooks.json
+sigil add --target antigravity shared/protect-config --scope user   # ~/.gemini/config/hooks.json
+```
+
+A project hook goes in `.agents/hooks.json`, which you commit with the repo. A user hook goes in
+`~/.gemini/config/hooks.json` and applies to every project; the first write to a user file that holds your own hooks
+takes one `~/.gemini/config/hooks.json.sigil.bak`. `--scope local` is refused: Antigravity has no personal
+per-project hook file. Hooks in Antigravity's `settings.json` are not loaded, so sigil writes none there
+([Hooks](https://antigravity.google/docs/hooks)). Hooks load when a session starts.
+
+**One named entry per hook.** The file maps a hook name to its events, and sigil names each hook after its id:
+`shared/protect-config` becomes `shared-protect-config`. Your other hooks are left as they are. A hook of your own
+with the same name is replaced, as an MCP server with the same name is, and `sigil uninstall` removes only sigil's
+key.
+
+```json
+{
+  "shared-protect-config": {
+    "PreToolUse": [
+      {
+        "matcher": "write_to_file|replace_file_content|multi_replace_file_content|write_file|edit_file",
+        "hooks": [{ "type": "command", "command": "node -e …" }]
+      }
+    ]
+  }
+}
+```
+
+**Events.** `before-tool`, `after-tool`, `session-start` and `stop` become `PreToolUse`, `PostToolUse`,
+`SessionStart` and `Stop`. `prompt-submit` is skipped (`PreInvocation` fires before every model call, not once per
+prompt), and so are `subagent-stop` and `notification`, which have no event. Only the two tool events take a
+matcher; a matcher on another event is skipped with the reason rather than run on everything.
+
+**Tool names.** The docs and `agy` 1.4.12 name the file tools differently: the docs list `write_to_file`,
+`replace_file_content` and `view_file`, and a session reports `write_file`, `edit_file` and `read_file` (ADR P4, E1).
+So a matcher names both sets, as above. A `todo` matcher is skipped: Antigravity has no task-list tool.
+
+**Deny.** A hook that exits 2 blocks the call and the model sees its stderr reason. The plugins page says a non-zero
+exit is ignored, but on `agy` 1.4.12 exit 2 denied the write in every test (ADR P4, E1, E2). **A `stop` hook can't
+block here:** a `Stop` hook that exited 2 ran once and the session ended anyway (ADR E1). Antigravity keeps a
+session going only on a JSON answer, which sigil's hook contract doesn't write.
+
+A subagent's tool calls reach the same hooks, but the hook's input doesn't say which agent made them, so
+`input.agent` is always empty on Antigravity. Hooks were checked on Linux only.
+
 ## Agents
 
 ```bash
@@ -129,8 +177,8 @@ folder, so an agent installed for `cursor` or `claude` as well is a separate cop
 
 ## What doesn't reach it
 
-- **Hooks.** Not built yet; they are a later phase of the [roadmap](../plan-antigravity-target.md#phases).
-  `sigil add` skips them with that reason.
+- **Hooks Antigravity has no event for** (`prompt-submit`, `subagent-stop`, `notification`), and a matcher on a
+  `todo` tool. `sigil add` skips them with the reason ([Hooks](#hooks)).
 - **Prompts and workflows.** Antigravity has no prompt files: workflows stopped working, and a skill is the slash
   command ([Migrating workflows to skills](https://antigravity.google/docs/migration/workflows-to-skills)).
 - **Anything written for Claude Code.** Antigravity doesn't read `CLAUDE.md` or `.claude/` (ADR P6), so
@@ -186,3 +234,8 @@ account, in throwaway repos. The Antigravity desktop app, Windows and macOS were
 - **U3, D1:** in a project agent each `tools` name in the table above loaded and was called;
   `multi_replace_file_content` never did. An agent with only `view_file` and `grep_search` refused to write a file.
   `model: flash_lite` and `model: pro` loaded; a made-up tier dropped the agent.
+- **P4, E1:** a hook in `.agents/hooks.json`, keyed by hook name, that exits 2 on a `.env` write blocked it, and the
+  model saw the reason. A matcher listing the edit tools caught every edit and no read. `SessionStart` and
+  `PostToolUse` fired, a subagent's calls reached the hook, and a `Stop` hook's exit 2 didn't keep the session going.
+- **E2:** `sigil add shared/protect-config --target antigravity`, then a `.env` write through the file tool: blocked,
+  with the reason in the stream; `notes.txt` was written; `sigil uninstall` deleted the emptied `.agents/hooks.json`.

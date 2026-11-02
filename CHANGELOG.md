@@ -18,6 +18,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   tool names (`view_file`, `grep_search`, `run_command`, …) and `model` as `flash_lite`, `flash` or `pro`. An agent
   with no `tools` gets the full list, since Antigravity reads an absent list as no tools. See
   `docs/setup/antigravity.md`.
+- `--target antigravity` installs hooks into `.agents/hooks.json` (project) or `~/.gemini/config/hooks.json`
+  (user), one entry per hook named after its id. `before-tool`, `after-tool`, `session-start` and `stop` are
+  supported; other events, and a `todo` matcher, are skipped with the reason. A `stop` hook cannot block on
+  Antigravity. See `docs/setup/antigravity.md`.
 - `McpDialect` takes `envSyntax: 'inherited'`, for a target whose MCP file expands no references but whose servers
   inherit the client's environment.
 - A neutral hook vocabulary: a hook names a neutral `event` (`before-tool`, `after-tool`, `prompt-submit`,

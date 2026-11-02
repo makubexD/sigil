@@ -54,7 +54,7 @@ Gemini CLI. Those names are facts to record, not a reason to target Gemini CLI.
 
 ## Steps
 
-### 1. Uninstall Gemini CLI `[inline: tiny shell step, owner-approved 2026-11-02]`
+## Step 1: Uninstall Gemini CLI `[inline: tiny shell step, owner-approved 2026-11-02]`
 
 Run `npm uninstall -g @google/gemini-cli` in an nvm shell. **Keep `~/.gemini/`.** Antigravity uses
 `~/.gemini/antigravity-cli/`, and which of the other files there (`google_accounts.json`, `settings.json`,
@@ -65,7 +65,7 @@ one-line note.
 Test: `command -v gemini` prints nothing, `npm ls -g @google/gemini-cli` shows it isn't installed, and
 `agy --version` still prints 1.4.12 or later.
 
-### 2. Docs pass: sigil kind vs. Antigravity mechanism `[inline: research and judgment]`
+## Step 2: Docs pass: sigil kind vs. Antigravity mechanism `[inline: research and judgment]`
 
 Read Google's official Antigravity CLI docs, including the Gemini CLI migration guide for what was renamed. Draft
 the ADR with one row for each sigil kind (`skill`, `agent`, `prompt`, `rule`, `hook`, `mcp`, `settings`) on two
@@ -89,7 +89,7 @@ and a docs link. Answer:
 Test: `npx prettier --check docs/decisions/antigravity-target-2026-11.md`. Every row has an official docs link that
 resolves today.
 
-### 3. Reuse map against sigil's code `[inline: architecture judgment]`
+## Step 3: Reuse map against sigil's code `[inline: architecture judgment]`
 
 For each row from step 2, name the sigil piece it would use and note any gap, with `file:line` citations. That covers
 the `AGENTS.md` aggregate (Copilot `build-helpers.ts`, the Codex target), `McpDialect` and `EnvSyntax`, the
@@ -106,7 +106,7 @@ Antigravity hook is the third consumer of them, which may be the point to make m
 Test: each citation points to a line that exists (`sed -n <line>p <file>`), then `npm run validate`. The
 neutrality table has no row that needs a change to the catalog or schema without a new neutral concept named for it.
 
-### 4. Live probe in Antigravity CLI `[inline: probes Antigravity's own loader and model behavior]`
+## Step 4: Live probe in Antigravity CLI `[inline: probes Antigravity's own loader and model behavior]`
 
 Gate: met. `agy` 1.4.12 is installed and signed in. Keep each probe to one or two short non-interactive runs (the
 mode from D0) in a throwaway repo under the scratchpad, on the cheapest model the account serves. Any key stays in
@@ -125,7 +125,7 @@ the ADR, with the `agy` version:
 
 Test: each probe's transcript summary is in the ADR with the `agy` version.
 
-### 5. Decision `[inline: judgment]`
+## Step 5: Decision `[inline: judgment]`
 
 Write the go/no-go in the ADR, covering demand, the maintenance cost per catalog change (conformance plus live
 probes), how much P1 and P6 already deliver with no target, and the target id (`antigravity` unless the docs name a
@@ -135,7 +135,7 @@ and add or decline an Antigravity entry in § 6.
 
 Test: `npm run validate`, then prettier on both decision files.
 
-### 6. Make the ground rules permanent, and run them as a regression over every target `[inline: review judgment]`
+## Step 6: Make the ground rules permanent, and run them as a regression over every target `[inline: review judgment]`
 
 - Copy the ground rules into `docs/reference/architecture.md` § Extension model as **Rules for every target**. Then
   the next target (and any review) reads them from the repo, not from this plan. Link to that section from the
@@ -150,7 +150,7 @@ Test: `npm run validate`, then prettier on both decision files.
 
 Test: `npx prettier --check` on the changed docs, then `npm run validate`. Every audit finding has a citation.
 
-### 7. Close-out `[inline: depends on step 5]`
+## Step 7: Close-out `[inline: depends on step 5]`
 
 - **Go:** write the roadmap `docs/plan-antigravity-target.md` with phases, not steps: capability rows, conformance
   implications, and which probes gate which phase. The roadmap repeats the ground rules, and any neutral concept from

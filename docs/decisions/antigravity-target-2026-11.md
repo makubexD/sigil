@@ -520,6 +520,20 @@ What F1 changes in the plan: decisions 3 and 5 stand as written. Decision 6 keep
 `variables`. The setup page names the namespaced server key (`<plugin>_<key>`), since a model asked for the bare key
 did not find it. Decision 9's validator needs no signed-out skip.
 
+**F2, a sigil-built plugin (2026-11-02, `agy 1.4.12`).** From a fresh `npm run catalog:build`, in a scratch repo, on
+`gemini-3.8-flash-low`. `essentials` holds only a prompt, a hook and MCP servers, so it gets no pack plugin; F2a and
+F2c used `python-starter` (one skill, one agent) instead.
+
+| #   | Action                                                                                                                        | Observed                                                                                                                                                                                                           |
+| --- | ----------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F2a | `agy plugin install dist/antigravity/plugins/python-starter`; ask what `py-generate-tests` advises                            | **Pass.** Install reported 1 skill and 1 agent. The model read `~/.gemini/config/plugins/python-starter/skills/py-generate-tests/SKILL.md`, named the skill and answered from it (pytest fixtures, `conftest.py`). |
+| F2b | `agy plugin install dist/antigravity/plugins/hook-protect-config`; "create `.env` holding `A=1`" with `write_file(*)` allowed | **Pass.** No `.env`. The stream shows `sigil-hook: blocked write to protected file .env` from `jsonhook__shared-protect-config_PreToolUse_0_0`.                                                                    |
+| F2c | `agy --agent py-code-reviewer -p "Say your name and your role"`                                                               | **Pass.** No unknown-agent error; it answered as "a Python code reviewer", from the agent's body.                                                                                                                  |
+| F2d | `agy plugin validate --strict` on both plugins                                                                                | **Pass.** Exit 0 on each. Across all 17 built plugins, only `mcp-context-mode` warns, because its `context-mode` command is not on this machine's PATH.                                                            |
+
+Cleanup: both plugins uninstalled, `agy plugin list --json` was `[]`, and the empty `~/.gemini/config/plugins/` and
+`import_manifest.json` that install left were removed.
+
 ## Decision
 
 **Go, staged, with target id `antigravity`.** The docs call the product Antigravity CLI and the binary `agy`, and

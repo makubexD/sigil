@@ -30,9 +30,9 @@ user wants it kept).
 
 ## Briefs
 
-| File                                           | Summary                                  | Status   |
-| ---------------------------------------------- | ---------------------------------------- | -------- |
-| [npm-first-publish.md](npm-first-publish.md)   | First npm publish and package name       | proposed |
-| [cursor-target.md](cursor-target.md)           | Cursor target (ADR Phase 6)              | proposed |
-| [gemini-cli-target.md](gemini-cli-target.md)   | Evaluate a Gemini CLI target             | proposed |
-| [ui-beyond-terminal.md](ui-beyond-terminal.md) | Decide on a catalog browser or other GUI | proposed |
+| File                                                   | Summary                                  | Status   |
+| ------------------------------------------------------ | ---------------------------------------- | -------- |
+| [npm-first-publish.md](npm-first-publish.md)           | First npm publish and package name       | proposed |
+| [cursor-target.md](cursor-target.md)                   | Cursor target (ADR Phase 6)              | proposed |
+| [antigravity-cli-target.md](antigravity-cli-target.md) | Evaluate an Antigravity CLI target       | proposed |
+| [ui-beyond-terminal.md](ui-beyond-terminal.md)         | Decide on a catalog browser or other GUI | proposed |

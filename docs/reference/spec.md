@@ -35,7 +35,7 @@ to the native file layout of each AI platform (Claude Code, GitHub Copilot, and 
 4. **Extensible targets.** Each AI platform is a Target adapter (`src/targets/<name>/`). Adding a
    new platform = implementing one interface. The canonical source does not change.
 5. **Portable by default.** The canonical SKILL.md format is an open cross-tool standard already
-   supported by Claude Code, Codex CLI, Gemini CLI, and Cursor. Skill bodies are portable; only
+   supported by Claude Code, Codex CLI, Antigravity CLI (formerly Gemini CLI), and Cursor. Skill bodies are portable; only
    the surrounding wrappers differ.
 
 ---

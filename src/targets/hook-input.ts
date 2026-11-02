@@ -12,8 +12,13 @@
  * composed-script test is the guard; a reference outside the body breaks the installed hook
  * while this unit test would still pass.
  *
+ * The composed source re-checks the matcher itself because the VS Code "Local" hook parser
+ * ignores `matcher` values (VS Code hooks page, "Existing Local hooks"), so a script hook means
+ * the same thing on a host that drops the matcher.
+ *
  * @module
  */
+import { TOOL_HOOK_EVENTS } from '../hook-vocabulary';
 import type { HookEvent } from '../hook-vocabulary';
 import type { NeutralTool } from '../tool-vocabulary';
 
@@ -146,14 +151,30 @@ export function normalizeHookInput(
 }
 
 /**
+ * The matcher lines spliced into a composed script: the neutral tool list as a JSON literal and
+ * the guard that skips the script for a named tool outside it. Empty when `tools` is undefined
+ * or the event does not fire around a tool call.
+ */
+function matcherLines(event: HookEvent, tools?: readonly NeutralTool[]): string[] {
+  if (tools === undefined || !TOOL_HOOK_EVENTS.includes(event)) return [];
+  return [
+    `  const tools = ${JSON.stringify(tools)};`,
+    '  if (normalized !== undefined && normalized.tool !== undefined && !tools.includes(normalized.tool)) return;',
+  ];
+}
+
+/**
  * The `node -e` source for a `script:` hook (decision 5): the normalizer's own source, the
  * dialect and the event as JSON literals, a stdin reader on `process.stdin` and the authored
- * script as a function of `input`. The matcher re-check is not part of this step.
+ * script as a function of `input`. When `tools` is given and `event` fires around a tool call,
+ * the source skips the script for a named tool outside that set; an undefined `input` or
+ * `input.tool` still runs it, since the provider may have matched a tool sigil cannot name.
  */
 export function composeHookScript(
   script: string,
   dialect: HookInputDialect,
   event: HookEvent,
+  tools?: readonly NeutralTool[],
 ): string {
   return [
     `const dialect = ${JSON.stringify(dialect)};`,
@@ -163,6 +184,7 @@ export function composeHookScript(
     `process.stdin.setEncoding('utf8');`,
     `process.stdin.on('data', chunk => (raw += chunk)).on('end', () => {`,
     `  const normalized = normalizeHookInput(raw, dialect, event);`,
+    ...matcherLines(event, tools),
     `  (function (input) { ${script} })(normalized);`,
     `});`,
   ].join('\n');

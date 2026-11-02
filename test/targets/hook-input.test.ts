@@ -241,4 +241,64 @@ describe('composeHookScript', () => {
     );
     assert.equal(runComposed(composed, 'not json').status, 3);
   });
+
+  const GUARD =
+    "if (input && input.files.includes('/r/.env')) { process.stderr.write('no'); process.exitCode = 2; }";
+
+  it('should skip the script for a named tool outside the matcher', () => {
+    const composed = composeHookScript(GUARD, CLAUDE_LIKE, 'before-tool', ['edit']);
+    const result = runComposed(
+      composed,
+      JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/r/.env' } }),
+    );
+    assert.equal(result.status, 0);
+    assert.equal(result.stderr, '');
+  });
+
+  it('should run the script for a named tool inside the matcher', () => {
+    const composed = composeHookScript(GUARD, CLAUDE_LIKE, 'before-tool', ['edit']);
+    const result = runComposed(
+      composed,
+      JSON.stringify({ tool_name: 'Write', tool_input: { file_path: '/r/.env' } }),
+    );
+    assert.equal(result.status, 2);
+    assert.equal(result.stderr, 'no');
+  });
+
+  it('should run the script for a tool sigil cannot name', () => {
+    const composed = composeHookScript(GUARD, CLAUDE_LIKE, 'before-tool', ['edit']);
+    const result = runComposed(
+      composed,
+      JSON.stringify({ tool_name: 'Mystery', tool_input: { file_path: '/r/.env' } }),
+    );
+    assert.equal(result.status, 2);
+  });
+
+  it('should run the script when stdin is not JSON and the matcher is set', () => {
+    const composed = composeHookScript(
+      'if (!input) process.exitCode = 3',
+      CLAUDE_LIKE,
+      'before-tool',
+      ['edit'],
+    );
+    assert.equal(runComposed(composed, 'not json').status, 3);
+  });
+
+  it('should run the script on every tool when the matcher is all', () => {
+    const composed = composeHookScript(GUARD, CLAUDE_LIKE, 'before-tool');
+    const result = runComposed(
+      composed,
+      JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/r/.env' } }),
+    );
+    assert.equal(result.status, 2);
+  });
+
+  it('should not filter an event outside the tool events', () => {
+    const composed = composeHookScript(GUARD, CLAUDE_LIKE, 'session-start', ['edit']);
+    const result = runComposed(
+      composed,
+      JSON.stringify({ tool_name: 'Read', tool_input: { file_path: '/r/.env' } }),
+    );
+    assert.equal(result.status, 2);
+  });
 });

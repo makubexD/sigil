@@ -21,8 +21,7 @@ import type { ToolDialect } from '../tool-dialect';
  * documented or observed. `edit` names both the documented tools (`write_to_file`,
  * `replace_file_content`, `multi_replace_file_content`) and the observed ones (`write_file`,
  * `edit_file`), because the docs and the binary disagree on the names and a matcher naming only
- * one set lets the other through (P4, E1 and D1 in docs/decisions/antigravity-target-2026-11.md;
- * docs/plan-antigravity-target-e.md, decision 1).
+ * one set lets the other through (P4, E1 and D1 in docs/decisions/antigravity-target-2026-11.md).
  *
  * Source: https://antigravity.google/docs/hooks ("Supported tools") for the documented names;
  * P4, D1 and E1 for `write_file`, `edit_file` and `read_file`.
@@ -46,7 +45,7 @@ const ANTIGRAVITY_HOOK_TOOL_NAMES: Readonly<Record<NeutralTool, readonly string[
 /**
  * Antigravity's hook tool table: how a neutral matcher is written in a hook entry's `matcher`.
  * E1 run 3 confirmed the `|` alternation matches whole names, so the edit set above is safe
- * (docs/plan-antigravity-target-e.md, decision 1).
+ * (probe E1 in docs/decisions/antigravity-target-2026-11.md).
  *
  * Source: https://antigravity.google/docs/hooks (the documented tool names) and the tool table
  * above.
@@ -60,7 +59,7 @@ export const ANTIGRAVITY_HOOK_TOOL_DIALECT: ToolDialect = {
  * Antigravity's hook event names: the four neutral events with a documented name. `PreInvocation`
  * is not `prompt-submit` (it fires before every model invocation, not once per prompt), and
  * there is no event for `subagent-stop` or `notification`
- * (docs/plan-antigravity-target-e.md, decision 2).
+ * (probe E1 in docs/decisions/antigravity-target-2026-11.md).
  *
  * Source: https://antigravity.google/docs/hooks (the hook event list).
  */
@@ -76,8 +75,8 @@ export const ANTIGRAVITY_HOOK_EVENTS: ReadonlyMap<HookEvent, string> = new Map<H
  * `toolCall`, the path in `TargetFile` (documented), `Path` (P4) or `AbsolutePath`, and the
  * shell command in `CommandLine`. No Antigravity tool carries patch text, and stdin reports
  * neither a subagent type nor a working directory (`workspacePaths` is an array and `Cwd` is a
- * `run_command` argument only), so neither has a field (P4, E1 and
- * docs/plan-antigravity-target-e.md, decision 3).
+ * `run_command` argument only), so neither has a field (probe E1 in
+ * docs/decisions/antigravity-target-2026-11.md).
  *
  * Source: https://antigravity.google/docs/hooks (the hook input fields) and the P4 / E1 probe
  * log.

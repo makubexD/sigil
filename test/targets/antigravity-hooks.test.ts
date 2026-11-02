@@ -168,6 +168,12 @@ describe('Antigravity hook skip reasons', () => {
     });
   }
 
+  it('accepts `*` on a non-tool event, since it names every call anyway', () => {
+    const artifact = asArtifact(makeHook({ event: 'session-start', matcher: '*' }));
+    assert.equal(antigravityHookSkipReason(artifact), undefined);
+    assert.ok(!('matcher' in hookEntry(onlyOp(artifact))), 'no matcher key');
+  });
+
   it('refuses a matcher on a non-tool event', () => {
     const artifact = asArtifact(makeHook({ event: 'session-start', matcher: 'edit' }));
     const reason = antigravityHookSkipReason(artifact) ?? '';

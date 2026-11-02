@@ -108,6 +108,13 @@ export interface KindEmitSpec {
    * a skill spec that maps `allowedTools`; a spec without it can carry neither field.
    */
   readonly toolDialect?: ToolDialect;
+  /**
+   * A reason this provider can't use the artifact as written (a probe showed it ignores the file),
+   * or undefined to write it. `add` and the wizard skip it with this reason, `build` and a skill's
+   * dependency closure leave it out, and a direct `scaffoldArtifact` call throws. `renderArtifact`
+   * still renders it, so conformance checks see the documented form.
+   */
+  readonly skipReason?: (frontmatter: Record<string, unknown>) => string | undefined;
   readonly body: readonly BodySectionSpec[];
   /**
    * This provider's body-lexicon table (see ./lexicon.ts) — applied unconditionally by

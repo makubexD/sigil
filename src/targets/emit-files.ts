@@ -17,10 +17,11 @@ import type {
   ResolvedCatalog,
   ScaffoldOptions,
 } from '../types';
+import { SigilError } from '../errors';
 import type { EmitContext, KindEmitSpec } from './spec-types';
 import { assertRestrictionCarried, renderArtifact, renderReference, REFERENCES_DIR } from './emit';
 import { inlinesDependency } from './capabilities';
-import { toolSkipReason } from './tool-restriction';
+import { specSkipReason } from './tool-restriction';
 
 /** The delivery channel a spec serves: `add` / `init` (scaffold) or a built plugin. */
 export type EmitChannel = 'scaffold' | 'plugin';
@@ -41,10 +42,11 @@ export function emitFile(
   ctx: EmitContext,
   files: FileMap,
 ): void {
-  // A strict agent whose restriction this spec cannot carry is left out instead of written wide:
-  // `add`'s selection reports it as skipped, `build` simply omits it. renderArtifact keeps
-  // throwing on skip as a backstop for any caller that reaches it directly.
-  if (toolSkipReason(spec, artifact) !== undefined) return;
+  // An artifact this spec cannot use as written — a strict agent whose tool restriction the
+  // dialect cannot carry, or whatever the spec's own `skipReason` refuses — is left out instead of
+  // written wide: `add`'s selection reports it as skipped, `build` simply omits it. renderArtifact
+  // and scaffoldArtifact keep throwing on a direct call as a backstop.
+  if (specSkipReason(spec, artifact) !== undefined) return;
   const filePath = spec.outputPath(artifact, ctx);
   files[filePath] = renderArtifact(spec, artifact, ctx);
   const dir = path.posix.dirname(filePath);
@@ -81,7 +83,7 @@ function installableDeps(
     return (
       depSpec !== undefined &&
       !inlinesDependency(spec, dep.kind) &&
-      toolSkipReason(depSpec, dep) === undefined
+      specSkipReason(depSpec, dep) === undefined
     );
   });
 }
@@ -97,6 +99,8 @@ export function scaffoldArtifact(input: ScaffoldInput, files: FileMap = {}): Fil
   if (!spec) throw new Error(`Scaffolding not supported for kind '${artifact.kind}'`);
   // A top-level pick still fails closed here (update/status), unlike a dependency or a build.
   assertRestrictionCarried(spec, artifact);
+  const skipReason = spec.skipReason?.(artifact.frontmatter);
+  if (skipReason) throw new SigilError(`${artifact.id}: ${skipReason}`);
   emitFile(spec, artifact, { catalog, installSet: options.coInstallSet }, files);
   if (options.includeDeps === false) return files;
   const depOptions = { ...options, includeDeps: false };

@@ -113,13 +113,13 @@ platform target). It is listed here so the regression has the full picture.
 
 ## Fix list
 
-| #   | Fix                                                      | Where                                                    | Size                 |
-| --- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------- |
-| V1  | Neutral hook events and matchers, a table per target     | schema, catalog hooks, each `hook-ops.ts`                | phase                |
-| V1  | Correct "each hook target already translates them"       | `docs/decisions/neutral-agent-vocabulary-2026-11.md:136` | one line             |
-| V2  | Neutral hook I/O contract                                | catalog hooks, each hook target                          | phase (with V1)      |
-| V3  | Neutral MCP descriptions, no per-target destination list | 4 `catalog/shared/mcps/*.mcp.md`                         | small                |
-| V4  | Point the prompt at the capability table                 | `author-artifact.prompt.md`                              | small                |
-| V5  | Decide neutral prose or a new concept, then apply        | `feature` skill and its reference                        | decision, then small |
-| V6  | Reword the reason                                        | 2 rules                                                  | one line each        |
-| V7  | `ConfigKindTable` for Claude and Copilot                 | `claude-code/config.ts`, `copilot/config.ts`             | medium               |
+| #   | Fix                                                      | Where                                                    | Size                 | Status                                     |
+| --- | -------------------------------------------------------- | -------------------------------------------------------- | -------------------- | ------------------------------------------ |
+| V1  | Neutral hook events and matchers, a table per target     | schema, catalog hooks, each `hook-ops.ts`                | phase                | open, roadmap Phase H                      |
+| V1  | Correct "each hook target already translates them"       | `docs/decisions/neutral-agent-vocabulary-2026-11.md:136` | one line             | fixed, `docs/plan-antigravity-target-a.md` |
+| V2  | Neutral hook I/O contract                                | catalog hooks, each hook target                          | phase (with V1)      | open, roadmap Phase H                      |
+| V3  | Neutral MCP descriptions, no per-target destination list | 4 `catalog/shared/mcps/*.mcp.md`                         | small                | fixed, `docs/plan-antigravity-target-a.md` |
+| V4  | Point the prompt at the capability table                 | `author-artifact.prompt.md`                              | small                | fixed, `docs/plan-antigravity-target-a.md` |
+| V5  | Decide neutral prose or a new concept, then apply        | `feature` skill and its reference                        | decision, then small | fixed, `docs/plan-antigravity-target-a.md` |
+| V6  | Reword the reason                                        | 2 rules                                                  | one line each        | fixed, `docs/plan-antigravity-target-a.md` |
+| V7  | `ConfigKindTable` for Claude and Copilot                 | `claude-code/config.ts`, `copilot/config.ts`             | medium               | open                                       |

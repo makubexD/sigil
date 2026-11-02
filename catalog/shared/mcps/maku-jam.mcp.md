@@ -4,7 +4,7 @@ kind: mcp
 template: shared/templates/mcp-note
 title: "MakuJam MCP Server"
 description: >-
-  Connects Claude Code (and Copilot) to the MakuJam remote MCP server
+  Connects your AI tool to the MakuJam remote MCP server
   over HTTP at mcp.jam.dev.
 server:
   type: "http"
@@ -17,6 +17,5 @@ tags: [mcp, remote, http, jam, shared]
 <!-- slot: details -->
 Installs the MakuJam remote MCP server, connecting via HTTP to `https://mcp.jam.dev/mcp`.
 
-**Install target:**
-- Claude Code: merged into `.mcp.json` under `mcpServers.maku-jam`
-- Copilot (VS Code, Copilot CLI): merged into `.mcp.json` under `mcpServers.maku-jam` (user scope: `~/.copilot/mcp-config.json`)
+**Install target:** `sigil add` merges the server into each tool's MCP file and prints where. The files and
+scopes per tool are in https://github.com/makubexD/sigil/blob/master/docs/reference/config-kinds.md.

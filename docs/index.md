@@ -12,6 +12,7 @@
 | [setup/copilot.md](setup/copilot.md)                         | Install packs on GitHub Copilot from the same marketplace, and what not to install |
 | [setup/codex.md](setup/codex.md)                             | Install skills on OpenAI Codex, and the trust and listing limits                   |
 | [setup/cursor.md](setup/cursor.md)                           | Install rules and skills on Cursor, and the skills Cursor already reads            |
+| [setup/antigravity.md](setup/antigravity.md)                 | Use Sigil rules and skills on Antigravity today, before its target ships           |
 | [reference/troubleshooting.md](reference/troubleshooting.md) | Common errors and FAQ                                                              |
 | [reference/capabilities.md](reference/capabilities.md)       | Which kinds each target delivers, per channel (generated)                          |
 | [reference/config-kinds.md](reference/config-kinds.md)       | How `mcp` / `hook` / `settings` merge into your JSON files                         |

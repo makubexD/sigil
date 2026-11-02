@@ -4,7 +4,7 @@ kind: mcp
 template: shared/templates/mcp-note
 title: "Filesystem MCP Server"
 description: >-
-  Connects Claude Code (and Copilot) to the official MCP filesystem server,
+  Connects your AI tool to the official MCP filesystem server,
   enabling structured read/write access to local directories via the MCP protocol.
 server:
   command: "npx"
@@ -23,9 +23,8 @@ the current directory (`.`).
 - `move_file` / `delete_file`
 - `search_files` / `get_file_info`
 
-**Install target:**
-- Claude Code: merged into `.mcp.json` under `mcpServers.filesystem`
-- Copilot (VS Code, Copilot CLI): merged into `.mcp.json` under `mcpServers.filesystem` (user scope: `~/.copilot/mcp-config.json`)
+**Install target:** `sigil add` merges the server into each tool's MCP file and prints where. The files and
+scopes per tool are in https://github.com/makubexD/sigil/blob/master/docs/reference/config-kinds.md.
 
 **Security note:** The server has access to the directory path you pass as its argument.
 Scope it to a specific subdirectory if you want to restrict access (replace `.` with

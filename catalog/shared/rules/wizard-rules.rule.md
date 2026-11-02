@@ -45,8 +45,8 @@ appliesTo:
   - "**/commands/setup.cs"
 appliesToRationale: >-
   Scoped to source files for wizard engines, flows, prompt adapters, and the init/setup entry
-  points, one glob per source extension (Copilot joins applyTo globs with commas, so brace sets
-  can't be used). Extension-scoped so it doesn't load for the wizard skill's own markdown or the
+  points, one glob per source extension (some tools join globs with commas, so brace sets can't
+  be used). Extension-scoped so it doesn't load for the wizard skill's own markdown or the
   installed rule and agent files. Validators are not globbed: a generic validat* pattern would
   load these rules for every validation module in the project. Generic defaults: narrow them to
   the project's wizard files after install.

@@ -4,7 +4,7 @@ kind: mcp
 template: shared/templates/mcp-note
 title: "Azure DevOps MCP Server"
 description: >-
-  Connects Claude Code (and Copilot) to the Azure DevOps MCP server,
+  Connects your AI tool to the Azure DevOps MCP server,
   enabling structured access to ADO boards, work items, and core APIs.
 server:
   command: "npx"
@@ -38,6 +38,5 @@ in `ADO_ORG`, authenticated via Personal Access Token, exposing the `core`, `wor
 Set them in the environment your AI tool starts from; sigil writes each tool's own syntax for
 reading them into its config file.
 
-**Install target:**
-- Claude Code: merged into `.mcp.json` under `mcpServers.ado`
-- Copilot (VS Code, Copilot CLI): merged into `.mcp.json` under `mcpServers.ado` (user scope: `~/.copilot/mcp-config.json`)
+**Install target:** `sigil add` merges the server into each tool's MCP file and prints where. The files and
+scopes per tool are in https://github.com/makubexD/sigil/blob/master/docs/reference/config-kinds.md.

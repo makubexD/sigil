@@ -36,22 +36,14 @@ Suggest the best fit and briefly explain why. If unsure, suggest a skill (most f
 
 Explain to the user:
 > "By default, this artifact will propagate to ALL AIs that support its kind — that's the DRY rule.
-> Right now that means: Claude Code and GitHub Copilot (both support skill/agent/rule/prompt).
+> Which AIs support which kind is listed in https://github.com/makubexD/sigil/blob/master/docs/reference/capabilities.md.
 > You can restrict it with `--platforms claude` if you only want it on one AI.
 > You can always widen it later with: `sigil retarget <id> --add <platform>`"
 
 Ask: "Should this go to all AIs (recommended) or only specific ones?" Default to all.
 
-**Platform kind support matrix** (reference):
-| Kind     | Claude Code          | GitHub Copilot         |
-|----------|----------------------|------------------------|
-| skill    | ✓ SKILL.md           | ✓ SKILL.md             |
-| agent    | ✓ subagent           | ✓ custom agent         |
-| rule     | ✓ memory rule        | ✓ instructions file    |
-| prompt   | ✓ user-invoked skill | ✓ prompt file          |
-
 **Vocabulary note**: the same catalog kind has different names per AI. The adapter translates
-automatically. Never add "For Claude only:" sections — one body, multiple outputs.
+automatically. Never add sections for one AI — one body, multiple outputs.
 
 ## Step 3 — Gather metadata
 

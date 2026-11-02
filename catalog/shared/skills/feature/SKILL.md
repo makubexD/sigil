@@ -31,14 +31,10 @@ tags:
 - **Gates:** at every GATE, stop and wait. Only "approve", "go", "yes" (or equivalent)
   counts. A hedged reply ("looks ok I guess") is NOT approval.
 - **Dependency:** phases call skills and agents from agent-skills (addyosmani/agent-skills),
-  named here by their bare name (`spec-driven-development`, `code-reviewer`). In Claude Code they
-  are namespaced `agent-skills:<name>`; elsewhere they use the bare name. If they aren't available
-  in this session, say so, suggest the install for the current tool, and stop:
-  - Claude Code: `claude plugin marketplace add addyosmani/agent-skills`, then
-    `claude plugin install agent-skills@addy-agent-skills --scope user`
-  - Copilot CLI: `copilot plugin install addyosmani/agent-skills`
-  - VS Code and other agents: `npx skills add addyosmani/agent-skills` (skills only — copy the
-    agent personas from its `agents/` folder separately, see its Copilot setup guide)
+  named here by their bare name (`spec-driven-development`, `code-reviewer`). Some tools
+  namespace them as `agent-skills:<name>`. If they aren't available in this session, say so,
+  point to the install guide for the current tool in the project's README
+  (https://github.com/addyosmani/agent-skills#quick-start), and stop.
 - **Never push. Never force anything.** Commits are local and one per task.
 - **Project rules win.** Read {sigil:conventions-file} (and docs/DECISIONS.md or ADRs, if
   present) before Phase 2. Where a skill's generic advice conflicts with a recorded project
@@ -47,7 +43,7 @@ tags:
   the tool has one). SPEC, `tasks/todo.md` and the "Plan:" commit are written only after GATE 3
   is approved and edit permission is granted. Phases 4-6 need edit permission. If the current
   mode doesn't match, say which mode to switch to and continue. [`references/examples.md`](references/examples.md) has
-  the mode map for Claude Code and VS Code.
+  the mode map.
 - **Live state** lives in `tasks/todo.md` from GATE 3 on: after each task or phase, update its
   checkbox and a one-line `Status:` header, so `/feature resume` works in a new session.
 

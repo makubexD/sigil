@@ -46,12 +46,13 @@ starts from them:
 | F     | Antigravity plugin channel, sigil's own builder                       | U7; a probe that an installed plugin's skill reaches a session |
 | G     | Live check, the ADR updated, the brief cut, the probe script kept     | B-F merged                                                     |
 
-### Phase A: setup note
+### Phase A: setup note (done 2026-11-02)
 
-`sigil add --target agents-standard` (or `codex`) already writes `AGENTS.md` with repo-wide rules and `.agents/skills/`,
-and Antigravity loads both (P1, P2). Nothing written for Claude reaches it (P6). Ship `docs/setup/antigravity.md`
-saying so, with the approval notes: print mode can auto-deny a write or a command with no allow rule (U7 saw it; step 4
-did not), the 20,000-token rules budget, and MCP's Ask approval. No code.
+Shipped `docs/setup/antigravity.md` with no code: `sigil add --target agents-standard` (or `codex`) writes
+`.agents/skills/` with each skill's rules inlined, and `sigil build` for those targets writes the root `AGENTS.md` with
+the repo-wide rules (`add` does not, A1). Antigravity loads both (P1, P2, A1). Nothing written for Claude reaches it
+(P6). The page carries the print-mode approval note and the 20,000-token rules budget; MCP's Ask approval waits for
+Phase C, since no MCP reaches Antigravity yet. Plan: [plan-antigravity-target-a.md](plan-antigravity-target-a.md).
 
 ### Phase B: the target, with skills and rules
 

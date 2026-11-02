@@ -384,6 +384,22 @@ What this changes:
   check that an installed plugin's skill reaches a session. `agy plugin validate --strict` is a free conformance check
   for that builder's output.
 
+### Phase A
+
+Step 1 of [plan-antigravity-target-a.md](../plan-antigravity-target-a.md), 2026-11-01, `agy 1.4.12`, Linux, signed in
+with a Google account, `agy -p` on `gemini-3.8-flash-low` with `--output-format stream-json`, in a fresh `git init`
+repo under the scratchpad. Unlike step 4, the files are sigil's own output, not hand-written fixtures.
+
+| #   | Question                                              | Expected | Observed                                                                                                                                                                                                                                                                                                                                                                               |
+| --- | ----------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A1  | Do sigil's `agents-standard` files reach Antigravity? | yes      | **Both reached it.** `sigil add shared/cli --target agents-standard` wrote `.agents/skills/cli/` with `cli-rules` inlined. The prompt asked to audit a CLI's command tree without naming a skill: the model read `cli/SKILL.md` from its description and returned its codeword (ECHO-58). The `AGENTS.md` codeword (DELTA-41) came back with no read of the file, so it was in context |
+
+**`sigil add` writes no `AGENTS.md`.** The same `add` with the repo-wide rule `shared/clean-code` skipped it ("a rule
+reaches this target only inside the skills that use it"), for `agents-standard` and for `codex` alike. The root
+`AGENTS.md` with the repo-wide rules comes only from `sigil build --target agents-standard` (or `codex`), at
+`dist/<target>/AGENTS.md`. A1 used that file, copied to the repo root with the codeword appended. So the P6 line and
+the Decision's first bullet were wrong about `add`: through `add`, a rule reaches Antigravity only inlined in a skill.
+
 ## Decision
 
 **Go, staged, with target id `antigravity`.** The docs call the product Antigravity CLI and the binary `agy`, and
@@ -393,8 +409,9 @@ product, not the binary or the CLI alone.
 - **Demand.** The owner moved from Gemini CLI to Antigravity as the Google tool sigil will use (Why Antigravity, in
   the plan), and Gemini CLI no longer serves individual accounts. That makes this the only Google agent sigil can
   serve for its owner. No outside demand is recorded.
-- **What already works with no target (P1, P6).** `sigil add --target agents-standard` (or `codex`) writes the root
-  `AGENTS.md` with repo-wide rules and `.agents/skills/`, and Antigravity loads both as-is. So skills and repo-wide
+- **What already works with no target (P1, P6, A1).** `sigil add --target agents-standard` (or `codex`) writes
+  `.agents/skills/` with the rules each skill uses inlined, and `sigil build` for those targets writes a root
+  `AGENTS.md` with the repo-wide rules (`add` does not, A1). Antigravity loads both as-is. So skills and repo-wide
   rules reach Antigravity today. The first deliverable is a setup note saying so, at no code cost. Nothing written for
   Claude reaches it.
 - **What a target adds.** Custom agents (`.agents/agents/`), MCP servers (`.agents/mcp_config.json`, user and

@@ -32,10 +32,10 @@ appliesTo:
   - "**/bin/*"
 appliesToRationale: >-
   Scoped to source files where CLI entry points and command modules conventionally live, one
-  glob per source extension (Copilot joins applyTo globs with commas, so brace sets can't be
-  used). Extension-scoped so it doesn't load for the cli skill's own markdown, .NET bin/ build
-  output, or node_modules; bin/* keeps only top-level launcher scripts. Generic defaults: narrow
-  them to the project's entry point and command-registration files after install.
+  glob per source extension (some tools join globs with commas, so brace sets can't be used).
+  Extension-scoped so it doesn't load for the cli skill's own markdown, .NET bin/ build output,
+  or node_modules; bin/* keeps only top-level launcher scripts. Generic defaults: narrow them
+  to the project's entry point and command-registration files after install.
 tags:
   - cli
   - shared

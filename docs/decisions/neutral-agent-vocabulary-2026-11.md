@@ -133,5 +133,6 @@ The owner delegated these choices on 2026-11-01. Each was checked against the so
 
 ## Out of scope
 
-Hook `matcher`s (`Edit|Write`, `Bash`) are Claude names too. Each hook target already translates them in its
-`hook-ops.ts`; moving them to the neutral vocabulary is a follow-up.
+Hook `matcher`s (`Edit|Write`, `Bash`) are Claude names too. Cursor translates them in its `hook-ops.ts`;
+Copilot and Codex pass them through, which their docs and probes accept; moving them to the neutral
+vocabulary is a follow-up.

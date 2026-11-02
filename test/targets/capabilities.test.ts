@@ -26,8 +26,9 @@ import {
   pluginMembersByKind,
 } from '../../dist-cli/targets/claude-code/plugin-assemble';
 import { visibleArtifacts } from '../../dist-cli/wizard/steps/add/state';
+import { packContentHint } from '../../dist-cli/wizard/steps/add/options';
 import { loadResolvedCatalog } from '../helpers/catalog';
-import type { Target } from '../../dist-cli/types';
+import type { Pack, Target } from '../../dist-cli/types';
 import { CHANNELS } from '../../dist-cli/targets/capability-types';
 
 const CLAUDE = new ClaudeCodeTarget();
@@ -176,13 +177,16 @@ describe('claude plugin assembler ↔ plugin capability rows', () => {
 });
 
 describe('add wizard — visibleArtifacts follows the chosen target', () => {
-  const stateFor = async (target: string | undefined) => ({
+  const stateFor = async (
+    target: string | undefined,
+    scaffoldableTargets: Target[] = [CLAUDE, COPILOT, FIXTURE],
+  ) => ({
     ctx: {
       catalog: await loadResolvedCatalog(),
       packs: [],
       detectedTarget: 'claude',
       projectDir: '/fake',
-      scaffoldableTargets: [CLAUDE, COPILOT, FIXTURE],
+      scaffoldableTargets,
     },
     ...(target ? { target } : {}),
   });
@@ -203,5 +207,73 @@ describe('add wizard — visibleArtifacts follows the chosen target', () => {
 
   it('should show only skills for the skill-only fixture target', async () => {
     assert.deepEqual([...kindsOf(visibleArtifacts(await stateFor('test-fixture')))], ['skill']);
+  });
+
+  const idsOf = (artifacts: readonly { id: string }[]) => artifacts.map(a => a.id).sort();
+
+  const firstHookId = (catalog: { artifacts: readonly { kind: string; id: string }[] }) => {
+    const hook = catalog.artifacts.find(a => a.kind === 'hook');
+    assert.ok(hook, 'the catalog holds at least one hook');
+    return hook.id;
+  };
+
+  /** A copy of a real target that refuses one catalog hook — no real target's behaviour is assumed. */
+  const refusingTarget = (hookId: string): Target =>
+    ({
+      ...CLAUDE,
+      configSkipReason: (a: { id: string }) => (a.id === hookId ? 'probe' : undefined),
+    }) as unknown as Target;
+
+  it('should hide a config artifact the chosen target refuses', async () => {
+    const catalog = await loadResolvedCatalog();
+    const hookId = firstHookId(catalog);
+    const all = idsOf(visibleArtifacts(await stateFor('claude')));
+    const visible = visibleArtifacts(
+      await stateFor('claude', [refusingTarget(hookId), COPILOT, FIXTURE]),
+    );
+
+    assert.deepEqual(
+      visible.map(a => a.id).sort(),
+      all.filter(id => id !== hookId),
+    );
+  });
+
+  it('should keep every artifact for an unmodified target', async () => {
+    const catalog = await loadResolvedCatalog();
+    const hookId = firstHookId(catalog);
+    const unmodified = idsOf(visibleArtifacts(await stateFor('claude')));
+    const refused = idsOf(
+      visibleArtifacts(await stateFor('claude', [refusingTarget(hookId), COPILOT, FIXTURE])),
+    );
+
+    assert.ok(unmodified.includes(hookId));
+    assert.deepEqual(unmodified, [...refused, hookId].sort());
+  });
+
+  it('should not count a refused config artifact in a pack hint', async () => {
+    const catalog = await loadResolvedCatalog();
+    const hookId = firstHookId(catalog);
+    const pack: Pack = {
+      name: 'probe-pack',
+      displayName: 'Probe Pack',
+      description: 'A pack holding one hook.',
+      artifacts: [hookId],
+    };
+
+    assert.equal(packContentHint(pack, catalog, [pack], CLAUDE), '1 hook');
+    assert.equal(packContentHint(pack, catalog, [pack], refusingTarget(hookId)), pack.displayName);
+  });
+
+  it('should count a config artifact in a pack hint before a target is chosen', async () => {
+    const catalog = await loadResolvedCatalog();
+    const hookId = firstHookId(catalog);
+    const pack: Pack = {
+      name: 'probe-pack',
+      displayName: 'Probe Pack',
+      description: 'A pack holding one hook.',
+      artifacts: [hookId],
+    };
+
+    assert.equal(packContentHint(pack, catalog, [pack], undefined), '1 hook');
   });
 });

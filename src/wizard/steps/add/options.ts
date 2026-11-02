@@ -65,13 +65,19 @@ function renderKindCountParts(
   return parts;
 }
 
-/** Resolves a pack's member ids via the `pack:<name>` selector. */
-function resolvePackIds(pack: Pack, catalog: ResolvedCatalog, packs: Pack[]): string[] {
+/** Resolves a pack's member ids via the `pack:<name>` selector, minus what the target cannot render. */
+function resolvePackIds(
+  pack: Pack,
+  catalog: ResolvedCatalog,
+  packs: Pack[],
+  target: Target | undefined,
+): string[] {
   return resolveSelection({
     selectors: [`pack:${pack.name}`],
     filters: {},
     catalog,
     packs,
+    skipReason: a => target?.configSkipReason?.(a),
   }).ids;
 }
 
@@ -87,7 +93,10 @@ export function packContentHint(
   target: Target | undefined,
 ): string {
   try {
-    const { counts, hasDepsClosure } = countKinds(resolvePackIds(pack, catalog, packs), catalog);
+    const { counts, hasDepsClosure } = countKinds(
+      resolvePackIds(pack, catalog, packs, target),
+      catalog,
+    );
     const parts = renderKindCountParts(counts, target);
     if (hasDepsClosure) parts.push('+deps');
     return parts.join(' · ') || pack.displayName;

@@ -107,6 +107,13 @@ non read-only tools.` Glob worked. That is close to the catalog's `tools: [Read,
 safer than it looked. Web tools never came up. This rests on the subagent's own report: its tool calls aren't in the
 parent's stream, but the error text is Cursor's.
 
+That premise was wrong too: the catalog's agents list `shell` (29 reviewers) or `edit` and `shell` (10 debuggers and
+refactor specialists), so none is read-only alone. Phase E (2026-11-01) ships them `nearest`: a list without `edit`
+gets `readonly: true` and loses `shell`, a list with `edit` gets no flag and every Cursor tool, and `add` warns for
+both. `disallowedTools` is not carried; a `strict` agent that sets it is skipped. Cursor also reads `.claude/agents/`,
+and its own `.cursor/agents/` copy wins on a name clash. Both were checked live with sigil-installed agents (Phase E
+probes): the reviewer ran in Ask mode and could not write, and the `.cursor/` copy won the clash.
+
 ## Plugins: try the Claude route first
 
 The CLI has no plugin install command, and a rule in a `--plugin-dir` plugin (`.cursor-plugin/plugin.json` plus
@@ -371,3 +378,23 @@ project --yes`. `.cursor/mcp.json` held `filesystem` (`type: "stdio"` first, `np
 `agent mcp list-tools filesystem` listed 14 tools. Owner, by hand: `agent -p --trust --approve-mcps --force "Use the
 filesystem MCP read_text_file tool on note.txt and answer with its contents only."`, output `hello-from-live-check`.
 **A sigil-written `.cursor/mcp.json` loads and its stdio server runs.**
+
+### Phase E probes
+
+Fixture: a repo with one committed `app.py`, then the built CLI's `sigil add shared/code-reviewer python/py-debugger
+--target cursor --yes` and `sigil add shared/code-reviewer --target claude --yes`. `.cursor/agents/code-reviewer.md` had
+`readonly: true`, `py-debugger.md` had no `readonly` line. To tell the two `code-reviewer` copies apart, each body got
+one marker line: `CURSOR-COPY-7731` in `.cursor/agents/`, `CLAUDE-COPY-4410` in `.claude/agents/`. Both runs were
+`agent -p --trust --output-format stream-json`, no `--force`, model `Auto`.
+
+**Run 1, a sigil-installed reviewer is read-only (Phase E step 7).** `Use the code-reviewer subagent to list the files
+here and create notes.txt containing hi. Report what each attempt did.` The `Task` call named `subagentType: {custom:
+{name: "code-reviewer"}}`. The subagent reported that `ls` was blocked in Ask mode, listed the files with a read-only
+Glob instead, and that the write was refused ("Ask mode is active, so writes are disallowed"). `notes.txt` did not
+exist afterwards. **A7 holds for a sigil-written agent.**
+
+**Run 2, which copy wins a name clash.** `Ask the code-reviewer subagent for its marker and report exactly what it
+replies. Do not read any files yourself.` The `Task` call named `code-reviewer`; its reply was `CURSOR-COPY-7731`, and
+`CLAUDE-COPY-4410` appears nowhere in the stream. **Cursor's own `.cursor/agents/` copy wins, so the `alsoLoads` row's
+`readerWins: true` is right.** One run, one version: it doesn't say whether Cursor loads the `.claude/` copy at all when
+the names differ.

@@ -166,18 +166,16 @@ export function renderOutcome(plan: AddPlan, outcome: AddOutcome): void {
   if (plan.fromWizard) printOutcomeEquivalentCommand(plan);
 }
 
-/** Skills this install picked: the only kind whose folders another target may also read. */
-function installedSkillIds(plan: AddPlan): string[] {
-  const ids = plan.wholeFileIds ?? [];
-  return ids.filter(id => plan.resolved.byId.get(id)?.kind === 'skill');
-}
-
-/** Prints the `ℹ` notes for artifacts this install makes the target load from a second folder. */
+/**
+ * Prints the `ℹ` notes for artifacts this install makes the target load from a second folder.
+ * Every whole-file pick is passed: `duplicateLoadsFor` keeps only the kinds a target's
+ * `alsoLoads` names (skills, and Cursor's agents).
+ */
 function printOverlapNotes(plan: AddPlan): void {
-  const skillIds = installedSkillIds(plan);
-  if (skillIds.length === 0) return;
+  const ids = plan.wholeFileIds ?? [];
+  if (ids.length === 0) return;
   const { entries } = loadManifest(plan.opts.projectDir);
-  for (const note of duplicateLoadsFor(entries, getAllTargets(), plan.targetName, skillIds)) {
+  for (const note of duplicateLoadsFor(entries, getAllTargets(), plan.targetName, ids)) {
     console.log(`  ℹ  ${note}`);
   }
 }

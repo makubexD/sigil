@@ -27,6 +27,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are a public API compatibility reviewer for a shared React component/hook library. Your sole

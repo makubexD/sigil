@@ -30,6 +30,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are an independent code reviewer. Audit code objectively, surface issues by severity, and

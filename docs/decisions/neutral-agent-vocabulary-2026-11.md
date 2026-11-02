@@ -90,13 +90,13 @@ Agents also get `toolPolicy: strict | nearest` (absent = `strict`), `model: fast
 
 ## Per-target table
 
-| Field                   | Claude                                                                                                                      | Copilot                                                                       | agents-standard                   | Codex     | Cursor (Phase E)                      |
-| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------- | --------- | ------------------------------------- |
-| agent `tools`           | `read`→Read, `search`→Grep+Glob, `edit`→Edit+Write, `shell`→Bash, `web`→WebFetch+WebSearch, `agent`→Agent, `todo`→TodoWrite | `read`, `search`, `edit`, `execute`, `web`, `agent`, `todo` (primary aliases) | no agents                         | no agents | `readonly: true` iff ⊆ {read, search} |
-| agent `disallowedTools` | same names                                                                                                                  | not carried (no denylist field: inexact)                                      | —                                 | —         | `readonly: true` iff ⊇ {edit, shell}  |
-| skill `allowedTools`    | same names                                                                                                                  | `read`, `search`, `edit`, `shell`, `web` (the skills doc's own `shell`)       | Claude-style names (spec example) | left out  | left out                              |
-| `model` tier            | `fast`→haiku, `balanced`→sonnet, `deep`→opus                                                                                | left out (inherits)                                                           | —                                 | —         | left out (`inherit`)                  |
-| `effort`                | as written                                                                                                                  | left out                                                                      | —                                 | —         | left out                              |
+| Field                   | Claude                                                                                                                      | Copilot                                                                       | agents-standard                   | Codex     | Cursor                                                                          |
+| ----------------------- | --------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------- | --------- | ------------------------------------------------------------------------------- |
+| agent `tools`           | `read`→Read, `search`→Grep+Glob, `edit`→Edit+Write, `shell`→Bash, `web`→WebFetch+WebSearch, `agent`→Agent, `todo`→TodoWrite | `read`, `search`, `edit`, `execute`, `web`, `agent`, `todo` (primary aliases) | no agents                         | no agents | `readonly: true` unless the list holds `edit`; exact only when ⊆ {read, search} |
+| agent `disallowedTools` | same names                                                                                                                  | not carried (no denylist field: inexact)                                      | —                                 | —         | not carried (`strict` skips, `nearest` warns)                                   |
+| skill `allowedTools`    | same names                                                                                                                  | `read`, `search`, `edit`, `shell`, `web` (the skills doc's own `shell`)       | Claude-style names (spec example) | left out  | left out                                                                        |
+| `model` tier            | `fast`→haiku, `balanced`→sonnet, `deep`→opus                                                                                | left out (inherits)                                                           | —                                 | —         | left out (`inherit`)                                                            |
+| `effort`                | as written                                                                                                                  | left out                                                                      | —                                 | —         | left out                                                                        |
 
 Claude's agent rendering of today's catalog is unchanged: `read` + `search` render back to `Read, Grep, Glob`.
 
@@ -118,8 +118,10 @@ The owner delegated these choices on 2026-11-01. Each was checked against the so
    `toolExceptions`. Inheriting at resolve time would make consumer commands read `standard.yaml`, which the
    family-skeleton invariant forbids, and an artifact file would stop saying what ships.
 4. **Absent `toolPolicy` means `strict`** (fail closed). A target that can't express an agent's restriction exactly
-   skips the agent with a reason; `nearest` writes the closest mapping and warns. Every agent family today is a
-   read-only reviewer, so this changes no output.
+   skips the agent with a reason; `nearest` writes the closest mapping and warns. When this was decided no target
+   was inexact for any catalog agent, so it changed no output. Cursor is (it can't express `shell`), so on 2026-11-01
+   every agent family became `nearest` ([plan-cursor-target-e.md](../plan-cursor-target-e.md) Decisions 1–3): 29
+   reviewers list `read, search, shell` and 10 edit agents add `edit`, none is read-only alone.
 5. **Model tiers map only where the provider has stable aliases.** Claude documents `haiku` / `sonnet` / `opus`.
    `fable` gets no tier: the docs place it in no cost/strength order. Copilot takes vendor model ids and Cursor
    defaults to `inherit`, so both leave the line out until a tier table is chosen as data. `claude.model` /

@@ -24,6 +24,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You audit interactive setup wizards. You do not edit, create, or delete project files. Run the

@@ -31,6 +31,7 @@ tools:
   - search
   - shell
   - edit
+toolPolicy: nearest
 ---
 
 You perform behavior-preserving refactors. Every change you make must leave rendered output and

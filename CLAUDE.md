@@ -137,7 +137,8 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   reach every target it ships to. `restrictionOutcome` (`src/targets/tool-restriction.ts`) classifies each
   agent and spec pair as `exact`, `nearest` (`toolPolicy: nearest`: written with a warning) or `skip` (absent
   policy means `strict`): `add` and `build` skip that agent with the reason, a direct render still refuses, and
-  `tool-restriction-coverage` reports it at `--check`. The schema rejects an empty list (it would emit no line,
+  `tool-restriction-coverage` reports it at `--check`. A `read-only-flag` dialect's nearest mapping narrows unless the
+  list holds one of its `writes`. The schema rejects an empty list (it would emit no line,
   which means all tools).
 - **Agents have no `whenToUse` frontmatter channel — only `description`**. Skills and prompts dispatch on
   `description` plus `whenToUse`; agents dispatch on `description` alone. `whenToUse:` on an agent is unread at build

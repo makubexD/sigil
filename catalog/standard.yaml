@@ -53,16 +53,17 @@ bases: [shared/clean-code, shared/git]
 
 families:
   # ── Agents ──────────────────────────────────────────────────────────────────────────────────
+  # nearest: Cursor narrows a read-only list to readonly: true (docs/plan-cursor-target-e.md Decision 3).
   - id: api-compat-reviewer
     title: API Compatibility Reviewer
     kind: agent
-    keys: [tools, relatedArtifacts]
+    keys: [tools, toolPolicy, relatedArtifacts]
     tools:
       allow:
         - read
         - search
         - shell
-      policy: strict
+      policy: nearest
     sections:
       - "Determine the public surface"
       - "Diff against the previous release"
@@ -78,13 +79,13 @@ families:
   - id: architecture-reviewer
     title: Architecture Reviewer
     kind: agent
-    keys: [tools, relatedArtifacts]
+    keys: [tools, toolPolicy, relatedArtifacts]
     tools:
       allow:
         - read
         - search
         - shell
-      policy: strict
+      policy: nearest
     sections:
       - "Determine scope"
       - "Discover architecture intent"
@@ -101,13 +102,13 @@ families:
   - id: code-reviewer
     title: Code Reviewer
     kind: agent
-    keys: [tools, relatedArtifacts]
+    keys: [tools, toolPolicy, relatedArtifacts]
     tools:
       allow:
         - read
         - search
         - shell
-      policy: strict
+      policy: nearest
     sections:
       - "Determine scope"
       - "Discover conventions"
@@ -123,14 +124,14 @@ families:
   - id: debugger
     title: Debugger
     kind: agent
-    keys: [tools, relatedArtifacts]
+    keys: [tools, toolPolicy, relatedArtifacts]
     tools:
       allow:
         - read
         - search
         - edit
         - shell
-      policy: strict
+      policy: nearest
     sections: [Reproduce, Isolate, Fix, Verify, Output]
     members:
       - angular/ng-debugger
@@ -141,13 +142,13 @@ families:
   - id: performance-profiler
     title: Performance Profiler
     kind: agent
-    keys: [tools, relatedArtifacts]
+    keys: [tools, toolPolicy, relatedArtifacts]
     tools:
       allow:
         - read
         - search
         - shell
-      policy: strict
+      policy: nearest
     sections:
       - "Determine scope"
       - "Discover context"
@@ -163,14 +164,14 @@ families:
   - id: refactor-specialist
     title: Refactor Specialist
     kind: agent
-    keys: [tools, relatedArtifacts]
+    keys: [tools, toolPolicy, relatedArtifacts]
     tools:
       allow:
         - read
         - search
         - edit
         - shell
-      policy: strict
+      policy: nearest
     sections:
       - "Establish baseline"
       - "Identify and plan the refactor"
@@ -186,13 +187,13 @@ families:
   - id: security-auditor
     title: Security Auditor
     kind: agent
-    keys: [tools, relatedArtifacts]
+    keys: [tools, toolPolicy, relatedArtifacts]
     tools:
       allow:
         - read
         - search
         - shell
-      policy: strict
+      policy: nearest
     sections:
       - "Determine scope"
       - "Discover conventions and security baseline"
@@ -208,13 +209,13 @@ families:
   - id: template-reviewer
     title: Template Reviewer
     kind: agent
-    keys: [tools, relatedArtifacts]
+    keys: [tools, toolPolicy, relatedArtifacts]
     tools:
       allow:
         - read
         - search
         - shell
-      policy: strict
+      policy: nearest
     members: [angular/ng-template-reviewer]
 
   # ── Rules ───────────────────────────────────────────────────────────────────────────────────
@@ -511,13 +512,13 @@ families:
   # Each audits one stack-skill design; its brief is that skill's references/auditor.md.
   - id: skill-auditor
     kind: agent
-    keys: [tools, relatedArtifacts, claude]
+    keys: [tools, toolPolicy, relatedArtifacts, claude]
     tools:
       allow:
         - read
         - search
         - shell
-      policy: strict
+      policy: nearest
     members: [shared/cli-auditor, shared/wizard-auditor]
   - id: skill-rules
     kind: rule
@@ -526,13 +527,13 @@ families:
   # A reviewer for languages with no namespace (layout standard, case a).
   - id: generic-code-reviewer
     kind: agent
-    keys: [tools, model, effort, relatedArtifacts, claude]
+    keys: [tools, toolPolicy, model, effort, relatedArtifacts, claude]
     tools:
       allow:
         - read
         - search
         - shell
-      policy: strict
+      policy: nearest
     members: [shared/code-reviewer]
   - id: feature
     kind: skill

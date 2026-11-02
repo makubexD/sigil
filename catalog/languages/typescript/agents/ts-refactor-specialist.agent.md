@@ -35,6 +35,7 @@ tools:
   - search
   - shell
   - edit
+toolPolicy: nearest
 ---
 
 You are a refactoring specialist. Your invariant: **every observable behavior is identical before

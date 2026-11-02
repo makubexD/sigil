@@ -1,8 +1,8 @@
 /**
  * `renderTools` is the one transform from the neutral tool vocabulary to what a target writes.
  * These cases pin the two dialect shapes: a `names` dialect expands each neutral tool in the
- * target's order and passes provider patterns through, and a `read-only-flag` dialect can only
- * say whether every authored tool is read-only.
+ * target's order and passes provider patterns through, and a `read-only-flag` dialect writes the
+ * nearest flag (read-only unless the list names one of its `writes`) and says whether it is exact.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,7 +23,11 @@ const NAMES: ToolDialect = {
   },
 };
 
-const READ_ONLY: ToolDialect = { kind: 'read-only-flag', readOnly: ['read', 'search'] };
+const READ_ONLY: ToolDialect = {
+  kind: 'read-only-flag',
+  readOnly: ['read', 'search'],
+  writes: ['edit'],
+};
 
 describe('renderTools', () => {
   it('expands neutral names in dialect order', () => {
@@ -62,8 +66,41 @@ describe('renderTools', () => {
     });
   });
 
-  it('is inexact and not read-only when a tool is not read-only', () => {
-    assert.deepEqual(renderTools(READ_ONLY, ['read', 'edit']), {
+  it('treats legacy names as their neutral tool under read-only-flag', () => {
+    assert.deepEqual(renderTools(READ_ONLY, ['Read', 'Grep', 'Glob']), {
+      kind: 'read-only-flag',
+      readOnly: true,
+      exact: true,
+      missing: [],
+    });
+  });
+
+  it('stays read-only but inexact when a non-write tool is not read-only', () => {
+    assert.deepEqual(renderTools(READ_ONLY, ['read', 'search', 'shell']), {
+      kind: 'read-only-flag',
+      readOnly: true,
+      exact: false,
+      missing: ['shell'],
+    });
+    assert.deepEqual(renderTools(READ_ONLY, ['read', 'web']), {
+      kind: 'read-only-flag',
+      readOnly: true,
+      exact: false,
+      missing: ['web'],
+    });
+  });
+
+  it('is inexact and not read-only when the list names a write tool', () => {
+    assert.deepEqual(renderTools(READ_ONLY, ['read', 'search', 'edit', 'shell']), {
+      kind: 'read-only-flag',
+      readOnly: false,
+      exact: false,
+      missing: ['edit', 'shell'],
+    });
+  });
+
+  it('is inexact and not read-only when the only tool is a write', () => {
+    assert.deepEqual(renderTools(READ_ONLY, ['edit']), {
       kind: 'read-only-flag',
       readOnly: false,
       exact: false,
@@ -83,9 +120,18 @@ describe('renderTools', () => {
   it('counts a provider pattern as missing under read-only-flag', () => {
     assert.deepEqual(renderTools(READ_ONLY, ['read', 'Bash(git log:*)']), {
       kind: 'read-only-flag',
-      readOnly: false,
+      readOnly: true,
       exact: false,
       missing: ['Bash(git log:*)'],
+    });
+  });
+
+  it('keeps read-only for an mcp pattern, which narrows rather than writes', () => {
+    assert.deepEqual(renderTools(READ_ONLY, ['read', 'mcp__github__get_issue']), {
+      kind: 'read-only-flag',
+      readOnly: true,
+      exact: false,
+      missing: ['mcp__github__get_issue'],
     });
   });
 

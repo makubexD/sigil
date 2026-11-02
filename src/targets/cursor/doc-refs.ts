@@ -26,14 +26,15 @@ export const CURSOR_RULES_DOC: DocRef = {
     'guidance to keep rules under 500 lines.',
 };
 
-/** Cursor subagent files cannot list tools, which is why catalog agents are skipped. */
+/** Cursor subagent files cannot list tools, so a neutral tool list maps to `readonly`. */
 export const CURSOR_SUBAGENTS_DOC: DocRef = {
   url: 'https://cursor.com/docs/context/subagents',
   title: 'Cursor — Subagents',
   verifiedOn: '2026-11-01',
   covers:
-    'Cursor subagent files: a subagent has no tool list, so a read-only one is declared with ' +
-    '`readonly: true`.',
+    'Cursor subagent files in .cursor/agents/*.md: a subagent has no tool list, so a read-only ' +
+    'one is declared with `readonly: true`; Cursor also reads .claude/agents/ and prefers its ' +
+    'own .cursor/agents/ copy on a name clash.',
 };
 
 /** Cursor custom commands are being folded into skills, which is why catalog prompts are skipped. */

@@ -23,6 +23,7 @@ tools:
   - read
   - search
   - shell
+toolPolicy: nearest
 ---
 
 You are a React code reviewer. Your sole output is a severity-ranked report — **you never modify

@@ -316,13 +316,16 @@ describe('status and update agree on the edge cases', () => {
       copyCatalog(catalog);
       const id = 'typescript/ts-code-reviewer';
       sigil(project, catalog, 'add', `agent:${id}`, '--target', 'copilot', '--yes');
-      // Copilot cannot express disallowedTools, so the agent no longer renders for it.
+      // Copilot cannot express disallowedTools, so a strict agent no longer renders for it
+      // (dropping toolPolicy: nearest makes it strict; nearest would only warn).
       const source = path.join(
         catalog,
         'catalog/languages/typescript/agents/ts-code-reviewer.agent.md',
       );
       const text = fs.readFileSync(source, 'utf8');
-      const edited = text.replace(/^tools:$/m, 'disallowedTools:\n  - Write\ntools:');
+      const edited = text
+        .replace(/^toolPolicy: nearest\n/m, '')
+        .replace(/^tools:$/m, 'disallowedTools:\n  - Write\ntools:');
       assert.notEqual(edited, text);
       fs.writeFileSync(source, edited);
 

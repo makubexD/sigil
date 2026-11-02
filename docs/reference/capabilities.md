@@ -19,10 +19,10 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 | settings | native | — (3) | — (4) | — (5) | — (5) |
 | prompt | native | native | — (6) | — (7) | — (8) |
 | skill | native | native | native | native | native |
-| agent | native | native | — (9) | — (10) | — (11) |
-| rule | native | native | via inline (12) | via inline (13) | native |
-| workflow | native | native | — (14) | — (15) | — (16) |
-| template | — (17) | — (17) | — (17) | — (17) | — (17) |
+| agent | native | native | — (9) | — (10) | native |
+| rule | native | native | via inline (11) | via inline (12) | native |
+| workflow | native | native | — (13) | — (14) | — (15) |
+| template | — (16) | — (16) | — (16) | — (16) | — (16) |
 
 1. the open standard (Agent Skills, AGENTS.md) defines no MCP config file shared by its tools; install it for a tool-specific target
 2. the open standard (Agent Skills, AGENTS.md) defines no hooks; install it for a tool-specific target
@@ -34,13 +34,12 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 8. Cursor is folding commands into skills (/migrate-to-skills) — [Cursor — Commands](https://cursor.com/docs/context/commands)
 9. the open standard (Agent Skills, AGENTS.md) defines no subagents; install it for a tool-specific target
 10. a Codex agent file can't restrict tools, so a catalog agent would gain every tool — [OpenAI Codex — Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-11. not built yet: a Cursor subagent has no tool list, so a read-only one needs `readonly: true` — [Cursor — Subagents](https://cursor.com/docs/context/subagents)
-12. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
-13. folded into each skill that `uses:` it — [OpenAI Codex — Build skills](https://learn.chatgpt.com/docs/build-skills)
-14. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
-15. Codex has no workflow file
-16. Cursor has no workflow file
-17. templates are composed into other artifacts at resolve time, never emitted
+11. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
+12. folded into each skill that `uses:` it — [OpenAI Codex — Build skills](https://learn.chatgpt.com/docs/build-skills)
+13. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
+14. Codex has no workflow file
+15. Cursor has no workflow file
+16. templates are composed into other artifacts at resolve time, never emitted
 
 ## plugin
 

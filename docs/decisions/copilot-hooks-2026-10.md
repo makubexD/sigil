@@ -44,6 +44,9 @@ Checked 2026-10-28 against
    `notification`, with camelCase payloads): rendering one for Copilot is refused, the same way `renderArtifact`
    refuses a `tools` list a spec can't carry, until a probe shows the alias works. `KIND_REGISTRY` drops
    `ownedBy: ['claude']` for `hook` only; `settings` stays Claude-owned.
+
+   Superseded by [neutral-hook-contract-2026-11.md](neutral-hook-contract-2026-11.md).
+
 3. **Destinations**, merged with the existing config-kind machinery (`replaceMerge` / `previousOpFor`,
    `array-append` on `hooks.<Event>`, `ensureHomeBackup` / `isHomeScopedRoot` for the home file):
 

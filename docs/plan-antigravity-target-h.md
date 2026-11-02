@@ -29,9 +29,13 @@ sign-off: decisions 1-6 are the contract.
    | `after-tool`    | `PostToolUse`      | `PostToolUse`              | `PostToolUse`      | `postToolUse`        |
    | `prompt-submit` | `UserPromptSubmit` | `UserPromptSubmit`         | `UserPromptSubmit` | `beforeSubmitPrompt` |
    | `session-start` | `SessionStart`     | `SessionStart`             | `SessionStart`     | `sessionStart`       |
-   | `stop`          | `Stop`             | refused (today's reason)   | `Stop`             | `stop`               |
-   | `subagent-stop` | `SubagentStop`     | refused (today's reason)   | `SubagentStop`     | `subagentStop`       |
+   | `stop`          | `Stop`             | `Stop`                     | `Stop`             | `stop`               |
+   | `subagent-stop` | `SubagentStop`     | `SubagentStop`             | `SubagentStop`     | `subagentStop`       |
    | `notification`  | `Notification`     | refused (today's reason)   | refused            | refused              |
+
+   Step 1 amendment: the Copilot reference now documents a VS Code compatible (snake_case) input for `Stop` and
+   `SubagentStop` (`agentStop / Stop`, `subagentStop / SubagentStop`), so the refusal's premise ("no documented
+   PascalCase alias") no longer holds for them. `Notification` still has only one mixed-case payload and stays refused.
 
    The seven PascalCase names stay accepted as **legacy aliases** (`LEGACY_HOOK_EVENT_ALIASES`, neutral data like
    `LEGACY_TOOL_ALIASES`), so an overlay catalog keeps loading; `legacy-tool-name` fails `sync --check` on one in
@@ -47,15 +51,22 @@ sign-off: decisions 1-6 are the contract.
    Antigravity's hook calls report `write_file` where its agents take `write_to_file` (P4, D1). Starting tables (step 1
    confirms each name against the provider's hooks docs and the probe records):
 
-   | Neutral  | Claude                          | Copilot (PascalCase) | Codex           | Cursor                  |
-   | -------- | ------------------------------- | -------------------- | --------------- | ----------------------- |
-   | `read`   | `Read`                          | `Read`               | none            | `Read`                  |
-   | `search` | `Grep`, `Glob`                  | none                 | none            | `Grep`                  |
-   | `edit`   | `Edit`, `Write`, `NotebookEdit` | `Edit`, `Write`      | `Edit`, `Write` | `Write`                 |
-   | `shell`  | `Bash`                          | `Bash`               | `Bash`          | `Shell`                 |
-   | `web`    | `WebFetch`, `WebSearch`         | none                 | none            | `WebFetch`, `WebSearch` |
-   | `agent`  | `Agent`                         | none                 | none            | `Task`                  |
-   | `todo`   | `TodoWrite`                     | none                 | none            | none                    |
+   | Neutral  | Claude                          | Copilot (PascalCase)    | Codex           | Cursor                  |
+   | -------- | ------------------------------- | ----------------------- | --------------- | ----------------------- |
+   | `read`   | `Read`                          | `Read`                  | none            | `Read`                  |
+   | `search` | `Grep`, `Glob`                  | `Grep`, `Glob`          | none            | `Grep`                  |
+   | `edit`   | `Edit`, `Write`, `NotebookEdit` | `Edit`, `Write`         | `Edit`, `Write` | `Write`, `Delete`       |
+   | `shell`  | `Bash`, `PowerShell`            | `Bash`                  | `Bash`          | `Shell`                 |
+   | `web`    | `WebFetch`, `WebSearch`         | `WebFetch`, `WebSearch` | none            | `WebFetch`, `WebSearch` |
+   | `agent`  | `Agent`                         | `Agent`                 | `Agent`         | `Task`                  |
+   | `todo`   | `TodoWrite`                     | `TodoWrite`             | `update_plan`   | none                    |
+
+   Step 1 amendment (sources in the ADR): Copilot's "Claude tool name" table maps every runtime tool (`view` → `Read`,
+   `grep`/`rg` → `Grep`, `glob` → `Glob`, `web_fetch`/`web_search`, `task` → `Agent`, `update_todo` → `TodoWrite`;
+   `powershell` → `Bash`). Claude's tools reference lists `PowerShell` as its own tool and no `MultiEdit`. Codex's tool
+   coverage table: `spawn_agent` also matches `Agent`, `update_plan` is a matchable local function tool, `WebSearch`
+   is hosted and never reaches a hook, and there is no read or search tool. Cursor's hooks page lists `Delete` among
+   the `preToolUse` matchers; it changes a file, so it is `edit`.
 
    A matcher naming a tool the target's table has no entry for is **refused with its reason** (Cursor's skip-reason
    path, Copilot's and Codex's `SigilError`), never rendered narrower: a guard that matches fewer calls than authored
@@ -105,8 +116,8 @@ sign-off: decisions 1-6 are the contract.
    }
    ```
 
-   `toolNames` is the inverted hook tool table plus the names a provider reports that no matcher writes (Claude
-   `MultiEdit` → `edit`; Codex `apply_patch` → `edit`). The normalizer `normalizeHookInput(raw, dialect, event)` is one
+   `toolNames` is the inverted hook tool table plus the names a provider reports that no matcher writes (Codex
+   `apply_patch` → `edit`, `spawn_agent` → `agent`; Copilot `Task` → `agent`). The normalizer `normalizeHookInput(raw, dialect, event)` is one
    self-contained function (no imports, no closure), embedded in the installed script with
    `Function.prototype.toString`, so the unit-tested function is the shipped one. Patch headers are parsed with
    `protect-config`'s current regex (`*** Add File:`, `Update File:`, `Delete File:`, `Move to:`). Antigravity's dialect
@@ -265,7 +276,7 @@ Files: `src/targets/claude-code/config-scaffold.ts`, new `src/targets/claude-cod
 
 - `hook-dialect.ts`: `CLAUDE_HOOK_TOOL_DIALECT` (decision 2's Claude column as amended), `CLAUDE_HOOK_EVENTS`
   (decision 1), `CLAUDE_HOOK_INPUT` (`tool_name`, `tool_input`, `file_path`/`path`/`notebook_path`, `command`, no
-  patch, `agent_type`, `cwd`, `toolNames` = inverted table plus `MultiEdit` → `edit`), each with its doc citation.
+  patch, `agent_type`, `cwd`, `toolNames` = inverted table), each with its doc citation.
 - `hookFragment`: event through `hookEventFor` (no row → `SigilError`), matcher through `renderHookMatcher` (`all` →
   `'*'`; `missing` → `SigilError` naming the tools), and a `script` hook as `{type: 'command', command: 'node', args:
 ['-e', composeHookScript(script, CLAUDE_HOOK_INPUT, event)]}`. A `command` hook is unchanged.
@@ -285,14 +296,15 @@ Files: `src/targets/copilot/hook-ops.ts`, new `src/targets/copilot/hook-dialect.
 
 As step 6, with decision 1's and 2's Copilot columns. `COPILOT_HOOK_INPUT`: as Claude's, plus `patch: { tools: [every
 provider name the table maps to edit, plus 'apply_patch'] }` with no `field` (the raw string case). The unaliased-event
-refusal keeps its message, keyed by the neutral event. Script hooks render `exec: 'node'`, `args: ['-e', composed]`.
-A matcher with a missing tool throws `SigilError` with the `platforms` hint.
+refusal keeps its message, keyed by the neutral event, now for `notification` only. Script hooks render
+`exec: 'node'`, `args: ['-e', composed]`. A matcher with a missing tool throws `SigilError` with the `platforms` hint.
 
 | Case                                                              | Expected                                             |
 | ----------------------------------------------------------------- | ---------------------------------------------------- |
 | `before-tool` / `edit` / `script`                                 | `PreToolUse`, matcher `Edit\|Write`, `exec` + `args` |
-| `stop`                                                            | Refused, message names `agentStop`                   |
-| `matcher: web`                                                    | Refused, names `web`                                 |
+| `stop`, `subagent-stop`                                           | `Stop`, `SubagentStop`                               |
+| `notification`                                                    | Refused, message names `notification`                |
+| A table with a missing tool (test dialect), its matcher           | Refused, names the tool                              |
 | Rendered script, Copilot raw `apply_patch` string touching `.env` | Exit 2                                               |
 | Existing cases in the file                                        | Still pass, legacy inputs                            |
 
@@ -326,13 +338,13 @@ Files: `src/targets/cursor/hook-ops.ts`, new `src/targets/cursor/hook-dialect.ts
 `CURSOR_HOOK_INPUT` like Claude's without `agentField`. `powershellSkipReason` applies only to `command` hooks; a
 script hook always renders through `nodeEvalCommandLine`.
 
-| Case                                                   | Expected                     |
-| ------------------------------------------------------ | ---------------------------- |
-| `before-tool` / `shell\|edit`                          | `preToolUse`, `Shell\|Write` |
-| `matcher: todo`                                        | Skip reason names `todo`     |
-| `notification`                                         | Skip reason                  |
-| Rendered command through `sh -c`, A4 payload on `.env` | Exit 2                       |
-| Existing cases in the file                             | Still pass                   |
+| Case                                                   | Expected                             |
+| ------------------------------------------------------ | ------------------------------------ |
+| `before-tool` / `shell\|edit`                          | `preToolUse`, `Shell\|Write\|Delete` |
+| `matcher: todo`                                        | Skip reason names `todo`             |
+| `notification`                                         | Skip reason                          |
+| Rendered command through `sh -c`, A4 payload on `.env` | Exit 2                               |
+| Existing cases in the file                             | Still pass                           |
 
 Test: `npm test -- test/targets/cursor-hooks.test.ts`, then `npm test`.
 

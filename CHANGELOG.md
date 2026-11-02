@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation
+
+- New `docs/setup/antigravity.md`: how to use the skills and `AGENTS.md` that `agents-standard`
+  writes in Antigravity today, before its target ships, and what doesn't reach it.
+
 ## [0.5.0] - 2026-11-02
 
 ### Added

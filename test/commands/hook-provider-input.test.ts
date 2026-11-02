@@ -119,15 +119,11 @@ describe('hook-provider-input — derived literals', () => {
 });
 
 describe('hook-provider-input — the real catalog', () => {
-  it('reports exactly the three catalog hooks that read provider stdin', async () => {
+  it('reports no catalog hooks reading provider stdin', async () => {
     const catalog = await loadBundledCatalog();
     const findings = runConformance(catalog, getAllTargets(), {
       ruleId: 'hook-provider-input',
     });
-    assert.deepEqual(
-      findings.map(finding => finding.artifactId).sort(),
-      ['shared/protect-config', 'shared/reviewer-bash-guard', 'shared/worker-mode-guard'],
-      findings.map(finding => `${finding.artifactId}: ${finding.detail}`).join('\n'),
-    );
+    assert.deepEqual(findings, []);
   });
 });

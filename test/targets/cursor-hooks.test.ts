@@ -548,26 +548,34 @@ describe('Cursor hook target scaffoldConfig', () => {
 // ── the real catalog ──────────────────────────────────────────────────────────
 
 describe('Cursor hook real catalog', () => {
-  it('protect-config maps Edit|Write to the edit matcher and decodes to its script', async () => {
+  it('protect-config maps edit to the edit matcher and composes its script', async () => {
     const catalog = await loadResolvedCatalog();
     const artifact = catalog.byId.get('shared/protect-config')!;
     assert.equal(cursorHookSkipReason(artifact), undefined);
 
     const entry = hookEntry(onlyOp(artifact));
     assert.equal(entry.matcher, EDIT_MATCHER);
-    const [, script] = artifact.frontmatter.args as readonly string[];
-    assert.equal(decodeNodeEval(entry.command as string), script);
+    const composed = decodeNodeEval(entry.command as string);
+    assert.match(composed, /normalizeHookInput/);
+    assert.ok(
+      composed.includes(artifact.frontmatter.script as string),
+      'the composed node -e source embeds the hook script',
+    );
   });
 
-  it('reviewer-bash-guard maps Bash to Shell and decodes to its script', async () => {
+  it('reviewer-bash-guard maps shell to Shell and composes its script', async () => {
     const catalog = await loadResolvedCatalog();
     const artifact = catalog.byId.get('shared/reviewer-bash-guard')!;
     assert.equal(cursorHookSkipReason(artifact), undefined);
 
     const entry = hookEntry(onlyOp(artifact));
     assert.equal(entry.matcher, 'Shell');
-    const [, script] = artifact.frontmatter.args as readonly string[];
-    assert.equal(decodeNodeEval(entry.command as string), script);
+    const composed = decodeNodeEval(entry.command as string);
+    assert.match(composed, /normalizeHookInput/);
+    assert.ok(
+      composed.includes(artifact.frontmatter.script as string),
+      'the composed node -e source embeds the hook script',
+    );
   });
 });
 
@@ -587,7 +595,7 @@ describe('Cursor hook protect-config with A4 payload', () => {
 
         const run = (filePath: string) => {
           const payload = JSON.stringify({
-            tool_name: 'Read',
+            tool_name: 'Write',
             tool_input: { file_path: filePath },
             hook_event_name: 'preToolUse',
           });

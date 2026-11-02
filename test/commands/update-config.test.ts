@@ -290,10 +290,10 @@ describe('sigil update — a Cursor hook that became unrenderable after install'
       const hooksFile = path.join(project, '.cursor/hooks.json');
       const before = fs.readFileSync(hooksFile, 'utf8');
 
-      // Notification has no Cursor event, so cursorHookSkipReason now refuses the hook.
+      // notification has no Cursor event, so cursorHookSkipReason now refuses the hook.
       const source = path.join(catalog.dir, 'shared/hooks/protect-config.hook.md');
       const text = fs.readFileSync(source, 'utf8');
-      const edited = text.replace(/^event: PreToolUse$/m, 'event: Notification');
+      const edited = text.replace(/^event: before-tool$/m, 'event: notification');
       assert.notEqual(edited, text, 'the fixture edit applied');
       fs.writeFileSync(source, edited);
 
@@ -302,7 +302,7 @@ describe('sigil update — a Cursor hook that became unrenderable after install'
       );
 
       assert.equal(fs.readFileSync(hooksFile, 'utf8'), before);
-      const reason = /no 'Notification' hook event/;
+      const reason = /no 'notification' hook event/;
       assert.equal(lines.filter(l => reason.test(l)).length, 1, lines.join('\n'));
     } finally {
       fs.rmSync(root, { recursive: true, force: true });

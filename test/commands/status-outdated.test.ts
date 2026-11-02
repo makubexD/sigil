@@ -102,9 +102,9 @@ function editSources(catalog: string): void {
     const text = fs.readFileSync(file, 'utf8');
     const edited =
       pick.kind === 'hook'
-        ? // Bash, not MultiEdit: Cursor maps every edit tool to Write, so MultiEdit renders nothing
-          // new, and Codex has no read tool to name.
-          text.replace('matcher: "Edit|Write"', 'matcher: "Edit|Write|Bash"')
+        ? // `shell`, not another edit name: every hook target names it, so the matcher changes
+          // in each one's render.
+          text.replace('matcher: edit', 'matcher: edit|shell')
         : `${text.trimEnd()}\n\nA line added after install.\n`;
     assert.notEqual(edited, text, `edit applied to ${pick.source}`);
     fs.writeFileSync(file, edited);

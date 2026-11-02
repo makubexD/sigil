@@ -1,9 +1,9 @@
 /**
- * Antigravity `rule` emission spec — project rules as `.agents/rules/<slug>.md`. A rule has two
- * modes, decided only by the authored `appliesTo` (never by `language`): repo-wide (absent, empty,
- * or every glob a match-everything glob) writes `trigger: always_on`, so the rule is in the
- * model's context every session; anything narrower writes `trigger: glob` and the comma-joined
- * `globs` list.
+ * Antigravity `rule` emission spec — project rules as `.agents/rules/<slug>.md`, in a scaffold and
+ * a plugin variant (`plugins/<pack>/rules/<id>.md`). A rule has two modes, decided only by the
+ * authored `appliesTo` (never by `language`): repo-wide (absent, empty, or every glob a
+ * match-everything glob) writes `trigger: always_on`, so the rule is in the model's context every
+ * session; anything narrower writes `trigger: glob` and the comma-joined `globs` list.
  *
  * A scoped rule is never written: probe B1 (docs/decisions/antigravity-target-2026-11.md) found
  * `agy` 1.4.12 never attaches a `trigger: glob` rule, after a read, an edit or in a later turn.
@@ -12,6 +12,7 @@
  * release attaches glob rules.
  */
 import type { KindEmitSpec, FieldMapping } from '../../spec-types';
+import { SigilError } from '../../../errors';
 import { ANTIGRAVITY_RULES_DOC } from '../doc-refs';
 import { ANTIGRAVITY_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
@@ -42,6 +43,7 @@ const SCOPED_RULE_SKIP_REASON =
 
 export const ANTIGRAVITY_RULE_SPEC: KindEmitSpec = {
   kind: 'rule',
+  variant: 'scaffold',
   outputPath: artifact => `.agents/rules/${artifact.id.replace(/\//g, '-')}.md`,
   pathPattern: /\.agents\/rules\/[^/]*\.md$/,
   frontmatter: [triggerMapping, ruleDescriptionMapping, commaGlobsMapping],
@@ -64,4 +66,17 @@ export const ANTIGRAVITY_RULE_SPEC: KindEmitSpec = {
       doc: ANTIGRAVITY_RULES_DOC,
     },
   ],
+};
+
+/** The plugin variant: the same rule file under its pack's `rules/` folder. */
+export const ANTIGRAVITY_PLUGIN_RULE_SPEC: KindEmitSpec = {
+  ...ANTIGRAVITY_RULE_SPEC,
+  variant: 'plugin',
+  outputPath: (artifact, ctx) => {
+    if (ctx.packName === undefined) {
+      throw new SigilError('the Antigravity plugin variant needs a pack name');
+    }
+    return `plugins/${ctx.packName}/rules/${artifact.id.replace(/\//g, '-')}.md`;
+  },
+  pathPattern: /plugins\/[^/]+\/rules\/[^/]*\.md$/,
 };

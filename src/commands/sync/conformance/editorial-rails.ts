@@ -112,7 +112,11 @@ export function passesSchemaRail(
 }
 
 function checkOneSpecContract(candidate: ResolvedArtifact, spec: SourcedSpec): string | undefined {
-  const outputPath = spec.spec.outputPath(candidate, {});
+  // A plugin-variant path needs a pack folder; any name serves for a contract check.
+  const outputPath = spec.spec.outputPath(
+    candidate,
+    spec.spec.variant === 'plugin' ? { packName: 'contract-check' } : {},
+  );
   const rendered = renderArtifact(spec.spec, candidate, {});
   const violations = checkOutputContract(
     { [outputPath]: rendered },

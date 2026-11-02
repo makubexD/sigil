@@ -12,7 +12,7 @@
  */
 import type { HookEvent } from '../../hook-vocabulary';
 import type { NeutralTool } from '../../tool-vocabulary';
-import { NEUTRAL_TOOLS } from '../../tool-vocabulary';
+import { invertHookToolNames } from '../hook-input';
 import type { HookInputDialect } from '../hook-input';
 import type { ToolDialect } from '../tool-dialect';
 
@@ -44,17 +44,6 @@ export const CODEX_HOOK_TOOL_DIALECT: ToolDialect = {
   kind: 'names',
   names: CODEX_HOOK_TOOL_NAMES,
 };
-
-/** Invert the hook tool table into the provider-name → neutral-tool map the normalizer reads. */
-function invertHookToolNames(
-  names: Readonly<Record<NeutralTool, readonly string[] | undefined>>,
-): Record<string, NeutralTool> {
-  const inverted: Record<string, NeutralTool> = {};
-  for (const tool of NEUTRAL_TOOLS) {
-    for (const name of names[tool] ?? []) inverted[name] = tool;
-  }
-  return inverted;
-}
 
 /**
  * Codex's hook event names: every neutral event with a documented Codex name. The `notification`

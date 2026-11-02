@@ -20,6 +20,7 @@
  */
 import { TOOL_HOOK_EVENTS } from '../hook-vocabulary';
 import type { HookEvent } from '../hook-vocabulary';
+import { NEUTRAL_TOOLS } from '../tool-vocabulary';
 import type { NeutralTool } from '../tool-vocabulary';
 
 /**
@@ -68,6 +69,20 @@ export interface HookInputDialect {
   readonly cwdField?: string;
   /** Provider tool name → neutral tool. */
   readonly toolNames: Readonly<Record<string, NeutralTool>>;
+}
+
+/**
+ * Invert a target's hook tool table (neutral tool → provider names, `undefined` for a tool it
+ * cannot name) into the provider-name → neutral-tool map a dialect's `toolNames` holds.
+ */
+export function invertHookToolNames(
+  names: Readonly<Record<NeutralTool, readonly string[] | undefined>>,
+): Record<string, NeutralTool> {
+  const inverted: Record<string, NeutralTool> = {};
+  for (const tool of NEUTRAL_TOOLS) {
+    for (const name of names[tool] ?? []) inverted[name] = tool;
+  }
+  return inverted;
 }
 
 // eslint-disable-next-line max-lines-per-function -- self-contained for toString embedding
@@ -185,7 +200,8 @@ export function composeHookScript(
     `process.stdin.on('data', chunk => (raw += chunk)).on('end', () => {`,
     `  const normalized = normalizeHookInput(raw, dialect, event);`,
     ...matcherLines(event, tools),
-    `  (function (input) { ${script} })(normalized);`,
+    // The script sits on its own lines, so a trailing `//` comment cannot swallow the close.
+    `  (function (input) {\n${script}\n  })(normalized);`,
     `});`,
   ].join('\n');
 }

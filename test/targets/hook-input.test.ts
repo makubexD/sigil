@@ -247,6 +247,15 @@ describe('composeHookScript', () => {
   const GUARD =
     "if (input && input.files.includes('/r/.env')) { process.stderr.write('no'); process.exitCode = 2; }";
 
+  it('should run a script whose last line is a line comment', () => {
+    const composed = composeHookScript(`${GUARD}\n// trailing comment`, CLAUDE_LIKE, 'before-tool');
+    const result = runComposed(
+      composed,
+      JSON.stringify({ tool_name: 'Edit', tool_input: { file_path: '/r/.env' } }),
+    );
+    assert.equal(result.status, 2);
+  });
+
   it('should skip the script for a named tool outside the matcher', () => {
     const composed = composeHookScript(GUARD, CLAUDE_LIKE, 'before-tool', ['edit']);
     const result = runComposed(

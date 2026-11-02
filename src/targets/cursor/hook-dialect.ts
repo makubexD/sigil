@@ -12,7 +12,7 @@
  */
 import type { HookEvent } from '../../hook-vocabulary';
 import type { NeutralTool } from '../../tool-vocabulary';
-import { NEUTRAL_TOOLS } from '../../tool-vocabulary';
+import { invertHookToolNames } from '../hook-input';
 import type { HookInputDialect } from '../hook-input';
 import type { ToolDialect } from '../tool-dialect';
 
@@ -61,17 +61,6 @@ export const CURSOR_HOOK_EVENTS: ReadonlyMap<HookEvent, string> = new Map<HookEv
   ['stop', 'stop'],
   ['subagent-stop', 'subagentStop'],
 ]);
-
-/** Invert the hook tool table into the provider-name → neutral-tool map the normalizer reads. */
-function invertHookToolNames(
-  names: Readonly<Record<NeutralTool, readonly string[] | undefined>>,
-): Record<string, NeutralTool> {
-  const inverted: Record<string, NeutralTool> = {};
-  for (const tool of NEUTRAL_TOOLS) {
-    for (const name of names[tool] ?? []) inverted[name] = tool;
-  }
-  return inverted;
-}
 
 /**
  * Where Cursor puts the pieces of a hook's stdin JSON: the Claude-compatible `tool_name` and

@@ -345,6 +345,18 @@ describe('codex hook contract', () => {
     );
   });
 
+  it('should refuse a script whose command line is over the cmd.exe limit', () => {
+    const script = `const pad = '${'x'.repeat(8000)}';`;
+    assert.throws(
+      () => hookFragment({ event: 'before-tool', matcher: '*', script }),
+      (err: Error) => {
+        assert.match(err.message, /8191/);
+        assert.match(err.message, /cmd\.exe/);
+        return true;
+      },
+    );
+  });
+
   it('should refuse a matcher naming a tool Codex cannot write', () => {
     assert.throws(
       () => hookFragment({ event: 'before-tool', matcher: 'read', script: 'return;' }),

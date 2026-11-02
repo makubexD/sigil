@@ -29,6 +29,12 @@ export {
   windowsCommandLine,
 } from '../shared/hook-command-line';
 
+/**
+ * cmd.exe's maximum command-line length. Codex runs a hook through `%COMSPEC%` on Windows
+ * (docs/decisions/codex-target-2026-10.md), and a longer line never starts, so the hook fails open.
+ */
+export const CMD_MAX_COMMAND_LINE = 8191;
+
 /** The one-line `node -e <composed>` invocation for a `script` hook. */
 function scriptCommandLine(
   script: string,
@@ -41,6 +47,12 @@ function scriptCommandLine(
   ]);
   if (commandLine === undefined)
     throw new Error('nodeEvalCommandLine refused its own `node -e` command');
+  if (commandLine.length > CMD_MAX_COMMAND_LINE)
+    throw new SigilError(
+      `This script hook installs as a ${commandLine.length}-character command line, over the ` +
+        `${CMD_MAX_COMMAND_LINE} cmd.exe runs Codex hooks through on Windows.`,
+      { hint: "Shorten the script, or add 'platforms:' without 'codex'." },
+    );
   return commandLine;
 }
 

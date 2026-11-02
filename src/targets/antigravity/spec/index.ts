@@ -3,6 +3,10 @@
  * file through, and the input to deriveContracts() and `sigil sync --stale`.
  */
 import type { KindEmitSpec } from '../../spec-types';
+import { ANTIGRAVITY_RULE_SPEC } from './rule';
 import { ANTIGRAVITY_SKILL_SPEC } from './skill';
 
-export const ANTIGRAVITY_EMIT_SPECS: readonly KindEmitSpec[] = [ANTIGRAVITY_SKILL_SPEC];
+export const ANTIGRAVITY_EMIT_SPECS: readonly KindEmitSpec[] = [
+  ANTIGRAVITY_RULE_SPEC,
+  ANTIGRAVITY_SKILL_SPEC,
+];

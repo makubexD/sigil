@@ -20,9 +20,9 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 | prompt | native | native | — (9) | — (10) | — (11) | — (12) |
 | skill | native | native | native | native | native | native |
 | agent | native | native | — (13) | — (14) | native | — (15) |
-| rule | native | native | via inline (16) | via inline (17) | native | — (18) |
-| workflow | native | native | — (19) | — (20) | — (21) | — (12) |
-| template | — (22) | — (22) | — (22) | — (22) | — (22) | — (22) |
+| rule | native | native | via inline (16) | via inline (17) | native | native |
+| workflow | native | native | — (18) | — (19) | — (20) | — (12) |
+| template | — (21) | — (21) | — (21) | — (21) | — (21) | — (21) |
 
 1. the open standard (Agent Skills, AGENTS.md) defines no MCP config file shared by its tools; install it for a tool-specific target
 2. not built yet (roadmap Phase C)
@@ -41,11 +41,10 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 15. not built yet (roadmap Phase D)
 16. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
 17. folded into each skill that `uses:` it — [OpenAI Codex — Build skills](https://learn.chatgpt.com/docs/build-skills)
-18. not built yet (roadmap Phase B)
-19. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
-20. Codex has no workflow file
-21. Cursor has no workflow file
-22. templates are composed into other artifacts at resolve time, never emitted
+18. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
+19. Codex has no workflow file
+20. Cursor has no workflow file
+21. templates are composed into other artifacts at resolve time, never emitted
 
 ## plugin
 

@@ -5,7 +5,7 @@
  * (docs/audits/2026-10-16/results.md, row 13). The wizard's install states render the same way:
  * without the installed set they dropped a Boundary section and called the file outdated.
  */
-import { describe, it } from 'node:test';
+import { before, describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -13,6 +13,9 @@ import path from 'node:path';
 import { withTempDir, withTempDirAsync } from '../helpers/temp-dir';
 import { getAllTargets } from '../../dist-cli/targets';
 import { installableKinds } from '../../dist-cli/targets/capabilities';
+import { wholeFileSkipReason } from '../../dist-cli/targets/tool-restriction';
+import type { ResolvedCatalog, Target } from '../../dist-cli/types';
+import { loadResolvedCatalog } from '../helpers/catalog';
 import { loadAndValidate } from '../../dist-cli/cli-helpers';
 import { resolveCatalog } from '../../dist-cli/resolve';
 import { applyProjectOverlays } from '../../dist-cli/overlay-report';
@@ -109,12 +112,25 @@ function editSources(catalog: string): void {
 
 const TARGETS = getAllTargets().filter(t => t.scaffold);
 
+let bundled: ResolvedCatalog;
+before(async () => {
+  bundled = await loadResolvedCatalog();
+});
+
+/** The picks `add` installs for `target`: its installable kinds, less any artifact it skips. */
+function picksFor(target: Target): typeof PICKS {
+  const kinds = new Set(installableKinds(target));
+  return PICKS.filter(
+    p =>
+      kinds.has(p.kind as never) &&
+      wholeFileSkipReason(target, bundled.byId.get(p.id)!) === undefined,
+  );
+}
+
 describe('status reports what update would change', () => {
   for (const target of TARGETS) {
-    const kinds = new Set(installableKinds(target));
-    const picks = PICKS.filter(p => kinds.has(p.kind as never));
-
     it(`${target.name}: nothing outdated right after install, then exactly what update rewrites`, () => {
+      const picks = picksFor(target);
       withTempDir(work => {
         const catalog = path.join(work, 'src');
         const project = path.join(work, 'project');
@@ -149,10 +165,8 @@ describe('status reports what update would change', () => {
 
 describe('install states agree with update', () => {
   for (const target of TARGETS) {
-    const kinds = new Set(installableKinds(target));
-    const picks = PICKS.filter(p => kinds.has(p.kind as never));
-
     it(`${target.name}: every pick is up to date right after install`, async () => {
+      const picks = picksFor(target);
       await withTempDirAsync(async project => {
         const specs = picks.map(p => `${p.kind}:${p.id}`);
         sigil(project, ROOT, 'add', ...specs, '--target', target.name, '--yes');

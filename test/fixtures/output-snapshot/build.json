@@ -70,6 +70,9 @@
   "agents-standard/.agents/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "agents-standard/.agents/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
   "agents-standard/AGENTS.md": "2c6ded365300dad30f6e649027e5d1cb13ca0c9e96eb6b6df9c9c4616bd58a31",
+  "antigravity/.agents/rules/shared-clean-code.md": "ec920b910fe8999265149e1397504db2eef45b44b95e4ace3a9fe57d1af96219",
+  "antigravity/.agents/rules/shared-git.md": "25070cf83cbf47cff7fac5ce0f6f3d335fd9ac3c50f5f3ce242e51db00051230",
+  "antigravity/.agents/rules/shared-orchestration.md": "55e86bcf315f0e11b065da846c2492e9ab7863b7846573aba2b8f147b975337a",
   "antigravity/.agents/skills/cli/SKILL.md": "edf711b6fa97a63f4d2502d5fa117099913813a0207bc594e0abea9cde2dd9b7",
   "antigravity/.agents/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
   "antigravity/.agents/skills/cli/references/auditor.md": "465959572a2b35404c7ed6aead162c194a85a42bfedb470ee144eb51cad3fd95",
@@ -713,5 +716,5 @@
   "cursor/.cursor/skills/wizard/references/stack-python.md": "118d9d12cb7ad5315aed9c2ad87afcdf0897f2b961330eef4d7cf08314d83cde",
   "cursor/.cursor/skills/wizard/references/stack-rust.md": "9231b88a97d9a454268ea18426523e081ea55b63c348976ede1184bb446b2d7a",
   "cursor/.cursor/skills/wizard/references/testing.md": "e13b59ecea34990992220c45ecc22c4092392f491210ce9c717e2ed60fde43f8",
-  "registry.json": "820d55c06af90cbf78c1250526a59eb4342d7dd45b4d7836f2f6db3f1844a1b5"
+  "registry.json": "963eb227f71e2e60a6bff6c62c9a28d1adb479d1cf47157869f7ccd0b704df45"
 }

@@ -52,7 +52,7 @@ export class AntigravityTarget implements Target {
   readonly outputContracts: ContractEntry[] = deriveContracts(ANTIGRAVITY_EMIT_SPECS);
   readonly lexicon: ProviderLexicon = ANTIGRAVITY_LEXICON;
 
-  /** Every artifact with a scaffold spec (skills, rules inlined), no AGENTS.md. */
+  /** Every artifact with a scaffold spec (skills and rule files), no AGENTS.md. */
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {
     const files: FileMap = {};
     const ctx = { catalog, installSet: new Set(catalog.artifacts.map(a => a.id)) };

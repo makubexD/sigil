@@ -21,7 +21,7 @@ import { appliesToEveryFile } from '../../shared/repo-wide-rules';
  * all, so this serializes to the empty string, which renderFieldMapping() drops. `required:
  * false` for the same reason: the key is legitimately absent on a repo-wide rule.
  */
-const globsMapping: FieldMapping = {
+export const globsMapping: FieldMapping = {
   from: 'appliesTo',
   to: 'globs',
   required: false,
@@ -44,8 +44,11 @@ const alwaysApplyMapping: FieldMapping = {
   serialize: v => `alwaysApply: ${appliesToEveryFile(v as readonly string[] | undefined)}`,
 };
 
-/** Cursor's rule UI shows a `description`, the same reason Copilot's rule spec emits one. */
-const descriptionMapping: FieldMapping = {
+/**
+ * Cursor's rule UI shows a `description`, the same reason Copilot's rule spec emits one.
+ * Antigravity's rule spec reuses this mapping, so it keeps its whitespace-collapsing form.
+ */
+export const descriptionMapping: FieldMapping = {
   from: 'description',
   to: 'description',
   required: true,

@@ -170,4 +170,22 @@ rendering is Phase E. Hook kind support rows don't change.
 - VS Code's legacy "Local" hook parser ignores matcher values (VS Code hooks page, "Existing Local hooks"), so there a
   `before-tool` hook runs for every tool. The composed script re-checks the authored matcher against `input.tool`
   (plan step 6), so a `script` hook keeps its meaning there; a `command` hook still runs on every tool.
-- Live deny check (plan step 15): recorded here when it runs.
+- Live deny check (plan step 15, 2026-11-02, Linux, `sigil add shared/protect-config` into a scratch git repo, then
+  the agent in print mode asked to write `.env`):
+
+  | Agent                      | Result                                                                                 |
+  | -------------------------- | -------------------------------------------------------------------------------------- |
+  | Claude Code (`claude -p`)  | Passed: no `.env`; the reply quotes `sigil-hook: blocked write to protected file .env` |
+  | Copilot CLI 1.0.105 (`-p`) | Not checked: the CLI ran no repo hook (see below)                                      |
+  | Codex CLI 0.166.0          | Not checked: not signed in                                                             |
+  | Cursor CLI 2026.10.22      | Not checked: account usage limit reached                                               |
+
+  Copilot CLI wrote `.env`, but it ran no hook from `.github/hooks/` at all: two plain recorder hooks beside sigil's
+  (`PreToolUse` with `command`, `preToolUse` with `bash`, each appending stdin to a file) never fired either, in three
+  sessions, one after the folder was opened interactively. Every session logs `Failed to reload managed hooks after
+enabling managed settings {"error":"no hook session for session id …"}`. So the CLI did not load repo hooks in this
+  setup; this is not a sigil payload gap. Fed directly, the installed Copilot command exits 2 for every payload
+  shape Copilot is documented or logged to send (`Edit` / `Write` / `create` objects and the raw `apply_patch`
+  string), and `test/hooks/deny-contract.test.ts` runs that check in CI. Copilot's live deny (last passed on CLI
+  1.0.105 on 2026-10-30, `docs/decisions/copilot-plugin-channel-2026-10.md`) stays owed: rerun when the CLI loads
+  repo hooks again.

@@ -37,20 +37,25 @@ the neutral contract into a one-line `node -e` command. Antigravity differs in f
    | `todo`   | none (`undefined`: no task-list tool is documented or observed)                                  |
 
    Documented names from Hooks § Supported tools; the observed set (`read_file`, `write_file`, `edit_file`) from P4,
-   U7 and D1. Step 1 drops any name E1 shows the binary never reports and adds any edit-shaped name it does report.
-   Rendered joined with `|`; the docs' matcher is a regular expression where a bare name matches exactly.
+   U7 and D1. **E1:** the default session reported only the observed names (`write_file`, `edit_file`, `read_file`,
+   `run_command`, and `invoke_subagent` / `send_message`); D1 showed the documented ones are reported when an agent's
+   `tools` name them, so the table stands unchanged, and no new edit-shaped name appeared. Rendered joined with `|`;
+   E1 run 3 confirmed the alternation matches whole names (edits logged, reads not).
 
 2. **`ANTIGRAVITY_HOOK_EVENTS`:** `before-tool` → `PreToolUse`, `after-tool` → `PostToolUse`, `session-start` →
    `SessionStart`, `stop` → `Stop`. **Refused:** `prompt-submit` (`PreInvocation` fires before every model
    invocation, not once per prompt, so it is not the same event), `subagent-stop` and `notification` (no event).
-   A `stop` script that exits 2 is recorded by E1: if the loop does not continue, the setup page says a stop hook
-   cannot block here (the docs block a stop only with `decision: "continue"` on stdout, outside contract v1).
+   **E1:** a `Stop` script that exits 2 ran once and the session ended, so the setup page says a stop hook cannot
+   block here (the docs block a stop only with `decision: "continue"` on stdout, outside contract v1).
+   `SessionStart` and `PostToolUse` both fired in the decision 4 shapes.
 
 3. **`ANTIGRAVITY_HOOK_INPUT`:** `toolField: 'toolCall.name'`, `inputField: 'toolCall.args'`, `pathFields:
 ['TargetFile', 'Path', 'AbsolutePath']`, `commandField: 'CommandLine'`, no `patch` (no Antigravity tool carries patch
    text), no `agentField` and no `cwdField` (the stdin has neither; `workspacePaths` is an array and `Cwd` is a
-   `run_command` argument only), `toolNames: invertHookToolNames(<table above>)`. Step 1 records the argument keys E1
-   sees for each edit name and amends `pathFields`; it sets `agentField` only if a subagent's stdin names its agent.
+   `run_command` argument only), `toolNames: invertHookToolNames(<table above>)`. **E1:** `write_file` (`Path`,
+   `Content`), `edit_file` (`Path`, `Target`, `Replacement`), `read_file` (`Path`), `run_command` (`CommandLine`,
+   `WaitMsBeforeAsync`, `toolSummary`), so `pathFields` stands. A subagent's stdin has the same keys as the main
+   session's (its own `conversationId` only), so no `agentField`.
    Only `shared/protect-config` ships to Antigravity (the other two catalog hooks are `platforms: [claude]`), and it
    reads `files` only.
 

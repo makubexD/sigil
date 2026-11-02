@@ -1,7 +1,7 @@
 # A provider-neutral hook contract (2026-11-02)
 
 Status: accepted. Roadmap: [plan-antigravity-target.md](../plan-antigravity-target.md) § Phase H. Step plan:
-[plan-antigravity-target-h.md](../plan-antigravity-target-h.md); steps 2-13 take their tables from this record.
+[plan-antigravity-target-h.md](../plan-antigravity-target-h.md); steps 2-14 take their tables from this record.
 
 ## Context
 
@@ -168,5 +168,6 @@ rendering is Phase E. Hook kind support rows don't change.
 - Copilot gains `stop` and `subagent-stop` hooks and matchers for `search`, `web`, `agent` and `todo`, from the docs
   alone. They are unprobed, like the `PreToolUse` alias was before the owner's live check.
 - VS Code's legacy "Local" hook parser ignores matcher values (VS Code hooks page, "Existing Local hooks"), so there a
-  `before-tool` hook runs for every tool. A script that must not act on reads checks `input.tool`.
-- Live deny check (plan step 14): recorded here when it runs.
+  `before-tool` hook runs for every tool. The composed script re-checks the authored matcher against `input.tool`
+  (plan step 6), so a `script` hook keeps its meaning there; a `command` hook still runs on every tool.
+- Live deny check (plan step 15): recorded here when it runs.

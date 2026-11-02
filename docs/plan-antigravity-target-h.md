@@ -92,7 +92,7 @@ sign-off: decisions 1-6 are the contract.
    exit 2 (Claude; Copilot ADR "Blocking"; Codex A4; Cursor A4; Antigravity P4, against its plugins page, so Phase E's
    regression test keeps checking it). A stdout decision object is a provider contract and is not part of v1.
    `command` / `args` stay for hooks that read no input (a `session-start` notice, say); they get the provider's raw
-   stdin, and the step 10 rule fails `sync --check` when one names a provider input field. Exactly one of `script` and
+   stdin, and the step 11 rule fails `sync --check` when one names a provider input field. Exactly one of `script` and
    `command` is set; `args` needs `command`.
 
    This amends the roadmap's "identity for Claude, Copilot, Codex and Cursor". Those four send Claude-like JSON, but
@@ -124,7 +124,8 @@ sign-off: decisions 1-6 are the contract.
    (`toolCall.name`, `toolCall.args`, `Path`/`TargetFile`, `CommandLine`) ships in Phase E.
 
 5. **Script rendering:** the installed command is `node -e <composed>`, where `composed` is the normalizer source, the
-   dialect and neutral event as JSON literals, a stdin reader, and `(function (input) { <script> })(normalized)`.
+   dialect, neutral event and matcher tools as JSON literals, a stdin reader, a matcher re-check (step 6: VS Code's
+   Local parser ignores `matcher`), and `(function (input) { <script> })(normalized)`.
    Claude and Copilot write it in exec form (`command: node`, `args: ['-e', composed]` / `exec` + `args`); Codex and
    Cursor through `nodeEvalCommandLine` (base64, so no shell quoting). Every installed hook's command changes, so
    `sigil status` shows them outdated and `sigil update` replaces them (`replaceMerge`); the CHANGELOG says so.
@@ -267,19 +268,52 @@ string } | { kind: 'missing'; tools: NeutralTool[] }`: `parseHookMatcher`, then 
 
 Test: `npm test -- test/targets/hook-render.test.ts`, then `npm test`.
 
-## Step 6 `[worker:medium]`: Claude hooks on the contract
+## Step 6 `[worker:medium]`: the composed script enforces its own matcher
+
+Files: `src/targets/hook-input.ts`, `test/targets/hook-input.test.ts`.
+
+Why: VS Code's legacy "Local" hook parser reads `.github/hooks/*.json` and `.claude/settings.json` but ignores
+`matcher` values (VS Code hooks page, "Existing Local hooks"). A `protect-config` installed for Copilot then runs on
+every tool there, so a read of `.env` is denied as if it were a write. The provider matcher stays the first filter
+everywhere; the composed script repeats it, so a script hook means the same thing on a host that drops the matcher.
+
+- `composeHookScript(script, dialect, event, tools?: readonly NeutralTool[])`: `tools` is the matcher's neutral tools
+  (`parseHookMatcher(...).tools`), `undefined` for `all`. When `tools` is set and `event` is in `TOOL_HOOK_EVENTS`,
+  the composed source returns before the script, exit 0, only when `input` is defined, `input.tool` is defined, and
+  `input.tool` is not in `tools`. An `undefined` `input` or `input.tool` still runs the script: a provider tool sigil
+  can't name may be one the provider matched, and a guard must not skip it. The list is a JSON literal in the
+  composed source, like the dialect.
+- Module comment: one sentence on why the script re-checks the matcher (the Local parser), citing the VS Code page.
+- Steps 7-10 pass the hook's matcher tools to `composeHookScript`. `command` hooks can't be filtered this way; step 14
+  documents that they run on every tool under VS Code's Local parser.
+
+Cases, Claude-shaped test dialect from step 4, body `if (input && input.files.includes('/r/.env')) { process.stderr.write('no'); process.exitCode = 2; }`:
+
+| Case                                                                | Expected                           |
+| ------------------------------------------------------------------- | ---------------------------------- |
+| `tools: ['edit']`, `before-tool`, `{tool_name:'Read', …'/r/.env'}`  | Exit 0, script not run             |
+| `tools: ['edit']`, `before-tool`, `{tool_name:'Write', …'/r/.env'}` | Exit 2, `no`                       |
+| `tools: ['edit']`, unknown `tool_name`, path `/r/.env`              | Exit 2 (script runs)               |
+| `tools: ['edit']`, stdin `'not json'`, body sets exit 3 on `!input` | Exit 3 (script runs)               |
+| `tools` undefined, `Read` on `/r/.env`                              | Exit 2                             |
+| `tools: ['edit']`, event `session-start`, `Read` payload on `.env`  | Exit 2 (no filter off tool events) |
+
+Test: `npm test -- test/targets/hook-input.test.ts`, then `npm test`.
+
+## Step 7 `[worker:medium]`: Claude hooks on the contract
 
 Files: `src/targets/claude-code/config-scaffold.ts`, new `src/targets/claude-code/hook-dialect.ts`,
 `test/targets/claude-code.test.ts` (or the Claude hook test that covers `hookFragment`); regenerated
 `test/fixtures/output-snapshot/build.json` (`npm run snapshot:update`: the Claude plugin's `hooks.json` gains
-`NotebookEdit`). Steps 7-9 and 11 regenerate it the same way when their output changes.
+`NotebookEdit`). Steps 8-10 and 12 regenerate it the same way when their output changes.
 
 - `hook-dialect.ts`: `CLAUDE_HOOK_TOOL_DIALECT` (decision 2's Claude column as amended), `CLAUDE_HOOK_EVENTS`
   (decision 1), `CLAUDE_HOOK_INPUT` (`tool_name`, `tool_input`, `file_path`/`path`/`notebook_path`, `command`, no
   patch, `agent_type`, `cwd`, `toolNames` = inverted table), each with its doc citation.
 - `hookFragment`: event through `hookEventFor` (no row → `SigilError`), matcher through `renderHookMatcher` (`all` →
   `'*'`; `missing` → `SigilError` naming the tools), and a `script` hook as `{type: 'command', command: 'node', args:
-['-e', composeHookScript(script, CLAUDE_HOOK_INPUT, event)]}`. A `command` hook is unchanged.
+['-e', composeHookScript(script, CLAUDE_HOOK_INPUT, event, tools)]}`, `tools` the matcher's neutral tools
+  (`undefined` for `all`, step 6). A `command` hook is unchanged.
 
 | Case                                                      | Expected                                                                       |
 | --------------------------------------------------------- | ------------------------------------------------------------------------------ |
@@ -290,11 +324,11 @@ Files: `src/targets/claude-code/config-scaffold.ts`, new `src/targets/claude-cod
 
 Test: `npm test -- test/targets/claude-code.test.ts`, then `npm test`.
 
-## Step 7 `[worker:medium]`: Copilot hooks on the contract
+## Step 8 `[worker:medium]`: Copilot hooks on the contract
 
 Files: `src/targets/copilot/hook-ops.ts`, new `src/targets/copilot/hook-dialect.ts`, `test/targets/copilot-hooks.test.ts`.
 
-As step 6, with decision 1's and 2's Copilot columns. `COPILOT_HOOK_INPUT`: as Claude's, plus `patch: { tools: [every
+As step 7, with decision 1's and 2's Copilot columns. `COPILOT_HOOK_INPUT`: as Claude's, plus `patch: { tools: [every
 provider name the table maps to edit, plus 'apply_patch'] }` with no `field` (the raw string case). The unaliased-event
 refusal keeps its message, keyed by the neutral event, now for `notification` only. Script hooks render
 `exec: 'node'`, `args: ['-e', composed]`. A matcher with a missing tool throws `SigilError` with the `platforms` hint.
@@ -310,11 +344,11 @@ refusal keeps its message, keyed by the neutral event, now for `notification` on
 
 Test: `npm test -- test/targets/copilot-hooks.test.ts`, then `npm test`.
 
-## Step 8 `[worker:medium]`: Codex hooks on the contract
+## Step 9 `[worker:medium]`: Codex hooks on the contract
 
 Files: `src/targets/codex/hook-ops.ts`, new `src/targets/codex/hook-dialect.ts`, `test/targets/codex-hooks.test.ts`.
 
-As step 6: `CODEX_HOOK_TOOL_DIALECT`, `CODEX_HOOK_EVENTS` (a map that replaces today's set; the refusal lists the
+As step 7: `CODEX_HOOK_TOOL_DIALECT`, `CODEX_HOOK_EVENTS` (a map that replaces today's set; the refusal lists the
 neutral events it maps), `CODEX_HOOK_INPUT` (`patch: { tools: ['apply_patch'], field: 'command' }`, `toolNames` adds
 `apply_patch` → `edit`). Script hooks go through `nodeEvalCommandLine('node', ['-e', composed])`. A matcher with a
 missing tool throws `SigilError`.
@@ -329,7 +363,7 @@ missing tool throws `SigilError`.
 
 Test: `npm test -- test/targets/codex-hooks.test.ts`, then `npm test`.
 
-## Step 9 `[worker:medium]`: Cursor hooks on the contract
+## Step 10 `[worker:medium]`: Cursor hooks on the contract
 
 Files: `src/targets/cursor/hook-ops.ts`, new `src/targets/cursor/hook-dialect.ts`, `test/targets/cursor-hooks.test.ts`.
 
@@ -348,7 +382,7 @@ script hook always renders through `nodeEvalCommandLine`.
 
 Test: `npm test -- test/targets/cursor-hooks.test.ts`, then `npm test`.
 
-## Step 10 `[worker:medium]`: conformance rules
+## Step 11 `[worker:medium]`: conformance rules
 
 Files: `src/commands/sync/conformance/rules/legacy-tool-name.ts`, new
 `src/commands/sync/conformance/rules/hook-provider-input.ts` (registered where the other rules are), and their tests.
@@ -367,12 +401,12 @@ Files: `src/commands/sync/conformance/rules/legacy-tool-name.ts`, new
 | Fixture `script` reading `input.files`     | No finding                                                     |
 | Fixture `script` reading `tool_input`      | `hook-provider-input` finding                                  |
 | Fixture `command` + `args` with `toolCall` | Finding                                                        |
-| The current catalog                        | Both rules fire on all three hooks (they are fixed in step 11) |
+| The current catalog                        | Both rules fire on all three hooks (they are fixed in step 12) |
 
 Test: `npm test -- test/commands/sync` (the rule tests), then `npm test`. `sigil sync --check` failing on the catalog is
-expected until step 11; say so in the commit.
+expected until step 12; say so in the commit.
 
-## Step 11 `[worker:high: three security-relevant scripts rewritten against a new contract; a wrong condition silently stops a guard]`: the catalog hooks
+## Step 12 `[worker:high: three security-relevant scripts rewritten against a new contract; a wrong condition silently stops a guard]`: the catalog hooks
 
 Files: `catalog/shared/hooks/protect-config.hook.md`, `reviewer-bash-guard.hook.md`, `worker-mode-guard.hook.md`.
 
@@ -393,7 +427,7 @@ commands".
 
 Test: `npm run validate`, `node dist-cli/cli.js sync --check` (after `npm run build`), `npm test`.
 
-## Step 12 `[worker:medium]`: the deny regression tests and snapshots
+## Step 13 `[worker:medium]`: the deny regression tests and snapshots
 
 Files: `test/catalog/protect-config-hook.test.ts`, `test/catalog/reviewer-bash-guard-hook.test.ts`, new
 `test/hooks/deny-contract.test.ts`; regenerated `test/fixtures/output-snapshot/build.json` if it
@@ -409,7 +443,7 @@ still differs (`npm run snapshot:update`).
 
 Test: `npm test`.
 
-## Step 13 `[worker:medium]`: docs
+## Step 14 `[worker:medium]`: docs
 
 Files: `docs/reference/config-kinds.md` (hook section), `docs/guides/authoring.md` (hook section), `docs/reference/
 architecture.md` (Rules for every target: a hook target supplies a hook tool table, an event table and a
@@ -420,6 +454,8 @@ architecture.md` (Rules for every target: a hook target supplies a hook tool tab
   (`src/hook-vocabulary.ts`); a hook that reads its input is a `script:` and gets `input`, built by the target's
   `HookInputDialect` (`src/targets/hook-input.ts`). Never read a provider's stdin field in catalog source;
   `hook-provider-input` fails `--check`."
+- `config-kinds.md` hook section: VS Code's Local parser ignores `matcher`; a `script` hook re-checks it itself
+  (step 6), a `command` hook runs on every tool there.
 - `CHANGELOG.md` (Unreleased): neutral hook events and matchers, `script:`, every installed hook outdated once (run
   `sigil update`), regex matchers no longer accepted.
 - Regression ADR: V1 and V2 rows `fixed, docs/plan-antigravity-target-h.md`. Roadmap: Phase H "(done <date>)" with a
@@ -427,7 +463,7 @@ architecture.md` (Rules for every target: a hook target supplies a hook tool tab
 
 Test: `npx prettier --check` on the changed docs, `npm run check`.
 
-## Step 14 `[inline: live check of real agents' behaviour, not mechanical]`: live deny check
+## Step 15 `[inline: live check of real agents' behaviour, not mechanical]`: live deny check
 
 In a scratch `git init` repo, for each CLI on PATH among `claude`, `copilot`, `codex` and `cursor-agent`: `sigil add
 shared/protect-config --target <t>`, then ask the agent in print mode to write `.env` (`X=1`). Expected: no `.env`, and

@@ -177,7 +177,8 @@ Tests:
 - with no identity: the exact object above, keys in that order, `keywords` = the pack's `languages` (`[]` when absent);
 - with an identity: the author from `author ?? owner`, its `url` defaulting to the identity's `homepage`, `license`
   only when set;
-- every key is in the published schema's property list (hard-code the 15 property names from the docs as the allowed
+- every key is in the published schema's property list (hard-code the 20 property names of
+  `https://antigravity.google/schemas/v1/plugin.json`, fetched 2026-11-02, snake_case aliases included, as the allowed
   set);
 - a pack named `claude-tools` → throws; `tools-claude` → fine.
 

@@ -398,3 +398,40 @@ replies. Do not read any files yourself.` The `Task` call named `code-reviewer`;
 `CLAUDE-COPY-4410` appears nowhere in the stream. **Cursor's own `.cursor/agents/` copy wins, so the `alsoLoads` row's
 `readerWins: true` is right.** One run, one version: it doesn't say whether Cursor loads the `.claude/` copy at all when
 the names differ.
+
+### Phase F probes
+
+Plan: [plan-cursor-target-f.md](../plan-cursor-target-f.md). CLI `2026.10.22-27dcf5f`, model `Auto`, every run
+`agent -p --trust --output-format stream-json` in a fresh `git init` repo with one committed `app.py`. **Incomplete:**
+the free plan's usage limit ("You've hit your usage limit") stopped the runs after F2e; F2d, F2f and F3b-F3c have not
+run.
+
+**F1, what sigil's Claude plugin already delivers.** No sigil plugin was installed in Claude Code, only stale `0.3.0`
+folders under `~/.claude/plugins/cache/sigil/`; Cursor listed none of their skills, so it follows Claude Code's installed
+set, not the cache. `python-starter@sigil` and `hook-protect-config@sigil` (`0.4.0`) were then installed at **project**
+scope in the probe repo (`claude plugin install --scope project`) and uninstalled afterwards.
+
+- F1a, skills: `py-generate-tests` listed. **Holds, project scope included.**
+- F1b, inlined rule: loading `py-generate-tests` quoted its inlined `## Coverage Floor` text. **Holds.**
+- F1c, agents: `py-code-reviewer` listed and ran as `subagentType: {custom: {name: "py-code-reviewer"}}`. **Holds.**
+- F1d, hooks: asked to write `.env` with the write tool, the agent wrote it; the `PreToolUse` `Edit|Write` hook did not
+  block it. **Fails** (one run; whether Cursor reads plugin hooks at all or only misses the Claude matcher is open).
+- F1e, the Claude agent's `tools:` line: `py-code-reviewer` (`tools: Read, Grep, Glob, Bash`, "you never modify files")
+  wrote `notes.txt` when told to. **Cursor ignores the Claude agent's tool list**: a sigil reviewer from the Claude
+  plugin can write in Cursor, where `sigil add --target cursor` gives it `readonly: true` (Phase E).
+
+**F2, a Cursor Plugin.** Fixture `sigil-probe`: `.cursor-plugin/plugin.json` (`name`, `version`, `description`) and
+folder discovery only: `rules/hotel.mdc` (`alwaysApply: true`, `HOTEL-F2`), `agents/probe-agent.md` (`readonly: true`,
+marker `AGENT-F2`), `skills/probe-skill/SKILL.md` (marker `SKILL-F2`).
+
+- F2a-F2c, copied (no symlink) to `~/.cursor/plugins/local/sigil-probe/`: the skill and the agent were listed, and asked
+  for, they returned `SKILL-F2` and `AGENT-F2` (a `Task` call named `probe-agent`). The rule's codeword: "None". **The
+  CLI loads a local plugin's skills and agents, not its rules.** The folder was removed after the run.
+- F3a, the same fixture through `--plugin-dir`: skill and agent listed, rule codeword "None". **Same as the local
+  folder**, and the same rule miss as A8.
+- F2e, `readonly: true` in a plugin agent: `probe-agent` wrote `notes2.txt` when told to. **A plugin agent's `readonly`
+  is not enforced in the CLI**, unlike a project `.cursor/agents/` one (A7, Phase E run 1). One run.
+
+So far, a CLI-loaded Cursor plugin adds nothing over the Claude plugin: rules don't load and `readonly` doesn't hold,
+while skills and agents already arrive through Claude Code's install. The open runs (a glob rule after a file read, the
+Agent Plugin format, failure scope, the marketplace route) and the desktop install flow decide the verdict.

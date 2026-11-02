@@ -7,6 +7,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderTools } from '../../dist-cli/targets/tool-dialect';
+import { restrictionOutcome } from '../../dist-cli/targets/tool-restriction';
+import { renderArtifact } from '../../dist-cli/targets/emit';
 import { NEUTRAL_TOOLS } from '../../dist-cli/tool-vocabulary';
 import {
   ANTIGRAVITY_AGENT_TOOL_DIALECT,
@@ -14,6 +16,11 @@ import {
   ANTIGRAVITY_MODEL_TIERS,
   antigravityAgentToolNames,
 } from '../../dist-cli/targets/antigravity/tool-dialect';
+import { ANTIGRAVITY_AGENT_SPEC } from '../../dist-cli/targets/antigravity/spec/agent';
+import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
+import { loadResolvedCatalog } from '../helpers/catalog';
+import { makeAgent } from '../helpers/fixtures';
+import type { ResolvedArtifact, ResolvedCatalog } from '../../dist-cli/types';
 
 describe('antigravityAgentToolNames', () => {
   it('expands read then search in table order', () => {
@@ -112,5 +119,133 @@ describe('antigravity agent tool dialect', () => {
       balanced: 'flash',
       deep: 'pro',
     });
+  });
+});
+
+// ── the agent emit spec ───────────────────────────────────────────────────────
+
+/** The Antigravity names for `read`, `search` and `shell`, the list every catalog agent has. */
+const READ_SEARCH_SHELL = ['view_file', 'grep_search', 'find_by_name', 'list_dir', 'run_command'];
+
+/** Renders a catalog agent through the Antigravity spec; fails when the id is absent. */
+function renderCatalogAgent(catalog: ResolvedCatalog, id: string): string {
+  const artifact = catalog.byId.get(id);
+  assert.ok(artifact, `${id} is in the catalog`);
+  return renderArtifact(ANTIGRAVITY_AGENT_SPEC, artifact, { catalog });
+}
+
+/** Renders an in-memory agent through the Antigravity spec. */
+function renderInMemory(fm: Record<string, unknown>): string {
+  return renderArtifact(ANTIGRAVITY_AGENT_SPEC, makeAgent(fm) as unknown as ResolvedArtifact, {});
+}
+
+describe('antigravity agent spec — catalog', () => {
+  it('writes typescript/ts-code-reviewer with name, description and the read/search/shell names, no model', async () => {
+    const catalog = await loadResolvedCatalog();
+    const out = renderCatalogAgent(catalog, 'typescript/ts-code-reviewer');
+    const { data } = parseFrontmatter(out);
+
+    assert.equal(data.name, 'ts-code-reviewer');
+    assert.match(String(data.description), /TypeScript/);
+    assert.equal('model' in data, false, 'no model line');
+    assert.deepEqual(data.tools, READ_SEARCH_SHELL);
+    assert.match(out, /^tools:\n {2}- view_file$/m);
+  });
+
+  it('writes shared/code-reviewer model: flash on the line before tools', async () => {
+    const catalog = await loadResolvedCatalog();
+    const out = renderCatalogAgent(catalog, 'shared/code-reviewer');
+
+    assert.equal(parseFrontmatter(out).data.model, 'flash');
+    assert.ok(out.indexOf('model: flash') >= 0, 'the model line is written');
+    assert.ok(out.indexOf('model: flash') < out.indexOf('tools:'), 'model precedes tools');
+  });
+
+  it('writes the edit names for typescript/ts-refactor-specialist', async () => {
+    const catalog = await loadResolvedCatalog();
+    const { data } = parseFrontmatter(
+      renderCatalogAgent(catalog, 'typescript/ts-refactor-specialist'),
+    );
+
+    assert.deepEqual(data.tools, [...READ_SEARCH_SHELL, 'write_to_file', 'replace_file_content']);
+  });
+
+  it('marks every catalog agent exact', async () => {
+    const catalog = await loadResolvedCatalog();
+    const agents = catalog.artifacts.filter(a => a.kind === 'agent');
+    assert.ok(agents.length > 0, 'the catalog has agents');
+
+    for (const agent of agents) {
+      assert.deepEqual(
+        restrictionOutcome(ANTIGRAVITY_AGENT_SPEC, agent.frontmatter),
+        { kind: 'exact' },
+        agent.id,
+      );
+    }
+  });
+
+  it('parses every catalog agent tools value back as an array of strings', async () => {
+    const catalog = await loadResolvedCatalog();
+    const agents = catalog.artifacts.filter(a => a.kind === 'agent');
+    assert.ok(agents.length > 0, 'the catalog has agents');
+
+    for (const agent of agents) {
+      const { data } = parseFrontmatter(renderArtifact(ANTIGRAVITY_AGENT_SPEC, agent, { catalog }));
+      assert.ok(Array.isArray(data.tools), `${agent.id}: tools is an array`);
+      for (const name of data.tools as unknown[]) {
+        assert.equal(typeof name, 'string', `${agent.id}: every tool name is a string`);
+      }
+    }
+  });
+
+  it('starts the body with the title and leaves no sigil token', async () => {
+    const catalog = await loadResolvedCatalog();
+    const artifact = catalog.byId.get('shared/code-reviewer');
+    assert.ok(artifact, 'shared/code-reviewer is in the catalog');
+
+    const out = renderArtifact(ANTIGRAVITY_AGENT_SPEC, artifact, { catalog });
+    const body = out.slice(out.indexOf('\n---\n') + 5).trimStart();
+
+    assert.ok(body.startsWith('# Code Reviewer\n'), body.slice(0, 40));
+    assert.doesNotMatch(out, /\{sigil:/);
+  });
+});
+
+describe('antigravity agent spec — in-memory', () => {
+  it('writes the full tool list when tools is absent', () => {
+    const { data } = parseFrontmatter(renderInMemory({}));
+
+    assert.deepEqual(data.tools, [...ANTIGRAVITY_ALL_TOOL_NAMES]);
+  });
+
+  it('writes flash_lite for fast and pro for deep', () => {
+    assert.equal(parseFrontmatter(renderInMemory({ model: 'fast' })).data.model, 'flash_lite');
+    assert.equal(parseFrontmatter(renderInMemory({ model: 'deep' })).data.model, 'pro');
+  });
+
+  it('ignores the claude: namespace model', () => {
+    const out = renderInMemory({ claude: { model: 'opus' } });
+
+    assert.equal('model' in parseFrontmatter(out).data, false, 'no model line');
+    assert.doesNotMatch(out, /^model:/m);
+  });
+
+  it('skips a disallowedTools restriction it cannot carry', () => {
+    const agent = makeAgent({ disallowedTools: ['edit'] });
+    const outcome = restrictionOutcome(ANTIGRAVITY_AGENT_SPEC, agent.frontmatter);
+
+    assert.equal(outcome.kind, 'skip');
+    if (outcome.kind !== 'skip') return;
+    assert.match(outcome.reason, /disallowedTools/);
+  });
+
+  it('skips tools: [read, todo], naming todo', () => {
+    const agent = makeAgent({ tools: ['read', 'todo'] });
+    const outcome = restrictionOutcome(ANTIGRAVITY_AGENT_SPEC, agent.frontmatter);
+
+    assert.equal(outcome.kind, 'skip');
+    if (outcome.kind !== 'skip') return;
+    assert.match(outcome.reason, /todo/);
+    assert.throws(() => renderInMemory({ tools: ['read', 'todo'] }), /todo/);
   });
 });

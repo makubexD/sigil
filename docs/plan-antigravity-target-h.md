@@ -208,6 +208,15 @@ Files: `src/schema/index.ts`, regenerated `schema/*.schema.json` (`npm run build
 
 Test: `npm test -- test/schema/hook.test.ts`, `npm run validate`, then `npm test`.
 
+Split after the first run timed out (mk-exec exit 124, 2026-11-02). Commit each sub-step as `#3`:
+
+- **3a** `[worker:medium]` `src/schema/index.ts`: import from `src/hook-vocabulary.ts`; the neutral plus legacy
+  `event` enum; `matcher` with the unknown-name `superRefine`; the `script` field; `command` optional; regenerate
+  `schema/*.schema.json`. Taken from the timed-out run's stash and reviewed inline, with its field doc comments.
+- **3b** `[worker:medium]` the object-level check (exactly one of `script` and `command`; `args` needs `command`),
+  falling back to `checkSchema` if `emit.ts` cannot carry it, and the remaining neutral doc comments.
+- **3c** `[worker:medium]` `test/schema/hook.test.ts` with every case in the table above.
+
 ## Step 4 `[worker:medium]`: input normalizer and script composer
 
 Files: new `src/targets/hook-input.ts`, new `test/targets/hook-input.test.ts`.

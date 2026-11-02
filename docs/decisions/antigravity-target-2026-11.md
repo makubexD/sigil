@@ -149,13 +149,13 @@ events take a `matcher`, a regular expression over Antigravity's tool names (`ru
   command in `toolCall.args.CommandLine`.
 - **Deny:** exit `0` with `{"decision": "deny", "reason": "..."}` on stdout. Other decisions are `allow`, `auto_approve`,
   `ask`, `force_ask` and `deny_unless_prior_grant`, and `overwrite` rewrites the arguments. **A non-zero exit is logged
-  and ignored (fails open)** ([Build plugins](https://antigravity.google/docs/build-plugins#lifecycle-hooks)). That is
-  the opposite of Claude's and Cursor's exit-2 deny, so a hook script written for those targets would let every call
-  through here.
+  and ignored (fails open)**, says the plugins page
+  ([Build plugins](https://antigravity.google/docs/build-plugins#lifecycle-hooks)). That would be the opposite of
+  Claude's and Cursor's exit-2 deny. **The binary disagrees:** in P4, exit 2 denied the write.
 - Handler fields: `type` (only `command`), `command`, `timeout` (seconds, default 30).
 
 **Conflict:** a `Stop` hook blocks with `decision: "continue"` on the hooks page and `decision: "block"` on the plugins
-page. P4 records the raw stdin and whether exit 2 really fails open.
+page. P4 found that exit 2 denies on `1.4.12` (see the probe log).
 
 ### D6. MCP
 
@@ -290,14 +290,18 @@ No row needs a change to `catalog/` or the zod schema except the two hook rows:
 
 - **Needed neutral concept: a hook I/O contract.** Today the catalog's hook bodies are written against Claude's payload
   and exit codes, and every shipped hook target accepts that: Cursor imports Claude hooks through its third-party table,
-  and Codex sends `tool_input` and honours exit 2 (`docs/decisions/codex-target-2026-10.md:22`). Antigravity is the first target that doesn't. The two documented differences are
-  the stdin (`toolCall.name` / `toolCall.args`, with `TargetFile` and `CommandLine` instead of `file_path` and
-  `command`) and the verdict (`{"decision": "deny"}` on stdout with exit 0, where any non-zero exit fails open). The
-  fix is a neutral contract, a named input shape and a neutral verdict, that each hook target adapts, for example
-  with a small adapter the target puts in front of the hook's command. **Cost:** a schema field or a body convention
-  for the verdict, rewriting the three catalog hooks against it, an adapter per target (Claude, Cursor, Codex become
-  identity mappings), and a regression test per target that a deny really denies. Until then a first version must ship
-  `hook` as `none`: shipping it would install guards that look active and block nothing.
+  and Codex sends `tool_input` and honours exit 2 (`docs/decisions/codex-target-2026-10.md:22`). Antigravity is the
+  first target that doesn't. The difference is the **stdin**: `toolCall.name` / `toolCall.args`, where a write is
+  `write_file` with `args.Path` (P4; the docs say `write_to_file` / `TargetFile`) instead of `tool_input.file_path`.
+  `protect-config` finds no `tool_input`, throws inside its `try`, and lets the write through. The verdict is **not**
+  a difference after all: P4 showed exit 2 denies, as does `{"decision": "deny"}` on stdout, although the plugins page
+  says a non-zero exit fails open. The fix is a neutral input contract that each hook target adapts, for example with
+  a small adapter the target puts in front of the hook's command that rewrites Antigravity's payload into the neutral
+  shape. **Cost:** a named input shape (a body convention or schema field), the three catalog hooks rewritten against
+  it, an adapter per target (Claude, Cursor and Codex become identity mappings), and a regression test per target that
+  a deny really denies. Until then a first version must ship `hook` as `none`: shipping it would install guards that
+  look active and block nothing. Exit 2 working is an observation on `1.4.12` that contradicts a doc page, so the
+  regression test must keep checking it.
 - **Known debt: neutral matchers.** Catalog matchers are Claude names (`Edit|Write`,
   `catalog/shared/hooks/protect-config.hook.md:10`; the follow-up named in
   `docs/decisions/neutral-agent-vocabulary-2026-11.md:136`). Cursor translates them with a fixed table; Antigravity
@@ -306,7 +310,41 @@ No row needs a change to `catalog/` or the zod schema except the two hook rows:
 
 ## Probe log
 
-Step 4.
+Step 4, 2026-11-01, Antigravity CLI `1.4.12`, Linux, signed in with a Google account. Every run was `agy -p` on
+`gemini-3.8-flash-low` with `--output-format stream-json`, in a fresh `git init` repo under the scratchpad built from
+fixture files, never in this repo. Each fixture carried a codeword so an answer can't be guessed. No run used
+`--dangerously-skip-permissions`: workspace writes are auto-allowed in print mode, and the MCP runs passed a
+session-only `--settings '{"permissions":{"allow":["mcp(probe/*)"]}}'`. The stream shows each tool call with its
+arguments, and `~/.gemini/antigravity-cli/brain/<id>/.system_generated/logs/transcript.jsonl` shows the exact text the
+model got. U6 needs no probe (a docs gap). U7 was not run: `agy plugin import claude` writes into the owner's home
+profile, so it waits for the owner.
+
+| #   | Question                                                  | Expected          | Observed                                                                                                                                                                                                                                                            |
+| --- | --------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| P1  | `AGENTS.md` and `.agents/rules/` reach the model?         | both              | **`AGENTS.md` yes** (ALPHA-17), with no settings. `trigger: always_on` yes (BRAVO-22). **`trigger: glob` no**: after reading `src/app.ts`, neither `globs: "src/**/*.ts"` nor `globs: "*.ts"` attached (runs 2, 3)                                                  |
+| P2  | `.agents/skills/` skill listed and picked?                | yes               | Yes: listed, picked from its description, `SKILL.md` read on demand (CHARLIE-3)                                                                                                                                                                                     |
+| U5  | Same skill name at the repo root and in the start folder? | undocumented      | **Listed once, and the repo-root copy won** over the nearer `sub/.agents/skills/` copy (run 9)                                                                                                                                                                      |
+| P3  | `/<skill> args`: is the text substituted?                 | undocumented (U1) | **No substitution.** The transcript shows the skill body with `$ARGUMENTS` still literal, and the typed text only in the user's request. The model filled in `ARGS=[hello world 42]` itself (run 4)                                                                 |
+| P4  | Hook denies a `.env` write; raw stdin?                    | deny              | **Both exit 2 and JSON `decision: deny` blocked it**; the model saw the reason. stdin: `toolCall: {name: "write_file", args: {Path, Content}}`, `stepIdx`, `lastUserInput`, and the common fields, `transcriptPath` pointing at `transcript_full.jsonl` (runs 5, 6) |
+| P5  | `${NAME}` in a workspace `mcp_config.json`?               | undocumented (U2) | **Not expanded**, in `env` or `args`: the server got the literal `${PROBE_SECRET}`. **The server inherits `agy`'s environment** (`INHERITED=[golf-77]`). The tool runs as `call_mcp_tool` with `ServerName` and `ToolName` (runs 7, 8)                              |
+| U3  | Agent with no `tools`: what can it do?                    | conflict          | No write tool: the agent run with `--agent notools` said so, and no file appeared. Same for a `tools: [view_file, grep_search]` agent. The `init` event lists the session's 44 tools in both cases, so it is not the agent's set (run 10)                           |
+| P6  | Does `agy` read `.claude/`, `CLAUDE.md`?                  | no                | **No**: `CLAUDE.md`, `.claude/rules/` and `.claude/skills/` never reached the model (run 1), and the D0 trace never opened them                                                                                                                                     |
+
+What this changes:
+
+- **Tool names come from the binary.** `agy 1.4.12` calls `read_file` (`Path`) and `write_file` (`Path`, `Content`),
+  and neither is in the hooks page's list or in the `init` tool list, which has `view_file` and `write_to_file`. A
+  `ToolDialect` and a matcher table built from the docs would miss every write. Both must be built from observed
+  names, and a live probe must re-check them on each `agy` update.
+- **MCP:** `EnvSyntax` cannot express a reference here. Because the server inherits the environment, an identity entry
+  (`NAME: {sigil:env:NAME}`) can be dropped and still work; any other token is skipped with its reason.
+- **Prompts:** a prompt could ship only as a skill, with `disable-model-invocation: true`, and with its
+  `{sigil:arguments}` rendered as prose pointing at the user's request, since nothing is substituted.
+- **Rules:** `AGENTS.md` and `always_on` rules work today. `glob` rules need a multi-turn check (the docs say rules are
+  re-read before each turn) before scoped rules ship.
+- **Skills:** the shared `.agents/skills/` works as documented. A second workspace level does not shadow the root.
+- **P6:** nothing sigil writes for Claude reaches Antigravity, but the `AGENTS.md` and `.agents/skills/` that Codex
+  and `agents-standard` write do, with no target.
 
 ## Decision
 

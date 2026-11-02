@@ -226,8 +226,8 @@ did not load.
 
 **Paused 2026-11-01** (step plan [plan-cursor-target-f.md](plan-cursor-target-f.md), § Status): Cursor's free usage
 limit stopped the probes partway through. So far a CLI-loaded Cursor plugin loads skills and agents but not rules, and
-doesn't enforce `readonly`. Meanwhile [plan-cursor-followups.md](plan-cursor-followups.md) clears the deferred review
-items, none of which needs Cursor usage.
+doesn't enforce `readonly`. Meanwhile [plan-cursor-followups.md](plan-cursor-followups.md) cleared the deferred review
+items, none of which needed Cursor usage (merged #164, 2026-11-01).
 
 ### Phase G: close-out
 

@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and skills to `.cursor/skills/` with their rules inlined. `sigil build --target cursor` writes the same
   files and no `AGENTS.md`. Prompts are skipped, with the reason. `sigil add` now
   prints a note after installing a skill that another tool's copy shadows or duplicates, the same note
-  `sigil status` prints. See `docs/setup/cursor.md`.
+  `sigil status` prints. See `docs/setup/cursor.md`. Cursor support was checked live in Cursor's CLI on
+  Linux only; the desktop app and Windows are not checked yet.
 - Cursor agents: `sigil add --target cursor` writes agents to `.cursor/agents/`. Cursor has no tool
   list, only `readonly: true`, so every catalog agent family is now `toolPolicy: nearest`: reviewers and
   auditors get `readonly: true` and lose the shell, and debuggers and refactor specialists get no flag and
@@ -81,6 +82,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+- On Cursor, the `toolPolicy: nearest` warning now says which way the mapping went: the agent is
+  read-only and loses the tools it listed, or gets no read-only flag and every Cursor tool.
+- A config install at a scope the target lacks now names that scope ("no user-level hook file",
+  "no project hook file") instead of always saying "no personal per-project" file.
+- The `sigil add` wizard no longer lists or counts, in its pack hints, a hook or MCP server the chosen
+  target can't render; `add` already skipped it.
+- `sigil update` on a hook the target can no longer render keeps the installed fragment and says why
+  (`kept as installed: <reason>`), instead of telling you to re-run `sigil add`, which would skip it too.
 - `sigil import` and `sigil check --trust` no longer refuse a file for naming `eval` in prose, or for
   piping `curl` to `shasum`. A word right after `"eval"` or touching the closing backtick of
   `` `eval` `` is still refused. Nine catalog agents and rules can now be imported. One example in

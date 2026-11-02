@@ -1,0 +1,238 @@
+# Antigravity CLI target (2026-11)
+
+Status: evaluation in progress. Step 2 (docs pass) done 2026-11-01 against Antigravity CLI `1.4.12`, Linux. The steps
+are in [plan-antigravity-eval.md](../plan-antigravity-eval.md); the brief is
+[antigravity-cli-target.md](../ideas/antigravity-cli-target.md). The reuse map (step 3), the live probes (step 4) and
+the decision (step 5) are still to come.
+
+## How the docs pass ran
+
+Every claim below cites a page on `antigravity.google/docs`, read on 2026-11-01 as the Markdown each page publishes at
+`<page>.md`. The page list came from the URLs compiled into the `agy` binary and from
+[llms.txt](https://antigravity.google/llms.txt). Where a page and the binary could be compared without a model call,
+the binary was checked: `strace` of `agy mcp list`, `agy plugin list`, `agy agents`, and one `agy -p` run on
+`gemini-3.8-flash-low` in an empty `git init` repo under the scratchpad (D0). Everything else marked
+**undocumented** or **conflict** goes to the step 4 probes; nothing here is assumed.
+
+Antigravity is one agent with three surfaces (App, CLI, IDE) sharing one customization layout. This record is about the
+CLI. Where a page says the App or IDE differs, the CLI row is the one used.
+
+## Kind table
+
+Workspace paths are relative to each folder from the one `agy` starts in up to the repository root (the folder holding
+`.git`). Antigravity reads each level, never subfolders below the start folder
+([Customization discovery](https://antigravity.google/docs/customization-discovery#workspace-folders-and-parent-directories)).
+User paths are under `~/.gemini/config/` unless noted, shared with the Antigravity App. Plugin paths are relative to
+the plugin root.
+
+| sigil kind | Channel  | Path                                                                                                                                                    | Format                                                                                                                                                            | Scopes                                         | Docs                                                                                                                                        |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| skill      | scaffold | `.agents/skills/<name>/SKILL.md`; user `~/.gemini/config/skills/<name>/SKILL.md` (CLI also `~/.gemini/antigravity-cli/skills/`, `~/.gemini/skills/`)    | Agent Skills `SKILL.md`: `name` (optional, defaults to folder), `description` (required); `scripts/`, `references/` etc. beside it                                | project, user                                  | [Agent skills](https://antigravity.google/docs/skills#cli-skill-locations)                                                                  |
+| skill      | plugin   | `skills/<name>/SKILL.md` (plus extra dirs listed in `plugin.json` `skills`)                                                                             | Same, but `name` required and must match the folder (1–64 chars), `description` 1–1,024 chars, optional `disable-model-invocation`                                | wherever the plugin is installed               | [Build plugins](https://antigravity.google/docs/build-plugins#agent-skills)                                                                 |
+| agent      | scaffold | `.agents/agents/<name>.md` or `.agents/agents/<name>/agent.md`; user `~/.gemini/config/agents/`                                                         | Markdown + YAML: `name`, `description`, `tools`, `model`, `mainAgent`, `subagent`, `commandExecutionPolicy`, `mcpServers`, `skills`                               | project, user                                  | [Custom subagents](https://antigravity.google/docs/subagents#agent-location-and-discovery)                                                  |
+| agent      | plugin   | `agents/<name>.md` or `agents/<name>/agent.md`                                                                                                          | Same, plus `inheritMcp` / `inheritCustomizations`                                                                                                                 | wherever the plugin is installed               | [Build plugins](https://antigravity.google/docs/build-plugins#subagents)                                                                    |
+| prompt     | scaffold | none. Workflows (`.agents/workflows/<name>.md`) stopped working on 2026-10-19; a skill is the slash command (`/<skill-name>`)                           | n/a                                                                                                                                                               | n/a                                            | [Migrate from workflows to skills](https://antigravity.google/docs/migration/workflows-to-skills)                                           |
+| prompt     | plugin   | none. `commands/` folders and `workflows/` files in a plugin are not loaded (`agy plugin validate` warns)                                               | n/a                                                                                                                                                               | n/a                                            | [Build plugins](https://antigravity.google/docs/build-plugins#supported-components), [changelog](https://antigravity.google/docs/changelog) |
+| rule       | scaffold | `AGENTS.md` / `GEMINI.md` (also under `.agents/`), and `.agents/rules/*.md` (one level deep); user `~/.gemini/AGENTS.md`, `~/.gemini/config/rules/*.md` | `AGENTS.md` / `GEMINI.md`: plain Markdown, always on. `rules/*.md`: YAML `trigger` (`always_on`, `model_decision`, `glob`, `manual`), `description`, `globs`      | project (cumulative up to the repo root), user | [Rules](https://antigravity.google/docs/rules#where-rules-are-stored)                                                                       |
+| rule       | plugin   | `rules/AGENTS.md` (or `rules/GEMINI.md`), `rules/<name>.md`                                                                                             | Same as scaffold                                                                                                                                                  | wherever the plugin is installed               | [Build plugins](https://antigravity.google/docs/build-plugins#rules)                                                                        |
+| hook       | scaffold | `.agents/hooks.json`; user `~/.gemini/config/hooks.json`                                                                                                | JSON: hook name → `{ enabled?, <Event>: [...] }`; tool events wrap handlers in `{ matcher, hooks: [{ type, command, timeout }] }`                                 | project, user                                  | [Hooks](https://antigravity.google/docs/hooks#schema-and-file-format)                                                                       |
+| hook       | plugin   | `hooks.json` at the plugin root (`hooks/hooks.json` is not read)                                                                                        | Same; commands run with the plugin root as `cwd`                                                                                                                  | wherever the plugin is installed               | [Build plugins](https://antigravity.google/docs/build-plugins#lifecycle-hooks)                                                              |
+| mcp        | scaffold | `.agents/mcp_config.json`; user `~/.gemini/config/mcp_config.json`                                                                                      | JSON `mcpServers.<key>`: `command` + `args` + `env` + `cwd`, or `serverUrl` (or `url`) + `headers`; `disabled`, `enabledTools`, `disabledTools`, `timeoutSeconds` | project, user                                  | [MCP](https://antigravity.google/docs/mcp#mcp-configuration-structure)                                                                      |
+| mcp        | plugin   | `mcp_config.json` at the plugin root; keys become `<plugin>_<key>`                                                                                      | Same, plus `variables` and `${VAR}`, `${PLUGIN_ROOT}`, `${PLUGIN_DATA}` expansion                                                                                 | wherever the plugin is installed               | [Build plugins](https://antigravity.google/docs/build-plugins#mcp-servers)                                                                  |
+| settings   | scaffold | `~/.gemini/antigravity-cli/settings.json` only; no documented workspace file                                                                            | JSON, rewritten by the CLI at every start                                                                                                                         | user                                           | [Settings](https://antigravity.google/docs/settings#setting-up-preferences)                                                                 |
+| settings   | plugin   | none: the manifest schema has no settings field                                                                                                         | n/a                                                                                                                                                               | n/a                                            | [Build plugins](https://antigravity.google/docs/build-plugins#full-json-schema)                                                             |
+
+## Answers
+
+### D0. Install, auth, updates, scripted runs, and `~/.gemini/`
+
+- **Install and version.** The official installer puts `agy` in `~/.local/bin/` (here `1.4.12`)
+  ([Get started](https://antigravity.google/docs/getting-started)). It updates itself in the background, with a 15-minute
+  check marker and a lock under `~/.gemini/antigravity-cli/updater/`; `agy update` updates on demand
+  ([Troubleshooting](https://antigravity.google/docs/cli/troubleshooting#resolve-self-updater-locks-and-failures)). There
+  is no documented channel choice, so a probe's version must be recorded with each result.
+- **Auth.** A Google account sign-in, kept in the OS keyring. For CI there are two documented routes: a Gemini API key
+  (`"modelProvider": "gemini"` in `settings.json` plus `GEMINI_API_KEY` in the environment, never a `.env` file), or
+  Application Default Credentials ([Authenticate](https://antigravity.google/docs/install#local-silent-keyring-sign-in)).
+- **Scripted probes.** Yes: `agy -p "<prompt>"` with `--output-format json` or `stream-json`, `--model`, `--effort`,
+  `--agent`, and `--print-timeout` (default five minutes). A tool that needs approval is soft-denied in print mode: the
+  run goes on and exits `0`, with a note on stderr. Workspace file reads and writes are auto-allowed, and shell commands
+  and MCP tools need a `permissions.allow` rule or `--dangerously-skip-permissions`
+  ([Headless mode](https://antigravity.google/docs/cli/headless#permissions-in-headless-mode)). The models this account
+  serves include `gemini-3.8-flash-low` (`agy models`).
+- **Which `~/.gemini/` files `agy` reads.** The docs name `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md`,
+  `~/.gemini/skills/`, everything under `~/.gemini/config/`, and `~/.gemini/antigravity-cli/`
+  ([Customization discovery](https://antigravity.google/docs/customization-discovery#where-antigravity-looks)). The
+  traced print run opened those, plus `~/.gemini/config/global_workflows`. **It never opened** `google_accounts.json`,
+  `trustedFolders.json`, `projects.json`, `state.json`, `state.json.bak`, `settings.json`, `installation_id`, `history/`
+  or `tmp/` at the top of `~/.gemini/`, which are Gemini CLI's. The migration guide confirms that Gemini CLI kept MCP
+  servers in `~/.gemini/settings.json` and that Antigravity does not
+  ([Migrating from Gemini CLI](https://antigravity.google/docs/cli/gcli-migration#mcp-config-formatting-changes)). That
+  closes step 1: those nine are Gemini-CLI-only and safe to remove. They were left in place; removing them is the
+  owner's call.
+
+### D1. Context files
+
+Antigravity reads `AGENTS.md` and `GEMINI.md`, both with no settings needed, plus `.agents/AGENTS.md` and
+`.agents/GEMINI.md`. It loads them **upward**: in the start folder and in every parent up to the repository root, and
+the rules add up instead of replacing each other. It does **not** load a nested `AGENTS.md` below the start folder,
+even when the agent works there ([Rules](https://antigravity.google/docs/rules#directory-scoped-rules)). No setting
+renames the file. User-level files are `~/.gemini/AGENTS.md`, `~/.gemini/GEMINI.md` and the same two under
+`~/.gemini/config/` ([Rules](https://antigravity.google/docs/rules#global-rules)). Each rule file is truncated at
+24,000 bytes, and all always-on and global rules share a 20,000-token budget, past which the largest are demoted to a
+path-and-description pointer ([Rules](https://antigravity.google/docs/rules#size-limits-and-token-budgets)).
+
+So the brief's "almost free" question is answered **yes, on the docs**: the root `AGENTS.md` that sigil already writes
+for Copilot and Codex is read as-is. Antigravity also has per-file rules sigil can map: `.agents/rules/<id>.md` with
+`trigger: glob` and a comma-separated `globs` string for a scoped rule, `trigger: always_on` for a repo-wide one. The
+docs warn that a missing or camelCase `trigger` silently drops the rule. P1 checks both.
+
+### D2. Skills
+
+The native project folder is **`.agents/skills/`**, the same folder `codex` and `agents-standard` write
+(`Target.sharesSkillFilesWith`). The migration guide says so in as many words: Gemini CLI's `.gemini/skills/` became
+`.agents/skills/` ([Migrating from Gemini CLI](https://antigravity.google/docs/cli/gcli-migration#updated-skills-paths)).
+The scan is one level deep, and parent folders up to the repo root are read too. Each skill also becomes a slash
+command `/<name>` in the CLI ([Agent skills](https://antigravity.google/docs/skills#slash-command-conversion)).
+
+When two skills share a name, one wins: the repo's personal folder, then the workspace, then `~/.gemini/config/`, then
+built-ins. In the CLI, `~/.gemini/antigravity-cli/skills/` and `~/.gemini/skills/` beat all of them, and manifest
+`exclude` lists don't hide them. Plugin skills are named `<plugin>:<skill>`, so they never collide
+([Customization discovery](https://antigravity.google/docs/customization-discovery#which-customization-wins)). The
+same name in two workspace levels (repo root and a subfolder) is undocumented; P2 covers the collision case.
+
+### D3. Subagents
+
+Custom agents are Markdown with YAML frontmatter, documented as a normal feature (no preview label)
+([Custom subagents](https://antigravity.google/docs/subagents#custom-subagents)):
+
+- **Tool list:** `tools`, an allowlist of Antigravity tool names (`view_file`, `grep_search`, `find_by_name`,
+  `run_command`, `write_to_file`, `replace_file_content`, …; the full list is on
+  [Hooks](https://antigravity.google/docs/hooks#supported-tools)). A misspelt name may hang the subagent (a known
+  issue the page names).
+- **Read-only:** no flag. Leaving file-edit and shell tools out of `tools` makes a read-only reviewer
+  ([Build plugins](https://antigravity.google/docs/build-plugins#subagents)). The `define_subagent` tool has
+  `enable_write_tools`, but that is a runtime argument, not frontmatter. There is no `disallowedTools`.
+- **Model:** `model` is a tier, not a model id: `inherit`, `flash`, `pro` on the subagents page, plus `flash_lite` on the
+  plugins page. sigil's `fast | balanced | deep` would map to a tier table.
+- Others: `mainAgent` and `subagent` (both default `true`), `commandExecutionPolicy` (default `sandbox`), `mcpServers`,
+  `skills` (skill paths).
+
+**Conflict:** the default for an absent `tools` is `[]` on the subagents page and "All tools" on the plugins page. This
+matters for sigil's invariant that an unmapped read-only list must never grant write access. P-probe in step 4.
+
+### D4. Commands and prompts
+
+There is no command or prompt file any more. Workflows (`.agents/workflows/*.md`, 12,000-character limit) were the
+form, and they **stopped working on 2026-10-19**; the replacement is a skill, which the CLI exposes as `/<skill-name>`
+([Migrate from workflows to skills](https://antigravity.google/docs/migration/workflows-to-skills)). Gemini CLI's TOML
+commands are converted to skills by `agy plugin import gemini`
+([Migrating from Gemini CLI](https://antigravity.google/docs/cli/gcli-migration#converting-extensions-to-plugins)), and
+a plugin's `commands/` folder is not loaded. A plugin skill can set `disable-model-invocation: true` to run only from
+its slash command ([Build plugins](https://antigravity.google/docs/build-plugins#agent-skills)).
+
+So the brief's TOML question is moot: no TOML writer is needed. **Undocumented:** how text typed after `/<skill-name>`
+reaches the skill, and whether any placeholder replaces `$ARGUMENTS`. P3 decides it. Until then a sigil `prompt` has no
+native home on this target.
+
+### D5. Hooks
+
+Events: `SessionStart`, `PreToolUse`, `PostToolUse`, `PreInvocation`, `PostInvocation`, `Stop`. Only the two tool
+events take a `matcher`, a regular expression over Antigravity's tool names (`run_command`, `write_to_file`,
+`replace_file_content`, `browser_.*`, MCP tools as `mcp:.*`). Files: `.agents/hooks.json`,
+`~/.gemini/config/hooks.json`, or a plugin's root `hooks.json`; hooks in `settings.json` are not loaded
+([Hooks](https://antigravity.google/docs/hooks)).
+
+- **stdin** (camelCase JSON): every event gets `conversationId`, `workspacePaths`, `transcriptPath`,
+  `artifactDirectoryPath`, `modelName`. `PreToolUse` adds `toolCall.name`, `toolCall.args` and `stepIdx`. A write's
+  path is in `toolCall.args.TargetFile` (`write_to_file`, `replace_file_content`, `multi_replace_file_content`), a shell
+  command in `toolCall.args.CommandLine`.
+- **Deny:** exit `0` with `{"decision": "deny", "reason": "..."}` on stdout. Other decisions are `allow`, `auto_approve`,
+  `ask`, `force_ask` and `deny_unless_prior_grant`, and `overwrite` rewrites the arguments. **A non-zero exit is logged
+  and ignored (fails open)** ([Build plugins](https://antigravity.google/docs/build-plugins#lifecycle-hooks)). That is
+  the opposite of Claude's and Cursor's exit-2 deny, so a hook script written for those targets would let every call
+  through here.
+- Handler fields: `type` (only `command`), `command`, `timeout` (seconds, default 30).
+
+**Conflict:** a `Stop` hook blocks with `decision: "continue"` on the hooks page and `decision: "block"` on the plugins
+page. P4 records the raw stdin and whether exit 2 really fails open.
+
+### D6. MCP
+
+Files: `.agents/mcp_config.json` (workspace) and `~/.gemini/config/mcp_config.json` (user), both an `mcpServers` map; a
+plugin's root `mcp_config.json` is namespaced `<plugin>_<key>`. A stdio entry is `command` + `args` + `env` + `cwd`;
+a remote one is `serverUrl` (or `url`) with `headers`, Streamable HTTP only, so legacy SSE and `httpUrl` are rejected
+([MCP](https://antigravity.google/docs/mcp#mcp-configuration-structure)). When the user file and the workspace file
+use the same key, whichever server is already running keeps it
+([Settings](https://antigravity.google/docs/settings#other-configuration-files)).
+
+- **Env references:** in a plugin, `${NAME}` expands from a declared `mcpServers.<key>.variables` entry (in `command`,
+  `args`, `env`, `url`, `headers`, `oauth`), and `${PLUGIN_ROOT}` / `${PLUGIN_DATA}` expand in `args`, `cwd` and `env`
+  ([Build plugins](https://antigravity.google/docs/build-plugins#plugin-path-variables)). **For the workspace and user
+  files no env syntax is documented**: whether `${NAME}` there reads the process environment is a P5 question. A plugin
+  that declares `variables` installs disabled until the user fills them in.
+- **Trust and approval:** an unconfigured MCP tool runs in Ask mode. Approval is a permission rule, `mcp(server/tool)`,
+  `mcp(server/*)` or `mcp(*)` ([MCP](https://antigravity.google/docs/mcp#mcp-permissions-and-access-control)). In print
+  mode an Ask is soft-denied, so P5 needs an allow rule.
+
+### D7. Settings
+
+The CLI's settings are user-only, in `~/.gemini/antigravity-cli/settings.json`. **The CLI owns that file:** it saves
+only non-default keys, rewrites the file in its own format at every start, and sets mode `0600`. It keeps unknown keys
+([Settings](https://antigravity.google/docs/settings#how-the-cli-reads-and-saves-settingsjson)). The one key that is
+user-owned config sigil could merge is `permissions` (`allow` / `ask` / `deny` arrays of `action(target)` strings)
+([Settings](https://antigravity.google/docs/settings#permissions)). The `/permissions` panel also has **Project** and
+**Shared** scopes, but no page says which file holds them
+([/permissions](https://antigravity.google/docs/cli/commands/permissions)). A repo-root `.gemini/config.json` exists, for
+`personal_customization_dir` only
+([Customization discovery](https://antigravity.google/docs/customization-discovery#personal-folders-in-a-shared-repository)).
+
+So `settings` is a weak fit: one user-scoped file the tool rewrites at start, which order-preserving `serialize()` can't
+protect. A first version would leave it `none`.
+
+### D8. Plugins
+
+- **Manifest:** `plugin.json` at the plugin root, or `.antigravity-plugin/plugin.json`, which wins over the root file and
+  is meant for repositories that also ship `.claude-plugin/plugin.json` or `.cursor-plugin/plugin.json`. Only `name`
+  is required (kebab-case); the Marketplace also needs `displayName`, `description`, `version`, `logo` and `author`.
+  The schema is published and closed (`additionalProperties: false`)
+  ([Build plugins](https://antigravity.google/docs/build-plugins#manifest-file-pluginjson)).
+- **Components:** skills, agents, rules (`rules/AGENTS.md` always on, `rules/<name>.md` with a trigger), `hooks.json`
+  and `mcp_config.json`. **A plugin can ship rules and context**, unlike a Claude plugin. It cannot ship commands or
+  settings ([Build plugins](https://antigravity.google/docs/build-plugins#supported-components)).
+- **Install scope:** both. `agy plugin install <name> | <GitHub URL> | <path>` installs into the user profile
+  (`~/.gemini/config/plugins/<plugin>/`, read-only, replaced on update). A folder placed in `.agents/plugins/<plugin>/`
+  is a workspace plugin ([Plugins](https://antigravity.google/docs/plugins#manual-plugin-installation)).
+  `agy plugin validate --strict` checks a plugin before release.
+- **Marketplace:** one official marketplace, `antigravity-plugins-official`, which `install` defaults to. Getting
+  listed is a partner intake form; there is no documented way to add a third-party marketplace, so sigil's route
+  would be a GitHub URL ([Marketplace](https://antigravity.google/docs/marketplace),
+  [Build plugins](https://antigravity.google/docs/build-plugins#publish-to-the-antigravity-marketplace)).
+- **Claude import:** `agy plugin import claude` converts plugins from `~/.claude/plugins/`
+  ([Plugins](https://antigravity.google/docs/plugins#cli-shell-subcommands-agy-plugin)). That may make sigil's existing
+  `dist/claude/` plugin usable with no new build, but how it converts sigil's inlined rules and hooks is a step 4
+  question.
+
+## Open for step 4
+
+| #   | Question                                                                     | Source                      |
+| --- | ---------------------------------------------------------------------------- | --------------------------- |
+| U1  | How do `/<skill> text` arguments reach the skill; is there a placeholder?    | undocumented (D4, P3)       |
+| U2  | Does `${NAME}` expand from the environment in a workspace `mcp_config.json`? | undocumented (D6, P5)       |
+| U3  | Default for an absent agent `tools`: none or all?                            | conflict (D3)               |
+| U4  | Does a non-zero hook exit fail open; what is `Stop`'s blocking decision?     | conflict and claim (D5, P4) |
+| U5  | Same skill name at two workspace levels: one listing or two?                 | undocumented (D2, P2)       |
+| U6  | Which file holds the Project and Shared permission scopes?                   | undocumented (D7)           |
+| U7  | What does `agy plugin import claude` make of a sigil plugin?                 | undocumented (D8)           |
+
+## Reuse map
+
+Step 3.
+
+## Probe log
+
+Step 4.
+
+## Decision
+
+Step 5.

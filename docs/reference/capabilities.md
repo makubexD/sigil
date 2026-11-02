@@ -19,10 +19,10 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 | settings | native | — (4) | — (5) | — (6) | — (6) | — (7) |
 | prompt | native | native | — (8) | — (9) | — (10) | — (11) |
 | skill | native | native | native | native | native | native |
-| agent | native | native | — (12) | — (13) | native | — (14) |
-| rule | native | native | via inline (15) | via inline (16) | native | native |
-| workflow | native | native | — (17) | — (18) | — (19) | — (11) |
-| template | — (20) | — (20) | — (20) | — (20) | — (20) | — (20) |
+| agent | native | native | — (12) | — (13) | native | native |
+| rule | native | native | via inline (14) | via inline (15) | native | native |
+| workflow | native | native | — (16) | — (17) | — (18) | — (11) |
+| template | — (19) | — (19) | — (19) | — (19) | — (19) | — (19) |
 
 1. the open standard (Agent Skills, AGENTS.md) defines no MCP config file shared by its tools; install it for a tool-specific target
 2. the open standard (Agent Skills, AGENTS.md) defines no hooks; install it for a tool-specific target
@@ -37,13 +37,12 @@ channels are split this way: [distribution-channels-2026-09](../decisions/distri
 11. Antigravity has no prompt files: workflows stopped working and a skill is the slash command — [Antigravity — Migrating workflows to skills](https://antigravity.google/docs/migration/workflows-to-skills)
 12. the open standard (Agent Skills, AGENTS.md) defines no subagents; install it for a tool-specific target
 13. a Codex agent file can't restrict tools, so a catalog agent would gain every tool — [OpenAI Codex — Subagents](https://learn.chatgpt.com/docs/agent-configuration/subagents)
-14. not built yet (roadmap Phase D)
-15. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
-16. folded into each skill that `uses:` it — [OpenAI Codex — Build skills](https://learn.chatgpt.com/docs/build-skills)
-17. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
-18. Codex has no workflow file
-19. Cursor has no workflow file
-20. templates are composed into other artifacts at resolve time, never emitted
+14. folded into each skill that `uses:` it — [Agent Skills — the open standard](https://agentskills.io)
+15. folded into each skill that `uses:` it — [OpenAI Codex — Build skills](https://learn.chatgpt.com/docs/build-skills)
+16. the open standard (Agent Skills, AGENTS.md) defines no workflows; install it for a tool-specific target
+17. Codex has no workflow file
+18. Cursor has no workflow file
+19. templates are composed into other artifacts at resolve time, never emitted
 
 ## plugin
 

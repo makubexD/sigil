@@ -1,10 +1,10 @@
 /**
  * The Antigravity target: Agent Skills in `.agents/skills/<name>/SKILL.md`, the same files the
  * open-standard and Codex targets write, with each skill's rules inlined; repo-wide rules as
- * `.agents/rules/` files; and MCP servers merged into `.agents/mcp_config.json` (project) or
- * `~/.gemini/config/mcp_config.json` (user). Everything here is data on the shared pipeline: emit
- * specs, lexicon, capabilities and citations. It needs nothing outside this folder except its
- * `registerTarget()` line.
+ * `.agents/rules/` files; subagents as `.agents/agents/` files; and MCP servers merged into
+ * `.agents/mcp_config.json` (project) or `~/.gemini/config/mcp_config.json` (user). Everything
+ * here is data on the shared pipeline: emit specs, lexicon, capabilities and citations. It needs
+ * nothing outside this folder except its `registerTarget()` line.
  *
  * `build` writes no `AGENTS.md`: an Antigravity repo-wide rule becomes an always-on
  * `.agents/rules/` file, which Antigravity loads, and Antigravity also reads a root `AGENTS.md`,
@@ -69,7 +69,7 @@ export class AntigravityTarget implements Target {
   readonly displayName = 'Antigravity';
   readonly installHint = 'writes to .agents/';
   readonly afterInstallHint =
-    'Antigravity picks up .agents/skills/ and .agents/rules/ in its next session. An MCP tool runs only after approval or an allow rule such as mcp(<server>/*).';
+    'Antigravity picks up .agents/skills/, .agents/rules/ and .agents/agents/ in its next session. An MCP tool runs only after approval or an allow rule such as mcp(<server>/*).';
   /**
    * Antigravity's MCP files expand no references, so an identity env entry is dropped and the
    * server reads the variable from `agy`'s own environment (ADR P5, C1).

@@ -135,7 +135,29 @@ and add or decline an Antigravity entry in § 6.
 
 Test: `npm run validate`, then prettier on both decision files.
 
-## Step 6: Make the ground rules permanent, and run them as a regression over every target `[inline: review judgment]`
+## Step 6: Owner decisions: remove Gemini CLI's files, run the plugin import probe `[inline: shell steps and a probe of Antigravity's own loader, owner-approved 2026-11-01]`
+
+Both decisions are the owner's, from 2026-11-01, after step 5.
+
+- **Delete the nine Gemini-CLI-only entries** at the top of `~/.gemini/` that the D0 trace showed `agy` never opens:
+  `google_accounts.json`, `trustedFolders.json`, `projects.json`, `state.json`, `state.json.bak`, `settings.json`,
+  `installation_id`, `history/`, `tmp/`. Delete only these, by name. Nothing else in `~/.gemini/` (`antigravity-cli/`,
+  `config/`, `antigravity-ide/`, any `AGENTS.md` / `GEMINI.md` / `skills/`) is touched. Then run one short `agy -p` and
+  check that it still signs in and answers. In the ADR's D0, replace "They were left in place" with a dated line saying
+  they were removed.
+- **Run U7.** Build with `npm run catalog:build`, then import one sigil plugin that carries skills, rules inlined into
+  them, and a hook, by path, not the bare `agy plugin import claude`. The bare form would import every plugin in
+  `~/.claude/plugins/`, not only sigil's. Use `agy plugin import <dist/claude/plugins/essentials>` and import
+  `dist/claude/plugins/hook-protect-config` the same way. Record what `agy plugin list --json` shows (skills, rules,
+  agents, hooks, MCP) and run `agy plugin validate --strict` on the imported folder. Run one `agy -p` in a scratchpad
+  repo asking for an imported skill by name, and check whether the imported hook denies a `.env` write (it should not,
+  given the stdin finding). Write the results as a U7 row in the ADR's probe log. Then `agy plugin uninstall` each
+  imported plugin and confirm `~/.gemini/config/plugins/` is back to its earlier contents.
+
+Test: `ls ~/.gemini` shows none of the nine; `agy -p "Reply ok"` exits 0; the U7 row is in the ADR with the `agy`
+version; `agy plugin list` shows no sigil plugin; `npx prettier --check docs/decisions/antigravity-target-2026-11.md`.
+
+## Step 7: Make the ground rules permanent, and run them as a regression over every target `[inline: review judgment]`
 
 - Copy the ground rules into `docs/reference/architecture.md` § Extension model as **Rules for every target**. Then
   the next target (and any review) reads them from the repo, not from this plan. Link to that section from the
@@ -150,10 +172,10 @@ Test: `npm run validate`, then prettier on both decision files.
 
 Test: `npx prettier --check` on the changed docs, then `npm run validate`. Every audit finding has a citation.
 
-## Step 7: Close-out `[inline: depends on step 5]`
+## Step 8: Close-out `[inline: depends on steps 5 and 6]`
 
 - **Go:** write the roadmap `docs/plan-antigravity-target.md` with phases, not steps: capability rows, conformance
-  implications, and which probes gate which phase. The roadmap repeats the ground rules, and any neutral concept from
+  implications, and which probes gate which phase (the plugin phase uses step 6's U7 result). The roadmap repeats the ground rules, and any neutral concept from
   step 3 becomes its own phase ahead of the phases that need it. Point the brief at it and set its
   `docs/ideas/README.md` row to `planned`.
 - **No-go:** move the still-true facts into the ADR, delete `docs/ideas/antigravity-cli-target.md`, remove its row

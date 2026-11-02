@@ -43,7 +43,8 @@ function writeMemberFiles(
   const writtenBy = new Map<string, string>();
   for (const artifact of members) {
     const spec = specFor(ANTIGRAVITY_EMIT_SPECS, artifact.kind, 'plugin');
-    if (!spec) continue;
+    // A member its spec skips writes nothing, so it can't collide with anything.
+    if (!spec || specSkipReason(spec, artifact) !== undefined) continue;
     const filePath = spec.outputPath(artifact, ctx);
     const otherId = writtenBy.get(filePath);
     if (otherId !== undefined && otherId !== artifact.id) {
@@ -120,17 +121,23 @@ function addConfigPlugins(
 
 /**
  * Builds the complete Antigravity plugin FileMap: every pack's plugin, then one generated plugin
- * per hook and MCP artifact (`hook-<basename>` / `mcp-<basename>`).
+ * per hook and MCP artifact (`hook-<basename>` / `mcp-<basename>`). Two packs with one name fail
+ * the build, since their plugins would share a folder.
  */
 export function buildAntigravityPlugins(
   catalog: ResolvedCatalog,
   options: CompileOptions,
 ): FileMap {
   const files: FileMap = {};
+  const packNames = new Set<string>();
   for (const pack of options.packs) {
+    if (packNames.has(pack.name)) {
+      throw new SigilError(`two packs are named '${pack.name}'; each plugin needs its own folder`);
+    }
+    packNames.add(pack.name);
     const plugin = buildPackPlugin(pack, catalog, options);
     if (plugin) Object.assign(files, plugin);
   }
-  addConfigPlugins(catalog, options, new Set(options.packs.map(pack => pack.name)), files);
+  addConfigPlugins(catalog, options, packNames, files);
   return files;
 }

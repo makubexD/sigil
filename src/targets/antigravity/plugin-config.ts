@@ -16,28 +16,12 @@
 import { applyMerge } from '../../config-merge/apply';
 import { serialize } from '../../config-merge/primitives';
 import { artifactTargetsPlatform } from '../../select';
-import type {
-  FileMap,
-  MarketplaceIdentity,
-  Pack,
-  ResolvedArtifact,
-  ResolvedCatalog,
-} from '../../types';
+import type { FileMap, Pack, ResolvedArtifact, ResolvedCatalog } from '../../types';
 import type { ConfigKindWriter } from '../config-kind-table';
 import { envTokenNames } from '../env-reference';
 import { configPluginName } from '../shared/plugin-packs';
 import { ANTIGRAVITY_CONFIG_KINDS } from './config';
-import { antigravityPluginJson } from './plugin-manifest';
-
-/** Inputs to the manifest builder that do not come from the artifact itself. */
-export interface AntigravityConfigPluginOptions {
-  /** npm package version, written to every generated manifest's `version` field. */
-  version: string;
-  /** Project homepage URL (from package.json `homepage`); defaults to sigil's own. */
-  homepage?: string | undefined;
-  /** Configured marketplace/plugin identity; absent keeps sigil's own values. */
-  marketplace?: MarketplaceIdentity | undefined;
-}
+import { antigravityPluginJson, type AntigravityPluginOptions } from './plugin-manifest';
 
 /** One generated config plugin: its name and the files under `plugins/<name>/`. */
 export interface AntigravityConfigPlugin {
@@ -94,7 +78,7 @@ function configContent(writer: ConfigKindWriter, artifact: ResolvedArtifact): st
 /** One artifact's plugin, or undefined when Antigravity does not deliver an artifact. */
 function buildOne(
   artifact: ResolvedArtifact,
-  options: AntigravityConfigPluginOptions,
+  options: AntigravityPluginOptions,
 ): AntigravityConfigPlugin | undefined {
   const writer = configWriterFor(artifact);
   if (!writer || !artifactTargetsPlatform(artifact, 'antigravity')) return undefined;
@@ -117,7 +101,7 @@ function buildOne(
  */
 export function buildAntigravityConfigPlugins(
   catalog: ResolvedCatalog,
-  options: AntigravityConfigPluginOptions,
+  options: AntigravityPluginOptions,
 ): AntigravityConfigPlugin[] {
   const plugins: AntigravityConfigPlugin[] = [];
   for (const kind of CONFIG_PLUGIN_KINDS) {

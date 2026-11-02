@@ -246,4 +246,23 @@ describe('Antigravity plugin build', () => {
       },
     );
   });
+
+  it('should fail the build when two packs share a name', async () => {
+    const catalog = await loadResolvedCatalog();
+
+    await assert.rejects(
+      getTarget(TARGET).compile(catalog, {
+        version: VERSION,
+        packs: [
+          packOf('twin-pack', ['typescript/ts-document']),
+          packOf('twin-pack', ['python/py-generate-tests']),
+        ],
+      }),
+      (error: unknown) => {
+        assert.ok(error instanceof SigilError, 'rejects with a SigilError');
+        assert.match(error.message, /two packs are named 'twin-pack'/);
+        return true;
+      },
+    );
+  });
 });

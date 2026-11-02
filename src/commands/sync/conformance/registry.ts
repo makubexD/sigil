@@ -27,6 +27,7 @@ import { familyToolsRule } from './rules/family-tools';
 import { legacyToolNameRule } from './rules/legacy-tool-name';
 import { stackLeakRule } from './rules/stack-leak';
 import { configTargetRenderRule } from './rules/config-target-render';
+import { hookProviderInputRule } from './rules/hook-provider-input';
 
 export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   whenToUseLiftRule,
@@ -50,4 +51,5 @@ export const CONFORMANCE_RULES: readonly ConformanceRule[] = [
   legacyToolNameRule,
   stackLeakRule,
   configTargetRenderRule,
+  hookProviderInputRule,
 ];

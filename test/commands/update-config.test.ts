@@ -7,6 +7,7 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
+import os from 'node:os';
 import path from 'node:path';
 import { applyConfigEntry, updateConfigEntry } from '../../dist-cli/commands/update-config';
 import { recordedOpsAt } from '../../dist-cli/manifest';
@@ -14,6 +15,9 @@ import type { Manifest, ManifestEntry } from '../../dist-cli/manifest/types';
 import type { ConfigMergeOp } from '../../dist-cli/types';
 import type { ConfigUpdateOptions } from '../../dist-cli/commands/update';
 import { withTempDir } from '../helpers/temp-dir';
+import { runAdd } from '../../dist-cli/commands/add';
+import { runUpdate } from '../../dist-cli/commands/update';
+import { makeTeamCatalog } from '../helpers/team-catalog';
 
 function makeOpts(
   projectDir: string,
@@ -243,5 +247,65 @@ describe('updateConfigEntry — the committed manifest is not trusted for conten
       assert.equal(text.includes('evil'), false, text);
       assert.match(text, /"command": "x"/);
     });
+  });
+});
+
+describe('sigil update — a Cursor hook that became unrenderable after install', () => {
+  /** Runs `fn` with console output captured (log, warn and error), returning every line. */
+  async function captureAll(fn: () => Promise<void>): Promise<string[]> {
+    const lines: string[] = [];
+    const saved = { log: console.log, warn: console.warn, error: console.error };
+    const push = (...args: unknown[]) => void lines.push(args.join(' '));
+    console.log = push;
+    console.warn = push;
+    console.error = push;
+    try {
+      await fn();
+    } finally {
+      Object.assign(console, saved);
+    }
+    return lines;
+  }
+
+  it('exits cleanly, leaves .cursor/hooks.json untouched and says why once', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-update-unrenderable-'));
+    try {
+      const catalog = makeTeamCatalog(root);
+      const project = path.join(root, 'project');
+      fs.mkdirSync(project);
+      const common = { projectDir: project, catalogDir: catalog.dir, packs: catalog.packs };
+      await captureAll(async () => {
+        await runAdd(['hook:shared/protect-config'], {
+          ...common,
+          target: 'cursor',
+          scope: 'project',
+          deps: true,
+          dryRun: false,
+          interactive: false,
+          yes: true,
+          overwrite: false,
+          settingsLocal: false,
+        });
+      });
+      const hooksFile = path.join(project, '.cursor/hooks.json');
+      const before = fs.readFileSync(hooksFile, 'utf8');
+
+      // Notification has no Cursor event, so cursorHookSkipReason now refuses the hook.
+      const source = path.join(catalog.dir, 'shared/hooks/protect-config.hook.md');
+      const text = fs.readFileSync(source, 'utf8');
+      const edited = text.replace(/^event: PreToolUse$/m, 'event: Notification');
+      assert.notEqual(edited, text, 'the fixture edit applied');
+      fs.writeFileSync(source, edited);
+
+      const lines = await captureAll(() =>
+        runUpdate([], { ...common, target: 'cursor', force: false, dryRun: false, yes: true }),
+      );
+
+      assert.equal(fs.readFileSync(hooksFile, 'utf8'), before);
+      const reason = /no 'Notification' hook event/;
+      assert.equal(lines.filter(l => reason.test(l)).length, 1, lines.join('\n'));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 });

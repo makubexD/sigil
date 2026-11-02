@@ -94,18 +94,19 @@ function updateOneConfigFile(
  * Brings one recorded fragment up to date from the catalog. The manifest is committed and
  * editable, so it only names *which* catalog fragment to maintain, never what to write: a
  * destination the catalog has no op for is skipped, and a missing fragment is restored from the
- * catalog's op, not the recorded copy.
+ * catalog's op, not the recorded copy. `fresh.noOpNote` is what a skipped destination prints.
  */
 function updateFromCatalog(
   cf: ManifestConfigMerge,
   entry: ManifestEntry,
   opts: ConfigUpdateOptions,
-  freshOps: readonly ConfigMergeOp[],
+  fresh: { ops: readonly ConfigMergeOp[]; noOpNote: string },
 ): FileOutcome {
+  const freshOps = fresh.ops;
   const current = freshOps.find(op => sameDestination(cf, op));
   if (!current) {
     console.log(`  ⊘  ${entry.id}
-     ${cf.file}  (${NOT_IN_CATALOG})`);
+     ${cf.file}  (${fresh.noOpNote})`);
     return 'none';
   }
   const changed = changedCatalogOp(cf, freshOps);
@@ -115,6 +116,14 @@ function updateFromCatalog(
 
 const NOT_IN_CATALOG =
   'not in the current catalog for this destination — not restored; re-run sigil add';
+
+/** How {@link applyConfigEntry} treats an entry's records beyond the catalog's ops. */
+export interface ApplyConfigOptions {
+  /** A record at a retired file, already handled by moveRetiredFragments. */
+  isRetired?: (cf: ManifestConfigMerge) => boolean;
+  /** Why the target now refuses the artifact; names a record with no op instead of NOT_IN_CATALOG. */
+  skipReason?: string | undefined;
+}
 
 /** The result of bringing an entry's config fragments up to date. */
 export interface ConfigEntryResult {
@@ -132,12 +141,14 @@ export function applyConfigEntry(
   entry: ManifestEntry,
   opts: ConfigUpdateOptions,
   freshOps: readonly ConfigMergeOp[],
-  isRetired: (cf: ManifestConfigMerge) => boolean = () => false,
+  { isRetired = () => false, skipReason }: ApplyConfigOptions = {},
 ): ConfigEntryResult {
   const result: ConfigEntryResult = { wrote: false, skipped: 0 };
+  // A target that refuses the artifact now has no op either: say why, not "re-run sigil add".
+  const noOpNote = skipReason === undefined ? NOT_IN_CATALOG : `kept as installed: ${skipReason}`;
   // A record at a retired file was already moved, previewed or reported by moveRetiredFragments.
   for (const cf of (entry.configFiles ?? []).filter(c => !isRetired(c))) {
-    const outcome = updateFromCatalog(cf, entry, opts, freshOps);
+    const outcome = updateFromCatalog(cf, entry, opts, { ops: freshOps, noOpNote });
     if (outcome === 'wrote') result.wrote = true;
     if (outcome === 'skipped') result.skipped++;
   }

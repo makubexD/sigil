@@ -63,6 +63,9 @@ guide is [CONTRIBUTING.md](CONTRIBUTING.md) § B. Contributing code (Testing, Be
   (`Bash(git log:*)`, `mcp__…`) are the one pass-through, verbatim, until a neutral pattern form exists. A spec with no dialect leaves a
   skill's `allowed-tools` out and makes an agent restriction inexact. `legacy-tool-name` fails `sync --check` on a
   provider name in catalog source. (see `docs/decisions/neutral-agent-vocabulary-2026-11.md`)
+- **Hook events and matchers are neutral** (`src/hook-vocabulary.ts`); a hook that reads its input is a `script:` and
+  gets `input`, built by the target's `HookInputDialect` (`src/targets/hook-input.ts`). Never read a provider's stdin
+  field in catalog source; `hook-provider-input` fails `--check`.
 - **`appliesTo` stays unchanged in `catalog/` source and the zod schema** — adapters translate it (`paths:` for
   Claude, `applyTo:` for Copilot `.instructions.md` only, `globs:` / `alwaysApply:` for Cursor `.mdc`). Never gate
   that translation on `language`. All four emitters must agree: the Claude scaffold rule spec

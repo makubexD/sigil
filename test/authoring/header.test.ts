@@ -4,6 +4,8 @@
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { headerFor } from '../../dist-cli/authoring/header';
+import { parseFrontmatter } from '../../dist-cli/frontmatter-parse';
+import { HookSchema } from '../../dist-cli/schema';
 
 describe('E4 — headerFor', () => {
   it('skill header contains required fields', () => {
@@ -60,6 +62,25 @@ describe('E4 — headerFor', () => {
     // Active platforms: block should be present (not commented out)
     assert.ok(result.includes('platforms:'), 'platforms: key present');
     assert.ok(result.includes('  - claude'), '  - claude entry present');
+  });
+
+  it('hook header is a schema-valid hook with a script reading input', () => {
+    const result = headerFor('hook', {
+      id: 'shared/guard',
+      kind: 'hook',
+      title: 'Guard',
+      description: 'Guard desc',
+    });
+    const { data } = parseFrontmatter(result);
+    const parsed = HookSchema.safeParse(data);
+    if (!parsed.success)
+      assert.fail(`generated hook rejected: ${JSON.stringify(parsed.error.issues)}`);
+    assert.equal(data.event, 'before-tool', 'neutral event emitted');
+    assert.equal(data.matcher, '*', 'all-tools matcher emitted');
+    assert.equal(data.command, undefined, 'script-only template sets no command');
+    const script = String(data.script);
+    assert.ok(script.includes('input.files'), 'script reads the neutral input');
+    assert.ok(script.includes('process.exitCode = 2'), 'script denies with exit code 2');
   });
 
   it('unrestricted platforms emitted as comment only', () => {

@@ -45,6 +45,8 @@ them (the first is `docs/decisions/target-neutrality-regression-2026-11.md`).
    `KindEmitSpec.limits`, and the recommended scopes and trust and approval rules go in the setup docs. sigil's own
    rules hold on every target too: a `.sigil.bak` backup before the first write to a home file, merging into
    user-owned config, and never overwriting it.
+4. **A hook target is data too.** It supplies a hook event table, a hook tool table and a `HookInputDialect`, the
+   dialect exposed as `Target.hookInput` (`src/types.ts`) so `hook-provider-input` derives its literals from it.
 
 ### Adding a language
 

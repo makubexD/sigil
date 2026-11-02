@@ -108,10 +108,17 @@ export function buildWorkflowLines(_v: HeaderValues): string[] {
 
 export function buildHookLines(_v: HeaderValues): string[] {
   return [
-    `event: PreToolUse   # PreToolUse | PostToolUse | UserPromptSubmit | SubagentStop | Stop | SessionStart | Notification`,
-    `matcher: "*"        # tool-name regex (used for PreToolUse/PostToolUse). "*" = all tools`,
-    `command: "TODO — shell command to run when the hook fires"`,
-    `# timeout:        # milliseconds before the command is killed (optional)`,
+    `event: before-tool   # before-tool | after-tool | prompt-submit | session-start | stop | subagent-stop | notification`,
+    `matcher: "*"   # neutral tools joined with |`,
+    `script: |-`,
+    `  if (!input) return;`,
+    `  const hit = input.files.find(file => file.endsWith('.env'));`,
+    `  if (hit) {`,
+    `    process.stderr.write('blocked write to protected file ' + hit + '\\n');`,
+    `    process.exitCode = 2;`,
+    `  }`,
+    `# command:        # shell command to run instead of a script — exactly one of script/command`,
+    `# timeout:        # seconds before the hook is killed (optional)`,
     `# language:       # scope to a language (omit for shared/all-language hooks)`,
     `# defaultScope: project  # recommended install scope: project | local | user (overridable by --scope)`,
   ];

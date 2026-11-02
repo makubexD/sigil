@@ -13,7 +13,8 @@ Copilot hook file for its scope (scope table below). On Codex it lands in `.code
 and an `mcp` artifact in `config.toml` beside them ([setup](../setup/codex.md)). On Cursor it lands in
 `.cursor/hooks.json` (project) or `~/.cursor/hooks.json` (user), with events and tool names translated from
 Cursor's Claude Code aliases; a hook with no equivalent is skipped with its reason, and an `mcp` artifact
-lands in `.cursor/mcp.json` or `~/.cursor/mcp.json` ([setup](../setup/cursor.md)).
+lands in `.cursor/mcp.json` or `~/.cursor/mcp.json` ([setup](../setup/cursor.md)). On Antigravity only `mcp` is
+built: it lands in `.agents/mcp_config.json` or `~/.gemini/config/mcp_config.json` ([setup](../setup/antigravity.md)).
 Only the TOML writer differs: it splices sigil's tables into your text (`src/config-merge/toml-file.ts`).
 
 | Field          | Meaning                                                                                                                               |
@@ -70,6 +71,11 @@ Cursor's `.cursor/mcp.json` gets `${env:NAME}`, which Cursor documents and expan
 `args`, `env`, `url` and `headers` (measured in `args` and `env`, `docs/decisions/cursor-target-2026-11.md`
 A6 and § Phase D probes), so Cursor has no `mcpEnvCaveat`. Codex forwards a variable by name
 (`env_vars`) and refuses any other use of the token ([setup](../setup/codex.md)).
+Antigravity's MCP files expand no reference at all, but the server inherits `agy`'s environment
+(`docs/decisions/antigravity-target-2026-11.md` P5, C1). Its dialect says so with `envSyntax: 'inherited'`
+(`src/targets/mcp-dialect.ts`): an identity `env` entry (`NAME: {sigil:env:NAME}`) is dropped, since the server
+already sees `NAME`, `env` goes when that empties it, and any other token skips the server with its reason
+([setup](../setup/antigravity.md)).
 Never write one tool's syntax in the catalog. Pin every `npx` package to an exact
 version (`@scope/pkg@1.2.3`); a test fails on a floating one.
 
@@ -279,6 +285,17 @@ Cursor MCP (2 scopes, `src/targets/cursor/config.ts`):
 
 `--scope local` is refused here too. Cursor never reads `.mcp.json`, so a server installed for
 `claude` or `copilot` doesn't reach it, and the two files are written and uninstalled independently.
+
+Antigravity MCP (2 scopes, `src/targets/antigravity/config.ts`):
+
+| Scope (precedence) | mcp                                               | Notes                                                      |
+| ------------------ | ------------------------------------------------- | ---------------------------------------------------------- |
+| project (1)        | `.agents/mcp_config.json` (`mcpServers`)          | git-committed; a tool runs after approval or an allow rule |
+| user (2)           | `~/.gemini/config/mcp_config.json` (`mcpServers`) | home-scoped: one `.sigil.bak` once it holds user content   |
+
+`--scope local` is refused. Neither file overrides the other: when both name a server, the one already running keeps
+the name, so don't install one server at both scopes. Antigravity doesn't read `.mcp.json` (C1), and no other target
+writes these files.
 
 The Copilot and Cursor hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
 hook remains in the file: uninstalling one of several hooks leaves the version in place, and

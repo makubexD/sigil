@@ -35,9 +35,42 @@ skills for one of them: `sigil add` refuses the second. GitHub Copilot and Curso
 `sigil add` and `sigil status` say so when a skill is installed for one of them too: Copilot shows it twice, and
 Cursor uses its own copy.
 
+## MCP servers
+
+```bash
+sigil add --target antigravity shared/filesystem                # .agents/mcp_config.json
+sigil add --target antigravity shared/filesystem --scope user   # ~/.gemini/config/mcp_config.json
+```
+
+A server merges into the `mcpServers` map of `.agents/mcp_config.json` (project scope, the default, git-committed)
+or `~/.gemini/config/mcp_config.json` (user scope, all projects), next to the servers you already have
+([MCP](https://antigravity.google/docs/mcp#mcp-configuration-structure)). The first write to a user file that holds
+your own servers takes one `~/.gemini/config/mcp_config.json.sigil.bak`. Nothing else in `~/.gemini/` is touched.
+`--scope local` is refused: Antigravity has no personal per-project MCP file. Antigravity doesn't read `.mcp.json`
+(ADR C1), so a server installed for `claude` or `copilot` doesn't reach it.
+
+**Don't install one server at both scopes.** Neither file overrides the other: when both name the same server,
+whichever one is already running keeps the name
+([Settings](https://antigravity.google/docs/settings#other-configuration-files)), so which copy you get depends on
+what started first.
+
+**Environment variables.** These files expand no environment references: a server given `${NAME}` gets the literal
+text. A server does inherit `agy`'s environment (ADR P5, C1). So an `env` entry that only passes a variable through
+under its own name is dropped, since the server sees that variable anyway: export it before you start `agy`. Any
+other use of a variable, such as one in `args` or a `Bearer` token in `headers`, can't be written, and `sigil add`
+skips that server with the reason.
+
+**Approval.** An MCP tool with no permission rule runs in Ask mode, and in print mode an Ask is denied. To allow a
+server's tools, add a rule such as `mcp(filesystem/*)` (`mcp(<server>/<tool>)` for one tool, `mcp(*)` for all)
+([MCP](https://antigravity.google/docs/mcp#mcp-permissions-and-access-control)):
+
+```bash
+agy -p "<prompt>" --settings '{"permissions":{"allow":["mcp(filesystem/*)"]}}'
+```
+
 ## What doesn't reach it
 
-- **Agents, MCP servers and hooks.** Not built yet; they are later phases of the
+- **Agents and hooks.** Not built yet; they are later phases of the
   [roadmap](../plan-antigravity-target.md#phases). `sigil add` skips them with that reason.
 - **Prompts and workflows.** Antigravity has no prompt files: workflows stopped working, and a skill is the slash
   command ([Migrating workflows to skills](https://antigravity.google/docs/migration/workflows-to-skills)).
@@ -87,3 +120,7 @@ account, in throwaway repos. The Antigravity desktop app, Windows and macOS were
 - **B1:** a `trigger: glob` rule with `globs: "src/**/*.ts"` returned `NONE` after a read of `src/app.ts`, after an
   `edit_file` of it, and in a `--continue` turn after each. The same file with `trigger: always_on` returned its
   codeword. This is why scoped rules are skipped.
+- **P5, C1:** a stdio server in `.agents/mcp_config.json`, with or without `type: "stdio"`, and a local HTTP server
+  given as `url` (with or without `type: "http"`) or `serverUrl`, were each loaded and called. `${NAME}` reached the
+  server as literal text, and a variable exported to `agy` reached it with no `env` entry. A server only in
+  `.mcp.json` was not loaded.

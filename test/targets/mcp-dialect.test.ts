@@ -9,6 +9,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { isMcpSkip, mcpServerOp, renderMcpServer } from '../../dist-cli/targets/mcp-dialect';
 import type { McpDialect } from '../../dist-cli/targets/mcp-dialect';
+import { SigilError } from '../../dist-cli/errors';
 import {
   PORTABLE_MCP_DIALECT,
   PORTABLE_MCP_SERVERS_KEY,
@@ -170,5 +171,131 @@ describe('portable dialect over every catalog mcp server', () => {
       assert.ok(!isMcpSkip(rendered), `${server.id} must not skip on the portable dialect`);
       assert.deepEqual(rendered, portableMcpServer(server), server.id);
     }
+  });
+});
+
+describe("renderMcpServer with envSyntax: 'inherited'", () => {
+  const inherited: McpDialect<'inherited'> = {
+    serversKey: 'mcpServers',
+    envSyntax: 'inherited',
+    interpolatedFields: [],
+    remoteType: 'drop',
+  };
+
+  it('should render a server with no env', () => {
+    assert.deepEqual(renderMcpServer(mcpArtifact({ command: 'x' }), inherited), {
+      name: 'fixture',
+      config: { command: 'x' },
+    });
+  });
+
+  it('should drop env when every entry is an identity entry', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', env: { A: '{sigil:env:A}' } }),
+      inherited,
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { command: 'x' });
+    assert.ok(!('env' in rendered.config));
+  });
+
+  it('should keep non-identity env entries', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', env: { A: '{sigil:env:A}', B: 'lit' } }),
+      inherited,
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { command: 'x', env: { B: 'lit' } });
+  });
+
+  it('should keep the authored order of the remaining env entries', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', env: { B: 'lit', A: '{sigil:env:A}', C: 'v' } }),
+      inherited,
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(Object.keys(rendered.config.env as object), ['B', 'C']);
+  });
+
+  it('should skip an env entry naming a different variable', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', env: { A: '{sigil:env:B}' } }),
+      inherited,
+    );
+    assert.ok(isMcpSkip(rendered));
+    assert.match(rendered.skip, /\{sigil:env:B\}/);
+    assert.match(rendered.skip, /in env /);
+    assert.match(rendered.skip, /identity env entry/);
+  });
+
+  it('should skip a token embedded in an env value', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', env: { A: 'Bearer {sigil:env:A}' } }),
+      inherited,
+    );
+    assert.ok(isMcpSkip(rendered));
+    assert.match(rendered.skip, /\{sigil:env:A\}/);
+    assert.match(rendered.skip, /in env /);
+  });
+
+  it('should skip a token in args', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', args: ['{sigil:env:ORG}'] }),
+      inherited,
+    );
+    assert.ok(isMcpSkip(rendered));
+    assert.match(rendered.skip, /\{sigil:env:ORG\}/);
+    assert.match(rendered.skip, /in args /);
+  });
+
+  it('should skip a token in headers and drop type on a remote server', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({
+        type: 'http',
+        url: 'u',
+        headers: { Authorization: 'Bearer {sigil:env:T}' },
+      }),
+      inherited,
+    );
+    assert.ok(isMcpSkip(rendered));
+    assert.match(rendered.skip, /in headers /);
+  });
+
+  it('should drop type on a remote server with no tokens', () => {
+    const rendered = renderMcpServer(mcpArtifact({ type: 'http', url: 'u' }), inherited);
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { url: 'u' });
+  });
+
+  it('should throw the skip text from mcpServerOp', () => {
+    assert.throws(
+      () =>
+        mcpServerOp(mcpArtifact({ command: 'x', args: ['{sigil:env:ORG}'] }), inherited, {
+          file: '.agents/mcp_config.json',
+          root: 'project',
+        }),
+      (err: unknown) =>
+        err instanceof SigilError &&
+        err.message ===
+          '{sigil:env:ORG} in args is not carried by this target: it expands no environment references, and only an identity env entry (NAME: {sigil:env:NAME}) is passed through the inherited environment',
+    );
+  });
+
+  it('should skip, not throw, on a malformed token under an identity-looking key', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', env: { A: '{sigil:env:1BAD}' } }),
+      inherited,
+    );
+    assert.ok(isMcpSkip(rendered));
+    assert.match(rendered.skip, /\{sigil:env:1BAD\}/);
+  });
+
+  it('should skip, not drop, an identity-shaped entry whose name is malformed', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', env: { '1BAD': '{sigil:env:1BAD}' } }),
+      inherited,
+    );
+    assert.ok(isMcpSkip(rendered));
+    assert.match(rendered.skip, /\{sigil:env:1BAD\}/);
   });
 });

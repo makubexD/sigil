@@ -31,3 +31,22 @@ export const ANTIGRAVITY_WORKFLOWS_DOC: DocRef = {
   verifiedOn: '2026-11-01',
   covers: 'workflows stopped working on 2026-10-19; a skill is the slash command',
 };
+
+/** Antigravity's MCP files and the server shapes they accept. */
+export const ANTIGRAVITY_MCP_DOC: DocRef = {
+  url: 'https://antigravity.google/docs/mcp#mcp-configuration-structure',
+  title: 'Antigravity — MCP',
+  verifiedOn: '2026-11-02',
+  covers:
+    '.agents/mcp_config.json and ~/.gemini/config/mcp_config.json, an mcpServers map; ' +
+    'stdio command + args + env + cwd, remote serverUrl or url + headers; ' +
+    'no env syntax documented for these files (P5: none expanded)',
+};
+
+/** How Antigravity resolves a server name present in both MCP files. */
+export const ANTIGRAVITY_SETTINGS_DOC: DocRef = {
+  url: 'https://antigravity.google/docs/settings#other-configuration-files',
+  title: 'Antigravity — Settings',
+  verifiedOn: '2026-11-02',
+  covers: 'on a key in both MCP files, the server already running keeps it',
+};

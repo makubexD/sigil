@@ -70,12 +70,15 @@ that attaches glob rules needs only `skipReason` deleted, after a re-run of B1. 
 check after the phase returned the codewords of an installed rule and skill. Plan:
 [plan-antigravity-target-b.md](plan-antigravity-target-b.md).
 
-### Phase C: MCP
+### Phase C: MCP (done 2026-11-02)
 
 `.agents/mcp_config.json` (project) and `~/.gemini/config/mcp_config.json` (user, with the `.sigil.bak` backup) through
 a `ConfigKindTable` and an `McpDialect`. `${NAME}` is not expanded (P5), but the server inherits `agy`'s environment,
 so an identity entry (`NAME: {sigil:env:NAME}`) is dropped and still works; any other env token is skipped with its
-reason.
+reason. That behavior is a new neutral dialect value, `envSyntax: 'inherited'`, not an Antigravity branch. C1 showed
+every documented entry shape loads (a `type` is accepted but not written) and that `.mcp.json` is not read; a live check
+(C2) ran a sigil-installed `shared/filesystem` and removed it with `uninstall`. `shared/ado` stays off this target: its
+organization is a token in `args`. Plan: [plan-antigravity-target-c.md](plan-antigravity-target-c.md).
 
 ### Phase D: agents
 

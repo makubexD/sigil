@@ -205,7 +205,7 @@ interface TargetCapabilities {
 | 1     | Family-granular Claude marketplace via `Pack.select`; hooks/MCP as their own opt-in plugins; prompts as skills; plugin-agent field guard                                                                                                                                                   |                   |
 | 2     | Publish the marketplace in git + CI sync gate; project-scoped `enabledPlugins` snippet                                                                                                                                                                                                     | CI and git layout |
 | 2b    | `sigil add --complement` + duplicate guard against enabled sigil plugins — **skipped ahead of Phase 4, not built**                                                                                                                                                                         |                   |
-| 3     | Agent Skills conformance (`name` = directory, ≤64/≤1024 chars) so `npx skills add … --skill x` works — **skipped ahead of Phase 4, checks built, install route unproven**                                                                                                                  |                   |
+| 3     | Agent Skills conformance (`name` = directory, ≤64/≤1024 chars) so `npx skills add … --skill x` works — **done 2026-11-03** (v0.7.0, `skills` branch, live install byte-equal)                                                                                                              |                   |
 | 4     | Verify the Claude-format marketplace in VS Code / Copilot CLI; Agent Plugins 1.0 output only if a gap remains — **done 2026-10-30, no new output**                                                                                                                                         |                   |
 | 5     | Codex adapter (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin) — **done 2026-10-31, without agents or a plugin emitter**                                                                                                                        |                   |
 | 6     | Cursor adapter (`.cursor/rules/*.mdc`, agents, commands, hooks, MCP; Cursor plugin — the one format that carries rules) — **in progress: rules, skills, hooks and MCP built 2026-11-01; agents and the plugin not yet**                                                                    |                   |
@@ -238,7 +238,7 @@ yet.
   of one artifact, the project copy of a skill or agent silently beats the plugin, while the plugin's
   MCP server beats the project's. That order is documented, not tested. Nothing warns; the
   [setup page](../setup/copilot.md#copies-of-the-same-artifact) says so.
-- **3 has its checks built and its goal unproven.** `provider-limits` has enforced both limits through
+- **3 is done 2026-11-03.** Its checks came first and its goal was unproven until v0.7.0. `provider-limits` has enforced both limits through
   `agent-skills-limits.ts` since `e5939bd` (2026-10-03), and `name` equals the folder because
   `outputPath` derives from it. Measured on fresh output on 2026-10-30: 0 mismatches across
   agents-standard (45 skills), Claude plugins (55) and Copilot (45), longest name 22, longest
@@ -251,6 +251,12 @@ yet.
   `skills-v<version>` (`scripts/publish-branch.sh`, shared with the marketplace). The drift workflow checks both
   branches. The install route is `npx skills add https://github.com/makubexD/sigil/tree/skills --skill <name>`
   ([setup](../setup/skills-cli.md)). The local probes below passed on the same tree.
+
+  Live on 2026-11-03 with v0.7.0 and `skills@1.7.6`, in a fresh `git init` scratch repo: the Release run's `skills` job
+  published `skills` and `skills-v0.7.0` (same commit `a88948e`), and both drift matrix legs passed.
+  `…/tree/skills --list` found 45 skills; `--skill ts-generate-tests -a claude-code -y` wrote
+  `.claude/skills/ts-generate-tests/`, byte-equal to a local `build --target agents-standard` of the tag. The pinned
+  form `…/tree/skills-v0.7.0 --list` also found 45, so the tag works as documented.
 
 ### Phase 3 probes (2026-11-03)
 

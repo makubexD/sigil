@@ -200,8 +200,8 @@ interface TargetCapabilities {
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
 | 0     | Marketplace hygiene: `build` cleans `dist/<target>/`; prompts emitted (or doc fixed); no empty plugins; refresh `consuming.md`; make catalog load order deterministic (today `AGENTS.md` and `registry.json` order varies between identical builds — a blocker for Phase 2's CI sync gate) | deletes `dist/`   |
 | 1a    | Capability model (behaviour-preserving; `dist/` identical before/after); generated capability matrix doc — **done 2026-09-27**                                                                                                                                                             |                   |
-| 1c    | Rich skill packaging (nested `references/`, `assets/`, `scripts/` via the trust scanner; one shared resource emitter); rules as references option; un-flatten `cli`/`wizard` stacks                                                                                                        |                   |
-| 1b    | `sigil cost` (always-on / on-match / on-invoke tokens) + budget conformance rules                                                                                                                                                                                                          |                   |
+| 1c    | Rich skill packaging (nested `references/`, `assets/`, `scripts/` via the trust scanner; one shared resource emitter); rules as references option; un-flatten `cli`/`wizard` stacks — **narrowed 2026-11-03**: rules as references for plugin skills only, behind an eval                  |                   |
+| 1b    | `sigil cost` (always-on / on-match / on-invoke tokens) + budget conformance rules — **no-go 2026-11-03**, see "Phases 1b and 1c"                                                                                                                                                           |                   |
 | 1     | Family-granular Claude marketplace via `Pack.select`; hooks/MCP as their own opt-in plugins; prompts as skills; plugin-agent field guard                                                                                                                                                   |                   |
 | 2     | Publish the marketplace in git + CI sync gate; project-scoped `enabledPlugins` snippet                                                                                                                                                                                                     | CI and git layout |
 | 2b    | `sigil add --complement` + duplicate guard against enabled sigil plugins — **done 2026-11-03** (Claude and Copilot readers)                                                                                                                                                                |                   |
@@ -389,6 +389,28 @@ installed manually in the desktop app, and sigil's `hook-*` plugins don't work t
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,
 then one collapsible section per tool) plus a `docs/setup/<tool>.md` page.
+
+### Phases 1b and 1c (2026-11-03)
+
+Measured on v0.8.0 output (bytes / 4 ≈ tokens), one `sigil add pack:<x> --target claude` per starter and tooling pack:
+
+| Pack                  | Always on (skill + agent descriptions) | Rules, if every one matches | Every skill invoked |
+| --------------------- | -------------------------------------- | --------------------------- | ------------------- |
+| `*-starter` (5 packs) | 107–312                                | 1.3k–5.6k                   | 0.8k–3.0k           |
+| `*-tooling` (5 packs) | 1.0k–1.2k                              | 10.3k–16.2k                 | 7.3k–9.7k           |
+
+Every installed rule is path-scoped, so nothing loads repo-wide.
+
+- **1b, `sigil cost`: no-go.** The always-on cost is at most ~1.2k tokens per pack. The cost that matters, rules on
+  match, is already measured per language and held to a CI baseline by `scripts/rule-load.cjs`. On-invoke size is bounded
+  by `provider-limits`. A consumer command would restate those numbers without changing a decision. Reopen when a target
+  ships always-on rules, or a pack's always-on cost passes ~5k tokens.
+- **1c, rich packaging: narrowed.** No catalog skill has `scripts/` or `assets/` (0 files), so that part waits until one
+  needs it. Stack references already ship (28 reference and stack-part files). Rules are the open part: across the 55
+  Claude plugin skills, the inlined `## Applied Rules` section is 58% of the text loaded on invoke (82k of 141k tokens;
+  median 1.3k, max 3.6k per skill; 52 skills carry one). Moving it to an on-demand `references/rules.md` would cut that,
+  but only helps if the model still reads and applies the rules when it writes code. That is model behaviour, so it
+  needs an eval with Claude before any build, and its own brief.
 
 ## 7. Done in this change
 

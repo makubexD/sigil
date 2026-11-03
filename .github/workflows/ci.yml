@@ -52,6 +52,9 @@ jobs:
       - name: Validate catalog
         run: npm run validate
 
+      - name: Trust-scan catalog artifacts
+        run: npm run trust:check
+
       - name: Check template drift + catalog conformance + provider-doc staleness
         run: node dist-cli/cli.js sync --check
 

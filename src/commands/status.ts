@@ -19,7 +19,7 @@ import { printStatusJson } from './status-json';
 import { isConfigKind } from '../kinds';
 import type { Freshness } from '../freshness';
 import type { StatusResult } from '../manifest';
-import type { LoadedCatalog } from '../types';
+import type { LoadedCatalog, ResolvedCatalog } from '../types';
 
 export interface StatusOptions {
   projectDir: string;
@@ -66,6 +66,7 @@ function printStatusTable(statuses: ReturnType<typeof computeStatus>): void {
 /** The notes under an entry for what the freshness scan found beyond its status. */
 function printScanNotes(s: StatusResult): void {
   if (s.renderError) console.log(`     ⚠ render failed: ${s.renderError}`);
+  if (s.keptReason) console.log(`     ⚠ kept as installed: ${s.keptReason}`);
   for (const f of s.retiredFiles ?? []) {
     console.log(`     ⚠ ${f}: retired, no replacement in the catalog`);
   }
@@ -188,17 +189,29 @@ async function buildStatuses(
     retiredFor: retiredConfigDestinationsOf,
     ...statusHooks(fresh),
   });
-  return { statuses: statuses.map(s => withScanFindings(s, fresh)), fresh };
+  return {
+    statuses: statuses.map(s => withScanFindings(s, fresh, overlaid.resolved)),
+    fresh,
+  };
 }
 
-/** `s` with the scan's failed render and new dependencies for its entry, when there are any. */
-function withScanFindings(s: StatusResult, fresh: Freshness): StatusResult {
+/** `s` with the scan's failed render, kept config reason and new dependencies, when there are any. */
+function withScanFindings(
+  s: StatusResult,
+  fresh: Freshness,
+  resolved: ResolvedCatalog,
+): StatusResult {
   const key = entryKey(s.entry);
   const renderError = fresh.failed.get(key);
+  const artifact = isConfigKind(s.entry.kind) ? resolved.byId.get(s.entry.id) : undefined;
+  // Why the entry's target refuses this config artifact, as `update` reports it.
+  const target = getAllTargets().find(t => t.name === s.entry.target);
+  const keptReason = artifact ? target?.configSkipReason?.(artifact) : undefined;
   const newDependencies = fresh.newDependencies.get(key);
   return {
     ...s,
     ...(renderError ? { renderError } : {}),
+    ...(keptReason ? { keptReason } : {}),
     ...(newDependencies ? { newDependencies: [...newDependencies].sort() } : {}),
   };
 }

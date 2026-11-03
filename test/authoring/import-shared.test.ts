@@ -10,6 +10,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import { runImport } from '../../dist-cli/commands/import';
+import { loadCatalog } from '../../dist-cli/load';
+import { validateCatalog } from '../../dist-cli/validate';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 const FAKE_AWS_KEY = 'AKIAIOSFODNN7EXAMPLE';
@@ -37,6 +39,45 @@ function emptyCatalog(root: string): string {
   const dir = path.join(root, 'catalog');
   fs.mkdirSync(path.join(dir, 'shared'), { recursive: true });
   return dir;
+}
+
+/** A source folder holding only `rules/<name>` files. */
+function rulesSource(root: string, rules: Record<string, string>): string {
+  const src = path.join(root, 'rules-source');
+  for (const [name, content] of Object.entries(rules)) {
+    const file = path.join(src, 'rules', name);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  }
+  return src;
+}
+
+/** A source folder holding only `agents/<name>` files. */
+function agentsSource(root: string, agents: Record<string, string>): string {
+  const src = path.join(root, 'agents-source');
+  for (const [name, content] of Object.entries(agents)) {
+    const file = path.join(src, 'agents', name);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  }
+  return src;
+}
+
+/** A source folder holding both `rules/<name>` and `agents/<name>` files. */
+function rulesAndAgentsSource(root: string, files: Record<string, string>): string {
+  const src = path.join(root, 'mixed-source');
+  for (const [rel, content] of Object.entries(files)) {
+    const file = path.join(src, rel);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  }
+  return src;
+}
+
+/** The catalog frontmatter of an imported shared rule. */
+function importedRule(catalog: string, slug: string): Record<string, unknown> {
+  const file = path.join(catalog, 'shared', 'rules', `${slug}.rule.md`);
+  return matter(fs.readFileSync(file, 'utf8')).data;
 }
 
 /** Runs `fn` with console output captured; returns everything printed. */
@@ -164,6 +205,72 @@ describe('sigil import --shared', () => {
   });
 });
 
+describe('sigil import: an imported rule keeps its paths as appliesTo', () => {
+  it('should keep a flow list of globs', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'flow.md':
+          '---\ndescription: Flow.\npaths: ["src/*.ts", "lib/*.ts"]\n---\n\n- **Rule.** Keep it.\n',
+      });
+      await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.deepEqual(importedRule(catalog, 'flow').appliesTo, ['src/*.ts', 'lib/*.ts']);
+    });
+  });
+
+  it('should wrap a scalar glob in a list', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'scalar.md': '---\ndescription: Scalar.\npaths: src/*.ts\n---\n\n- **Rule.** Keep it.\n',
+      });
+      await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.deepEqual(importedRule(catalog, 'scalar').appliesTo, ['src/*.ts']);
+    });
+  });
+
+  it('should keep a block list of globs', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'block.md': '---\ndescription: Block.\npaths:\n  - src/*.ts\n---\n\n- **Rule.** Keep it.\n',
+      });
+      await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.deepEqual(importedRule(catalog, 'block').appliesTo, ['src/*.ts']);
+    });
+  });
+
+  it('should apply to every file when no paths are given', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'all.md': '---\ndescription: All.\n---\n\n- **Rule.** Keep it.\n',
+      });
+      await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.deepEqual(importedRule(catalog, 'all').appliesTo, ['**/*']);
+    });
+  });
+
+  it('should report an invalid paths value and still import the other rules', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'empty.md': '---\ndescription: Empty.\npaths: []\n---\n\n- **Rule.** Keep it.\n',
+        'unclosed.md':
+          '---\ndescription: Unclosed.\npaths: [unclosed\n---\n\n- **Rule.** Keep it.\n',
+        'ok.md': '---\ndescription: Ok.\npaths: src/*.ts\n---\n\n- **Rule.** Keep it.\n',
+      });
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      const reason = 'not imported: paths must be a glob or a list of globs';
+      assert.match(out, new RegExp(`empty\\.md\\s+— ${reason}`));
+      assert.match(out, new RegExp(`unclosed\\.md\\s+— ${reason}`));
+      assert.equal(fs.existsSync(path.join(catalog, 'shared', 'rules', 'empty.rule.md')), false);
+      assert.equal(fs.existsSync(path.join(catalog, 'shared', 'rules', 'unclosed.rule.md')), false);
+      assert.deepEqual(importedRule(catalog, 'ok').appliesTo, ['src/*.ts']);
+    });
+  });
+});
+
 /** A catalog with a standard: go's stack text lives in languages/go, and dotnet is undeclared. */
 function catalogWithStandard(root: string): string {
   const dir = emptyCatalog(root);
@@ -218,6 +325,41 @@ describe('sigil import: stack files go to their language', () => {
   });
 });
 
+describe('sigil import: a README in a flat kind directory is skipped', () => {
+  it('should neither import nor report rules/README.md', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'README.md': '# Rules\nHouse rules live here.\n',
+        'one.md': '---\ndescription: One.\n---\n\n- **Rule.** Keep it.\n',
+      });
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.match(out, /\(0 unrecognised\)/);
+      assert.doesNotMatch(out, /README/);
+      const rulesDir = path.join(catalog, 'shared', 'rules');
+      assert.deepEqual(fs.readdirSync(rulesDir), ['one.rule.md']);
+      assert.equal(fs.existsSync(path.join(rulesDir, 'README.rule.md')), false);
+      assert.equal(importedRule(catalog, 'one').id, 'shared/one');
+    });
+  });
+
+  it('should neither import nor report agents/README.md', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = agentsSource(root, {
+        'README.md': '# Agents\n',
+        'one.md': '---\nname: one\ndescription: One agent.\n---\n\nBody.\n',
+      });
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.match(out, /\(0 unrecognised\)/);
+      assert.doesNotMatch(out, /README/);
+      const agentsDir = path.join(catalog, 'shared', 'agents');
+      assert.deepEqual(fs.readdirSync(agentsDir), ['one.agent.md']);
+      assert.equal(fs.existsSync(path.join(agentsDir, 'README.agent.md')), false);
+    });
+  });
+});
+
 describe('sigil import: prefixes come from language.yaml', () => {
   it("should strip a language's own prefix from the title, for any language", async () => {
     await withTempDirAsync(async root => {
@@ -232,6 +374,30 @@ describe('sigil import: prefixes come from language.yaml', () => {
       await captured(() => runImport(src, importOpts(catalog, { language: 'go' })));
       const written = path.join(catalog, 'languages', 'go', 'skills', 'go-lint-fix', 'SKILL.md');
       assert.equal(matter(fs.readFileSync(written, 'utf8')).data.title, 'Lint Fix (Go)');
+    });
+  });
+});
+
+describe('sigil import: one artifact per name across kinds', () => {
+  it('should import the rule and report an agent with the same name', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesAndAgentsSource(root, {
+        'rules/dupx.md': '---\ndescription: Dup rule.\n---\n\n- **Rule.** Keep it.\n',
+        'agents/dupx.md': '---\nname: dupx\ndescription: Dup agent.\n---\n\nBody.\n',
+      });
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.ok(fs.existsSync(path.join(catalog, 'shared', 'rules', 'dupx.rule.md')));
+      assert.equal(fs.existsSync(path.join(catalog, 'shared', 'agents', 'dupx.agent.md')), false);
+      assert.match(
+        out,
+        new RegExp(`agents[\\\\/]dupx\\.md\\s+— not imported: same name as rules[\\\\/]dupx\\.md`),
+      );
+      const result = validateCatalog(await loadCatalog(catalog));
+      assert.deepEqual(
+        result.errors.map(e => `${e.artifactId}: ${e.error}`),
+        [],
+      );
     });
   });
 });

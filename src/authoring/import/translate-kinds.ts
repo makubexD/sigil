@@ -5,7 +5,12 @@
  * @module
  */
 import { slugToTitle } from './translate-shared';
-import { splitToolsString, tagsFromSlug, computeDroppedFields } from './translate-helpers';
+import {
+  splitToolsString,
+  tagsFromSlug,
+  computeDroppedFields,
+  normalizeRulePaths,
+} from './translate-helpers';
 import type { TranslateOptions, CatalogFrontmatter, TranslateResult } from './translate-shared';
 
 /** Builds a rule's CatalogFrontmatter from its translated fields. */
@@ -36,8 +41,10 @@ export function translateRule(
 ): TranslateResult {
   // description is the main content field — required
   const description = typeof sourceFm.description === 'string' ? sourceFm.description : '';
-  // paths → appliesTo
-  const appliesTo = Array.isArray(sourceFm.paths) ? (sourceFm.paths as string[]) : ['**/*'];
+  // paths → appliesTo. Discovery rejects 'invalid' before translation.
+  const normalizedPaths = normalizeRulePaths(sourceFm.paths);
+  const appliesTo =
+    normalizedPaths === undefined || normalizedPaths === 'invalid' ? ['**/*'] : normalizedPaths;
   const droppedFields = computeDroppedFields(sourceFm, new Set(['description', 'paths']));
 
   const syntheticDescription = `${opts.displayName} coding conventions and style guidelines.`;

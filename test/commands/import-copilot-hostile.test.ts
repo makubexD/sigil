@@ -68,11 +68,16 @@ describe('sigil import --from copilot on hostile files', () => {
     });
   });
 
-  it('should refuse a symlinked .github', () => {
+  it('should refuse a symlinked .github', t => {
     withTempDir(root => {
       writeFiles(root, { 'elsewhere/agents/x.agent.md': '---\ndescription: d\n---\n\nBody.\n' });
       fs.mkdirSync(path.join(root, 'p'));
-      fs.symlinkSync(path.join(root, 'elsewhere'), path.join(root, 'p/.github'));
+      try {
+        fs.symlinkSync(path.join(root, 'elsewhere'), path.join(root, 'p/.github'));
+      } catch {
+        t.skip('this machine cannot create symbolic links');
+        return;
+      }
       const result = runImport(root, path.join(root, 'p'), COPILOT_ARGS);
       assert.notEqual(result.status, 0);
       assert.match(result.output, /symbolic link/);
@@ -274,13 +279,18 @@ describe('discoverCopilotFiles on unreadable frontmatter', () => {
 
 describe('discoverCopilotFiles on linked kind folders', () => {
   for (const dir of ['instructions', 'agents', 'prompts', 'skills']) {
-    it(`should report a linked ${dir}/ and read nothing under it`, () => {
+    it(`should report a linked ${dir}/ and read nothing under it`, t => {
       withTempDir(root => {
         writeFiles(root, {
           'elsewhere/x.instructions.md': '---\napplyTo: "**"\n---\n\nSecret.\n',
           '.github/README.md': 'readme',
         });
-        fs.symlinkSync(path.join(root, 'elsewhere'), path.join(root, '.github', dir));
+        try {
+          fs.symlinkSync(path.join(root, 'elsewhere'), path.join(root, '.github', dir));
+        } catch {
+          t.skip('this machine cannot create symbolic links');
+          return;
+        }
         const { discovered, unrecognised } = discoverCopilotFiles(path.join(root, '.github'), 'x');
         assert.deepEqual(discovered, []);
         assert.equal(unrecognised[0]?.relativePath, dir);

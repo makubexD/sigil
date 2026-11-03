@@ -15,6 +15,7 @@ import { crossKindPickerStep } from './cross-kind-picker';
 import { kindPickerStep } from './kind-picker';
 import { languageStep } from './language';
 import { depsStep } from './deps';
+import { complementStep } from './complement';
 import { overwriteStep } from './overwrite';
 import { configScopeStep } from './config-scope';
 import { proceedStep } from './proceed';
@@ -28,6 +29,7 @@ export const ADD_STEPS: readonly WizardStep<AddWizardState>[] = [
   kindPickerStep,
   languageStep,
   depsStep,
+  complementStep,
   overwriteStep,
   configScopeStep,
   proceedStep,

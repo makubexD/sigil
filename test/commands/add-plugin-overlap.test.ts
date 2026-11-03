@@ -219,7 +219,13 @@ describe('sigil add — plugin duplicate guard', () => {
       await inTempDir(async home => {
         enablePack(home);
 
-        const rec = await addViaWizard(project, home, ['pack', `pack:${PACK}`, ENTER, 'proceed']);
+        const rec = await addViaWizard(project, home, [
+          'pack',
+          `pack:${PACK}`,
+          ENTER,
+          ENTER,
+          'proceed',
+        ]);
         const text = rec.logs.join('\n');
 
         assert.ok(fs.existsSync(path.join(project, '.claude/skills/cli/SKILL.md')));

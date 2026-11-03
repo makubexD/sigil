@@ -75,6 +75,7 @@ function toWizardResult(done: AddWizardState): WizardResult {
     selectors: done.selectors!,
     includeDeps: done.includeDeps!,
     overwrite: done.overwrite!,
+    complement: done.complement,
     language: done.language,
     configScope: done.configScope,
   };

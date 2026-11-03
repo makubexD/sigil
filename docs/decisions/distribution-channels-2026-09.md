@@ -346,6 +346,21 @@ byte by hash; `~/.gemini/config/` back to its earlier file list). Plan: `git sho
   `config.toml` by hash; in `~/.gemini/config/`, `agy plugin uninstall` leaves `import_manifest.json`
   (`{"imports": null}`) and an empty `plugins/`, both removed to match the earlier file list.
 
+### Claude and Copilot proof (2026-11-03)
+
+Plan: `docs/plan-claude-copilot-proof.md`. Release under test: v0.8.0 (`marketplace` branch).
+
+- **Claude marketplace on a clean machine passes.** In a fresh `docker.io/library/node:24` container with
+  Claude Code from npm and no sign-in, `claude plugin marketplace add makubexD/sigil#marketplace` and
+  `claude plugin install <x>@sigil --scope project` work as `setup/claude-code.md` says: plugin commands need no auth.
+  `enabledPlugins` lands in the project's `.claude/settings.json`. `deepseek-worker` (the one plugin with a
+  `dependencies` entry) installs `hook-worker-mode-guard` with it. `uninstall` removes the `enabledPlugins` key but keeps
+  the cache folder, and leaves an auto-installed dependency enabled until `claude plugin prune --scope project`.
+- **Live session on Claude Code 2.1.317** (owner's sign-in, fresh scratch repo, `typescript-starter` and
+  `hook-protect-config` at project scope): `/typescript-starter:ts-generate-tests sum.ts` loaded the plugin skill; a
+  `Write` to `.env` was blocked with `sigil-hook: blocked write to protected file .env`; a `Write` to `notes.txt` was
+  allowed.
+
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict
 them. There's no Codex plugin emitter: skills and MCP load from the Claude marketplace, and hook plugins fail open.

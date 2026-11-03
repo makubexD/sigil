@@ -140,7 +140,8 @@ async function resolveAndPartitionIds(
   const shown = ctx.opts.complement ? new Map<string, PluginOverlap>() : overlaps;
 
   printSkippedAdvice(skipped, ctx.target);
-  printPluginOverlapAdvice(shown);
+  // The wizard's plan box already showed this advisory (decision 11), so print it only for a typed add.
+  if (!ctx.inputs.fromWizard) printPluginOverlapAdvice(shown);
   refuseSharedSkillFiles(ctx, ids);
 
   const upToDateIds = await computeUpToDateIds(ctx, ids);

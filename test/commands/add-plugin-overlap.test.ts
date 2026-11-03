@@ -15,7 +15,9 @@ import { runAdd } from '../../dist-cli/commands/add';
 import { runStatus } from '../../dist-cli/commands/status';
 import { runUpdate } from '../../dist-cli/commands/update';
 import { loadManifest } from '../../dist-cli/manifest';
-import { createRecorder, mockClack } from '../helpers/clack-mock';
+import { createRecorder, mockClack, ENTER } from '../helpers/clack-mock';
+import type { MockAnswer } from '../helpers/clack-mock';
+import { fakeTTY } from '../helpers/tty';
 import { makeTempDir, withTempDirAsync } from '../helpers/temp-dir';
 import type { AddOpts } from '../../dist-cli/commands/add';
 
@@ -77,6 +79,39 @@ async function add(
     restore();
   }
   return recorder.logs;
+}
+
+/** Runs `sigil add` with no selector in a fake TTY, driving the real wizard; returns its recorder. */
+async function addViaWizard(
+  projectDir: string,
+  homeDir: string,
+  answers: MockAnswer[],
+): Promise<ReturnType<typeof createRecorder>> {
+  const recorder = createRecorder();
+  const restoreTTY = fakeTTY();
+  const restore = mockClack(answers, recorder);
+  const originalLog = console.log;
+  console.log = () => {};
+  try {
+    await runAdd([], {
+      projectDir,
+      catalogDir: CATALOG,
+      packs: PACKS,
+      target: 'claude',
+      deps: true,
+      dryRun: false,
+      interactive: true,
+      yes: false,
+      overwrite: false,
+      settingsLocal: false,
+      homeDir,
+    });
+  } finally {
+    console.log = originalLog;
+    restore();
+    restoreTTY();
+  }
+  return recorder;
 }
 
 /** Runs `sigil update` against a temp project and home, with the add helper's mocks. */
@@ -174,6 +209,37 @@ describe('sigil add — plugin duplicate guard', () => {
           text,
           /shared\/cli is also delivered by plugin cli-builder@sigil \(enabled in ~\/\.claude\/settings\.json\)/,
         );
+      });
+    });
+  });
+
+  it('should leave the plugin advisory to the wizard plan box', async () => {
+    await withTempDirAsync(async project => {
+      await inTempDir(async home => {
+        enablePack(home);
+
+        const rec = await addViaWizard(project, home, ['pack', `pack:${PACK}`, ENTER, 'proceed']);
+        const text = rec.logs.join('\n');
+
+        assert.ok(fs.existsSync(path.join(project, '.claude/skills/cli/SKILL.md')));
+        assert.doesNotMatch(text, HEADER);
+        assert.ok(
+          rec.notes.some(n => /an enabled plugin already delivers/.test(n.body)),
+          'the wizard plan box showed the advisory',
+        );
+      });
+    });
+  });
+
+  it('should print the plugin advisory once for a typed add', async () => {
+    await withTempDirAsync(async project => {
+      await inTempDir(async home => {
+        enablePack(home);
+
+        const text = (await add(project, home, SKILL)).join('\n');
+
+        const count = [...text.matchAll(/an enabled plugin already delivers/g)].length;
+        assert.equal(count, 1);
       });
     });
   });

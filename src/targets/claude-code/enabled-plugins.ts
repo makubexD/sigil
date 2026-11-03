@@ -66,10 +66,40 @@ function parseSettings(
   }
 }
 
+/** ENOTDIR: a path component (the project's `.claude`) is a file, so nothing under it can be read. */
+function isNotDirectory(error: unknown): boolean {
+  return error instanceof Error && (error as NodeJS.ErrnoException).code === 'ENOTDIR';
+}
+
+/**
+ * Whether the scope is worth reading: a missing file is not, and a path error (EACCES, ENOTDIR,
+ * …) is reported once per directory rather than once per settings file under it.
+ */
+function scopeReadable(
+  scope: SettingsScope,
+  warnings: string[],
+  unreadableDirs: Set<string>,
+): boolean {
+  const dir = path.dirname(scope.file);
+  if (unreadableDirs.has(dir)) return false;
+
+  try {
+    return fs.lstatSync(scope.file, { throwIfNoEntry: false }) !== undefined;
+  } catch (error) {
+    if (isNotDirectory(error)) unreadableDirs.add(dir);
+    const detail = error instanceof Error ? error.message : String(error);
+    warnings.push(`${scope.source}: ${detail}`);
+    return false;
+  }
+}
+
 /** The file's `enabledPlugins` object, or undefined when the file is missing or has no usable one. */
-function readScope(scope: SettingsScope, warnings: string[]): Record<string, unknown> | undefined {
-  // A missing file is the normal case; only a file that exists and can't be used is reported.
-  if (fs.lstatSync(scope.file, { throwIfNoEntry: false }) === undefined) return undefined;
+function readScope(
+  scope: SettingsScope,
+  warnings: string[],
+  unreadableDirs: Set<string>,
+): Record<string, unknown> | undefined {
+  if (!scopeReadable(scope, warnings, unreadableDirs)) return undefined;
 
   const read = readRegularFile(scope.file, { maxBytes: MAX_SETTINGS_KIB * KIB });
   if ('reason' in read) {
@@ -93,9 +123,10 @@ function pluginName(key: string, marketplace: string): string | undefined {
 export function readClaudeEnabledPlugins(env: EnabledPluginsEnv): EnabledPluginsResult {
   const warnings: string[] = [];
   const decided = new Map<string, EnabledPlugin & { enabled: boolean }>();
+  const unreadableDirs = new Set<string>();
 
   for (const scope of settingsScopes(env)) {
-    const enabledPlugins = readScope(scope, warnings);
+    const enabledPlugins = readScope(scope, warnings, unreadableDirs);
     if (enabledPlugins === undefined) continue;
     for (const [key, value] of Object.entries(enabledPlugins)) {
       if (decided.has(key)) continue;

@@ -175,4 +175,31 @@ describe('readClaudeEnabledPlugins', () => {
       cleanup();
     }
   });
+
+  it('(k) a project .claude that is a file warns once and the user scope is still read', () => {
+    const { projectDir, homeDir, cleanup } = tempDirs();
+    try {
+      fs.writeFileSync(path.join(projectDir, '.claude'), 'not a directory');
+      writeFile(userSettings(homeDir), { enabledPlugins: { 'a@sigil': true } });
+      const result = readClaudeEnabledPlugins({ projectDir, homeDir, marketplace: 'sigil' });
+      assert.deepEqual(result.plugins, [{ name: 'a', source: '~/.claude/settings.json' }]);
+      assert.equal(result.warnings.length, 1);
+      assert.ok(result.warnings[0]!.includes('.claude/settings'), result.warnings[0]);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('(l) a missing settings file is skipped without a warning', () => {
+    const { projectDir, homeDir, cleanup } = tempDirs();
+    try {
+      fs.mkdirSync(path.join(projectDir, '.claude'));
+      writeFile(userSettings(homeDir), { enabledPlugins: { 'a@sigil': true } });
+      const result = readClaudeEnabledPlugins({ projectDir, homeDir, marketplace: 'sigil' });
+      assert.deepEqual(result.plugins, [{ name: 'a', source: '~/.claude/settings.json' }]);
+      assert.deepEqual(result.warnings, []);
+    } finally {
+      cleanup();
+    }
+  });
 });

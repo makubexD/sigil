@@ -12,6 +12,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
 import { createRecorder, mockClack, ENTER } from '../helpers/clack-mock';
+import { BACK } from '../../dist-cli/wizard/steps/add/state';
 import type { MockAnswer, Recorder } from '../helpers/clack-mock';
 import { fakeTTY } from '../helpers/tty';
 import { withTempDirAsync } from '../helpers/temp-dir';
@@ -109,6 +110,39 @@ describe('wizard complement step', () => {
         const rec = await addViaWizard(project, home, packPath(ENTER));
 
         assert.ok(fs.existsSync(path.join(project, SKILL_FILE)));
+        assert.doesNotMatch(rec.copied.join('\n'), /--complement/);
+      });
+    });
+  });
+
+  it('should drop a skip answer when Back changes the picks to ones no plugin delivers', async () => {
+    await withTempDirAsync(async project => {
+      await withTempDirAsync(async home => {
+        enablePack(home);
+
+        const rec = await addViaWizard(project, home, [
+          'pack',
+          `pack:${PACK}`,
+          ENTER,
+          'yes',
+          BACK,
+          BACK,
+          BACK,
+          'pack:spec-driven',
+          'proceed',
+        ]);
+
+        const messages = rec.prompts.map(p => p.message);
+        const repick = messages.lastIndexOf('Which pack?');
+        assert.ok(
+          messages.slice(0, repick).includes(COMPLEMENT_QUESTION),
+          'asked for the first pack',
+        );
+        assert.ok(
+          !messages.slice(repick).includes(COMPLEMENT_QUESTION),
+          'not asked for the second',
+        );
+        assert.ok(rec.copied.length > 0, 'the equivalent command was printed');
         assert.doesNotMatch(rec.copied.join('\n'), /--complement/);
       });
     });

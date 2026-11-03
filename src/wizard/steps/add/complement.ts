@@ -12,7 +12,7 @@ import { planSelection } from './proceed';
 import type { AddWizardState } from './state';
 
 /** True when at least one id the plan covers is also delivered by an enabled plugin. */
-function hasPluginOverlap(s: AddWizardState): boolean {
+export function hasPluginOverlap(s: AddWizardState): boolean {
   return previewPluginOverlaps(s, planSelection(s).ids).size > 0;
 }
 

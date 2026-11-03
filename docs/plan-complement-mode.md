@@ -162,3 +162,37 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   Record the result in the ADR's Phase 2b paragraph.
 
 Commit trailers per step as the global rules say (`Plan-Step: docs/plan-complement-mode.md#<n>`).
+
+## Review fixes (2026-11-03, `/agent-skills:review` of the whole feature)
+
+## Step 11 `[worker:medium]`: the Claude reader never aborts on a bad settings path
+
+- Files: `src/targets/claude-code/enabled-plugins.ts`, `test/targets/claude-enabled-plugins.test.ts`.
+- `readScope`'s `fs.lstatSync(scope.file, { throwIfNoEntry: false })` throws on EACCES / ENOTDIR. Catch it, push
+  `${scope.source}: <message>` to `warnings`, return undefined, and keep reading the other scopes (as the Copilot
+  reader does).
+- Tests: (a) a project whose `.claude` is a regular file (ENOTDIR) → no throw, one warning naming that scope, a
+  plugin enabled at user scope still found. (b) unchanged behaviour for a missing file (no warning).
+
+## Step 12 `[worker:medium]`: `add --complement` renders with the set `update` uses
+
+- Files: `src/commands/add/co-install.ts`, `src/commands/add/plan-scaffold.ts`, `test/commands/add-plugin-overlap.test.ts`.
+- `coInstallSetFor` must leave out the dependencies `--complement` skipped (`excludeDeps`), so a kept artifact's
+  Boundary names only what is installed; otherwise `status` calls it outdated right after `add`.
+- Test: enable `python-starter` in the temp home, `add skill:python/py-document agent:python/py-security-auditor`
+  with `deps: true, complement: true`, then the status computation for the project reports every entry up to date.
+
+## Step 13 `[worker:medium]`: `update` and `status` never re-add a dependency an enabled plugin delivers
+
+- Files: `src/freshness.ts` (`missingDependencies` callers), `src/commands/update-deps.ts`, their tests.
+- A missing `uses:` dependency an enabled plugin of that target delivers (`pluginOverlaps`, env as `status` builds
+  it) is not reported as `newDependencies` and not installed by `installNewDependencies`.
+- Test: complement add as in step 12, then `status` shows no "update would also install", and `update --yes` writes
+  no new file.
+
+## Step 14 `[inline: user-facing copy]`: review doc nits
+
+- `spec.md` add row and CHANGELOG: picks or dependencies. `consuming.md`: a symlinked settings file is skipped with a
+  warning; under `--complement` a skipped skill's rules are recorded as your picks. Optional findings left open (in
+  the ADR's left-open list): `CLAUDE_CONFIG_DIR`, symlinked settings, `status --json` dropping reader warnings, the
+  wizard printing the advisory twice.

@@ -93,9 +93,8 @@ export function applyStaleMigration(
  * hash was recorded before. */
 export function rebuildEntryFiles(
   entry: ManifestEntry,
-  freshFiles: Record<string, string>,
+  rendered: { fresh: Record<string, string>; written: Record<string, string> },
   keptStalePaths: string[],
-  toWrite: Record<string, string>,
   projectDir: string,
 ): ManifestFile[] {
   const keptStale = new Set(keptStalePaths);
@@ -105,19 +104,23 @@ export function rebuildEntryFiles(
   // ts-performance-profiler run flagged the sibling pattern in uninstall.ts/prune-apply.ts (see
   // docs/audits/2026-08-25/register.md's backlog).
   const shaByPath = new Map(entry.files.map(mf => [mf.path, mf.sha256]));
-  const freshRecorded = Object.keys(freshFiles).map(relPath => {
-    const recorded = shaByPath.get(relPath);
-    const written = toWrite[relPath];
-    let sha: string;
-    if (written !== undefined) {
-      sha = sha256(written);
-    } else if (recorded !== undefined) {
-      sha = recorded;
-    } else {
-      const fullPath = path.join(projectDir, relPath);
-      sha = fs.existsSync(fullPath) ? sha256(fs.readFileSync(fullPath, 'utf-8')) : '';
-    }
-    return { path: relPath, sha256: sha };
-  });
+  const freshRecorded = Object.keys(rendered.fresh).map(relPath => ({
+    path: relPath,
+    sha256: recordedSha(relPath, rendered.written[relPath], shaByPath.get(relPath), projectDir),
+  }));
   return [...freshRecorded, ...carriedOver];
+}
+
+/** The hash to record for one fresh path: what was written, else the recorded baseline, else the
+ * disk copy (`''` when the file is absent). */
+function recordedSha(
+  relPath: string,
+  written: string | undefined,
+  recorded: string | undefined,
+  projectDir: string,
+): string {
+  if (written !== undefined) return sha256(written);
+  if (recorded !== undefined) return recorded;
+  const fullPath = path.join(projectDir, relPath);
+  return fs.existsSync(fullPath) ? sha256(fs.readFileSync(fullPath, 'utf-8')) : '';
 }

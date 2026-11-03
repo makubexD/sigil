@@ -15,9 +15,7 @@ options, writing a decision, scoping a follow-up) or a throwaway spike, so every
 | The `add` command a page would show is stable                  | Recheck in step 1 (`sigil add <kind>:<id> --target <t> --yes`).                                                                                                                                                                                                                       |
 | (not in brief) Other browsable surfaces already exist          | `catalog/README.md` (generated, describes the standard, not the artifacts); the Claude marketplace (`/plugin` in Claude Code browses packs); Antigravity plugins under `dist/antigravity/plugins/`. GitHub Pages is not enabled on the repo (`has_pages: false`); the repo is public. |
 
-## Steps
-
-### 1. Compare the options `[inline: judgment, the decision itself]`
+## Step 1 `[inline: judgment, the decision itself]`: Compare the options
 
 Answer the brief's open questions from evidence, not guesses:
 
@@ -31,14 +29,14 @@ Answer the brief's open questions from evidence, not guesses:
 Write `docs/decisions/ui-beyond-terminal-2026-11.md` with the table, the recommendation and why. Test:
 `npx prettier --check docs/decisions/ui-beyond-terminal-2026-11.md`.
 
-### 2. Spike the chosen option, if it is a generated site or index `[inline: throwaway, measures the decision]`
+## Step 2 `[inline: throwaway, measures the decision]`: Spike the chosen option, if it is a generated site or index
 
 Only when step 1 recommends a static site or a generated index. A script in the session scratchpad (never committed)
 reads `dist/registry.json` plus `packs.yaml` and writes pages into the scratchpad. Record in the decision: what was
 missing from the registry, page count and size, and how long generation takes. Nothing from the spike is committed
 except those findings. Skip this step, and say so in the decision, when step 1 recommends none or an extension.
 
-### 3. Close out the brief `[inline: scoping a follow-up is design]`
+## Step 3 `[inline: scoping a follow-up is design]`: Close out the brief
 
 - If the decision is "do it": write `docs/ideas/<option>.md` in the brief shape (Objective, Evidence, Out of scope,
   Success criteria, Riskiest assumption, Open questions) and add it to the table in `docs/ideas/README.md`.

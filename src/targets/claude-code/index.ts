@@ -35,6 +35,7 @@
 import type {
   Target,
   ResolvedCatalog,
+  Pack,
   FileMap,
   CompileOptions,
   ScaffoldOptions,
@@ -78,6 +79,7 @@ import { scaffoldArtifact } from '../emit-files';
 import { CLAUDE_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 import { readClaudeEnabledPlugins } from './enabled-plugins';
+import { marketplacePluginContents as computeMarketplacePluginContents } from './plugin-contents';
 
 export { ConfigDestination, resolveClaudeConfigDestination } from './config';
 
@@ -142,6 +144,17 @@ export class ClaudeCodeTarget implements Target {
    */
   enabledPlugins(env: EnabledPluginsEnv): EnabledPluginsResult {
     return readClaudeEnabledPlugins(env);
+  }
+
+  /**
+   * What each plugin of the Claude marketplace holds, from the same pack membership and config
+   * plugin selection `compile` writes (src/targets/claude-code/plugin-contents.ts).
+   */
+  marketplacePluginContents(
+    catalog: ResolvedCatalog,
+    packs: Pack[],
+  ): ReadonlyMap<string, readonly string[]> {
+    return computeMarketplacePluginContents(catalog, packs);
   }
 
   readonly outputContracts: ContractEntry[] = CLAUDE_OUTPUT_CONTRACTS;

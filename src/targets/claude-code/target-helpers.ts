@@ -20,6 +20,7 @@ import { resolveConfigRoot } from '../../config-utils';
 import { resolveClaudeConfigDestination, CLAUDE_MCP_SERVERS_KEY } from './config';
 import { JSON_INDENT } from '../../json-util';
 import { getPackArtifacts } from './plugin-build';
+import { DEFAULT_MARKETPLACE_NAME } from '../../marketplace-name';
 import { buildPlugin, hasPluginMembers, resolveIdentityContact } from './plugin-assemble';
 import { buildHookConfigOps, buildSettingsConfigOps, buildMcpConfigOps } from './config-scaffold';
 
@@ -89,7 +90,7 @@ export function buildMarketplaceJson(
 function sigilMarketplace(homepage: string | undefined, pluginEntries: PluginEntry[]) {
   const marketplaceUrl = homepage ?? 'https://github.com/makubexD/sigil#readme';
   return {
-    name: 'sigil',
+    name: DEFAULT_MARKETPLACE_NAME,
     owner: { name: 'Sigil', url: marketplaceUrl },
     description: 'Vendor-neutral AI skills, agents, and rules for multiple languages.',
     plugins: pluginEntries,

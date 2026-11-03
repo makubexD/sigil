@@ -37,7 +37,7 @@ Out of scope: npm first-publish (last in the backlog), Cursor, Codex agents, Ope
 
 ## Steps
 
-### 1. Claude marketplace in a clean container [inline: live probe]
+## Step 1: Claude marketplace in a clean container `[inline: live probe]`
 
 In a scratch dir, run `podman run --rm -it docker.io/library/node:24 bash`; inside: `npm i -g @anthropic-ai/claude-code`,
 `git init /w && cd /w`, then the commands from `setup/claude-code.md` as written.
@@ -54,7 +54,7 @@ Then on the host, in a fresh `git init` scratch repo with the owner's sign-in: i
 `hook-protect-config` at project scope, run `claude -p` asking for one plugin skill by slash name, and ask it to write
 `.env`. Expected: the skill answers, the `.env` write is denied.
 
-### 2. `sigil add` from a fresh clone, full lifecycle [inline: live probe]
+## Step 2: `sigil add` from a fresh clone, full lifecycle `[inline: live probe]`
 
 In the container from step 1 (or a second one): `git clone https://github.com/makubexD/sigil`, then the README
 § Install steps exactly (`npm ci`, `npm run build`, `npm link`). In a fresh `git init` project:
@@ -71,7 +71,7 @@ In the container from step 1 (or a second one): `git clone https://github.com/ma
 
 Any README step that fails or needs an unwritten step is a doc bug: fix it in step 7.
 
-### 3. `update --force` restores an edited file whose catalog content is unchanged [worker:medium]
+## Step 3: `update --force` restores an edited file whose catalog content is unchanged `[worker:medium]`
 
 Found in step 2 (v0.8.0, fresh clone): after a hand edit to an installed rule, `sigil status` says "To replace them
 with the catalog version: sigil update --force", but `sigil update --force --yes` prints `(already up-to-date)` and
@@ -95,7 +95,7 @@ cases:
 3a and 3c fail before the change. Test: `npm run build && node --test test-compiled/commands/update-wholefile.test.js`,
 then `npm test`.
 
-### 4. Copilot `.env` through `create` and `edit` [inline: live probe]
+## Step 4: Copilot `.env` through `create` and `edit` `[inline: live probe]`
 
 On the host, scratch repo from step 2's layout (`hook:shared/protect-config --target copilot`), `copilot --trust-folder -p`
 with a free or included model.
@@ -108,7 +108,7 @@ with a free or included model.
 
 If 3a or 3b is allowed, stop and report: that is a hook bug, not a doc fix.
 
-### 5. Copilot complement reader on a real install (B5) [inline: live probe]
+## Step 5: Copilot complement reader on a real install (B5) `[inline: live probe]`
 
 On the host: `copilot plugin marketplace add makubexD/sigil#marketplace`, `copilot plugin install typescript-tooling@sigil`.
 
@@ -122,7 +122,7 @@ On the host: `copilot plugin marketplace add makubexD/sigil#marketplace`, `copil
 
 If 4a's layout differs from the reader, stop: the reader fix gets its own step.
 
-### 6. Copilot open questions [inline: owner GUI + docs]
+## Step 6: Copilot open questions `[inline: owner GUI + docs]`
 
 - 5a, VS Code (owner, GUI): set `chat.plugins.enabled`, add `"makubexD/sigil#marketplace"` to
   `chat.plugins.marketplaces`, install `typescript-tooling` from **Customize**, run one skill. Expected: it runs.
@@ -130,32 +130,31 @@ If 4a's layout differs from the reader, stop: the reader fix gets its own step.
   "undocumented" with the date. No probe.
 - 5c, cloud agent: optional, owner's call (it spends premium requests). If skipped, record "not tested, by choice".
 
-### 7. Record results [inline: user-facing docs]
+## Step 7: Record results `[inline: user-facing docs]`
 
 Update `docs/setup/claude-code.md` and `docs/setup/copilot.md` (drop "wasn't tested" lines that are now tested, fix
 any README/install gap from step 2), ADR § 6 (clean-machine and B5 results), and
 `copilot-plugin-channel-2026-10.md` § Scope and open questions. Test: `npm run check` and `npx prettier --check docs`.
 
-### 8. Phase 1b decision: `sigil cost` [inline: design]
+## Step 8: Phase 1b decision: `sigil cost` `[inline: design]`
 
 Measure what an install costs per session today, from built output, for one pack per language on Claude:
 always-on (skill and agent descriptions, repo-wide rules), on-match (path-scoped rules, which `rule-load.cjs` already
 counts), on-invoke (`SKILL.md` + references). Decide whether a `sigil cost` command adds value beyond `rule-load` and
 `provider-limits`. Record go or no-go with the numbers in ADR § 6. A go writes `docs/plan-sigil-cost.md` (not built here).
 
-### 9. Phase 1c decision: rich skill packaging [inline: design]
+## Step 9: Phase 1c decision: rich skill packaging `[inline: design]`
 
 List catalog skills that would use `assets/` or `scripts/`, and the token saving of rules as on-demand references
 (numbers from step 8). Record go, narrowed go or no-go in ADR § 6; update the roadmap row either way.
 
-### 10. Close out [inline: release]
+## Step 10: Review the branch `[inline: review]`
 
-PR with steps 1-9, `/agent-skills:review` with one round of fixes, `pr-ready`, merge. Delete this plan in a follow-up
-PR. Update memory: the next item is the OpenCode eval plan.
+`/agent-skills:review` of the whole branch, one round of fixes (steps 11 and 12). Done 2026-11-03: approved.
 
 ## Review fixes
 
-### 11. `update` records a skipped user edit as the baseline [worker:medium]
+## Step 11: `update` records a skipped user edit as the baseline `[worker:medium]`
 
 Found by the step 10 review, already on master: `rebuildEntryFiles` (`src/commands/update-stale.ts`) records the
 on-disk hash for every freshly rendered path, including a drifted file that `update` skipped or left unchanged. The
@@ -180,12 +179,16 @@ Tests, `test/commands/update-wholefile.test.ts`, in `describe('updateWholeFileEn
 11a and 11b fail before the change. Test: `npm run build && npm run build:test && node --test
 test-compiled/commands/update-wholefile.test.js`, then `npm test`.
 
-### 12. Review doc fixes [inline: user-facing docs]
+## Step 12: Review doc fixes `[inline: user-facing docs]`
 
 From the step 10 review: in `docs/decisions/copilot-plugin-channel-2026-10.md` (the "Answered 2026-11-03" paragraph),
 say that the plugin-level `name` / `description` caps aren't checked (`plugin.json` is not a `KindEmitSpec`; longest pack
 description is 522 characters); in `docs/setup/copilot.md` § Limits, reword to "`protect-config`'s `create` / `edit`
 case wasn't reached on that plan"; in `docs/setup/claude-code.md` § Remove, mention `claude plugin prune --dry-run`
 first and `-y` outside a terminal. Not fixed, recorded as a follow-up: the guided update and the wizard's Update can't
-offer to restore an edited file whose catalog text is unchanged (it classifies `unchanged`, not `skip-drifted`). Then
-step 10 (close-out) runs: PR, `pr-ready`, merge, memory.
+offer to restore an edited file whose catalog text is unchanged (it classifies `unchanged`, not `skip-drifted`).
+
+## Step 13: Close out `[inline: release]`
+
+PR with every step, `pr-ready`, merge. Delete this plan in a follow-up PR. Update memory: the next item is the OpenCode
+eval plan.

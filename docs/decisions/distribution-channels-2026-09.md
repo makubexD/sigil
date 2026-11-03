@@ -246,7 +246,7 @@ yet.
   isn't documented. It may need a published tree: `master` holds catalog source with `{sigil:…}`
   tokens, not rendered skills. Phase 3 stays open, narrowed to that install route.
 
-  Built 2026-11-03 ([plan](../plan-agent-skills-conformance.md)), live proof pending the next release: each release
+  Built 2026-11-03 (plan: `git show 57848f9:docs/plan-agent-skills-conformance.md`), proven live with v0.7.0: each release
   publishes the agents-standard build, without its root `AGENTS.md`, to an orphan `skills` branch tagged
   `skills-v<version>` (`scripts/publish-branch.sh`, shared with the marketplace). The drift workflow checks both
   branches. The install route is `npx skills add https://github.com/makubexD/sigil/tree/skills --skill <name>`
@@ -262,7 +262,7 @@ yet.
 
 Run with `npx skills@1.7.6` (the newest on npm that day) in fresh `git init` repos in a scratch directory, against
 `build --target agents-standard` output from `1c02fba` and against GitHub. Plan:
-[plan-agent-skills-conformance.md](../plan-agent-skills-conformance.md) step 1. Every install also writes a
+`git show 57848f9:docs/plan-agent-skills-conformance.md`, step 1. Every install also writes a
 `skills-lock.json` at the project root; `--copy` writes real files, not symlinks.
 
 - **P1, `--list` on the build: pass.** Found 45 skills, the listed names exactly equal the 45 folder names, no warning.

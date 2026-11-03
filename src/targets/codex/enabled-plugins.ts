@@ -4,10 +4,10 @@
  * `$CODEX_HOME/config.toml` (default `~/.codex`).
  *
  * Codex reports a plugin as installed only when both exist (decision 7,
- * docs/plan-complement-follow-ups.md). A folder without its table is a leftover cache entry, and a
- * table without its folder is a stale config entry; neither counts. A folder that is a symbolic
- * link is never followed. The project `.codex/config.toml` is not read: it applies only in a
- * trusted project, and trust lives in Codex's own state.
+ * `git show 69ced68:docs/plan-complement-follow-ups.md`). A folder without its table is a
+ * leftover cache entry, and a table without its folder is a stale config entry; neither counts.
+ * A folder that is a symbolic link is never followed. The project `.codex/config.toml` is not
+ * read: it applies only in a trusted project, and trust lives in Codex's own state.
  *
  * @module
  */

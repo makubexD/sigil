@@ -360,6 +360,13 @@ Plan: `docs/plan-claude-copilot-proof.md`. Release under test: v0.8.0 (`marketpl
   `hook-protect-config` at project scope): `/typescript-starter:ts-generate-tests sum.ts` loaded the plugin skill; a
   `Write` to `.env` was blocked with `sigil-hook: blocked write to protected file .env`; a `Write` to `notes.txt` was
   allowed.
+- **`sigil add` from a fresh clone passes**, following README § Install exactly in the same container image
+  (`npm install`, `npm run build`, `npm link`; no install warnings). In a fresh project: `init --target claude`;
+  `add pack:typescript-starter` for `claude` and then `copilot` (12 and 6 entries; Copilot prints the "skills load
+  twice" notice); `status` lists all 18 up to date, then flags a hand-edited rule as `edited by you`; `uninstall` of
+  every id for both targets reverses the JSON merges, keeps the user's own `settings.json` keys, removes the
+  sigil-only `.mcp.json`, keeps the edited rule, and leaves an empty manifest. One bug: `update --force` kept the
+  edited rule, although `status` tells the user to run it (fixed in plan step 3).
 
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict

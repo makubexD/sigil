@@ -53,16 +53,23 @@ async function scaffoldFreshFiles(
 /** Splits fresh scaffold output into files to write vs. drifted files to skip (without --force). */
 type FreshFileVerdict = 'unchanged' | 'skip-drifted' | 'write';
 
-/** Classifies one fresh-scaffold file: unchanged, drifted-and-skipped, or needs writing. */
+/**
+ * Classifies one fresh-scaffold file: unchanged, drifted-and-skipped, or needs writing.
+ * A fresh render that still matches the recorded hash is normally `unchanged`; with `--force`
+ * it is `write` when the copy on disk drifted, so the user's request restores the catalog
+ * version even though the catalog itself never moved.
+ */
 function classifyFreshFile(
   relPath: string,
   content: string,
   recordedHash: string | undefined,
   opts: UpdateOptions,
 ): FreshFileVerdict {
-  if (recordedHash && sha256(content) === recordedHash) return 'unchanged';
-
   const fullPath = path.join(opts.projectDir, relPath);
+  if (recordedHash && sha256(content) === recordedHash) {
+    return opts.force && isFileDrifted(fullPath, recordedHash) ? 'write' : 'unchanged';
+  }
+
   if (isFileDrifted(fullPath, recordedHash) && !opts.force) return 'skip-drifted';
 
   return 'write';
@@ -126,7 +133,12 @@ function writeAndRefreshEntry({
   for (const p of skipped) console.log(`     ⊘ ${p}  (drifted — skipped)`);
 
   const { toKeep } = applyStaleMigration(entry, freshFiles, opts.projectDir);
-  entry.files = rebuildEntryFiles(entry, freshFiles, toKeep, opts.projectDir);
+  entry.files = rebuildEntryFiles(
+    entry,
+    { fresh: freshFiles, written: toWrite },
+    toKeep,
+    opts.projectDir,
+  );
 
   // Refresh the recorded template revision so `status` stops reporting this entry as outdated.
   entry.template = currentTemplateOfId(entry.id, resolved);

@@ -354,7 +354,9 @@ To throw away your edits and reset a file right now, reinstall it with `--overwr
 sigil add skill:csharp/cs-generate-tests --overwrite --yes
 ```
 
-That rewrote all three files, and `sigil status` went back to `3 up-to-date`.
+That rewrote all three files, and `sigil status` went back to `3 up-to-date`. `sigil update --force` restores an
+edited file the same way. The guided update and the wizard's Update don't offer that yet: they list such a file as
+unchanged.
 
 **6. Remove what you installed.**
 

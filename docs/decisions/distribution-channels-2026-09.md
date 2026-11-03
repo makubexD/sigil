@@ -200,8 +200,8 @@ interface TargetCapabilities {
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------- |
 | 0     | Marketplace hygiene: `build` cleans `dist/<target>/`; prompts emitted (or doc fixed); no empty plugins; refresh `consuming.md`; make catalog load order deterministic (today `AGENTS.md` and `registry.json` order varies between identical builds — a blocker for Phase 2's CI sync gate) | deletes `dist/`   |
 | 1a    | Capability model (behaviour-preserving; `dist/` identical before/after); generated capability matrix doc — **done 2026-09-27**                                                                                                                                                             |                   |
-| 1c    | Rich skill packaging (nested `references/`, `assets/`, `scripts/` via the trust scanner; one shared resource emitter); rules as references option; un-flatten `cli`/`wizard` stacks                                                                                                        |                   |
-| 1b    | `sigil cost` (always-on / on-match / on-invoke tokens) + budget conformance rules                                                                                                                                                                                                          |                   |
+| 1c    | Rich skill packaging (nested `references/`, `assets/`, `scripts/` via the trust scanner; one shared resource emitter); rules as references option; un-flatten `cli`/`wizard` stacks — **narrowed 2026-11-03**: rules as references for plugin skills only, behind an eval                  |                   |
+| 1b    | `sigil cost` (always-on / on-match / on-invoke tokens) + budget conformance rules — **no-go 2026-11-03**, see "Phases 1b and 1c"                                                                                                                                                           |                   |
 | 1     | Family-granular Claude marketplace via `Pack.select`; hooks/MCP as their own opt-in plugins; prompts as skills; plugin-agent field guard                                                                                                                                                   |                   |
 | 2     | Publish the marketplace in git + CI sync gate; project-scoped `enabledPlugins` snippet                                                                                                                                                                                                     | CI and git layout |
 | 2b    | `sigil add --complement` + duplicate guard against enabled sigil plugins — **done 2026-11-03** (Claude and Copilot readers)                                                                                                                                                                |                   |
@@ -346,6 +346,43 @@ byte by hash; `~/.gemini/config/` back to its earlier file list). Plan: `git sho
   `config.toml` by hash; in `~/.gemini/config/`, `agy plugin uninstall` leaves `import_manifest.json`
   (`{"imports": null}`) and an empty `plugins/`, both removed to match the earlier file list.
 
+### Claude and Copilot proof (2026-11-03)
+
+Plan: `docs/plan-claude-copilot-proof.md`. Release under test: v0.8.0 (`marketplace` branch).
+
+- **Claude marketplace on a clean machine passes.** In a fresh `docker.io/library/node:24` container with
+  Claude Code from npm and no sign-in, `claude plugin marketplace add makubexD/sigil#marketplace` and
+  `claude plugin install <x>@sigil --scope project` work as `setup/claude-code.md` says: plugin commands need no auth.
+  `enabledPlugins` lands in the project's `.claude/settings.json`. `deepseek-worker` (the one plugin with a
+  `dependencies` entry) installs `hook-worker-mode-guard` with it. `uninstall` removes the `enabledPlugins` key but keeps
+  the cache folder, and leaves an auto-installed dependency enabled until `claude plugin prune --scope project`.
+- **Live session on Claude Code 2.1.317** (owner's sign-in, fresh scratch repo, `typescript-starter` and
+  `hook-protect-config` at project scope): `/typescript-starter:ts-generate-tests sum.ts` loaded the plugin skill; a
+  `Write` to `.env` was blocked with `sigil-hook: blocked write to protected file .env`; a `Write` to `notes.txt` was
+  allowed.
+- **`sigil add` from a fresh clone passes**, following README § Install exactly in the same container image
+  (`npm install`, `npm run build`, `npm link`; no install warnings). In a fresh project: `init --target claude`;
+  `add pack:typescript-starter` for `claude` and then `copilot` (12 and 6 entries; Copilot prints the "skills load
+  twice" notice); `status` lists all 18 up to date, then flags a hand-edited rule as `edited by you`; `uninstall` of
+  every id for both targets reverses the JSON merges, keeps the user's own `settings.json` keys, removes the
+  sigil-only `.mcp.json`, keeps the edited rule, and leaves an empty manifest. One bug: `update --force` kept the
+  edited rule, although `status` tells the user to run it (fixed in plan step 3).
+- **Copilot `create` / `edit` against `protect-config`: not reached** on Copilot CLI 1.0.105. The owner's account
+  accepts only `--model auto`: every named model (`gpt-5-mini`, `mai-code-1.1-flash`, Claude and Gemini names) is "not
+  available". `auto` picked `gpt-6-luna` in 10 of 11 runs, and Copilot gives GPT models `apply_patch` instead of
+  `create` / `edit` (`--available-tools create edit view` leaves them only `view`, per the session's `events.jsonl`). The
+  one `mai-code-1.1-flash` run had both tools and created the control file. `apply_patch` is the path these accounts
+  take, and it was denied live on 2026-10-31. The `create` / `edit` case stays untested: the owner is on the Copilot Free
+  plan, and the CLI on that plan offers only `auto`.
+- **Not tested, by plan limits:** the VS Code marketplace install (a GUI flow, left for when the owner runs VS Code
+  chat) and the cloud agent installing from a repo marketplace (GitHub lists the cloud agent for paid plans only).
+- **B5 passes on a real install.** `copilot plugin install typescript-tooling@sigil` wrote
+  `~/.copilot/installed-plugins/sigil/typescript-tooling/` (`skills/`, `agents/`, `.claude-plugin/plugin.json`), the
+  layout the reader assumes. `sigil add skill:typescript/ts-document --target copilot` warned about the skill and its
+  agent `ts-code-reviewer` and installed both; with `--complement` it skipped both; `status --json` rows carry
+  `plugin: { name, source, marketplace: "sigil" }` with an empty stderr. `copilot plugin uninstall` removed the
+  `sigil/` folder; `marketplace remove` left `installed-plugins/` empty.
+
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict
 them. There's no Codex plugin emitter: skills and MCP load from the Claude marketplace, and hook plugins fail open.
@@ -355,6 +392,28 @@ installed manually in the desktop app, and sigil's `hook-*` plugins don't work t
 Every phase that creates an install route adds its `<details>` block to the README Quick Start (the
 agent-skills layout adopted in this change: fastest path, individual picks, a cost/limits callout,
 then one collapsible section per tool) plus a `docs/setup/<tool>.md` page.
+
+### Phases 1b and 1c (2026-11-03)
+
+Measured on v0.8.0 output (bytes / 4 ≈ tokens), one `sigil add pack:<x> --target claude` per starter and tooling pack:
+
+| Pack                  | Always on (skill + agent descriptions) | Rules, if every one matches | Every skill invoked |
+| --------------------- | -------------------------------------- | --------------------------- | ------------------- |
+| `*-starter` (5 packs) | 107–312                                | 1.3k–5.6k                   | 0.8k–3.0k           |
+| `*-tooling` (5 packs) | 1.0k–1.2k                              | 10.3k–16.2k                 | 7.3k–9.7k           |
+
+Every installed rule is path-scoped, so nothing loads repo-wide.
+
+- **1b, `sigil cost`: no-go.** The always-on cost is at most ~1.2k tokens per pack. The cost that matters, rules on
+  match, is already measured per language and held to a CI baseline by `scripts/rule-load.cjs`. On-invoke size is bounded
+  by `provider-limits`. A consumer command would restate those numbers without changing a decision. Reopen when a target
+  ships always-on rules, or a pack's always-on cost passes ~5k tokens.
+- **1c, rich packaging: narrowed.** No catalog skill has `scripts/` or `assets/` (0 files), so that part waits until one
+  needs it. Stack references already ship (28 reference and stack-part files). Rules are the open part: across the 55
+  Claude plugin skills, the inlined `## Applied Rules` section is 58% of the text loaded on invoke (82k of 141k tokens;
+  median 1.3k, max 3.6k per skill; 52 skills carry one). Moving it to an on-demand `references/rules.md` would cut that,
+  but only helps if the model still reads and applies the rules when it writes code. That is model behaviour, so it
+  needs an eval with Claude before any build, and its own brief.
 
 ## 7. Done in this change
 

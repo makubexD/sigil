@@ -50,6 +50,10 @@ function makeEntry(files: { path: string; sha256: string }[]): ManifestEntry {
   };
 }
 
+function recordedHash(entry: ManifestEntry, relPath: string): string | undefined {
+  return entry.files.find(f => f.path === relPath)?.sha256;
+}
+
 describe('isFileDrifted', () => {
   it('returns false when no hash was recorded (nothing to compare against)', () => {
     assert.equal(isFileDrifted('/does/not/matter', undefined), false);
@@ -145,6 +149,56 @@ describe('updateWholeFileEntry', () => {
     });
   });
 
+  it('restores a hand-edited file with --force when the catalog content is unchanged', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'rule.md'), 'hand-edited by the user');
+      const target = makeFakeTarget({ 'rule.md': 'catalog content' });
+      const entry = makeEntry([{ path: 'rule.md', sha256: sha256('catalog content') }]);
+      const result = await updateWholeFileEntry(
+        entry,
+        {} as ResolvedCatalog,
+        target,
+        makeOpts(dir, { force: true }),
+      );
+      assert.equal(result.updated, true);
+      assert.equal(fs.readFileSync(path.join(dir, 'rule.md'), 'utf-8'), 'catalog content');
+    });
+  });
+
+  it('keeps a hand-edited file without --force when the catalog content is unchanged', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'rule.md'), 'hand-edited by the user');
+      const target = makeFakeTarget({ 'rule.md': 'catalog content' });
+      const entry = makeEntry([{ path: 'rule.md', sha256: sha256('catalog content') }]);
+      const result = await updateWholeFileEntry(
+        entry,
+        {} as ResolvedCatalog,
+        target,
+        makeOpts(dir),
+      );
+      assert.equal(result.updated, false);
+      assert.equal(result.skippedDriftCount, 0);
+      assert.equal(fs.readFileSync(path.join(dir, 'rule.md'), 'utf-8'), 'hand-edited by the user');
+    });
+  });
+
+  it('dry-run with --force previews restoring a hand-edited file and leaves it untouched', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'rule.md'), 'hand-edited by the user');
+      const target = makeFakeTarget({ 'rule.md': 'catalog content' });
+      const entry = makeEntry([{ path: 'rule.md', sha256: sha256('catalog content') }]);
+      const result = await updateWholeFileEntry(
+        entry,
+        {} as ResolvedCatalog,
+        target,
+        makeOpts(dir, { force: true, dryRun: true }),
+      );
+      assert.equal(result.updated, false);
+      assert.equal(result.pending, true);
+      assert.equal(fs.readFileSync(path.join(dir, 'rule.md'), 'utf-8'), 'hand-edited by the user');
+    });
+  });
+
   it('migrates a stale recorded path when the scaffold output moves to a new path', async () => {
     await withTempDirAsync(async dir => {
       fs.mkdirSync(path.join(dir, '.claude', 'commands'), { recursive: true });
@@ -221,6 +275,79 @@ describe('updateWholeFileEntry', () => {
       );
       assert.equal(result.updated, false);
       assert.equal(fs.existsSync(path.join(dir, 'rule.md')), false);
+    });
+  });
+
+  it('keeps a skipped drifted file as its baseline across two runs', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'a.md'), 'USER EDIT');
+      fs.writeFileSync(path.join(dir, 'b.md'), 'b v1');
+      const target = makeFakeTarget({ 'a.md': 'a v2', 'b.md': 'b v2' });
+      const entry = makeEntry([
+        { path: 'a.md', sha256: sha256('a v1') },
+        { path: 'b.md', sha256: sha256('b v1') },
+      ]);
+      const opts = makeOpts(dir);
+
+      for (let run = 1; run <= 2; run++) {
+        await updateWholeFileEntry(entry, {} as ResolvedCatalog, target, opts);
+        assert.equal(
+          fs.readFileSync(path.join(dir, 'a.md'), 'utf-8'),
+          'USER EDIT',
+          `a.md is left untouched on run ${run}`,
+        );
+        assert.equal(
+          recordedHash(entry, 'a.md'),
+          sha256('a v1'),
+          `a.md keeps its pre-skip baseline on run ${run}`,
+        );
+        assert.equal(
+          recordedHash(entry, 'b.md'),
+          sha256('b v2'),
+          `b.md records what was written on run ${run}`,
+        );
+      }
+      assert.equal(fs.readFileSync(path.join(dir, 'b.md'), 'utf-8'), 'b v2');
+    });
+  });
+
+  it('keeps the recorded hash of an unchanged-but-drifted file', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'a.md'), 'USER EDIT');
+      fs.writeFileSync(path.join(dir, 'b.md'), 'b v2');
+      const target = makeFakeTarget({ 'a.md': 'a v2', 'b.md': 'b v3' });
+      const entry = makeEntry([
+        { path: 'a.md', sha256: sha256('a v2') },
+        { path: 'b.md', sha256: sha256('b v2') },
+      ]);
+
+      await updateWholeFileEntry(entry, {} as ResolvedCatalog, target, makeOpts(dir));
+
+      assert.equal(fs.readFileSync(path.join(dir, 'a.md'), 'utf-8'), 'USER EDIT');
+      assert.equal(recordedHash(entry, 'a.md'), sha256('a v2'));
+      assert.equal(fs.readFileSync(path.join(dir, 'b.md'), 'utf-8'), 'b v3');
+    });
+  });
+
+  it('--force restores an unchanged-but-drifted file after a no-force run', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'a.md'), 'USER EDIT');
+      fs.writeFileSync(path.join(dir, 'b.md'), 'b v2');
+      const target = makeFakeTarget({ 'a.md': 'a v2', 'b.md': 'b v3' });
+      const entry = makeEntry([
+        { path: 'a.md', sha256: sha256('a v2') },
+        { path: 'b.md', sha256: sha256('b v2') },
+      ]);
+
+      await updateWholeFileEntry(entry, {} as ResolvedCatalog, target, makeOpts(dir));
+      await updateWholeFileEntry(
+        entry,
+        {} as ResolvedCatalog,
+        target,
+        makeOpts(dir, { force: true }),
+      );
+
+      assert.equal(fs.readFileSync(path.join(dir, 'a.md'), 'utf-8'), 'a v2');
     });
   });
 });

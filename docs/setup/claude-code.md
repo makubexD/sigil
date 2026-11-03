@@ -83,6 +83,10 @@ claude plugin marketplace remove sigil
 
 Without `--scope project`, the uninstall fails for a plugin installed at project scope.
 
+Uninstalling `deepseek-worker` leaves `hook-worker-mode-guard`, which it installed as a dependency, enabled. Remove it
+with `claude plugin prune --scope project`. Run it with `--dry-run` first to see what it would remove; outside a
+terminal it needs `-y`.
+
 ## Build it yourself
 
 To try unreleased catalog changes, or to publish your own catalog, build the marketplace locally with

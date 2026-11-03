@@ -84,10 +84,16 @@ export function applyStaleMigration(
 /** Rebuilds `entry.files` from the CURRENT scaffold's path set, not the stale recorded one — this
  * is what makes an emit-path change (e.g. a kind switching output layout) actually re-track under
  * its new path instead of leaving the new file permanently untracked by the manifest. Kept-stale
- * (locally-edited) paths are carried over unchanged. */
+ * (locally-edited) paths are carried over unchanged.
+ *
+ * Each fresh path records what `update` actually wrote: a path in `toWrite` gets the hash of the
+ * content written, never the on-disk copy (a drifted file that was skipped must keep the baseline
+ * it was compared against, or the next run would see no drift and overwrite the user's edit). A
+ * path that was not written keeps its recorded hash, falling back to the disk hash only when no
+ * hash was recorded before. */
 export function rebuildEntryFiles(
   entry: ManifestEntry,
-  freshFiles: Record<string, string>,
+  rendered: { fresh: Record<string, string>; written: Record<string, string> },
   keptStalePaths: string[],
   projectDir: string,
 ): ManifestFile[] {
@@ -98,12 +104,23 @@ export function rebuildEntryFiles(
   // ts-performance-profiler run flagged the sibling pattern in uninstall.ts/prune-apply.ts (see
   // docs/audits/2026-08-25/register.md's backlog).
   const shaByPath = new Map(entry.files.map(mf => [mf.path, mf.sha256]));
-  const freshRecorded = Object.keys(freshFiles).map(relPath => {
-    const fullPath = path.join(projectDir, relPath);
-    const sha = fs.existsSync(fullPath)
-      ? sha256(fs.readFileSync(fullPath, 'utf-8'))
-      : (shaByPath.get(relPath) ?? '');
-    return { path: relPath, sha256: sha };
-  });
+  const freshRecorded = Object.keys(rendered.fresh).map(relPath => ({
+    path: relPath,
+    sha256: recordedSha(relPath, rendered.written[relPath], shaByPath.get(relPath), projectDir),
+  }));
   return [...freshRecorded, ...carriedOver];
+}
+
+/** The hash to record for one fresh path: what was written, else the recorded baseline, else the
+ * disk copy (`''` when the file is absent). */
+function recordedSha(
+  relPath: string,
+  written: string | undefined,
+  recorded: string | undefined,
+  projectDir: string,
+): string {
+  if (written !== undefined) return sha256(written);
+  if (recorded !== undefined) return recorded;
+  const fullPath = path.join(projectDir, relPath);
+  return fs.existsSync(fullPath) ? sha256(fs.readFileSync(fullPath, 'utf-8')) : '';
 }

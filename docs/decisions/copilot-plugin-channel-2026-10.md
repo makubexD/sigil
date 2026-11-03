@@ -130,5 +130,13 @@ Read 2026-10-30:
   ([reference](https://code.visualstudio.com/docs/agents/reference/agent-plugin-reference)).
 
 Still open: whether the cloud agent installs plugins from a repo marketplace (the docs say "through
-repository settings"; not tested), and whether Copilot's skill discovery has a description-length
-budget like Claude's (the docs read don't say).
+repository settings"; not tested).
+
+Answered 2026-11-03: Copilot documents per-skill limits only. [VS Code's skill
+reference](https://code.visualstudio.com/docs/copilot/customization/agent-skills) caps `name` at 64 characters (and
+"names with invalid characters cause the skill to silently fail to load") and `description` at 1024; the [CLI plugin
+reference](https://docs.github.com/en/copilot/reference/cli-plugin-reference) gives the same caps for a plugin's
+`name` and `description`. Neither page, nor GitHub's agent skills pages, names a total budget for the skill listing
+like Claude's. sigil's `provider-limits` already enforces both per-skill caps on Copilot output. It doesn't check the
+plugin-level caps: `plugin.json` is not a `KindEmitSpec`, so `provider-limits` never sees it. Every pack fits today
+(the longest plugin `description` is 522 characters).

@@ -145,6 +145,56 @@ describe('updateWholeFileEntry', () => {
     });
   });
 
+  it('restores a hand-edited file with --force when the catalog content is unchanged', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'rule.md'), 'hand-edited by the user');
+      const target = makeFakeTarget({ 'rule.md': 'catalog content' });
+      const entry = makeEntry([{ path: 'rule.md', sha256: sha256('catalog content') }]);
+      const result = await updateWholeFileEntry(
+        entry,
+        {} as ResolvedCatalog,
+        target,
+        makeOpts(dir, { force: true }),
+      );
+      assert.equal(result.updated, true);
+      assert.equal(fs.readFileSync(path.join(dir, 'rule.md'), 'utf-8'), 'catalog content');
+    });
+  });
+
+  it('keeps a hand-edited file without --force when the catalog content is unchanged', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'rule.md'), 'hand-edited by the user');
+      const target = makeFakeTarget({ 'rule.md': 'catalog content' });
+      const entry = makeEntry([{ path: 'rule.md', sha256: sha256('catalog content') }]);
+      const result = await updateWholeFileEntry(
+        entry,
+        {} as ResolvedCatalog,
+        target,
+        makeOpts(dir),
+      );
+      assert.equal(result.updated, false);
+      assert.equal(result.skippedDriftCount, 0);
+      assert.equal(fs.readFileSync(path.join(dir, 'rule.md'), 'utf-8'), 'hand-edited by the user');
+    });
+  });
+
+  it('dry-run with --force previews restoring a hand-edited file and leaves it untouched', async () => {
+    await withTempDirAsync(async dir => {
+      fs.writeFileSync(path.join(dir, 'rule.md'), 'hand-edited by the user');
+      const target = makeFakeTarget({ 'rule.md': 'catalog content' });
+      const entry = makeEntry([{ path: 'rule.md', sha256: sha256('catalog content') }]);
+      const result = await updateWholeFileEntry(
+        entry,
+        {} as ResolvedCatalog,
+        target,
+        makeOpts(dir, { force: true, dryRun: true }),
+      );
+      assert.equal(result.updated, false);
+      assert.equal(result.pending, true);
+      assert.equal(fs.readFileSync(path.join(dir, 'rule.md'), 'utf-8'), 'hand-edited by the user');
+    });
+  });
+
   it('migrates a stale recorded path when the scaffold output moves to a new path', async () => {
     await withTempDirAsync(async dir => {
       fs.mkdirSync(path.join(dir, '.claude', 'commands'), { recursive: true });

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `sigil update --force` now restores a file you edited even when its catalog version hasn't changed. Before, it
+  printed `already up-to-date` and kept your edit, although `sigil status` told you to run it.
+
 ## [0.8.0] - 2026-11-03
 
 ### Added

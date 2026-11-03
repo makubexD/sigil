@@ -1,17 +1,16 @@
 # /feature: real prompts and which mode to use
 
-The mode map covers Claude Code and VS Code Copilot; in other tools use the closest
-read-only and edit-allowed modes.
+Use your tool's read-only mode while deciding and its edit mode while building; the names differ per tool.
 
 ## Mode map
 
-| Phase | Claude Code | VS Code Copilot | Why |
-| --- | --- | --- | --- |
-| 0 size, 1 clarify, 2 spec, 3 plan | **Plan mode** (`Shift+Tab` until `⏸ plan mode on`, or `claude --permission-mode plan`) | **Plan** agent | Read-only: nothing is edited while you're still deciding |
-| Accept the plan | Dialog → **"Yes, and use auto mode"** | Hand off to **Agent** | Writes SPEC/tasks and starts building |
-| 4 build, 5 review, 6 close-out | **Auto mode** | **Agent** | Edits and local commits; "never push" still holds |
-| A ⚠ task you want to watch line by line | **Manual** or **acceptEdits** for that task only | **Agent** with tool approval on | You see every command or diff |
-| Never | `bypassPermissions` | Auto-approve all tools | No protection at all |
+| Phase | Mode | Why |
+| --- | --- | --- |
+| 0 size, 1 clarify, 2 spec, 3 plan | Read-only (plan) mode | Read-only: nothing is edited while you're still deciding |
+| Accept the plan | Approve the plan, then switch to edit mode | Writes SPEC/tasks and starts building |
+| 4 build, 5 review, 6 close-out | Edit mode | Edits and local commits; "never push" still holds |
+| A ⚠ task you want to watch line by line | Edit mode with approval for each tool call, for that task only | You see every command or diff |
+| Never | Approve every tool call automatically | No protection at all |
 
 Tip: put limits in your first message ("don't push", "don't touch src/auth/"). Limits stated in
 the conversation are honoured for the rest of the run.

@@ -12,6 +12,7 @@ import type { ArtifactInstallState } from '../../../install-state';
 import { stateLabelParts, renderStateLegend } from '../../state-display';
 import type { ResolvedCatalog } from '../../../types';
 import type { ItemRow } from '../../picker';
+import { installSkipReason } from './state';
 
 /** Build a per-picker header summary like "  (3 already installed, 1 new)". */
 export function buildPickerSummary(
@@ -77,7 +78,7 @@ function resolvePackIds(
     filters: {},
     catalog,
     packs,
-    skipReason: a => target?.configSkipReason?.(a),
+    skipReason: a => (target ? installSkipReason(target, a) : undefined),
   }).ids;
 }
 

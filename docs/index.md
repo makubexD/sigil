@@ -15,6 +15,7 @@
 | [setup/antigravity.md](setup/antigravity.md)                 | Install Sigil rules and skills for Antigravity                                     |
 | [reference/troubleshooting.md](reference/troubleshooting.md) | Common errors and FAQ                                                              |
 | [reference/capabilities.md](reference/capabilities.md)       | Which kinds each target delivers, per channel (generated)                          |
+| [reference/artifacts.md](reference/artifacts.md)             | Every installable artifact: packs, tools, install command (generated)              |
 | [reference/config-kinds.md](reference/config-kinds.md)       | How `mcp` / `hook` / `settings` merge into your JSON files                         |
 
 ## Author artifacts (catalog authors)
@@ -57,7 +58,7 @@ The guides and reference describe the system as it stands; history and ideas do 
 | S6 Suggest an artifact without code  | Supported   | Fill in the [issue form](https://github.com/makubexD/sigil/issues/new?template=propose-artifact.yml), or run the `sigil new` wizard from a clone. `sigil import` reads Claude and Copilot layouts. [Guide](guides/authoring.md#import-an-existing-portable-template-directory)                                                     |
 | S4c Cursor                           | Partial     | Rules (`.mdc`) and skills through `add` and `build`, no `AGENTS.md`. Cursor also reads Claude Code's skills and installed plugins. Hooks, MCP and agents are planned. [Setup](setup/cursor.md), [probes](decisions/cursor-target-2026-11.md)                                                                                       |
 | S4d Antigravity                      | Partial     | Skills and repo-wide rules (`always_on`) through `add` and `build`, no `AGENTS.md`. Scoped rules are skipped: no glob rule attached in testing. MCP servers and agents (`.agents/agents/`) through `add`. Hooks are planned. [Setup](setup/antigravity.md), [probes](decisions/antigravity-target-2026-11.md)                      |
-| S8 GUI / web browsing                | Not planned | Plugin browsers in each AI tool; a generated artifact index is next. [Decision](decisions/ui-beyond-terminal-2026-11.md) · [Brief](ideas/artifact-index.md)                                                                                                                                                                        |
+| S8 GUI / web browsing                | Not planned | Plugin browsers in each AI tool, plus the generated [artifact index](reference/artifacts.md). [Decision](decisions/ui-beyond-terminal-2026-11.md)                                                                                                                                                                                  |
 
 ## Glossary
 

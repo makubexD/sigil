@@ -27,6 +27,20 @@ function matchesPackMembership(
   return lang !== undefined && packLangs.has(lang);
 }
 
+/**
+ * The ids of `catalog.artifacts`, in catalog order, that belong to `pack`.
+ *
+ * This is the expansion `sigil add pack:<name>` uses. `pluginExclude` does not apply here: it is
+ * plugin-only, so an excluded id is still installed by `add`.
+ */
+export function packMemberIds(pack: Pack, catalog: ResolvedCatalog): string[] {
+  const packLangs = new Set(pack.languages ?? []);
+  const packArtifactIds = new Set(pack.artifacts ?? []);
+  return catalog.artifacts
+    .filter(a => matchesPackMembership(a, packLangs, packArtifactIds))
+    .map(a => a.id);
+}
+
 /** Expands the `pack:<name>` selector to its member artifact ids, added via `addId`. */
 function expandPackSelector(
   packName: string,
@@ -41,11 +55,7 @@ function expandPackSelector(
       `Unknown pack '${packName}'. Available packs: ${available || '(none — check packs.yaml)'}`,
     );
   }
-  const packLangs = new Set(pack.languages ?? []);
-  const packArtifactIds = new Set(pack.artifacts ?? []);
-  catalog.artifacts
-    .filter(a => matchesPackMembership(a, packLangs, packArtifactIds))
-    .forEach(a => addId(a.id));
+  packMemberIds(pack, catalog).forEach(addId);
 }
 
 /** Strips a known `<kind>:` prefix from a selector (e.g. "skill:foo/bar" → "foo/bar"). */

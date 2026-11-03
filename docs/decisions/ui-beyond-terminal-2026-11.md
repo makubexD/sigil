@@ -55,4 +55,20 @@ No hosting, accounts or editing in a browser (the brief's own limits). A static 
 render the same data, and nothing in the index blocks it. Reconsider it only if people ask for search the GitHub page
 can't give.
 
-The follow-up is `docs/ideas/artifact-index.md`.
+## Built
+
+The index shipped as [docs/reference/artifacts.md](../reference/artifacts.md), written by `npm run build`
+(`src/emit-artifact-index.ts`, rows and page in `src/artifact-index.ts`). The brief's open questions were settled this
+way:
+
+- **One page**, one H2 per kind with a contents line. Split it only if it grows past about 100 KB.
+- **Only sigil's catalog.** No `sigil index --markdown` for a fork until someone asks; the renderer is pure, so it can be
+  wired later.
+- **Tools are what `add` installs**, not the registry's `platforms`. No render is needed: each scaffold target runs
+  `resolveSelection` with selector `all` and `installSkipReason` (`src/targets/install-skip.ts`), the same check `add`
+  uses, so a scoped rule on Antigravity or a tool-restricted agent is left out. A base rule `all` drops as already
+  included still installs on its own, so it is listed.
+- **Packs use `add`'s expansion** (`packMemberIds`, `src/select/selector-resolve.ts`), not `getPackArtifacts`, which
+  drops `pluginExclude` ids that `add` still installs.
+- **The command is `sigil add <kind>:<id>`**, with one note above the tables: it installs for the tool set up in the
+  folder, and `--target <name>` picks another.

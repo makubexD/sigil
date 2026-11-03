@@ -12,7 +12,7 @@ import { loadManifest, sameDestination } from '../../manifest';
 import { CONFIG_KINDS } from '../../select';
 import type { PlanCtx } from './plan-context';
 import { carriedKinds, installableKinds } from '../../targets/capabilities';
-import { wholeFileSkipReason } from '../../targets/tool-restriction';
+import { installSkipReason } from '../../targets/install-skip';
 
 type Filters = Parameters<typeof resolveSelection>[0]['filters'];
 
@@ -34,7 +34,7 @@ function select(ctx: PlanCtx, filters: Filters): SelectionResult {
       supportedKinds: installableKinds(ctx.target),
       carriedKinds: carriedKinds(ctx.target),
       targetName: ctx.targetName,
-      skipReason: a => ctx.target.configSkipReason?.(a) ?? wholeFileSkipReason(ctx.target, a),
+      skipReason: a => installSkipReason(ctx.target, a),
     });
   } catch (err) {
     throw new SigilError((err as Error).message, { cause: err });

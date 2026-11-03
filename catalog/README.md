@@ -7,6 +7,9 @@ standard, generated from the data `sigil sync --check` enforces
 ([family-skeleton-standard-2026-10.md](../docs/decisions/family-skeleton-standard-2026-10.md),
 [catalog-layout-standard-2026-10.md](../docs/decisions/catalog-layout-standard-2026-10.md)).
 
+Every installable artifact, with its packs, tools and install command, is listed in the
+[artifact index](../docs/reference/artifacts.md).
+
 ## Where an artifact goes
 
 - No language variation: `shared/`.

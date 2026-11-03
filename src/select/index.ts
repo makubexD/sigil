@@ -16,7 +16,7 @@ export {
   isAgnostic,
   artifactTargetsPlatform,
 } from './selection';
-export { resolveSelection, type ResolveSelectionOptions } from './selector-resolve';
+export { resolveSelection, packMemberIds, type ResolveSelectionOptions } from './selector-resolve';
 
 export { kindNoun, kindPlural, kindHint, artifactLabel, artifactHint } from './vocabulary';
 

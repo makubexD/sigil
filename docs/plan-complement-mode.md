@@ -196,3 +196,11 @@ Commit trailers per step as the global rules say (`Plan-Step: docs/plan-compleme
   warning; under `--complement` a skipped skill's rules are recorded as your picks. Optional findings left open (in
   the ADR's left-open list): `CLAUDE_CONFIG_DIR`, symlinked settings, `status --json` dropping reader warnings, the
   wizard printing the advisory twice.
+
+## Step 15 `[inline: cross-platform debugging, Windows CI failure on PR #184]`: a `.claude` that is a file warns on every OS
+
+- Files: `src/targets/claude-code/enabled-plugins.ts`.
+- On Windows, `lstat` of a path under a regular file reports ENOENT, not ENOTDIR, so `throwIfNoEntry: false` turns it
+  into "missing" and test (k) gets no warning. Check the settings file's directory explicitly (`stat`, so a symlinked
+  `.claude` still reads): absent → skip silently; not a directory → one warning per directory.
+- Test: `test/targets/claude-enabled-plugins.test.ts` (k) and (l) pass unchanged; Windows CI passes.

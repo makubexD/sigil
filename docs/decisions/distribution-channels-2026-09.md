@@ -303,6 +303,30 @@ scratch folder so the real `~/.claude` stayed untouched. Plan: `docs/plan-comple
   (nothing was left installed after the 2026-10-31 check), so the `<marketplace>/<plugin>` layout rests on the
   [CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference#file-locations)
   alone. Step 10 doesn't cover Copilot, so this stays unproven live.
+
+### Phase 2b follow-up probes (2026-11-03)
+
+Run against the real `~/.codex` and `~/.gemini` on this machine, each restored afterwards (Codex `config.toml` byte for
+byte by hash; `~/.gemini/config/` back to its earlier file list). Plan: `docs/plan-complement-follow-ups.md`, step 1.
+
+- **C1, Codex CLI 0.166.0, `codex plugin marketplace add makubexD/sigil --ref marketplace` then
+  `codex plugin add typescript-starter@sigil`: pass.** The plugin lands in
+  `~/.codex/plugins/cache/sigil/typescript-starter/0.7.0/`, and `config.toml` gains `[marketplaces.sigil]` and
+  `[plugins."typescript-starter@sigil"]` with `enabled = true`.
+- **C2, the enabled state: pass, with one addition.** The TUI toggle wasn't driven; `config.toml` was edited by hand and
+  read back with `codex plugin list`. `enabled = false` shows `installed, disabled`. A bare
+  `[plugins."typescript-starter@sigil"]` table shows `installed, enabled`, and `disabled` once `plugins._default.enabled`
+  is `false`. The addition: with the cache folder present but **no** `plugins."<name>@<mp>"` table, Codex reports
+  `not installed`; with the table but no cache folder, also `not installed`. A plugin is installed only when both exist.
+- **A1, Antigravity CLI 1.4.12, `agy plugin install dist/antigravity/plugins/typescript-starter`: pass.**
+  `~/.gemini/config/plugins/typescript-starter/` holds `plugin.json` (`name: typescript-starter`), `skills/` and
+  `agents/`, no `.claude-plugin/`. agy also writes `~/.gemini/config/import_manifest.json` (`source: "antigravity"`,
+  the components copied); `agy plugin list --json` reports the same `source`.
+- **A2, `agy plugin disable typescript-starter`: a disabled state exists.** It writes
+  `~/.gemini/config/config.json` as `{"plugins": {"typescript-starter": {"enabled": false}}}`; `enable` flips it to
+  `true`, and `uninstall` leaves `{"plugins": {}}`. The Plugins page doesn't document this file.
+- **A3, rules in Antigravity plugins: none today.** No `dist/antigravity/plugins/*/` folder has `rules/`: only
+  repo-wide rules ship in a plugin, and no pack holds one.
 - **L1, live check (plan step 10): pass after one fix.** Same setup: `claude plugin install typescript-tooling@sigil
 --scope project`, then `sigil add skill:typescript/ts-generate-tests --target claude --yes`. Plain `add` installed
   the skill with the warning naming `typescript-tooling@sigil (enabled in .claude/settings.json)`, and `sigil status`

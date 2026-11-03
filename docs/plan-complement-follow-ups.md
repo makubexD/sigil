@@ -63,7 +63,8 @@ claude` copies Claude plugins into the same folder.
    describe. sigil's plugins never set `defaultEnabled: false`, and an install writes an explicit `true` (probe B2).
    The only case missed is an installed plugin whose entry the user deleted by hand.
 7. **Codex reader.** A plugin is installed when a regular folder
-   `<codexHome>/plugins/cache/<marketplace>/<plugin>/` exists. `codexHome` is `$CODEX_HOME`, or `~/.codex` when it is
+   `<codexHome>/plugins/cache/<marketplace>/<plugin>/` exists **and** `config.toml` has a `plugins."<plugin>@<marketplace>"`
+   table (probe C2: Codex reports either one alone as not installed). `codexHome` is `$CODEX_HOME`, or `~/.codex` when it is
    unset. The plugin is enabled by `plugins."<plugin>@<marketplace>".enabled` in `<codexHome>/config.toml`, else
    `plugins._default.enabled`, else `true`. Parse with `smol-toml` (already a dependency), through `readRegularFile`.
    The project `.codex/config.toml` is not read: it applies only in a trusted project, and trust lives in Codex's own
@@ -75,7 +76,10 @@ antigravity`), not the Claude marketplace. So the target gets its own `marketpla
    **and** has no `.claude-plugin/` folder. An `agy plugin import claude` copy has that folder, and its hook doesn't
    work on Antigravity (U7), so it must never count. Antigravity has no third-party marketplace, so these overlaps
    have no marketplace. `PluginOverlap.marketplace` becomes optional, and the shared wording drops `@<marketplace>`
-   when there is none. Disabled state isn't documented, so presence counts as enabled, as on Copilot.
+   when there is none. Disabled state isn't documented, but probe A2 found it: `agy plugin disable` writes
+   `plugins.<name>.enabled: false` to `~/.gemini/config/config.json`. An explicit `false` there drops the plugin (counting
+   a disabled plugin would make `--complement` skip something nothing delivers); anything else counts as enabled.
+   Antigravity plugins carry only repo-wide rules, and no pack has one today (probe A3).
 9. **Cursor: no reader.** Cursor documents no on-disk plugin state outside its development folder, and Phase F is
    paused on Cursor usage. Recorded as left open with that reason.
 10. **`status --json` reader warnings go to stderr.** Stdout stays the JSON array (no shape change). The warnings use
@@ -158,13 +162,15 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   `test/targets/codex-enabled-plugins.test.ts`.
 - `readCodexEnabledPlugins(env)` per decision 7: `codexHome` = `vars.CODEX_HOME` when non-empty, else
   `<homeDir>/.codex`. List regular folders (never links) under `<codexHome>/plugins/cache/<marketplace>/`, as the Copilot
-  reader does. Read `<codexHome>/config.toml` through `readRegularFile` (1 MiB cap), parse it with `smol-toml`, and
-  apply `plugins["<name>@<marketplace>"].enabled`, then `plugins._default.enabled`, then `true`. Only a boolean
-  counts. A bad TOML file is one warning, and every installed plugin then counts as enabled. `source` is
+  reader does. Read `<codexHome>/config.toml` through `readRegularFile` (1 MiB cap), parse it with `smol-toml`. A
+  folder counts only when `plugins["<name>@<marketplace>"]` is a table; then apply its `enabled`, then
+  `plugins._default.enabled`, then `true`. Only a boolean counts. A missing `config.toml` means nothing is installed.
+  A bad TOML file is one warning, and every cache folder then counts as enabled. `source` is
   `~/.codex/plugins/cache/<marketplace>/<name>` (or the `CODEX_HOME` path). Results are sorted by name.
 - Codex target: `enabledPlugins` calls it, `pluginKinds = ['skill']`, `pluginContentsFrom = 'claude-code'` (comment
   cites `docs/decisions/codex-target-2026-10.md` § Plugins).
-- Tests: (a) an installed folder, no config → enabled. (b) An explicit `enabled = false` → not counted. (c)
+- Tests: (a) an installed folder with a bare `[plugins."<name>@<mp>"]` table → enabled; the same folder with no
+  `config.toml`, or a `config.toml` without that table → not counted. (b) An explicit `enabled = false` → not counted. (c)
   `_default.enabled = false` with an explicit `true` for one plugin → only that one. (d) `CODEX_HOME` respected. (e)
   Invalid TOML → one warning, installed plugins counted. (f) A symlinked plugin folder → skipped. (g) Through
   `pluginOverlaps` with the real catalog: an installed `typescript-starter` yields its skill ids and no agent id.
@@ -178,7 +184,8 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   membership `buildAntigravityPlugins` uses and the config plugins `buildAntigravityConfigPlugins` emits. Mirror
   `src/targets/claude-code/plugin-contents.ts`. Expose it as the target's `marketplacePluginContents`.
 - Tests: (a) The key set equals the `plugins/<name>/` folders of a fresh `build --target antigravity`. (b) Each
-  pack plugin's ids include its rules (Antigravity plugins carry rules). (c) `dist/antigravity/` is byte-identical
+  plugin's ids are exactly what its built folder holds: for `typescript-starter`, its skills and agents, and no
+  scoped rule (only repo-wide rules ship, and no pack has one today; probe A3). (c) `dist/antigravity/` is byte-identical
   before and after (build twice and `diff -r`).
 
 ## Step 7 `[worker:medium]`: optional marketplace on an overlap
@@ -200,12 +207,15 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   read through `readRegularFile` (64 KiB cap), parses to an object whose `name` equals the folder name, and it has no
   `.claude-plugin` entry. The first folder for a name wins. `source` is `.agents/plugins/<name>` or
   `~/.gemini/config/plugins/<name>`. It returns `marketplace: false` (step 7). An unreadable or invalid `plugin.json` is
-  one warning.
+  one warning. Then read `<homeDir>/.gemini/config/config.json` through `readRegularFile` (1 MiB cap): a plugin whose
+  `plugins.<name>.enabled` is exactly `false` is dropped (decision 8, probe A2). A missing file is silent; an invalid
+  one is one warning, and every found plugin then counts.
 - Antigravity target: `enabledPlugins` calls it. No `pluginKinds` (its own plugins carry every kind they hold).
 - Tests: (a) A user-scope folder with a matching `plugin.json` → counted. (b) The same name in both scopes →
   the workspace source. (c) A folder holding `.claude-plugin/` → not counted. (d) `name` mismatch → not counted. (e)
-  Invalid JSON → one warning. (f) Through `pluginOverlaps` with the real catalog: an installed `typescript-starter` yields
-  its rule ids too, and the wording has no `@`.
+  Invalid JSON → one warning. (f) `config.json` with `{"plugins": {"<name>": {"enabled": false}}}` → not counted;
+  `true` or no entry → counted; invalid `config.json` → one warning, still counted. (g) Through `pluginOverlaps` with
+  the real catalog: an installed `typescript-starter` yields its skill and agent ids, and the wording has no `@`.
 
 ## Step 9 `[worker:medium]`: `status --json` prints reader warnings to stderr
 

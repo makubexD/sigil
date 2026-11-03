@@ -4,7 +4,7 @@ import { computeClosure } from '../../../select';
 import type { WizardStep, StepOutcome } from '../../engine';
 import { BACK, chosenTarget, type AddWizardState } from './state';
 import { CANCEL_MESSAGE, resolveOutcome } from './prompt-helpers';
-import { previewSelection, upToDateIds } from './plan-preview';
+import { previewSelection, previewPluginOverlaps, upToDateIds } from './plan-preview';
 import { showPlanBox } from './plan-box';
 import type { PlanView } from './plan-box';
 
@@ -17,7 +17,13 @@ function buildPlanView(s: AddWizardState): PlanView {
     ...(s.includeDeps ? closure.dependencies.map(d => d.artifact.id) : []),
   ];
   const upToDate = new Set(s.overwrite ? [] : upToDateIds(s, ids));
-  return { closure, skipped: selection.skipped, upToDate, writeCount: ids.length - upToDate.size };
+  return {
+    closure,
+    skipped: selection.skipped,
+    upToDate,
+    writeCount: ids.length - upToDate.size,
+    pluginOverlaps: previewPluginOverlaps(s, ids),
+  };
 }
 
 /** Prompts "Ready to install?" (no "Proceed" when there is nothing to write) and maps the answer. */

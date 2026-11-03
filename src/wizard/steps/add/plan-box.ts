@@ -10,6 +10,8 @@ import type { ClosurePreview, SkippedArtifact } from '../../../select';
 import type { ConfigKind } from '../../../types';
 import { CLI_LABEL_COL_WIDTH } from '../../../cli-helpers';
 import { OVERLAYS_FILE } from '../../../overlays';
+import { pluginOverlapAdviceLines } from '../../command-strings';
+import type { PluginOverlap } from '../../../plugin-overlap';
 import { chosenTarget } from './state';
 import type { AddWizardState } from './state';
 
@@ -25,6 +27,8 @@ export interface PlanView {
   upToDate: ReadonlySet<string>;
   /** How many artifacts will actually be written. */
   writeCount: number;
+  /** Picks an enabled plugin already delivers; installed anyway unless `--complement` skips them. */
+  pluginOverlaps: ReadonlyMap<string, PluginOverlap>;
 }
 
 type TargetOrUndefined = ReturnType<typeof chosenTarget>;
@@ -132,6 +136,12 @@ export function skippedLine(view: PlanView, ct: TargetOrUndefined): string[] {
   ];
 }
 
+/** The plugin-overlap warning, blank line first, in the same words `sigil add` prints it. */
+export function pluginOverlapLines(view: PlanView): string[] {
+  if (view.pluginOverlaps.size === 0) return [];
+  return ['', ...pluginOverlapAdviceLines(view.pluginOverlaps)];
+}
+
 /** Ids the plan covers: the picks, plus their helpers when those are included. */
 function planIds(s: AddWizardState, view: PlanView): string[] {
   return [
@@ -155,6 +165,7 @@ export function showPlanBox(s: AddWizardState, view: PlanView): void {
       body,
       ...artifactLines(view, ct, Boolean(s.includeDeps)),
       ...skippedLine(view, ct),
+      ...pluginOverlapLines(view),
     ].join('\n'),
     'Install plan',
   );

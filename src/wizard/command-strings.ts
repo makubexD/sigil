@@ -155,20 +155,25 @@ export function printPluginCheckWarnings(warnings: readonly string[]): void {
 }
 
 /**
- * Print the artifacts an enabled marketplace plugin already delivers. They are installed anyway
- * unless `--complement` asked to skip them, so this is one advisory with a line per id.
+ * The artifacts an enabled marketplace plugin already delivers, as a header plus one sorted line
+ * per id. `[]` when there is nothing to say. Shared by `add` and the wizard's plan box.
  */
-export function printPluginOverlapAdvice(overlaps: ReadonlyMap<string, PluginOverlap>): void {
-  if (overlaps.size === 0) return;
+export function pluginOverlapAdviceLines(overlaps: ReadonlyMap<string, PluginOverlap>): string[] {
+  if (overlaps.size === 0) return [];
+  const header =
+    `${overlaps.size} artifact(s) an enabled plugin already delivers ` +
+    `(installed anyway; --complement skips them):`;
   const lines = [...overlaps.keys()].sort().flatMap(id => {
     const overlap = overlaps.get(id);
     return overlap === undefined ? [] : [`  ${formatPluginOverlap(id, overlap)}`];
   });
-  log.warn(
-    `${overlaps.size} artifact(s) an enabled plugin already delivers ` +
-      `(installed anyway; --complement skips them):\n` +
-      lines.join('\n'),
-  );
+  return [header, ...lines];
+}
+
+/** Print that advisory. They are installed anyway unless `--complement` asked to skip them. */
+export function printPluginOverlapAdvice(overlaps: ReadonlyMap<string, PluginOverlap>): void {
+  const lines = pluginOverlapAdviceLines(overlaps);
+  if (lines.length > 0) log.warn(lines.join('\n'));
 }
 
 /** A line stops one column short of the window, so the terminal never wraps on the last cell. */

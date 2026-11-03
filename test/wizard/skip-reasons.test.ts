@@ -44,6 +44,7 @@ const viewOf = (skipped: SkippedArtifact[]): PlanView => ({
   skipped,
   upToDate: new Set(),
   writeCount: 0,
+  pluginOverlaps: new Map(),
 });
 const planOf = (skipped: SkippedArtifact[], targetName = 'claude'): AddPlan =>
   ({ skipped, targetName }) as unknown as AddPlan;

@@ -2,7 +2,7 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "mcp-context-mode",
   "displayName": "Context Mode MCP Server",
-  "version": "0.7.0",
+  "version": "0.8.0",
   "description": "Connects your AI tool to the local context-mode MCP server, which must be installed globally and available on PATH. As a plugin, this is for Claude Code only.",
   "author": {
     "name": "Sigil",

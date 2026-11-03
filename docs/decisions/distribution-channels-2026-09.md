@@ -335,6 +335,16 @@ byte by hash; `~/.gemini/config/` back to its earlier file list). Plan: `docs/pl
   wrote its `uses:` agent `ts-code-reviewer`, which the plugin also holds, and called the skip "not supported". Fixed
   in the same branch (overlaps cover the dependency closure; a held dependency is never scaffolded). Rerun: both
   skipped and named, only the rule `ts-testing` written, and `status` lists only that rule.
+- **L2, live check for Codex and Antigravity (plan step 13): pass.** Codex 0.166.0 with `typescript-starter@sigil` and
+  `hook-protect-config@sigil` installed: plain `sigil add skill:typescript/ts-generate-tests --target codex` warns
+  `typescript-starter@sigil (enabled in ~/.codex/plugins/cache/sigil/typescript-starter)`; `status` prints the note and
+  `--json` the `plugin` field, with an empty stderr; `--complement` skips the skill; and
+  `sigil add hook:shared/protect-config --target codex --complement` merges the hook into `.codex/hooks.json` (hook is
+  not a Codex plugin kind). Antigravity 1.4.12 with `dist/antigravity/plugins/typescript-starter` installed: the same
+  `add` warns about the skill and its agent `ts-code-reviewer` as `plugin typescript-starter` (no `@`), `status
+--json` rows carry no `marketplace` key, and `--complement` skips both. Both tools restored afterwards: Codex
+  `config.toml` by hash; in `~/.gemini/config/`, `agy plugin uninstall` leaves `import_manifest.json`
+  (`{"imports": null}`) and an empty `plugins/`, both removed to match the earlier file list.
 
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict

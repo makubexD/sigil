@@ -58,7 +58,8 @@ function fromWizardResult(
     language: wizardResult.language ?? opts.language,
     scope: (wizardResult.configScope as ConfigScope | undefined) ?? baseScope,
     fromWizard: true,
-    complement: wizardResult.complement ?? opts.complement === true,
+    // The wizard always answers (false when nothing overlaps), like overwrite: the flag is not read here.
+    complement: wizardResult.complement === true,
   };
 }
 

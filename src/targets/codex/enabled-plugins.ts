@@ -15,6 +15,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { parse } from 'smol-toml';
 import { readRegularFile } from '../../safe-read';
+import { homeDisplayPath } from '../home-path';
 import type { EnabledPlugin, EnabledPluginsEnv, EnabledPluginsResult } from '../../types';
 
 const KIB = 1024;
@@ -35,12 +36,6 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** `file` named with `homeDir` as `~`. */
-function displayPath(file: string, homeDir: string): string {
-  const prefix = homeDir.endsWith(path.sep) ? homeDir : `${homeDir}${path.sep}`;
-  return file.startsWith(prefix) ? `~${file.slice(homeDir.length)}` : file;
-}
-
 /** The Codex home: a non-empty `CODEX_HOME`, else `~/.codex`. */
 function codexHomeOf(env: EnabledPluginsEnv): { dir: string; isDefault: boolean } {
   const configured = (env.vars ?? process.env).CODEX_HOME;
@@ -53,7 +48,7 @@ function codexHomeOf(env: EnabledPluginsEnv): { dir: string; isDefault: boolean 
 function cacheLabel(env: EnabledPluginsEnv, codexHome: string, isDefault: boolean): string {
   if (isDefault) return `~/.codex/plugins/cache/${env.marketplace}`;
   const dir = path.join(codexHome, 'plugins', 'cache', env.marketplace);
-  return displayPath(dir, env.homeDir);
+  return homeDisplayPath(dir, env.homeDir);
 }
 
 /** Names of the regular plugin folders in the cache; a link is skipped, never followed. */
@@ -127,7 +122,7 @@ export function readCodexEnabledPlugins(env: EnabledPluginsEnv): EnabledPluginsR
   const configFile = path.join(codexHome, 'config.toml');
   const config = readConfig(configFile);
   if (config.kind === 'invalid') {
-    warnings.push(`${displayPath(configFile, env.homeDir)}: ${config.detail}`);
+    warnings.push(`${homeDisplayPath(configFile, env.homeDir)}: ${config.detail}`);
   }
 
   const plugins: EnabledPlugin[] = enabledNames(names, config, env.marketplace).map(name => ({

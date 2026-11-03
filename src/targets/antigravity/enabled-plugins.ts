@@ -18,6 +18,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { readRegularFile } from '../../safe-read';
+import { homeDisplayPath } from '../home-path';
 import type { EnabledPlugin, EnabledPluginsEnv, EnabledPluginsResult } from '../../types';
 
 const KIB = 1024;
@@ -55,12 +56,6 @@ type ConfigRead =
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** `file` named with `homeDir` as `~`. */
-function displayPath(file: string, homeDir: string): string {
-  const prefix = homeDir.endsWith(path.sep) ? homeDir : `${homeDir}${path.sep}`;
-  return file.startsWith(prefix) ? `~${file.slice(homeDir.length)}` : file;
 }
 
 /** The workspace scope, then the user scope; workspace plugins are listed first. */
@@ -190,7 +185,7 @@ export function readAntigravityEnabledPlugins(env: EnabledPluginsEnv): EnabledPl
   const configFile = path.join(env.homeDir, '.gemini', 'config', 'config.json');
   const config = readConfig(configFile);
   if (config.kind === 'invalid') {
-    warnings.push(`${displayPath(configFile, env.homeDir)}: ${config.detail}`);
+    warnings.push(`${homeDisplayPath(configFile, env.homeDir)}: ${config.detail}`);
   }
   const disabled = config.kind === 'parsed' ? disabledNames(config.config) : new Set<string>();
   const plugins = [...found.values()].filter(plugin => !disabled.has(plugin.name));

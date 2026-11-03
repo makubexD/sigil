@@ -19,6 +19,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { readRegularFile } from '../../safe-read';
+import { homeDisplayPath } from '../home-path';
 import type { EnabledPlugin, EnabledPluginsEnv, EnabledPluginsResult } from '../../types';
 import { readManagedEnabledPlugins, SETTINGS_MAX_BYTES } from './managed-settings';
 
@@ -31,12 +32,6 @@ interface SettingsScope {
   readonly followLinks?: boolean;
 }
 
-/** `file` named with `homeDir` as `~`, so a moved user scope still reads as a home path. */
-function displayPath(file: string, homeDir: string): string {
-  const prefix = homeDir.endsWith(path.sep) ? homeDir : `${homeDir}${path.sep}`;
-  return file.startsWith(prefix) ? `~${file.slice(homeDir.length)}` : file;
-}
-
 /** The user scope, moved by a non-empty `CLAUDE_CONFIG_DIR` as Claude Code moves it. */
 function userScope(env: EnabledPluginsEnv): SettingsScope {
   const configDir = (env.vars ?? process.env).CLAUDE_CONFIG_DIR;
@@ -44,7 +39,7 @@ function userScope(env: EnabledPluginsEnv): SettingsScope {
     configDir !== undefined && configDir.length > 0
       ? path.join(configDir, 'settings.json')
       : path.join(env.homeDir, '.claude', 'settings.json');
-  return { file, source: displayPath(file, env.homeDir), followLinks: true };
+  return { file, source: homeDisplayPath(file, env.homeDir), followLinks: true };
 }
 
 /** The scopes in precedence order, highest first. */

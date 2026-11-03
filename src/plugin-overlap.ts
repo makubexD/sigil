@@ -2,8 +2,11 @@
  * The duplicate guard's neutral half: which catalog ids an enabled marketplace plugin already
  * delivers. `add`, `status` and the wizard call {@link pluginOverlaps} instead of reading plugin
  * state themselves; the per-target reader lives on `Target.enabledPlugins`, and what a plugin
- * holds comes from `Target.marketplacePluginContents`, the same contents the build writes from
- * (decision 3, docs/plan-complement-mode.md).
+ * holds comes from {@link pluginContentsFor}: the target's own `Target.marketplacePluginContents`
+ * (the same contents its build writes), else that of the target named by
+ * `Target.pluginContentsFrom`, else nothing (decision 3, docs/plan-complement-mode.md).
+ * `Target.pluginKinds`, when set, limits the overlaps to the kinds the tool really loads from a
+ * plugin (decision 2, docs/plan-complement-follow-ups.md).
  *
  * @module
  */
@@ -40,33 +43,50 @@ function enabledSources(plugins: EnabledPlugin[]): Map<string, string> {
 }
 
 /**
- * What the registered target that builds a plugin marketplace says its plugins hold. Only that
- * target can answer; with none registered, nothing is delivered and every overlap is empty.
+ * What the marketplace plugins `target` reads hold. A target that builds its own plugin
+ * marketplace answers directly; one that installs another target's plugins names it in
+ * `Target.pluginContentsFrom`; with neither, nothing is delivered and every overlap is empty.
  */
-function registeredPluginContents(
+function pluginContentsFor(
+  target: Target,
   catalog: ResolvedCatalog,
   packs: Pack[],
 ): ReadonlyMap<string, readonly string[]> {
-  for (const target of getAllTargets()) {
-    if (target.marketplacePluginContents !== undefined) {
-      return target.marketplacePluginContents(catalog, packs);
-    }
+  if (target.marketplacePluginContents !== undefined) {
+    return target.marketplacePluginContents(catalog, packs);
   }
-  return new Map();
+  if (target.pluginContentsFrom === undefined) return new Map();
+  const source = getAllTargets().find(candidate => candidate.name === target.pluginContentsFrom);
+  return source?.marketplacePluginContents?.(catalog, packs) ?? new Map();
+}
+
+/** Everything {@link collectOverlaps} joins. */
+interface OverlapJoin {
+  readonly target: Target;
+  readonly catalog: ResolvedCatalog;
+  readonly contents: ReadonlyMap<string, readonly string[]>;
+  readonly sources: ReadonlyMap<string, string>;
+  readonly marketplace: string;
+}
+
+/** Whether the target loads an artifact of this id's kind from a plugin. */
+function isLoadedKind(target: Target, catalog: ResolvedCatalog, id: string): boolean {
+  const kinds = target.pluginKinds;
+  if (kinds === undefined) return true;
+  const kind = catalog.byId.get(id)?.kind;
+  return kind !== undefined && kinds.includes(kind);
 }
 
 /** Every id in marketplace order, the first enabled plugin holding it deciding the winner. */
-function collectOverlaps(
-  contents: ReadonlyMap<string, readonly string[]>,
-  sources: ReadonlyMap<string, string>,
-  marketplace: string,
-): Map<string, PluginOverlap> {
+function collectOverlaps(join: OverlapJoin): Map<string, PluginOverlap> {
+  const { target, catalog, contents, sources, marketplace } = join;
   const overlaps = new Map<string, PluginOverlap>();
   for (const [plugin, ids] of contents) {
     const source = sources.get(plugin);
     if (source === undefined) continue;
     for (const id of ids) {
-      if (!overlaps.has(id)) overlaps.set(id, { plugin, marketplace, source });
+      if (overlaps.has(id) || !isLoadedKind(target, catalog, id)) continue;
+      overlaps.set(id, { plugin, marketplace, source });
     }
   }
   return overlaps;
@@ -75,8 +95,9 @@ function collectOverlaps(
 /**
  * Joins what the target has enabled with what each marketplace plugin holds. A target that reads
  * no plugin state returns nothing and never computes the contents. Enabled names the current
- * contents don't know (an old or renamed plugin) are ignored, and when two enabled plugins hold
- * the same id the one earlier in marketplace order wins.
+ * contents don't know (an old or renamed plugin) are ignored; ids of a kind outside
+ * `Target.pluginKinds` are ignored too; and when two enabled plugins hold the same id the one
+ * earlier in marketplace order wins.
  */
 export function pluginOverlaps(
   target: Target,
@@ -86,9 +107,15 @@ export function pluginOverlaps(
 ): PluginOverlapResult {
   if (target.enabledPlugins === undefined) return { overlaps: new Map(), warnings: [] };
   const { plugins, warnings } = target.enabledPlugins(env);
-  const contents = registeredPluginContents(catalog, packs);
+  const contents = pluginContentsFor(target, catalog, packs);
   return {
-    overlaps: collectOverlaps(contents, enabledSources(plugins), env.marketplace),
+    overlaps: collectOverlaps({
+      target,
+      catalog,
+      contents,
+      sources: enabledSources(plugins),
+      marketplace: env.marketplace,
+    }),
     warnings,
   };
 }

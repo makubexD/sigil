@@ -4,6 +4,9 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 import {
   DEFAULT_MARKETPLACE_NAME,
@@ -19,7 +22,7 @@ import type {
   ResolvedCatalog,
   Target,
 } from '../dist-cli/types';
-import { getAllTargets } from '../dist-cli/targets/index';
+import { getAllTargets, getTarget } from '../dist-cli/targets/index';
 
 const ENV: EnabledPluginsEnv = {
   projectDir: '/tmp/project',
@@ -50,10 +53,29 @@ function packOf(name: string, extra: Partial<Pack> = {}): Pack {
   return { name, displayName: name, description: `The ${name} pack.`, ...extra };
 }
 
-/** A target whose plugin reader returns `result`. */
+/** A target whose plugin reader returns `result`, reading Claude's plugin contents. */
 function stubTarget(result: EnabledPluginsResult): Target {
-  return { enabledPlugins: () => result } as unknown as Target;
+  return { enabledPlugins: () => result, pluginContentsFrom: 'claude' } as unknown as Target;
 }
+
+/** A temporary home, removed after the test. */
+function tempHome(): { homeDir: string; cleanup: () => void } {
+  const homeDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-plugin-overlap-'));
+  return { homeDir, cleanup: () => fs.rmSync(homeDir, { recursive: true, force: true }) };
+}
+
+/** Install a Copilot CLI plugin folder under `~/.copilot/installed-plugins/sigil/`. */
+function installCopilotPlugin(homeDir: string, plugin: string): void {
+  fs.mkdirSync(path.join(homeDir, '.copilot', 'installed-plugins', 'sigil', plugin), {
+    recursive: true,
+  });
+}
+
+const homeEnv = (homeDir: string): EnabledPluginsEnv => ({
+  projectDir: homeDir,
+  homeDir,
+  marketplace: 'sigil',
+});
 
 describe('pluginOverlaps', () => {
   it('should return nothing for a target that reads no plugin state', () => {
@@ -155,6 +177,78 @@ describe('pluginOverlaps', () => {
     const result = pluginOverlaps(target, catalogOf([]), [], ENV);
 
     assert.deepEqual(result.warnings, warnings);
+  });
+});
+
+describe('pluginOverlaps for a real target', () => {
+  it('(a) should not count a hook Copilot cannot run from a plugin', () => {
+    const { homeDir, cleanup } = tempHome();
+    try {
+      installCopilotPlugin(homeDir, 'hook-protect-config');
+      const catalog = catalogOf([artifact('shared/protect-config', 'hook')]);
+
+      const { overlaps } = pluginOverlaps(getTarget('copilot'), catalog, [], homeEnv(homeDir));
+
+      assert.equal(overlaps.size, 0);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('(b) should count a pack plugin skill and leave out its hook and MCP ids', () => {
+    const { homeDir, cleanup } = tempHome();
+    try {
+      installCopilotPlugin(homeDir, 'essentials');
+      const catalog = catalogOf([
+        artifact('shared/skill-a', 'skill'),
+        artifact('shared/guard', 'hook'),
+        artifact('shared/server', 'mcp'),
+      ]);
+      const packs = [
+        packOf('essentials', {
+          artifacts: ['shared/skill-a', 'shared/guard', 'shared/server'],
+        }),
+      ];
+
+      const { overlaps } = pluginOverlaps(getTarget('copilot'), catalog, packs, homeEnv(homeDir));
+
+      assert.deepEqual([...overlaps.keys()], ['shared/skill-a']);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('(c) should still count a hook on Claude, which loads every kind', () => {
+    const { homeDir, cleanup } = tempHome();
+    try {
+      fs.mkdirSync(path.join(homeDir, '.claude'), { recursive: true });
+      fs.writeFileSync(
+        path.join(homeDir, '.claude', 'settings.json'),
+        JSON.stringify({ enabledPlugins: { 'hook-protect-config@sigil': true } }),
+      );
+      const catalog = catalogOf([artifact('shared/protect-config', 'hook')]);
+
+      const { overlaps } = pluginOverlaps(getTarget('claude'), catalog, [], homeEnv(homeDir));
+
+      assert.deepEqual([...overlaps.keys()], ['shared/protect-config']);
+    } finally {
+      cleanup();
+    }
+  });
+
+  it('(d) should return nothing and never compute the contents when the target names none', () => {
+    const target = {
+      enabledPlugins: () => ({
+        plugins: [{ name: 'anything', source: 'state' }],
+        warnings: [],
+      }),
+    } as unknown as Target;
+
+    // A `null` catalog proves the contents are never computed on this path.
+    const result = pluginOverlaps(target, null as unknown as ResolvedCatalog, [] as Pack[], ENV);
+
+    assert.equal(result.overlaps.size, 0);
+    assert.deepEqual(result.warnings, []);
   });
 });
 

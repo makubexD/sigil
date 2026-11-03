@@ -125,8 +125,11 @@ export const RULES: ScanRule[] = [
     id: 'config/exfil-in-command',
     severity: 'warn',
     description: 'Command that may exfiltrate data (curl/wget to external URL with data)',
+    // The gap before the URL is bounded to 512 chars and refuses to contain `http://`/`https://`,
+    // so only the command's first URL is read, and the URL itself is bounded to 2048 chars. The
+    // unbounded `[^'"]*` rescanned the rest of the line from every `curl`, which is quadratic.
     pattern:
-      /(?:curl|wget)\s+[^'"]*(?:https?:\/\/)[^'" ]+\s+(?:-d\s*['"`]?\$|--data\s*['"`]?\$|--upload-file)/i,
+      /(?:curl|wget)\s+(?:(?!https?:\/\/)[^'"]){0,512}https?:\/\/[^'" ]{1,2048}\s+(?:-d\s*['"`]?\$|--data\s*['"`]?\$|--upload-file)/i,
   },
 
   // ── Prompt injection heuristics ────────────────────────────────────────────
@@ -157,9 +160,11 @@ export const RULES: ScanRule[] = [
     id: 'injection/data-exfil-url',
     severity: 'warn',
     description: 'Potential data exfiltration URL pattern',
-    // Looks for "fetch/curl/request <external-url>" with suspicious query params
+    // Looks for "fetch/curl/request <external-url>" with suspicious query params. The host part
+    // excludes `?` so it cannot overlap the query delimiter, and the query string is bounded to
+    // 2048 chars; the old `[^'"` ]+\?[^'"` ]+` backtracks quadratically on a long `a?a?…` run.
     globalPattern:
-      /(?:fetch|curl|request|wget|http\.get)\s*\(\s*['"`]https?:\/\/[^'"` ]+\?[^'"` ]+\b(?:data|token|key|secret|content|output)\b/i,
+      /(?:fetch|curl|request|wget|http\.get)\s*\(\s*['"`]https?:\/\/[^'"` ?]+\?[^'"` ]{0,2048}\b(?:data|token|key|secret|content|output)\b/i,
   },
   {
     id: 'injection/role-switch',

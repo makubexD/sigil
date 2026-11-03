@@ -74,6 +74,12 @@ or a harmless name, or because the same command passes on master in another spel
   Master refuses these only because it refuses every `"eval"`, which was the false positive. Single quotes pass on master too.
 - **A quoted `eval` called across something the pattern doesn't skip:** `window["eval"]/**/(x)`, `getattr(b, "eval", None)(x)`.
 
+`config/exfil-in-command` and `injection/data-exfil-url` bound their scans so no single line is quadratic. A span past a bound is not flagged:
+
+- More than 512 characters between `curl`/`wget` and the URL, or a URL longer than 2048 characters, is not flagged by `config/exfil-in-command`.
+- `config/exfil-in-command` reads only the first `http://`/`https://` in a command, so a data flag after a second URL on the line is not seen.
+- A query string longer than 2048 characters is not flagged by `injection/data-exfil-url`.
+
 ## Prose that stays refused
 
 There is no override, so these need rewording: `.sigil/allow.json` has no reader, and an inline `sigil-allow` only silences `warn`

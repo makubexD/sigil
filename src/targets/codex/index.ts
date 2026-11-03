@@ -18,6 +18,8 @@ import type {
   ConfigScope,
   ConfigScopeInfo,
   ContractEntry,
+  EnabledPluginsEnv,
+  EnabledPluginsResult,
   FileMap,
   KindVocabulary,
   ResolvedCatalog,
@@ -39,6 +41,7 @@ import { CODEX_EMIT_SPECS } from './spec';
 import { CODEX_AGGREGATE_DOCS } from './aggregate-docs';
 import { CODEX_INIT_DIRS, CODEX_PROJECT_MARKERS, CODEX_VOCABULARY } from './metadata';
 import { CODEX_CONFIG_KINDS } from './config';
+import { readCodexEnabledPlugins } from './enabled-plugins';
 
 export { CodexConfigDestination, resolveCodexConfigDestination } from './config';
 
@@ -79,6 +82,23 @@ export class CodexTarget implements Target {
   readonly aggregateDocs: readonly SourcedDocRef[] = CODEX_AGGREGATE_DOCS;
 
   readonly configKinds = CODEX_CONFIG_KINDS;
+
+  /**
+   * Marketplace plugins installed for Codex: a plugin counts only when its folder under
+   * `$CODEX_HOME/plugins/cache/<marketplace>/` exists and `config.toml` has its
+   * `plugins."<name>@<marketplace>"` table (src/targets/codex/enabled-plugins.ts).
+   */
+  enabledPlugins(env: EnabledPluginsEnv): EnabledPluginsResult {
+    return readCodexEnabledPlugins(env);
+  }
+
+  /**
+   * Codex loads skills from a plugin; its `agents/` folder and hooks are not run
+   * (docs/decisions/codex-target-2026-10.md § Plugins).
+   */
+  readonly pluginKinds: readonly ArtifactKind[] = ['skill'];
+  /** Codex installs the Claude marketplace's plugins (docs/decisions/codex-target-2026-10.md § Plugins). */
+  readonly pluginContentsFrom = 'claude';
 
   /**
    * Codex config scopes, ordered by documented precedence (project overrides user). Codex has no

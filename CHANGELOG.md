@@ -17,6 +17,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `sigil status` notes each installed entry an enabled plugin also delivers, and `--json` rows gain an optional
   `plugin` field (`{ name, marketplace, source }`). Neither `status` nor `sigil update` counts a dependency an
   enabled plugin delivers as new, so `update` never installs it.
+- The duplicate guard also reads Codex plugins (`~/.codex/plugins/cache/<marketplace>/` plus the matching
+  `config.toml` tables) and Antigravity plugins (`.agents/plugins/` and `~/.gemini/config/plugins/`). Claude Code's
+  file-based managed settings are read, `CLAUDE_CONFIG_DIR` moves the user settings file, and a symlinked user
+  `settings.json` is followed. `sigil status --json` prints reader warnings to stderr, leaving the JSON array on
+  stdout.
+- The `sigil add` wizard asks whether to skip what an enabled plugin delivers, and adds `--complement` to the printed
+  equivalent command when you do.
+
+### Fixed
+
+- `sigil add --complement` no longer skips a Copilot hook or MCP server because an enabled plugin holds it. Copilot
+  loads only skills, agents and prompts from plugins: its hook plugins are unsafe and its MCP root is the plugin
+  folder. Hooks and MCP servers are installed as usual; Codex counts skills only.
 
 ## [0.7.0] - 2026-11-03
 

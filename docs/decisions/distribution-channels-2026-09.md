@@ -238,13 +238,14 @@ them on 2026-10-30, and it has no code dependency on either. Both were built aft
   counts), and Copilot's `~/.copilot/installed-plugins/<marketplace>/` folders. `src/plugin-overlap.ts` joins the two.
   `sigil add` warns about each overlapping pick and still installs it; `--complement` skips it with the `plugin`
   cause, keeping rules, settings and dependencies the plugin doesn't hold. `sigil status` notes installed entries an
-  enabled plugin also delivers (`plugin` on `--json` rows), and the wizard's plan box shows the `add` warning. Left
-  open: readers for Codex, Cursor and Antigravity (their plugin state isn't documented in a form read here), managed
-  Claude settings, plugins enabled only through `defaultEnabled`, a complement toggle in the wizard, a
-  `CLAUDE_CONFIG_DIR` that moves the user settings (the reader always looks in `~/.claude`), following a symlinked
-  settings file (skipped with a warning), reader warnings in `status --json` (only the text output prints them), and
-  the wizard printing the plugin advisory twice. The Copilot
-  reader rests on the docs alone (probe B5 below).
+  enabled plugin also delivers (`plugin` on `--json` rows), and the wizard's plan box shows the `add` warning. The
+  follow-ups (`docs/plan-complement-follow-ups.md`) added readers for Codex and Antigravity, file-based managed Claude
+  settings, `CLAUDE_CONFIG_DIR` and a symlinked user settings file, reader warnings on `status --json`'s stderr, and
+  the wizard's complement choice; an overlap now counts only for a kind its tool loads from a plugin. Left open:
+  Cursor (decision 9 of the plan: its plugin state isn't documented on disk), plugins enabled only through
+  `defaultEnabled` (decision 6 of the plan: won't-do), MDM and server-managed policy, and the Codex project
+  `.codex/config.toml`, which applies only in a trusted project. The Copilot reader rests on the docs alone (probe B5
+  below).
 - **3 is done 2026-11-03.** Its checks came first and its goal was unproven until v0.7.0. `provider-limits` has enforced both limits through
   `agent-skills-limits.ts` since `e5939bd` (2026-10-03), and `name` equals the folder because
   `outputPath` derives from it. Measured on fresh output on 2026-10-30: 0 mismatches across

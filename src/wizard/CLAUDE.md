@@ -159,7 +159,8 @@ An empty queue throws, which is how a test proves "this path asks nothing".
 scripted paths are equivalent. After install, `printEquivalentCommand()` prints the copy-pasteable
 `sigil add … --yes` line (boxed in a TTY, plain text in CI), only after a wizard install: a command the user
 typed is not echoed back. Picks that install nothing (cause `inlined`) are left out of it. The plan box shows summary + artifact
-preview only — never the command — so it is never printed twice.
+preview only — never the command — so it is never printed twice. A wizard-driven `add` also leaves the plugin advisory
+to the plan box: `add` skips its own copy when the inputs come from the wizard.
 
 **Cancel/back handling (`src/wizard/steps/add/prompt-helpers.ts`):** every step under
 `src/wizard/steps/add/` shares one `isCancel → cancel(...) → return 'cancel'` triad and one
@@ -233,13 +234,17 @@ with its artifact count (Skills, Agents, Rules, Commands, Workflows, Hooks, Sett
   always appears first (mcp/hook/settings with no `language`; `partitionConfigKinds`). Everything
   else, including a language's own settings (`csharp/cs-allow-dev-tools`), follows in language
   groups. Language is an optional, skippable refinement shown only when ≥2 languages are present.
-  Agnostic config kinds are never touched by the language filter. Goes through deps → overwrite → scope.
+  Agnostic config kinds are never touched by the language filter. Goes through deps → complement → overwrite → scope.
 - **Specific kind (`kindPicker` step):**
   - **Config kinds (mcp/hook/settings):** flat `pickArtifacts` (single group); **skips language and
-    deps steps**; proceeds directly to overwrite → scope (where the blast-radius warning fires if
+    deps steps**; proceeds to complement → overwrite → scope (where the blast-radius warning fires if
     needed).
   - **Code kinds (skill/agent/rule/prompt/workflow):** optional "Narrow by language?" (`initialValue:''`
-    — Enter = all), then a flat or language-grouped `pickArtifacts`. Proceeds to deps → overwrite → proceed.
+    — Enter = all), then a flat or language-grouped `pickArtifacts`. Proceeds to
+    deps → complement → overwrite → proceed.
+
+The complement step (`complementStep`) follows deps on every path. It shows only when an enabled plugin already
+delivers one of the plan's picks, and its answer becomes `--complement` for `add` and the printed command.
 
 **The picker (`src/wizard/picker/`) — constant frame height is the invariant, never break it.**
 `crossKindPicker` and `kindPicker` render through `pickArtifacts()`, not `@clack/prompts`'

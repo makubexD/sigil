@@ -39,7 +39,7 @@ const ARTIFACT_GLOBS = [
 // the same limit, so this leaves ample room.
 const MAX_CHUNK_BYTES = 64 * 1024;
 
-/** Lists the tracked artifact files, newest-listing first, or exits 1 when git fails. */
+/** Lists the tracked artifact files in git index order, or null when git fails. */
 function listArtifactFiles() {
   const result = spawnSync('git', ['ls-files', '-z', '--', ...ARTIFACT_GLOBS], {
     cwd: REPO_ROOT,

@@ -11,6 +11,8 @@ import type { ResolvedArtifact } from '../../../types';
 import type { ArtifactInstallState } from '../../../install-state';
 import { carriedKinds, installableKinds } from '../../../targets/capabilities';
 import { installSkipReason } from '../../../targets/install-skip';
+import { pluginOverlaps } from '../../../plugin-overlap';
+import type { PluginOverlap } from '../../../plugin-overlap';
 import { chosenTarget } from './state';
 import type { AddWizardState } from './state';
 
@@ -32,6 +34,22 @@ export function previewSelection(s: AddWizardState): SelectionResult {
     ...(s.target ? { targetName: s.target } : {}),
   });
   return skipRefused(selection, s.ctx.refusedOverlays, s.ctx.catalog);
+}
+
+/**
+ * The plugin overlaps among `ids` for the plan box. Empty before a target is chosen or when the
+ * context has no plugin reader; reader warnings are left to `add`, which prints them when it runs.
+ */
+export function previewPluginOverlaps(
+  s: AddWizardState,
+  ids: readonly string[],
+): ReadonlyMap<string, PluginOverlap> {
+  const target = chosenTarget(s);
+  const env = s.ctx.pluginEnv;
+  if (target === undefined || env === undefined) return new Map();
+  const { overlaps } = pluginOverlaps(target, s.ctx.catalog, s.ctx.packs, env);
+  const wanted = new Set(ids);
+  return new Map([...overlaps].filter(([id]) => wanted.has(id)));
 }
 
 /** Ids among `ids` that are already installed and unchanged (skipped unless overwrite is on). */

@@ -9,12 +9,14 @@
  *
  * @module
  */
+import os from 'node:os';
 import { missingDependencies } from '../freshness';
+import { marketplaceName, pluginDeliveredIds } from '../plugin-overlap';
 import { runAdd } from './add/index';
 import { isConfigEntry } from './update-config';
 import { loadManifest, saveManifest } from '../manifest';
 import type { MissingDependency } from '../freshness';
-import type { ResolvedCatalog, Target } from '../types';
+import type { PacksConfig, ResolvedCatalog, Target } from '../types';
 import type { ManifestEntry } from '../manifest/types';
 import type { UpdateOptions } from './update';
 import type { AddOpts } from './add/index';
@@ -52,14 +54,36 @@ function addOptions(target: Target, opts: UpdateOptions): AddOpts {
 export interface UpdatedSet {
   readonly entries: readonly ManifestEntry[];
   readonly resolved: ResolvedCatalog;
+  /**
+   * The run's parsed `packs.yaml`, which names what each plugin holds. Absent only for a caller
+   * that builds an `UpdatedSet` by hand (the plugin guard then has no contents to match).
+   */
+  readonly packsConfig?: PacksConfig | undefined;
   readonly target: Target;
   readonly installedIds: ReadonlySet<string>;
+}
+
+/** The installed ids plus the ones an enabled plugin of `target` delivers. */
+function idsPresentFor(run: UpdatedSet, opts: UpdateOptions): Set<string> {
+  if (run.packsConfig === undefined) return new Set(run.installedIds);
+  const env = {
+    projectDir: opts.projectDir,
+    homeDir: opts.homeDir ?? os.homedir(),
+    marketplace: marketplaceName(run.packsConfig.marketplace),
+  };
+  const delivered = pluginDeliveredIds(run.target, run.resolved, run.packsConfig.packs, env);
+  return new Set([...run.installedIds, ...delivered]);
 }
 
 /** Installs the dependencies the updated artifacts gained, then records them as dependents. */
 export async function installNewDependencies(run: UpdatedSet, opts: UpdateOptions): Promise<void> {
   const updatedIds = run.entries.map(entry => entry.id);
-  const missing = missingDependencies(updatedIds, run.resolved, run.target, run.installedIds);
+  const missing = missingDependencies(
+    updatedIds,
+    run.resolved,
+    run.target,
+    idsPresentFor(run, opts),
+  );
   if (missing.length === 0) return;
   const ids = missing.map(dep => dep.id);
   console.log(`\n  New dependencies of updated artifacts: ${ids.join(', ')}`);

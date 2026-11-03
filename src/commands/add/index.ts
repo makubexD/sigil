@@ -28,6 +28,10 @@ export interface AddOpts {
   scope?: string;
   /** Deprecated alias for --scope local. */
   settingsLocal: boolean;
+  /** Skip artifacts an enabled marketplace plugin already delivers (--complement). */
+  complement?: boolean;
+  /** The user home the plugin readers look in; defaults to os.homedir(), injectable for tests. */
+  homeDir?: string;
 }
 
 /** Returns `'cancelled'` when the user backed out of the wizard before anything was planned. */

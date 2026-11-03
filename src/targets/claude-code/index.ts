@@ -35,6 +35,7 @@
 import type {
   Target,
   ResolvedCatalog,
+  Pack,
   FileMap,
   CompileOptions,
   ScaffoldOptions,
@@ -46,6 +47,8 @@ import type {
   KindVocabulary,
   ContractEntry,
   AuthoringField,
+  EnabledPluginsEnv,
+  EnabledPluginsResult,
 } from '../../types';
 import { resolveClaudeConfigDestination } from './config';
 import {
@@ -75,6 +78,8 @@ import type { KindEmitSpec, SourcedDocRef } from '../spec-types';
 import { scaffoldArtifact } from '../emit-files';
 import { CLAUDE_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
+import { readClaudeEnabledPlugins } from './enabled-plugins';
+import { marketplacePluginContents as computeMarketplacePluginContents } from './plugin-contents';
 
 export { ConfigDestination, resolveClaudeConfigDestination } from './config';
 
@@ -131,6 +136,25 @@ export class ClaudeCodeTarget implements Target {
       label: sc.value,
       destinations: kinds.map(kind => buildScopeDestination(kind, sc.value, projectDir)),
     }));
+  }
+
+  /**
+   * Marketplace plugins enabled in Claude's settings, from the highest scope that sets each key.
+   * Read from local, project and user settings (src/targets/claude-code/enabled-plugins.ts).
+   */
+  enabledPlugins(env: EnabledPluginsEnv): EnabledPluginsResult {
+    return readClaudeEnabledPlugins(env);
+  }
+
+  /**
+   * What each plugin of the Claude marketplace holds, from the same pack membership and config
+   * plugin selection `compile` writes (src/targets/claude-code/plugin-contents.ts).
+   */
+  marketplacePluginContents(
+    catalog: ResolvedCatalog,
+    packs: Pack[],
+  ): ReadonlyMap<string, readonly string[]> {
+    return computeMarketplacePluginContents(catalog, packs);
   }
 
   readonly outputContracts: ContractEntry[] = CLAUDE_OUTPUT_CONTRACTS;

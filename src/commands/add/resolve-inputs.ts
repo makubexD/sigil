@@ -5,13 +5,15 @@
  *
  * @module
  */
+import os from 'node:os';
 import { isInteractiveTTY, runWizardAt, type FixedTarget, type WizardResult } from '../../wizard';
 import { SigilError } from '../../errors';
+import { marketplaceName } from '../../plugin-overlap';
 import { detectProjectTarget } from '../../cli-helpers';
 import { detectedTargetsIn } from '../../project-context';
 import { getTarget } from '../../targets';
 import type { OverlaidCatalog } from '../../overlays';
-import type { ConfigScope, Target } from '../../types';
+import type { ConfigScope, EnabledPluginsEnv, PacksConfig, Target } from '../../types';
 import type { AddOpts } from './index';
 
 export interface ResolvedAddInputs {
@@ -84,22 +86,35 @@ function fixedTargetFor(opts: AddOpts): FixedTarget | undefined {
   };
 }
 
+/** Where the plugin readers look, the same place `add` reads them from (`computePluginOverlaps`). */
+function pluginEnvFor(opts: AddOpts, packsConfig: PacksConfig): EnabledPluginsEnv {
+  return {
+    projectDir: opts.projectDir,
+    homeDir: opts.homeDir ?? os.homedir(),
+    marketplace: marketplaceName(packsConfig.marketplace),
+  };
+}
+
 /** Runs the interactive wizard and maps its result to `ResolvedAddInputs`, or null on cancel. */
 async function resolveViaWizard(
   opts: AddOpts,
   overlaid: OverlaidCatalog,
-  packs: Parameters<typeof runWizardAt>[1],
+  packsConfig: PacksConfig,
   baseScope: ConfigScope,
 ): Promise<ResolvedAddInputs | null> {
   if (!isInteractiveTTY()) throwNotInteractiveError();
 
-  const detectedTarget = detectProjectTarget(opts.projectDir, { verbose: false });
-  const wizardResult: WizardResult | null = await runWizardAt(overlaid.resolved, packs, {
-    detectedTarget,
-    projectDir: opts.projectDir,
-    fixed: fixedTargetFor(opts),
-    refusedOverlays: overlaid.refused,
-  });
+  const wizardResult: WizardResult | null = await runWizardAt(
+    overlaid.resolved,
+    packsConfig.packs,
+    {
+      detectedTarget: detectProjectTarget(opts.projectDir, { verbose: false }),
+      projectDir: opts.projectDir,
+      fixed: fixedTargetFor(opts),
+      refusedOverlays: overlaid.refused,
+      pluginEnv: pluginEnvFor(opts, packsConfig),
+    },
+  );
   return wizardResult ? fromWizardResult(wizardResult, opts, baseScope) : null;
 }
 
@@ -127,12 +142,12 @@ export async function resolveInputs(
   selectors: string[],
   opts: AddOpts,
   overlaid: OverlaidCatalog,
-  packs: Parameters<typeof runWizardAt>[1],
+  packsConfig: PacksConfig,
 ): Promise<ResolvedAddInputs | null> {
   const needsWizard = (selectors.length === 0 || opts.interactive) && !opts.yes;
   const baseScope = resolveBaseScope(opts);
 
   if (!needsWizard) return typedInputs(selectors, opts, baseScope);
 
-  return resolveViaWizard(opts, overlaid, packs, baseScope);
+  return resolveViaWizard(opts, overlaid, packsConfig, baseScope);
 }

@@ -21,9 +21,10 @@ export interface SelectionFilters {
 
 /**
  * Why an artifact is not installed: the tool lacks the kind, it is limited to other platforms,
- * another artifact already carries it, or the target cannot render its config.
+ * another artifact already carries it, the target cannot render its config, or an enabled
+ * marketplace plugin already delivers it (only under `--complement`).
  */
-export type SkipCause = 'kind' | 'platform' | 'inlined' | 'overlay' | 'unrenderable';
+export type SkipCause = 'kind' | 'platform' | 'inlined' | 'overlay' | 'unrenderable' | 'plugin';
 
 export interface SkippedArtifact {
   id: string;

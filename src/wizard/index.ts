@@ -5,6 +5,8 @@ export {
   buildEquivalentCommand,
   printConflictAdvice,
   printSkippedAdvice,
+  printPluginCheckWarnings,
+  printPluginOverlapAdvice,
   printEquivalentCommand,
 } from './command-strings';
 export { runEditWizard } from './edit';

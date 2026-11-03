@@ -17,7 +17,7 @@ import type {
   SourceGroup,
 } from '../../manifest/catalog-source';
 import type { Manifest } from '../../manifest/types';
-import type { LoadedCatalog } from '../../types';
+import type { LoadedCatalog, PacksConfig } from '../../types';
 
 /** One group's result, tagged with the source it was judged against (absent = bundled). */
 export interface CatalogResult<T> {
@@ -39,14 +39,17 @@ function groupView(manifest: Manifest, group: SourceGroup): Manifest {
 export async function perCatalog<T>(
   manifest: Manifest,
   opts: CatalogSourceOptions,
-  run: (catalog: LoadedCatalog, view: Manifest) => T | Promise<T>,
+  run: (catalog: LoadedCatalog, view: Manifest, packsConfig: PacksConfig) => T | Promise<T>,
 ): Promise<CatalogResult<T>[]> {
   const groups = groupBySource(manifest.entries, opts);
   assertReachable(groups, opts.projectDir);
   const results: CatalogResult<T>[] = [];
   for (const group of groups) {
-    const { catalog } = await loadAndValidate(group.catalogDir, group.packs);
-    results.push({ source: group.source, result: await run(catalog, groupView(manifest, group)) });
+    const { catalog, packsConfig } = await loadAndValidate(group.catalogDir, group.packs);
+    results.push({
+      source: group.source,
+      result: await run(catalog, groupView(manifest, group), packsConfig),
+    });
   }
   return results;
 }

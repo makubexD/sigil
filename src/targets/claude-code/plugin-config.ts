@@ -96,19 +96,28 @@ function buildOneConfigPlugin(
 }
 
 /**
- * One plugin per `hook` and `mcp` artifact whose `platforms:` allows Claude (an absent list
- * allows every target). The marketplace lists them after the pack plugins, never in `packs.yaml`.
+ * Every `hook` and `mcp` artifact whose `platforms:` allows Claude (an absent list allows every
+ * target), in marketplace order: all hooks, then all MCP servers. The marketplace lists a
+ * generated plugin for each, after the pack plugins, never in `packs.yaml`.
  */
+export function configPluginArtifacts(catalog: ResolvedCatalog): ResolvedArtifact[] {
+  const artifacts: ResolvedArtifact[] = [];
+  for (const kind of CONFIG_PLUGIN_KINDS) {
+    for (const artifact of catalog.artifacts) {
+      if (artifact.kind === kind && artifactTargetsPlatform(artifact, 'claude')) {
+        artifacts.push(artifact);
+      }
+    }
+  }
+  return artifacts;
+}
+
+/** One plugin per generated config artifact, in {@link configPluginArtifacts} order. */
 export function buildConfigPlugins(
   catalog: ResolvedCatalog,
   options: ConfigPluginOptions,
 ): ConfigPlugin[] {
-  const plugins: ConfigPlugin[] = [];
-  for (const kind of CONFIG_PLUGIN_KINDS) {
-    for (const artifact of catalog.artifacts) {
-      if (artifact.kind !== kind || !artifactTargetsPlatform(artifact, 'claude')) continue;
-      plugins.push(buildOneConfigPlugin(artifact, catalog, options));
-    }
-  }
-  return plugins;
+  return configPluginArtifacts(catalog).map(artifact =>
+    buildOneConfigPlugin(artifact, catalog, options),
+  );
 }

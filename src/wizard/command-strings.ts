@@ -12,6 +12,8 @@ import { log } from './prompts';
 import { terminalWidth } from './terminal';
 import type { Target } from '../types';
 import { kindNoun } from '../select';
+import { formatPluginOverlap } from '../plugin-overlap';
+import type { PluginOverlap } from '../plugin-overlap';
 
 export interface EquivalentCommandOptions {
   selectors: string[];
@@ -145,6 +147,33 @@ export function printSkippedAdvice(
     `${rest.length} artifact(s) skipped:\n` +
       rest.map(s => `  ${s.id} (${kindNoun(target, s.kind)}): ${s.reason}`).join('\n'),
   );
+}
+
+/** Print the problems a target met while reading its plugin state, one line each. */
+export function printPluginCheckWarnings(warnings: readonly string[]): void {
+  for (const warning of warnings) log.warn(`plugin check: ${warning}`);
+}
+
+/**
+ * The artifacts an enabled marketplace plugin already delivers, as a header plus one sorted line
+ * per id. `[]` when there is nothing to say. Shared by `add` and the wizard's plan box.
+ */
+export function pluginOverlapAdviceLines(overlaps: ReadonlyMap<string, PluginOverlap>): string[] {
+  if (overlaps.size === 0) return [];
+  const header =
+    `${overlaps.size} artifact(s) an enabled plugin already delivers ` +
+    `(installed anyway; --complement skips them):`;
+  const lines = [...overlaps.keys()].sort().flatMap(id => {
+    const overlap = overlaps.get(id);
+    return overlap === undefined ? [] : [`  ${formatPluginOverlap(id, overlap)}`];
+  });
+  return [header, ...lines];
+}
+
+/** Print that advisory. They are installed anyway unless `--complement` asked to skip them. */
+export function printPluginOverlapAdvice(overlaps: ReadonlyMap<string, PluginOverlap>): void {
+  const lines = pluginOverlapAdviceLines(overlaps);
+  if (lines.length > 0) log.warn(lines.join('\n'));
 }
 
 /** A line stops one column short of the window, so the terminal never wraps on the last cell. */

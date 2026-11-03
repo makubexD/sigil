@@ -39,6 +39,8 @@ export interface UpdateOptions {
   dryRun: boolean;
   /** Skip the terminal preview-and-confirm. Has no effect outside a terminal, which never asks. */
   yes?: boolean | undefined;
+  /** The home directory the plugin reader looks in; defaults to the real home, tests inject one. */
+  homeDir?: string | undefined;
   /**
    * Every artifact id installed for this target — set by runUpdate from the manifest, not a CLI
    * flag. Re-rendering needs it for the same reason `add` passes its install set: a Boundary

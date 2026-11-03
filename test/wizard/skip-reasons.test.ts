@@ -44,6 +44,7 @@ const viewOf = (skipped: SkippedArtifact[]): PlanView => ({
   skipped,
   upToDate: new Set(),
   writeCount: 0,
+  pluginOverlaps: new Map(),
 });
 const planOf = (skipped: SkippedArtifact[], targetName = 'claude'): AddPlan =>
   ({ skipped, targetName }) as unknown as AddPlan;
@@ -113,6 +114,18 @@ describe('install summary line', () => {
       skippedSummary(planOf([REFUSED, NO_HOOKS])),
       ", 1 artifact(s) not supported by 'claude', 1 skipped by .sigil/overlays.yaml",
     );
+  });
+
+  it('should count a pick an enabled plugin delivers apart from unsupported kinds', () => {
+    const plugin: SkippedArtifact = {
+      id: 'shared/cli',
+      kind: 'skill',
+      cause: 'plugin',
+      reason: 'delivered by plugin cli-builder@sigil (.claude/settings.json)',
+    };
+    const summary = skippedSummary(planOf([plugin]));
+    assert.equal(summary, ', 1 skipped (an enabled plugin delivers them)');
+    assert.doesNotMatch(summary, /not supported/);
   });
 
   it('should count an artifact the target cannot render apart from unsupported kinds', () => {

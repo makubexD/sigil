@@ -75,8 +75,12 @@ those too.
 
 ## Copies of the same artifact
 
-A project or personal skill or agent with the same name silently beats the plugin, and `sigil status`
-doesn't see plugins.
+A project or personal skill or agent with the same name silently beats the plugin. `sigil add` reads the
+plugins installed under `~/.copilot/installed-plugins/<marketplace>/` and warns about each pick or dependency one of them
+already delivers; `sigil add --complement` skips those picks, and `sigil status` notes the copies already
+installed. This reader rests on Copilot's
+[file locations](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference#file-locations)
+and hasn't been run against a live install.
 
 MCP goes the other way. Copilot's
 [loading order](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference#mcp-server-loading-priority)

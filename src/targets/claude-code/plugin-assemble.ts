@@ -232,6 +232,35 @@ export function hasPluginMembers(packArtifacts: ResolvedArtifact[]): boolean {
   return false;
 }
 
+/** A pack plugin's member files (in write order) and its Boundary install set. */
+export interface PackPluginMembers {
+  artifacts: ResolvedArtifact[];
+  installSet: Set<string>;
+}
+
+/** A pack's own members in the order the build writes them. */
+function packMembers(byKind: (kind: ArtifactKind) => ResolvedArtifact[]): ResolvedArtifact[] {
+  return [...byKind('workflow'), ...byKind('prompt'), ...byKind('skill'), ...byKind('agent')];
+}
+
+/**
+ * The artifacts a pack plugin holds. Shared agents are the ids a pack's skills use that the pack
+ * doesn't carry itself (`computeSharedAgentIds`), resolved against the catalog for writing. The
+ * marketplace-contents caller reads the same lists, so the guard and the build agree.
+ */
+export function packPluginMembers(
+  pack: Pack,
+  packArtifacts: ResolvedArtifact[],
+  catalog: ResolvedCatalog,
+): PackPluginMembers {
+  const byKind = pluginMembersByKind(packArtifacts);
+  const installSet = new Set<string>(packArtifacts.map(a => a.id));
+  const excluded = new Set(pack.pluginExclude ?? []);
+  const shared = computeSharedAgentIds(byKind('skill'), byKind('agent'), excluded, installSet);
+  const sharedAgents = [...shared].flatMap(id => catalog.byId.get(id) ?? []);
+  return { artifacts: [...packMembers(byKind), ...sharedAgents], installSet };
+}
+
 /** Build all plugin files for a single pack. */
 export function buildPlugin(options: BuildPluginOptions): FileMap {
   const { pack, packArtifacts, catalog } = options;
@@ -240,21 +269,9 @@ export function buildPlugin(options: BuildPluginOptions): FileMap {
 
   files[`${prefix}/.claude-plugin/plugin.json`] = buildPluginJson(pack, options);
 
-  const members = pluginMembersByKind(packArtifacts);
-  const skills = members('skill');
-  const agents = members('agent');
-  const workflows = members('workflow');
-  const prompts = members('prompt');
-
-  // Build the co-install set for the plugin: pack artifacts + shared agents.
-  // Drives each file's conditional Boundary section.
-  const packInstallSet = new Set<string>(packArtifacts.map(a => a.id));
-  const excluded = new Set(pack.pluginExclude ?? []);
-  const sharedAgentIds = computeSharedAgentIds(skills, agents, excluded, packInstallSet);
-
-  const sharedAgents = [...sharedAgentIds].flatMap(id => catalog.byId.get(id) ?? []);
-  const ctx: EmitContext = { catalog, installSet: packInstallSet, packName: pack.name };
-  writeMemberFiles([...workflows, ...prompts, ...skills, ...agents, ...sharedAgents], ctx, files);
+  const members = packPluginMembers(pack, packArtifacts, catalog);
+  const ctx: EmitContext = { catalog, installSet: members.installSet, packName: pack.name };
+  writeMemberFiles(members.artifacts, ctx, files);
 
   return files;
 }

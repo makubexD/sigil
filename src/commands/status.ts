@@ -9,17 +9,16 @@ import { detectProjectTarget } from '../cli-helpers';
 import { getAllTargets, getTarget, retiredConfigDestinationsOf } from '../targets';
 import { duplicateLoads } from './status-overlaps';
 import { computeStatus, type CurrentTemplateOf } from '../manifest';
-import { resolveCatalog } from '../resolve';
-import { overlayProject, reportOverlayIssues } from '../overlay-report';
-import type { OverlaidCatalog } from '../overlays';
 import { entryKey, staleEntries, statusHooks } from '../freshness';
 import { requireManifest } from './shared/manifest';
-import { perCatalog, printSourceLine } from './shared/catalog-groups';
+import { printSourceLine } from './shared/catalog-groups';
+import { deliveredIdsFor, perCatalogWithPlugins, printPluginNotes } from './status-plugins';
 import { printStatusJson } from './status-json';
 import { isConfigKind } from '../kinds';
 import type { Freshness } from '../freshness';
-import type { StatusResult } from '../manifest';
-import type { LoadedCatalog, ResolvedCatalog } from '../types';
+import type { OverlaidCatalog } from '../overlays';
+import type { Manifest, StatusResult } from '../manifest';
+import type { LoadedCatalog, PacksConfig, ResolvedCatalog } from '../types';
 
 export interface StatusOptions {
   projectDir: string;
@@ -27,6 +26,8 @@ export interface StatusOptions {
   catalogDir: string;
   packs: string;
   json: boolean;
+  /** The home directory the plugin reader looks in; defaults to the real home, tests inject one. */
+  homeDir?: string | undefined;
 }
 
 /** Icon per status value, used by the human-readable table. */
@@ -160,15 +161,15 @@ function makeCurrentTemplateOf(catalog: LoadedCatalog): CurrentTemplateOf {
 function scanFreshness(
   manifest: ReturnType<typeof requireManifest>,
   overlaid: OverlaidCatalog,
-  opts: StatusOptions,
+  ctx: StatusOptions & { packsConfig: PacksConfig },
 ): Promise<Freshness> {
-  const { resolved, refused } = overlaid;
   return staleEntries(manifest, {
-    resolved,
-    projectDir: opts.projectDir,
+    resolved: overlaid.resolved,
+    projectDir: ctx.projectDir,
     targetOf: name => getAllTargets().find(t => t.name === name),
-    refused,
+    refused: overlaid.refused,
     retiredFor: retiredConfigDestinationsOf,
+    deliveredFor: deliveredIdsFor(ctx, ctx.packsConfig, overlaid.resolved),
   });
 }
 
@@ -180,11 +181,11 @@ async function buildStatuses(
   manifest: ReturnType<typeof requireManifest>,
   rawCatalog: LoadedCatalog,
   overlaid: OverlaidCatalog,
-  opts: StatusOptions,
+  ctx: StatusOptions & { packsConfig: PacksConfig },
 ): Promise<{ statuses: ReturnType<typeof computeStatus>; fresh: Freshness }> {
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  const fresh = await scanFreshness(manifest, overlaid, opts);
-  const statuses = computeStatus(manifest, opts.projectDir, catalogIds, {
+  const fresh = await scanFreshness(manifest, overlaid, ctx);
+  const statuses = computeStatus(manifest, ctx.projectDir, catalogIds, {
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
     retiredFor: retiredConfigDestinationsOf,
     ...statusHooks(fresh),
@@ -216,18 +217,6 @@ function withScanFindings(
   };
 }
 
-/** Runs the per-catalog status logic once per catalog the manifest records; overlay issues print once. */
-async function perCatalogStatus(manifest: ReturnType<typeof requireManifest>, opts: StatusOptions) {
-  const overlaid: OverlaidCatalog[] = [];
-  const results = await perCatalog(manifest, opts, (catalog, view) => {
-    const group = overlayProject(resolveCatalog(catalog), opts.projectDir);
-    overlaid.push(group);
-    return buildStatuses(view, catalog, group, opts);
-  });
-  reportOverlayIssues(overlaid);
-  return results;
-}
-
 export async function runStatus(opts: StatusOptions): Promise<void> {
   // An unknown --target still fails here, before any catalog is read.
   getTarget(opts.target ?? detectProjectTarget(opts.projectDir, { verbose: false }));
@@ -239,14 +228,26 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     return;
   }
 
-  const results = await perCatalogStatus(manifest, opts);
+  const build = (view: Manifest, catalog: LoadedCatalog, group: OverlaidCatalog, p: PacksConfig) =>
+    buildStatuses(view, catalog, group, { ...opts, packsConfig: p });
+  const { results, warnings } = await perCatalogWithPlugins(manifest, opts, build);
 
   if (opts.json) return printStatusJson(results);
+  printHumanStatus(results, manifest, warnings);
+}
 
+/** Prints the human report: each group's table, the summary, then the overlap and plugin notes. */
+function printHumanStatus(
+  results: Parameters<typeof printStatusJson>[0],
+  manifest: ReturnType<typeof requireManifest>,
+  pluginWarnings: readonly string[],
+): void {
   for (const r of results) {
     printSourceLine(r.source);
     printStatusTable(r.result.statuses);
   }
-  printStatusSummary(results.flatMap(r => r.result.statuses));
+  const statuses = results.flatMap(r => r.result.statuses);
+  printStatusSummary(statuses);
   for (const note of duplicateLoads(manifest.entries, getAllTargets())) console.log(`  ℹ  ${note}`);
+  printPluginNotes(statuses, pluginWarnings);
 }

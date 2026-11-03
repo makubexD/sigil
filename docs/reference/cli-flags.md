@@ -148,6 +148,8 @@ Options:
                        (default: false)
   --overwrite          Replace existing files (default: warn and skip conflicts)
                        (default: false)
+  --complement         Skip artifacts an enabled sigil plugin already delivers
+                       (default: install them and warn) (default: false)
   --scope <scope>      Install scope for config-kind artifacts: project | local
                        | user
   --settings-local     (deprecated) Alias for --scope local (default: false)

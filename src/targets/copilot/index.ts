@@ -42,6 +42,8 @@ import type {
   KindVocabulary,
   ContractEntry,
   RetiredConfigDestination,
+  EnabledPluginsEnv,
+  EnabledPluginsResult,
 } from '../../types';
 import { COPILOT_OUTPUT_CONTRACTS } from './contracts';
 import { COPILOT_EMIT_SPECS } from './spec';
@@ -58,6 +60,7 @@ import { COPILOT_CAPABILITIES } from './capabilities';
 import type { TargetCapabilities } from '../capability-types';
 import { COPILOT_INIT_DIRS, COPILOT_PROJECT_MARKERS, COPILOT_VOCABULARY } from './metadata';
 import { buildCopilotHookOps } from './hook-ops';
+import { readCopilotEnabledPlugins } from './enabled-plugins';
 import {
   copilotScopesFor,
   buildScopeDestinations,
@@ -91,6 +94,15 @@ export class CopilotTarget implements Target {
       label: sc.value,
       destinations: buildScopeDestinations(kinds, sc.value, projectDir),
     }));
+  }
+
+  /**
+   * Marketplace plugins installed for Copilot CLI, one per folder under
+   * `~/.copilot/installed-plugins/<marketplace>/` (src/targets/copilot/enabled-plugins.ts).
+   * Ref: https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference#file-locations
+   */
+  enabledPlugins(env: EnabledPluginsEnv): EnabledPluginsResult {
+    return readCopilotEnabledPlugins(env);
   }
 
   readonly outputContracts: ContractEntry[] = COPILOT_OUTPUT_CONTRACTS;

@@ -349,6 +349,27 @@ export interface ScaffoldOptions {
    * this artifact. When absent, no Boundary section is rendered (avoids dangling refs).
    */
   coInstallSet?: Set<string>;
+  /** Dependency ids never written: an enabled plugin already delivers them (`add --complement`). */
+  excludeDeps?: ReadonlySet<string>;
+}
+
+/**
+ * Where a target looks for its enabled plugins: the project root, the user's home (injectable so
+ * tests never read the real one) and the marketplace name whose plugins are counted.
+ */
+export type EnabledPluginsEnv = { projectDir: string; homeDir: string; marketplace: string };
+
+/** One enabled plugin: its name without the `@<marketplace>` suffix, and where it is enabled. */
+export type EnabledPlugin = { name: string; source: string };
+
+/** Plugin name → the catalog ids that plugin delivers, in marketplace order. */
+type PluginContents = ReadonlyMap<string, readonly string[]>;
+
+/** The enabled plugins a target found, plus the problems met while reading its settings. */
+export interface EnabledPluginsResult {
+  plugins: EnabledPlugin[];
+  /** Read problems (a refused or unparseable settings file), for the caller to show. */
+  warnings: string[];
 }
 
 /**
@@ -479,6 +500,22 @@ export interface Target {
    * fragment an older install recorded there (src/commands/update-config-move.ts).
    */
   readonly retiredConfigDestinations?: readonly RetiredConfigDestination[];
+
+  /**
+   * Enabled plugins from `env.marketplace`, and where each is enabled. Platform logic, read-only:
+   * a target reads its own plugin state here (Claude's `enabledPlugins` settings, Copilot's
+   * installed-plugin folders) and returns warnings rather than printing them, so callers decide
+   * how to show them. Omitted when the target has no documented way to read its plugin state.
+   */
+  enabledPlugins?(env: EnabledPluginsEnv): EnabledPluginsResult;
+
+  /**
+   * What each plugin of the marketplace this target builds holds: plugin name → the catalog ids
+   * it delivers, in marketplace order. Implemented by the target that emits the plugin
+   * marketplace (the same contents its build writes), and read by src/plugin-overlap.ts.
+   * Omitted when the target builds no plugin marketplace.
+   */
+  marketplacePluginContents?(catalog: ResolvedCatalog, packs: Pack[]): PluginContents;
 
   /**
    * Other targets whose files this tool also loads, per kind, with the doc that says so (Copilot

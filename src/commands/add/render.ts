@@ -76,20 +76,23 @@ function buildOutcomeSummaryLine(plan: AddPlan, outcome: AddOutcome, written: nu
 
 /**
  * ", N artifact(s) not supported by 'x'", ", N skipped (cannot render on 'x')", ", N skipped by
- * <overlay file>" and ", N already included in another artifact", each when non-zero.
+ * <overlay file>", ", N skipped (an enabled plugin delivers them)" and ", N already included in
+ * another artifact", each when non-zero.
  */
 export function skippedSummary(plan: AddPlan): string {
   const count = (cause: string) => plan.skipped.filter(x => x.cause === cause).length;
-  const [included, refused, unrenderable] = [
+  const [included, refused, unrenderable, plugin] = [
     count('inlined'),
     count('overlay'),
     count('unrenderable'),
+    count('plugin'),
   ];
-  const unsupported = plan.skipped.length - included - refused - unrenderable;
+  const unsupported = plan.skipped.length - included - refused - unrenderable - plugin;
   return (
     (unsupported > 0 ? `, ${unsupported} artifact(s) not supported by '${plan.targetName}'` : '') +
     (unrenderable > 0 ? `, ${unrenderable} skipped (cannot render on '${plan.targetName}')` : '') +
     (refused > 0 ? `, ${refused} skipped by ${OVERLAYS_FILE}` : '') +
+    (plugin > 0 ? `, ${plugin} skipped (an enabled plugin delivers them)` : '') +
     (included > 0 ? `, ${included} already included in another artifact` : '')
   );
 }

@@ -53,11 +53,9 @@ project's (`docs/setup/copilot.md` § Copies of the same artifact). § 8 item 5 
 6. **The wizard shows the same warning in its preview.** It has no complement toggle in this phase; that is listed as
    a follow-up in the ADR.
 
-## Steps
-
 Each worker step ends with `npm run build && npm run lint && npm run test:built` green unless it says otherwise.
 
-### Step 1 `[inline: live probe of Claude and Copilot behaviour]`: confirm the state files
+## Step 1 `[inline: live probe of Claude and Copilot behaviour]`: confirm the state files
 
 - In a scratch `git init` project, with `CLAUDE_CONFIG_DIR` pointed at a scratch folder so `~/.claude` is untouched:
   `claude plugin marketplace add makubexD/sigil@marketplace` (or the form `docs/setup/claude-code.md` uses), then
@@ -69,7 +67,7 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
 - Record both results in the ADR under § 6 as "Phase 2b probes". If an expectation fails, stop and amend decision 2
   before step 3.
 
-### Step 2 `[worker:medium]`: one function for plugin contents
+## Step 2 `[worker:medium]`: one function for plugin contents
 
 - Files: new `src/targets/claude-code/plugin-contents.ts`; `src/targets/claude-code/index.ts` (and
   `plugin-assemble.ts` only if needed) read it; new `test/targets/claude-code/plugin-contents.test.ts`.
@@ -85,7 +83,7 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
 - Also run `npm run marketplace:check -- <a build of master>`, or build twice and `diff -r`: `dist/claude/` must stay
   byte-identical.
 
-### Step 3 `[worker:medium]`: `Target.enabledPlugins` and the Claude reader
+## Step 3 `[worker:medium]`: `Target.enabledPlugins` and the Claude reader
 
 - Files: `src/types.ts` (the optional member and its `EnabledPluginsEnv` / `EnabledPlugin` types); new
   `src/targets/claude-code/enabled-plugins.ts`, wired in `claude-code/index.ts`; new
@@ -99,7 +97,7 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   (h) marketplace `acme` from options → `a@acme` counted, `a@sigil` not. (i) a settings file that is a symlink is
   refused through `safe-read`, the same way other reads are.
 
-### Step 4 `[worker:medium]`: the Copilot reader
+## Step 4 `[worker:medium]`: the Copilot reader
 
 - Files: new `src/targets/copilot/enabled-plugins.ts`, wired in `copilot/index.ts`; new
   `test/targets/copilot/enabled-plugins.test.ts`.
@@ -108,7 +106,7 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
 - Tests: (a) two plugin folders → both, sorted. (b) folder missing → empty. (c) a file (not a folder) → ignored.
   (d) `_direct/` and other marketplaces → ignored. (e) a symlinked folder → ignored.
 
-### Step 5 `[worker:medium]`: the neutral overlap module
+## Step 5 `[worker:medium]`: the neutral overlap module
 
 - Files: new `src/plugin-overlap.ts`; new `test/plugin-overlap.test.ts`.
 - `pluginOverlaps(target, catalog, packs, env)`: joins `target.enabledPlugins` with `marketplacePluginContents` into
@@ -118,7 +116,7 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   mapped to it. (c) unknown enabled name → empty. (d) id in two enabled plugins → the first one. (e) a `hook-*` plugin
   enabled → only that hook id.
 
-### Step 6 `[worker:medium]`: `sigil add` warns, `--complement` skips
+## Step 6 `[worker:medium]`: `sigil add` warns, `--complement` skips
 
 - Files: `src/cli.ts` (the `--complement` option on `add`, lazy wiring unchanged), `src/commands/add/index.ts`
   (`AddOpts.complement`), `src/commands/add/plan.ts` (compute overlaps once; under `complement`, move the ids to
@@ -133,7 +131,7 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   eager import).
 - Run `npm run build` so `docs/reference/cli-flags.md` picks up `--complement`; commit it.
 
-### Step 7 `[worker:medium]`: `sigil status` notes and the JSON field
+## Step 7 `[worker:medium]`: `sigil status` notes and the JSON field
 
 - Files: `src/commands/status.ts` (notes after the existing overlap notes), `src/commands/status-overlaps.ts` only if
   the note renderer is shared, `src/commands/status-json.ts` (optional `plugin` field). New
@@ -143,13 +141,13 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   `plugin: { name, source }`, others have no `plugin` key. (d) status writes nothing (the manifest and settings are
   unchanged byte for byte).
 
-### Step 8 `[worker:medium]`: the wizard preview line
+## Step 8 `[worker:medium]`: the wizard preview line
 
 - Files: the wizard's install preview (find it from `src/wizard/CLAUDE.md`, which auto-loads), and its test.
 - The preview shows the step 6 warning lines from `AddPlan.pluginOverlaps`, in the same words.
 - Tests: (a) a plan with one overlap → the preview contains the warning line. (b) no overlap → the preview is unchanged.
 
-### Step 9 `[inline: user-facing copy]`: docs
+## Step 9 `[inline: user-facing copy]`: docs
 
 - `docs/guides/consuming.md` (plugin and `sigil add` together, `--complement`), `docs/setup/claude-code.md`,
   `docs/setup/copilot.md` § Copies of the same artifact (now guarded on `add` and noted by `status`),
@@ -157,7 +155,7 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
 - ADR: § 6 row 2b → **done <date>**, the § 6 paragraph on 2b, § 8 item 5 ("documented, not guarded" → guarded), plus
   what's left open: Codex, Cursor and Antigravity readers, managed settings, a wizard toggle.
 
-### Step 10 `[inline: live check]`: prove it
+## Step 10 `[inline: live check]`: prove it
 
 - In a scratch project with `CLAUDE_CONFIG_DIR` set to a scratch folder: install a sigil pack plugin at project scope,
   then `sigil add <a skill from it> --target claude` → warning; `--complement` → skipped; `sigil status` → note.

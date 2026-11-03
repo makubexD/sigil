@@ -137,4 +137,6 @@ reference](https://code.visualstudio.com/docs/copilot/customization/agent-skills
 "names with invalid characters cause the skill to silently fail to load") and `description` at 1024; the [CLI plugin
 reference](https://docs.github.com/en/copilot/reference/cli-plugin-reference) gives the same caps for a plugin's
 `name` and `description`. Neither page, nor GitHub's agent skills pages, names a total budget for the skill listing
-like Claude's. sigil's `provider-limits` already enforces both per-skill caps on Copilot output.
+like Claude's. sigil's `provider-limits` already enforces both per-skill caps on Copilot output. It doesn't check the
+plugin-level caps: `plugin.json` is not a `KindEmitSpec`, so `provider-limits` never sees it. Every pack fits today
+(the longest plugin `description` is 522 characters).

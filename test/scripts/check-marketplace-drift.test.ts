@@ -178,7 +178,7 @@ describe('marketplace-drift check', () => {
       const result = runScript('--target', 'agents-standard', published);
 
       assert.equal(result.status, 0, result.stderr);
-      assert.match(result.stdout, /✓ agents-standard branch matches a fresh build \(\d+ files\)/);
+      assert.match(result.stdout, /✓ skills branch matches a fresh build \(\d+ files\)/);
     });
   });
 

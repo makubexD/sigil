@@ -41,7 +41,7 @@ const IGNORED_TOP_LEVEL = new Set(['.git']);
 const TARGETS = {
   claude: { label: 'marketplace', buildDir: 'claude', omitTopLevel: [] },
   'agents-standard': {
-    label: 'agents-standard branch',
+    label: 'skills branch',
     buildDir: 'agents-standard',
     omitTopLevel: ['AGENTS.md'],
   },

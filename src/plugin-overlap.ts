@@ -20,8 +20,8 @@ export { DEFAULT_MARKETPLACE_NAME, marketplaceName } from './marketplace-name';
 export interface PluginOverlap {
   /** The plugin name, without the `@<marketplace>` suffix. */
   plugin: string;
-  /** The marketplace the plugin comes from. */
-  marketplace: string;
+  /** The marketplace the plugin comes from; absent when the tool installs plugins outside one. */
+  marketplace?: string;
   /** Where the plugin is enabled (a settings file or a plugin folder). */
   source: string;
 }
@@ -68,7 +68,7 @@ interface OverlapJoin {
   readonly catalog: ResolvedCatalog;
   readonly contents: ReadonlyMap<string, readonly string[]>;
   readonly sources: ReadonlyMap<string, string>;
-  readonly marketplace: string;
+  readonly marketplace: string | undefined;
 }
 
 /** Whether the target loads an artifact of this id's kind from a plugin. */
@@ -88,7 +88,9 @@ function collectOverlaps(join: OverlapJoin): Map<string, PluginOverlap> {
     if (source === undefined) continue;
     for (const id of ids) {
       if (overlaps.has(id) || !isLoadedKind(target, catalog, id)) continue;
-      overlaps.set(id, { plugin, marketplace, source });
+      const overlap: PluginOverlap = { plugin, source };
+      if (marketplace !== undefined) overlap.marketplace = marketplace;
+      overlaps.set(id, overlap);
     }
   }
   return overlaps;
@@ -108,7 +110,7 @@ export function pluginOverlaps(
   env: EnabledPluginsEnv,
 ): PluginOverlapResult {
   if (target.enabledPlugins === undefined) return { overlaps: new Map(), warnings: [] };
-  const { plugins, warnings } = target.enabledPlugins(env);
+  const { plugins, warnings, marketplace } = target.enabledPlugins(env);
   const contents = pluginContentsFor(target, catalog, packs);
   return {
     overlaps: collectOverlaps({
@@ -116,7 +118,8 @@ export function pluginOverlaps(
       catalog,
       contents,
       sources: enabledSources(plugins),
-      marketplace: env.marketplace,
+      // A reader that installs plugins outside a marketplace (`marketplace: false`) names none.
+      marketplace: marketplace === false ? undefined : env.marketplace,
     }),
     warnings,
   };
@@ -134,5 +137,12 @@ export function pluginDeliveredIds(
 
 /** The one wording `add`, `status` and the wizard share for an overlapping id. */
 export function formatPluginOverlap(id: string, overlap: PluginOverlap): string {
-  return `${id} is also delivered by plugin ${overlap.plugin}@${overlap.marketplace} (enabled in ${overlap.source})`;
+  return `${id} is also delivered by plugin ${pluginLabel(overlap)} (enabled in ${overlap.source})`;
+}
+
+/** `<plugin>@<marketplace>`, or the bare plugin name when it comes from no marketplace. */
+export function pluginLabel(overlap: PluginOverlap): string {
+  return overlap.marketplace === undefined
+    ? overlap.plugin
+    : `${overlap.plugin}@${overlap.marketplace}`;
 }

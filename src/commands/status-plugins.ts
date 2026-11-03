@@ -92,14 +92,14 @@ export function deliveredIdsFor(
 }
 
 /** The overlap map keyed by catalog id, in the shape a status row carries. */
-function statusPlugins(overlaps: ReadonlyMap<string, PluginOverlap>): Map<string, StatusPlugin> {
+export function statusPlugins(
+  overlaps: ReadonlyMap<string, PluginOverlap>,
+): Map<string, StatusPlugin> {
   const plugins = new Map<string, StatusPlugin>();
   for (const [id, overlap] of overlaps) {
-    plugins.set(id, {
-      name: overlap.plugin,
-      marketplace: overlap.marketplace,
-      source: overlap.source,
-    });
+    const plugin: StatusPlugin = { name: overlap.plugin, source: overlap.source };
+    if (overlap.marketplace !== undefined) plugin.marketplace = overlap.marketplace;
+    plugins.set(id, plugin);
   }
   return plugins;
 }
@@ -210,5 +210,7 @@ export function printPluginNotes(
 
 /** The status row's `plugin` field in the shape the shared note wording takes. */
 function asOverlap(plugin: StatusPlugin): PluginOverlap {
-  return { plugin: plugin.name, marketplace: plugin.marketplace, source: plugin.source };
+  const overlap: PluginOverlap = { plugin: plugin.name, source: plugin.source };
+  if (plugin.marketplace !== undefined) overlap.marketplace = plugin.marketplace;
+  return overlap;
 }

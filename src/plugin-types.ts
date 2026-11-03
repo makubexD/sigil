@@ -31,4 +31,9 @@ export interface EnabledPluginsResult {
   plugins: EnabledPlugin[];
   /** Read problems (a refused or unparseable settings file), for the caller to show. */
   warnings: string[];
+  /**
+   * `false`: the tool installs plugins outside any marketplace, so overlaps name no marketplace.
+   * Absent means the plugins come from `EnabledPluginsEnv.marketplace`.
+   */
+  marketplace?: false;
 }

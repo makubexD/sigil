@@ -178,6 +178,23 @@ describe('pluginOverlaps', () => {
 
     assert.deepEqual(result.warnings, warnings);
   });
+
+  it('should leave the marketplace out when the reader installs plugins outside one', () => {
+    const a = artifact('shared/a', 'skill');
+    const packs = [packOf('essentials', { artifacts: ['shared/a'] })];
+    const target = stubTarget({
+      plugins: [{ name: 'essentials', source: '.agents/plugins/essentials' }],
+      warnings: [],
+      marketplace: false,
+    });
+
+    const { overlaps } = pluginOverlaps(target, catalogOf([a]), packs, ENV);
+    const overlap = overlaps.get('shared/a');
+
+    assert.ok(overlap);
+    assert.equal('marketplace' in overlap, false);
+    assert.deepEqual(overlap, { plugin: 'essentials', source: '.agents/plugins/essentials' });
+  });
 });
 
 describe('pluginOverlaps for a real target', () => {
@@ -261,6 +278,16 @@ describe('formatPluginOverlap', () => {
         source: '.claude/settings.json',
       }),
       'shared/a is also delivered by plugin essentials@sigil (enabled in .claude/settings.json)',
+    );
+  });
+
+  it('should drop the marketplace when there is none', () => {
+    assert.equal(
+      formatPluginOverlap('shared/a', {
+        plugin: 'essentials',
+        source: '.agents/plugins/essentials',
+      }),
+      'shared/a is also delivered by plugin essentials (enabled in .agents/plugins/essentials)',
     );
   });
 });

@@ -12,6 +12,7 @@ import { computeClosure, type SkippedArtifact } from '../../select';
 import {
   marketplaceName,
   pluginOverlaps,
+  pluginLabel,
   type PluginOverlap,
   type PluginOverlapResult,
 } from '../../plugin-overlap';
@@ -96,7 +97,7 @@ function recordPluginSkips(
       id,
       kind: ctx.resolved.byId.get(id)?.kind ?? '',
       cause: 'plugin',
-      reason: `delivered by plugin ${overlap.plugin}@${overlap.marketplace} (${overlap.source})`,
+      reason: `delivered by plugin ${pluginLabel(overlap)} (${overlap.source})`,
     });
   }
 }

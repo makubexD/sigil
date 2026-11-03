@@ -11,6 +11,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
+import { statusPlugins } from '../../dist-cli/commands/status-plugins';
 import { runStatus } from '../../dist-cli/commands/status';
 import { MANIFEST_RELATIVE_PATH } from '../../dist-cli/manifest/types';
 import { createRecorder, mockClack } from '../helpers/clack-mock';
@@ -32,7 +33,7 @@ const SOURCE = '~/.claude/settings.json';
 interface StatusRow {
   id: string;
   target: string;
-  plugin?: { name: string; marketplace: string; source: string };
+  plugin?: { name: string; marketplace?: string; source: string };
 }
 
 /** Writes the settings that enable `plugin` at user scope in `home`. */
@@ -144,6 +145,20 @@ describe('sigil status — plugin duplicate guard', () => {
       assert.deepEqual(skill?.plugin, { name: PACK, marketplace: 'sigil', source: SOURCE });
       assert.ok(rule, `${RULE_ID} is not installed`);
       assert.ok(!('plugin' in rule));
+    });
+  });
+
+  it('should leave the marketplace key off a JSON row whose plugin has none', () => {
+    const rows = statusPlugins(
+      new Map([['shared/a', { plugin: 'essentials', source: '.agents/plugins/essentials' }]]),
+    );
+    const plugin = rows.get('shared/a');
+
+    assert.ok(plugin);
+    assert.equal('marketplace' in plugin, false);
+    assert.deepEqual(JSON.parse(JSON.stringify(plugin)), {
+      name: 'essentials',
+      source: '.agents/plugins/essentials',
     });
   });
 

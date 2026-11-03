@@ -30,6 +30,8 @@ import type {
   ConfigScope,
   ConfigScopeInfo,
   ContractEntry,
+  EnabledPluginsEnv,
+  EnabledPluginsResult,
   FileMap,
   KindVocabulary,
   Pack,
@@ -52,6 +54,7 @@ import { ANTIGRAVITY_LEXICON } from './lexicon';
 import { ANTIGRAVITY_EMIT_SPECS } from './spec';
 import { buildAntigravityPlugins } from './plugin-assemble';
 import { antigravityPluginContents } from './plugin-contents';
+import { readAntigravityEnabledPlugins } from './enabled-plugins';
 import {
   ANTIGRAVITY_INIT_DIRS,
   ANTIGRAVITY_PROJECT_MARKERS,
@@ -144,6 +147,15 @@ export class AntigravityTarget implements Target {
    */
   configSkipReason(artifact: Artifact): string | undefined {
     return configSkipReasonFrom(this.configKinds, artifact);
+  }
+
+  /**
+   * Antigravity plugins installed for this project or the user: regular folders under
+   * `.agents/plugins/` and `~/.gemini/config/plugins/` whose own `plugin.json` names them, minus
+   * those `config.json` disables (src/targets/antigravity/enabled-plugins.ts).
+   */
+  enabledPlugins(env: EnabledPluginsEnv): EnabledPluginsResult {
+    return readAntigravityEnabledPlugins(env);
   }
 
   /**

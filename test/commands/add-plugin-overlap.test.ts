@@ -13,6 +13,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
 import { runStatus } from '../../dist-cli/commands/status';
+import { runUpdate } from '../../dist-cli/commands/update';
+import { loadManifest } from '../../dist-cli/manifest';
 import { createRecorder, mockClack } from '../helpers/clack-mock';
 import { makeTempDir, withTempDirAsync } from '../helpers/temp-dir';
 import type { AddOpts } from '../../dist-cli/commands/add';
@@ -75,6 +77,35 @@ async function add(
     restore();
   }
   return recorder.logs;
+}
+
+/** Runs `sigil update` against a temp project and home, with the add helper's mocks. */
+async function update(projectDir: string, homeDir: string): Promise<void> {
+  const restore = mockClack([], createRecorder());
+  const originalLog = console.log;
+  console.log = () => {};
+  try {
+    await runUpdate([], {
+      projectDir,
+      catalogDir: CATALOG,
+      packs: PACKS,
+      target: 'claude',
+      force: false,
+      dryRun: false,
+      yes: true,
+      homeDir,
+    });
+  } finally {
+    console.log = originalLog;
+    restore();
+  }
+}
+
+/** The manifest's entry ids, sorted. */
+function entryIds(projectDir: string): string[] {
+  return loadManifest(projectDir)
+    .entries.map(entry => entry.id)
+    .sort();
 }
 
 /** Every file under `dir`, relative and slash-separated, sorted. */
@@ -295,6 +326,22 @@ describe('sigil add — plugin duplicate guard', () => {
 
         const text = await captureText(() => runStatus({ ...statusOpts, json: false }));
         assert.doesNotMatch(text, /update would also install/);
+      });
+    });
+  });
+
+  it('should not install a dependency an enabled plugin delivers on update', async () => {
+    await withTempDirAsync(async project => {
+      await inTempDir(async home => {
+        enablePack(home, PYTHON_STARTER);
+        await add(project, home, PYTHON_PICKS, { deps: true, complement: true });
+
+        const filesBefore = listFiles(project);
+        const idsBefore = entryIds(project);
+        await update(project, home);
+
+        assert.deepEqual(listFiles(project), filesBefore);
+        assert.deepEqual(entryIds(project), idsBefore);
       });
     });
   });

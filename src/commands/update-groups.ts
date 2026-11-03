@@ -22,7 +22,7 @@ import { updateWholeFileEntry } from './update-wholefile';
 import type { CatalogSource, SourceGroup } from '../manifest/catalog-source';
 import type { ManifestEntry } from '../manifest/types';
 import type { OverlaidCatalog } from '../overlays';
-import type { LoadedCatalog, ResolvedCatalog, Target } from '../types';
+import type { LoadedCatalog, PacksConfig, ResolvedCatalog, Target } from '../types';
 import type { WrittenConfig } from './add/execute-config';
 import type { ConfigUpdateOptions, UpdateOptions, UpdateRunTotals } from './update';
 
@@ -34,6 +34,8 @@ export interface UpdateGroup {
   catalogDir: string;
   /** Absolute `packs.yaml` this group is judged against. */
   packs: string;
+  /** That `packs.yaml`, parsed, so the dependency step needn't read it again. */
+  packsConfig: PacksConfig;
   /** The group's catalog with project overlays applied. */
   resolved: ResolvedCatalog;
   /** Every artifact id the group's catalog holds. */
@@ -48,18 +50,20 @@ export interface UpdateGroup {
 interface LoadedGroup {
   group: SourceGroup;
   rawCatalog: LoadedCatalog;
+  packsConfig: PacksConfig;
   overlaid: OverlaidCatalog;
 }
 
 /** Loads one group's catalog and overlays it, reporting nothing yet. */
 async function loadGroup(group: SourceGroup, projectDir: string): Promise<LoadedGroup> {
-  const { catalog: rawCatalog } = await loadAndValidate(group.catalogDir, group.packs);
-  return { group, rawCatalog, overlaid: overlayProject(resolveCatalog(rawCatalog), projectDir) };
+  const { catalog: rawCatalog, packsConfig } = await loadAndValidate(group.catalogDir, group.packs);
+  const overlaid = overlayProject(resolveCatalog(rawCatalog), projectDir);
+  return { group, rawCatalog, packsConfig, overlaid };
 }
 
 /** The group's entries this run updates, as an UpdateGroup; undefined when it has none. */
 function toUpdateGroup(
-  { group, rawCatalog, overlaid }: LoadedGroup,
+  { group, rawCatalog, packsConfig, overlaid }: LoadedGroup,
   targetName: string,
   idFilter: ReadonlySet<string>,
 ): UpdateGroup | undefined {
@@ -67,9 +71,8 @@ function toUpdateGroup(
   const entries = withoutRefused(picked, overlaid.refused);
   if (entries.length === 0) return undefined;
   return {
-    source: group.source,
-    catalogDir: group.catalogDir,
-    packs: group.packs,
+    ...group,
+    packsConfig,
     resolved: overlaid.resolved,
     catalogIds: new Set(rawCatalog.artifacts.map(a => a.id)),
     entries,
@@ -230,10 +233,8 @@ export async function finishEachGroup(
 ): Promise<void> {
   for (const group of groups) {
     const groupOpts = { ...opts, catalogDir: group.catalogDir, packs: group.packs };
-    await installNewDependencies(
-      { entries: group.entries, resolved: group.resolved, target, installedIds },
-      groupOpts,
-    );
+    const run = { ...group, target, installedIds };
+    await installNewDependencies(run, groupOpts);
     printInlinedNotice(group.installed, target, group.resolved);
   }
 }

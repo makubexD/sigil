@@ -45,6 +45,9 @@ A pack's plugin never contains them, except that `deepseek-worker` depends on
 `mcp-filesystem`, `hook-protect-config` and `hook-reviewer-bash-guard` for the rest of it.
 `author-artifact` still needs `sigil add`, because it runs the `sigil` CLI against a catalog.
 
+If you also install an artifact with `sigil add`, it warns when an enabled sigil plugin already delivers it;
+`sigil add --complement` skips those picks instead, and `sigil status` notes the copies already installed.
+
 An MCP plugin's description names the environment variables it needs. Nothing warns you when one is
 unset, and a plugin update can change a hook's command with no review step. Details are in
 [consuming.md](../guides/consuming.md#install-a-pack-as-a-claude-plugin).

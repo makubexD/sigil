@@ -544,11 +544,27 @@ from, and its description names the ones it needs. `mcp-ado`, for example, needs
 `${NAME}` as its value and Claude Code shows no warning, so a connected server doesn't prove the value
 is set. A project `.mcp.json` from `sigil add` behaves the same way.
 
-**A plugin and `sigil add` together.** Installing the same artifact both ways is safe, but sigil does
-not warn about it. A hook runs twice, which is harmless for sigil's three hooks because they are
+**A plugin and `sigil add` together.** Installing the same artifact both ways is safe, but rarely
+what you want. A hook runs twice, which is harmless for sigil's three hooks because they are
 deterministic checks. For an MCP server in a project `.mcp.json`, the outcome depends on what the two
 copies resolve to. If the endpoint is the same, Claude Code drops the plugin's server and keeps the
 project's. If it differs, both run and the tools appear twice.
+
+`sigil add` checks for this. For Claude Code it reads `enabledPlugins` from `.claude/settings.local.json`,
+`.claude/settings.json` and `~/.claude/settings.json` (the highest scope that names a plugin decides, and only
+an explicit `true` counts). For Copilot it reads the folders under `~/.copilot/installed-plugins/<marketplace>/`.
+Each pick an enabled sigil plugin already delivers is still installed, with a warning naming the plugin and the
+file it is enabled in. The wizard's install plan shows the same lines before you confirm. To skip those picks
+instead, pass `--complement`:
+
+```bash
+sigil add pack:typescript-tooling --target claude --complement
+```
+
+A skipped pick is listed with `delivered by plugin <name>@<marketplace> (<file>)`. Rules and settings never ride
+in a plugin, so they are always installed, and so is any dependency the plugin doesn't hold. `sigil status` notes
+each installed entry an enabled plugin also delivers (see [Keep installs healthy over time](#keep-installs-healthy-over-time)). Codex, Cursor and
+Antigravity have no plugin check yet.
 
 **Reviewing updates.** A plugin update can change a hook's command with no review step. `sigil update`
 shows what would change before it writes, and `--dry-run` previews it. To read a hook before it runs,
@@ -768,6 +784,11 @@ server, hook, settings) is `outdated` when the catalog changed its fragment or i
 in (Copilot's MCP servers moved out of `.vscode/mcp.json`); a fragment you edited or deleted shows as `drifted` or
 `missing`. Each fragment is checked in its own root, so a server in
 `~/.claude.json` or `~/.copilot/mcp-config.json` is read there, not under the project.
+
+After the table, `status` also prints one `ℹ` line per installed entry an enabled sigil plugin also delivers
+(`<id> is also delivered by plugin <name>@<marketplace> (enabled in <file>) (installed for <tool>)`), and the
+`--json` row carries it as `plugin: { name, marketplace, source }`. Keep one copy: `sigil uninstall <id>`, or
+disable the plugin. A settings file that isn't valid JSON adds a `⚠ plugin check:` line.
 
 Three notes can appear under a row, whatever its status, each with a next step after the table:
 

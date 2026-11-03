@@ -204,7 +204,7 @@ interface TargetCapabilities {
 | 1b    | `sigil cost` (always-on / on-match / on-invoke tokens) + budget conformance rules                                                                                                                                                                                                          |                   |
 | 1     | Family-granular Claude marketplace via `Pack.select`; hooks/MCP as their own opt-in plugins; prompts as skills; plugin-agent field guard                                                                                                                                                   |                   |
 | 2     | Publish the marketplace in git + CI sync gate; project-scoped `enabledPlugins` snippet                                                                                                                                                                                                     | CI and git layout |
-| 2b    | `sigil add --complement` + duplicate guard against enabled sigil plugins — **skipped ahead of Phase 4, not built**                                                                                                                                                                         |                   |
+| 2b    | `sigil add --complement` + duplicate guard against enabled sigil plugins — **done 2026-11-03** (Claude and Copilot readers)                                                                                                                                                                |                   |
 | 3     | Agent Skills conformance (`name` = directory, ≤64/≤1024 chars) so `npx skills add … --skill x` works — **done 2026-11-03** (v0.7.0, `skills` branch, live install byte-equal)                                                                                                              |                   |
 | 4     | Verify the Claude-format marketplace in VS Code / Copilot CLI; Agent Plugins 1.0 output only if a gap remains — **done 2026-10-30, no new output**                                                                                                                                         |                   |
 | 5     | Codex adapter (`.agents/skills`, `AGENTS.md`, `.codex/agents/*.toml`, `config.toml` merges, Codex plugin) — **done 2026-10-31, without agents or a plugin emitter**                                                                                                                        |                   |
@@ -230,14 +230,18 @@ emitter, although the test's gate sent unsafe results to one: the owner accepted
 documented ([decision](copilot-plugin-channel-2026-10.md#decision)).
 
 Phases 2b and 3 did not run first, despite the suggested order above. The owner took Phase 4 ahead of
-them on 2026-10-30, and it has no code dependency on either. Both stay open, and neither has a brief
-yet.
+them on 2026-10-30, and it has no code dependency on either. Both were built afterwards, on 2026-11-03.
 
-- **2b is not built.** `src/` has no `--complement` or `enabledPlugins`, and `status-overlaps.ts` only
-  compares what `add` installed. What the skip costs on Copilot: with a `sigil add` copy and the plugin
-  of one artifact, the project copy of a skill or agent silently beats the plugin, while the plugin's
-  MCP server beats the project's. That order is documented, not tested. Nothing warns; the
-  [setup page](../setup/copilot.md#copies-of-the-same-artifact) says so.
+- **2b is done 2026-11-03** (plan: `docs/plan-complement-mode.md`). `marketplacePluginContents` computes what each
+  marketplace plugin holds from the code `build` uses, and `Target.enabledPlugins` reads what is enabled: Claude's
+  `enabledPlugins` in local, project and user settings (the highest scope that names a plugin decides; only `true`
+  counts), and Copilot's `~/.copilot/installed-plugins/<marketplace>/` folders. `src/plugin-overlap.ts` joins the two.
+  `sigil add` warns about each overlapping pick and still installs it; `--complement` skips it with the `plugin`
+  cause, keeping rules, settings and dependencies the plugin doesn't hold. `sigil status` notes installed entries an
+  enabled plugin also delivers (`plugin` on `--json` rows), and the wizard's plan box shows the `add` warning. Left
+  open: readers for Codex, Cursor and Antigravity (their plugin state isn't documented in a form read here), managed
+  Claude settings, plugins enabled only through `defaultEnabled`, and a complement toggle in the wizard. The Copilot
+  reader rests on the docs alone (probe B5 below).
 - **3 is done 2026-11-03.** Its checks came first and its goal was unproven until v0.7.0. `provider-limits` has enforced both limits through
   `agent-skills-limits.ts` since `e5939bd` (2026-10-03), and `name` equals the folder because
   `outputPath` derives from it. Measured on fresh output on 2026-10-30: 0 mismatches across
@@ -438,7 +442,8 @@ Decisions:
 4. **Keep `{sigil:env:NAME}` and `PORTABLE_MCP_ENV_SYNTAX`; no `userConfig`.** Set variables work and unset ones behave
    as `sigil add` does, so `userConfig` would only be a second way to supply values. Because nothing warns the user, a
    generated MCP plugin's description names the variables it needs, derived with `envTokenNames`.
-5. **Duplicates are documented, not guarded** (Phase 2b owns the guard). Running a blocking hook twice is harmless,
+5. **Duplicates are guarded since Phase 2b (2026-11-03)**: `sigil add` warns, `--complement` skips and `sigil status`
+   notes, for Claude Code and Copilot. Running a blocking hook twice is harmless,
    because all three hooks are deterministic checks. `consuming.md` says what happens.
 6. **`consuming.md` says a plugin update can change a hook command with no review step**, unlike `sigil update`.
 

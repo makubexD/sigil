@@ -152,3 +152,30 @@ List catalog skills that would use `assets/` or `scripts/`, and the token saving
 
 PR with steps 1-9, `/agent-skills:review` with one round of fixes, `pr-ready`, merge. Delete this plan in a follow-up
 PR. Update memory: the next item is the OpenCode eval plan.
+
+## Review fixes
+
+### 11. `update` records a skipped user edit as the baseline [worker:medium]
+
+Found by the step 10 review, already on master: `rebuildEntryFiles` (`src/commands/update-stale.ts`) records the
+on-disk hash for every freshly rendered path, including a drifted file that `update` skipped or left unchanged. The
+next plain `sigil update` then sees no drift and overwrites the user's edit, and `--force` can no longer restore it.
+
+Change, `src/commands/update-stale.ts` and its one caller `writeAndRefreshEntry` in `src/commands/update-wholefile.ts`:
+`rebuildEntryFiles` takes the written map (`toWrite: Record<string, string>`) as a new parameter. For each fresh path:
+written → `sha256(toWrite[path])`; not written and a hash was recorded → keep the recorded hash; not written and none
+recorded → the disk hash if the file exists, else `''` (today's fallback). Kept-stale carry-over is unchanged. Update
+the doc comment. CHANGELOG `### Fixed` gets a line: a plain `sigil update` no longer overwrites a file you edited on
+the run after it skipped that file.
+
+Tests, `test/commands/update-wholefile.test.ts`, in `describe('updateWholeFileEntry')`, an entry with two files
+`a.md` and `b.md`:
+
+| Case | Setup                                                                                                           | Expected                                                                                                                    |
+| ---- | --------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------- |
+| 11a  | Recorded `a v1`, `b v1`; disk `a.md` = `USER EDIT`, `b.md` = `b v1`; render `a v2`, `b v2`; no force; run twice | After each run `a.md` is `USER EDIT`; recorded `a.md` hash stays `sha256('a v1')`; recorded `b.md` hash is `sha256('b v2')` |
+| 11b  | Recorded `a v2`, `b v2`; disk `a.md` = `USER EDIT`; render `a v2`, `b v3`; no force                             | `a.md` still `USER EDIT`; recorded `a.md` hash stays `sha256('a v2')`; `b.md` is `b v3`                                     |
+| 11c  | Continue 11b with `force: true`, same render                                                                    | `a.md` is `a v2`                                                                                                            |
+
+11a and 11b fail before the change. Test: `npm run build && npm run build:test && node --test
+test-compiled/commands/update-wholefile.test.js`, then `npm test`.

@@ -16,6 +16,8 @@ export type EnabledPluginsEnv = {
   marketplace: string;
   /** Environment variables; readers default to `process.env`. */
   vars?: Readonly<Record<string, string | undefined>>;
+  /** Replaces the OS policy directory managed settings are read from; tests only. */
+  systemDir?: string;
 };
 
 /** One enabled plugin: its name without the `@<marketplace>` suffix, and where it is enabled. */

@@ -1,10 +1,13 @@
 /**
  * Which Claude Code marketplace plugins are enabled, read from the `enabledPlugins` setting.
- * Precedence follows Claude's settings scopes, highest first: local (`.claude/settings.local.json`),
- * project (`.claude/settings.json`), user (`$CLAUDE_CONFIG_DIR/settings.json` when that variable is
- * non-empty, else `~/.claude/settings.json`). The highest scope that sets a key decides, and only an
- * explicit `true` counts — a plugin with no entry at any scope is not counted, because whether it is
- * installed lives in files the docs do not describe. Managed settings are not read.
+ * Precedence follows Claude's settings scopes, highest first: file-based managed settings
+ * (`managed-settings.json`, then `managed-settings.d/*.json`; see managed-settings.ts), local
+ * (`.claude/settings.local.json`), project (`.claude/settings.json`), user
+ * (`$CLAUDE_CONFIG_DIR/settings.json` when that variable is non-empty, else
+ * `~/.claude/settings.json`). The highest scope that sets a key decides, and only an explicit
+ * `true` counts — a plugin with no entry at any scope is not counted, because whether it is
+ * installed lives in files the docs do not describe. Server-managed, MDM and registry policy
+ * are not files sigil can read, so they are not covered.
  *
  * Files are read through src/safe-read.ts like every other sigil read; a missing file is skipped
  * silently, a refused or unparseable one is reported as a warning and the other scopes still read.
@@ -17,11 +20,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { readRegularFile } from '../../safe-read';
 import type { EnabledPlugin, EnabledPluginsEnv, EnabledPluginsResult } from '../../types';
-
-const KIB = 1024;
-
-/** A settings file is small; anything far larger is not one sigil should read. */
-const MAX_SETTINGS_KIB = 1024;
+import { readManagedEnabledPlugins, SETTINGS_MAX_BYTES } from './managed-settings';
 
 interface SettingsScope {
   /** Absolute path of the file. */
@@ -154,7 +153,7 @@ function readScope(
   const file = scopeFileToRead(scope, warnings);
   if (file === undefined) return undefined;
 
-  const read = readRegularFile(file, { maxBytes: MAX_SETTINGS_KIB * KIB });
+  const read = readRegularFile(file, { maxBytes: SETTINGS_MAX_BYTES });
   if ('reason' in read) {
     warnings.push(`${scope.source}: ${read.reason}`);
     return undefined;
@@ -172,11 +171,39 @@ function pluginName(key: string, marketplace: string): string | undefined {
   return name.length > 0 ? name : undefined;
 }
 
+/**
+ * Managed settings decide before every settings file, so their keys are recorded first: a
+ * managed `false` beats a local or project `true`, and a managed `true` beats a lower `false`.
+ */
+function seedManaged(
+  env: EnabledPluginsEnv,
+  decided: Map<string, EnabledPlugin & { enabled: boolean }>,
+  warnings: string[],
+): void {
+  const managed = readManagedEnabledPlugins(env);
+  warnings.push(...managed.warnings);
+  for (const [key, entry] of managed.entries) {
+    const name = pluginName(key, env.marketplace);
+    if (name !== undefined) decided.set(key, { name, source: entry.source, enabled: entry.value });
+  }
+}
+
+/** The enabled entries as the result's plugin list, sorted by name. */
+function sortedPlugins(
+  decided: Map<string, EnabledPlugin & { enabled: boolean }>,
+): EnabledPlugin[] {
+  return [...decided.values()]
+    .filter(entry => entry.enabled)
+    .map(({ name, source }) => ({ name, source }))
+    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
+}
+
 /** Enabled plugins from `env.marketplace`, sorted by name, plus any read warnings. */
 export function readClaudeEnabledPlugins(env: EnabledPluginsEnv): EnabledPluginsResult {
   const warnings: string[] = [];
   const decided = new Map<string, EnabledPlugin & { enabled: boolean }>();
   const unreadableDirs = new Set<string>();
+  seedManaged(env, decided, warnings);
 
   for (const scope of settingsScopes(env)) {
     const enabledPlugins = readScope(scope, warnings, unreadableDirs);
@@ -189,10 +216,5 @@ export function readClaudeEnabledPlugins(env: EnabledPluginsEnv): EnabledPlugins
     }
   }
 
-  const plugins: EnabledPlugin[] = [...decided.values()]
-    .filter(entry => entry.enabled)
-    .map(({ name, source }) => ({ name, source }))
-    .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
-
-  return { plugins, warnings };
+  return { plugins: sortedPlugins(decided), warnings };
 }

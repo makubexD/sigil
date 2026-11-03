@@ -23,6 +23,7 @@ function statusJsonRow(s: StatusResult, catalog?: CatalogSource): Record<string,
     // Each is absent unless non-empty, so JSON.stringify leaves it out.
     retiredFiles: s.retiredFiles,
     renderError: s.renderError,
+    keptReason: s.keptReason,
     newDependencies: s.newDependencies,
   };
 }

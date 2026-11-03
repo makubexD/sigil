@@ -1,15 +1,23 @@
 #!/usr/bin/env node
 /**
- * Proves a published marketplace tree equals a fresh `--target claude` build.
+ * Proves a published branch tree equals a fresh build of one target.
  *
  * Why this exists: the release workflow publishes a fresh `claude/` build to the `marketplace`
- * branch, and users add that branch as a Claude Code marketplace. If the branch drifts from the
- * build of its tag — a hand edit, a partial publish, a job that half-ran — users would install
- * something that is not the release. This check builds the current tree into a temp dir and
- * compares it byte-for-byte with the published one, so CI fails on any difference.
+ * branch, and users add that branch as a Claude Code marketplace; it also publishes the
+ * `agents-standard` build (minus the root `AGENTS.md`) to the `skills` branch for `npx skills add`.
+ * If a branch drifts from the build of its tag — a hand edit, a partial publish, a job that
+ * half-ran — users would install something that is not the release. This check builds the current
+ * tree into a temp dir and compares it byte-for-byte with the published one, so CI fails on any
+ * difference.
  *
- * Usage: node scripts/check-marketplace-drift.cjs <published-dir>
- * Exit 0 when equal, 1 on drift, 2 on a usage or build error.
+ * Usage: node scripts/check-marketplace-drift.cjs [--target <name>] <published-dir>
+ *
+ * Targets:
+ *   claude           (default) the `marketplace` branch: the whole `claude/` build
+ *   agents-standard  the `skills` branch: the `agents-standard/` build minus its root `AGENTS.md`
+ *
+ * `--target` may come before or after the published dir. Exit 0 when equal, 1 on drift, 2 on a
+ * usage or build error.
  */
 'use strict';
 
@@ -23,14 +31,52 @@ const { spawnSync } = require('child_process');
 const REPO_ROOT = path.resolve(__dirname, '..');
 const CLI = path.join(REPO_ROOT, 'dist-cli', 'cli.js');
 
-// The publish step checks out the marketplace branch, so `.git/` sits at the published root and
-// is not part of the build. Nothing else in the published dir is exempt.
+// The publish step checks out the branch, so `.git/` sits at the published root and is not part of
+// the build. Nothing else in the published dir is exempt.
 const IGNORED_TOP_LEVEL = new Set(['.git']);
-const NO_IGNORED_ENTRIES = new Set();
+
+// One row per published branch: the name builders use for the target, the build's output folder,
+// the label the messages use, and the entries a published tree intentionally leaves out of the
+// fresh build (`skills` installs skills, so the repo-wide `AGENTS.md` stays behind).
+const TARGETS = {
+  claude: { label: 'marketplace', buildDir: 'claude', omitTopLevel: [] },
+  'agents-standard': {
+    label: 'agents-standard branch',
+    buildDir: 'agents-standard',
+    omitTopLevel: ['AGENTS.md'],
+  },
+};
+const DEFAULT_TARGET = 'claude';
 
 function printUsage() {
-  console.error('Usage: node scripts/check-marketplace-drift.cjs <published-dir>');
-  console.error('Compares a published marketplace tree against a fresh `--target claude` build.');
+  console.error(
+    'Usage: node scripts/check-marketplace-drift.cjs [--target <name>] <published-dir>',
+  );
+  console.error('Compares a published branch tree against a fresh build of the same target.');
+  console.error('Targets: claude (default; marketplace branch), agents-standard (skills branch).');
+}
+
+/**
+ * Parses `[--target <name>] <published-dir>`, with `--target` allowed before or after the
+ * positional. Returns null when the arguments are unusable: an unknown target, a `--target` with
+ * no value, or any positional count other than one.
+ */
+function parseArgs(argv) {
+  let target = DEFAULT_TARGET;
+  const positionals = [];
+  for (let i = 0; i < argv.length; i += 1) {
+    const arg = argv[i];
+    if (arg === '--target') {
+      const value = argv[i + 1];
+      if (value === undefined) return null;
+      target = value;
+      i += 1;
+    } else {
+      positionals.push(arg);
+    }
+  }
+  if (positionals.length !== 1 || !Object.hasOwn(TARGETS, target)) return null;
+  return { target, published: positionals[0] };
 }
 
 /**
@@ -78,14 +124,14 @@ function diffTrees(published, fresh) {
   return lines;
 }
 
-/** Builds `--target claude` into `tmp` and returns `<tmp>/claude`; exits 2 if that fails. */
-function buildFresh(tmp) {
-  const build = spawnSync(
-    process.execPath,
-    [CLI, 'build', '--target', 'claude', '--out-dir', tmp],
-    { cwd: REPO_ROOT, stdio: ['ignore', 'ignore', 'inherit'], windowsHide: true },
-  );
-  const freshDir = path.join(tmp, 'claude');
+/** Builds `--target target` into `tmp` and returns its build folder; exits 2 if that fails. */
+function buildFresh(tmp, target) {
+  const build = spawnSync(process.execPath, [CLI, 'build', '--target', target, '--out-dir', tmp], {
+    cwd: REPO_ROOT,
+    stdio: ['ignore', 'ignore', 'inherit'],
+    windowsHide: true,
+  });
+  const freshDir = path.join(tmp, TARGETS[target].buildDir);
   if (build.status !== 0 || !fs.existsSync(freshDir)) {
     console.error('✗ build failed — run `npm run build` first so dist-cli/cli.js exists');
     return null;
@@ -94,13 +140,13 @@ function buildFresh(tmp) {
 }
 
 function main() {
-  const args = process.argv.slice(2);
-  if (args.length !== 1) {
+  const parsed = parseArgs(process.argv.slice(2));
+  if (parsed === null) {
     printUsage();
     process.exit(2);
   }
 
-  const published = path.resolve(args[0]);
+  const published = path.resolve(parsed.published);
   let isDirectory = false;
   try {
     isDirectory = fs.statSync(published).isDirectory();
@@ -108,29 +154,30 @@ function main() {
     isDirectory = false;
   }
   if (!isDirectory) {
-    console.error(`✗ published dir not found or not a directory: ${args[0]}`);
+    console.error(`✗ published dir not found or not a directory: ${parsed.published}`);
     printUsage();
     process.exit(2);
   }
 
+  const target = TARGETS[parsed.target];
   const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-marketplace-drift-'));
   try {
-    const freshDir = buildFresh(tmp);
+    const freshDir = buildFresh(tmp, parsed.target);
     if (freshDir === null) {
       process.exitCode = 2;
       return;
     }
 
-    const fresh = readTree(freshDir, NO_IGNORED_ENTRIES);
+    const fresh = readTree(freshDir, new Set(target.omitTopLevel));
     const actual = readTree(published, IGNORED_TOP_LEVEL);
     const drift = diffTrees(actual, fresh);
 
     if (drift.length === 0) {
-      console.log(`✓ marketplace matches a fresh build (${fresh.size} files)`);
+      console.log(`✓ ${target.label} matches a fresh build (${fresh.size} files)`);
       return;
     }
 
-    console.log('✗ marketplace drift:');
+    console.log(`✗ ${target.label} drift:`);
     for (const line of drift) console.log(line);
     process.exitCode = 1;
   } finally {

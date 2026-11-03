@@ -13,6 +13,7 @@
 | [setup/codex.md](setup/codex.md)                             | Install skills on OpenAI Codex, and the trust and listing limits                   |
 | [setup/cursor.md](setup/cursor.md)                           | Install rules and skills on Cursor, and the skills Cursor already reads            |
 | [setup/antigravity.md](setup/antigravity.md)                 | Install Sigil rules and skills for Antigravity                                     |
+| [setup/skills-cli.md](setup/skills-cli.md)                   | Install single skills into any agent with `npx skills`, from the `skills` branch   |
 | [reference/troubleshooting.md](reference/troubleshooting.md) | Common errors and FAQ                                                              |
 | [reference/capabilities.md](reference/capabilities.md)       | Which kinds each target delivers, per channel (generated)                          |
 | [reference/artifacts.md](reference/artifacts.md)             | Every installable artifact: packs, tools, install command (generated)              |

@@ -11,11 +11,11 @@ permissions:
 jobs:
   # ── Gate ───────────────────────────────────────────────────────────────────
   #
-  # The same gate CI runs, on the tagged commit. `publish` and `marketplace` both wait on
-  # this and nothing else, so the marketplace ships even before npm Trusted Publishing is set
-  # up, and a failed npm publish never blocks it. `publish` also requires the repository
-  # variable NPM_PUBLISH set to `true` and is skipped otherwise, so a release cut before npm
-  # is set up still concludes green.
+  # The same gate CI runs, on the tagged commit. `publish`, `marketplace` and `skills` all
+  # wait on this and nothing else, so the marketplace and skills branches ship even before npm
+  # Trusted Publishing is set up, and a failed npm publish never blocks them. `publish` also
+  # requires the repository variable NPM_PUBLISH set to `true` and is skipped otherwise, so a
+  # release cut before npm is set up still concludes green.
   gate:
     runs-on: ubuntu-latest
 
@@ -135,48 +135,50 @@ jobs:
         run: node dist-cli/cli.js build --target claude --out-dir "$RUNNER_TEMP/mp"
 
       - name: Publish to the marketplace branch
+        run: bash scripts/publish-branch.sh marketplace marketplace- "$RUNNER_TEMP/mp/claude"
+
+  # ── Agent Skills ───────────────────────────────────────────────────────────
+  #
+  # Runs after the gate passes, independent of npm publish, so the skills branch ships even
+  # before npm Trusted Publishing is set up. It builds the tag's agents-standard tree without
+  # its root AGENTS.md and publishes it to the orphan `skills` branch, which users install
+  # from with `npx skills add https://github.com/makubexD/sigil/tree/skills --skill <name>`.
+  # Every publish is also tagged `skills-v<version>` so a user can pin one. Only the newest
+  # `v*.*.*` tag publishes, so a backport release never rolls users back, and a re-run of an
+  # already published tag is a no-op — both in scripts/publish-branch.sh. `contents: write`
+  # is granted on this job only — the workflow-level permissions stay read-only.
+  # See docs/decisions/distribution-channels-2026-09.md (§ 6, Phase 3).
+  #
+  skills:
+    needs: gate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    # Two releases publish one after the other, never racing.
+    concurrency:
+      group: skills-publish
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+
+      - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
+        with:
+          node-version: '20'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Build the Agent Skills tree
         run: |
-          set -euo pipefail
+          node dist-cli/cli.js build --target agents-standard --out-dir "$RUNNER_TEMP/sk"
+          # Repo-wide rules belong to `sigil add`, not to `npx skills`.
+          rm "$RUNNER_TEMP/sk/agents-standard/AGENTS.md"
 
-          BR="$RUNNER_TEMP/branch"
-          TAG="marketplace-$GITHUB_REF_NAME"
-
-          # Publish only from the newest release tag: a backport never rolls users back.
-          LATEST=$(git -c versionsort.suffix=- ls-remote --tags --refs --sort=-v:refname origin "v*.*.*" | sed -n 1p | sed 's|.*refs/tags/||')
-          if [ "$GITHUB_REF_NAME" != "$LATEST" ]; then
-            echo "::notice::$GITHUB_REF_NAME is not the newest release ($LATEST); the marketplace stays on the newest one"
-            exit 0
-          fi
-
-          # An already published tag is a no-op, so re-running a release is safe.
-          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" > /dev/null; then
-            echo "::notice::$TAG is already published; nothing to do"
-            exit 0
-          fi
-
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
-          # First publish has no `marketplace` branch yet: start an orphan one.
-          if git ls-remote --exit-code --heads origin marketplace > /dev/null; then
-            git fetch --depth=1 origin marketplace:refs/remotes/origin/marketplace
-            git worktree add -B marketplace "$BR" origin/marketplace
-          else
-            git worktree add --orphan -b marketplace "$BR"
-          fi
-
-          # Keep `.git/`; replace everything else with the fresh build.
-          find "$BR" -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -a "$RUNNER_TEMP/mp/claude/." "$BR/"
-
-          cd "$BR"
-          git add -A
-
-          if git diff --cached --quiet; then
-            echo "marketplace unchanged; tagging the existing commit"
-          else
-            git commit -m "marketplace: $GITHUB_REF_NAME"
-          fi
-
-          git tag "$TAG"
-          git push --atomic origin marketplace "refs/tags/$TAG"
+      - name: Publish to the skills branch
+        run: bash scripts/publish-branch.sh skills skills- "$RUNNER_TEMP/sk/agents-standard"

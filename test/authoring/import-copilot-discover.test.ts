@@ -197,13 +197,18 @@ describe('discoverCopilotFiles — unrecognised entries', () => {
     });
   });
 
-  it('does not follow a symlinked instruction file', () => {
+  it('does not follow a symlinked instruction file', t => {
     withTempDir(project => {
       const github = copilotDir(project);
       const outside = writeFile(project, 'outside.md', RULE);
       const link = path.join(github, 'instructions', 'linked.instructions.md');
       fs.mkdirSync(path.dirname(link), { recursive: true });
-      fs.symlinkSync(outside, link);
+      try {
+        fs.symlinkSync(outside, link);
+      } catch {
+        t.skip('this machine cannot create symbolic links');
+        return;
+      }
       const result = discoverCopilotFiles(github, 'typescript');
       assert.equal(result.discovered.length, 0);
       assert.equal(result.unrecognised.length, 1);

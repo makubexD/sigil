@@ -32,6 +32,7 @@ import type {
   ContractEntry,
   FileMap,
   KindVocabulary,
+  Pack,
   ResolvedCatalog,
   ScaffoldOptions,
   Target,
@@ -50,6 +51,7 @@ import { ANTIGRAVITY_HOOK_INPUT } from './hook-dialect';
 import { ANTIGRAVITY_LEXICON } from './lexicon';
 import { ANTIGRAVITY_EMIT_SPECS } from './spec';
 import { buildAntigravityPlugins } from './plugin-assemble';
+import { antigravityPluginContents } from './plugin-contents';
 import {
   ANTIGRAVITY_INIT_DIRS,
   ANTIGRAVITY_PROJECT_MARKERS,
@@ -142,6 +144,17 @@ export class AntigravityTarget implements Target {
    */
   configSkipReason(artifact: Artifact): string | undefined {
     return configSkipReasonFrom(this.configKinds, artifact);
+  }
+
+  /**
+   * What each plugin of the Antigravity plugin layout holds, from the same pack membership and
+   * config plugin selection `compile` writes (src/targets/antigravity/plugin-contents.ts).
+   */
+  marketplacePluginContents(
+    catalog: ResolvedCatalog,
+    packs: Pack[],
+  ): ReadonlyMap<string, readonly string[]> {
+    return antigravityPluginContents(catalog, packs);
   }
 
   /** The plugin layout: one folder per pack, plus one generated plugin per hook and MCP artifact. */

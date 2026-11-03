@@ -11,6 +11,7 @@
  * @module
  */
 import { getAllTargets } from './targets';
+import { catalogForPlatform } from './select';
 import type { EnabledPlugin, EnabledPluginsEnv, Pack, ResolvedCatalog, Target } from './types';
 
 export { DEFAULT_MARKETPLACE_NAME, marketplaceName } from './marketplace-name';
@@ -52,12 +53,13 @@ function pluginContentsFor(
   catalog: ResolvedCatalog,
   packs: Pack[],
 ): ReadonlyMap<string, readonly string[]> {
-  if (target.marketplacePluginContents !== undefined) {
-    return target.marketplacePluginContents(catalog, packs);
-  }
-  if (target.pluginContentsFrom === undefined) return new Map();
-  const source = getAllTargets().find(candidate => candidate.name === target.pluginContentsFrom);
-  return source?.marketplacePluginContents?.(catalog, packs) ?? new Map();
+  const source =
+    target.marketplacePluginContents !== undefined
+      ? target
+      : getAllTargets().find(candidate => candidate.name === target.pluginContentsFrom);
+  if (source?.marketplacePluginContents === undefined) return new Map();
+  // The build compiles each target from its `platforms:` slice, so the contents must too.
+  return source.marketplacePluginContents(catalogForPlatform(catalog, source.name), packs);
 }
 
 /** Everything {@link collectOverlaps} joins. */

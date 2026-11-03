@@ -95,21 +95,30 @@ function buildOne(
 }
 
 /**
- * One plugin per `hook` and `mcp` artifact whose `platforms:` allows Antigravity (an absent list
- * allows every target) and whose skip reason does not refuse it. Hooks come first, then MCP
- * servers, each kind in catalog order.
+ * Every `hook` and `mcp` artifact that gets a generated plugin, in build order: hooks first, then
+ * MCP servers, each kind in catalog order. An artifact whose `platforms:` excludes Antigravity
+ * (an absent list allows every target) or whose skip reason refuses it is left out.
  */
+export function antigravityConfigPluginArtifacts(catalog: ResolvedCatalog): ResolvedArtifact[] {
+  const artifacts: ResolvedArtifact[] = [];
+  for (const kind of CONFIG_PLUGIN_KINDS) {
+    for (const artifact of catalog.artifacts) {
+      if (artifact.kind !== kind) continue;
+      const writer = configWriterFor(artifact);
+      if (!writer || !artifactTargetsPlatform(artifact, 'antigravity')) continue;
+      if (writer.skipReason?.(artifact) !== undefined) continue;
+      artifacts.push(artifact);
+    }
+  }
+  return artifacts;
+}
+
+/** One plugin per config artifact in {@link antigravityConfigPluginArtifacts} order. */
 export function buildAntigravityConfigPlugins(
   catalog: ResolvedCatalog,
   options: AntigravityPluginOptions,
 ): AntigravityConfigPlugin[] {
-  const plugins: AntigravityConfigPlugin[] = [];
-  for (const kind of CONFIG_PLUGIN_KINDS) {
-    for (const artifact of catalog.artifacts) {
-      if (artifact.kind !== kind) continue;
-      const plugin = buildOne(artifact, options);
-      if (plugin) plugins.push(plugin);
-    }
-  }
-  return plugins;
+  return antigravityConfigPluginArtifacts(catalog)
+    .map(artifact => buildOne(artifact, options))
+    .filter((plugin): plugin is AntigravityConfigPlugin => plugin !== undefined);
 }

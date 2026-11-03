@@ -15,6 +15,7 @@ export {
   artifactLanguage,
   isAgnostic,
   artifactTargetsPlatform,
+  catalogForPlatform,
 } from './selection';
 export { resolveSelection, packMemberIds, type ResolveSelectionOptions } from './selector-resolve';
 

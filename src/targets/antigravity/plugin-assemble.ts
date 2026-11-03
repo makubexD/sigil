@@ -21,7 +21,7 @@ import { antigravityPluginJson } from './plugin-manifest';
 import { buildAntigravityConfigPlugins } from './plugin-config';
 
 /** Whether the plugin channel writes `artifact`: it has a plugin spec that refuses nothing. */
-function isWritable(artifact: ResolvedArtifact): boolean {
+export function isWritable(artifact: ResolvedArtifact): boolean {
   const spec = specFor(ANTIGRAVITY_EMIT_SPECS, artifact.kind, 'plugin');
   return spec !== undefined && specSkipReason(spec, artifact) === undefined;
 }
@@ -61,7 +61,7 @@ function writeMemberFiles(
  * A pack's members (its skills, agents and rules, plus the shared agents its skills use) and its
  * co-install set, which drives each file's conditional Boundary section.
  */
-function packMembers(
+export function packMembers(
   pack: Pack,
   catalog: ResolvedCatalog,
 ): { members: ResolvedArtifact[]; installSet: Set<string> } {

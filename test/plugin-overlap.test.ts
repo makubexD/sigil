@@ -278,3 +278,23 @@ describe('marketplaceName', () => {
     assert.equal(marketplaceName({ name: 'acme' }), 'acme');
   });
 });
+
+describe('pluginOverlaps platform slice', () => {
+  it('should leave out a pack member whose platforms exclude the target that builds the plugin', () => {
+    const everywhere = artifact('shared/skill-a', 'skill', { frontmatter: { name: 'skill-a' } });
+    const claudeOnly = artifact('shared/skill-b', 'skill', {
+      frontmatter: { name: 'skill-b', platforms: ['claude'] },
+    });
+    const catalog = catalogOf([everywhere, claudeOnly]);
+    const pack = packOf('starter', { artifacts: [everywhere.id, claudeOnly.id] });
+    const plugins = { plugins: [{ name: 'starter', source: 'state' }], warnings: [] };
+    const readsFrom = (name: string): Target =>
+      ({ enabledPlugins: () => plugins, pluginContentsFrom: name }) as unknown as Target;
+
+    const fromAntigravity = pluginOverlaps(readsFrom('antigravity'), catalog, [pack], ENV);
+    assert.deepEqual([...fromAntigravity.overlaps.keys()], ['shared/skill-a']);
+
+    const fromClaude = pluginOverlaps(readsFrom('claude'), catalog, [pack], ENV);
+    assert.deepEqual([...fromClaude.overlaps.keys()].sort(), ['shared/skill-a', 'shared/skill-b']);
+  });
+});

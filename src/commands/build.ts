@@ -10,7 +10,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { resolveCatalog } from '../resolve';
 import { getAllTargets, getTarget } from '../targets';
-import { artifactTargetsPlatform } from '../select';
+import { catalogForPlatform } from '../select';
 import { checkOutputContract } from '../targets/output-contract';
 import { contractsFor } from '../targets/all-emit-specs';
 import { buildRegistry, isRegistryFile } from '../registry';
@@ -27,12 +27,6 @@ export interface BuildOptions {
   outDir: string;
 }
 
-/** Filter a resolved catalog to only artifacts targeting a given platform. */
-function filterForTarget(resolved: ResolvedCatalog, name: string): ResolvedCatalog {
-  const filtered = resolved.artifacts.filter(a => artifactTargetsPlatform(a, name));
-  return { ...resolved, artifacts: filtered, byId: new Map(filtered.map(a => [a.id, a])) };
-}
-
 /** Compiles one target's catalog slice and checks its output against the target's contracts. */
 async function compileTarget(
   target: Target,
@@ -40,7 +34,7 @@ async function compileTarget(
   compileOpts: CompileOptions,
 ): Promise<FileMap> {
   console.log(`\nBuilding target: ${target.name}`);
-  const files = await target.compile(filterForTarget(resolved, target.name), compileOpts);
+  const files = await target.compile(catalogForPlatform(resolved, target.name), compileOpts);
 
   // Output-conformance check: verify emitted file shapes match the target's contracts.
   const violations = checkOutputContract(files, contractsFor(target));

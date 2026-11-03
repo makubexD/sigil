@@ -143,3 +143,12 @@ export function artifactTargetsPlatform(
   if (!platforms || platforms.length === 0) return true;
   return platforms.includes(targetName);
 }
+
+/**
+ * The catalog slice a target builds from: only the artifacts {@link artifactTargetsPlatform}
+ * allows. `build` compiles it, and the duplicate guard computes plugin contents from it.
+ */
+export function catalogForPlatform(resolved: ResolvedCatalog, targetName: string): ResolvedCatalog {
+  const artifacts = resolved.artifacts.filter(a => artifactTargetsPlatform(a, targetName));
+  return { ...resolved, artifacts, byId: new Map(artifacts.map(a => [a.id, a])) };
+}

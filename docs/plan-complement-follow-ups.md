@@ -84,9 +84,9 @@ antigravity`), not the Claude marketplace. So the target gets its own `marketpla
    paused on Cursor usage. Recorded as left open with that reason.
 10. **`status --json` reader warnings go to stderr.** Stdout stays the JSON array (no shape change). The warnings use
     the same `plugin check:` lines the text output prints.
-11. **The wizard prints the plugin advisory once.** The plan box already shows it, so the wizard's `add` call passes
-    a new `quietPluginAdvice: true` option, and `resolveAndPartitionIds` then skips `printPluginOverlapAdvice`. Plain
-    `sigil add` is unchanged.
+11. **The wizard prints the plugin advisory once.** The plan box already shows it. The wizard runs inside `add`
+    (`resolveInputs`), whose inputs already carry `fromWizard`, so `resolveAndPartitionIds` skips
+    `printPluginOverlapAdvice` when `ctx.inputs.fromWizard` is true. No new option. Plain `sigil add` is unchanged.
 12. **The wizard gets a complement choice.** It appears only when the preview found overlaps, as a select after the
     deps step: "Install them anyway" (default, as plain `add` does) or "Skip what the plugin delivers (--complement)".
     The choice sets `s.complement`, is passed to `add`, and appears in the equivalent command the wizard prints.
@@ -228,11 +228,12 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
 
 ## Step 10 `[worker:medium]`: the wizard prints the plugin advisory once
 
-- Files: `src/commands/add/index.ts` (`AddOptions.quietPluginAdvice?: boolean`, doc: the caller already showed the
-  advisory), `src/commands/add/plan.ts` (skip `printPluginOverlapAdvice` when set), the wizard file that calls `runAdd`
-  after `proceed` (find it from `src/wizard/steps/add/proceed.ts`), and its test.
-- Test: a wizard add run with one overlapping pick → the `already delivers` header appears once in the captured
-  output. Plain `add` still prints it.
+- Files: `src/commands/add/plan.ts` (`resolveAndPartitionIds`: skip `printPluginOverlapAdvice` when
+  `ctx.inputs.fromWizard`; the returned `pluginOverlaps` is unchanged), `test/commands/add-plugin-overlap.test.ts`.
+- Amended 2026-11-03: the wizard runs inside `add` (`resolveInputs` → `runWizardAt`), so there is no separate wizard
+  `runAdd` call to pass an option from; `fromWizard` already says the plan box showed the advisory.
+- Test: an add run whose inputs come from the wizard, with one overlapping pick → the `already delivers` header is
+  not printed by `add` (the plan box printed it). Plain `add` with the same pick still prints it once.
 
 ## Step 11 `[worker:medium]`: the wizard's complement choice
 

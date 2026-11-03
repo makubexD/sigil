@@ -2,7 +2,7 @@
  * The neutral tool vocabulary in the schema: a neutral name, a legacy provider alias or a
  * provider-specific permission pattern is accepted; an unknown bare name is rejected because no
  * target could map it. Model, effort and tool policy are the three neutral hints on an agent.
- * See docs/plan-cursor-target-n.md step 3.
+ * See docs/decisions/neutral-agent-vocabulary-2026-11.md.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

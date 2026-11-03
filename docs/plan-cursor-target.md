@@ -8,6 +8,10 @@ This is a phase-level roadmap, not a step plan. Each phase is one branch and one
 `docs/plan-cursor-target-<phase>.md` when it starts. A phase that opens with a spike ends the spike in a written
 go/no-go, and a recorded no-go counts as done.
 
+The finished step plans (A-E, N and the follow-ups) were deleted on 2026-11-02; read one with
+`git show 4c0403c:docs/plan-cursor-target-<phase>.md` (or `plan-cursor-followups.md`). Phase E's decisions live in
+[cursor-target-2026-11.md](decisions/cursor-target-2026-11.md).
+
 Standing procedure: RED first, `npm run ci:local` green, merge on green CI. Close-out per phase: `workflow-report .`,
 `/agent-skills:review`, a `CHANGELOG.md` entry, the ADR note updated, and the step plan deleted after merge.
 
@@ -54,7 +58,7 @@ Confirmed by the owner on 2026-11-01.
    Refined by Decision 7: the refusal depends on the agent's `toolPolicy`. Since no catalog agent is read-only alone,
    the owner chose on 2026-11-01 to make every agent family `nearest`: reviewers ship `readonly: true` and lose `shell`,
    edit agents ship with no flag and gain every tool, each with a warning
-   ([plan-cursor-target-e.md](plan-cursor-target-e.md) Decisions 1–4).
+   (`plan-cursor-target-e.md` Decisions 1–4).
 6. **The catalog's agent vocabulary is provider-neutral** (owner, 2026-11-01, Phase N): tool names (`read`,
    `search`, `edit`, `shell`, `web`, `agent`), a `toolPolicy` (`strict`: a target that can't express the
    restriction exactly skips the agent with a reason; `nearest`: it gets the closest mapping and a warning), and model
@@ -157,7 +161,7 @@ double-load check in `add`, a warning since A3. No home-scope `cursor` skill ins
 Cursor already loads Claude Code's plugin skills (A3). No `AGENTS.md` (Decision 4). `prompt`, `agent`,
 `workflow`, `settings`: `none` with reasons. Capability table, `capabilities.md`, `sync --check` (coverage, unemitted fields, term leaks) green.
 
-**Done 2026-11-01** in #153 (step plan [plan-cursor-target-b.md](plan-cursor-target-b.md)): `.mdc` rules and
+**Done 2026-11-01** in #153 (step plan `plan-cursor-target-b.md`): `.mdc` rules and
 `.cursor/skills/`, no `AGENTS.md`, and `readerWins` overlap notes in `add` and `status`. Setup page:
 [setup/cursor.md](setup/cursor.md).
 
@@ -170,7 +174,7 @@ A4 found `tool_input.file_path`, so the parser needs no change. A4 also found th
 an allowed edit's calls before choosing the matcher that `Edit|Write` maps to. A5 was inconclusive (its matcher matched
 no call): rerun it with a matcher-less `.claude` hook and document whether hooks run twice.
 
-**Done 2026-11-01** in #155 (step plan [plan-cursor-target-c.md](plan-cursor-target-c.md)): hooks in
+**Done 2026-11-01** in #155 (step plan `plan-cursor-target-c.md`): hooks in
 `.cursor/hooks.json` and `~/.cursor/hooks.json` with the home backup, unrenderable hooks skipped with a reason, the
 `hook-target-render` sync rule, and a live CLI block of a sigil-installed hook. A5's rerun: the Cursor CLI never runs
 `.claude/settings.json` hooks, so nothing runs twice. Setup: [setup/cursor.md](setup/cursor.md).
@@ -180,7 +184,7 @@ no call): rerun it with a matcher-less `.claude` hook and document whether hooks
 MCP ops through the existing JSON writer, `${env:NAME}` as Cursor's `EnvSyntax` (expanded, A6), project and home scope.
 The setup note says a project server needs approval, and print mode also needs `--force` to call it.
 
-**Done 2026-11-01** in #157 (step plan [plan-cursor-target-d.md](plan-cursor-target-d.md)): servers in
+**Done 2026-11-01** in #157 (step plan `plan-cursor-target-d.md`): servers in
 `.cursor/mcp.json` and `~/.cursor/mcp.json` with the home backup, rendered from data (`McpDialect`) through a
 `ConfigKindTable` that Codex also adopted, and `config-target-render` replacing `hook-target-render`. `shared/ado` ships
 to Cursor. Probes: Cursor never reads `.mcp.json`, `${env:NAME}` expands in `args`, and an unknown `type` drops the
@@ -188,14 +192,14 @@ whole file. A sigil-installed `filesystem` server ran live in the CLI. Setup: [s
 
 ### Phase N: provider-neutral agent vocabulary
 
-Catalog-wide, not Cursor-only (Decision 7). Step plan [plan-cursor-target-n.md](plan-cursor-target-n.md). Tool names in
+Catalog-wide, not Cursor-only (Decision 7). Step plan `plan-cursor-target-n.md`. Tool names in
 agents' `tools` / `disallowedTools` and skills' `allowedTools` become neutral (Copilot's alias set: `read`, `search`,
 `edit`, `shell`, `web`, `agent`). Today's Claude names are accepted as legacy aliases with a `validate` warning. Each
 target gets a `ToolDialect` that says how a neutral list is written and whether it is exact. A `toolPolicy`
 (`strict` / `nearest`, family default in `standard.yaml`) decides what an inexact mapping does. Neutral `model` /
 `effort` hints map per target. The catalog's 39 agents and 41 skills migrate.
 
-**Done 2026-11-01** in #159 (step plan [plan-cursor-target-n.md](plan-cursor-target-n.md)): the vocabulary, Claude, Copilot and open-standard
+**Done 2026-11-01** in #159 (step plan `plan-cursor-target-n.md`): the vocabulary, Claude, Copilot and open-standard
 dialects, `toolPolicy` skips, Claude model tiers, family tool defaults (`family-tools`), and the catalog migrated. Legacy
 names are a `sync --check` error (`legacy-tool-name`), not a `validate` warning. Follow-up: hook `matcher`s
 (`Edit|Write`, `Bash`) still use Claude names, translated per target in `hook-ops.ts`.
@@ -207,10 +211,10 @@ Go (Decision 5), recorded in the ADR, built on Phase N. Cursor's `ToolDialect` e
 `nearest` one gets `readonly: true` unless its list holds `edit` (then no line), with a warning. The agent
 `KindEmitSpec` goes in `.cursor/agents/`, and `model` is left out (Cursor's default is `inherit`). Tests: every catalog
 agent without `edit` renders with `readonly: true`; a `strict` agent with `shell` is skipped; a `nearest` one warns.
-Steps: [plan-cursor-target-e.md](plan-cursor-target-e.md). The ADR records what `readonly` still allows
+Steps: `plan-cursor-target-e.md`. The ADR records what `readonly` still allows
 (A7), and the live check runs on a free Cursor model.
 
-**Done 2026-11-01** in #161 (step plan [plan-cursor-target-e.md](plan-cursor-target-e.md)): agents in `.cursor/agents/`
+**Done 2026-11-01** in #161 (step plan `plan-cursor-target-e.md`): agents in `.cursor/agents/`
 through Cursor's `read-only-flag` dialect, whose nearest rule narrows to `readonly: true` unless the list holds one of
 its `writes`. Every agent family is `toolPolicy: nearest`. Live: a sigil-installed reviewer ran in Ask mode and could
 not write (A7 holds), and on a name clash the `.cursor/agents/` copy beat `.claude/agents/` (`readerWins: true`).
@@ -226,7 +230,7 @@ did not load.
 
 **Paused 2026-11-01** (step plan [plan-cursor-target-f.md](plan-cursor-target-f.md), § Status): Cursor's free usage
 limit stopped the probes partway through. So far a CLI-loaded Cursor plugin loads skills and agents but not rules, and
-doesn't enforce `readonly`. Meanwhile [plan-cursor-followups.md](plan-cursor-followups.md) cleared the deferred review
+doesn't enforce `readonly`. Meanwhile `plan-cursor-followups.md` cleared the deferred review
 items, none of which needed Cursor usage (merged #164, 2026-11-01).
 
 ### Phase G: close-out

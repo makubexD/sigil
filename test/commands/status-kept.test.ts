@@ -1,6 +1,6 @@
 /**
  * `sigil status` names a config artifact its target would now refuse as installed, the way
- * `update` prints `kept as installed: <reason>` (plan-cleanup-leftovers step 8). A target refuses
+ * `update` prints `kept as installed: <reason>`. A target refuses
  * a hook it cannot map; editing the catalog after install reproduces that on a real target.
  */
 import { describe, it } from 'node:test';

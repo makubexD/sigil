@@ -292,7 +292,7 @@ command: "echo tool-use detected"
   });
 });
 
-// ─── Linear exfil rules (step 5 of docs/plan-cleanup-leftovers.md) ─────────────
+// ─── Linear exfil rules (docs/decisions/trust-scan-eval-limits-2026-10.md) ────
 //
 // config/exfil-in-command and injection/data-exfil-url were quadratic before the rewrite: the
 // first rescanned the rest of the line from every `curl` through an unbounded `[^'"]*` gap, the

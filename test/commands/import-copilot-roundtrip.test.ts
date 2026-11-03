@@ -1,8 +1,7 @@
 /**
  * Round trip: install real catalog artifacts for Copilot, import the resulting `.github/` layout
  * back into an empty catalog, and compare it with the bundled source. A mismatch is a bug in the
- * import pipeline, not something this test papers over — see
- * `docs/plan-import-copilot-layout.md` step 10.
+ * import pipeline, not something this test papers over.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

@@ -114,6 +114,28 @@ both. `disallowedTools` is not carried; a `strict` agent that sets it is skipped
 and its own `.cursor/agents/` copy wins on a name clash. Both were checked live with sigil-installed agents (Phase E
 probes): the reviewer ran in Ask mode and could not write, and the `.cursor/` copy won the clash.
 
+## Phase E: agent decisions (owner, 2026-11-01)
+
+Shipped in #161. Code and catalog comments cite these as "Phase E Decision <n>".
+
+1. **Reviewers ship narrowed.** The 29 `[read, search, shell]` agents get `readonly: true` on Cursor and lose `shell`
+   (no `git diff`, no test runs), with a warning. Narrowing never grants a tool the author didn't list.
+2. **Edit agents ship widened.** The 10 `[read, search, edit, shell]` agents get no `readonly` line, so Cursor gives
+   them every tool (`web`, `agent`, `todo` added), with a warning. They already have `shell`.
+3. **So every agent family becomes `toolPolicy: nearest`.** Claude and Copilot express all 39 lists exactly, so their
+   output doesn't change; `nearest` only matters on an inexact target, which today is only Cursor.
+4. **The `read-only-flag` nearest rule is data on the dialect**: a new `writes` list (Cursor: `[edit]`). The nearest
+   flag is `readonly: true` unless an authored tool is in `writes`. `exact` is unchanged (every tool in `readOnly`), so a
+   `strict` agent with `shell` is still skipped. A provider pattern (`mcp__…`) counts as not-a-write: it narrows.
+5. **`model` and `effort` are left out**: Cursor's default is `inherit`, and the vocabulary record (Decision 5 there)
+   keeps model ids out until a tier table is chosen as data. `is_background` is not mapped: no catalog field asks for
+   it.
+6. **`disallowedTools` is not carried on Cursor.** No catalog agent uses it. Unmapped, `restrictionOutcome` skips a
+   `strict` agent that sets it and warns on a `nearest` one, which is fail-closed enough until one exists. The record's
+   table row ("`readonly: true` iff ⊇ {edit, shell}") is corrected to say so.
+7. **Cursor reads `.claude/agents/` too**, so the target gets an `alsoLoads` row for `agent` from `claude` with
+   `readerWins: true` (the docs' name-clash rule). It was checked live, as A3 did for skills.
+
 ## Plugins: try the Claude route first
 
 The CLI has no plugin install command, and a rule in a `--plugin-dir` plugin (`.cursor-plugin/plugin.json` plus

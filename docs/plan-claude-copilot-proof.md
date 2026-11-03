@@ -179,3 +179,13 @@ Tests, `test/commands/update-wholefile.test.ts`, in `describe('updateWholeFileEn
 
 11a and 11b fail before the change. Test: `npm run build && npm run build:test && node --test
 test-compiled/commands/update-wholefile.test.js`, then `npm test`.
+
+### 12. Review doc fixes [inline: user-facing docs]
+
+From the step 10 review: in `docs/decisions/copilot-plugin-channel-2026-10.md` (the "Answered 2026-11-03" paragraph),
+say that the plugin-level `name` / `description` caps aren't checked (`plugin.json` is not a `KindEmitSpec`; longest pack
+description is 522 characters); in `docs/setup/copilot.md` § Limits, reword to "`protect-config`'s `create` / `edit`
+case wasn't reached on that plan"; in `docs/setup/claude-code.md` § Remove, mention `claude plugin prune --dry-run`
+first and `-y` outside a terminal. Not fixed, recorded as a follow-up: the guided update and the wizard's Update can't
+offer to restore an edited file whose catalog text is unchanged (it classifies `unchanged`, not `skip-drifted`). Then
+step 10 (close-out) runs: PR, `pr-ready`, merge, memory.

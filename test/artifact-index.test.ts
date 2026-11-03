@@ -23,8 +23,8 @@ import type { Pack, ResolvedCatalog, Target } from '../dist-cli/types';
 import { loadResolvedCatalog } from './helpers/catalog';
 import { PACKS } from './helpers/install-scenario';
 
-/** From `test-compiled/` up two levels to the repo root. */
-const ROOT = path.resolve(__dirname, '../..');
+/** The test compiles to `test-compiled/`, one level below the repo root. */
+const ROOT = path.resolve(__dirname, '..');
 
 describe('buildArtifactIndex', () => {
   let catalog: ResolvedCatalog;
@@ -102,6 +102,12 @@ describe('buildArtifactIndex', () => {
         );
       }
     }
+  });
+
+  it('should match the committed docs/reference/artifacts.md', () => {
+    const page = renderArtifactIndex(rows, targets);
+    const committed = fs.readFileSync(path.join(ROOT, 'docs/reference/artifacts.md'), 'utf8');
+    assert.equal(committed, page, 'run npm run build to regenerate');
   });
 });
 

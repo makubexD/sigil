@@ -12,6 +12,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
+import { buildAddPlan } from '../../dist-cli/commands/add/plan';
 import { runStatus } from '../../dist-cli/commands/status';
 import { runUpdate } from '../../dist-cli/commands/update';
 import { loadManifest } from '../../dist-cli/manifest';
@@ -255,6 +256,41 @@ describe('sigil add — plugin duplicate guard', () => {
         assert.ok(!fs.existsSync(path.join(project, '.claude/skills/cli/SKILL.md')));
         assert.match(text, /delivered by plugin cli-builder@sigil \(~\/\.claude\/settings\.json\)/);
         assert.doesNotMatch(text, /installed anyway/);
+      });
+    });
+  });
+
+  it('should report a typed --complement on the plan', async () => {
+    await withTempDirAsync(async project => {
+      await inTempDir(async home => {
+        enablePack(home);
+
+        const restore = mockClack([], createRecorder());
+        const originalLog = console.log;
+        console.log = () => {};
+        try {
+          const plan = await buildAddPlan([SKILL], {
+            projectDir: project,
+            catalogDir: CATALOG,
+            packs: PACKS,
+            target: 'claude',
+            deps: false,
+            dryRun: true,
+            interactive: false,
+            yes: true,
+            overwrite: false,
+            settingsLocal: false,
+            homeDir: home,
+            complement: true,
+          });
+
+          assert.ok(plan);
+          assert.equal(plan.effectiveComplement, true);
+          assert.ok(!plan.wholeFileIds.includes('shared/cli'));
+        } finally {
+          console.log = originalLog;
+          restore();
+        }
       });
     });
   });

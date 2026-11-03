@@ -52,6 +52,8 @@ export interface AddPlan {
   readonly effectiveIncludeDeps: boolean;
   readonly effectiveOverwrite: boolean;
   readonly effectiveScope: ConfigScope;
+  /** Skip picks an enabled plugin already delivers (--complement). */
+  readonly effectiveComplement: boolean;
   readonly fromWizard: boolean;
   readonly skipped: SkippedArtifact[];
   /** Ids an enabled plugin also delivers, when not running under --complement (empty then). */
@@ -136,8 +138,8 @@ async function resolveAndPartitionIds(
   const { ids: resolvedIds, skipped } = resolveIds(ctx, filters);
   const { overlaps, warnings } = computePluginOverlaps(ctx, resolvedIds);
   printPluginCheckWarnings(warnings);
-  const ids = ctx.opts.complement ? complement(ctx, resolvedIds, skipped, overlaps) : resolvedIds;
-  const shown = ctx.opts.complement ? new Map<string, PluginOverlap>() : overlaps;
+  const ids = ctx.inputs.complement ? complement(ctx, resolvedIds, skipped, overlaps) : resolvedIds;
+  const shown = ctx.inputs.complement ? new Map<string, PluginOverlap>() : overlaps;
 
   printSkippedAdvice(skipped, ctx.target);
   // The wizard's plan box already showed this advisory (decision 11), so print it only for a typed add.
@@ -159,6 +161,7 @@ type EffectiveFields = Pick<
   | 'effectiveIncludeDeps'
   | 'effectiveOverwrite'
   | 'effectiveScope'
+  | 'effectiveComplement'
   | 'fromWizard'
 >;
 
@@ -175,6 +178,7 @@ function buildEffectiveFields(
     effectiveIncludeDeps: ctx.inputs.includeDeps,
     effectiveOverwrite: ctx.inputs.overwrite,
     effectiveScope: ctx.inputs.scope,
+    effectiveComplement: ctx.inputs.complement,
     fromWizard: ctx.inputs.fromWizard,
   };
 }

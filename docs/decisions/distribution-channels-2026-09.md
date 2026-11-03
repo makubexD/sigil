@@ -348,7 +348,7 @@ byte by hash; `~/.gemini/config/` back to its earlier file list). Plan: `git sho
 
 ### Claude and Copilot proof (2026-11-03)
 
-Plan: `docs/plan-claude-copilot-proof.md`. Release under test: v0.8.0 (`marketplace` branch).
+Plan: `git show 0818794:docs/plan-claude-copilot-proof.md` (merged in PR #187, then deleted). Release under test: v0.8.0 (`marketplace` branch).
 
 - **Claude marketplace on a clean machine passes.** In a fresh `docker.io/library/node:24` container with
   Claude Code from npm and no sign-in, `claude plugin marketplace add makubexD/sigil#marketplace` and

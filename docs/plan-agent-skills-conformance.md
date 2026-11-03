@@ -92,7 +92,7 @@ Tests (add to the existing file; every existing case must still pass unchanged):
 | `--target copilot`                                                    | exit 2, usage printed                         |
 | `--target` with no value                                              | exit 2                                        |
 
-Test command: `npm run build && node --test test-compiled/test/scripts/check-marketplace-drift.test.js`.
+Test command: `npm run build && npm run build:test && node --test test-compiled/scripts/check-marketplace-drift.test.js`.
 
 ## Step 3 `[worker:medium]`: one publish script for both branches
 
@@ -113,7 +113,7 @@ Tests in `test/workflows.test.ts`:
 | `publish-branch.sh` holds `git push --atomic` and the `versionsort` newest-tag check       | passes   |
 | `bash scripts/publish-branch.sh` with no arguments                                         | exit 2   |
 
-Test command: `npm run build && node --test test-compiled/test/workflows.test.js && bash -n scripts/publish-branch.sh`.
+Test command: `npm run build && npm run build:test && node --test test-compiled/workflows.test.js && bash -n scripts/publish-branch.sh`.
 
 ## Step 4 `[worker:medium]`: publish the `skills` branch on release
 
@@ -129,7 +129,7 @@ build`, `node dist-cli/cli.js build --target agents-standard --out-dir "$RUNNER_
 Tests: the job exists, needs only `gate`, has `contents: write`, calls `publish-branch.sh skills skills-`, and the
 existing pinned-SHA test still passes.
 
-Test command: `npm run build && node --test test-compiled/test/workflows.test.js`.
+Test command: `npm run build && npm run build:test && node --test test-compiled/workflows.test.js`.
 
 ## Step 5 `[worker:medium]`: drift gate for the `skills` branch
 
@@ -143,7 +143,7 @@ ${{ matrix.target }} "$RUNNER_TEMP/branch"`. A missing branch stays a notice, no
 
 Tests: both matrix entries exist; the compare step passes `--target`; `on:` still lists `workflow_run` on `Release`.
 
-Test command: `npm run build && node --test test-compiled/test/workflows.test.js`.
+Test command: `npm run build && npm run build:test && node --test test-compiled/workflows.test.js`.
 
 ## Step 6 `[inline: user-facing copy]`: document the route
 

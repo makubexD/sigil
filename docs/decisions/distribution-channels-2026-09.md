@@ -367,6 +367,18 @@ Plan: `docs/plan-claude-copilot-proof.md`. Release under test: v0.8.0 (`marketpl
   every id for both targets reverses the JSON merges, keeps the user's own `settings.json` keys, removes the
   sigil-only `.mcp.json`, keeps the edited rule, and leaves an empty manifest. One bug: `update --force` kept the
   edited rule, although `status` tells the user to run it (fixed in plan step 3).
+- **Copilot `create` / `edit` against `protect-config`: not reached** on Copilot CLI 1.0.105. The owner's account
+  accepts only `--model auto`: every named model (`gpt-5-mini`, `mai-code-1.1-flash`, Claude and Gemini names) is "not
+  available". `auto` picked `gpt-6-luna` in 10 of 11 runs, and Copilot gives GPT models `apply_patch` instead of
+  `create` / `edit` (`--available-tools create edit view` leaves them only `view`, per the session's `events.jsonl`). The
+  one `mai-code-1.1-flash` run had both tools and created the control file. `apply_patch` is the path these accounts
+  take, and it was denied live on 2026-10-31. The `create` / `edit` case moves to the owner's VS Code check.
+- **B5 passes on a real install.** `copilot plugin install typescript-tooling@sigil` wrote
+  `~/.copilot/installed-plugins/sigil/typescript-tooling/` (`skills/`, `agents/`, `.claude-plugin/plugin.json`), the
+  layout the reader assumes. `sigil add skill:typescript/ts-document --target copilot` warned about the skill and its
+  agent `ts-code-reviewer` and installed both; with `--complement` it skipped both; `status --json` rows carry
+  `plugin: { name, source, marketplace: "sigil" }` with an empty stderr. `copilot plugin uninstall` removed the
+  `sigil/` folder; `marketplace remove` left `installed-plugins/` empty.
 
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict

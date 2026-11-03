@@ -18,13 +18,14 @@ import { coInstallSetFor } from './co-install';
 
 /** The scaffold options for this plan; `--complement` keeps a plugin's dependencies unwritten. */
 export function buildScaffoldOpts(ctx: PlanCtx, partition: PartitionedIds): ScaffoldOpts {
+  const excludeDeps = new Set(partition.skipped.filter(x => x.cause === 'plugin').map(x => x.id));
   return {
     projectDir: ctx.opts.projectDir,
     overwrite: ctx.inputs.overwrite,
     includeDeps: ctx.inputs.includeDeps,
     scope: ctx.inputs.scope,
-    coInstallSet: coInstallSetFor(ctx, partition.wholeFileIds),
-    excludeDeps: new Set(partition.skipped.filter(x => x.cause === 'plugin').map(x => x.id)),
+    coInstallSet: coInstallSetFor(ctx, partition.wholeFileIds, excludeDeps),
+    excludeDeps,
   };
 }
 

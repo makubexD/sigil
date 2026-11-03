@@ -3,7 +3,8 @@
  * "related artifacts" are checked against. It must match what `sigil update` passes (every
  * manifest id for the target), or update re-renders a file `add` just wrote. Found by the
  * 2026-09-27 install audit: the two shared auditors, pulled in as `uses:` dependencies, lost
- * each other's Boundary entry because only the direct picks were counted.
+ * each other's Boundary entry because only the direct picks were counted. A dependency an enabled
+ * plugin delivers under `--complement` is not written, so it is not counted either.
  *
  * @module
  */
@@ -12,9 +13,15 @@ import { preloadedSkillIds } from '../../refs';
 import { computeClosure } from '../../select/closure';
 import type { PlanCtx } from './plan-context';
 
-export function coInstallSetFor(ctx: PlanCtx, pickedIds: readonly string[]): Set<string> {
+export function coInstallSetFor(
+  ctx: PlanCtx,
+  pickedIds: readonly string[],
+  excludeDeps: ReadonlySet<string>,
+): Set<string> {
   const deps = ctx.inputs.includeDeps
-    ? computeClosure([...pickedIds], ctx.resolved, ctx.target).dependencies.map(d => d.artifact.id)
+    ? computeClosure([...pickedIds], ctx.resolved, ctx.target)
+        .dependencies.map(d => d.artifact.id)
+        .filter(id => !excludeDeps.has(id))
     : [];
   const installed = loadManifest(ctx.opts.projectDir)
     .entries.filter(e => e.target === ctx.targetName)

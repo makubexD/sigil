@@ -196,7 +196,8 @@ that use them. MCP servers merge into `.agents/mcp_config.json` (or `~/.gemini/c
   repository files. Packs also install from the published marketplace, but its hook and filesystem
   MCP plugins don't work on Copilot, so use `add` for those. Settings aren't supported. See
   [docs/setup/copilot.md](docs/setup/copilot.md), [consuming.md](docs/guides/consuming.md) and
-  [capabilities](docs/reference/capabilities.md).
+  [capabilities](docs/reference/capabilities.md). Every artifact, its packs, the tools it installs
+  into and its `sigil add` command are listed in the [artifact index](docs/reference/artifacts.md).
 - **Open standard** (`agents-standard`): `sigil add --target agents-standard` writes Agent Skills to
   `.agents/skills/<name>/SKILL.md` exactly as the [Agent Skills spec](https://agentskills.io/specification)
   defines them, with each skill's rules inlined; a full build also writes a root `AGENTS.md`

@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `docs/reference/artifacts.md`: a generated index of every installable artifact, with the packs that hold it,
+  the tools `sigil add` installs it into, and the command that installs it. `npm run build` writes it and a test
+  fails when the committed page is stale.
+
 ### Fixed
 
 - `sigil import` keeps a rule's `paths` globs written as a flow list (`["src/*.ts"]`) or a single glob

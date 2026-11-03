@@ -139,6 +139,9 @@ Files: `.github/workflows/marketplace-drift.yml`, `test/workflows.test.ts`.
   `{ branch: skills, tag_prefix: skills-, target: agents-standard }`, `fail-fast: false`. Every literal `marketplace`
   in the resolve step reads the matrix value; the compare step runs `node scripts/check-marketplace-drift.cjs --target
 ${{ matrix.target }} "$RUNNER_TEMP/branch"`. A missing branch stays a notice, not a failure.
+- Amended during the step: the job runs the checked-out release tag's own script, and tags before this plan have no
+  `--target`, so the matrix carries `target_args` (empty for `marketplace`, `--target agents-standard` for `skills`),
+  passed through `env:`, never inlined into `run:`.
 - Rename the workflow `Published branch drift`; keep the file name, so links still work. Update the header comment.
 
 Tests: both matrix entries exist; the compare step passes `--target`; `on:` still lists `workflow_run` on `Release`.

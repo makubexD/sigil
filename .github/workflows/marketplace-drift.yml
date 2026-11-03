@@ -1,13 +1,16 @@
-# Drift gate for the published Claude marketplace.
+# Drift gate for the published branches.
 #
-# After every Release run (any conclusion) and on demand, this checks that the `marketplace`
-# branch equals a fresh `--target claude` build of the release its tip is tagged with
-# (`marketplace-v<version>`). A tip without that tag fails, since only the release workflow
-# tags it. A difference means a hand edit or a partial publish. Unreleased changes on
-# `master` are not drift. Node is pinned to release.yml's version.
-# See docs/decisions/publish-claude-marketplace-2026-10.md.
+# After every Release run (any conclusion) and on demand, this checks that each published branch
+# equals a fresh build of the release its tip is tagged with: `marketplace` is the fresh
+# `--target claude` build tagged `marketplace-v<version>`, and `skills` is the fresh
+# `--target agents-standard` build minus its root `AGENTS.md`, tagged `skills-v<version>`. A tip
+# without that tag fails, since only the release workflow tags it. A difference means a hand edit
+# or a partial publish. Unreleased changes on `master` are not drift. Node is pinned to
+# release.yml's version.
+# See docs/decisions/publish-claude-marketplace-2026-10.md and, for the skills branch,
+# docs/decisions/distribution-channels-2026-09.md (§ 6, Phase 3).
 
-name: Marketplace drift
+name: Published branch drift
 
 on:
   workflow_run:
@@ -22,42 +25,58 @@ jobs:
   drift:
     runs-on: ubuntu-latest
 
+    # A tag published before this change carries a script with no --target flag, whose default is
+    # claude, so target_args is empty for marketplace and names the target for skills.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - branch: marketplace
+            tag_prefix: marketplace-
+            target_args: ''
+          - branch: skills
+            tag_prefix: skills-
+            target_args: '--target agents-standard'
+
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
 
-      - name: Resolve the published release and the marketplace branch
+      - name: Resolve the published release and the branch
         id: resolve
+        env:
+          BRANCH: ${{ matrix.branch }}
+          TAG_PREFIX: ${{ matrix.tag_prefix }}
         run: |
           set -euo pipefail
 
-          if ! git ls-remote --exit-code --heads origin marketplace > /dev/null; then
-            echo "::notice::no marketplace branch yet; nothing to check"
+          if ! git ls-remote --exit-code --heads origin "$BRANCH" > /dev/null; then
+            echo "::notice::no $BRANCH branch yet; nothing to check"
             echo "skip=true" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          git fetch origin marketplace:refs/remotes/origin/marketplace
+          git fetch origin "$BRANCH:refs/remotes/origin/$BRANCH"
 
-          MTAG=$(git -c versionsort.suffix=- tag --points-at origin/marketplace --list "marketplace-v*.*.*" --sort=-v:refname | sed -n 1p)
+          MTAG=$(git -c versionsort.suffix=- tag --points-at "origin/$BRANCH" --list "${TAG_PREFIX}v*.*.*" --sort=-v:refname | sed -n 1p)
           if [ -z "$MTAG" ]; then
-            echo "::error::the marketplace branch tip carries no marketplace-v* tag; it was changed outside the release workflow"
+            echo "::error::the $BRANCH branch tip carries no ${TAG_PREFIX}v* tag; it was changed outside the release workflow"
             exit 1
           fi
 
-          TAG="${MTAG#marketplace-}"
+          TAG="${MTAG#"$TAG_PREFIX"}"
           if ! git rev-parse --verify --quiet "refs/tags/$TAG" > /dev/null; then
             echo "::error::$MTAG names release $TAG, which has no tag"
             exit 1
           fi
 
           git checkout --quiet "$TAG"
-          git worktree add --detach "$RUNNER_TEMP/branch" origin/marketplace
+          git worktree add --detach "$RUNNER_TEMP/branch" "origin/$BRANCH"
 
           echo "skip=false" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
-          echo "Checking marketplace against $TAG"
+          echo "Checking $BRANCH against $TAG"
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         if: steps.resolve.outputs.skip != 'true'
@@ -73,6 +92,10 @@ jobs:
         if: steps.resolve.outputs.skip != 'true'
         run: npm run build
 
-      - name: Compare the marketplace branch with a fresh build
+      - name: Compare the published branch with a fresh build
         if: steps.resolve.outputs.skip != 'true'
-        run: npm run marketplace:check -- "$RUNNER_TEMP/branch"
+        env:
+          TARGET_ARGS: ${{ matrix.target_args }}
+        run: |
+          # TARGET_ARGS is unquoted on purpose (shellcheck SC2086): an empty value must add no argument.
+          node scripts/check-marketplace-drift.cjs $TARGET_ARGS "$RUNNER_TEMP/branch"

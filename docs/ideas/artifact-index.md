@@ -12,7 +12,7 @@ the packs that hold it, the targets that get it, and the `sigil add` command tha
 - The pattern to copy: `src/emit-catalog-readme.ts` writes `catalog/README.md` at the end of `npm run build`
   (`package.json` `build` script), and `test/catalog-readme.test.ts` compares the committed page with
   `renderCatalogReadme`. `docs/reference/capabilities.md` follows it too (`src/targets/emit-capability-doc.ts`).
-- The per-artifact fields exist on `RegistryEntry` (`src/registry.ts:24-36`): `id`, `kind`, `title`, `description`,
+- The per-artifact fields exist on `RegistryEntry` (`src/registry.ts:30-42`): `id`, `kind`, `title`, `description`,
   `tags`, `platforms` (all six targets), `relatedArtifacts`, `uses`. `buildRegistry` derives them from the resolved
   catalog.
 - Pack membership is not in the registry. `getPackArtifacts` (`src/targets/shared/plugin-packs.ts:26`) expands both

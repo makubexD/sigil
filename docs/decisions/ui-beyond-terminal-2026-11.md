@@ -23,8 +23,8 @@ them. That was the brief's riskiest assumption, and it holds.
 
 What is left is "people choosing artifacts": someone reading the repo on GitHub who wants to see what exists, which pack
 holds it, which targets get it, and the command to install it. Today they have `sigil list` / `sigil search` (CLI only),
-`catalog/README.md` (the authoring standard, not the artifacts) and the catalog folders. A plugin browser shows packs,
-not the 167 artifacts inside them, and only for its own tool.
+`catalog/README.md` (the authoring standard, not the artifacts) and the catalog folders. A plugin browser lists each pack and what it installs,
+but only for its own tool, and never one artifact across packs and targets with the command to install it.
 
 ## Options
 

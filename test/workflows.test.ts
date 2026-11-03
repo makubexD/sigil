@@ -61,6 +61,16 @@ describe('release and CI workflows', () => {
     );
   });
 
+  it('should publish the skills branch through the shared publish script', () => {
+    const release = workflow('release.yml');
+    const skills = jobBlock(release, 'skills');
+    assert.match(skills, /^\s{4}needs:\s*gate\s*$/m);
+    assert.match(skills, /contents:\s*write/);
+    assert.match(skills, /bash scripts\/publish-branch\.sh skills skills-/);
+    // The skills branch ships regardless: it never waits on the npm publish job.
+    assert.doesNotMatch(skills, /NPM_PUBLISH/);
+  });
+
   it('should push atomically and only from the newest release tag', () => {
     const script = fs.readFileSync(PUBLISH_SCRIPT, 'utf8');
     assert.match(script, /git push --atomic/);

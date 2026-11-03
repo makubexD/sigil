@@ -72,6 +72,18 @@ function isNotDirectory(error: unknown): boolean {
 }
 
 /**
+ * Whether the scope's directory can hold the file. It is checked explicitly, because under a
+ * regular file Windows reports ENOENT where POSIX reports ENOTDIR, and `throwIfNoEntry` would hide
+ * it. `stat` follows a symlinked `.claude`, which reads as before.
+ */
+function dirHoldsFiles(dir: string, scope: SettingsScope, warnings: string[]): boolean {
+  const stats = fs.statSync(dir, { throwIfNoEntry: false });
+  if (stats === undefined || stats.isDirectory()) return stats !== undefined;
+  warnings.push(`${scope.source}: ${dir} is not a directory`);
+  return false;
+}
+
+/**
  * Whether the scope is worth reading: a missing file is not, and a path error (EACCES, ENOTDIR,
  * …) is reported once per directory rather than once per settings file under it.
  */
@@ -84,6 +96,10 @@ function scopeReadable(
   if (unreadableDirs.has(dir)) return false;
 
   try {
+    if (!dirHoldsFiles(dir, scope, warnings)) {
+      unreadableDirs.add(dir);
+      return false;
+    }
     return fs.lstatSync(scope.file, { throwIfNoEntry: false }) !== undefined;
   } catch (error) {
     if (isNotDirectory(error)) unreadableDirs.add(dir);

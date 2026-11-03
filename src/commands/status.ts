@@ -12,13 +12,13 @@ import { computeStatus, type CurrentTemplateOf } from '../manifest';
 import { entryKey, staleEntries, statusHooks } from '../freshness';
 import { requireManifest } from './shared/manifest';
 import { printSourceLine } from './shared/catalog-groups';
-import { perCatalogWithPlugins, printPluginNotes } from './status-plugins';
+import { deliveredIdsFor, perCatalogWithPlugins, printPluginNotes } from './status-plugins';
 import { printStatusJson } from './status-json';
 import { isConfigKind } from '../kinds';
 import type { Freshness } from '../freshness';
 import type { OverlaidCatalog } from '../overlays';
 import type { Manifest, StatusResult } from '../manifest';
-import type { LoadedCatalog, ResolvedCatalog } from '../types';
+import type { LoadedCatalog, PacksConfig, ResolvedCatalog } from '../types';
 
 export interface StatusOptions {
   projectDir: string;
@@ -161,15 +161,15 @@ function makeCurrentTemplateOf(catalog: LoadedCatalog): CurrentTemplateOf {
 function scanFreshness(
   manifest: ReturnType<typeof requireManifest>,
   overlaid: OverlaidCatalog,
-  opts: StatusOptions,
+  ctx: StatusOptions & { packsConfig: PacksConfig },
 ): Promise<Freshness> {
-  const { resolved, refused } = overlaid;
   return staleEntries(manifest, {
-    resolved,
-    projectDir: opts.projectDir,
+    resolved: overlaid.resolved,
+    projectDir: ctx.projectDir,
     targetOf: name => getAllTargets().find(t => t.name === name),
-    refused,
+    refused: overlaid.refused,
     retiredFor: retiredConfigDestinationsOf,
+    deliveredFor: deliveredIdsFor(ctx, ctx.packsConfig, overlaid.resolved),
   });
 }
 
@@ -181,11 +181,11 @@ async function buildStatuses(
   manifest: ReturnType<typeof requireManifest>,
   rawCatalog: LoadedCatalog,
   overlaid: OverlaidCatalog,
-  opts: StatusOptions,
+  ctx: StatusOptions & { packsConfig: PacksConfig },
 ): Promise<{ statuses: ReturnType<typeof computeStatus>; fresh: Freshness }> {
   const catalogIds = new Set(rawCatalog.artifacts.map(a => a.id));
-  const fresh = await scanFreshness(manifest, overlaid, opts);
-  const statuses = computeStatus(manifest, opts.projectDir, catalogIds, {
+  const fresh = await scanFreshness(manifest, overlaid, ctx);
+  const statuses = computeStatus(manifest, ctx.projectDir, catalogIds, {
     currentTemplateOf: makeCurrentTemplateOf(rawCatalog),
     retiredFor: retiredConfigDestinationsOf,
     ...statusHooks(fresh),
@@ -228,8 +228,8 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     return;
   }
 
-  const build = (view: Manifest, catalog: LoadedCatalog, group: OverlaidCatalog) =>
-    buildStatuses(view, catalog, group, opts);
+  const build = (view: Manifest, catalog: LoadedCatalog, group: OverlaidCatalog, p: PacksConfig) =>
+    buildStatuses(view, catalog, group, { ...opts, packsConfig: p });
   const { results, warnings } = await perCatalogWithPlugins(manifest, opts, build);
 
   if (opts.json) return printStatusJson(results);

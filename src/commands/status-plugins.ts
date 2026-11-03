@@ -7,7 +7,12 @@
  */
 import os from 'node:os';
 import { overlayProject, reportOverlayIssues } from '../overlay-report';
-import { formatPluginOverlap, marketplaceName, pluginOverlaps } from '../plugin-overlap';
+import {
+  formatPluginOverlap,
+  marketplaceName,
+  pluginDeliveredIds,
+  pluginOverlaps,
+} from '../plugin-overlap';
 import { resolveCatalog } from '../resolve';
 import { getAllTargets } from '../targets';
 import { perCatalog } from './shared/catalog-groups';
@@ -15,7 +20,13 @@ import type { PluginOverlap } from '../plugin-overlap';
 import type { CatalogSourceOptions } from '../manifest/catalog-source';
 import type { Manifest, StatusResult } from '../manifest';
 import type { OverlaidCatalog } from '../overlays';
-import type { EnabledPluginsEnv, LoadedCatalog, PacksConfig, ResolvedCatalog } from '../types';
+import type {
+  EnabledPluginsEnv,
+  LoadedCatalog,
+  PacksConfig,
+  ResolvedCatalog,
+  Target,
+} from '../types';
 import type { CatalogResult } from './shared/catalog-groups';
 
 /** What one catalog group's plugin check adds: the statuses carrying overlaps and reader warnings. */
@@ -38,6 +49,7 @@ type GroupBuilder<T> = (
   view: Manifest,
   catalog: LoadedCatalog,
   group: OverlaidCatalog,
+  packsConfig: PacksConfig,
 ) => Promise<T>;
 
 /** The state `perCatalogWithPlugins` carries through one group's run. */
@@ -58,12 +70,25 @@ interface TargetOverlaps {
 }
 
 /** The environment a target's plugin reader gets; an absent `homeDir` falls back to the real home. */
-function pluginEnv(context: StatusPluginContext, packsConfig: PacksConfig): EnabledPluginsEnv {
+export function pluginEnv(
+  context: StatusPluginContext,
+  packsConfig: PacksConfig,
+): EnabledPluginsEnv {
   return {
     projectDir: context.projectDir,
     homeDir: context.homeDir ?? os.homedir(),
     marketplace: marketplaceName(packsConfig.marketplace),
   };
+}
+
+/** The ids an enabled plugin of a target delivers, as the freshness scan filters on them. */
+export function deliveredIdsFor(
+  context: StatusPluginContext,
+  packsConfig: PacksConfig,
+  resolved: ResolvedCatalog,
+): (target: Target) => ReadonlySet<string> {
+  const env = pluginEnv(context, packsConfig);
+  return target => pluginDeliveredIds(target, resolved, packsConfig.packs, env);
 }
 
 /** The overlap map keyed by catalog id, in the shape a status row carries. */
@@ -139,7 +164,7 @@ async function runOneGroup<T extends { statuses: StatusResult[] }>(
 ): Promise<T> {
   const group = overlayProject(resolveCatalog(catalog), run.opts.projectDir);
   run.overlaid.push(group);
-  const built = await run.build(view, catalog, group);
+  const built = await run.build(view, catalog, group, packsConfig);
   const attached = attachPluginOverlaps(built.statuses, group.resolved, packsConfig, run.opts);
   run.warnings.push(...attached.warnings);
   return { ...built, statuses: attached.statuses };

@@ -110,8 +110,8 @@ interface StatusRow {
   status: string;
 }
 
-/** Runs `fn` and parses its `--json` output. */
-async function captureJson<T>(fn: () => Promise<void>): Promise<T> {
+/** Runs `fn` and returns everything it logged. */
+async function captureText(fn: () => Promise<void>): Promise<string> {
   const original = console.log;
   const lines: string[] = [];
   console.log = (...args: unknown[]) => lines.push(args.join(' '));
@@ -120,7 +120,12 @@ async function captureJson<T>(fn: () => Promise<void>): Promise<T> {
   } finally {
     console.log = original;
   }
-  return JSON.parse(lines.join('\n')) as T;
+  return lines.join('\n');
+}
+
+/** Runs `fn` and parses its `--json` output. */
+async function captureJson<T>(fn: () => Promise<void>): Promise<T> {
+  return JSON.parse(await captureText(fn)) as T;
 }
 
 describe('sigil add — plugin duplicate guard', () => {
@@ -265,6 +270,31 @@ describe('sigil add — plugin duplicate guard', () => {
         for (const row of rows) {
           assert.equal(row.status, 'up-to-date', `${row.id} reports ${row.status}`);
         }
+      });
+    });
+  });
+
+  it('should not report a plugin-delivered dependency as new', async () => {
+    await withTempDirAsync(async project => {
+      await inTempDir(async home => {
+        enablePack(home, PYTHON_STARTER);
+
+        await add(project, home, PYTHON_PICKS, { deps: true, complement: true });
+
+        const statusOpts = {
+          projectDir: project,
+          catalogDir: CATALOG,
+          packs: PACKS,
+          homeDir: home,
+          target: 'claude',
+        };
+        const rows = await captureJson<StatusRow[]>(() => runStatus({ ...statusOpts, json: true }));
+        for (const row of rows) {
+          assert.ok(!('newDependencies' in row), `${row.id} reports new dependencies`);
+        }
+
+        const text = await captureText(() => runStatus({ ...statusOpts, json: false }));
+        assert.doesNotMatch(text, /update would also install/);
       });
     });
   });

@@ -93,6 +93,16 @@ export function pluginOverlaps(
   };
 }
 
+/** The catalog ids an enabled plugin of `target` delivers; reader warnings are ignored. */
+export function pluginDeliveredIds(
+  target: Target,
+  catalog: ResolvedCatalog,
+  packs: Pack[],
+  env: EnabledPluginsEnv,
+): Set<string> {
+  return new Set(pluginOverlaps(target, catalog, packs, env).overlaps.keys());
+}
+
 /** The one wording `add`, `status` and the wizard share for an overlapping id. */
 export function formatPluginOverlap(id: string, overlap: PluginOverlap): string {
   return `${id} is also delivered by plugin ${overlap.plugin}@${overlap.marketplace} (enabled in ${overlap.source})`;

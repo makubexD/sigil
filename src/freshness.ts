@@ -22,16 +22,19 @@ export interface MissingDependency {
   readonly via: readonly string[];
 }
 
-/** Dependencies (`uses`) of `updatedIds` that aren't installed for the target yet. */
+/**
+ * Dependencies (`uses`) of `updatedIds` not in `present`: what is installed for the target, plus
+ * whatever an enabled plugin of it delivers.
+ */
 export function missingDependencies(
   updatedIds: readonly string[],
   resolved: ResolvedCatalog,
   target: Target,
-  installedIds: ReadonlySet<string>,
+  present: ReadonlySet<string>,
 ): MissingDependency[] {
   const known = updatedIds.filter(id => resolved.byId.has(id));
   return computeClosure(known, resolved, target)
-    .dependencies.filter(dep => !installedIds.has(dep.artifact.id))
+    .dependencies.filter(dep => !present.has(dep.artifact.id))
     .map(dep => ({ id: dep.artifact.id, via: dep.via }));
 }
 
@@ -160,6 +163,8 @@ export interface StaleScan {
   only?: (entry: ManifestEntry) => boolean;
   /** The retired config destinations of a target; nothing is unmovable when absent. */
   retiredFor?: ((target: string) => readonly RetiredConfigDestination[]) | undefined;
+  /** Ids an enabled plugin of that target delivers; a dependency in it is never new. */
+  deliveredFor?: ((target: Target) => ReadonlySet<string>) | undefined;
 }
 
 /** What one scan found; every key is an {@link entryKey}. */
@@ -222,11 +227,12 @@ async function scanEntries(
 function recordNewDependencies(
   checked: readonly ManifestEntry[],
   ctx: FreshRenderCtx,
-  installedIds: ReadonlySet<string>,
+  delivered: Iterable<string> = [],
   found: ScanFound,
 ): void {
   const ids = checked.map(e => e.id);
-  for (const { id, via } of missingDependencies(ids, ctx.resolved, ctx.target, installedIds)) {
+  const present = new Set([...(ctx.installedIds ?? []), ...delivered]);
+  for (const { id, via } of missingDependencies(ids, ctx.resolved, ctx.target, present)) {
     for (const v of via) {
       const k = entryKey({ target: ctx.target.name, id: v });
       found.newDependencies.set(k, [...(found.newDependencies.get(k) ?? []), id]);
@@ -243,16 +249,15 @@ async function scanTarget(
   const target = scan.targetOf(name);
   if (!target?.scaffold) return;
   const entries = manifest.entries.filter(e => e.target === name);
-  const installedIds = new Set(entries.map(e => e.id));
   const ctx: FreshRenderCtx = {
     target,
     resolved: scan.resolved,
     projectDir: scan.projectDir,
-    installedIds,
+    installedIds: new Set(entries.map(e => e.id)),
   };
   const checked = checkedEntries(entries, scan);
   await scanEntries(checked, ctx, scan.retiredFor?.(name) ?? [], found);
-  recordNewDependencies(checked, ctx, installedIds, found);
+  recordNewDependencies(checked, ctx, scan.deliveredFor?.(target), found);
 }
 
 /**

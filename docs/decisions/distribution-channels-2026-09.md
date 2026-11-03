@@ -240,7 +240,10 @@ them on 2026-10-30, and it has no code dependency on either. Both were built aft
   cause, keeping rules, settings and dependencies the plugin doesn't hold. `sigil status` notes installed entries an
   enabled plugin also delivers (`plugin` on `--json` rows), and the wizard's plan box shows the `add` warning. Left
   open: readers for Codex, Cursor and Antigravity (their plugin state isn't documented in a form read here), managed
-  Claude settings, plugins enabled only through `defaultEnabled`, and a complement toggle in the wizard. The Copilot
+  Claude settings, plugins enabled only through `defaultEnabled`, a complement toggle in the wizard, a
+  `CLAUDE_CONFIG_DIR` that moves the user settings (the reader always looks in `~/.claude`), following a symlinked
+  settings file (skipped with a warning), reader warnings in `status --json` (only the text output prints them), and
+  the wizard printing the plugin advisory twice. The Copilot
   reader rests on the docs alone (probe B5 below).
 - **3 is done 2026-11-03.** Its checks came first and its goal was unproven until v0.7.0. `provider-limits` has enforced both limits through
   `agent-skills-limits.ts` since `e5939bd` (2026-10-03), and `name` equals the folder because

@@ -554,15 +554,16 @@ project's. If it differs, both run and the tools appear twice.
 `.claude/settings.json` and `~/.claude/settings.json` (the highest scope that names a plugin decides, and only
 an explicit `true` counts). For Copilot it reads the folders under `~/.copilot/installed-plugins/<marketplace>/`.
 Each pick or dependency an enabled sigil plugin already delivers is still installed, with a warning naming the plugin and the
-file it is enabled in. The wizard's install plan shows the same lines before you confirm. To skip those picks
-instead, pass `--complement`:
+file it is enabled in. A settings file that is a symbolic link is not followed: it is skipped with a warning. The wizard's install plan
+shows the same lines before you confirm. To skip those artifacts instead, pass `--complement`:
 
 ```bash
 sigil add pack:typescript-tooling --target claude --complement
 ```
 
 A skipped pick is listed with `delivered by plugin <name>@<marketplace> (<file>)`. Rules and settings never ride
-in a plugin, so they are always installed, and so is any dependency the plugin doesn't hold. `sigil status` notes
+in a plugin, so they are always installed, and so is any dependency the plugin doesn't hold. When a skipped skill uses a rule, the
+rule is recorded in the manifest as one of your picks, not as a dependency, since the skill that pulled it in isn't installed. `sigil status` notes
 each installed entry an enabled plugin also delivers (see [Keep installs healthy over time](#keep-installs-healthy-over-time)). Codex, Cursor and
 Antigravity have no plugin check yet.
 

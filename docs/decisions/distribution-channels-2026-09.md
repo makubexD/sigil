@@ -232,14 +232,14 @@ documented ([decision](copilot-plugin-channel-2026-10.md#decision)).
 Phases 2b and 3 did not run first, despite the suggested order above. The owner took Phase 4 ahead of
 them on 2026-10-30, and it has no code dependency on either. Both were built afterwards, on 2026-11-03.
 
-- **2b is done 2026-11-03** (plan: `docs/plan-complement-mode.md`). `marketplacePluginContents` computes what each
+- **2b is done 2026-11-03** (plan: `git show 69ced68:docs/plan-complement-mode.md`). `marketplacePluginContents` computes what each
   marketplace plugin holds from the code `build` uses, and `Target.enabledPlugins` reads what is enabled: Claude's
   `enabledPlugins` in local, project and user settings (the highest scope that names a plugin decides; only `true`
   counts), and Copilot's `~/.copilot/installed-plugins/<marketplace>/` folders. `src/plugin-overlap.ts` joins the two.
   `sigil add` warns about each overlapping pick and still installs it; `--complement` skips it with the `plugin`
   cause, keeping rules, settings and dependencies the plugin doesn't hold. `sigil status` notes installed entries an
   enabled plugin also delivers (`plugin` on `--json` rows), and the wizard's plan box shows the `add` warning. The
-  follow-ups (`docs/plan-complement-follow-ups.md`) added readers for Codex and Antigravity, file-based managed Claude
+  follow-ups (`git show 69ced68:docs/plan-complement-follow-ups.md`) added readers for Codex and Antigravity, file-based managed Claude
   settings, `CLAUDE_CONFIG_DIR` and a symlinked user settings file, reader warnings on `status --json`'s stderr, and
   the wizard's complement choice; an overlap now counts only for a kind its tool loads from a plugin. Left open:
   Cursor (decision 9 of the plan: its plugin state isn't documented on disk), plugins enabled only through
@@ -290,7 +290,7 @@ Run with `npx skills@1.7.6` (the newest on npm that day) in fresh `git init` rep
 ### Phase 2b probes (2026-11-03)
 
 Run with Claude Code 2.1.317 in a fresh `git init` repo in a scratch directory, `CLAUDE_CONFIG_DIR` pointed at a
-scratch folder so the real `~/.claude` stayed untouched. Plan: `docs/plan-complement-mode.md`, step 1.
+scratch folder so the real `~/.claude` stayed untouched. Plan: `git show 69ced68:docs/plan-complement-mode.md`, step 1.
 
 - **B1, `claude plugin marketplace add makubexD/sigil#marketplace`: pass.** Writes `extraKnownMarketplaces.sigil`
   (`github`, `makubexD/sigil`, ref `marketplace`) to the user settings in `CLAUDE_CONFIG_DIR`; no `enabledPlugins` there.
@@ -308,7 +308,7 @@ scratch folder so the real `~/.claude` stayed untouched. Plan: `docs/plan-comple
 ### Phase 2b follow-up probes (2026-11-03)
 
 Run against the real `~/.codex` and `~/.gemini` on this machine, each restored afterwards (Codex `config.toml` byte for
-byte by hash; `~/.gemini/config/` back to its earlier file list). Plan: `docs/plan-complement-follow-ups.md`, step 1.
+byte by hash; `~/.gemini/config/` back to its earlier file list). Plan: `git show 69ced68:docs/plan-complement-follow-ups.md`, step 1.
 
 - **C1, Codex CLI 0.166.0, `codex plugin marketplace add makubexD/sigil --ref marketplace` then
   `codex plugin add typescript-starter@sigil`: pass.** The plugin lands in

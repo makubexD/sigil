@@ -2,8 +2,8 @@
  * Tests for the Codex enabled-plugin reader (src/targets/codex/enabled-plugins.ts): a plugin is
  * installed only when its cache folder under `$CODEX_HOME/plugins/cache/<marketplace>/` exists and
  * `config.toml` holds its `plugins."<name>@<marketplace>"` table (decision 7,
- * docs/plan-complement-follow-ups.md). Every test passes `vars` explicitly, so the real
- * `CODEX_HOME` is never read.
+ * `git show 69ced68:docs/plan-complement-follow-ups.md`). Every test passes `vars` explicitly,
+ * so the real `CODEX_HOME` is never read.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

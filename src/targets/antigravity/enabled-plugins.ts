@@ -1,7 +1,7 @@
 /**
  * Which Antigravity plugins are installed, read from the plugin folders in the workspace's
  * `.agents/plugins/` and the user's `~/.gemini/config/plugins/` (decision 8,
- * docs/plan-complement-follow-ups.md).
+ * `git show 69ced68:docs/plan-complement-follow-ups.md`).
  *
  * A regular folder is one plugin only when it holds a root `plugin.json` naming that folder and
  * has no `.claude-plugin/` folder. An `agy plugin import claude` copy has that folder, and its

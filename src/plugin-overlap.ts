@@ -4,9 +4,10 @@
  * state themselves; the per-target reader lives on `Target.enabledPlugins`, and what a plugin
  * holds comes from {@link pluginContentsFor}: the target's own `Target.marketplacePluginContents`
  * (the same contents its build writes), else that of the target named by
- * `Target.pluginContentsFrom`, else nothing (decision 3, docs/plan-complement-mode.md).
+ * `Target.pluginContentsFrom`, else nothing (decision 3,
+ * `git show 69ced68:docs/plan-complement-mode.md`).
  * `Target.pluginKinds`, when set, limits the overlaps to the kinds the tool really loads from a
- * plugin (decision 2, docs/plan-complement-follow-ups.md).
+ * plugin (decision 2, `git show 69ced68:docs/plan-complement-follow-ups.md`).
  *
  * @module
  */

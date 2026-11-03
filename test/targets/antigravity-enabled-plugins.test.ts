@@ -3,7 +3,7 @@
  * a plugin is installed when a regular folder under `.agents/plugins/` (workspace) or
  * `~/.gemini/config/plugins/` holds a root `plugin.json` naming it and no `.claude-plugin/`, and
  * `~/.gemini/config/config.json` does not mark it `enabled: false` (decision 8,
- * docs/plan-complement-follow-ups.md).
+ * `git show 69ced68:docs/plan-complement-follow-ups.md`).
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';

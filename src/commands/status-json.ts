@@ -25,6 +25,7 @@ function statusJsonRow(s: StatusResult, catalog?: CatalogSource): Record<string,
     renderError: s.renderError,
     keptReason: s.keptReason,
     newDependencies: s.newDependencies,
+    plugin: s.plugin,
   };
 }
 

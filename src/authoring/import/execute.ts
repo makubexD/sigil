@@ -13,6 +13,7 @@ import path from 'path';
 import { parseFrontmatter } from '../../frontmatter-parse';
 import { checkSourceArtifact } from '../check-source';
 import { scanContent } from '../../trust/scan';
+import { isPlainObject } from '../../config-merge/primitives';
 import { renderArtifactFile } from './plan';
 import { resolveContained } from '../../cli-helpers';
 import type { ImportItem } from './plan';
@@ -73,6 +74,53 @@ function scanImportContent(content: string, destPath: string): string[] {
   return scanResult.findings.map(f => `[trust] ${f.rule} (line ${f.line}): ${f.snippet}`);
 }
 
+/** Appends one frontmatter value's strings to `lines`, recursing into arrays and plain objects. */
+function collectFrontmatterStrings(key: string, value: unknown, lines: string[]): void {
+  if (typeof value === 'string') {
+    lines.push(`${key}: ${value}`);
+    return;
+  }
+  if (Array.isArray(value)) {
+    value.forEach(entry => collectFrontmatterStrings(key, entry, lines));
+    return;
+  }
+  if (isPlainObject(value)) {
+    for (const [nestedKey, nested] of Object.entries(value)) {
+      collectFrontmatterStrings(nestedKey, nested, lines);
+    }
+  }
+}
+
+/**
+ * Flattens every string in an import item's translated frontmatter into `key: value` lines, so
+ * the trust scanner reads the value as parsed rather than as the rendered file writes it.
+ * `serializeScalar` escapes a `"` inside a double-quoted scalar (`eval \"$(curl …)\"`), which
+ * hides an invocation the same text exposes in the body; scanning the parsed values closes that
+ * gap. Array items use their parent key; a nested object's fields use the nested key.
+ */
+function frontmatterScanText(frontmatter: ImportItem['frontmatter']): string {
+  const lines: string[] = [];
+  for (const [key, value] of Object.entries(frontmatter)) {
+    collectFrontmatterStrings(key, value, lines);
+  }
+  return lines.join('\n');
+}
+
+/** Scans an item's rendered body, parsed frontmatter, references and stack parts. */
+function scanImportItem(item: ImportItem, content: string): string[] {
+  const frontmatterText = frontmatterScanText(item.frontmatter);
+  return [
+    ...scanImportContent(content, item.destPath),
+    ...(frontmatterText === ''
+      ? []
+      : scanImportContent(frontmatterText, `${item.destPath} (frontmatter)`)),
+    ...(item.references ?? []).flatMap(ref =>
+      scanImportContent(ref.content, referencePath(item.destPath, ref.name)),
+    ),
+    ...(item.stackParts ?? []).flatMap(part => scanImportContent(part.content, part.destPath)),
+  ];
+}
+
 /** Renders content and validates it against the catalog; throws-free — returns violations. */
 function renderAndValidate(
   item: ImportItem,
@@ -82,13 +130,7 @@ function renderAndValidate(
   const content = renderArtifactFile(item.frontmatter, item.body);
   const artifact = makeArtifactFromContent(content, item.destPath);
   const violations = checkSourceArtifact(artifact, catalog, targets);
-  const trustViolations = [
-    ...scanImportContent(content, item.destPath),
-    ...(item.references ?? []).flatMap(ref =>
-      scanImportContent(ref.content, referencePath(item.destPath, ref.name)),
-    ),
-    ...(item.stackParts ?? []).flatMap(part => scanImportContent(part.content, part.destPath)),
-  ];
+  const trustViolations = scanImportItem(item, content);
   return { content, violations: [...violations.map(v => v.problem), ...trustViolations] };
 }
 

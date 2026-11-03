@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `sigil import` keeps a rule's `paths` globs written as a flow list (`["src/*.ts"]`) or a single glob
+  (`src/*.ts`); both used to import as every file. A `paths` that is not a glob or a list of globs is reported.
+- `sigil import` skips a `README.md` in `rules/` or `agents/` instead of aborting the whole import.
+- `sigil import` brings in one artifact per name: a rule and an agent with the same name no longer both import
+  and fail `validate`. The rule is kept, the other is reported, and the result no longer depends on the
+  filesystem's file order.
+- `sigil import` trust-scans frontmatter values as written, so a dangerous command inside a quoted
+  `description:` is refused like the same text in the body.
+- The trust scan's `config/exfil-in-command` and `injection/data-exfil-url` checks no longer slow down on long
+  lines. The new length limits are listed in `docs/decisions/trust-scan-eval-limits-2026-10.md`.
+- The `sigil add` wizard counts and lists only what `add` installs: a pack's hint no longer counts rules the
+  tool skips, such as scoped rules on Antigravity.
+- `sigil status` prints `kept as installed: <reason>` for a hook or other config entry its tool now refuses,
+  as `sigil update` does, and `--json` carries it as `keptReason`.
+
 ## [0.6.0] - 2026-11-02
 
 ### Added

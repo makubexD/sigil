@@ -17,7 +17,7 @@ npx skills add https://github.com/makubexD/sigil/tree/skills --skill ts-generate
 - `--list` shows every skill on the branch without installing anything.
 - `--skill` takes several names: `--skill ts-generate-tests --skill py-generate-tests`.
 - `-a <agent>` picks the agent: `-a claude-code` writes `.claude/skills/<name>/`, `-a codex` writes
-  `.agents/skills/<name>/`. The CLI lists the other agents it knows.
+  `.agents/skills/<name>/`. The other agent names are in the CLI's README.
 - `-g` installs for your user instead of the project. `-y` skips the prompts.
 - `--copy` writes real files instead of symlinks.
 

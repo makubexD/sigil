@@ -41,6 +41,21 @@ function buildPublished(outDir: string): string {
   return path.join(outDir, 'claude');
 }
 
+/**
+ * Builds `--target agents-standard` into `outDir` and returns `<outDir>/agents-standard` after
+ * deleting its top-level `AGENTS.md` — the shape the `skills` branch publishes.
+ */
+function buildSkillsBranch(outDir: string): string {
+  execFileSync(
+    process.execPath,
+    [CLI, 'build', '--target', 'agents-standard', '--out-dir', outDir],
+    { cwd: ROOT, stdio: 'ignore', windowsHide: true },
+  );
+  const dir = path.join(outDir, 'agents-standard');
+  fs.rmSync(path.join(dir, 'AGENTS.md'));
+  return dir;
+}
+
 /** POSIX relative path of the lexicographically first file named `name` under `root`. */
 function firstFileNamed(root: string, name: string): string {
   const found: string[] = [];
@@ -154,5 +169,62 @@ describe('marketplace-drift check', () => {
 
     assert.equal(result.status, 2);
     assert.match(result.stderr, /Usage:/);
+  });
+
+  it('should pass for --target agents-standard on a matching tree', async () => {
+    await withTempDirAsync(async dir => {
+      const published = buildSkillsBranch(path.join(dir, 'expected'));
+
+      const result = runScript('--target', 'agents-standard', published);
+
+      assert.equal(result.status, 0, result.stderr);
+      assert.match(result.stdout, /✓ agents-standard branch matches a fresh build \(\d+ files\)/);
+    });
+  });
+
+  it('should report a root AGENTS.md as added for --target agents-standard', async () => {
+    await withTempDirAsync(async dir => {
+      const published = buildSkillsBranch(path.join(dir, 'expected'));
+      fs.writeFileSync(path.join(published, 'AGENTS.md'), '# rules\n');
+
+      const result = runScript(published, '--target', 'agents-standard');
+
+      assert.equal(result.status, 1, result.stderr);
+      assert.ok(result.stdout.includes('added   AGENTS.md'), result.stdout);
+    });
+  });
+
+  it('should report an edited skill as changed for --target agents-standard', async () => {
+    await withTempDirAsync(async dir => {
+      const published = buildSkillsBranch(path.join(dir, 'expected'));
+      const rel = firstFileNamed(published, 'SKILL.md');
+      fs.appendFileSync(resolveIn(published, rel), '\n<!-- hand edit -->\n');
+
+      const result = runScript('--target', 'agents-standard', published);
+
+      assert.equal(result.status, 1, result.stderr);
+      assert.ok(rel.startsWith('.agents/skills/'), rel);
+      assert.ok(result.stdout.includes(`changed ${rel}`), result.stdout);
+    });
+  });
+
+  it('should exit 2 on an unknown target', async () => {
+    await withTempDirAsync(async dir => {
+      const published = buildPublished(path.join(dir, 'expected'));
+
+      const result = runScript('--target', 'copilot', published);
+
+      assert.equal(result.status, 2);
+      assert.match(result.stderr, /Usage:/);
+    });
+  });
+
+  it('should exit 2 when --target has no value', async () => {
+    await withTempDirAsync(async dir => {
+      const result = runScript(dir, '--target');
+
+      assert.equal(result.status, 2);
+      assert.match(result.stderr, /Usage:/);
+    });
   });
 });

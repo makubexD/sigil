@@ -14,6 +14,7 @@ import type { ArtifactKind, Pack, ResolvedCatalog, ResolvedArtifact, Target } fr
 import { artifactLabel, KIND_ORDER, packMemberIds, resolveSelection } from './select';
 import { carriedKinds, installableKinds } from './targets/capabilities';
 import { installSkipReason } from './targets/install-skip';
+import { defaultTargetName } from './targets/index';
 
 /** One row of the artifact index: everything the page shows for an artifact. */
 export interface ArtifactIndexRow {
@@ -45,9 +46,19 @@ const BACK_LINK = '> **Back to:** [README](../../README.md) · [Documentation in
 const PAGE_INTRO =
   'Every installable artifact in the catalog, with the packs that hold it, the tools it installs into, and the command that installs it.';
 
-/** The install note from the plan's Decisions table, stated once above the tables. */
-const INSTALL_NOTE =
-  'Each command installs for the tool set up in your project; add `--target <name>` to install for another.';
+/**
+ * The install note, stated once above the tables. Without `--target`, `add` uses the tool set up in
+ * the folder, else the default target (`detectProjectTarget` in `src/cli-helpers.ts`).
+ */
+function installNote(targets: Target[]): string {
+  const name = defaultTargetName();
+  const fallback = targets.find(target => target.name === name);
+  const label = fallback?.displayName ?? name;
+  return (
+    `Each command installs for the tool set up in your project, or ${label} when none is; ` +
+    'add `--target <name>` to install for another.'
+  );
+}
 
 /** The table header every kind section opens with. */
 const TABLE_HEADER = [
@@ -223,9 +234,17 @@ function slug(text: string): string {
   return text.toLowerCase().replace(/\s+/g, '-');
 }
 
-/** The line naming the tools the index covers, by `displayName ?? name`. */
+/**
+ * The line naming the tools the index covers: `displayName` with the `--target` name the Tools
+ * column uses, e.g. ``Claude Code (`claude`)``.
+ */
 function toolsLine(targets: Target[]): string {
-  return `Tools: ${orDash(targets.map(target => target.displayName ?? target.name))}.`;
+  const names = targets.map(target =>
+    target.displayName && target.displayName !== target.name
+      ? `${target.displayName} (\`${target.name}\`)`
+      : `\`${target.name}\``,
+  );
+  return `Tools: ${orDash(names)}.`;
 }
 
 /** The contents line linking each kind's H2 by its GitHub anchor. */
@@ -258,7 +277,7 @@ export function renderArtifactIndex(rows: ArtifactIndexRow[], targets: Target[])
     '',
     PAGE_INTRO,
     '',
-    INSTALL_NOTE,
+    installNote(targets),
     '',
     toolsLine(targets),
     '',

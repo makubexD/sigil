@@ -167,6 +167,14 @@ describe('renderArtifactIndex', () => {
     assert.match(text, /\[MCP servers\]\(#mcp-servers\)/);
   });
 
+  it('should name the default tool in the install note and each --target name in the tools line', () => {
+    const claude = getAllTargets().find(target => target.name === 'claude');
+    assert.ok(claude);
+    const text = renderArtifactIndex(rows, [claude]);
+    assert.match(text, /or Claude Code when none is; add `--target <name>`/);
+    assert.match(text, /^Tools: Claude Code \(`claude`\)\.$/m);
+  });
+
   it('should render the same rows byte-identically every time', () => {
     assert.equal(renderArtifactIndex(rows, []), page);
   });

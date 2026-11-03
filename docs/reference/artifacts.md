@@ -6,9 +6,9 @@
 
 Every installable artifact in the catalog, with the packs that hold it, the tools it installs into, and the command that installs it.
 
-Each command installs for the tool set up in your project; add `--target <name>` to install for another.
+Each command installs for the tool set up in your project, or Claude Code when none is; add `--target <name>` to install for another.
 
-Tools: Claude Code, GitHub Copilot, Open standard (Agent Skills), OpenAI Codex, Cursor, Antigravity.
+Tools: Claude Code (`claude`), GitHub Copilot (`copilot`), Open standard (Agent Skills) (`agents-standard`), OpenAI Codex (`codex`), Cursor (`cursor`), Antigravity (`antigravity`).
 
 Contents: [Skills](#skills) · [Agents](#agents) · [Rules](#rules) · [Prompts](#prompts) · [Hooks](#hooks) · [Settings](#settings) · [MCP servers](#mcp-servers)
 

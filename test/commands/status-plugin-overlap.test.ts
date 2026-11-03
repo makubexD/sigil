@@ -46,6 +46,32 @@ function enable(home: string, plugin: string): void {
   );
 }
 
+/** Writes user settings that are not JSON, so the plugin reader reports exactly one warning. */
+function invalidSettings(home: string): void {
+  const dir = path.join(home, '.claude');
+  fs.mkdirSync(dir, { recursive: true });
+  fs.writeFileSync(path.join(dir, 'settings.json'), '{ not valid JSON');
+}
+
+/** Runs `fn`, returning the `console.log` and `console.error` lines separately. */
+async function captureStreams(
+  fn: () => Promise<void>,
+): Promise<{ stdout: string; stderr: string }> {
+  const out: string[] = [];
+  const err: string[] = [];
+  const originalOut = console.log;
+  const originalErr = console.error;
+  console.log = (...args: unknown[]) => void out.push(args.join(' '));
+  console.error = (...args: unknown[]) => void err.push(args.join(' '));
+  try {
+    await fn();
+  } finally {
+    console.log = originalOut;
+    console.error = originalErr;
+  }
+  return { stdout: out.join('\n'), stderr: err.join('\n') };
+}
+
 /** Runs `fn`, returning every `console.log` line joined by newlines. */
 async function captureLogs(fn: () => Promise<void>): Promise<string> {
   const lines: string[] = [];
@@ -145,6 +171,22 @@ describe('sigil status — plugin duplicate guard', () => {
       assert.deepEqual(skill?.plugin, { name: PACK, marketplace: 'sigil', source: SOURCE });
       assert.ok(rule, `${RULE_ID} is not installed`);
       assert.ok(!('plugin' in rule));
+    });
+  });
+
+  it('should print a reader warning to stderr and keep stdout a JSON array', async () => {
+    await withFixture(async (project, home) => {
+      await install(project, home, SKILL);
+      invalidSettings(home);
+
+      const { stdout, stderr } = await captureStreams(() =>
+        runStatus(statusOpts(project, home, true)),
+      );
+      const warnings = stderr.split('\n').filter(line => line.length > 0);
+
+      assert.ok(Array.isArray(JSON.parse(stdout)));
+      assert.equal(warnings.length, 1);
+      assert.match(warnings[0] ?? '', /plugin check:/);
     });
   });
 

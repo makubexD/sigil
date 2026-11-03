@@ -29,10 +29,16 @@ function statusJsonRow(s: StatusResult, catalog?: CatalogSource): Record<string,
   };
 }
 
-/** Prints the `--json` machine-readable status output: every group's rows, in group order. */
+/**
+ * Prints the `--json` machine-readable status output: every group's rows, in group order. The
+ * plugin reader's warnings are not part of that shape, so they go to stderr and stdout stays the
+ * JSON array (`log.warn` writes to stdout, so this uses `console.error`).
+ */
 export function printStatusJson(
   results: readonly CatalogResult<{ statuses: StatusResult[] }>[],
+  pluginWarnings: readonly string[] = [],
 ): void {
+  for (const warning of pluginWarnings) console.error(`plugin check: ${warning}`);
   const rows = results.flatMap(r => r.result.statuses.map(s => statusJsonRow(s, r.source)));
   console.log(JSON.stringify(rows, null, JSON_INDENT));
 }

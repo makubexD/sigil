@@ -9,7 +9,7 @@ This phase writes no code: it ends in a recorded go or no-go. A go gets its own 
 
 Cursor's free usage limit stopped the probes partway through. Step 1 is done, and step 2 and 3 are partly done. The
 results so far are merged in the ADR (§ Phase F probes, first PR `docs/cursor-plugin-spike`). Meanwhile, development
-goes on with [plan-cursor-followups.md](plan-cursor-followups.md), which needs no Cursor usage.
+goes on with `plan-cursor-followups.md`, which needs no Cursor usage.
 
 - **Done:** F1a-F1e, F2a-F2c, F2e, F3a.
 - **Open:** F2d (Agent Plugin format), F2f (a `globs` rule after a file read), F3b (marketplace from a `file://` URL),

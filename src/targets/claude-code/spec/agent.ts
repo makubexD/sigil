@@ -45,7 +45,7 @@ function claudeHintMapping(key: 'model' | 'effort' | 'maxTurns' | 'isolation'): 
 /**
  * Neutral model tier → Claude's documented model alias (CLAUDE_AGENTS_DOC lists `haiku`,
  * `sonnet`, `opus` and `fable`). `fable` gets no tier: the docs give it no place in a
- * cost/strength order, so no neutral tier maps to it (Decision 5, plan-cursor-target-n.md).
+ * cost/strength order, so no neutral tier maps to it (Decision 5, docs/decisions/neutral-agent-vocabulary-2026-11.md).
  */
 export const CLAUDE_MODEL_TIERS: Readonly<Record<'fast' | 'balanced' | 'deep', string>> = {
   fast: 'haiku',

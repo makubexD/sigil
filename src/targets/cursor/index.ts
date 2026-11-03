@@ -93,7 +93,7 @@ export class CursorTarget implements Target {
       readerWins: true,
     },
     // Cursor reads `.claude/agents/` too, and its own `.cursor/agents/` copy wins on a name
-    // clash (docs/plan-cursor-target-e.md Decision 7, CURSOR_SUBAGENTS_DOC).
+    // clash (docs/decisions/cursor-target-2026-11.md, Phase E Decision 7; CURSOR_SUBAGENTS_DOC).
     { kind: 'agent' as const, targets: ['claude'], doc: CURSOR_SUBAGENTS_DOC, readerWins: true },
   ];
 

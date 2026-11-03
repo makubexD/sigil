@@ -1,7 +1,7 @@
 # A provider-neutral agent vocabulary (2026-11-01)
 
 Roadmap: [plan-cursor-target.md](../plan-cursor-target.md) § Phase N, Decision 7. Step plan:
-[plan-cursor-target-n.md](../plan-cursor-target-n.md). Steps 7-9 of that plan take their tables from this record.
+`plan-cursor-target-n.md`. Steps 7-9 of that plan take their tables from this record.
 
 ## Problem
 
@@ -124,7 +124,7 @@ The owner delegated these choices on 2026-11-01. Each was checked against the so
 4. **Absent `toolPolicy` means `strict`** (fail closed). A target that can't express an agent's restriction exactly
    skips the agent with a reason; `nearest` writes the closest mapping and warns. When this was decided no target
    was inexact for any catalog agent, so it changed no output. Cursor is (it can't express `shell`), so on 2026-11-01
-   every agent family became `nearest` ([plan-cursor-target-e.md](../plan-cursor-target-e.md) Decisions 1–3): 29
+   every agent family became `nearest` ([cursor-target-2026-11.md](cursor-target-2026-11.md) Phase E Decisions 1–3): 29
    reviewers list `read, search, shell` and 10 edit agents add `edit`, none is read-only alone.
 5. **Model tiers map only where the provider has stable aliases.** Claude documents `haiku` / `sonnet` / `opus`.
    `fable` gets no tier: the docs place it in no cost/strength order. Copilot takes vendor model ids and Cursor

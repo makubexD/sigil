@@ -10,7 +10,7 @@
  * maps nearest.
  *
  * `readOnly` is what the nearest mapping grants and `writes` (`edit`) what clears it
- * (docs/plan-cursor-target-e.md Decisions 1, 2 and 4): a read-only list narrows with the flag,
+ * (docs/decisions/cursor-target-2026-11.md, Phase E Decisions 1, 2 and 4): a read-only list narrows with the flag,
  * while a list naming an edit tool gets no flag and so every Cursor tool.
  *
  * @module

@@ -6,7 +6,7 @@
  * edit tool serializes to `''` (dropped by renderFieldMapping), leaving Cursor's every-tool
  * default.
  *
- * `model` and `effort` are not mapped (docs/plan-cursor-target-e.md Decision 5): Cursor's
+ * `model` and `effort` are not mapped (docs/decisions/cursor-target-2026-11.md, Phase E Decision 5): Cursor's
  * `model` defaults to `inherit`, and the vocabulary record keeps model ids out until a tier
  * table is chosen as data. `disallowedTools` is not carried either (Decision 6): no catalog
  * agent uses it, and leaving it unmapped makes `restrictionOutcome` fail closed on one that does.

@@ -53,7 +53,7 @@ bases: [shared/clean-code, shared/git]
 
 families:
   # ── Agents ──────────────────────────────────────────────────────────────────────────────────
-  # nearest: Cursor narrows a read-only list to readonly: true (docs/plan-cursor-target-e.md Decision 3).
+  # nearest: Cursor narrows a read-only list to readonly: true (docs/decisions/cursor-target-2026-11.md, Phase E Decision 3).
   - id: api-compat-reviewer
     title: API Compatibility Reviewer
     kind: agent

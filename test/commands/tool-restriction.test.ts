@@ -272,7 +272,7 @@ describe('tool-restriction-coverage', () => {
 
   it('should report only Cursor nearest warnings for the bundled catalog', async () => {
     // Every catalog agent is toolPolicy: nearest; Claude and Copilot carry each list exactly, and
-    // Cursor's readonly switch is inexact for all of them (docs/plan-cursor-target-e.md).
+    // Cursor's readonly switch is inexact for all of them (docs/decisions/cursor-target-2026-11.md, Phase E).
     const resolved = await loadResolvedCatalog();
     const realTargets = getAllTargets().filter(target => target.name !== FAKE_TARGET);
     const findings = runConformance(resolved as unknown as LoadedCatalog, realTargets, {

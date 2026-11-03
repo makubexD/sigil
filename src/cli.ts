@@ -109,6 +109,11 @@ program
   .option('-i, --interactive', 'Force the interactive guided installer', false)
   .option('--yes', 'Non-interactive mode; skip the wizard. Safe for CI.', false)
   .option('--overwrite', 'Replace existing files (default: warn and skip conflicts)', false)
+  .option(
+    '--complement',
+    'Skip artifacts an enabled sigil plugin already delivers (default: install them and warn)',
+    false,
+  )
   .option('--scope <scope>', 'Install scope for config-kind artifacts: project | local | user')
   .option('--settings-local', '(deprecated) Alias for --scope local', false)
   .action(async (selectors: string[], opts: AddOpts) => {

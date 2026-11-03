@@ -133,7 +133,7 @@ function writeAndRefreshEntry({
   for (const p of skipped) console.log(`     ⊘ ${p}  (drifted — skipped)`);
 
   const { toKeep } = applyStaleMigration(entry, freshFiles, opts.projectDir);
-  entry.files = rebuildEntryFiles(entry, freshFiles, toKeep, opts.projectDir);
+  entry.files = rebuildEntryFiles(entry, freshFiles, toKeep, toWrite, opts.projectDir);
 
   // Refresh the recorded template revision so `status` stops reporting this entry as outdated.
   entry.template = currentTemplateOfId(entry.id, resolved);

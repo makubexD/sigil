@@ -84,11 +84,18 @@ export function applyStaleMigration(
 /** Rebuilds `entry.files` from the CURRENT scaffold's path set, not the stale recorded one — this
  * is what makes an emit-path change (e.g. a kind switching output layout) actually re-track under
  * its new path instead of leaving the new file permanently untracked by the manifest. Kept-stale
- * (locally-edited) paths are carried over unchanged. */
+ * (locally-edited) paths are carried over unchanged.
+ *
+ * Each fresh path records what `update` actually wrote: a path in `toWrite` gets the hash of the
+ * content written, never the on-disk copy (a drifted file that was skipped must keep the baseline
+ * it was compared against, or the next run would see no drift and overwrite the user's edit). A
+ * path that was not written keeps its recorded hash, falling back to the disk hash only when no
+ * hash was recorded before. */
 export function rebuildEntryFiles(
   entry: ManifestEntry,
   freshFiles: Record<string, string>,
   keptStalePaths: string[],
+  toWrite: Record<string, string>,
   projectDir: string,
 ): ManifestFile[] {
   const keptStale = new Set(keptStalePaths);
@@ -99,10 +106,17 @@ export function rebuildEntryFiles(
   // docs/audits/2026-08-25/register.md's backlog).
   const shaByPath = new Map(entry.files.map(mf => [mf.path, mf.sha256]));
   const freshRecorded = Object.keys(freshFiles).map(relPath => {
-    const fullPath = path.join(projectDir, relPath);
-    const sha = fs.existsSync(fullPath)
-      ? sha256(fs.readFileSync(fullPath, 'utf-8'))
-      : (shaByPath.get(relPath) ?? '');
+    const recorded = shaByPath.get(relPath);
+    const written = toWrite[relPath];
+    let sha: string;
+    if (written !== undefined) {
+      sha = sha256(written);
+    } else if (recorded !== undefined) {
+      sha = recorded;
+    } else {
+      const fullPath = path.join(projectDir, relPath);
+      sha = fs.existsSync(fullPath) ? sha256(fs.readFileSync(fullPath, 'utf-8')) : '';
+    }
     return { path: relPath, sha256: sha };
   });
   return [...freshRecorded, ...carriedOver];

@@ -15,11 +15,18 @@ import { CONFIG_KINDS, type SkippedArtifact } from '../../select';
 import { SigilError } from '../../errors';
 import { loadManifest } from '../../manifest';
 import { printSkippedAdvice } from '../../wizard';
+import { printPluginCheckWarnings, printPluginOverlapAdvice } from '../../wizard/command-strings';
+import type { PluginOverlap } from '../../plugin-overlap';
 import { loadAndValidate, detectProjectTarget } from '../../cli-helpers';
 import { resolveInputs } from './resolve-inputs';
 import { resolveIds, computeUpToDateIds } from './plan-ids';
 import { computePrimaryPaths, scaffoldWholeFiles } from './plan-scaffold';
-import type { PlanCtx } from './plan-context';
+import {
+  complement,
+  computePluginOverlaps,
+  type PartitionedIds,
+  type PlanCtx,
+} from './plan-context';
 import { coInstallSetFor } from './co-install';
 import type { FileMap, ConfigScope, ResolvedCatalog, Target } from '../../types';
 import type { AddOpts } from './index';
@@ -46,6 +53,8 @@ export interface AddPlan {
   readonly effectiveScope: ConfigScope;
   readonly fromWizard: boolean;
   readonly skipped: SkippedArtifact[];
+  /** Ids an enabled plugin also delivers, when not running under --complement (empty then). */
+  readonly pluginOverlaps: ReadonlyMap<string, PluginOverlap>;
   readonly upToDateIds: string[];
   readonly wholeFileIds: string[];
   readonly configIds: string[];
@@ -84,8 +93,8 @@ async function buildPlanCtx(selectors: string[], opts: AddOpts): Promise<PlanCtx
   const targetName = inputs.target ?? detectProjectTarget(opts.projectDir, { verbose: true });
   const target = resolveScaffoldTarget(targetName);
 
-  const packs = packsConfig.packs;
-  return { opts, resolved, refusedOverlays: refused, target, targetName, inputs, packs };
+  const ctx = { opts, resolved, refusedOverlays: refused, target, targetName, inputs };
+  return { ...ctx, packs: packsConfig.packs, marketplace: packsConfig.marketplace };
 }
 
 /** Splits resolved ids into whole-file vs config-kind, excluding already-up-to-date ids from both. */
@@ -122,20 +131,21 @@ function refuseSharedSkillFiles(ctx: PlanCtx, ids: readonly string[]): void {
 async function resolveAndPartitionIds(
   ctx: PlanCtx,
   filters: Parameters<typeof resolveIds>[1],
-): Promise<{
-  skipped: SkippedArtifact[];
-  upToDateIds: string[];
-  wholeFileIds: string[];
-  configIds: string[];
-}> {
-  const { ids, skipped } = resolveIds(ctx, filters);
+): Promise<PartitionedIds> {
+  const { ids: resolvedIds, skipped } = resolveIds(ctx, filters);
+  const { overlaps, warnings } = computePluginOverlaps(ctx, resolvedIds);
+  printPluginCheckWarnings(warnings);
+  const ids = ctx.opts.complement ? complement(ctx, resolvedIds, skipped, overlaps) : resolvedIds;
+  const shown = ctx.opts.complement ? new Map<string, PluginOverlap>() : overlaps;
+
   printSkippedAdvice(skipped, ctx.target);
+  printPluginOverlapAdvice(shown);
   refuseSharedSkillFiles(ctx, ids);
 
   const upToDateIds = await computeUpToDateIds(ctx, ids);
   const { wholeFileIds, configIds } = partitionIdsByKind(ids, ctx.resolved, new Set(upToDateIds));
 
-  return { skipped, upToDateIds, wholeFileIds, configIds };
+  return { skipped, pluginOverlaps: shown, upToDateIds, wholeFileIds, configIds };
 }
 
 type EffectiveFields = Pick<

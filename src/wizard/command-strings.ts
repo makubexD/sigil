@@ -12,6 +12,8 @@ import { log } from './prompts';
 import { terminalWidth } from './terminal';
 import type { Target } from '../types';
 import { kindNoun } from '../select';
+import { formatPluginOverlap } from '../plugin-overlap';
+import type { PluginOverlap } from '../plugin-overlap';
 
 export interface EquivalentCommandOptions {
   selectors: string[];
@@ -144,6 +146,28 @@ export function printSkippedAdvice(
   log.warn(
     `${rest.length} artifact(s) skipped:\n` +
       rest.map(s => `  ${s.id} (${kindNoun(target, s.kind)}): ${s.reason}`).join('\n'),
+  );
+}
+
+/** Print the problems a target met while reading its plugin state, one line each. */
+export function printPluginCheckWarnings(warnings: readonly string[]): void {
+  for (const warning of warnings) log.warn(`plugin check: ${warning}`);
+}
+
+/**
+ * Print the artifacts an enabled marketplace plugin already delivers. They are installed anyway
+ * unless `--complement` asked to skip them, so this is one advisory with a line per id.
+ */
+export function printPluginOverlapAdvice(overlaps: ReadonlyMap<string, PluginOverlap>): void {
+  if (overlaps.size === 0) return;
+  const lines = [...overlaps.keys()].sort().flatMap(id => {
+    const overlap = overlaps.get(id);
+    return overlap === undefined ? [] : [`  ${formatPluginOverlap(id, overlap)}`];
+  });
+  log.warn(
+    `${overlaps.size} artifact(s) an enabled plugin already delivers ` +
+      `(installed anyway; --complement skips them):\n` +
+      lines.join('\n'),
   );
 }
 

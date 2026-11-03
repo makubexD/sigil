@@ -279,6 +279,24 @@ Run with `npx skills@1.7.6` (the newest on npm that day) in fresh `git init` rep
   `ts-generate-tests` from it writes the catalog source, with 2 unexpanded `{sigil:arguments}` tokens and no rules inlined.
 - **P8, `--list` on `<build>/.agents/skills`: pass.** Found the same 45 skills; the fallback path form also works.
 
+### Phase 2b probes (2026-11-03)
+
+Run with Claude Code 2.1.317 in a fresh `git init` repo in a scratch directory, `CLAUDE_CONFIG_DIR` pointed at a
+scratch folder so the real `~/.claude` stayed untouched. Plan: `docs/plan-complement-mode.md`, step 1.
+
+- **B1, `claude plugin marketplace add makubexD/sigil#marketplace`: pass.** Writes `extraKnownMarketplaces.sigil`
+  (`github`, `makubexD/sigil`, ref `marketplace`) to the user settings in `CLAUDE_CONFIG_DIR`; no `enabledPlugins` there.
+- **B2, `claude plugin install hook-protect-config@sigil --scope project`: pass.** `.claude/settings.json` holds
+  exactly `{"enabledPlugins": {"hook-protect-config@sigil": true}}`.
+- **B3, the same with `--scope local`: pass.** `.claude/settings.local.json` holds the same object.
+- **B4, `claude plugin disable hook-protect-config@sigil --scope local`: pass.** It writes an explicit `false` to
+  `.claude/settings.local.json`, and `claude plugin list` then shows the local entry disabled while the project file
+  still says `true`. The higher scope decides, as decision 2 of the plan assumes.
+- **B5, Copilot (read-only): not observable.** `~/.copilot/installed-plugins/` exists on this machine but is empty
+  (nothing was left installed after the 2026-10-31 check), so the `<marketplace>/<plugin>` layout rests on the
+  [CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference#file-locations)
+  alone. Step 10 doesn't cover Copilot, so this stays unproven live.
+
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict
 them. There's no Codex plugin emitter: skills and MCP load from the Claude marketplace, and hook plugins fail open.

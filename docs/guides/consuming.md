@@ -474,6 +474,17 @@ marketplace, with no project files: [setup/copilot.md](../setup/copilot.md).
 
 ---
 
+## Install single skills with `npx skills`
+
+Each release also publishes the skills in the open Agent Skills format to the `skills` branch, for the
+[`skills` CLI](https://github.com/vercel-labs/skills):
+`npx skills add https://github.com/makubexD/sigil/tree/skills --skill <name>`. Each skill carries its rules inlined.
+These installs have no manifest, so `sigil status`, `update` and `uninstall` don't see them. Never use the bare
+`makubexD/sigil` form: it installs catalog source with raw `{sigil:…}` placeholders. Details:
+[setup/skills-cli.md](../setup/skills-cli.md).
+
+---
+
 ## Install a pack as a Claude plugin
 
 Besides copying files into your project with `sigil add`, sigil can compile the catalog into **Claude

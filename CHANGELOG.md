@@ -12,6 +12,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `docs/reference/artifacts.md`: a generated index of every installable artifact, with the packs that hold it,
   the tools `sigil add` installs it into, and the command that installs it. `npm run build` writes it and a test
   fails when the committed page is stale.
+- Each release publishes the skills, rendered in the open Agent Skills format with their rules inlined, to a
+  `skills` branch tagged `skills-v<version>`, so `npx skills add https://github.com/makubexD/sigil/tree/skills
+  --skill <name>` installs one into any agent the `skills` CLI supports. A drift check covers the branch after every
+  release, as for the marketplace. See `docs/setup/skills-cli.md`.
 
 ### Fixed
 

@@ -154,6 +154,21 @@ that use them. MCP servers merge into `.agents/mcp_config.json` (or `~/.gemini/c
 
 </details>
 
+<details>
+<summary><strong>Any agent: install single skills with <code>npx skills</code></strong></summary>
+
+Each release publishes its skills in the open Agent Skills format to the `skills` branch:
+
+```bash
+npx skills add https://github.com/makubexD/sigil/tree/skills --skill ts-generate-tests
+```
+
+Add `--list` to see every skill, and `-a <agent>` to pick the agent (`claude-code`, `codex`, …). Each skill carries
+its rules. Always use the `…/tree/skills` URL: the bare `makubexD/sigil` form installs unrendered catalog source.
+These installs aren't tracked by `sigil status`. Setup and limits: [docs/setup/skills-cli.md](docs/setup/skills-cli.md).
+
+</details>
+
 ### Getting help
 
 | You want                                 | Run                                                                  |

@@ -50,6 +50,17 @@ function rulesSource(root: string, rules: Record<string, string>): string {
   return src;
 }
 
+/** A source folder holding only `agents/<name>` files. */
+function agentsSource(root: string, agents: Record<string, string>): string {
+  const src = path.join(root, 'agents-source');
+  for (const [name, content] of Object.entries(agents)) {
+    const file = path.join(src, 'agents', name);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  }
+  return src;
+}
+
 /** The catalog frontmatter of an imported shared rule. */
 function importedRule(catalog: string, slug: string): Record<string, unknown> {
   const file = path.join(catalog, 'shared', 'rules', `${slug}.rule.md`);
@@ -232,7 +243,8 @@ describe('sigil import: an imported rule keeps its paths as appliesTo', () => {
       const catalog = emptyCatalog(root);
       const src = rulesSource(root, {
         'empty.md': '---\ndescription: Empty.\npaths: []\n---\n\n- **Rule.** Keep it.\n',
-        'unclosed.md': '---\ndescription: Unclosed.\npaths: [unclosed\n---\n\n- **Rule.** Keep it.\n',
+        'unclosed.md':
+          '---\ndescription: Unclosed.\npaths: [unclosed\n---\n\n- **Rule.** Keep it.\n',
         'ok.md': '---\ndescription: Ok.\npaths: src/*.ts\n---\n\n- **Rule.** Keep it.\n',
       });
       const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
@@ -296,6 +308,41 @@ describe('sigil import: stack files go to their language', () => {
         ),
       );
       assert.match(out, /a language skill carries no stack files; import it with --shared/);
+    });
+  });
+});
+
+describe('sigil import: a README in a flat kind directory is skipped', () => {
+  it('should neither import nor report rules/README.md', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'README.md': '# Rules\nHouse rules live here.\n',
+        'one.md': '---\ndescription: One.\n---\n\n- **Rule.** Keep it.\n',
+      });
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.match(out, /\(0 unrecognised\)/);
+      assert.doesNotMatch(out, /README/);
+      const rulesDir = path.join(catalog, 'shared', 'rules');
+      assert.deepEqual(fs.readdirSync(rulesDir), ['one.rule.md']);
+      assert.equal(fs.existsSync(path.join(rulesDir, 'README.rule.md')), false);
+      assert.equal(importedRule(catalog, 'one').id, 'shared/one');
+    });
+  });
+
+  it('should neither import nor report agents/README.md', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = agentsSource(root, {
+        'README.md': '# Agents\n',
+        'one.md': '---\nname: one\ndescription: One agent.\n---\n\nBody.\n',
+      });
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.match(out, /\(0 unrecognised\)/);
+      assert.doesNotMatch(out, /README/);
+      const agentsDir = path.join(catalog, 'shared', 'agents');
+      assert.deepEqual(fs.readdirSync(agentsDir), ['one.agent.md']);
+      assert.equal(fs.existsSync(path.join(agentsDir, 'README.agent.md')), false);
     });
   });
 });

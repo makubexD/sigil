@@ -116,8 +116,8 @@ interface FlatKindContext {
 }
 
 function classifyFlatKindEntry(entry: Dirent, ctx: FlatKindContext): ClassifyResult {
+  if (entry.name === 'README.md') return {};
   if (!entry.isFile() || !entry.name.endsWith('.md')) {
-    if (entry.name === 'README.md') return {};
     return {
       unrecognised: {
         relativePath: path.join(ctx.dirName, entry.name),

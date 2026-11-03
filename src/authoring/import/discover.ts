@@ -8,8 +8,9 @@
  *
  * A rule file name may carry the import namespace, as `add` writes it, so the slug drops one
  * leading `<namespace>-` — exact case, once, only when something remains. Agents and skills
- * keep their names: their file names carry no namespace. Stripping can make two rules one name,
- * so rules go through `dedupeDiscovered` and a second file is reported, never overwritten.
+ * keep their names: their file names carry no namespace. Every kind lands at
+ * `<namespace>/<slug>`, so one name is one id: all discoveries go through `dedupeDiscovered`
+ * in rules → agents → skills order, and a second file is reported, never overwritten.
  *
  * Returns a list of `DiscoveredFile` objects with the kind and parsed frontmatter.
  * README.md and any other file that doesn't match the layout is placed in `unrecognised`.
@@ -64,6 +65,9 @@ export interface DiscoverResult {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
+
+/** Plain name order, so discovery never depends on the filesystem's readdir order. */
+const byName = (a: Dirent, b: Dirent): number => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
 /** Classifies one directory entry within a flat kind dir (rules/ or agents/). */
 export type ClassifyResult = { discovered?: DiscoveredFile; unrecognised?: UnrecognisedFile };
@@ -145,7 +149,7 @@ function discoverFlatKindDir(
   if (!fs.existsSync(dir)) return { discovered, unrecognised };
 
   const ctx: FlatKindContext = { dir, dirName, kind, namespace };
-  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true }).sort(byName)) {
     const result = classifyFlatKindEntry(entry, ctx);
     if (result.discovered) discovered.push(result.discovered);
     if (result.unrecognised) unrecognised.push(result.unrecognised);
@@ -199,7 +203,7 @@ export function discoverSkillsDir(
   const skillsDir = path.join(sourceDir, 'skills');
   if (!fs.existsSync(skillsDir)) return { discovered, unrecognised };
 
-  for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
+  for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true }).sort(byName)) {
     const result = classifySkillEntry(entry, skillsDir, opts);
     if (result.discovered) {
       const { file, notShipped } = withReferences(result.discovered, skillsDir);
@@ -254,20 +258,22 @@ function discoverRootLevelUnrecognised(sourceDir: string): UnrecognisedFile[] {
  * @param namespace  Catalog language (or "shared") whose prefix rule file names may carry.
  */
 export function discoverFiles(sourceDir: string, namespace: string): DiscoverResult {
-  const rulesFound = discoverFlatKindDir(sourceDir, 'rules', 'rule', namespace);
-  const rules = dedupeDiscovered(rulesFound.discovered);
+  const rules = discoverFlatKindDir(sourceDir, 'rules', 'rule', namespace);
   const agents = discoverFlatKindDir(sourceDir, 'agents', 'agent');
   const skills = discoverSkillsDir(sourceDir);
   const rootUnrecognised = discoverRootLevelUnrecognised(sourceDir);
+  // One dedupe over every kind: a rule wins a name clash, then an agent, then a skill.
+  const all = [...rules.discovered, ...agents.discovered, ...skills.discovered];
+  const deduped = dedupeDiscovered(all);
 
   return {
-    discovered: [...rules.discovered, ...agents.discovered, ...skills.discovered],
+    discovered: deduped.discovered,
     unrecognised: [
-      ...rulesFound.unrecognised,
       ...rules.unrecognised,
       ...agents.unrecognised,
       ...skills.unrecognised,
       ...rootUnrecognised,
+      ...deduped.unrecognised,
     ],
   };
 }

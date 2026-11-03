@@ -10,6 +10,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import matter from 'gray-matter';
 import { runImport } from '../../dist-cli/commands/import';
+import { loadCatalog } from '../../dist-cli/load';
+import { validateCatalog } from '../../dist-cli/validate';
 import { withTempDirAsync } from '../helpers/temp-dir';
 
 const FAKE_AWS_KEY = 'AKIAIOSFODNN7EXAMPLE';
@@ -55,6 +57,17 @@ function agentsSource(root: string, agents: Record<string, string>): string {
   const src = path.join(root, 'agents-source');
   for (const [name, content] of Object.entries(agents)) {
     const file = path.join(src, 'agents', name);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  }
+  return src;
+}
+
+/** A source folder holding both `rules/<name>` and `agents/<name>` files. */
+function rulesAndAgentsSource(root: string, files: Record<string, string>): string {
+  const src = path.join(root, 'mixed-source');
+  for (const [rel, content] of Object.entries(files)) {
+    const file = path.join(src, rel);
     fs.mkdirSync(path.dirname(file), { recursive: true });
     fs.writeFileSync(file, content);
   }
@@ -361,6 +374,30 @@ describe('sigil import: prefixes come from language.yaml', () => {
       await captured(() => runImport(src, importOpts(catalog, { language: 'go' })));
       const written = path.join(catalog, 'languages', 'go', 'skills', 'go-lint-fix', 'SKILL.md');
       assert.equal(matter(fs.readFileSync(written, 'utf8')).data.title, 'Lint Fix (Go)');
+    });
+  });
+});
+
+describe('sigil import: one artifact per name across kinds', () => {
+  it('should import the rule and report an agent with the same name', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesAndAgentsSource(root, {
+        'rules/dupx.md': '---\ndescription: Dup rule.\n---\n\n- **Rule.** Keep it.\n',
+        'agents/dupx.md': '---\nname: dupx\ndescription: Dup agent.\n---\n\nBody.\n',
+      });
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.ok(fs.existsSync(path.join(catalog, 'shared', 'rules', 'dupx.rule.md')));
+      assert.equal(fs.existsSync(path.join(catalog, 'shared', 'agents', 'dupx.agent.md')), false);
+      assert.match(
+        out,
+        new RegExp(`agents[\\\\/]dupx\\.md\\s+— not imported: same name as rules[\\\\/]dupx\\.md`),
+      );
+      const result = validateCatalog(await loadCatalog(catalog));
+      assert.deepEqual(
+        result.errors.map(e => `${e.artifactId}: ${e.error}`),
+        [],
+      );
     });
   });
 });

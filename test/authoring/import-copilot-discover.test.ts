@@ -161,6 +161,19 @@ describe('discoverCopilotFiles — unrecognised entries', () => {
     });
   });
 
+  it('accepts the first of two files with the same name in different kinds', () => {
+    withTempDir(project => {
+      const github = copilotDir(project);
+      writeFile(github, 'instructions/dupx.instructions.md', RULE);
+      writeFile(github, 'agents/dupx.agent.md', AGENT);
+      const result = discoverCopilotFiles(github, 'typescript');
+      assert.equal(result.discovered.length, 1);
+      const rejected = result.unrecognised.filter(entry => entry.reason.includes('same name as'));
+      assert.equal(rejected.length, 1);
+      assert.match(rejected[0]?.reason ?? '', /^not imported: same name as /);
+    });
+  });
+
   it('reports copilot-instructions.md and AGENTS.md beside .github/', () => {
     withTempDir(project => {
       const github = copilotDir(project);

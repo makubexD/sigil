@@ -44,13 +44,13 @@ export function rootFileReports(githubDir: string): UnrecognisedFile[] {
   return beside === undefined ? root : [...root, beside];
 }
 
-/** Marks a second file with the same kind and slug as unrecognised. */
+/** Marks a second file with the same slug as unrecognised, whatever its kind. */
 export function dedupeDiscovered(discovered: DiscoveredFile[]): DiscoverResult {
   const seen = new Map<string, string>();
   const kept: DiscoveredFile[] = [];
   const unrecognised: UnrecognisedFile[] = [];
   for (const file of discovered) {
-    const key = `${file.kind}:${file.slug}`;
+    const key = file.slug;
     const other = seen.get(key);
     if (other !== undefined) {
       const reason = `not imported: same name as ${other}`;

@@ -18,6 +18,7 @@ import type { WizardResult } from './types';
 import { runSteps } from './engine';
 import { ADD_STEPS } from './steps/add';
 import { adoptTarget } from './steps/add/target';
+import { hasPluginOverlap } from './steps/add/complement';
 import type { AddWizardState } from './steps/add';
 
 const HOW_IT_WORKS = [
@@ -75,6 +76,8 @@ function toWizardResult(done: AddWizardState): WizardResult {
     selectors: done.selectors!,
     includeDeps: done.includeDeps!,
     overwrite: done.overwrite!,
+    // A "skip" answer outlives a Back that changed the picks; it counts only while something overlaps.
+    complement: done.complement === true && hasPluginOverlap(done),
     language: done.language,
     configScope: done.configScope,
   };

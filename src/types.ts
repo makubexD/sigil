@@ -8,6 +8,7 @@ import type { ConfigKindTable } from './targets/config-kind-table';
 import type { DocRef, KindEmitSpec, SourcedDocRef } from './targets/spec-types';
 import type { ProviderLexicon } from './targets/lexicon';
 import type { HookInputDialect } from './targets/hook-input';
+import type { EnabledPluginsEnv, EnabledPluginsResult, PluginContents } from './plugin-types';
 
 // ─── Artifact kinds ──────────────────────────────────────────────────────────
 
@@ -353,24 +354,7 @@ export interface ScaffoldOptions {
   excludeDeps?: ReadonlySet<string>;
 }
 
-/**
- * Where a target looks for its enabled plugins: the project root, the user's home (injectable so
- * tests never read the real one) and the marketplace name whose plugins are counted.
- */
-export type EnabledPluginsEnv = { projectDir: string; homeDir: string; marketplace: string };
-
-/** One enabled plugin: its name without the `@<marketplace>` suffix, and where it is enabled. */
-export type EnabledPlugin = { name: string; source: string };
-
-/** Plugin name → the catalog ids that plugin delivers, in marketplace order. */
-type PluginContents = ReadonlyMap<string, readonly string[]>;
-
-/** The enabled plugins a target found, plus the problems met while reading its settings. */
-export interface EnabledPluginsResult {
-  plugins: EnabledPlugin[];
-  /** Read problems (a refused or unparseable settings file), for the caller to show. */
-  warnings: string[];
-}
+export type { EnabledPluginsEnv, EnabledPlugin, EnabledPluginsResult } from './plugin-types';
 
 /**
  * The interface every platform adapter must implement.
@@ -516,6 +500,20 @@ export interface Target {
    * Omitted when the target builds no plugin marketplace.
    */
   marketplacePluginContents?(catalog: ResolvedCatalog, packs: Pack[]): PluginContents;
+
+  /**
+   * The kinds this tool loads and runs correctly from the plugins it reads. Absent means every
+   * kind. `src/plugin-overlap.ts` leaves out an id of another kind, so a plugin copy the tool
+   * cannot run never makes `add` skip the artifact it would otherwise install.
+   */
+  readonly pluginKinds?: readonly ArtifactKind[];
+
+  /**
+   * The name of the target whose built plugins this tool installs, used when this target has no
+   * `marketplacePluginContents` of its own. Copilot installs the Claude marketplace's plugins, so
+   * it names `'claude'`. Absent means nothing is delivered from another target.
+   */
+  readonly pluginContentsFrom?: string;
 
   /**
    * Other targets whose files this tool also loads, per kind, with the doc that says so (Copilot

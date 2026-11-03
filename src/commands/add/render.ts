@@ -147,6 +147,7 @@ function printOutcomeEquivalentCommand(plan: AddPlan): void {
       overwrite: plan.effectiveOverwrite,
       configScope: plan.effectiveScope,
       hasConfigKinds: plan.configIds.length > 0,
+      complement: plan.effectiveComplement,
     }),
     isInteractiveTTY(),
   );

@@ -105,6 +105,11 @@ export class CopilotTarget implements Target {
     return readCopilotEnabledPlugins(env);
   }
 
+  /** A plugin delivers skills, agents and prompts only; its hooks are Unsafe (docs/decisions/copilot-plugin-channel-2026-10.md). */
+  readonly pluginKinds: readonly ArtifactKind[] = ['skill', 'agent', 'prompt'];
+  /** Copilot installs the Claude marketplace's plugins (docs/decisions/copilot-plugin-channel-2026-10.md). */
+  readonly pluginContentsFrom = 'claude';
+
   readonly outputContracts: ContractEntry[] = COPILOT_OUTPUT_CONTRACTS;
   readonly emitSpecs: readonly KindEmitSpec[] = COPILOT_EMIT_SPECS;
   readonly lexicon: ProviderLexicon = COPILOT_LEXICON;

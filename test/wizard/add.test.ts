@@ -283,6 +283,39 @@ describe('O — Wizard: config-scope for mcp', () => {
     assert.ok(cmd.includes('--scope project'), `Expected --scope project in: ${cmd}`);
   });
 
+  it('buildEquivalentCommand — appends --complement when complement is true', () => {
+    const { buildEquivalentCommand } =
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
+    const cmd = buildEquivalentCommand({
+      selectors: ['skill:csharp/cs-generate-tests'],
+      target: 'claude',
+      includeDeps: true,
+      overwrite: false,
+      complement: true,
+    });
+    assert.ok(cmd.endsWith('--complement'), `Expected command to end with --complement: ${cmd}`);
+  });
+
+  it('buildEquivalentCommand — omits --complement when absent or false', () => {
+    const { buildEquivalentCommand } =
+      require('../../dist-cli/wizard/index') as typeof import('../../dist-cli/wizard/index');
+    const absent = buildEquivalentCommand({
+      selectors: ['skill:csharp/cs-generate-tests'],
+      target: 'claude',
+      includeDeps: true,
+      overwrite: false,
+    });
+    assert.ok(!absent.includes('--complement'), `Expected no --complement flag in: ${absent}`);
+    const disabled = buildEquivalentCommand({
+      selectors: ['skill:csharp/cs-generate-tests'],
+      target: 'claude',
+      includeDeps: true,
+      overwrite: false,
+      complement: false,
+    });
+    assert.ok(!disabled.includes('--complement'), `Expected no --complement flag in: ${disabled}`);
+  });
+
   it('individual picker — "Config — agnostic" group contains mcp artifacts, shared group excludes them', async () => {
     // This test captures the options object passed to pickArtifacts and inspects the group layout.
     const { runWizard } =

@@ -27,6 +27,8 @@ export interface EquivalentCommandOptions {
   /** True when the install includes at least one mcp/hook/settings artifact. When set,
    *  --scope is always emitted (even for the 'project' default) to pin the destination. */
   hasConfigKinds?: boolean | undefined;
+  /** True when the install skipped the picks an enabled plugin already delivers (--complement). */
+  complement?: boolean | undefined;
 }
 
 /** A path every shell takes as one plain word. */
@@ -116,6 +118,7 @@ export function buildEquivalentCommand(opts: EquivalentCommandOptions): string {
   const scopeFlag = buildScopeFlag(opts);
   if (scopeFlag) parts.push(scopeFlag);
   parts.push('--yes');
+  if (opts.complement) parts.push('--complement');
   return parts.join(' ');
 }
 

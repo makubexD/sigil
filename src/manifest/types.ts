@@ -110,8 +110,11 @@ export interface StatusResult {
   keptReason?: string;
   /** Dependencies (`uses`) the entry gained that `update` would install. */
   newDependencies?: string[];
-  /** The enabled marketplace plugin that also delivers this artifact; absent when none does. */
-  plugin?: { name: string; marketplace: string; source: string };
+  /**
+   * The enabled marketplace plugin that also delivers this artifact; absent when none does.
+   * `marketplace` is absent when the tool installs plugins outside any marketplace.
+   */
+  plugin?: { name: string; marketplace?: string; source: string };
   /** Short human-readable explanation of `status`. Absent for 'up-to-date'. */
   reason?: string;
 }

@@ -27,6 +27,8 @@ export interface WizardResult {
    * Maps to --scope on the CLI. Undefined means 'project' (the default).
    */
   configScope?: string | undefined;
+  /** Skip picks an enabled plugin already delivers (--complement). */
+  complement?: boolean | undefined;
 }
 
 /** Return value of `runNewWizard` — maps 1:1 to `sigil new` CLI flags. */

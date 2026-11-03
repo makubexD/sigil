@@ -25,6 +25,8 @@ export interface ResolvedAddInputs {
   scope: ConfigScope;
   /** True when the wizard chose these inputs, so the user has no command yet to repeat. */
   fromWizard: boolean;
+  /** Skip picks an enabled plugin already delivers (--complement). */
+  complement: boolean;
 }
 
 /** Throws the "no selectors + not a TTY" guidance error. */
@@ -56,6 +58,8 @@ function fromWizardResult(
     language: wizardResult.language ?? opts.language,
     scope: (wizardResult.configScope as ConfigScope | undefined) ?? baseScope,
     fromWizard: true,
+    // The wizard always answers (false when nothing overlaps), like overwrite: the flag is not read here.
+    complement: wizardResult.complement === true,
   };
 }
 
@@ -134,6 +138,7 @@ function typedInputs(selectors: string[], opts: AddOpts, scope: ConfigScope): Re
     language: opts.language,
     scope,
     fromWizard: false,
+    complement: opts.complement === true,
   };
 }
 

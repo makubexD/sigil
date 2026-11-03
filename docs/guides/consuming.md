@@ -550,22 +550,36 @@ deterministic checks. For an MCP server in a project `.mcp.json`, the outcome de
 copies resolve to. If the endpoint is the same, Claude Code drops the plugin's server and keeps the
 project's. If it differs, both run and the tools appear twice.
 
-`sigil add` checks for this. For Claude Code it reads `enabledPlugins` from `.claude/settings.local.json`,
-`.claude/settings.json` and `~/.claude/settings.json` (the highest scope that names a plugin decides, and only
-an explicit `true` counts). For Copilot it reads the folders under `~/.copilot/installed-plugins/<marketplace>/`.
-Each pick or dependency an enabled sigil plugin already delivers is still installed, with a warning naming the plugin and the
-file it is enabled in. A settings file that is a symbolic link is not followed: it is skipped with a warning. The wizard's install plan
-shows the same lines before you confirm. To skip those artifacts instead, pass `--complement`:
+`sigil add` checks for this. For Claude Code it reads `enabledPlugins` from file-based managed settings
+(`managed-settings.json` and `managed-settings.d/*.json`; a managed value wins), `.claude/settings.local.json`,
+`.claude/settings.json` and the user settings (the highest scope that names a plugin decides, and only an explicit
+`true` counts). The user file is `~/.claude/settings.json`, or `$CLAUDE_CONFIG_DIR/settings.json` when that variable
+is non-empty; a symbolic link there is followed. Project and local settings links are refused with a warning. For
+Codex it reads the cache folders under `~/.codex/plugins/cache/<marketplace>/` and the matching
+`plugins."<name>@<marketplace>"` tables in `~/.codex/config.toml`. For Antigravity it reads the `plugin.json` folders
+under `.agents/plugins/` and `~/.gemini/config/plugins/`. For Copilot it reads the folders under
+`~/.copilot/installed-plugins/<marketplace>/`.
+
+Only the kinds a tool really loads from a plugin count. Copilot's plugin hooks are unsafe and its MCP root is the
+plugin folder, so only its skills, agents and prompts count; its hooks and MCP servers are installed as usual. Codex
+counts skills only. Server-managed and MDM policy, and the Codex project `.codex/config.toml`, are not read: sigil
+cannot see the first two, and the last applies only in a project Codex trusts.
+
+Each pick or dependency an enabled sigil plugin already delivers is still installed, with a warning naming the plugin
+and the file it is enabled in. The wizard's install plan shows the same lines before you confirm, and asks whether to
+skip what the plugin delivers (only when there is an overlap; the answer maps to `--complement`). To skip those
+artifacts instead, pass `--complement`:
 
 ```bash
 sigil add pack:typescript-tooling --target claude --complement
 ```
 
-A skipped pick is listed with `delivered by plugin <name>@<marketplace> (<file>)`. Rules and settings never ride
-in a plugin, so they are always installed, and so is any dependency the plugin doesn't hold. When a skipped skill uses a rule, the
-rule is recorded in the manifest as one of your picks, not as a dependency, since the skill that pulled it in isn't installed. `sigil status` notes
-each installed entry an enabled plugin also delivers (see [Keep installs healthy over time](#keep-installs-healthy-over-time)). Codex, Cursor and
-Antigravity have no plugin check yet.
+A skipped pick is listed with `delivered by plugin <name>@<marketplace> (<file>)`; an Antigravity plugin comes from no
+marketplace, so its line names the plugin alone. Rules and settings never ride in a plugin, so they are always
+installed, and so is any dependency the plugin doesn't hold. When a skipped skill uses a rule, the rule is recorded in
+the manifest as one of your picks, not as a dependency, since the skill that pulled it in isn't installed. `sigil
+status` notes each installed entry an enabled plugin also delivers (see [Keep installs healthy over
+time](#keep-installs-healthy-over-time)). Cursor has no plugin check.
 
 **Reviewing updates.** A plugin update can change a hook's command with no review step. `sigil update`
 shows what would change before it writes, and `--dry-run` previews it. To read a hook before it runs,
@@ -789,7 +803,8 @@ in (Copilot's MCP servers moved out of `.vscode/mcp.json`); a fragment you edite
 After the table, `status` also prints one `ℹ` line per installed entry an enabled sigil plugin also delivers
 (`<id> is also delivered by plugin <name>@<marketplace> (enabled in <file>) (installed for <tool>)`), and the
 `--json` row carries it as `plugin: { name, marketplace, source }`. Keep one copy: `sigil uninstall <id>`, or
-disable the plugin. A settings file that isn't valid JSON adds a `⚠ plugin check:` line.
+disable the plugin. A settings file that isn't valid JSON adds a `⚠ plugin check:` line. `status --json` prints the
+reader warnings to stderr, so stdout stays the JSON array.
 
 Three notes can appear under a row, whatever its status, each with a next step after the table:
 

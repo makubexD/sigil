@@ -232,7 +232,7 @@ export async function runStatus(opts: StatusOptions): Promise<void> {
     buildStatuses(view, catalog, group, { ...opts, packsConfig: p });
   const { results, warnings } = await perCatalogWithPlugins(manifest, opts, build);
 
-  if (opts.json) return printStatusJson(results);
+  if (opts.json) return printStatusJson(results, warnings);
   printHumanStatus(results, manifest, warnings);
 }
 

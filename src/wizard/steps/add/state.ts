@@ -47,6 +47,8 @@ export interface AddWizardState {
   language?: string | undefined;
   includeDeps?: boolean;
   overwrite?: boolean;
+  /** Skip picks an enabled plugin already delivers (--complement). */
+  complement?: boolean;
   configScope?: string | undefined;
   installStates?: Map<string, ArtifactInstallState>;
   installStatesForTarget?: string;

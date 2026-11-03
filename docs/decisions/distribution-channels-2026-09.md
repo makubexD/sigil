@@ -238,13 +238,14 @@ them on 2026-10-30, and it has no code dependency on either. Both were built aft
   counts), and Copilot's `~/.copilot/installed-plugins/<marketplace>/` folders. `src/plugin-overlap.ts` joins the two.
   `sigil add` warns about each overlapping pick and still installs it; `--complement` skips it with the `plugin`
   cause, keeping rules, settings and dependencies the plugin doesn't hold. `sigil status` notes installed entries an
-  enabled plugin also delivers (`plugin` on `--json` rows), and the wizard's plan box shows the `add` warning. Left
-  open: readers for Codex, Cursor and Antigravity (their plugin state isn't documented in a form read here), managed
-  Claude settings, plugins enabled only through `defaultEnabled`, a complement toggle in the wizard, a
-  `CLAUDE_CONFIG_DIR` that moves the user settings (the reader always looks in `~/.claude`), following a symlinked
-  settings file (skipped with a warning), reader warnings in `status --json` (only the text output prints them), and
-  the wizard printing the plugin advisory twice. The Copilot
-  reader rests on the docs alone (probe B5 below).
+  enabled plugin also delivers (`plugin` on `--json` rows), and the wizard's plan box shows the `add` warning. The
+  follow-ups (`docs/plan-complement-follow-ups.md`) added readers for Codex and Antigravity, file-based managed Claude
+  settings, `CLAUDE_CONFIG_DIR` and a symlinked user settings file, reader warnings on `status --json`'s stderr, and
+  the wizard's complement choice; an overlap now counts only for a kind its tool loads from a plugin. Left open:
+  Cursor (decision 9 of the plan: its plugin state isn't documented on disk), plugins enabled only through
+  `defaultEnabled` (decision 6 of the plan: won't-do), MDM and server-managed policy, and the Codex project
+  `.codex/config.toml`, which applies only in a trusted project. The Copilot reader rests on the docs alone (probe B5
+  below).
 - **3 is done 2026-11-03.** Its checks came first and its goal was unproven until v0.7.0. `provider-limits` has enforced both limits through
   `agent-skills-limits.ts` since `e5939bd` (2026-10-03), and `name` equals the folder because
   `outputPath` derives from it. Measured on fresh output on 2026-10-30: 0 mismatches across
@@ -303,6 +304,30 @@ scratch folder so the real `~/.claude` stayed untouched. Plan: `docs/plan-comple
   (nothing was left installed after the 2026-10-31 check), so the `<marketplace>/<plugin>` layout rests on the
   [CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference#file-locations)
   alone. Step 10 doesn't cover Copilot, so this stays unproven live.
+
+### Phase 2b follow-up probes (2026-11-03)
+
+Run against the real `~/.codex` and `~/.gemini` on this machine, each restored afterwards (Codex `config.toml` byte for
+byte by hash; `~/.gemini/config/` back to its earlier file list). Plan: `docs/plan-complement-follow-ups.md`, step 1.
+
+- **C1, Codex CLI 0.166.0, `codex plugin marketplace add makubexD/sigil --ref marketplace` then
+  `codex plugin add typescript-starter@sigil`: pass.** The plugin lands in
+  `~/.codex/plugins/cache/sigil/typescript-starter/0.7.0/`, and `config.toml` gains `[marketplaces.sigil]` and
+  `[plugins."typescript-starter@sigil"]` with `enabled = true`.
+- **C2, the enabled state: pass, with one addition.** The TUI toggle wasn't driven; `config.toml` was edited by hand and
+  read back with `codex plugin list`. `enabled = false` shows `installed, disabled`. A bare
+  `[plugins."typescript-starter@sigil"]` table shows `installed, enabled`, and `disabled` once `plugins._default.enabled`
+  is `false`. The addition: with the cache folder present but **no** `plugins."<name>@<mp>"` table, Codex reports
+  `not installed`; with the table but no cache folder, also `not installed`. A plugin is installed only when both exist.
+- **A1, Antigravity CLI 1.4.12, `agy plugin install dist/antigravity/plugins/typescript-starter`: pass.**
+  `~/.gemini/config/plugins/typescript-starter/` holds `plugin.json` (`name: typescript-starter`), `skills/` and
+  `agents/`, no `.claude-plugin/`. agy also writes `~/.gemini/config/import_manifest.json` (`source: "antigravity"`,
+  the components copied); `agy plugin list --json` reports the same `source`.
+- **A2, `agy plugin disable typescript-starter`: a disabled state exists.** It writes
+  `~/.gemini/config/config.json` as `{"plugins": {"typescript-starter": {"enabled": false}}}`; `enable` flips it to
+  `true`, and `uninstall` leaves `{"plugins": {}}`. The Plugins page doesn't document this file.
+- **A3, rules in Antigravity plugins: none today.** No `dist/antigravity/plugins/*/` folder has `rules/`: only
+  repo-wide rules ship in a plugin, and no pack holds one.
 - **L1, live check (plan step 10): pass after one fix.** Same setup: `claude plugin install typescript-tooling@sigil
 --scope project`, then `sigil add skill:typescript/ts-generate-tests --target claude --yes`. Plain `add` installed
   the skill with the warning naming `typescript-tooling@sigil (enabled in .claude/settings.json)`, and `sigil status`
@@ -310,6 +335,16 @@ scratch folder so the real `~/.claude` stayed untouched. Plan: `docs/plan-comple
   wrote its `uses:` agent `ts-code-reviewer`, which the plugin also holds, and called the skip "not supported". Fixed
   in the same branch (overlaps cover the dependency closure; a held dependency is never scaffolded). Rerun: both
   skipped and named, only the rule `ts-testing` written, and `status` lists only that rule.
+- **L2, live check for Codex and Antigravity (plan step 13): pass.** Codex 0.166.0 with `typescript-starter@sigil` and
+  `hook-protect-config@sigil` installed: plain `sigil add skill:typescript/ts-generate-tests --target codex` warns
+  `typescript-starter@sigil (enabled in ~/.codex/plugins/cache/sigil/typescript-starter)`; `status` prints the note and
+  `--json` the `plugin` field, with an empty stderr; `--complement` skips the skill; and
+  `sigil add hook:shared/protect-config --target codex --complement` merges the hook into `.codex/hooks.json` (hook is
+  not a Codex plugin kind). Antigravity 1.4.12 with `dist/antigravity/plugins/typescript-starter` installed: the same
+  `add` warns about the skill and its agent `ts-code-reviewer` as `plugin typescript-starter` (no `@`), `status
+--json` rows carry no `marketplace` key, and `--complement` skips both. Both tools restored afterwards: Codex
+  `config.toml` by hash; in `~/.gemini/config/`, `agy plugin uninstall` leaves `import_manifest.json`
+  (`{"imports": null}`) and an empty `plugins/`, both removed to match the earlier file list.
 
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict

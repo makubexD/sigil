@@ -333,6 +333,7 @@ const EXEMPT: Record<string, string> = {
   'wizard/steps/new/language.ts': 'author-only; one select',
   'wizard/steps/new/platforms.ts': 'author-only; one multiselect',
   'wizard/steps/add/browse-kind.ts': 'one select; flow covered by add.test.ts',
+  'wizard/steps/add/complement.ts': 'one select; flow covered by complement-step.test.ts',
   'wizard/steps/add/config-scope.ts': 'one select and notes; flow covered by add.test.ts',
   'wizard/steps/add/cross-kind-picker.ts':
     'select plus the install picker (picker-render property tests)',

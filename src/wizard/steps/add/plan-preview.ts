@@ -10,7 +10,8 @@ import type { SelectionResult } from '../../../select';
 import type { ResolvedArtifact } from '../../../types';
 import type { ArtifactInstallState } from '../../../install-state';
 import { carriedKinds, installableKinds } from '../../../targets/capabilities';
-import { chosenTarget, installSkipReason } from './state';
+import { installSkipReason } from '../../../targets/install-skip';
+import { chosenTarget } from './state';
 import type { AddWizardState } from './state';
 
 /** The picks resolved the way `sigil add` resolves them: the chosen target's kinds and platform only. */

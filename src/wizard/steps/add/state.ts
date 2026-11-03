@@ -4,10 +4,10 @@
  *
  * @module
  */
-import type { ResolvedCatalog, ResolvedArtifact, Pack, ArtifactKind, Target } from '../../../types';
+import type { ResolvedCatalog, Pack, ArtifactKind, Target } from '../../../types';
 import type { ArtifactInstallState } from '../../../install-state';
 import { isInstallable } from '../../../targets/capabilities';
-import { wholeFileSkipReason } from '../../../targets/tool-restriction';
+import { installSkipReason } from '../../../targets/install-skip';
 
 export type ScopeChoice = 'all' | 'pack' | 'browse';
 
@@ -47,15 +47,6 @@ export interface AddWizardState {
 /** The currently chosen target adapter, or undefined before the target step runs. */
 export function chosenTarget(s: AddWizardState): Target | undefined {
   return s.ctx.scaffoldableTargets.find(t => t.name === s.target);
-}
-
-/**
- * The reason `add` leaves `artifact` out for `target`: a config kind the target refuses, otherwise
- * a whole-file artifact it cannot render (a scoped Antigravity rule, a tool-restricted agent).
- * Undefined when the artifact installs.
- */
-export function installSkipReason(target: Target, artifact: ResolvedArtifact): string | undefined {
-  return target.configSkipReason?.(artifact) ?? wholeFileSkipReason(target, artifact);
 }
 
 /** Catalog artifacts supported by the chosen target (or the full catalog before one is chosen). */

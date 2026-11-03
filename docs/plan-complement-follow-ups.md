@@ -250,6 +250,32 @@ Each worker step ends with `npm run build && npm run lint && npm run test:built`
   `yes` → the command string holds `--complement`, and the overlapping id isn't written. (c) The default → installed,
   and no flag.
 
+Amended 2026-11-03: split in three. `add` reads `ctx.opts.complement` and the wizard runs inside `add`, so the choice
+has to come back through `WizardResult` and `ResolvedAddInputs`. Each part ends with build, lint and tests green.
+
+### Step 11a `[worker:medium]`: `add` takes complement from its inputs
+
+- Files: `src/wizard/types.ts` (`WizardResult.complement?: boolean`), `src/commands/add/resolve-inputs.ts`
+  (`ResolvedAddInputs.complement: boolean`: typed = `opts.complement === true`; wizard =
+  `wizardResult.complement ?? opts.complement === true`), `src/commands/add/plan.ts` (read `ctx.inputs.complement`
+  wherever it read `ctx.opts.complement`; add `effectiveComplement: boolean` to `AddPlan` and the effective fields), and
+  `test/commands/add-plugin-overlap.test.ts`.
+- Test: a typed `--complement` add still skips the overlapping id (existing tests stay green).
+
+### Step 11b `[worker:medium]`: the equivalent command shows `--complement`
+
+- Files: `src/wizard/command-strings.ts` (`EquivalentCommandOptions.complement?: boolean` → appends `--complement`),
+  `src/commands/add/render.ts` (pass `plan.effectiveComplement`), and the existing `buildEquivalentCommand` test file.
+- Tests: `complement: true` → the command ends with `--complement`; absent or `false` → no flag.
+
+### Step 11c `[worker:medium]`: the wizard step
+
+- Files: `src/wizard/steps/add/state.ts` (`complement?: boolean`), new `src/wizard/steps/add/complement.ts`,
+  `src/wizard/steps/add/index.ts` (register after `depsStep`), `src/wizard/add.ts` (copy `s.complement` into
+  `WizardResult.complement`), `src/wizard/steps/add/proceed.ts` / `plan-box.ts` (under `s.complement`, no overlap lines;
+  those ids in the skipped list), and a wizard test next to the existing add-step tests.
+- The select and its options are as in step 11 above. Tests (a)-(c) as in step 11, driven through the wizard.
+
 ## Step 12 `[worker:medium]`: docs
 
 - `docs/guides/consuming.md` (duplicate guard section): Codex and Antigravity are covered. Only the kinds each tool

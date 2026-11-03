@@ -3,7 +3,7 @@
 > **Back to:** [README](../../README.md) · [Documentation index](../index.md) · [Decisions](../decisions/)
 
 Each file here is a brief for one gap between what sigil does today and what the maintainer wants:
-interactive use for non-terminal users, publishing to marketplaces (including your own), and more
+a browsable artifact index, publishing to marketplaces (including your own), and more
 AI tools. A brief follows the SPEC shape: Objective, Evidence (with `file:line` citations),
 Out of scope, Success criteria, Riskiest assumption, Open questions. Where the
 [distribution-channels ADR](../decisions/distribution-channels-2026-09.md) already plans the work,
@@ -30,8 +30,8 @@ user wants it kept).
 
 ## Briefs
 
-| File                                           | Summary                                  | Status   |
-| ---------------------------------------------- | ---------------------------------------- | -------- |
-| [npm-first-publish.md](npm-first-publish.md)   | First npm publish and package name       | proposed |
-| [cursor-target.md](cursor-target.md)           | Cursor target (ADR Phase 6)              | proposed |
-| [ui-beyond-terminal.md](ui-beyond-terminal.md) | Decide on a catalog browser or other GUI | proposed |
+| File                                         | Summary                                       | Status   |
+| -------------------------------------------- | --------------------------------------------- | -------- |
+| [npm-first-publish.md](npm-first-publish.md) | First npm publish and package name            | proposed |
+| [cursor-target.md](cursor-target.md)         | Cursor target (ADR Phase 6)                   | proposed |
+| [artifact-index.md](artifact-index.md)       | Generated index of every installable artifact | proposed |

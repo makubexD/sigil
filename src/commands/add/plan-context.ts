@@ -52,7 +52,14 @@ export function computePluginOverlaps(ctx: PlanCtx, ids: readonly string[]): Plu
     homeDir: ctx.opts.homeDir ?? os.homedir(),
     marketplace: marketplaceName(ctx.marketplace),
   });
-  return { overlaps: new Map([...overlaps].filter(([id]) => ids.includes(id))), warnings };
+  const candidates = new Set([...ids, ...dependencyIds(ctx, ids)]);
+  return { overlaps: new Map([...overlaps].filter(([id]) => candidates.has(id))), warnings };
+}
+
+/** The `uses:` dependencies `add` would also write for `ids`; none under `--no-deps`. */
+function dependencyIds(ctx: PlanCtx, ids: readonly string[]): string[] {
+  if (!ctx.inputs.includeDeps) return [];
+  return computeClosure([...ids], ctx.resolved, ctx.target).dependencies.map(d => d.artifact.id);
 }
 
 /**
@@ -67,7 +74,7 @@ export function complement(
   overlaps: ReadonlyMap<string, PluginOverlap>,
 ): string[] {
   const removed = ids.filter(id => overlaps.has(id));
-  recordPluginSkips(ctx, removed, skipped, overlaps);
+  recordPluginSkips(ctx, [...overlaps.keys()].sort(), skipped, overlaps);
   const kept = ids.filter(id => !overlaps.has(id));
   if (!ctx.inputs.includeDeps) return kept;
   const { dependencies } = computeClosure(removed, ctx.resolved, ctx.target);

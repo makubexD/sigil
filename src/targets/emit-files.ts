@@ -105,6 +105,7 @@ export function scaffoldArtifact(input: ScaffoldInput, files: FileMap = {}): Fil
   if (options.includeDeps === false) return files;
   const depOptions = { ...options, includeDeps: false };
   for (const dep of installableDeps(specs, spec, artifact, catalog)) {
+    if (options.excludeDeps?.has(dep.id)) continue;
     scaffoldArtifact({ ...input, artifact: dep, options: depOptions }, files);
   }
   return files;

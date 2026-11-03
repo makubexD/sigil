@@ -24,13 +24,18 @@ const PACK = 'cli-builder';
 const SKILL = 'skill:shared/cli';
 const RULE_FILE = '.claude/rules/shared-cli-rules.md';
 
-/** Enables the `PACK` plugin at user scope in `home`. */
-function enablePack(home: string): void {
+/** A starter plugin holds `ts-code-reviewer` but not `ts-sync-tests`, the skill that uses it. */
+const STARTER = 'typescript-starter';
+const USING_SKILL = 'skill:typescript/ts-sync-tests';
+const HELD_AGENT_FILE = '.claude/agents/ts-code-reviewer.md';
+
+/** Enables the `pack` plugin (default `PACK`) at user scope in `home`. */
+function enablePack(home: string, pack = PACK): void {
   const dir = path.join(home, '.claude');
   fs.mkdirSync(dir, { recursive: true });
   fs.writeFileSync(
     path.join(dir, 'settings.json'),
-    JSON.stringify({ enabledPlugins: { [`${PACK}@sigil`]: true } }, null, 2),
+    JSON.stringify({ enabledPlugins: { [`${pack}@sigil`]: true } }, null, 2),
   );
 }
 
@@ -178,6 +183,39 @@ describe('sigil add — plugin duplicate guard', () => {
           /delivered by plugin cli-builder@sigil \(~\/\.claude\/settings\.json\)/,
         );
         assert.deepEqual(listFiles(project), []);
+      });
+    });
+  });
+
+  it('should warn about a dependency an enabled plugin also delivers', async () => {
+    await withTempDirAsync(async project => {
+      await inTempDir(async home => {
+        enablePack(home, STARTER);
+
+        const logs = await add(project, home, USING_SKILL, { deps: true });
+
+        assert.ok(fs.existsSync(path.join(project, HELD_AGENT_FILE)));
+        assert.match(
+          logs.join('\n'),
+          /typescript\/ts-code-reviewer is also delivered by plugin typescript-starter@sigil/,
+        );
+      });
+    });
+  });
+
+  it('should not write a dependency the plugin holds under complement', async () => {
+    await withTempDirAsync(async project => {
+      await inTempDir(async home => {
+        enablePack(home, STARTER);
+
+        const logs = await add(project, home, USING_SKILL, { deps: true, complement: true });
+
+        assert.ok(fs.existsSync(path.join(project, '.claude/skills/ts-sync-tests/SKILL.md')));
+        assert.ok(!fs.existsSync(path.join(project, HELD_AGENT_FILE)));
+        assert.match(
+          logs.join('\n'),
+          /typescript\/ts-code-reviewer \(agent\): delivered by plugin typescript-starter@sigil/,
+        );
       });
     });
   });

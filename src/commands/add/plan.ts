@@ -20,14 +20,13 @@ import type { PluginOverlap } from '../../plugin-overlap';
 import { loadAndValidate, detectProjectTarget } from '../../cli-helpers';
 import { resolveInputs } from './resolve-inputs';
 import { resolveIds, computeUpToDateIds } from './plan-ids';
-import { computePrimaryPaths, scaffoldWholeFiles } from './plan-scaffold';
+import { buildScaffoldOpts, computePrimaryPaths, scaffoldWholeFiles } from './plan-scaffold';
 import {
   complement,
   computePluginOverlaps,
   type PartitionedIds,
   type PlanCtx,
 } from './plan-context';
-import { coInstallSetFor } from './co-install';
 import type { FileMap, ConfigScope, ResolvedCatalog, Target } from '../../types';
 import type { AddOpts } from './index';
 
@@ -37,6 +36,8 @@ export interface ScaffoldOpts {
   includeDeps: boolean;
   scope: ConfigScope;
   coInstallSet: Set<string>;
+  /** Dependencies an enabled plugin already delivers, never written under `--complement`. */
+  excludeDeps: ReadonlySet<string>;
 }
 
 export interface AddPlan {
@@ -203,21 +204,15 @@ function assembleAddPlan(ctx: PlanCtx, options: AssembleAddPlanOptions): AddPlan
 /** Builds scaffoldOpts and runs the scaffold phase (primary-path pre-compute + main loop). */
 async function runScaffoldPhase(
   ctx: PlanCtx,
-  wholeFileIds: string[],
+  partition: PartitionedIds,
 ): Promise<{
   scaffoldOpts: ScaffoldOpts;
   primaryPaths: Set<string>;
   toWrite: FileMap;
   conflicting: FileMap;
 }> {
-  const scaffoldOpts: ScaffoldOpts = {
-    projectDir: ctx.opts.projectDir,
-    overwrite: ctx.inputs.overwrite,
-    includeDeps: ctx.inputs.includeDeps,
-    scope: ctx.inputs.scope,
-    coInstallSet: coInstallSetFor(ctx, wholeFileIds),
-  };
-
+  const { wholeFileIds } = partition;
+  const scaffoldOpts = buildScaffoldOpts(ctx, partition);
   const primaryPaths = await computePrimaryPaths(ctx, wholeFileIds, scaffoldOpts);
   const { toWrite, conflicting } = await scaffoldWholeFiles(ctx, wholeFileIds, scaffoldOpts);
   return { scaffoldOpts, primaryPaths, toWrite, conflicting };
@@ -234,7 +229,7 @@ export async function buildAddPlan(selectors: string[], opts: AddOpts): Promise<
 
   const { scaffoldOpts, primaryPaths, toWrite, conflicting } = await runScaffoldPhase(
     ctx,
-    partition.wholeFileIds,
+    partition,
   );
 
   return assembleAddPlan(ctx, {

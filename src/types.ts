@@ -349,6 +349,8 @@ export interface ScaffoldOptions {
    * this artifact. When absent, no Boundary section is rendered (avoids dangling refs).
    */
   coInstallSet?: Set<string>;
+  /** Dependency ids never written: an enabled plugin already delivers them (`add --complement`). */
+  excludeDeps?: ReadonlySet<string>;
 }
 
 /**
@@ -360,13 +362,8 @@ export type EnabledPluginsEnv = { projectDir: string; homeDir: string; marketpla
 /** One enabled plugin: its name without the `@<marketplace>` suffix, and where it is enabled. */
 export type EnabledPlugin = { name: string; source: string };
 
-/** Plugin name → the catalog ids that plugin delivers. */
+/** Plugin name → the catalog ids that plugin delivers, in marketplace order. */
 type PluginContents = ReadonlyMap<string, readonly string[]>;
-
-/**
- * A target's reader of what its marketplace plugins hold: plugin name → ids, in marketplace order.
- */
-type PluginContentsReader = (catalog: ResolvedCatalog, packs: Pack[]) => PluginContents;
 
 /** The enabled plugins a target found, plus the problems met while reading its settings. */
 export interface EnabledPluginsResult {
@@ -518,7 +515,7 @@ export interface Target {
    * marketplace (the same contents its build writes), and read by src/plugin-overlap.ts.
    * Omitted when the target builds no plugin marketplace.
    */
-  marketplacePluginContents?: PluginContentsReader;
+  marketplacePluginContents?(catalog: ResolvedCatalog, packs: Pack[]): PluginContents;
 
   /**
    * Other targets whose files this tool also loads, per kind, with the doc that says so (Copilot

@@ -116,6 +116,18 @@ describe('install summary line', () => {
     );
   });
 
+  it('should count a pick an enabled plugin delivers apart from unsupported kinds', () => {
+    const plugin: SkippedArtifact = {
+      id: 'shared/cli',
+      kind: 'skill',
+      cause: 'plugin',
+      reason: 'delivered by plugin cli-builder@sigil (.claude/settings.json)',
+    };
+    const summary = skippedSummary(planOf([plugin]));
+    assert.equal(summary, ', 1 skipped (an enabled plugin delivers them)');
+    assert.doesNotMatch(summary, /not supported/);
+  });
+
   it('should count an artifact the target cannot render apart from unsupported kinds', () => {
     const summary = skippedSummary(planOf([UNRENDERABLE], 'cursor'));
     assert.equal(summary, ", 1 skipped (cannot render on 'cursor')");

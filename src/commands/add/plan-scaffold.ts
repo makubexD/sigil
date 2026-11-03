@@ -13,6 +13,20 @@ import { renderViolations } from '../shared/contract';
 import type { FileMap } from '../../types';
 import type { PlanCtx } from './plan-context';
 import type { ScaffoldOpts } from './plan';
+import type { PartitionedIds } from './plan-context';
+import { coInstallSetFor } from './co-install';
+
+/** The scaffold options for this plan; `--complement` keeps a plugin's dependencies unwritten. */
+export function buildScaffoldOpts(ctx: PlanCtx, partition: PartitionedIds): ScaffoldOpts {
+  return {
+    projectDir: ctx.opts.projectDir,
+    overwrite: ctx.inputs.overwrite,
+    includeDeps: ctx.inputs.includeDeps,
+    scope: ctx.inputs.scope,
+    coInstallSet: coInstallSetFor(ctx, partition.wholeFileIds),
+    excludeDeps: new Set(partition.skipped.filter(x => x.cause === 'plugin').map(x => x.id)),
+  };
+}
 
 /** Pre-computes primary (no-dep) file paths for dep tagging in the summary listing. */
 export async function computePrimaryPaths(

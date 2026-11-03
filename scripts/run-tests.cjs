@@ -63,5 +63,9 @@ const requested = Number.parseInt(process.env.SIGIL_TEST_CONCURRENCY ?? '', 10);
 const concurrency = requested > 0 ? requested : os.availableParallelism();
 args.push(`--test-concurrency=${concurrency}`);
 args.push(...process.argv.slice(2));
-const result = spawnSync(process.execPath, [...args, ...files], { stdio: 'inherit' });
+// Plugin readers honor these the way the tools do, which would move a test's injected home to the
+// developer's real config. A test that needs one passes it through `EnabledPluginsEnv.vars`.
+const env = { ...process.env };
+for (const name of ['CLAUDE_CONFIG_DIR', 'CODEX_HOME']) delete env[name];
+const result = spawnSync(process.execPath, [...args, ...files], { stdio: 'inherit', env });
 process.exit(result.status === null ? 1 : result.status);

@@ -1,13 +1,15 @@
 /**
  * Which Claude Code marketplace plugins are enabled, read from the `enabledPlugins` setting.
  * Precedence follows Claude's settings scopes, highest first: local (`.claude/settings.local.json`),
- * project (`.claude/settings.json`), user (`~/.claude/settings.json`). The highest scope that sets a
- * key decides, and only an explicit `true` counts — a plugin with no entry at any scope is not
- * counted, because whether it is installed lives in files the docs do not describe. Managed settings
- * are not read.
+ * project (`.claude/settings.json`), user (`$CLAUDE_CONFIG_DIR/settings.json` when that variable is
+ * non-empty, else `~/.claude/settings.json`). The highest scope that sets a key decides, and only an
+ * explicit `true` counts — a plugin with no entry at any scope is not counted, because whether it is
+ * installed lives in files the docs do not describe. Managed settings are not read.
  *
  * Files are read through src/safe-read.ts like every other sigil read; a missing file is skipped
  * silently, a refused or unparseable one is reported as a warning and the other scopes still read.
+ * A user-scope settings file that is a symbolic link is resolved and read at its target (dotfile
+ * managers link it), with the same size cap; project and local links stay refused.
  *
  * @module
  */
@@ -26,6 +28,24 @@ interface SettingsScope {
   readonly file: string;
   /** How this module names the file in `EnabledPlugin.source` and in warnings. */
   readonly source: string;
+  /** Resolve a symbolic link before reading; only the user scope does. */
+  readonly followLinks?: boolean;
+}
+
+/** `file` named with `homeDir` as `~`, so a moved user scope still reads as a home path. */
+function displayPath(file: string, homeDir: string): string {
+  const prefix = homeDir.endsWith(path.sep) ? homeDir : `${homeDir}${path.sep}`;
+  return file.startsWith(prefix) ? `~${file.slice(homeDir.length)}` : file;
+}
+
+/** The user scope, moved by a non-empty `CLAUDE_CONFIG_DIR` as Claude Code moves it. */
+function userScope(env: EnabledPluginsEnv): SettingsScope {
+  const configDir = (env.vars ?? process.env).CLAUDE_CONFIG_DIR;
+  const file =
+    configDir !== undefined && configDir.length > 0
+      ? path.join(configDir, 'settings.json')
+      : path.join(env.homeDir, '.claude', 'settings.json');
+  return { file, source: displayPath(file, env.homeDir), followLinks: true };
 }
 
 /** The scopes in precedence order, highest first. */
@@ -39,10 +59,7 @@ function settingsScopes(env: EnabledPluginsEnv): SettingsScope[] {
       file: path.join(env.projectDir, '.claude', 'settings.json'),
       source: '.claude/settings.json',
     },
-    {
-      file: path.join(env.homeDir, '.claude', 'settings.json'),
-      source: '~/.claude/settings.json',
-    },
+    userScope(env),
   ];
 }
 
@@ -109,6 +126,23 @@ function scopeReadable(
   }
 }
 
+/**
+ * The path to read for a scope: the user scope follows a symbolic link, other scopes leave it to
+ * `readRegularFile` to refuse. A broken link is one warning.
+ */
+function scopeFileToRead(scope: SettingsScope, warnings: string[]): string | undefined {
+  if (scope.followLinks !== true) return scope.file;
+  const stats = fs.lstatSync(scope.file, { throwIfNoEntry: false });
+  if (stats === undefined || !stats.isSymbolicLink()) return scope.file;
+  try {
+    return fs.realpathSync(scope.file);
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    warnings.push(`${scope.source}: ${detail}`);
+    return undefined;
+  }
+}
+
 /** The file's `enabledPlugins` object, or undefined when the file is missing or has no usable one. */
 function readScope(
   scope: SettingsScope,
@@ -117,7 +151,10 @@ function readScope(
 ): Record<string, unknown> | undefined {
   if (!scopeReadable(scope, warnings, unreadableDirs)) return undefined;
 
-  const read = readRegularFile(scope.file, { maxBytes: MAX_SETTINGS_KIB * KIB });
+  const file = scopeFileToRead(scope, warnings);
+  if (file === undefined) return undefined;
+
+  const read = readRegularFile(file, { maxBytes: MAX_SETTINGS_KIB * KIB });
   if ('reason' in read) {
     warnings.push(`${scope.source}: ${read.reason}`);
     return undefined;

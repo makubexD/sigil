@@ -6,11 +6,17 @@
  * @module
  */
 
-/**
- * Where a target looks for its enabled plugins: the project root, the user's home (injectable so
- * tests never read the real one) and the marketplace name whose plugins are counted.
- */
-export type EnabledPluginsEnv = { projectDir: string; homeDir: string; marketplace: string };
+/** Where a target looks for its enabled plugins. */
+export type EnabledPluginsEnv = {
+  /** The project root whose settings file is read. */
+  projectDir: string;
+  /** The user's home (injectable so tests never read the real one). */
+  homeDir: string;
+  /** The marketplace name whose plugins are counted. */
+  marketplace: string;
+  /** Environment variables; readers default to `process.env`. */
+  vars?: Readonly<Record<string, string | undefined>>;
+};
 
 /** One enabled plugin: its name without the `@<marketplace>` suffix, and where it is enabled. */
 export type EnabledPlugin = { name: string; source: string };

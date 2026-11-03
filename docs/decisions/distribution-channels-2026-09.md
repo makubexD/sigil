@@ -372,7 +372,10 @@ Plan: `docs/plan-claude-copilot-proof.md`. Release under test: v0.8.0 (`marketpl
   available". `auto` picked `gpt-6-luna` in 10 of 11 runs, and Copilot gives GPT models `apply_patch` instead of
   `create` / `edit` (`--available-tools create edit view` leaves them only `view`, per the session's `events.jsonl`). The
   one `mai-code-1.1-flash` run had both tools and created the control file. `apply_patch` is the path these accounts
-  take, and it was denied live on 2026-10-31. The `create` / `edit` case moves to the owner's VS Code check.
+  take, and it was denied live on 2026-10-31. The `create` / `edit` case stays untested: the owner is on the Copilot Free
+  plan, and the CLI on that plan offers only `auto`.
+- **Not tested, by plan limits:** the VS Code marketplace install (a GUI flow, left for when the owner runs VS Code
+  chat) and the cloud agent installing from a repo marketplace (GitHub lists the cloud agent for paid plans only).
 - **B5 passes on a real install.** `copilot plugin install typescript-tooling@sigil` wrote
   `~/.copilot/installed-plugins/sigil/typescript-tooling/` (`skills/`, `agents/`, `.claude-plugin/plugin.json`), the
   layout the reader assumes. `sigil add skill:typescript/ts-document --target copilot` warned about the skill and its

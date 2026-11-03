@@ -64,6 +64,8 @@ those too.
 
 ## Limits
 
+- On Copilot CLI's Free plan only `--model auto` is accepted, and it mostly picks a GPT model, which writes files
+  through `apply_patch`. `protect-config` blocks `apply_patch`; its `create` / `edit` path wasn't reached on that plan.
 - A read-only agent has no edit tool but keeps its shell. `reviewer-bash-guard` never reaches Copilot
   (`sigil add` skips it), so nothing blocks a write through the shell.
 - An MCP write skips `protect-config`: `filesystem-write_file` doesn't match `Edit|Write`.

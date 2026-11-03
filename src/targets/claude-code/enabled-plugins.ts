@@ -67,10 +67,7 @@ function parseSettings(
 }
 
 /** The file's `enabledPlugins` object, or undefined when the file is missing or has no usable one. */
-function readScope(
-  scope: SettingsScope,
-  warnings: string[],
-): Record<string, unknown> | undefined {
+function readScope(scope: SettingsScope, warnings: string[]): Record<string, unknown> | undefined {
   // A missing file is the normal case; only a file that exists and can't be used is reported.
   if (fs.lstatSync(scope.file, { throwIfNoEntry: false }) === undefined) return undefined;
 

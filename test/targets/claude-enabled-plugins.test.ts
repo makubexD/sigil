@@ -37,10 +37,10 @@ describe('readClaudeEnabledPlugins', () => {
     const { projectDir, homeDir, cleanup } = tempDirs();
     try {
       writeFile(projectSettings(projectDir), { enabledPlugins: { 'a@sigil': true } });
-      assert.deepEqual(
-        readClaudeEnabledPlugins({ projectDir, homeDir, marketplace: 'sigil' }),
-        { plugins: [{ name: 'a', source: '.claude/settings.json' }], warnings: [] },
-      );
+      assert.deepEqual(readClaudeEnabledPlugins({ projectDir, homeDir, marketplace: 'sigil' }), {
+        plugins: [{ name: 'a', source: '.claude/settings.json' }],
+        warnings: [],
+      });
     } finally {
       cleanup();
     }
@@ -90,10 +90,10 @@ describe('readClaudeEnabledPlugins', () => {
   it('(e) no settings files is empty, with no warnings and no throw', () => {
     const { projectDir, homeDir, cleanup } = tempDirs();
     try {
-      assert.deepEqual(
-        readClaudeEnabledPlugins({ projectDir, homeDir, marketplace: 'sigil' }),
-        { plugins: [], warnings: [] },
-      );
+      assert.deepEqual(readClaudeEnabledPlugins({ projectDir, homeDir, marketplace: 'sigil' }), {
+        plugins: [],
+        warnings: [],
+      });
     } finally {
       cleanup();
     }
@@ -117,10 +117,10 @@ describe('readClaudeEnabledPlugins', () => {
     const { projectDir, homeDir, cleanup } = tempDirs();
     try {
       writeFile(projectSettings(projectDir), { enabledPlugins: ['a@sigil'] });
-      assert.deepEqual(
-        readClaudeEnabledPlugins({ projectDir, homeDir, marketplace: 'sigil' }),
-        { plugins: [], warnings: [] },
-      );
+      assert.deepEqual(readClaudeEnabledPlugins({ projectDir, homeDir, marketplace: 'sigil' }), {
+        plugins: [],
+        warnings: [],
+      });
     } finally {
       cleanup();
     }

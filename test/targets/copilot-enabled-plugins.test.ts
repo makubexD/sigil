@@ -18,8 +18,7 @@ function tempHome(): { homeDir: string; cleanup: () => void } {
 }
 
 /** The folder Copilot installs marketplace plugins into. */
-const installedPlugins = (homeDir: string) =>
-  path.join(homeDir, '.copilot', 'installed-plugins');
+const installedPlugins = (homeDir: string) => path.join(homeDir, '.copilot', 'installed-plugins');
 
 /** Creates the marketplace folder `sigil` and returns its path. */
 function sigilDir(homeDir: string): string {

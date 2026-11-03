@@ -352,6 +352,22 @@ export interface ScaffoldOptions {
 }
 
 /**
+ * Where a target looks for its enabled plugins: the project root, the user's home (injectable so
+ * tests never read the real one) and the marketplace name whose plugins are counted.
+ */
+export type EnabledPluginsEnv = { projectDir: string; homeDir: string; marketplace: string };
+
+/** One enabled plugin: its name without the `@<marketplace>` suffix, and where it is enabled. */
+export type EnabledPlugin = { name: string; source: string };
+
+/** The enabled plugins a target found, plus the problems met while reading its settings. */
+export interface EnabledPluginsResult {
+  plugins: EnabledPlugin[];
+  /** Read problems (a refused or unparseable settings file), for the caller to show. */
+  warnings: string[];
+}
+
+/**
  * The interface every platform adapter must implement.
  * Register in src/targets/index.ts.
  */
@@ -479,6 +495,14 @@ export interface Target {
    * fragment an older install recorded there (src/commands/update-config-move.ts).
    */
   readonly retiredConfigDestinations?: readonly RetiredConfigDestination[];
+
+  /**
+   * Enabled plugins from `env.marketplace`, and where each is enabled. Platform logic, read-only:
+   * a target reads its own plugin state here (Claude's `enabledPlugins` settings, Copilot's
+   * installed-plugin folders) and returns warnings rather than printing them, so callers decide
+   * how to show them. Omitted when the target has no documented way to read its plugin state.
+   */
+  enabledPlugins?(env: EnabledPluginsEnv): EnabledPluginsResult;
 
   /**
    * Other targets whose files this tool also loads, per kind, with the doc that says so (Copilot

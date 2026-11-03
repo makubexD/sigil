@@ -12,7 +12,7 @@
  */
 import { log } from './prompts';
 import { intro, noteOnce } from './frame';
-import type { ResolvedCatalog, Pack } from '../types';
+import type { ResolvedCatalog, Pack, EnabledPluginsEnv } from '../types';
 import { getAllTargets } from '../targets';
 import type { WizardResult } from './types';
 import { runSteps } from './engine';
@@ -41,6 +41,8 @@ export interface WizardSite {
   fixed?: FixedTarget | undefined;
   /** Ids whose consumer overlay was refused (src/overlays.ts): the preview skips them as `add` does. */
   refusedOverlays?: ReadonlyMap<string, string> | undefined;
+  /** Where the plugin readers look; unset means the preview shows no plugin overlaps. */
+  pluginEnv?: EnabledPluginsEnv | undefined;
 }
 
 function buildInitialState(
@@ -57,6 +59,7 @@ function buildInitialState(
       scaffoldableTargets: getAllTargets().filter(t => Boolean(t.scaffold)),
       fixedTarget: site.fixed?.name,
       refusedOverlays: site.refusedOverlays,
+      pluginEnv: site.pluginEnv,
     },
     // Matches the pre-registry wizard's default: config-kind-only selections
     // (which skip the deps prompt entirely) behave as if "Yes" was answered.

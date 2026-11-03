@@ -87,7 +87,7 @@ async function buildPlanCtx(selectors: string[], opts: AddOpts): Promise<PlanCtx
   const overlaid = applyProjectOverlays(resolveCatalog(catalog), opts.projectDir);
   const { resolved, refused } = overlaid;
 
-  const inputs = await resolveInputs(selectors, opts, overlaid, packsConfig.packs);
+  const inputs = await resolveInputs(selectors, opts, overlaid, packsConfig);
   if (!inputs) return null;
 
   const targetName = inputs.target ?? detectProjectTarget(opts.projectDir, { verbose: true });

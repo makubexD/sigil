@@ -4,7 +4,13 @@
  *
  * @module
  */
-import type { ResolvedCatalog, Pack, ArtifactKind, Target } from '../../../types';
+import type {
+  ResolvedCatalog,
+  Pack,
+  ArtifactKind,
+  Target,
+  EnabledPluginsEnv,
+} from '../../../types';
 import type { ArtifactInstallState } from '../../../install-state';
 import { isInstallable } from '../../../targets/capabilities';
 import { installSkipReason } from '../../../targets/install-skip';
@@ -25,6 +31,8 @@ export interface AddWizardContext {
   readonly fixedTarget?: string | undefined;
   /** Ids whose consumer overlay was refused; skipped by the preview exactly as `add` skips them. */
   readonly refusedOverlays?: ReadonlyMap<string, string> | undefined;
+  /** Where the plugin readers look; unset means the preview shows no plugin overlaps. */
+  readonly pluginEnv?: EnabledPluginsEnv | undefined;
 }
 
 /** Mutable answers accumulated as the wizard progresses. */

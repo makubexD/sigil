@@ -246,6 +246,27 @@ yet.
   isn't documented. It may need a published tree: `master` holds catalog source with `{sigil:…}`
   tokens, not rendered skills. Phase 3 stays open, narrowed to that install route.
 
+### Phase 3 probes (2026-11-03)
+
+Run with `npx skills@1.7.6` (the newest on npm that day) in fresh `git init` repos in a scratch directory, against
+`build --target agents-standard` output from `1c02fba` and against GitHub. Plan:
+[plan-agent-skills-conformance.md](../plan-agent-skills-conformance.md) step 1. Every install also writes a
+`skills-lock.json` at the project root; `--copy` writes real files, not symlinks.
+
+- **P1, `--list` on the build: pass.** Found 45 skills, the listed names exactly equal the 45 folder names, no warning.
+- **P2, `--skill ts-generate-tests -a claude-code -y --copy`: pass.** Only `.claude/skills/ts-generate-tests/SKILL.md`
+  (plus `skills-lock.json`), byte-equal to the built file.
+- **P3, `--skill cli`: pass.** `references/` installed, 12 of 12 files; `diff -r` against the built folder is empty.
+- **P4, `--skill ts-generate-tests --skill py-generate-tests`: pass.** Exactly those two folders, both equal to the build.
+- **P5, `-a codex`: pass.** `.agents/skills/ts-generate-tests/SKILL.md`, byte-equal.
+- **P6, `https://github.com/makubexD/sigil/tree/marketplace --list`: pass.** The CLI resolves it to
+  `sigil.git @ marketplace` and finds 47 skills: the 55 plugin skills less the 8 names two plugins share. A tree URL at
+  a branch root works, so decision 3's `…/tree/skills` form stands.
+- **P7, `makubexD/sigil --list` (the bare form, `master`): hazard confirmed.** Found 46 skills, exactly the 46 catalog
+  source skills (`mk-check` included, which no agents-standard build ships); no test fixture or probe skill. Installing
+  `ts-generate-tests` from it writes the catalog source, with 2 unexpanded `{sigil:arguments}` tokens and no rules inlined.
+- **P8, `--list` on `<build>/.agents/skills`: pass.** Found the same 45 skills; the fallback path form also works.
+
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict
 them. There's no Codex plugin emitter: skills and MCP load from the Claude marketplace, and hook plugins fail open.

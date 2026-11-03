@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `sigil add` warns about each pick an enabled sigil marketplace plugin already delivers, naming the plugin and the
+- `sigil add` warns about each pick or dependency an enabled sigil marketplace plugin already delivers, naming the plugin and the
   file it is enabled in, and `sigil add --complement` skips those picks instead. Claude Code's `enabledPlugins`
   (local, project and user settings) and Copilot's `~/.copilot/installed-plugins/<marketplace>/` are read. Rules,
   settings and dependencies the plugin doesn't hold are still installed. The wizard's install plan shows the same

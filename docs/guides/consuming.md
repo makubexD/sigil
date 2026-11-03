@@ -553,7 +553,7 @@ project's. If it differs, both run and the tools appear twice.
 `sigil add` checks for this. For Claude Code it reads `enabledPlugins` from `.claude/settings.local.json`,
 `.claude/settings.json` and `~/.claude/settings.json` (the highest scope that names a plugin decides, and only
 an explicit `true` counts). For Copilot it reads the folders under `~/.copilot/installed-plugins/<marketplace>/`.
-Each pick an enabled sigil plugin already delivers is still installed, with a warning naming the plugin and the
+Each pick or dependency an enabled sigil plugin already delivers is still installed, with a warning naming the plugin and the
 file it is enabled in. The wizard's install plan shows the same lines before you confirm. To skip those picks
 instead, pass `--complement`:
 

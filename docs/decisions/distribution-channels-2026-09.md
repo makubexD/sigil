@@ -300,6 +300,13 @@ scratch folder so the real `~/.claude` stayed untouched. Plan: `docs/plan-comple
   (nothing was left installed after the 2026-10-31 check), so the `<marketplace>/<plugin>` layout rests on the
   [CLI plugin reference](https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference#file-locations)
   alone. Step 10 doesn't cover Copilot, so this stays unproven live.
+- **L1, live check (plan step 10): pass after one fix.** Same setup: `claude plugin install typescript-tooling@sigil
+--scope project`, then `sigil add skill:typescript/ts-generate-tests --target claude --yes`. Plain `add` installed
+  the skill with the warning naming `typescript-tooling@sigil (enabled in .claude/settings.json)`, and `sigil status`
+  printed the `ℹ` note with the `plugin` field on `--json`. The first `--complement` run skipped the skill but still
+  wrote its `uses:` agent `ts-code-reviewer`, which the plugin also holds, and called the skip "not supported". Fixed
+  in the same branch (overlaps cover the dependency closure; a held dependency is never scaffolded). Rerun: both
+  skipped and named, only the rule `ts-testing` written, and `status` lists only that rule.
 
 Phase 5 is done as of 2026-10-31 ([codex-target-2026-10](codex-target-2026-10.md)). `sigil add --target codex` delivers
 skills, hooks and MCP. Agents are a recorded no-go: all 39 catalog agents set `tools`, and a Codex agent file can't restrict

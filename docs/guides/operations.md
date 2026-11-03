@@ -92,10 +92,11 @@ messages, and on Node 20 stray text can corrupt them ("Unable to deserialize clo
    read files; each one's output is grouped, and a failure in one does not hide the other)
 4. `npm run build`
 5. `npm run validate`
-6. `node dist-cli/cli.js sync --check`
-7. `npm run test:built` (the build just ran, so `npm test`'s `pretest` would repeat it)
-8. `npm run catalog:build`
-9. Smoke test: `node dist-cli/cli.js --version` and `node dist-cli/cli.js list`
+6. `npm run trust:check` (the trust scan over every catalog artifact)
+7. `node dist-cli/cli.js sync --check`
+8. `npm run test:built` (the build just ran, so `npm test`'s `pretest` would repeat it)
+9. `npm run catalog:build`
+10. Smoke test: `node dist-cli/cli.js --version` and `node dist-cli/cli.js list`
 
 A separate Linux job, **Claude plugin validation**, installs a pinned Claude Code CLI and runs
 `npm run validate:claude-plugins`: `claude plugin validate --strict` over `dist/claude` (the

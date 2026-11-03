@@ -39,6 +39,23 @@ function emptyCatalog(root: string): string {
   return dir;
 }
 
+/** A source folder holding only `rules/<name>` files. */
+function rulesSource(root: string, rules: Record<string, string>): string {
+  const src = path.join(root, 'rules-source');
+  for (const [name, content] of Object.entries(rules)) {
+    const file = path.join(src, 'rules', name);
+    fs.mkdirSync(path.dirname(file), { recursive: true });
+    fs.writeFileSync(file, content);
+  }
+  return src;
+}
+
+/** The catalog frontmatter of an imported shared rule. */
+function importedRule(catalog: string, slug: string): Record<string, unknown> {
+  const file = path.join(catalog, 'shared', 'rules', `${slug}.rule.md`);
+  return matter(fs.readFileSync(file, 'utf8')).data;
+}
+
 /** Runs `fn` with console output captured; returns everything printed. */
 async function captured(fn: () => Promise<void>): Promise<string> {
   const original = { log: console.log, warn: console.warn };
@@ -160,6 +177,71 @@ describe('sigil import --shared', () => {
         runImport(source, importOpts(catalog, { shared: true, language: 'csharp' })),
         /--language|--shared/,
       );
+    });
+  });
+});
+
+describe('sigil import: an imported rule keeps its paths as appliesTo', () => {
+  it('should keep a flow list of globs', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'flow.md':
+          '---\ndescription: Flow.\npaths: ["src/*.ts", "lib/*.ts"]\n---\n\n- **Rule.** Keep it.\n',
+      });
+      await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.deepEqual(importedRule(catalog, 'flow').appliesTo, ['src/*.ts', 'lib/*.ts']);
+    });
+  });
+
+  it('should wrap a scalar glob in a list', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'scalar.md': '---\ndescription: Scalar.\npaths: src/*.ts\n---\n\n- **Rule.** Keep it.\n',
+      });
+      await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.deepEqual(importedRule(catalog, 'scalar').appliesTo, ['src/*.ts']);
+    });
+  });
+
+  it('should keep a block list of globs', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'block.md': '---\ndescription: Block.\npaths:\n  - src/*.ts\n---\n\n- **Rule.** Keep it.\n',
+      });
+      await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.deepEqual(importedRule(catalog, 'block').appliesTo, ['src/*.ts']);
+    });
+  });
+
+  it('should apply to every file when no paths are given', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'all.md': '---\ndescription: All.\n---\n\n- **Rule.** Keep it.\n',
+      });
+      await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      assert.deepEqual(importedRule(catalog, 'all').appliesTo, ['**/*']);
+    });
+  });
+
+  it('should report an invalid paths value and still import the other rules', async () => {
+    await withTempDirAsync(async root => {
+      const catalog = emptyCatalog(root);
+      const src = rulesSource(root, {
+        'empty.md': '---\ndescription: Empty.\npaths: []\n---\n\n- **Rule.** Keep it.\n',
+        'unclosed.md': '---\ndescription: Unclosed.\npaths: [unclosed\n---\n\n- **Rule.** Keep it.\n',
+        'ok.md': '---\ndescription: Ok.\npaths: src/*.ts\n---\n\n- **Rule.** Keep it.\n',
+      });
+      const out = await captured(() => runImport(src, importOpts(catalog, { shared: true })));
+      const reason = 'not imported: paths must be a glob or a list of globs';
+      assert.match(out, new RegExp(`empty\\.md\\s+— ${reason}`));
+      assert.match(out, new RegExp(`unclosed\\.md\\s+— ${reason}`));
+      assert.equal(fs.existsSync(path.join(catalog, 'shared', 'rules', 'empty.rule.md')), false);
+      assert.equal(fs.existsSync(path.join(catalog, 'shared', 'rules', 'unclosed.rule.md')), false);
+      assert.deepEqual(importedRule(catalog, 'ok').appliesTo, ['src/*.ts']);
     });
   });
 });

@@ -4,6 +4,7 @@
  *
  * @module
  */
+import { parseYamlFrontmatter } from '../../frontmatter-parse';
 import { stripLanguagePrefix } from './translate-shared';
 
 /**
@@ -52,6 +53,33 @@ export function tagsFromSlug(slug: string, language: string, prefix?: string): s
   const withoutPrefix = stripLanguagePrefix(slug, prefix);
   const words = withoutPrefix.split('-').filter(Boolean);
   return [language, ...words];
+}
+
+/** The value when it is a non-empty array of non-empty strings, else undefined. */
+function globArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  const valid = value.every(item => typeof item === 'string' && item.trim() !== '');
+  return valid ? (value as string[]) : undefined;
+}
+
+/**
+ * Normalise a rule's source `paths` field into a glob list.
+ *
+ * Accepts a YAML list, a flow list left as text by the tolerant parser (`'["src/*.ts"]'`), or a
+ * bare scalar. Returns `undefined` when absent and `'invalid'` when the value cannot be a glob
+ * list (empty, non-string items, a flow list that does not parse).
+ */
+export function normalizeRulePaths(value: unknown): string[] | undefined | 'invalid' {
+  if (value === undefined) return undefined;
+  if (Array.isArray(value)) return globArray(value) ?? 'invalid';
+  if (typeof value !== 'string') return 'invalid';
+  const trimmed = value.trim();
+  if (trimmed === '') return 'invalid';
+  if (trimmed.startsWith('[')) {
+    const parsed = parseYamlFrontmatter(`paths: ${trimmed}`);
+    return parsed === undefined ? 'invalid' : (globArray(parsed.paths) ?? 'invalid');
+  }
+  return [trimmed];
 }
 
 /** Source frontmatter keys not present in `knownFields`, in original order. */

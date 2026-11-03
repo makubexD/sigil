@@ -25,6 +25,7 @@ import { parseMarkdown, stemOf } from './parse-markdown';
 import { readReferences, skillFolderExtras } from '../../load-references';
 import { SourceFileRejected } from './parse-markdown';
 import { dedupeDiscovered } from './discover-copilot-root';
+import { normalizeRulePaths } from './translate-helpers';
 import type { ReferenceFile } from '../../types';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -100,6 +101,9 @@ function buildFlatKindDiscoveredFile(
 ): DiscoveredFile {
   const slug = flatKindSlug(filePath, namespace);
   const { frontmatter, body } = parseMarkdown(filePath);
+  if (kind === 'rule' && normalizeRulePaths(frontmatter.paths) === 'invalid') {
+    throw new SourceFileRejected('paths must be a glob or a list of globs');
+  }
   return { sourcePath: filePath, relativePath, kind, slug, frontmatter, body };
 }
 

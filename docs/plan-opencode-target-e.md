@@ -17,12 +17,19 @@ Decided in this plan:
   User: `opencode.json` under `opencode-home`, next to any `opencode.jsonc`, which sigil leaves alone. A key set in both goes
   to the `.jsonc`, and the setup page says so. `local` is refused: OpenCode has no personal per-project config file.
 - **No `.jsonc` support and no `jsonc-parser` dependency**, per D7.
-- **`shared/ado` joins OpenCode (step 5). This is the one `catalog/` edit in the roadmap's OpenCode work, and it departs from
-  the roadmap's "no phase changes `catalog/`".** The roadmap counts 4 MCP servers, but `ado` lists `platforms: [claude,
-copilot, cursor]`, so only 3 would ship. The ADR's 4 needs the edit, and Cursor's MCP commit (`cdd5ac3`) made the same one.
-  OpenCode expands the whole file (D6), so `ado`'s token in `args` renders. It is also the only catalog server with env
-  tokens, so without it the caveat in step 2 would never fire on shipped content. No neutral concept changes. To keep the
-  roadmap's rule instead, delete step 5 and record 3 of 4 in the roadmap.
+- **`shared/ado` loses both env tokens and its `platforms:` limit, on every target (step 5; owner's decision, 2026-11-04).** This
+  is the one `catalog/` edit in the OpenCode work, and it amends the roadmap's "no phase changes `catalog/`". The roadmap counts
+  4 MCP servers, but `ado` lists `platforms: [claude, copilot, cursor]`, so only 3 would ship. After this edit no catalog server
+  uses `{sigil:env:NAME}`. The feature stays, for other catalogs, and fixtures keep its tests alive.
+- **`ado`'s org becomes the literal placeholder `YOUR_ADO_ORG`.** `@azure-devops/mcp@2.10.0` demands `<organization>` as a
+  positional argument and reads no variable for it, so nothing can be inherited. The user edits it by hand, which `update`
+  reports as `modified` drift and keeps without `--force`.
+- **`ado`'s token name was wrong, and step 5 fixes it.** With `--authentication pat`, 2.10.0 reads `PERSONAL_ACCESS_TOKEN`
+  (`dist/auth.js:134-146`), base64-encoded, and never reads the `ADO_MCP_PERSONAL_TOKEN` the catalog sets. Read from the package
+  source, not run. So the entry as shipped can't authenticate unless the user happens to set the other name too.
+- **The token now has to reach the server by inheritance.** Antigravity is measured (ADR P5), and steps 6 and 8 measure OpenCode.
+  Codex forwards only what `env_vars` names ([setup](setup/codex.md)), so it needs a hand edit, and the setup page says so.
+  Claude Code, Copilot and Cursor aren't tested here, and the docs say that.
 - **The "not valid JSON" hint stays target-free.** The ADR asked for a target-aware word, but `src/commands/` is neutral and the
   text is true of every JSON destination, so one helper covers `add` and `update` with no new `Target` field (step 4).
 - **`mcpEnvCaveat` applies though OpenCode does expand references.** The field's doc says otherwise today, so step 2 widens
@@ -212,18 +219,28 @@ the old text; `not valid JSON` remains a substring, so most keep passing.
 
 Test: the new test file, plus `test/commands/update-config-move.test.ts`.
 
-## Step 5: `shared/ado` on OpenCode `[inline: a one-word catalog edit that departs from the roadmap]`
+## Step 5: Strip `shared/ado`'s tokens `[inline: changes output on every target, and each diff has to be judged]`
 
-`catalog/shared/mcps/ado.mcp.md`: `platforms: [claude, copilot, cursor, opencode]`. In
-`test/targets/opencode-mcp.test.ts`, add one case: `shared/ado` gives `command` holding `{env:ADO_ORG}` and
-`environment: { ADO_MCP_PERSONAL_TOKEN: '{env:ADO_MCP_PERSONAL_TOKEN}' }`.
-Then regenerate anything `npm run validate` or the `sync --check` step reports as stale.
+`catalog/shared/mcps/ado.mcp.md`, `docs/reference/artifacts.md` if regenerated, and the tests below.
 
-Test: `opencode-mcp` test file, `npm run validate`, and `npm run build` leaves no unexpected diff.
+- Frontmatter: delete `platforms:` and the `env:` block, and replace `"{sigil:env:ADO_ORG}"` in `args` with `"YOUR_ADO_ORG"`.
+- Body: replace the "Requires environment variables" list and the paragraph after it. Say to replace `YOUR_ADO_ORG` in the
+  installed file with your organisation name, and that `PERSONAL_ACCESS_TOKEN` must be set to the base64 of `:<your PAT>` (the package splits the
+  decoded value on the first `:`, `dist/index.js:63`), in the environment your AI tool starts from. Keep the
+  body free of provider literals.
+- Tests: a test using `ado` as its token example moves to a fixture artifact, so token coverage stays. `test/targets/cursor-mcp.test.ts:98`,
+  `test/targets/mcp-env.test.ts`, `test/targets/codex-mcp.test.ts`, `test/targets/antigravity-mcp.test.ts`,
+  `test/targets/plugin-config.test.ts`. Regenerate `test/fixtures/portable-mcp-golden.json` and read its diff: only `ado` entries
+  may change. `test/fixtures/output-snapshot/ids.json` gains `ado` for the new targets if it lists them.
+- In `test/targets/opencode-mcp.test.ts`, one new case: `shared/ado` gives `command` holding `YOUR_ADO_ORG`, no `environment`, and
+  no `{env:`.
+- New case in `test/targets/codex-mcp.test.ts` and `test/targets/antigravity-mcp.test.ts`: `shared/ado` now renders, with no skip reason.
+
+Test: `npm run validate`, then `npm test`, since this crosses targets, and `npm run build` leaves no unexpected diff.
 
 ## Step 6: `probe:opencode`, V1 loader cases `[worker:medium]`
 
-New `scripts/probe-opencode.mjs`, `scripts/opencode-probe/catalog/shared/mcps/probe-env.mcp.md`,
+New `scripts/probe-opencode.mjs`, `scripts/opencode-probe/catalog/shared/mcps/probe-env.mcp.md` and `probe-inherit.mcp.md`,
 `scripts/opencode-probe/mcp-server.mjs`, and a `"probe:opencode": "node scripts/probe-opencode.mjs"` line in `package.json`.
 Follow `scripts/probe-antigravity.mjs` for the header comment, `parseArgs`, `prepareCatalog`, `run`, `makeRepo`, `selectProbes`,
 `cleanup` and the `OK` / `CHANGED` / `ERROR` report. Flags: `--only <id,...>`, `--dry-run`, `--keep`. Without `opencode` on
@@ -248,25 +265,29 @@ server:
     PROBE_TOKEN: '{sigil:env:PROBE_HOST_TOKEN}'
 ```
 
+A second fixture, `probe-inherit.mcp.md`, is the same without `env:`, id `shared/probe-inherit`, so the server sees `PROBE_TOKEN`
+only by inheritance. This is the route `shared/ado` now depends on.
+
 `prepareCatalog` replaces both placeholders, and `__PROBE_OUT__` is `<run>/token.txt`. `sigil add` runs with `--catalog-dir` and
 `--yes`.
 
-| Id             | Setup                                                                 | Check                                                                              | Expect |
-| -------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------ |
-| `O-skill`      | `add shared/feature`                                                  | `opencode debug skill` lists `feature`                                             | pass   |
-| `O-agent`      | `add shared/code-reviewer`                                            | `opencode agent list` shows `code-reviewer (subagent)`                             | pass   |
-| `O-perm`       | Same                                                                  | `opencode debug agent code-reviewer`: `*` deny, then `read` `*` allow, `*.env` ask | pass   |
-| `O-mcp`        | `add shared/probe-env`, `PROBE_HOST_TOKEN=tangerine`                  | `opencode mcp list` shows `connected`, `token.txt` holds `TOKEN=tangerine`         | pass   |
-| `O-mcp-unset`  | Same, variable unset                                                  | `connected`, `token.txt` holds `TOKEN=` with nothing after it                      | pass   |
-| `O-mcp-quote`  | Same, `PROBE_HOST_TOKEN='a"b'`                                        | `mcp list` exits non-zero or prints a config error, and never `connected`          | pass   |
-| `O-mcp-remote` | `add shared/maku-jam`                                                 | `opencode debug config`: `mcp['maku-jam'].type` is `remote`, `url` matches         | pass   |
-| `O-mcp-user`   | `add shared/probe-env --scope user`, variable set                     | Written under `<run>/home/.config/opencode/`, and `mcp list` shows `connected`     | pass   |
-| `O-jsonc`      | Root `opencode.jsonc` with a comment and a server, then `O-mcp`'s add | `.jsonc` byte-identical, and `mcp list` shows both servers                         | pass   |
+| Id              | Setup                                                                  | Check                                                                              | Expect |
+| --------------- | ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------ |
+| `O-skill`       | `add shared/feature`                                                   | `opencode debug skill` lists `feature`                                             | pass   |
+| `O-agent`       | `add shared/code-reviewer`                                             | `opencode agent list` shows `code-reviewer (subagent)`                             | pass   |
+| `O-perm`        | Same                                                                   | `opencode debug agent code-reviewer`: `*` deny, then `read` `*` allow, `*.env` ask | pass   |
+| `O-mcp`         | `add shared/probe-env`, `PROBE_HOST_TOKEN=tangerine`                   | `opencode mcp list` shows `connected`, `token.txt` holds `TOKEN=tangerine`         | pass   |
+| `O-mcp-unset`   | Same, variable unset                                                   | `connected`, `token.txt` holds `TOKEN=` with nothing after it                      | pass   |
+| `O-mcp-inherit` | `add shared/probe-inherit`, `PROBE_TOKEN=tangerine` in the spawned env | `connected`, `token.txt` holds `TOKEN=tangerine`                                   | pass   |
+| `O-mcp-quote`   | Same, `PROBE_HOST_TOKEN='a"b'`                                         | `mcp list` exits non-zero or prints a config error, and never `connected`          | pass   |
+| `O-mcp-remote`  | `add shared/maku-jam`                                                  | `opencode debug config`: `mcp['maku-jam'].type` is `remote`, `url` matches         | pass   |
+| `O-mcp-user`    | `add shared/probe-env --scope user`, variable set                      | Written under `<run>/home/.config/opencode/`, and `mcp list` shows `connected`     | pass   |
+| `O-jsonc`       | Root `opencode.jsonc` with a comment and a server, then `O-mcp`'s add  | `.jsonc` byte-identical, and `mcp list` shows both servers                         | pass   |
 
 Don't run `npm run probe:opencode` against a live OpenCode as your acceptance if it can't be reached; run `--dry-run`, and the
 main session runs it live in step 8.
 
-Test: `node scripts/probe-opencode.mjs --dry-run` lists all nine, and `PATH=/usr/bin:/bin node scripts/probe-opencode.mjs` prints
+Test: `node scripts/probe-opencode.mjs --dry-run` lists all ten, and `PATH=/usr/bin:/bin node scripts/probe-opencode.mjs` prints
 the skip notice and exits 0. Then `npx eslint scripts/probe-opencode.mjs scripts/opencode-probe/mcp-server.mjs`.
 
 ## Step 7: `probe:opencode`, the `serve` route `[worker:high: two CLIs with undocumented routes, and the retry behavior is only known from the ADR's run notes]`
@@ -284,14 +305,14 @@ and [Sigil output run](decisions/opencode-target-2026-11.md#sigil-output-run). F
 - Kill the server in a `finally`, and report `ERROR` rather than hanging if it prints no password within 15 seconds.
 
 New probes: `O-command` runs on V1: `add shared/author-artifact`, and `/command` lists `shared-author-artifact`. With `--v2`, these
-run on the V2 binary too: `O2-skill`, `O2-agent`, `O2-perm`, `O2-command`, `O2-mcp`, `O2-mcp-unset`. They use the matching V1
+run on the V2 binary too: `O2-skill`, `O2-agent`, `O2-perm`, `O2-command`, `O2-mcp`, `O2-mcp-unset`, `O2-mcp-inherit`. They use the matching V1
 probe's setup, and read the `/api/*` route in place of `debug` and `list`. Without `--v2` they are skipped by name. `O2-mcp`
 expects the status `connected` and the same `token.txt`.
 
 Install the V2 binary outside the repo for testing: `npm i --prefix <scratch> @opencode/cli@2.2.5`, then the path
 `<scratch>/node_modules/@opencode/cli-linux-x64/bin/opencode`.
 
-Test: `node scripts/probe-opencode.mjs --dry-run --v2 <path>` lists all sixteen, `node scripts/probe-opencode.mjs --only O-command,O2-mcp --v2 <path>`
+Test: `node scripts/probe-opencode.mjs --dry-run --v2 <path>` lists all eighteen, `node scripts/probe-opencode.mjs --only O-command,O2-mcp --v2 <path>`
 ends `OK` on both, and `npx eslint scripts/probe-opencode.mjs`.
 
 ## Step 8: Run it live and record the result `[inline: a live run, whose result the ADR's claims rest on]`
@@ -301,8 +322,8 @@ ends `OK` on both, and `npx eslint scripts/probe-opencode.mjs`.
 Run `npm run probe:opencode -- --v2 <path>` with `opencode-ai` 1.19.4 and `@opencode/cli` 2.2.5. Add a `### Sigil MCP run`
 section after [Sigil output run](decisions/opencode-target-2026-11.md#sigil-output-run), with versions, date and one row per
 probe. `CHANGED` on `O-mcp-quote` means D6's claim is wrong: correct D6 and the caveat in step 2's text. Any other `CHANGED`
-is a stop. Add a note to the Reuse map's `read-config.ts` row that step 4 chose a target-free hint, and to the capability rows
-that `shared/ado` ships.
+is a stop. Add a note to the Reuse map's `read-config.ts` row that step 4 chose a target-free hint, and to the capability rows that `shared/ado` ships with no tokens.
+`CHANGED` on `O-mcp-inherit` is a stop too: `shared/ado` can't authenticate on OpenCode without it.
 
 Test: the probe exits 0, and a listing of `~/.config/opencode/` taken before and after the run is identical.
 
@@ -322,8 +343,15 @@ yet` row. Keep the "allow-list denies MCP tools" bullet, updated now that server
   paragraph after line 96 on `{env:NAME}` and the caveat.
 - **`CHANGELOG.md`:** under `[Unreleased]`, in the `opencode` entry: MCP servers in `.opencode/opencode.json` or the user
   `opencode.json`, and the `.json` comment hint.
-- **`docs/plan-opencode-target.md`:** under Phase E, the 4-of-4 note that `shared/ado` was opened in this phase, and amend "No
-  phase changes `catalog/`" in the Summary.
+- **`docs/plan-opencode-target.md`:** under Phase E, the note that `shared/ado` lost its tokens and limit in this phase, and amend
+  "No phase changes `catalog/`" in the Summary.
+- **`ado`, wherever it's described:** `docs/setup/cursor.md:100-114` (the example becomes `shared/filesystem` or a token-free `ado`),
+  `docs/setup/codex.md:67` (no longer skipped; add `env_vars = ["PERSONAL_ACCESS_TOKEN"]` by hand), `docs/guides/consuming.md:544-545`,
+  and `docs/reference/config-kinds.md`. Each says `YOUR_ADO_ORG` must be replaced, and that inheritance wasn't tested on Claude Code,
+  Copilot or Cursor.
+- **`CHANGELOG.md`, a `### Changed` or `### Fixed` line:** `shared/ado` no longer uses env tokens, ships to every target, needs its
+  org edited in, and reads `PERSONAL_ACCESS_TOKEN`, which is what the package reads. This is a breaking change for anyone who
+  has it installed.
 
 Test: `npm run format:check`, and `grep -rn -i 'not yet delivered\|MCP not yet' README.md docs/index.md docs/setup/opencode.md`
 prints nothing.

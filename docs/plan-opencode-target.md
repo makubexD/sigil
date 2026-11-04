@@ -32,7 +32,9 @@ new neutral concept is needed.
 
 ## Phase A: setup note
 
-`docs/guides/consuming.md` documents the free route: a full `agents-standard` build carries skills and `AGENTS.md`, while
+Done on 2026-11-03: [docs/setup/opencode.md](setup/opencode.md), with its commands and variables run live.
+
+`docs/setup/opencode.md`, the home every other tool's setup page has, documents the free route: a full `agents-standard` build carries skills and `AGENTS.md`, while
 `sigil add` carries skills with their rules inlined. It states what stays out (agents, prompts, MCP) and P7's two limits
 when a Claude install shares the repo: colliding skills and user-only prompts offered to the model, both removed by
 `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`. It also says that no `.env` guard exists on OpenCode through sigil. This ships whatever Phase B finds.

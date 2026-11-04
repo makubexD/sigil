@@ -44,12 +44,22 @@ export function resolveIdentityContact(
   };
 }
 
+/** A `plugin.json` `userConfig` entry: one prompt Claude shows when the plugin is enabled. */
+export interface PluginUserConfigEntry {
+  type: 'string';
+  title: string;
+  description: string;
+  required: true;
+}
+
 /** Build the `plugin.json` manifest content for a pack. */
 export function buildPluginJson(pack: Pack, options: BuildPluginOptions): string {
   const manifest = options.marketplace
     ? configuredPluginManifest(pack, options.version, options.marketplace, options.catalog)
     : sigilPluginManifest(pack, options.version, options.homepage, options.catalog);
-  return JSON.stringify(manifest, null, JSON_INDENT) + '\n';
+  const withUserConfig =
+    options.userConfig === undefined ? manifest : { ...manifest, userConfig: options.userConfig };
+  return JSON.stringify(withUserConfig, null, JSON_INDENT) + '\n';
 }
 
 /**
@@ -166,6 +176,8 @@ export interface BuildPluginOptions {
   homepage?: string | undefined;
   /** Configured marketplace/plugin identity; absent keeps sigil's own values. */
   marketplace?: MarketplaceIdentity | undefined;
+  /** Install-time variable prompts, written last in the manifest when present. */
+  userConfig?: Record<string, PluginUserConfigEntry> | undefined;
 }
 
 /**

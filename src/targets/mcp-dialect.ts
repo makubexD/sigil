@@ -42,10 +42,16 @@ export interface McpDialect<S extends McpEnvSyntax = EnvSyntax> {
   readonly envSyntax: S;
   /** The server fields in which an env token may appear; a token elsewhere skips the server. */
   readonly interpolatedFields: readonly McpField[];
-  /** Write `type: 'stdio'` first on a stdio server; omit to leave the authored object untouched. */
-  readonly stdioType?: 'stdio';
-  /** On a remote server: `'drop'` removes `type`, `'keep'` leaves it in place. */
-  readonly remoteType: 'keep' | 'drop';
+  /**
+   * Write `type: <stdioType>` first on a stdio server (`'stdio'` or `'local'`, whichever the file
+   * format expects), replacing any authored `type`; omit to leave the authored object untouched.
+   */
+  readonly stdioType?: 'stdio' | 'local';
+  /**
+   * On a remote server: `'drop'` removes `type`, `'keep'` leaves it in place, and `{ set }` writes
+   * `type: <set>` first, replacing any authored `type`.
+   */
+  readonly remoteType: 'keep' | 'drop' | { readonly set: string };
 }
 
 /** The two outcomes of rendering one server: a named config, or a reason it cannot be written. */
@@ -117,9 +123,12 @@ function applyTypePolicy(
   isRemote: boolean,
   dialect: McpDialect<McpEnvSyntax>,
 ): Record<string, unknown> {
-  if (isStdio && dialect.stdioType === 'stdio') {
-    // `type: 'stdio'` first, any authored `type` removed so there is exactly one type key.
-    return { type: 'stdio', ...omitKey(authored, 'type') };
+  if (isStdio && dialect.stdioType !== undefined) {
+    // `type: <stdioType>` first, any authored `type` removed so there is exactly one type key.
+    return { type: dialect.stdioType, ...omitKey(authored, 'type') };
+  }
+  if (isRemote && typeof dialect.remoteType === 'object') {
+    return { type: dialect.remoteType.set, ...omitKey(authored, 'type') };
   }
   if (isRemote && dialect.remoteType === 'drop') {
     return omitKey(authored, 'type');

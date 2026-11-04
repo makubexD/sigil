@@ -63,6 +63,66 @@ describe('renderMcpServer', () => {
     assert.equal(rendered.config.type, 'stdio');
   });
 
+  it("should put type: 'local' first on a stdio server when stdioType is 'local'", () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x' }),
+      dialect({ stdioType: 'local' }),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'local', command: 'x' });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command']);
+  });
+
+  it("should replace an authored type with 'local' first on a stdio server", () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', type: 'stdio' }),
+      dialect({ stdioType: 'local' }),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'local', command: 'x' });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command']);
+  });
+
+  it("should put type: 'stdio' first on a bare stdio server when stdioType is 'stdio'", () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x' }),
+      dialect({ stdioType: 'stdio' }),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'stdio', command: 'x' });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command']);
+  });
+
+  it('should set type: remote first on a remote server when remoteType sets it', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ type: 'http', url: 'u' }),
+      dialect({ remoteType: { set: 'remote' } }),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'remote', url: 'u' });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'url']);
+  });
+
+  it('should add type: remote first on a remote server that had no type', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ url: 'u' }),
+      dialect({ remoteType: { set: 'remote' } }),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'remote', url: 'u' });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'url']);
+  });
+
+  it('should keep the authored order of other remote keys after type: remote', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ url: 'u', headers: { A: 'b' } }),
+      dialect({ remoteType: { set: 'remote' } }),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'remote', url: 'u', headers: { A: 'b' } });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'url', 'headers']);
+  });
+
   it("should drop type on a remote server when remoteType is 'drop'", () => {
     const rendered = renderMcpServer(
       mcpArtifact({ type: 'http', url: 'https://example.test/mcp', headers: { A: 'B' } }),

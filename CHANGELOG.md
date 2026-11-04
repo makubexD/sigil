@@ -12,8 +12,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `opencode` target: `sigil add --target opencode` writes skills to `.agents/skills/`, agents as subagents in
   `.opencode/agents/` with their tool lists written as `permission` rules, and prompts as commands in `.opencode/commands/`. A
   full build also writes a root `AGENTS.md`. `explain-diff` is skipped, because a real diff doesn't survive OpenCode's argument
-  quoting. MCP servers are not delivered yet, and hooks, settings and workflows are skipped. `add` and `sigil status` print a
-  note when a skill is installed for both `claude` and `opencode`.
+  quoting. MCP servers merge into `.opencode/opencode.json` or the user `opencode.json` through `add`, and hooks, settings and
+  workflows are skipped. `add` and `sigil status` print a note when a skill is installed for both `claude` and `opencode`.
+- A config file that fails to parse as `.json` now gets a hint: sigil can't keep comments or trailing commas in a `.json` file.
+
+### Changed
+
+- `sigil add` now exits non-zero when it can't parse a config file it would merge into. Before, it printed the error and exited 0.
 
 ### Documentation
 

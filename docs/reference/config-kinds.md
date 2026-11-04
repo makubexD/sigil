@@ -16,6 +16,8 @@ the neutral vocabulary; a hook with no equivalent is skipped with its reason, an
 lands in `.cursor/mcp.json` or `~/.cursor/mcp.json` ([setup](../setup/cursor.md)). On Antigravity a hook lands in
 `.agents/hooks.json` or `~/.gemini/config/hooks.json` under its own hook name, and an `mcp` artifact in
 `.agents/mcp_config.json` or `~/.gemini/config/mcp_config.json` ([setup](../setup/antigravity.md)).
+OpenCode takes no hook, and an `mcp` artifact lands in `.opencode/opencode.json` or the user `opencode.json`
+([setup](../setup/opencode.md)).
 Only the TOML writer differs: it splices sigil's tables into your text (`src/config-merge/toml-file.ts`).
 
 | Field          | Meaning                                                                                                                                                      |
@@ -73,11 +75,11 @@ artifact's `name`, under `mcpServers` on both targets: Copilot writes the portab
 recommends (`.mcp.json`, or `~/.copilot/mcp-config.json` for the user), which VS Code, its Agent
 Host and Copilot CLI all read.
 
-| Field          | Meaning                                                                                                                                                                                                                                                |
-| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `server`       | Either stdio (`command`, optional `args`, optional `env`) or remote (`type: http \| sse`, `url`, optional `headers`)                                                                                                                                   |
-| `defaultScope` | Recommended install scope. Claude: `project` = `.mcp.json`, `local` = `~/.claude.json` per-project key, `user` = `~/.claude.json`. Copilot: `project` / `local` = `.mcp.json`; `user` = `mcp-config.json` under `$COPILOT_HOME` (default `~/.copilot`) |
-| `language`     | Optional language scope. Omit for a shared server                                                                                                                                                                                                      |
+| Field          | Meaning                                                                                                                                                                                                                                                                                                                                                                                            |
+| -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `server`       | Either stdio (`command`, optional `args`, optional `env`) or remote (`type: http \| sse`, `url`, optional `headers`)                                                                                                                                                                                                                                                                               |
+| `defaultScope` | Recommended install scope. Claude: `project` = `.mcp.json`, `local` = `~/.claude.json` per-project key, `user` = `~/.claude.json`. Copilot: `project` / `local` = `.mcp.json`; `user` = `mcp-config.json` under `$COPILOT_HOME` (default `~/.copilot`). OpenCode: `project` = `.opencode/opencode.json`; `user` = `opencode.json` under `$XDG_CONFIG_HOME/opencode` (default `~/.config/opencode`) |
+| `language`     | Optional language scope. Omit for a shared server                                                                                                                                                                                                                                                                                                                                                  |
 
 Reference an environment variable anywhere in `server` with the neutral token `{sigil:env:NAME}`
 (`src/targets/env-reference.ts`). Each target writes the syntax of the file it merges into:
@@ -98,6 +100,9 @@ Antigravity's MCP files expand no reference at all, but the server inherits `agy
 (`src/targets/mcp-dialect.ts`): an identity `env` entry (`NAME: {sigil:env:NAME}`) is dropped, since the server
 already sees `NAME`, `env` goes when that empties it, and any other token skips the server with its reason
 ([setup](../setup/antigravity.md)).
+OpenCode's `opencode.json` gets `{env:NAME}`, which OpenCode replaces with the raw value when it reads the file
+([Env vars](https://opencode.ai/docs/config/#env-vars)). An unset variable becomes an empty string with no error, and a value
+holding `"` stops the file loading (`docs/decisions/opencode-target-2026-11.md`, Sigil MCP run), so its `mcpEnvCaveat` says so.
 Never write one tool's syntax in the catalog. Pin every `npx` package to an exact
 version (`@scope/pkg@1.2.3`); a test fails on a floating one.
 
@@ -330,6 +335,17 @@ Antigravity MCP (2 scopes, `src/targets/antigravity/config.ts`):
 `--scope local` is refused. Neither file overrides the other: when both name a server, the one already running keeps
 the name, so don't install one server at both scopes. Antigravity doesn't read `.mcp.json` (C1), and no other target
 writes these files.
+
+OpenCode MCP (2 scopes, `src/targets/opencode/config.ts`):
+
+| Scope (precedence) | mcp                                                                                     | Notes                                                    |
+| ------------------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| project (1)        | `.opencode/opencode.json` (`mcp`)                                                       | git-committed; sigil never opens a root `opencode.json`  |
+| user (2)           | `opencode.json` under `$XDG_CONFIG_HOME/opencode` (default `~/.config/opencode`, `mcp`) | home-scoped: one `.sigil.bak` once it holds user content |
+
+`--scope local` is refused: OpenCode has no personal per-project config file. Only plain `.json` is written, and a `.jsonc`
+beside either file is left alone. OpenCode loads both, and a key set in both goes to the `.jsonc`
+([setup](../setup/opencode.md)).
 
 The Copilot and Cursor hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
 hook remains in the file: uninstalling one of several hooks leaves the version in place, and

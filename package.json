@@ -67,6 +67,7 @@
     "validate:claude-plugins": "node scripts/validate-claude-plugins.cjs",
     "validate:antigravity-plugins": "node scripts/validate-antigravity-plugins.cjs",
     "probe:antigravity": "node scripts/probe-antigravity.mjs",
+    "probe:opencode": "node scripts/probe-opencode.mjs",
     "sigil": "node dist-cli/cli.js",
     "prepack": "npm run build",
     "lint": "eslint src test",

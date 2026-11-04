@@ -473,8 +473,9 @@ export interface Target {
   readonly aggregateDocs?: readonly SourcedDocRef[];
 
   /**
-   * A known reader of this target's MCP file that does not expand environment-variable
-   * references. `add` prints it when an installed server uses `{sigil:env:NAME}`.
+   * What can go wrong with environment-variable references in this target's MCP file: a known
+   * reader that doesn't expand them, or an expansion with a trap. `add` prints it when an
+   * installed server uses `{sigil:env:NAME}`.
    */
   readonly mcpEnvCaveat?: string;
 

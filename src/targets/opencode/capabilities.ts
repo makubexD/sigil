@@ -1,10 +1,11 @@
 /**
  * What the OpenCode target delivers: Agent Skills in `.agents/skills/` (each skill's rules
- * inlined), subagents in `.opencode/agents/`, commands in `.opencode/commands/`, and repo-wide
- * rules in the root `AGENTS.md`. This is the scaffold channel only; the target defines no plugin
- * channel. OpenCode has no workflow file, its hooks are code modules on a plugin API OpenCode 2
- * doesn't run, and the catalog's `settings` kind is Claude Code's own vocabulary. MCP is Phase E,
- * so the `mcp` row says `none` here and changes in Phase E.
+ * inlined), subagents in `.opencode/agents/`, commands in `.opencode/commands/`, repo-wide
+ * rules in the root `AGENTS.md`, and MCP servers merged into `.opencode/opencode.json` (project)
+ * or `$XDG_CONFIG_HOME/opencode/opencode.json` (user). This is the scaffold channel only; the
+ * target defines no plugin channel. OpenCode has no workflow file, its hooks are code modules on
+ * a plugin API OpenCode 2 doesn't run, and the catalog's `settings` kind is Claude Code's own
+ * vocabulary.
  *
  * @module
  */
@@ -23,7 +24,7 @@ export const OPENCODE_CAPABILITIES: TargetCapabilities = {
       reason: "OpenCode hooks are generated code on a plugin API OpenCode 2 doesn't run",
       docs: [OPENCODE_PLUGINS_DOC],
     },
-    mcp: { mode: 'none', reason: "the OpenCode MCP entry isn't built yet" },
+    mcp: { mode: 'native' },
     settings: { mode: 'none', reason: "this kind's schema is Claude Code's own vocabulary" },
     template: TEMPLATE_NOT_EMITTED,
   },

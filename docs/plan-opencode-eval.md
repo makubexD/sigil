@@ -1,5 +1,8 @@
 # Plan: OpenCode target evaluation
 
+Done 2026-11-03: go, staged. See the [decision](decisions/opencode-target-2026-11.md#decision) and the
+[roadmap](plan-opencode-target.md).
+
 There's no brief yet. The owner set the order on 2026-11-03 (Claude, then Copilot, then Antigravity, then OpenCode),
 and OpenCode is next because it's free and already installed. This plan produces a decision, not code: a go/no-go ADR
 in `docs/decisions/opencode-target-2026-11.md` and, on a go, a phased roadmap `docs/plan-opencode-target.md`. Every

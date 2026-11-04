@@ -33,7 +33,7 @@
 | Doc                                                    | Covers                                                                      |
 | ------------------------------------------------------ | --------------------------------------------------------------------------- |
 | [../CONTRIBUTING.md](../CONTRIBUTING.md)               | Contributing code: setup, checks, PR process                                |
-| [../CLAUDE.md](../CLAUDE.md)                           | Invariants that must not break, architecture, doc map                       |
+| [../CLAUDE.md](../CLAUDE.md)                           | Purpose, commands, hard rules, pointers (full rules in `.claude/rules/`)    |
 | [reference/architecture.md](reference/architecture.md) | Extension model, emit specs, templates, lexicon, conformance                |
 | [guides/operations.md](guides/operations.md)           | Build and link, targets, CI gate (`npm run ci:local` mirrors CI), `release` |
 | [../CHANGELOG.md](../CHANGELOG.md)                     | Version history                                                             |

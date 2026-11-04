@@ -10,7 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Documentation
 
 - [docs/setup/opencode.md](docs/setup/opencode.md): how `agents-standard` output reaches OpenCode, what doesn't, how it
-  behaves next to Claude output, and what was tested.
+  behaves next to Claude output, and what was tested, including what loads on OpenCode 2.
 
 ## [0.8.1] - 2026-11-03
 

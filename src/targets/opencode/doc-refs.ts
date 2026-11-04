@@ -57,3 +57,23 @@ export const OPENCODE_PLUGINS_DOC: DocRef = {
   verifiedOn: '2026-11-03',
   covers: 'hooks as code modules, not a declarative file.',
 };
+
+/** OpenCode MCP servers — the `mcp` map and the `local` / `remote` server shapes. */
+export const OPENCODE_MCP_DOC: DocRef = {
+  url: 'https://opencode.ai/docs/mcp-servers/',
+  title: 'OpenCode — MCP servers',
+  verifiedOn: '2026-11-04',
+  covers:
+    'the `mcp` map: `local` with a `command` array and `environment`, `remote` with `url` and ' +
+    '`headers`.',
+};
+
+/** OpenCode config — `{env:NAME}` expansion, an unset variable, and `opencode.json` precedence. */
+export const OPENCODE_CONFIG_DOC: DocRef = {
+  url: 'https://opencode.ai/docs/config/',
+  title: 'OpenCode — Config',
+  verifiedOn: '2026-11-04',
+  covers:
+    '`{env:NAME}` references, an unset variable becoming empty, and the `opencode.json` layers ' +
+    'and their precedence.',
+};

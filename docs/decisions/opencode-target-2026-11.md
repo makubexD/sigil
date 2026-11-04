@@ -1,7 +1,6 @@
 # OpenCode target (2026-11)
 
-Status: **evaluation in progress**, [plan](../plan-opencode-eval.md) steps 1–3 done (docs pass, reuse map, live probes). No
-decision yet.
+Status: **go, staged**, 2026-11-03; see [Decision](#decision). Stage 1 is the setup note, and code waits on U1.
 
 ## How the docs pass ran
 
@@ -510,3 +509,47 @@ model confirmed the rules are in its prompt, and it picked `ng-document` by desc
 - A corrected D1 conflict: the source is right, and `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT` also drops a project `CLAUDE.md`.
 - D0's dependency install is narrower than the source reading suggested. Three `.opencode/` folders with no plugin kept
   only their `.gitignore` across their runs.
+
+## Decision
+
+**Go, staged, with target id `opencode`.** Scaffold channel only. `hook`, `settings` and `workflow` stay `none`, and the
+`plugin` channel stays undefined. Code starts only after U1 passes.
+
+- **Demand.** Low. OpenCode is the owner's priority 4 of 4, no outside demand is recorded, and the owner's own config
+  is left over from a retired worker setup. That rules out building ahead of Claude, Copilot or Antigravity work. It
+  doesn't rule out the target, because OpenCode is in the owner's delivery order.
+- **What already works with no target (P7).** A full `agents-standard` build reaches OpenCode today: 45 skills, picked
+  by description, and repo-wide rules through the root `AGENTS.md`. `sigil add` installs skills with their rules
+  inlined, but no `AGENTS.md`. So the first deliverable is a setup note, at no code cost.
+- **What a target adds.** 39 agents with their tool restrictions exact (P4), 2 prompts as commands (P3) and 4 MCP servers
+  (P6). No other route carries those: P7 shows `.claude/agents/` isn't read. It adds no skill or rule reach.
+- **Maintenance cost.** Per catalog change, the same as any target: emit specs, `provider-limits` and the conformance
+  rules. Per OpenCode update, the probes again. This is the cheapest live check sigil has, because it needs no account,
+  and that's what the owner's focus asks for: a target that can stay proven. A re-run script, as Antigravity has, keeps
+  it to one command. The real extra cost is a second product line, since V1 and V2 both have to be probed.
+- **Neutral concepts.** None for this scope: no row changes `catalog/` or the schema, and the three shared changes are in
+  the target layer. The whole-file config kind stays unbuilt, because `hook: none` doesn't need it.
+- **Hooks stay out, although P5 passed.** A guard works on V1 and fires in subagents. But it would be a generated file
+  that V2 doesn't run, so a catalog guard could look installed and block nothing. Failing visibly at `add` is safer than
+  a `.env` guard that silently stops working on an upgrade.
+
+**Why not stop at the doc?** It would leave every reviewer and auditor agent out, and those are the catalog's main
+reach beyond skills. The target is mostly data in one folder. The doc route is still right if U1 fails.
+
+**What would change this.** If `@opencode/cli` doesn't load the V1 shape for agents, commands or MCP (U1), the work stops
+at the setup note and this record is revised. U2 only decides whether hooks can ever ship, so it doesn't gate the target.
+
+**Known limits to carry forward.**
+
+- A Claude install in the same repo reaches OpenCode: skills can collide with different bodies, and a user-only prompt
+  is offered to the model (P7). The setup note names `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`. A warning from `add` is a
+  question for the roadmap.
+- Every model result here comes from one free model, on one version. The loader results don't depend on the model.
+- The probes ran on 1.19.4, and the docs pass read 1.19.5.
+
+**Stages** (the roadmap, step 5, turns these into phases):
+
+1. Setup note for the free route, with P7's limits.
+2. Probe `@opencode/cli` for U1 and U2. This gates everything after it.
+3. Shared changes: the `McpDialect` fields, the `bodyTransform` argument and the `opencode-home` root.
+4. The target: skills, agents, prompts, rules and MCP.

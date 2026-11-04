@@ -31,6 +31,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `shared/ado` now signs in through the Azure CLI and takes its organization at install. `ADO_ORG` and `ADO_MCP_PERSONAL_TOKEN`
   are no longer read from the environment, because `--authentication pat` never read that token. Install `az`, run `az login`, then run
   `sigil update --var ADO_ORG=<org>` once. Until you do, the old entry stays as installed and `status` shows it as outdated.
+  Not yet proven: a real tool call after `az login`, and `az` under Copilot CLI, which passes only `PATH` to the server. The install and
+  the server start were checked; a tool call against a real organization was not.
 
 ### Documentation
 

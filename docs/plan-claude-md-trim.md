@@ -111,7 +111,7 @@ Test:
   prints nothing.
 - 35 hard-rule lines: `git show 944a13c:CLAUDE.md | sed -n '/^## Invariants/,/^## Architecture/p' | grep -c '^- \*\*'`
   prints 35, and the review lists each bold lead next to its new line.
-- The verifier passes. It splits the old file's body into sentences and requires each one, with whitespace
+- The verifier passes. It splits the old file's body into blocks (bullets, paragraphs), then sentences, and requires each one, with whitespace
   normalized, to appear in the new `CLAUDE.md` or a rules file:
 
 ```bash
@@ -125,8 +125,9 @@ def norm(t):
     t = t.replace('**', '').replace('|', ' ')
     return re.sub(r'\s+', ' ', t)
 dest = ' '.join(norm(open(p).read()) for p in ['CLAUDE.md', *sorted(glob.glob('.claude/rules/repo-*.md'))])
-body = norm(old.split('## Build & test', 1)[1])
-sents = [s.strip() for s in re.split(r'(?<=[.;:])\s+(?=[A-Z`(*])', body) if len(s.strip()) > 20]
+blocks = re.split(r'\n(?=- )|\n\s*\n', old.split('## Build & test', 1)[1])
+sents = [s.strip() for blk in blocks for s in re.split(r'(?<=[.;:])\s+(?=[A-Z`(*])', norm(blk).strip().removeprefix('- '))
+         if len(s.strip()) > 20]
 miss = [s for s in sents if s not in dest]
 print(f'{len(sents)} sentences, {len(miss)} missing')
 for s in miss: print('-', s[:160])

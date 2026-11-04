@@ -38,6 +38,9 @@ Each of these is settled from the docs and the code, per the repo's target rules
 - **Resolution order:** `--var NAME=value`, then the value recorded for this id and target, then the value recorded for this id on
   another target, then a prompt in a terminal. Otherwise `add` fails before writing anything, naming the flag to pass. `--yes` never
   prompts. `--dry-run` never prompts: a missing value previews as `<NAME>`, and nothing is written or recorded.
+- **Amended in the finish, after review and the live check.** With no value and no way to ask, only a server named directly fails. One
+  that `all`, `kind:` or `pack:` swept in is skipped with the same advice, because `add all --yes` broke otherwise. `args` also carry
+  `--allow-scripts=keytar`, because npm 12's `npx` skips `keytar`'s install script and the server dies on start without it.
 - **`add --var` with a changed value reinstalls.** An id whose flag value differs from the recorded one is not up to date.
 - **An unknown `--var NAME` is an error** on `add` and `update`, so a typo isn't silently dropped. A malformed flag is an error too.
 - **`update` takes `--var` and never prompts.** It keeps its flow simple: a missing value prints

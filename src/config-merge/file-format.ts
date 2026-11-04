@@ -21,8 +21,15 @@ function isTomlPath(fullPath: string): boolean {
 }
 
 /** The format's name for an error message about `fullPath`. */
-export function configFormatName(fullPath: string): string {
+function configFormatName(fullPath: string): string {
   return isTomlPath(fullPath) ? 'TOML' : 'JSON';
+}
+
+/** Why a config file fails to parse, as one sentence ending in a period. */
+export function configParseProblem(fullPath: string): string {
+  const name = configFormatName(fullPath);
+  if (name !== 'JSON') return `is not valid ${name}.`;
+  return "is not valid JSON. sigil can't keep comments or trailing commas in a .json file: remove them, or move your settings to a .jsonc file if your tool reads one.";
 }
 
 /** Parses a config file's text by its path; throws on invalid content. */

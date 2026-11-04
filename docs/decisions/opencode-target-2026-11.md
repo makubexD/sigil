@@ -649,4 +649,7 @@ setup docs narrow to V1. The code stays, because it holds for V1. U2 only decide
 1. Setup note for the free route, with P7's limits.
 2. Probe `@opencode/cli`, loader first. U1's enforcement half and U2 close last, in the roadmap's Phase F.
 3. Shared changes: the `McpDialect` fields, the `bodyTransform` argument and the `opencode-home` root.
-4. The target: skills, agents, prompts, rules and MCP.
+4. The target: skills, agents, prompts, rules and MCP. Shipped on 2026-11-04 without MCP, which is the roadmap's Phase E: 45
+   skills, 39 agents, 1 of 2 prompts (the [quoting run](#quoting-run) ruled out `explain-diff`), and repo-wide rules through
+   `AGENTS.md` on a build. The [Sigil output run](#sigil-output-run) shows it loading on V1 and V2. Enforcement on sigil's own
+   output wasn't seen, because no model answered.

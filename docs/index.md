@@ -13,7 +13,7 @@
 | [setup/codex.md](setup/codex.md)                             | Install skills on OpenAI Codex, and the trust and listing limits                   |
 | [setup/cursor.md](setup/cursor.md)                           | Install rules and skills on Cursor, and the skills Cursor already reads            |
 | [setup/antigravity.md](setup/antigravity.md)                 | Install Sigil rules and skills for Antigravity                                     |
-| [setup/opencode.md](setup/opencode.md)                       | Use Sigil skills and rules on OpenCode, which has no target yet                    |
+| [setup/opencode.md](setup/opencode.md)                       | Install skills, agents and commands on OpenCode, and the `.env` limit              |
 | [setup/skills-cli.md](setup/skills-cli.md)                   | Install single skills into any agent with `npx skills`, from the `skills` branch   |
 | [reference/troubleshooting.md](reference/troubleshooting.md) | Common errors and FAQ                                                              |
 | [reference/capabilities.md](reference/capabilities.md)       | Which kinds each target delivers, per channel (generated)                          |
@@ -78,6 +78,7 @@ The guides and reference describe the system as it stands; history and ideas do 
 | S6 Suggest an artifact without code  | Supported   | Fill in the [issue form](https://github.com/makubexD/sigil/issues/new?template=propose-artifact.yml), or run the `sigil new` wizard from a clone. `sigil import` reads Claude and Copilot layouts. [Guide](guides/authoring.md#import-an-existing-portable-template-directory)                                                     |
 | S4c Cursor                           | Partial     | Rules (`.mdc`) and skills through `add` and `build`, no `AGENTS.md`. Cursor also reads Claude Code's skills and installed plugins. Hooks, MCP and agents are planned. [Setup](setup/cursor.md), [probes](decisions/cursor-target-2026-11.md)                                                                                       |
 | S4d Antigravity                      | Partial     | Skills and repo-wide rules (`always_on`) through `add` and `build`, no `AGENTS.md`. Scoped rules are skipped: no glob rule attached in testing. MCP servers and agents (`.agents/agents/`) through `add`. Hooks are planned. [Setup](setup/antigravity.md), [probes](decisions/antigravity-target-2026-11.md)                      |
+| S4e OpenCode                         | Partial     | Skills, agents and commands through `add` and `build`, plus `AGENTS.md` on `build`. `explain-diff` is skipped: a real diff doesn't survive its argument quoting. MCP not yet, no hooks. Agent restrictions are proven on OpenCode 1 only. [Setup](setup/opencode.md), [probes](decisions/opencode-target-2026-11.md)               |
 | S8 GUI / web browsing                | Not planned | Plugin browsers in each AI tool, plus the generated [artifact index](reference/artifacts.md). [Decision](decisions/ui-beyond-terminal-2026-11.md)                                                                                                                                                                                  |
 
 ## Glossary

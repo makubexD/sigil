@@ -234,8 +234,11 @@ These installs aren't tracked by `sigil status`. Setup and limits: [docs/setup/s
   that use them carry them inline. MCP servers merge into `.agents/mcp_config.json` and agents go to
   `.agents/agents/`. A full build writes no `AGENTS.md`. Hooks are planned. See
   [docs/setup/antigravity.md](docs/setup/antigravity.md).
-- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`. OpenCode is one, and
-  [docs/setup/opencode.md](docs/setup/opencode.md) says what reaches it and what doesn't.
+- **OpenCode**: `sigil add --target opencode` writes skills to `.agents/skills/`, agents to `.opencode/agents/` and commands
+  to `.opencode/commands/`, and a full build also writes a root `AGENTS.md` with the repo-wide rules. `explain-diff` is
+  skipped, because a real diff doesn't survive OpenCode's argument quoting. MCP servers are not yet delivered, and hooks are
+  skipped. Agents can run `cat .env`, and no hook stands behind it. See [docs/setup/opencode.md](docs/setup/opencode.md).
+- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
 
 ## What is in the catalog
 

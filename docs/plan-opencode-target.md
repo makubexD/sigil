@@ -63,6 +63,10 @@ The hint in `src/commands/add/read-config.ts:23` stays until Phase E, which adds
 
 ## Phase D: the target
 
+Done on 2026-11-04: [plan](plan-opencode-target-d.md), with [real output run on V1 and V2](decisions/opencode-target-2026-11.md#sigil-output-run).
+Correction to the Summary's figures: 39 agents, but 1 prompt of 2, because `explain-diff` failed the
+[quoting run](decisions/opencode-target-2026-11.md#quoting-run).
+
 `src/targets/opencode/` with its capabilities, lexicon and emit specs, per the ADR's capability rows. Implications the step
 plan must cover:
 

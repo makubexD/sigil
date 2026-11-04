@@ -515,9 +515,9 @@ How to run it:
 - D0's isolation holds (`debug paths` stays in the scratch `HOME`). Add `TMPDIR`, or `tmp` is `/tmp/opencode`. Pass
   `--standalone`, or commands use a background service.
 - `run` has no `--command`, and `debug skill` is gone. Loader facts come from `opencode serve` with basic auth (`opencode`,
-  the printed password): `/api/skill`, `/api/command`, `/api/agent`, `/api/mcp`. Both skill and command lists are empty until
-  a session exists, then fill within about 3 seconds, so poll for a project entry. A repo with no commit has project
-  `global`, so give fixtures a commit.
+  the printed password): `/api/skill`, `/api/command`, `/api/agent`, `/api/mcp`. Give fixtures a commit and create a session, then poll for a
+  project entry: with both, the lists filled within about 3 seconds. They stayed empty in the two runs without them,
+  which had no commit, so the cause wasn't isolated.
 - `POST /api/session/{id}/command` stores the expanded text first, so substitution needs no model reply.
 
 | Probe | Run                                                         | Observed                                                                                 |
@@ -542,7 +542,7 @@ entries were empty without a model turn, so they prove nothing either way. These
 
 ### What the probes change
 
-- **U3 to U9 are answered.** U1 and U2 stay open: nothing here ran on `@opencode/cli`.
+- **U3 to U9 are answered.** U1 and U2 stayed open here: these probes didn't run on `@opencode/cli`.
 - D3 stands. Blocked tools were absent from the model's report, not refused, and no file appeared. That rests on the
   model's word plus the result. The object-form `read` isn't optional, because P4 returned a `.env` value with the
   shorthand.
@@ -582,7 +582,7 @@ kind loads, and the enforcement half of U1 closes last, in the roadmap's Phase F
   a `.env` guard that silently stops working on an upgrade.
 
 **Why not stop at the doc?** It would leave every reviewer and auditor agent out, and those are the catalog's main
-reach beyond skills. The target is mostly data in one folder. The doc route is still right if U1 fails.
+reach beyond skills. The target is mostly data in one folder. If U1 fails, the target stays for V1 and the docs narrow to it.
 
 **What would change this.** If `@opencode/cli` doesn't enforce the V1 shape for agents (U1), this record is revised and the
 setup docs narrow to V1. The code stays, because it holds for V1. U2 only decides whether hooks can ever ship, so it doesn't gate the target.
@@ -599,6 +599,6 @@ setup docs narrow to V1. The code stays, because it holds for V1. U2 only decide
 **Stages** (the roadmap, step 5, turns these into phases):
 
 1. Setup note for the free route, with P7's limits.
-2. Probe `@opencode/cli` for U1 and U2. This gates everything after it.
+2. Probe `@opencode/cli`, loader first. U1's enforcement half and U2 close last, in the roadmap's Phase F.
 3. Shared changes: the `McpDialect` fields, the `bodyTransform` argument and the `opencode-home` root.
 4. The target: skills, agents, prompts, rules and MCP.

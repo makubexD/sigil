@@ -71,6 +71,7 @@ plan must cover:
   `explain-diff` lists `diff` first, so it needs a quoted diff. On V2 a `"` inside double quotes splits it, and
   `\"` doesn't help, while `'a "b" c'` holds. Test a diff holding `'`, and on V1 too, then say so in the setup docs or
   mark the prompt skipped for this target.
+- Until Phase F passes, the setup docs say agent restrictions are proven on V1 only, and not yet on OpenCode 2.
 - `bodyForbids` covers `` !`cmd` `` and `@file` in prompts.
 - Open question: should `add --target opencode` warn when `.claude/skills/` exists? Settle it from P7 in the step plan.
 
@@ -83,7 +84,7 @@ loader probes on one command. The ADR's Phase 8 row in `distribution-channels-20
 ## Phase F: V2 model-backed checks
 
 Last, and once a free model answers (try one `opencode run` first). It can run before D or E if the quota returns, and it
-needs no code. Setup and rules for controls are in the [V2 run](decisions/opencode-target-2026-11.md#v2-run). "Nothing
+needs no code. Setup is in the [V2 run](decisions/opencode-target-2026-11.md#v2-run). "Nothing
 happened" is never a pass alone.
 
 | Case | Do                                                                             | Pass                                     |

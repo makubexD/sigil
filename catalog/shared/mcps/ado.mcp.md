@@ -14,6 +14,7 @@ server:
   command: "npx"
   args:
     - "-y"
+    - "--allow-scripts=keytar"
     - "@azure-devops/mcp@2.10.0"
     - "{sigil:var:ADO_ORG}"
     - "--authentication"

@@ -68,6 +68,12 @@ describe('shared/ado across every target', () => {
       assert.ok(args.includes(PACKAGE), `${name}: pinned package`);
       assert.ok(args.includes(ORG), `${name}: the install value`);
       assert.ok(args.includes('azcli'), `${name}: Azure CLI authentication`);
+      // npm 12's npx skips install scripts without this, and the server dies loading keytar.
+      assert.ok(
+        args.indexOf('--allow-scripts=keytar') < args.indexOf(PACKAGE) &&
+          args.includes('--allow-scripts=keytar'),
+        `${name}: keytar's install script allowed, as an npx option before the package`,
+      );
     }
   });
 

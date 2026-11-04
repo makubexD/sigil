@@ -120,7 +120,15 @@ vars:
     description: 'The <org> in dev.azure.com/<org>'
 server:
   command: 'npx'
-  args: ['-y', '@azure-devops/mcp@2.10.0', '{sigil:var:ADO_ORG}', '--authentication', 'azcli']
+  args:
+    [
+      '-y',
+      '--allow-scripts=keytar',
+      '@azure-devops/mcp@2.10.0',
+      '{sigil:var:ADO_ORG}',
+      '--authentication',
+      'azcli',
+    ]
 ```
 
 `title` and `description` are required, because the prompts show them. `sigil validate` fails when a token and the `vars:` block
@@ -146,8 +154,8 @@ either: a missing value previews as `<NAME>`, and nothing is written or recorded
 reinstalls that id, and a `--var` name no selected artifact declares is an error.
 
 **`update` never prompts.** It takes `--var` too, and otherwise uses the recorded value. If there is none, it prints
-`kept as installed: needs ADO_ORG; re-run with --var ADO_ORG=<value>` and leaves the entry outdated, and `status` and `outdated` keep
-reporting it as stale.
+`kept as installed: needs ADO_ORG; re-run with --var ADO_ORG=<value>` and leaves the entry alone, and `status` keeps showing it as
+outdated.
 
 **Plugins.** A plugin has no install step. The Claude plugin declares each variable as `userConfig` in `plugin.json` and writes
 `${user_config.NAME}` in `.mcp.json`, so Claude Code asks when the plugin is enabled
@@ -161,6 +169,17 @@ server with `vars:` is left out of them, and `sigil add` still installs it there
 - `shared/ado` signs in through the Azure CLI, so it needs `az` on `PATH` and a finished `az login`. Copilot CLI passes a local server
   only `PATH`, so `az` may not find its login there. That case and a real tool call are unproven, because no live check has had `az`.
 - An `ado` install from before `vars:` has no recorded value. Run `sigil update --var ADO_ORG=<org>` once.
+
+**`shared/ado` live check.** With `--var ADO_ORG=contoso`, `add` wrote a file that parses on all six targets, with the organization as
+a literal and no `{sigil:` token. On a machine with no `az`, the rendered command started, answered `initialize` and listed 13 tools from
+`tools/list`, so a running server proves nothing about sign-in. An upgrade from an install made by the previous `master` kept the old
+entry until `update --var ADO_ORG=contoso` replaced it.
+
+`--allow-scripts=keytar` is in `args` because of that run. The server loads `keytar`, a native module built by its install script, and
+npm 12's `npx` skips install scripts unless they are allowed by name. It ignores the `allowScripts` field in `@azure-devops/mcp`'s own
+`package.json`. Without the flag, the server exits on start with `Cannot find module '../build/Release/keytar.node'`, whatever the
+authentication. Measured on npm 12.2.1 with and without the flag, and on npm 11 with it, each with an empty npm cache. It allows that
+one script and nothing else.
 
 ## Merge strategies
 

@@ -300,7 +300,7 @@
   "claude/plugins/hook-worker-mode-guard/.claude-plugin/plugin.json": "e309b83790fbc184f09c845338d5a3a06991e5c8445dc849d78ec18dee3219a2",
   "claude/plugins/hook-worker-mode-guard/hooks/hooks.json": "68c4a575f1a38aac1171ddb663088d3f200ffc17ee0a2e8735c34d991d65ad72",
   "claude/plugins/mcp-ado/.claude-plugin/plugin.json": "62fdd80b471c51605020eedc07b359d8596f55b33afe16187fdf074f83fe5e25",
-  "claude/plugins/mcp-ado/.mcp.json": "745488ab1eb64f1bd960a53b40d120a51e519c481fc56a21af61e254ff667dbf",
+  "claude/plugins/mcp-ado/.mcp.json": "91bfede10763b8d7c280cffad8f41ad5f900c052bff26e03df504484325c3b8f",
   "claude/plugins/mcp-context-mode/.claude-plugin/plugin.json": "9965a98e8ecf666a78b104d714d672548c6678f5d53a05959c8d18d466ab0bfa",
   "claude/plugins/mcp-context-mode/.mcp.json": "a31aa82eb09bafabdb7842b428fb99013a073f698724d760c1d66b9a12d893da",
   "claude/plugins/mcp-filesystem/.claude-plugin/plugin.json": "80a74237f9f24ba96b8eff35cb985dfa01b51450796126f8adcec75f7cab247e",
@@ -897,5 +897,5 @@
   "opencode/.opencode/agents/wizard-auditor.md": "97ddab3531af2a8a3d866268f66b3ee0d54c79f7da5fe79bedbf62976c801206",
   "opencode/.opencode/commands/shared-author-artifact.md": "d6e26c47db1c9e40db7406884cf540944bf5335375f5d1d8375bfa971a27a4d2",
   "opencode/AGENTS.md": "2c6ded365300dad30f6e649027e5d1cb13ca0c9e96eb6b6df9c9c4616bd58a31",
-  "registry.json": "4dfbea53706c30e470a79b3fc892f72888816f2be96e38290ef973f90802fd47"
+  "registry.json": "6f8f4a9ff00a3829957cb0d91856a09689cd07c10ac5fcbebe3d1864ec9a90cc"
 }

@@ -29,7 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `shared/ado` now signs in through the Azure CLI and takes its organization at install. `ADO_ORG` and `ADO_MCP_PERSONAL_TOKEN`
   are no longer read from the environment, because `--authentication pat` never read that token. Install `az`, run `az login`, then run
-  `sigil update --var ADO_ORG=<org>` once. Until you do, the old entry stays as installed and `status` reports it as stale.
+  `sigil update --var ADO_ORG=<org>` once. Until you do, the old entry stays as installed and `status` shows it as outdated.
 
 ### Documentation
 

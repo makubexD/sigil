@@ -103,6 +103,7 @@ Cursor expands in `command`, `args`, `env`, `url` and `headers`. An
       "command": "npx",
       "args": [
         "-y",
+        "--allow-scripts=keytar",
         "@azure-devops/mcp@2.10.0",
         "contoso",
         "--authentication",

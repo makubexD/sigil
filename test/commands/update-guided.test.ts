@@ -167,6 +167,26 @@ describe('runUpdate in a terminal', () => {
       assert.equal(read(dir, GIT), OLD);
     });
   });
+
+  it('should restore an edited file when the catalog is unchanged and the user chooses force', async () => {
+    await withTempDirAsync(async dir => {
+      await outdatedProject(dir);
+      await guided(dir, ['apply']); // brings both rules current
+      fs.writeFileSync(path.join(dir, GIT), 'my own edit\n');
+      await guided(dir, ['force']);
+      assert.notEqual(read(dir, GIT), 'my own edit\n');
+    });
+  });
+
+  it('should keep an edited file when the catalog is unchanged and the user chooses plain apply', async () => {
+    await withTempDirAsync(async dir => {
+      await outdatedProject(dir);
+      await guided(dir, ['apply']); // brings both rules current
+      fs.writeFileSync(path.join(dir, GIT), 'my own edit\n');
+      await guided(dir, ['apply']);
+      assert.equal(read(dir, GIT), 'my own edit\n');
+    });
+  });
 });
 
 describe('runUpdate outside a terminal', () => {
@@ -175,6 +195,29 @@ describe('runUpdate outside a terminal', () => {
       await outdatedProject(dir);
       await runUpdate([], options(dir));
       assert.notEqual(read(dir, GIT), OLD);
+    });
+  });
+
+  it('should keep an edited file without --force and count it as skipped', async () => {
+    await withTempDirAsync(async dir => {
+      await outdatedProject(dir);
+      await guided(dir, ['apply']); // brings both rules current
+      fs.writeFileSync(path.join(dir, GIT), 'my own edit\n');
+      const lines: string[] = [];
+      const originalLog = console.log;
+      console.log = (...args: unknown[]) => {
+        lines.push(args.join(' '));
+      };
+      try {
+        await runUpdate([], options(dir, { yes: true }));
+      } finally {
+        console.log = originalLog;
+      }
+      assert.equal(read(dir, GIT), 'my own edit\n');
+      assert.ok(
+        lines.some(line => line.includes('1 file(s) skipped (drifted)')),
+        'the summary counts the edited file as skipped',
+      );
     });
   });
 });

@@ -55,9 +55,9 @@ type FreshFileVerdict = 'unchanged' | 'skip-drifted' | 'write';
 
 /**
  * Classifies one fresh-scaffold file: unchanged, drifted-and-skipped, or needs writing.
- * A fresh render that still matches the recorded hash is normally `unchanged`; with `--force`
- * it is `write` when the copy on disk drifted, so the user's request restores the catalog
- * version even though the catalog itself never moved.
+ * A fresh render that still matches the recorded hash is `unchanged` when the copy on disk
+ * matches too; when the copy drifted, it is `skip-drifted` without `--force` and `write` with
+ * it, so the user's request restores the catalog version even though the catalog never moved.
  */
 function classifyFreshFile(
   relPath: string,
@@ -67,7 +67,8 @@ function classifyFreshFile(
 ): FreshFileVerdict {
   const fullPath = path.join(opts.projectDir, relPath);
   if (recordedHash && sha256(content) === recordedHash) {
-    return opts.force && isFileDrifted(fullPath, recordedHash) ? 'write' : 'unchanged';
+    if (!isFileDrifted(fullPath, recordedHash)) return 'unchanged';
+    return opts.force ? 'write' : 'skip-drifted';
   }
 
   if (isFileDrifted(fullPath, recordedHash) && !opts.force) return 'skip-drifted';

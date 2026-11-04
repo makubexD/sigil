@@ -330,16 +330,17 @@ sigil update
 
 ```
   =  csharp/cs-generate-tests  (already up-to-date)
-  =  csharp/cs-testing  (already up-to-date)
+  ~  csharp/cs-testing  (drifted — run with --force to overwrite)
+     ~ .claude/rules/csharp-cs-testing.md
   =  csharp/cs-code-reviewer  (already up-to-date)
 
-✓ 0 artifact(s) updated.
+✓ 0 artifact(s) updated, 1 file(s) skipped (drifted).
 ```
 
-Nothing changed, and **your edit is still there**. That is by design: `update` re-renders each
+Nothing is overwritten, and **your edit is still there**. That is by design: `update` re-renders each
 artifact from the catalog bundled with your sigil version and only writes files whose catalog output
-changed since you installed. This catalog has not changed, so there is nothing to write, and your edit
-is neither overwritten nor reported by `update`.
+changed since you installed. This catalog has not changed, so there is nothing to write. A file you
+edited is counted as drifted and skipped: `update` reports it and leaves it alone.
 
 When a newer sigil does change a file you also edited, `update` skips that file and says
 `drifted — run with --force to overwrite`. `--force` then replaces your version with the catalog's.
@@ -355,8 +356,7 @@ sigil add skill:csharp/cs-generate-tests --overwrite --yes
 ```
 
 That rewrote all three files, and `sigil status` went back to `3 up-to-date`. `sigil update --force` restores an
-edited file the same way. The guided update and the wizard's Update don't offer that yet: they list such a file as
-unchanged.
+edited file the same way, and the guided update and the wizard's Update offer that same restore as a choice.
 
 **6. Remove what you installed.**
 

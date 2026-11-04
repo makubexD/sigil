@@ -82,6 +82,8 @@ plan must cover:
 
 ## Phase E: MCP, user scope and re-run
 
+Done on 2026-11-04, with the [Sigil MCP run](decisions/opencode-target-2026-11.md#sigil-mcp-run): 16 of 16 probes on V1 and V2, no model.
+
 The `mcp` kind through an `McpDialect` value and a `ConfigKindTable` entry, writing `.opencode/opencode.json` and the user
 `opencode.json` (`.json` only). A `probe:opencode` script, on the model of `scripts/probe-antigravity.mjs`, re-runs the
 loader probes on one command. The ADR's Phase 8 row in `distribution-channels-2026-09.md` closes in Phase F.

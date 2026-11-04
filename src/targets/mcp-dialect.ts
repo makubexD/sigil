@@ -2,10 +2,10 @@
  * What one target's MCP file expects, given as data. A catalog `mcp` artifact authors a
  * provider-neutral server (`server:`) with `{sigil:env:NAME}` tokens; each target turns it into
  * the file it writes through one `McpDialect` value instead of a hand-rolled builder: which JSON
- * key servers sit under, how env tokens are expanded, which fields may carry a token, and the
- * `type` policy for stdio and remote servers. `renderMcpServer` is the single transform; a
- * target that cannot carry one of the server's tokens gets `{ skip }` rather than a fragment
- * with an unexpanded token.
+ * key servers sit under, how env tokens are expanded, which fields may carry a token, the `type`
+ * policy for stdio and remote servers, and the field shape (`envKey`, `commandForm`).
+ * `renderMcpServer` is the single transform; a target that cannot carry one of the server's
+ * tokens gets `{ skip }` rather than a fragment with an unexpanded token.
  *
  * @module
  */
@@ -42,7 +42,7 @@ export interface McpDialect<S extends McpEnvSyntax = EnvSyntax> {
   readonly envSyntax: S;
   /** The server fields in which an env token may appear; a token elsewhere skips the server. */
   readonly interpolatedFields: readonly McpField[];
-  /** Write the server's `env` under this key instead of `env`, in `env`'s key position; omit to keep `env`. */
+  /** Write the server's `env` under this key, in `env`'s key position; omit to keep `env`. */
   readonly envKey?: string;
   /**
    * `'array'`: a server with `command` writes `command: [command, ...args]` in `command`'s key

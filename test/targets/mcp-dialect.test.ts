@@ -281,6 +281,15 @@ describe('renderMcpServer field shape', () => {
     assert.match(rendered.skip, /\{sigil:env:D\}/);
   });
 
+  it('should keep args on a server without command', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ url: 'u', args: ['a'] }),
+      dialect({ commandForm: 'array' }),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { url: 'u', args: ['a'] });
+  });
+
   it('should leave a remote server without command unchanged', () => {
     const rendered = renderMcpServer(mcpArtifact({ url: 'u' }), shaped());
     assert.ok(!isMcpSkip(rendered));
@@ -338,6 +347,22 @@ describe("renderMcpServer with envSyntax: 'inherited'", () => {
     interpolatedFields: [],
     remoteType: 'drop',
   };
+
+  it('should apply the field shape on the inherited path', () => {
+    const rendered = renderMcpServer(mcpArtifact({ command: 'x', args: ['a'], env: { A: 'b' } }), {
+      ...inherited,
+      envKey: 'environment',
+      commandForm: 'array',
+      stdioType: 'local',
+    });
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, {
+      type: 'local',
+      command: ['x', 'a'],
+      environment: { A: 'b' },
+    });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command', 'environment']);
+  });
 
   it('should render a server with no env', () => {
     assert.deepEqual(renderMcpServer(mcpArtifact({ command: 'x' }), inherited), {

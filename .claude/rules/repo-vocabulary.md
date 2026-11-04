@@ -52,3 +52,16 @@ Moved from the root `CLAUDE.md`, which keeps a one-line hard rule for each; this
   `description` plus `whenToUse`; agents dispatch on `description` alone. `whenToUse:` on an agent is unread at build
   time. Put dispatch-disambiguation in `description`. `declared-but-unemitted` fails `sync --check` if the field is
   authored and unmapped. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
+- **MCP config never carries a provider's env syntax.** Catalog `server` values write `{sigil:env:NAME}`; each target
+  expands it for the file it writes (`src/targets/env-reference.ts`, an `EnvSyntax` per file format).
+- **Artifact bodies are provider-neutral prose — never a hardcoded provider-specific literal** (`CLAUDE.md`,
+  `$ARGUMENTS`, `.claude/rules/`, …). Bodies use `{sigil:<term>}` tokens (`LEXICON_TERMS` in `src/targets/lexicon.ts`)
+  and one `ProviderLexicon` per provider (`src/targets/<provider>/lexicon.ts`), applied by `renderArtifact()`
+  (`src/targets/emit.ts`). Every `KindEmitSpec` must set `lexicon:` and include `UNTRANSLATED_TOKEN_FORBID`
+  (`src/targets/lexicon-forbid.ts`) in `bodyForbids`. A hand-rolled aggregate that does not call `renderArtifact()`
+  (Copilot `copilot-instructions.md` in `targets/copilot/build-helpers.ts`) must call `applyLexicon()` itself.
+  `provider-term-leak` derives its literals from the registered lexicons, not a hand-listed set. A skill's reference
+  files are shipped prose too: `emitFile` renders them through `renderReference` (the same lexicon), the reference
+  contract `deriveContracts` adds checks them, and prose rules read every shipped text through `shippedTexts`
+  (`src/artifact-texts.ts`), never `artifact.body` alone. (see
+  `docs/decisions/provider-neutral-body-lexicon-2026-08.md`)

@@ -10,6 +10,7 @@ paths:
   - 'src/frontmatter-parse.ts'
   - 'src/catalog-cache.ts'
   - 'src/packs-config.ts'
+  - 'src/validate/**'
 ---
 
 # Schema, loading and selection

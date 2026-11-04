@@ -256,8 +256,8 @@ import { applyMerge, classifyConfigDrift, detectConfigDrift } from 'sigil';
 
 Everything else — the pipeline stages, target adapters, wizard, commands — is intentionally not
 exported; only `.` and `./package.json` resolve via the package name (`package.json`'s `exports`
-map). See `src/index.ts` for the full exported surface and `CLAUDE.md`'s "public library surface"
-invariant for why it stays curated rather than exposing all of `dist-cli/`.
+map). See `src/index.ts` for the full exported surface and the "public library surface"
+invariant in `.claude/rules/repo-cli.md` for why it stays curated rather than exposing all of `dist-cli/`.
 
 ## Learn more
 

@@ -42,10 +42,8 @@ work on its paths. Read it before changing that area.
 - Kind support is declared only in `src/targets/<provider>/capabilities.ts`, read only through `supportsKind` & co.
 - Every whole-file kind a target emits `native` has a `KindEmitSpec`.
 - Provider size limits live on `KindEmitSpec.limits`; never hard-code one in a rule.
-- MCP config never carries a provider's env syntax; catalog source writes `{sigil:env:NAME}`.
 - A JSON MCP entry comes only from an `McpDialect`, never a target's own builder (Codex TOML excepted).
 - Config dispatches only through the target's `ConfigKindTable`, never a `kind === 'hook'` branch.
-- Artifact bodies never hold a provider literal; use `{sigil:<term>}` lexicon tokens.
 
 **Vocabulary** (`repo-vocabulary.md`)
 
@@ -53,8 +51,11 @@ work on its paths. Read it before changing that area.
 - Tool names and model hints stay neutral in the catalog; output goes only through a `ToolDialect` and tier table.
 - Hook events and matchers stay neutral; catalog source never reads a provider's stdin field.
 - `appliesTo` stays unchanged in `catalog/` and the schema; the four rule emitters must agree.
-- Every authored frontmatter field is mapped by a `KindEmitSpec`; an agent's tool restriction reaches every target.
+- Every authored frontmatter field is mapped by a `KindEmitSpec`; an agent's tool restriction reaches every target it
+  ships to, or that agent is skipped.
 - Agents have no `whenToUse`; dispatch text goes in `description`.
+- MCP config never carries a provider's env syntax; catalog source writes `{sigil:env:NAME}`.
+- Artifact bodies never hold a provider literal; use `{sigil:<term>}` lexicon tokens.
 
 **Config merge** (`repo-config-merge.md`)
 

@@ -5,6 +5,7 @@ paths:
   - 'src/validate/**'
   - 'src/resolve.ts'
   - 'src/commands/sync/**'
+  - 'src/commands/build.ts'
 ---
 
 # Targets and emit specs
@@ -32,8 +33,6 @@ Moved from the root `CLAUDE.md`, which keeps a one-line hard rule for each; this
   (see `docs/decisions/catalog-conformance-audit-2026-08.md`)
 - **A provider's documented size limits are data on its `KindEmitSpec.limits`**, checked by the one generic
   `provider-limits` rule against the rendered file; never hard-code a provider's limit in a rule.
-- **MCP config never carries a provider's env syntax.** Catalog `server` values write `{sigil:env:NAME}`; each target
-  expands it for the file it writes (`src/targets/env-reference.ts`, an `EnvSyntax` per file format).
 - **A JSON MCP server entry comes from an `McpDialect`** (`src/targets/mcp-dialect.ts`, `renderMcpServer` /
   `mcpServerOp`): a new target supplies one dialect value, never its own builder. The portable files use
   `PORTABLE_MCP_DIALECT`, Cursor `CURSOR_MCP_DIALECT`. Codex's TOML builder is the one exception (it forwards by name).
@@ -42,14 +41,3 @@ Moved from the root `CLAUDE.md`, which keeps a one-line hard rule for each; this
   from the table, never a `kind === 'hook'` branch. The table's kinds must equal the target's `native` config kinds
   (`test/targets/capabilities.test.ts`). `config-target-render` fails `sync --check` when a catalog `hook` or `mcp`
   ships to a target whose `skipReason` refuses it.
-- **Artifact bodies are provider-neutral prose — never a hardcoded provider-specific literal** (`CLAUDE.md`,
-  `$ARGUMENTS`, `.claude/rules/`, …). Bodies use `{sigil:<term>}` tokens (`LEXICON_TERMS` in `src/targets/lexicon.ts`)
-  and one `ProviderLexicon` per provider (`src/targets/<provider>/lexicon.ts`), applied by `renderArtifact()`
-  (`src/targets/emit.ts`). Every `KindEmitSpec` must set `lexicon:` and include `UNTRANSLATED_TOKEN_FORBID`
-  (`src/targets/lexicon-forbid.ts`) in `bodyForbids`. A hand-rolled aggregate that does not call `renderArtifact()`
-  (Copilot `copilot-instructions.md` in `targets/copilot/build-helpers.ts`) must call `applyLexicon()` itself.
-  `provider-term-leak` derives its literals from the registered lexicons, not a hand-listed set. A skill's reference
-  files are shipped prose too: `emitFile` renders them through `renderReference` (the same lexicon), the reference
-  contract `deriveContracts` adds checks them, and prose rules read every shipped text through `shippedTexts`
-  (`src/artifact-texts.ts`), never `artifact.body` alone. (see
-  `docs/decisions/provider-neutral-body-lexicon-2026-08.md`)

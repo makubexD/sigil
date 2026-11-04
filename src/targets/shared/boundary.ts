@@ -37,12 +37,15 @@ function appendRelationGroup(lines: string[], spec: RelationGroupSpec): void {
   if (trailingBlank) lines.push('');
 }
 
-/** Splits co-present related artifacts into their three relation buckets. */
-function splitByRelation(coPresent: RelatedArtifact[]): {
+/** Co-present related artifacts, one bucket per relation. */
+interface RelationBuckets {
   escalates: RelatedArtifact[];
   complements: RelatedArtifact[];
   seeAlso: RelatedArtifact[];
-} {
+}
+
+/** Splits co-present related artifacts into their three relation buckets. */
+function splitByRelation(coPresent: RelatedArtifact[]): RelationBuckets {
   return {
     escalates: coPresent.filter(r => r.relation === 'escalates-to'),
     complements: coPresent.filter(r => r.relation === 'complements'),
@@ -69,13 +72,12 @@ function appendAllGroups(
 
 /** Renders the body lines (all three relation-group sections) once buckets are known. */
 function renderRelationGroups(
-  escalates: RelatedArtifact[],
-  complements: RelatedArtifact[],
-  seeAlso: RelatedArtifact[],
+  { escalates, complements, seeAlso }: RelationBuckets,
   catalog: ResolvedCatalog,
+  escalatesHeading = 'Delegate specialized work to co-installed agents:',
 ): string[] {
   const groups = [
-    { heading: 'Delegate specialized work to co-installed agents:', items: escalates },
+    { heading: escalatesHeading, items: escalates },
     { heading: 'Related specialists (distinct scope):', items: complements },
     { heading: 'See also:', items: seeAlso },
   ];
@@ -91,11 +93,15 @@ function renderRelationGroups(
  * being installed/built together. Returns `[]` (no section) when `installSet`/`catalog`
  * are omitted (standalone install — co-presence can't be known) or no related artifact
  * from `agent.frontmatter.relatedArtifacts` is present in `installSet`.
+ *
+ * `escalatesHeading` replaces the escalates-to group's heading, for a target whose tool
+ * policy stops the agent from delegating; the other two group headings never change.
  */
 export function renderBoundarySection(
   agent: ResolvedArtifact,
   installSet: Set<string> | undefined,
   catalog: ResolvedCatalog | undefined,
+  escalatesHeading?: string,
 ): string[] {
   if (!installSet || !catalog) return [];
 
@@ -103,6 +109,5 @@ export function renderBoundarySection(
   const coPresent = related.filter(r => r.id !== agent.id && installSet.has(r.id));
   if (coPresent.length === 0) return [];
 
-  const { escalates, complements, seeAlso } = splitByRelation(coPresent);
-  return renderRelationGroups(escalates, complements, seeAlso, catalog);
+  return renderRelationGroups(splitByRelation(coPresent), catalog, escalatesHeading);
 }

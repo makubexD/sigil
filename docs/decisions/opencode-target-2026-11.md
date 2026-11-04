@@ -1,0 +1,333 @@
+# OpenCode target (2026-11)
+
+Status: **evaluation in progress**, [plan](../plan-opencode-eval.md) step 1 done (docs pass). No decision yet.
+
+## How the docs pass ran
+
+Every claim cites a page on `opencode.ai/docs`, read on 2026-11-03 from
+`packages/web/src/content/docs/` at tag `v1.19.5` (commit `810c0eb`) and checked to resolve on the live site. Where a
+page could be compared with the code, that tag's source under `packages/` was read. Citations like `config/paths.ts:27`
+are relative to `packages/opencode/src/`, or to `packages/core/src/` when they start with `core:`. **Conflict** means the
+page and the source disagree, and the source wins for what 1.19.5 does. **Undocumented** means only the source says it.
+Nothing here is live behavior yet; step 3 probes it.
+
+`sst/opencode` now redirects to `anomalyco/opencode`.
+
+### Two product lines
+
+The plan's starting facts are true of the npm package `opencode-ai` only. That package holds OpenCode 1. **OpenCode 2
+ships as `@opencode/cli`, `2.2.5` on 2026-11-03**, with the same `opencode` binary name, so the two aren't installed
+side by side (`installation/index.ts:55-56`, `:76-82`). OpenCode 1 advertises it at the end of `opencode upgrade`
+(`cli/cmd/upgrade.ts:79`). V2's own guide says what breaks
+([Migrate from V1](https://opencode.ai/v2/docs/migrate-v1/)):
+
+- **Three intentional breaks:** the plugin API, the server API and clients, and terminal config (`tui.json` →
+  `cli.json`). "V1 plugin implementations do not run in V2."
+- **Everything else is meant to stay compatible:** V2 reads the same config locations, normalizes V1 fields in memory,
+  and still discovers `agent(s)/`, `command(s)/` and `.opencode/skills/`. A native V2 shape exists (`agents`, `commands`,
+  `permissions`, `mcp.servers`, `plugins`) but is optional, and V1 agent frontmatter is "deprecated but still translated".
+- **Behavior differences that reach sigil:** V2 reads [`AGENTS.md` only](https://opencode.ai/v2/docs/instructions/), with
+  no `CLAUDE.md` fallback. Todos are off by default. `external_directory` is allowed by default. `lsp` config is ignored.
+
+So a file-based target written in V1 shape should load on both lines, and the one piece that can't is a generated
+plugin (D5). This record answers D0–D8 for V1 as the plan scoped them and notes V2 where it differs. V2's source was not
+read and neither line has been run yet. U1 asks for a V2 run.
+
+## Kind table
+
+Project paths walk from the working directory up to the git worktree (`config/paths.ts:27`). User paths are under
+`~/.config/opencode/`. `opencode.json[c]` means either file.
+
+| sigil kind | Project path                                                                                    | User path                                                                  | Format                                                                                                                                                                                                                               | Docs                                                          |
+| ---------- | ----------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------- |
+| `skill`    | `.opencode/skills/<name>/SKILL.md`; also `.agents/skills/` and `.claude/skills/`                | `skills/<name>/SKILL.md`; also `~/.agents/skills/` and `~/.claude/skills/` | Agent Skills `SKILL.md`: `name`, `description` required; `license`, `compatibility`, `metadata` optional; unknown fields ignored                                                                                                     | [Agent Skills](https://opencode.ai/docs/skills/#place-files)  |
+| `agent`    | `.opencode/agents/<name>.md`; or the `agent` key in `opencode.json[c]`                          | `agents/<name>.md`; or the `agent` key                                     | Markdown; `description`, `mode`, `model`, `permission`, `temperature`, `top_p`, `steps`, `hidden`, `color`, `disable`, `variant`; deprecated `tools`, `maxSteps`. Body is the prompt. Other keys go to the provider as model options | [Agents](https://opencode.ai/docs/agents/#markdown)           |
+| `prompt`   | `.opencode/commands/<name>.md`; or the `command` key                                            | `commands/<name>.md`; or the `command` key                                 | Markdown; `description`, `agent`, `model`, `subtask`, `variant`. Body is the template: `$ARGUMENTS`, `$1`…, `` !`cmd` ``, `@file`                                                                                                    | [Commands](https://opencode.ai/docs/commands/#markdown)       |
+| `rule`     | root `AGENTS.md` (fallback `CLAUDE.md`); or files listed in `instructions` (paths, globs, URLs) | `AGENTS.md` (fallback `~/.claude/CLAUDE.md`); or `instructions`            | Plain Markdown, no frontmatter, no path scoping                                                                                                                                                                                      | [Rules](https://opencode.ai/docs/rules/#precedence)           |
+| `hook`     | `.opencode/plugins/*.{js,ts}`                                                                   | `plugins/*.{js,ts}`                                                        | No declarative hooks. A JS/TS module returning `tool.execute.before` and similar; V1 API only                                                                                                                                        | [Plugins](https://opencode.ai/docs/plugins/#from-local-files) |
+| `mcp`      | `mcp` key in `opencode.json[c]`                                                                 | `mcp` key                                                                  | `type: local` with `command` array, `environment`, `cwd`, `enabled`, `timeout`; `type: remote` with `url`, `headers`, `oauth`, `enabled`, `timeout`. `{env:NAME}` and `{file:path}` substitution                                     | [MCP servers](https://opencode.ai/docs/mcp-servers/#local)    |
+| `settings` | `opencode.json[c]`; `.opencode/opencode.json[c]` (undocumented on V1)                           | `opencode.json[c]`                                                         | JSON or JSONC against `https://opencode.ai/config.json`, merged across layers                                                                                                                                                        | [Config](https://opencode.ai/docs/config/#precedence-order)   |
+
+Singular folder names (`agent/`, `command/`, `plugin/`, `skill/`) still load for backwards compatibility
+([Config](https://opencode.ai/docs/config/#precedence-order)). The plan's `.opencode/agent/` and `.opencode/command/` are
+those legacy names. The plural is the one to write, and V2 calls it preferred.
+
+## Answers
+
+### D0. Install, update, scripted runs, config layers, and isolation
+
+**Install and update.** `npm i -g opencode-ai` for V1. `opencode upgrade [target]` moves within the line, and `--major`
+swaps to OpenCode 2 ([CLI](https://opencode.ai/docs/cli/#upgrade)). `autoupdate` only notifies by default: nothing is
+installed until `/update` ([Config](https://opencode.ai/docs/config/#autoupdate)).
+
+**Scripted runs.** `opencode run [message..]` takes `--model provider/model`, `--agent`, `--command`, `--format json`,
+`--dir` and `--auto` ([CLI](https://opencode.ai/docs/cli/#run)). Without `--auto`, a permission ask in `opencode run` is
+auto-rejected and the run continues (**undocumented**, `cli/cmd/run.ts:791-812`). `--auto` still enforces explicit `deny`
+([Permissions](https://opencode.ai/docs/permissions/#auto-mode)).
+
+**Layers.** Remote `.well-known/opencode`, then global, `OPENCODE_CONFIG`, project `opencode.json[c]`, `.opencode`
+directories, `OPENCODE_CONFIG_CONTENT`, then managed files
+([Config](https://opencode.ai/docs/config/#precedence-order)). Layers deep-merge, and arrays replace except `instructions`,
+which concatenates in the layered merge (`config/config.ts:42-52`). At one level `.jsonc` loads after `.json`, so it wins
+(**undocumented**, `config/paths.ts:15-20`, `config/config.ts:272-274`).
+
+**Isolation.** `OPENCODE_CONFIG_DIR` does not isolate a probe. It adds a directory; the global config
+still loads from `Global.Path.config` (`config/config.ts:272-274`, `config/paths.ts:24-40`). Discovery of
+`~/.claude/skills/`, `~/.agents/skills/` and `~/.claude/CLAUDE.md` is rooted at the home directory
+(`skill/index.ts`, `session/instruction.ts:59-62`). And a mismatch: the global `AGENTS.md` follows
+`OPENCODE_CONFIG_DIR` (`core:global.ts:64`), while the global config doesn't.
+
+A probe gets real isolation from `HOME=<scratch>/home` with every `XDG_*_HOME` unset. `xdg-basedir` then derives config,
+data, cache and state from that home, and `os.homedir()` follows it (`core:global.ts:10-20`). Auth lives in the data
+dir, so nothing of the owner's is visible, and that also rules out reaching a Claude credential by accident.
+
+**Side effects to design around.** Each config directory, `.opencode/` included, gets a `.gitignore` and a background
+dependency install of `@opencode-ai/plugin`, leaving `package.json` and `node_modules` there
+(**undocumented**, `config/config.ts:309-325`, `:450-466`). The first run without env overrides seeds a global config
+file (`:264-270`). A config file with no `$schema` gets one written into it (`:245-249`), by text insert, so comments
+survive but a byte-for-byte drift hash wouldn't.
+
+### D1. Rules
+
+**`AGENTS.md` lookup.** From the working directory up to the worktree. The first _filename_ that exists anywhere wins, in
+the order `AGENTS.md`, `CLAUDE.md`, `CONTEXT.md` (deprecated, **undocumented**). Then every copy of that file on the walk
+is loaded, not only the nearest (**conflict** with "the first matching file wins", `session/instruction.ts:122-132` and
+`core:fs-util.ts:154-166`; the code comment says otherwise too, and V2's page describes the stacking).
+
+**Global.** `~/.config/opencode/AGENTS.md`, or `~/.claude/CLAUDE.md` if that's absent. First one wins
+([Rules](https://opencode.ai/docs/rules/#precedence)).
+
+**Turning the fallback off.** There is no config key, only environment variables. `OPENCODE_DISABLE_CLAUDE_CODE` drops all
+`.claude` support and `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT` drops `CLAUDE.md`
+([Rules](https://opencode.ai/docs/rules/#claude-code-compatibility)). **Conflict:** the page says the second covers only
+`~/.claude/CLAUDE.md`, while the source also removes project `CLAUDE.md` (`session/instruction.ts:63-67`). V2 has no
+fallback at all.
+
+**`instructions`.** Paths, globs and URLs, combined with `AGENTS.md`
+([Rules](https://opencode.ai/docs/rules/#custom-instructions)). A relative glob is matched at every level from the working
+directory up to the worktree (`session/instruction.ts:80-84`). URLs have a 5-second timeout.
+
+**Per-path rules.** Nothing like `appliesTo`: no globs, no frontmatter. The nearest thing is **undocumented** on V1: when
+the `read` tool opens a file, any `AGENTS.md` between that file and the working directory is attached to the result once
+per message (`tool/read.ts:300`, `session/instruction.ts:178-220`). [V2 documents it](https://opencode.ai/v2/docs/instructions/#discovery).
+That is directory-scoped and read-triggered, so it isn't `appliesTo` either. Rules are repo-wide for sigil's purposes.
+
+### D2. Skills
+
+**Folders.** `.opencode/skills/` is native. OpenCode also reads `.agents/skills/` and `.claude/skills/`, in project and
+home ([Agent Skills](https://opencode.ai/docs/skills/#place-files)). The layout survey's claim holds on paper. The match
+is `skills/**/SKILL.md`, recursive (`skill/index.ts:23`). `OPENCODE_DISABLE_EXTERNAL_SKILLS` turns off both external
+folders, and `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS` only `.claude` (**undocumented** for the first). So `agents-standard`
+output is already discovered.
+
+**Frontmatter.** `name`, `description` required; `license`, `compatibility`, `metadata` optional; unknown fields ignored
+([Agent Skills](https://opencode.ai/docs/skills/#write-frontmatter)). There's no `allowed-tools`: that field is ignored,
+so a skill's tool list doesn't restrict anything here.
+
+**Conflict on enforcement.** The page says `name` must match the folder and the regex
+([Validate names](https://opencode.ai/docs/skills/#validate-names)). 1.19.5 checks only that `name` is a string
+(`skill/index.ts:53-59`), and `NameMismatchError` is declared and never raised. `description` is optional at parse and
+filtered out at listing (`skill/index.ts:322`). sigil's kebab ids satisfy the strict reading, so neither side matters to
+output.
+
+**Same name in two folders.** The docs only say to keep names unique
+([Troubleshoot](https://opencode.ai/docs/skills/#troubleshoot-loading)). The source logs a warning and the later write
+wins, and `add` runs with `concurrency: "unbounded"` around an async parse (`skill/index.ts:105-146`, `:235-245`). So
+which copy wins is completion order, not folder order. One entry reaches the listing either way. That is harmless for
+identical copies and a real hazard for different ones, which P2 should confirm.
+
+**Delivery.** Skills are advertised in the native `skill` tool's description and loaded on demand
+([Recognize tool description](https://opencode.ai/docs/skills/#recognize-tool-description)). `permission.skill` gates them
+by name. A built-in `customize-opencode` skill sits underneath and a disk skill of that name overrides it
+(`skill/index.ts:276-284`).
+
+### D3. Agents
+
+**Frontmatter.** See the Kind table. The file name is the agent name, and a nested path keeps its folders (`a/b.md` is
+`a/b`, `config/entry-name.ts:15-19`). `mode` is `primary`, `subagent` or `all`, default `all`
+([Mode](https://opencode.ai/docs/agents/#mode)). A subagent with no `model` uses the caller's
+([Model](https://opencode.ai/docs/agents/#model)). `model` needs a `provider/model-id`, so a neutral tier has nothing
+provider-free to map to; a target would omit it. `tools` is deprecated in favor of `permission`
+([Tools](https://opencode.ai/docs/agents/#tools-deprecated)).
+
+**A trap for emit specs.** The schema takes any extra key, and unknown keys are passed to the provider as model options
+([Additional](https://opencode.ai/docs/agents/#additional), `core:v1/config/agent.ts:40-75`). A Claude-only field left
+in the frontmatter would reach the model API instead of being dropped. A spec must map every field explicitly, which
+`KindEmitSpec` already requires.
+
+**Neutral tool map.** Permission keys are the mapping target
+([Permissions](https://opencode.ai/docs/agents/#permissions)):
+
+| Neutral  | OpenCode permission keys | Note                                                                          |
+| -------- | ------------------------ | ----------------------------------------------------------------------------- |
+| `read`   | `read`, `list`           | `list` is directory listing; `lsp` is left out of every neutral tool          |
+| `search` | `grep`, `glob`           |                                                                               |
+| `edit`   | `edit`                   | One key gates `write`, `edit`, `apply_patch`                                  |
+| `shell`  | `bash`                   | V2 action name is `shell`; V1 keys are still read                             |
+| `web`    | `webfetch`, `websearch`  |                                                                               |
+| `agent`  | `task`                   | V2 action name is `subagent`. Depth is limited by `subagent_depth`, default 1 |
+| `todo`   | `todowrite`              | Off by default on V2                                                          |
+
+**Can `permission` express a read-only agent exactly? Yes.** The built-in `explore` agent is the proof: `"*": deny`, then
+named allows (`agent/agent.ts:196-209`). Rules are ordered and the last match wins
+([Granular Rules](https://opencode.ai/docs/permissions/#granular-rules-object-syntax)), key order is preserved at parse
+(`core:v1/config/permission.ts:15-17`), and an agent's rules append after the defaults (`agent/agent.ts:293`). So:
+
+```yaml
+permission:
+  '*': deny
+  read: allow
+  list: allow
+  grep: allow
+  glob: allow
+```
+
+An allow-list like this also denies MCP tools and `skill`, because the keys are wildcard matches on the tool name. A
+`disallowedTools` list maps to `<key>: deny` the same way. `read: allow` as a shorthand replaces the default `.env` rule;
+**conflict** there: the page says `.env` reads are denied by default
+([Defaults](https://opencode.ai/docs/permissions/#defaults)), and the source says `ask` (`agent/agent.ts:130-135`). An
+agent that must keep that rule writes the object form. Step 2 decides how this fits `ToolDialect`, whose `names` form
+expects a list, not a rule map.
+
+### D4. Commands
+
+**Frontmatter.** `description`, `agent`, `model`, `subtask`, plus `variant` (**undocumented** on the page,
+`core:v1/config/command.ts:5-12`). Unknown keys are ignored. An invalid file throws and fails the load
+(`config/command.ts:36`). A nested path becomes a namespaced command. A file can override a built-in such as `/init`
+([Built-in](https://opencode.ai/docs/commands/#built-in)).
+
+**Arguments.** `$ARGUMENTS` is the raw string and `$1`, `$2`… are positional
+([Arguments](https://opencode.ai/docs/commands/#arguments)). Two behaviors the page doesn't give
+(`session/prompt.ts:1372-1395`):
+
+- **The highest-numbered placeholder takes every remaining argument**, joined by spaces.
+- **A template with no placeholder gets the arguments appended** after a blank line.
+
+Splitting honors `"..."` and `'...'`.
+
+**Against `src/targets/prompt-args.ts`.** sigil has named `{{name}}` and a matching `args:` list. Claude resolves `$name`
+through `arguments:` and Copilot uses `${input:name}`. OpenCode has no named form, so a new helper would write
+`{{name}}` as `$<position in args>`. That's lossless for order, and the argument name survives only in the description.
+`{{name}}` with no `args:` entry has no position, so it must be refused or skipped. Both behaviors above favor sigil: a
+last free-text argument works unquoted.
+
+**Shell injection.** `` !`cmd` `` and `@file` in a template run or expand on OpenCode. A catalog body that happens to
+hold that syntax would now execute. Step 2 should check for it.
+
+### D5. Hooks
+
+**A neutral `script:` hook can map onto a generated plugin file on V1. On V2 it would need a second build.**
+
+**The surface** ([Plugins](https://opencode.ai/docs/plugins/#events), `packages/plugin/src/index.ts`). A file in
+`.opencode/plugins/` loads automatically (non-recursive, `config/plugin.ts:21`) and its exports are called with
+`{ project, client, $, directory, worktree }`. All hooks run in sequence (`plugin/index.ts:284-297`).
+
+| Neutral event   | OpenCode                                 | Can deny?        | Note                                                               |
+| --------------- | ---------------------------------------- | ---------------- | ------------------------------------------------------------------ |
+| `before-tool`   | `tool.execute.before`                    | Yes, by throwing | Fires for built-in and MCP tools (`session/tools.ts:107`, `:403`)  |
+| `after-tool`    | `tool.execute.after`                     | No               |                                                                    |
+| `prompt-submit` | `chat.message`                           | Undocumented     | Not in the page's list; typed in `packages/plugin/src/index.ts`    |
+| `session-start` | `event` with `session.created`           | No               | Fire-and-forget: `void hook.event?.()` (`plugin/index.ts:257-261`) |
+| `stop`          | `event` with `session.idle`              | No               | Same                                                               |
+| `subagent-stop` | none documented                          | -                | Refuse                                                             |
+| `notification`  | none (`permission.asked` is only a part) | -                | Refuse                                                             |
+
+**Input fields.** `input` is `{ tool, sessionID, callID }` and `output` is `{ args }`. There's no stdin and no JSON; a
+generated plugin has to build what the neutral script expects. `args` by tool (`tool/*.ts`): `read`, `edit`, `write` use
+`filePath`; `bash` uses `command`, with `workdir`; `apply_patch` uses `patchText`. MCP tools arrive as `<server>_<tool>`.
+These fit `HookInputDialect`'s fields. **Which edit tool appears depends on the model:** `gpt-*` models other than
+`gpt-4` and `*oss*` get `apply_patch` and never `edit` or `write` (`tool/registry.ts:297-300`), so a path guard needs
+patch headers too, as it already does for Copilot.
+
+**Deny.** A thrown error is the documented way
+([.env protection](https://opencode.ai/docs/plugins/#env-protection)). `args` is also mutable, which sigil wouldn't use.
+`trigger` wraps the hook in `Effect.promise`, so a rejection is a defect, not a typed failure, and P5 must show that the
+model sees it as a failed tool call rather than a crashed turn. There's also a dead end: the `"permission.ask"` hook is
+in the plugin types but nothing in 1.19.5 triggers it (no match in `packages/opencode/src` or `packages/core/src`), so
+`tool.execute.before` is the only route.
+
+**Shape of a generated plugin.** One `.opencode/plugins/sigil-hooks.js` that, for each catalog hook on an event, runs the
+composed `node -e` source through `child_process` with the normalized JSON on stdin, and throws on exit 2. The file is
+sigil-owned and whole. It needs `node` on `PATH` at runtime, same as every other target's script hooks.
+
+**Against V2.** The V1 file doesn't run on V2, and a V2 port is [its own migration](https://opencode.ai/v2/docs/migrate-v1/#plugins).
+What a V2 install does when it finds a V1-shaped file in `.opencode/plugins/` isn't stated. See U2.
+
+### D6. MCP
+
+**Shape.** A `mcp` map keyed by server name, with `type` required ([Local](https://opencode.ai/docs/mcp-servers/#local),
+[Remote](https://opencode.ai/docs/mcp-servers/#remote)). Against `PORTABLE_MCP_DIALECT` (`src/targets/portable-mcp.ts:30`):
+
+| Portable              | OpenCode                | Fits `McpDialect` today?                     |
+| --------------------- | ----------------------- | -------------------------------------------- |
+| `mcpServers`          | `mcp`                   | Yes, `serversKey`                            |
+| `${NAME}`             | `{env:NAME}`            | Yes, `envSyntax`                             |
+| `command` + `args`    | one `command` array     | **No**                                       |
+| `env`                 | `environment`           | **No**                                       |
+| no `type` on stdio    | `type: local` required  | **No**: `stdioType` is the literal `'stdio'` |
+| `type: http` or `sse` | `type: remote` required | **No**: `remoteType` is `keep` or `drop`     |
+| `url`, `headers`      | same                    | Yes                                          |
+
+So the data-only dialect needs new fields, or a small renderer hook. Step 2 decides which. The rule "a JSON MCP entry comes
+only from an `McpDialect`" stands either way.
+
+**`{env:NAME}` details** ([Env vars](https://opencode.ai/docs/config/#env-vars), `config/variable.ts:34-36`). Plain text
+replacement over the whole file before parsing. It reaches every field, so `interpolatedFields` is everything. A missing
+variable becomes an empty string with no error. There's no default syntax. The value isn't JSON-escaped, so a value
+holding `"` breaks the parse. Invalid config is a hard failure at startup.
+
+**V2.** `mcp.servers` with `disabled`, but the flat V1 entry stays accepted, and mixed members are recognized inside `mcp`
+([Migrate from V1](https://opencode.ai/v2/docs/migrate-v1/#mcp-servers)).
+
+### D7. Settings and permissions
+
+**Keys sigil could merge.** Everything in `opencode.json[c]` is user-owned: the tool doesn't rewrite the file at start
+beyond adding `$schema` (D0). The keys a target would touch are `mcp`, plus `permission` and `instructions` if the
+`settings` kind ever maps them. That makes `settings` a better fit than Antigravity's, whose file is tool-owned. Writes
+must be schema-valid, because a bad value stops startup, and unknown top-level keys are dropped silently
+(`onExcessProperty: "ignore"`, `config/parse.ts:38-42`).
+
+**Can sigil write JSONC without losing comments? Not today.** sigil has no JSONC code or dependency (no match for
+`jsonc` in `src/` or `package.json`), and `serialize()` writes plain JSON. OpenCode itself patches JSONC with
+`jsonc-parser` `modify`/`applyEdits` (`config/config.ts:13`, `:151-163`), so a comment-safe path exists if sigil wants that
+dependency. It doesn't have to:
+
+- **`.opencode/opencode.json` is loaded after the project root files** (`config/config.ts:438-448`). In a project, sigil
+  can write there and never open the user's root `opencode.json[c]`. V1's page doesn't list it; V2's does
+  ([Migrate from V1](https://opencode.ai/v2/docs/migrate-v1/#use-your-existing-configuration)).
+- **`opencode.json` and `opencode.jsonc` both load at one level.** In user scope sigil can write `opencode.json` and leave
+  a user's `opencode.jsonc` alone. The owner's own setup has that file, so this is the live case. A key set in both goes
+  to the `.jsonc`.
+
+Recommendation for step 2: never edit a `.jsonc`. Only plain JSON goes through `serialize()`.
+
+### D8. Distribution
+
+**Channel.** npm packages in the `plugin: [...]` array, installed by Bun at startup and cached in
+`~/.cache/opencode/node_modules/` ([From npm](https://opencode.ai/docs/plugins/#from-npm)). Entries can be
+`name@version`, a file path, or a `[name, options]` tuple (**undocumented** on the page, built-in
+`customize-opencode` skill). `opencode plugin <module>` installs one and patches config, in project or with `--global` in
+user config ([plugin](https://opencode.ai/docs/cli/#plugin)). There's no marketplace or manifest, and the ecosystem page
+is a list.
+
+**What it ships.** Code: hooks, tools, auth. A plugin has no documented way to ship skills, agents or commands as files.
+The way that exists is **undocumented**: a `config` hook receives the merged config object and can mutate it
+(`plugin/index.ts:245-253`), so a package could add `agent`, `command` or `skills.paths` entries. `skills.paths` and
+`skills.urls` themselves appear only in the built-in skill and `core:v1/config`.
+
+**Verdict.** This is a code channel, not an artifact channel. A sigil package would be a generated JS plugin that rewrites
+config at runtime, on an undocumented hook and an API V2 replaced. The scaffold channel (files in the repo or the user
+folder) is the one worth considering. On V2 the plugin story changes too: `plugins`, directories only, `opencode plugin
+add`, Git specs ([V2 plugins](https://opencode.ai/v2/docs/plugins/)).
+
+## Open for later steps
+
+| #   | Question                                                                                                          | Source                  |
+| --- | ----------------------------------------------------------------------------------------------------------------- | ----------------------- |
+| U1  | Do the file-based kinds really load unchanged on `@opencode/cli`? The guide says so; no probe has.                | V2 guide, not yet run   |
+| U2  | What does V2 do with a V1-shaped `.opencode/plugins/*.js`: skip, warn, or fail? This decides if `hook` can ship.  | undocumented (D5)       |
+| U3  | Does a throw in `tool.execute.before` reach the model as a failed call? Does it fire inside a subagent?           | P5, source reading only |
+| U4  | Same skill in `.agents/skills/` and `.opencode/skills/`: one listing, and which body?                             | P2, conflict (D2)       |
+| U5  | Does a project `CLAUDE.md` load when there is no `AGENTS.md`, and does the env var turn it off?                   | P1, conflict (D1)       |
+| U6  | Does an agent's `"*": deny` allow-list hold under `opencode run`, and does `.opencode/opencode.json` carry `mcp`? | P4, P6                  |
+| U7  | Does a free model answer from a home with no credentials at all? This is step 3's gate.                           | D0                      |

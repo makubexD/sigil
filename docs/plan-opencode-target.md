@@ -57,8 +57,7 @@ Each is target-layer code with no behavior change for existing targets, proven b
 2. `bodyTransform` receives the artifact, for positional arguments from `args:`.
 3. A new `opencode-home` `ConfigRoot` that honors `XDG_CONFIG_HOME`, listed in `isHomeScopedRoot`.
 
-The hint in `src/commands/add/read-config.ts:23` gets a target-aware word for a commented `.json` file, or stays, as the
-step plan decides from the reuse map.
+The hint in `src/commands/add/read-config.ts:23` stays until Phase E, which adds the first writer it can fire for.
 
 ## Phase D: the target
 

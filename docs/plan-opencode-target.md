@@ -95,6 +95,9 @@ Done 2026-11-04: `shared/ado` moved to `azcli`, so OpenCode has all 4 of 4 serve
 
 ## Phase F: V2 model-backed checks
 
+Done on 2026-11-04, on the paid DeepSeek API: the [Phase F run](decisions/opencode-target-2026-11.md#phase-f-run). U1 passes, U2 is a
+silent skip, and `grep` does return `.env` lines, so the setup note says so.
+
 Last. It needs no code. The free models were still out of quota on 2026-11-04, so the owner approved running it on the paid
 DeepSeek API: these cases test what OpenCode enforces, so any model that attempts the action will do. The key is passed
 only to the isolated home. Setup is in the [V2 run](decisions/opencode-target-2026-11.md#v2-run). "Nothing

@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- OpenCode setup note: agent restrictions are now proven on OpenCode 2 with Sigil's own files. It also records two more routes
+  to `.env`, on top of `cat .env`: `grep`, and `opencode run --auto`, which approves the `read` ask.
+
 ## [0.9.0] - 2026-11-04
 
 ### Added

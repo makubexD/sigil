@@ -325,10 +325,10 @@ add`, Git specs ([V2 plugins](https://opencode.ai/v2/docs/plugins/)).
 
 ## Open for later steps
 
-| #   | Question                                                                                                         | Source                |
-| --- | ---------------------------------------------------------------------------------------------------------------- | --------------------- |
-| U1  | Do the file-based kinds really load unchanged on `@opencode/cli`? They load; enforcement isn't proven.           | [V2 run](#v2-run)     |
-| U2  | What does V2 do with a V1-shaped `.opencode/plugins/*.js`: skip, warn, or fail? This decides if `hook` can ship. | undocumented, not run |
+| #   | Question                                                                                                   | Source                      |
+| --- | ---------------------------------------------------------------------------------------------------------- | --------------------------- |
+| U1  | Do the file-based kinds really load unchanged on `@opencode/cli`? They load, and agent rules are enforced. | [Phase F run](#phase-f-run) |
+| U2  | What does V2 do with a V1-shaped `.opencode/plugins/*.js`: skip, warn, or fail? It skips silently.         | [Phase F run](#phase-f-run) |
 
 U3 to U9 are answered in the [Probe log](#probe-log).
 
@@ -625,9 +625,45 @@ the run exited 0, and `~/.config/opencode/` was identical before and after it.
 **For the next run.** V1 also wrote a `.gitignore` into `.opencode/`. A V1 `serve` takes `OPENCODE_SERVER_PASSWORD`, and V2's `serve`
 prints its own password. `serve` rejects `--standalone`, as the [Quoting run](#quoting-run) found.
 
+### Phase F run
+
+2026-11-04, `@opencode/cli` 2.2.5 on Linux, model `deepseek/deepseek-flash` on the paid API, because all the free models
+still returned `Free usage limit reached`. D0's isolation, one fresh scratch `HOME` per case, `--standalone`, a committed
+fixture, and the key passed only to that process. The cases test what OpenCode enforces, so the model only has to attempt
+the action. Cases 15, 17 and the plugin control ran on V1 (`opencode-ai` 1.19.4).
+
+The locked agent is Sigil's agent rules without `bash`: `'*': deny`, the object-form `read`, then `list`, `grep`, `glob`.
+Case 11 is Sigil's own `ts-architecture-reviewer`, from `add`, unedited.
+
+| Case | Run                                                                   | Result                                                                                     |
+| ---- | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| 1    | A skill in `.agents/skills/`, picked by description                   | **Pass.** `skill` tool called, body used                                                   |
+| 2    | `mode: subagent`, locked, asked through `task` to write               | **Pass.** Subagent ran, no file. Control wrote `out.txt`                                   |
+| 3    | Locked, `mode: all`, write and shell through `--agent`, with `--auto` | **Pass.** No file, tools never offered. Control wrote `out.txt` and `shell.txt`            |
+| 4    | Locked, read `.env`                                                   | **Pass.** No value, `permission requested: read (.env); auto-rejecting`                    |
+| 5    | Locked, read `note.txt`                                               | **Pass.** Text returned                                                                    |
+| 6    | Object-form `read` plus `bash: allow`, `cat .env`                     | Recorded: **value returned**, as on V1                                                     |
+| 7    | Root `AGENTS.md`; a second repo with `CLAUDE.md` alone                | **Pass.** Closing word in the first, none in the second                                    |
+| 8    | No plugin, write `.env`, with `--auto`                                | Recorded: **written**                                                                      |
+| 9    | V1 `.opencode/plugins/sigil-hooks.js`, throwing on that write         | Recorded: **skipped silently**. `.env` written, exit 0, nothing on stderr                  |
+| 10   | Same plugin, write `ok.txt`                                           | Recorded: the run works                                                                    |
+| 11   | Sigil's own subagent: read `.env`, then write with a file tool        | **Pass.** Read auto-rejected, no value, no file                                            |
+| 12   | Locked, read `.env`, with `--auto`                                    | Recorded: **value returned**. `--auto` approves `ask`                                      |
+| 14   | Locked, `grep` for a line in a tracked `.env`                         | **Fail.** Value returned. Same on V1 (15)                                                  |
+| 16   | Locked, `grep` for it in a gitignored `.env`                          | **Fail.** A plain search misses it; a search aimed at the file returns it. Same on V1 (17) |
+
+The control for case 9: the same plugin on V1 blocked the write with its own message, so the file itself works.
+
+- **U1 passes:** cases 2 to 5, and 11 on Sigil's own file. Blocked tools aren't refused, they are never offered.
+- **U2 is answered:** a V1 plugin is skipped with no message, which is the silent guard failure behind `hook: none`.
+- **`grep` is a third route to `.env`,** after `shell` and `--auto`. It adds no new exposure on a catalog agent, since all 39 list
+  `shell`, but removing `bash` alone doesn't close the gap.
+- In cases 2 and 3 the model listed `skill` among its tools under `'*': deny`. That is the model's word, and it wasn't tested
+  further.
+
 ### What the probes change
 
-- **U3 to U9 are answered.** U1 and U2 stayed open here: these probes didn't run on `@opencode/cli`.
+- **U3 to U9 are answered.** U1 and U2 stayed open here: these probes didn't run on `@opencode/cli`. The [Phase F run](#phase-f-run) closes both.
 - D3 stands. Blocked tools were absent from the model's report, not refused, and no file appeared. That rests on the
   model's word plus the result. The object-form `read` isn't optional, because P4 returned a `.env` value with the
   shorthand.
@@ -646,7 +682,7 @@ prints its own password. `serve` rejects `--standalone`, as the [Quoting run](#q
 
 **Go, staged, with target id `opencode`.** Scaffold channel only. `hook`, `settings` and `workflow` stay `none`, and the
 `plugin` channel stays undefined. Code no longer waits on U1 (owner, 2026-11-03): the [V2 run](#v2-run) showed that every
-kind loads, and the enforcement half of U1 closes last, in the roadmap's Phase F.
+kind loads, and the enforcement half of U1 closed last, in the [Phase F run](#phase-f-run): it passes.
 
 - **Demand.** Low. OpenCode is the owner's priority 4 of 4, no outside demand is recorded, and the owner's own config
   is left over from a retired worker setup. That rules out building ahead of Claude, Copilot or Antigravity work. It
@@ -674,7 +710,8 @@ setup docs narrow to V1. The code stays, because it holds for V1. U2 only decide
 
 **Known limits to carry forward.**
 
-- `.env` stays reachable through `shell` on every catalog agent, with no hook to stop it (P4). The setup note says so.
+- `.env` stays reachable through `shell` and `grep` on every catalog agent, and through `read` under `--auto`, with no hook
+  to stop it (P4, [Phase F run](#phase-f-run)). The setup note says so.
 - A Claude install in the same repo reaches OpenCode: skills can collide with different bodies, and a user-only prompt
   is offered to the model (P7). The setup note names `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`. A warning from `add` is a
   question for the roadmap.

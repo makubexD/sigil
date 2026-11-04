@@ -55,10 +55,10 @@ checks for drift, and it writes a `.gitignore` into `.opencode/`.
 
 - **Its allow-list also denies MCP tools and the `skill` tool.** The list holds only the tools the agent names, so a catalog
   agent doesn't reach the servers above, or your own, and doesn't load skills. This comes from reading OpenCode's source, and
-  wasn't tested.
+  wasn't tested. On OpenCode 2 the model still listed `skill` among its tools.
 - **It carries no model.** It uses the model of the agent that called it.
-- **Restrictions have been seen working only on OpenCode 1, with hand-written files of the same shape and one free model.**
-  They haven't been seen working on Sigil's own files, or on OpenCode 2. Both versions load Sigil's rules in the same order:
+- **Restrictions work on both versions.** A tool outside the list is never offered to the model. On OpenCode 2 this was tested
+  with one of Sigil's own agents and with hand-written files of the same shape. Both versions load the rules in the same order:
   `*` deny first, then an allow for each listed tool, with `read` asking on `.env` files.
 
 ## What it skips
@@ -131,12 +131,16 @@ To turn this off, set these variables before you start `opencode`. There is no c
 
 ## No `.env` guard
 
-**A catalog agent can run `cat .env`.** All 39 list `shell`, and no hook stands behind it: Sigil installs none on OpenCode, so
-nothing from Sigil protects your `.env`.
+**A catalog agent can read your `.env`.** All 39 list `shell`, so they can run `cat .env`, and no hook stands behind it: Sigil
+installs none on OpenCode, so nothing from Sigil protects your `.env`.
 
-Each agent keeps OpenCode's own rule that asks before a `read` of `.env`, but that rule covers only the `read` tool. To narrow
-the gap, remove the `bash` line from the agent's `permission` block, or set your own rules. Whether `grep` can return `.env`
-lines wasn't tested. See OpenCode's
+Each agent keeps OpenCode's own rule that asks before a `read` of `.env`, but that rule covers only the `read` tool, and it has
+two more gaps on both versions:
+
+- **`grep` returns `.env` lines.** A plain search skips a gitignored `.env`, but a search aimed at the file returns it.
+- **`opencode run --auto` approves the ask,** so a `read` of `.env` returns its values. This was tested on OpenCode 2.
+
+To narrow the gap, remove the `bash` and `grep` lines from the agent's `permission` block, or set your own rules. See OpenCode's
 [Permissions](https://opencode.ai/docs/permissions/) page for what you can set. That page says these reads are denied by
 default; in testing OpenCode asked.
 
@@ -156,13 +160,15 @@ npm run probe:opencode                        # OpenCode 1, from PATH
 npm run probe:opencode -- --v2 <path>         # also OpenCode 2, from an @opencode/cli binary
 ```
 
-No model answered in those runs, so these rest on earlier tests on OpenCode 1.19.4 with one free model
-(`opencode/deepseek-v4.1-flash-free`), on 2026-11-03:
+No model answered in those runs. With a model, on OpenCode 1.19.4 (`opencode/deepseek-v4.1-flash-free`, 2026-11-03) and
+OpenCode 2 (`deepseek/deepseek-flash` on the paid API, 2026-11-04):
 
-- An agent can't use a tool outside its list, from hand-written files.
-- The `.env` behavior above, from hand-written files.
-- Skills are picked by description, from `agents-standard` output.
+- An agent can't use a tool outside its list. On OpenCode 2 a write and a shell command were tested with a control agent
+  that could do both.
+- The `.env` behavior above.
+- Skills are picked by description.
 
-On OpenCode 2 only loading was tested, with no model. Its guide says it reads `AGENTS.md` only, with no `CLAUDE.md` fallback,
-which wasn't tested. Results: [opencode-target-2026-11](../decisions/opencode-target-2026-11.md#probe-log), P1, P2, P4, P7, the
-V2 run, the quoting run, the Sigil output run and the Sigil MCP run.
+On OpenCode 2 a root `AGENTS.md` loads and a `CLAUDE.md` alone doesn't, and a V1 plugin in `.opencode/plugins/` is skipped with
+no message, so a guard copied from OpenCode 1 blocks nothing there. Results:
+[opencode-target-2026-11](../decisions/opencode-target-2026-11.md#probe-log), P1, P2, P4, P7, the V2 run, the quoting run, the
+Sigil output run, the Sigil MCP run and the Phase F run.

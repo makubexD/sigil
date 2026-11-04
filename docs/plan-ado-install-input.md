@@ -46,8 +46,9 @@ Each of these is settled from the docs and the code, per the repo's target rules
 - **The Claude plugin uses `userConfig`.** A plugin has no install step, so `mcp-ado` declares `userConfig.ADO_ORG` in `plugin.json` and
   writes `${user_config.ADO_ORG}` in `.mcp.json`. The
   [plugin manifest reference](https://code.claude.com/docs/en/plugins-reference#user-configuration) documents the prompt on enable, the
-  substitution in MCP config, and the required `type`, `title` and `description`, so `vars:` needs `title` and `description`. The other
-  plugin channels ship no MCP. `ci:local`'s `claude plugin validate --strict` checks the result.
+  substitution in MCP config, and the required `type`, `title` and `description`, so `vars:` needs `title` and `description`. Antigravity's plugin
+  channel ships MCP but has no prompt on enable, so a server with `vars:` is left out of it (`src/targets/antigravity/plugin-config.ts`), and
+  `sigil add` still installs it there. The other plugin channels ship no MCP. `ci:local`'s `claude plugin validate --strict` checks the result.
 - **`vars` isn't exported from `src/index.ts`.** No public API change.
 
 ## Known limits, stated in the docs step

@@ -36,6 +36,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { stripVTControlCharacters } from 'node:util';
 
 const REPO = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const CATALOG = join(REPO, 'catalog');
@@ -166,11 +167,13 @@ const PROBES = [
     setup: (repo, ctx) => {
       writeFileSync(join(repo, 'opencode.jsonc'), jsoncFixture());
       addProbe(ctx, repo, 'shared/probe-env', 'project');
+      // Read now: OpenCode V1 adds `$schema` to this file itself when it starts.
+      ctx.jsoncAfterAdd = readFileSync(join(repo, 'opencode.jsonc'), 'utf8');
     },
     args: ['mcp', 'list'],
     env: { PROBE_HOST_TOKEN: 'tangerine' },
-    check: (result, repo) => {
-      const unchanged = readFileSync(join(repo, 'opencode.jsonc'), 'utf8') === jsoncFixture();
+    check: (result, _repo, ctx) => {
+      const unchanged = ctx.jsoncAfterAdd === jsoncFixture();
       const text = result.stdout;
       const both = text.includes(JSONC_SERVER) && text.includes('probe-env');
       return {
@@ -434,10 +437,11 @@ function lastNonEmptyLine(path) {
 
 /**
  * True when the text holds the status `opencode mcp list` really prints for a connected server,
- * `connected` — not `disconnected` and not `not connected`.
+ * `connected` — not `disconnected` and not `not connected`. The status follows a color code ending
+ * in `m`, a word character, so the codes come off first.
  */
 function mcpConnected(text) {
-  return /(?<!not\s+)\bconnected\b/.test(text);
+  return /(?<!not\s+)\bconnected\b/.test(stripVTControlCharacters(text));
 }
 
 /** One line of `opencode mcp list` output plus the wrapper's recorded token line. */
@@ -636,14 +640,15 @@ async function serveClient(bin, repo, env, v2) {
 }
 
 /**
- * Reads `route` once a second until it returns a non-empty list (up to 15 seconds) and returns
- * the last payload. One early read came back empty in the ADR, so never trust a single read.
+ * Reads `route` once a second until `isReady` accepts a non-empty list (up to 15 seconds) and
+ * returns the last payload. One early read came back empty in the ADR, and built-in entries fill
+ * a list before the project's do, so neither a single read nor a filled list is enough.
  */
-async function pollFilled(client, route) {
+async function pollFilled(client, route, isReady) {
   let payload = null;
   for (let attempt = 0; attempt < SERVE_TIMEOUT_MS / 1000; attempt += 1) {
     payload = await client.get(route);
-    if (payloadList(payload).length > 0) return payload;
+    if (payloadList(payload).length > 0 && isReady(payload)) return payload;
     await sleep(1000);
   }
   return payload;
@@ -717,7 +722,8 @@ async function runServeProbe(probe, repo, ctx) {
   );
   try {
     await client.createSession();
-    const payload = await pollFilled(client, probe.serveRoute);
+    const isReady = body => probe.check(body, repo, ctx).verdict === 'pass';
+    const payload = await pollFilled(client, probe.serveRoute, isReady);
     writeFileSync(join(ctx.runDir, `${probe.id}.log`), JSON.stringify(payload));
     const checked = probe.check(payload, repo, ctx);
     return {

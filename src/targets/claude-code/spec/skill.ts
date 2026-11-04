@@ -128,6 +128,30 @@ function outputPath(
     : `${prefix}/skills/${name}/SKILL.md`;
 }
 
+/**
+ * Claude Code skill output limits. Shared with `spec/prompt.ts`, whose plugin variant ships a
+ * prompt as a plugin skill and so is subject to the same limits.
+ */
+export const CLAUDE_SKILL_LIMITS: NonNullable<KindEmitSpec['limits']> = [
+  ...AGENT_SKILLS_LIMITS,
+  // Past it the listing loses its tail, often the trigger phrase the model dispatches on.
+  {
+    field: 'listing',
+    max: MAX_SKILL_LISTING_CHARS,
+    unit: 'chars',
+    severity: 'error',
+    doc: CLAUDE_SKILLS_DOC,
+  },
+  // Claude's skill guidance: keep SKILL.md under 500 lines and move detail into references.
+  {
+    field: 'body',
+    max: MAX_SKILL_BODY_LINES,
+    unit: 'lines',
+    severity: 'warning',
+    doc: CLAUDE_SKILLS_DOC,
+  },
+];
+
 export const CLAUDE_PLUGIN_SKILL_SPEC: KindEmitSpec = {
   kind: 'skill',
   variant: 'plugin',
@@ -154,25 +178,7 @@ export const CLAUDE_PLUGIN_SKILL_SPEC: KindEmitSpec = {
     UNTRANSLATED_TOKEN_FORBID,
   ],
   docs: [CLAUDE_SKILLS_DOC],
-  limits: [
-    ...AGENT_SKILLS_LIMITS,
-    // Past it the listing loses its tail, often the trigger phrase the model dispatches on.
-    {
-      field: 'listing',
-      max: MAX_SKILL_LISTING_CHARS,
-      unit: 'chars',
-      severity: 'error',
-      doc: CLAUDE_SKILLS_DOC,
-    },
-    // Claude's skill guidance: keep SKILL.md under 500 lines and move detail into references.
-    {
-      field: 'body',
-      max: MAX_SKILL_BODY_LINES,
-      unit: 'lines',
-      severity: 'warning',
-      doc: CLAUDE_SKILLS_DOC,
-    },
-  ],
+  limits: CLAUDE_SKILL_LIMITS,
 };
 
 export const CLAUDE_SCAFFOLD_SKILL_SPEC: KindEmitSpec = {

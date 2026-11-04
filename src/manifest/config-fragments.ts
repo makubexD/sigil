@@ -5,6 +5,8 @@
  *
  * @module
  */
+import { usableVars } from '../mcp-vars';
+import type { VarValues } from '../mcp-vars';
 import type { ConfigMergeOp, ConfigRoot, MergeStrategy, RetiredConfigDestination } from '../types';
 import type { Manifest, ManifestConfigMerge, ManifestEntry } from './types';
 
@@ -58,6 +60,23 @@ export function recordedOpsAt(
   return manifest.entries.flatMap(entry =>
     (entry.configFiles ?? []).filter(cf => sameFile(cf, dest)).map(recordedOp),
   );
+}
+
+/**
+ * The install-variable values recorded for `id` on `targetName`, filled from any other target's
+ * entry for the same id (the first in manifest order wins a gap). A recorded value that fails the
+ * value rule is left out, as if it were never recorded.
+ */
+export function recordedVars(manifest: Manifest, id: string, targetName: string): VarValues {
+  const fromOthers: Record<string, string> = {};
+  for (const entry of manifest.entries) {
+    if (entry.id !== id || entry.target === targetName) continue;
+    for (const [name, value] of Object.entries(usableVars(entry.vars))) {
+      if (!Object.hasOwn(fromOthers, name)) fromOthers[name] = value;
+    }
+  }
+  const own = manifest.entries.find(e => e.id === id && e.target === targetName);
+  return { ...fromOthers, ...usableVars(own?.vars) };
 }
 
 /** The fragment `entry` recorded for `op`'s destination, as an op, if any. */

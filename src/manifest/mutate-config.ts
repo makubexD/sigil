@@ -43,6 +43,21 @@ export interface UpsertConfigEntryOptions {
    * catalog (no key recorded). Omit it entirely to leave an existing entry's record untouched.
    */
   catalog?: CatalogSource | undefined;
+  /**
+   * Install-variable values to record under the artifact's declared names. Omit it entirely to
+   * leave an existing entry's record untouched; an empty record writes no key.
+   */
+  vars?: Record<string, string> | undefined;
+}
+
+/**
+ * Stores `vars` on the entry when given, dropping the key for an empty record. An omitted
+ * `vars` leaves whatever the entry already holds.
+ */
+function applyVars(entry: ManifestEntry, vars: Record<string, string> | undefined): void {
+  if (vars === undefined) return;
+  if (Object.keys(vars).length === 0) delete entry.vars;
+  else entry.vars = vars;
 }
 
 /** Updates an existing config-kind manifest entry in place with fresh fragments + timestamp. */
@@ -52,6 +67,7 @@ function refreshExistingConfigEntry(
   options: UpsertConfigEntryOptions,
 ): void {
   applyCatalog(existing, options);
+  applyVars(existing, options.vars);
   existing.configFiles = configFiles;
   existing.sigilVersion = options.sigilVersion;
   existing.installedAt = options.now;
@@ -74,6 +90,7 @@ function buildNewConfigEntry(
     installedAt: options.now,
   };
   applyCatalog(entry, options);
+  applyVars(entry, options.vars);
   return entry;
 }
 

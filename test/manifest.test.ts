@@ -16,6 +16,7 @@ import {
   sha256,
   MANIFEST_VERSION,
   upsertConfigEntry,
+  recordedVars,
 } from '../dist-cli/manifest/index';
 import { applyMerge, canonicalize } from '../dist-cli/config-merge/index';
 import type { ConfigMergeOp } from '../dist-cli/types';
@@ -676,6 +677,86 @@ describe('L — Manifest config entries (manifest.ts)', () => {
     const { computeStatus: computeStatus2 } = require('../dist-cli/manifest/index');
     const results = computeStatus2(manifest, tmpDir, new Set(['shared/allow-dev-tools']));
     assert.equal(results[0].status, 'up-to-date', 'user key edit is not drift');
+  });
+});
+
+describe('L2 — Manifest install vars', () => {
+  let tmpDir: string;
+  beforeEach(() => {
+    tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-manifest-vars-'));
+  });
+  afterEach(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  function upsert(manifest: any, target: string, vars?: Record<string, string>): void {
+    upsertConfigEntry(manifest, {
+      id: 'shared/ado',
+      kind: 'mcp',
+      target,
+      ops: [{ file: '.mcp.json', fragment: { ado: { command: 'npx' } }, strategy: {} }],
+      dependentOf: [],
+      sigilVersion: VERSION,
+      now: '2026-01-01T00:00:00Z',
+      ...(vars === undefined ? {} : { vars }),
+    });
+  }
+
+  it('upsertConfigEntry records vars on a new entry', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    upsert(manifest, 'claude', { ADO_ORG: 'contoso' });
+    assert.deepEqual(manifest.entries[0].vars, { ADO_ORG: 'contoso' });
+  });
+
+  it('upsertConfigEntry writes no vars key without the option', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    upsert(manifest, 'claude');
+    assert.equal('vars' in manifest.entries[0], false);
+  });
+
+  it('upsertConfigEntry keeps an earlier vars record when the option is omitted', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    upsert(manifest, 'claude', { ADO_ORG: 'contoso' });
+    upsert(manifest, 'claude');
+    assert.deepEqual(manifest.entries[0].vars, { ADO_ORG: 'contoso' });
+  });
+
+  it('upsertConfigEntry replaces an earlier vars record with a new one', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    upsert(manifest, 'claude', { ADO_ORG: 'contoso' });
+    upsert(manifest, 'claude', { ADO_ORG: 'fabrikam' });
+    assert.deepEqual(manifest.entries[0].vars, { ADO_ORG: 'fabrikam' });
+  });
+
+  it('recordedVars prefers the own entry and fills a gap from another target', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    upsert(manifest, 'claude', { ADO_ORG: 'contoso' });
+    upsert(manifest, 'copilot', { ADO_ORG: 'fabrikam', REGION: 'westus' });
+    assert.deepEqual(recordedVars(manifest as any, 'shared/ado', 'claude'), {
+      ADO_ORG: 'contoso',
+      REGION: 'westus',
+    });
+  });
+
+  it('recordedVars leaves out a recorded value that fails the rule', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    upsert(manifest, 'claude', { ADO_ORG: '-x', REGION: 'westus' });
+    upsert(manifest, 'copilot', { ZONE: '-x' });
+    assert.deepEqual(recordedVars(manifest as any, 'shared/ado', 'claude'), { REGION: 'westus' });
+  });
+
+  it('recordedVars is empty when nothing is recorded', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    assert.deepEqual(recordedVars(manifest as any, 'shared/ado', 'claude'), {});
+    upsert(manifest, 'claude');
+    assert.deepEqual(recordedVars(manifest as any, 'shared/ado', 'claude'), {});
+  });
+
+  it('saveManifest then loadManifest round-trips vars', () => {
+    const manifest = { manifestVersion: MANIFEST_VERSION, entries: [] as any[] };
+    upsert(manifest, 'claude', { ADO_ORG: 'contoso' });
+    saveManifest(tmpDir, manifest as any);
+    assert.deepEqual(loadManifest(tmpDir).entries[0]?.vars, { ADO_ORG: 'contoso' });
   });
 });
 

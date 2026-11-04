@@ -177,11 +177,16 @@ export type ConfigKind = 'hook' | 'settings' | 'mcp';
  *   home       — os.homedir(). Used for Claude user/local MCP + user settings.
  *   copilot-home — $COPILOT_HOME, default ~/.copilot. Used for Copilot user MCP (mcp-config.json).
  *   codex-home — $CODEX_HOME, default ~/.codex. Used for Codex user hooks (hooks.json).
+ *   opencode-home — $XDG_CONFIG_HOME/opencode, default ~/.config/opencode. Used for OpenCode user
+ *                   config.
  *   vscode-user — VS Code user-profile directory (platform-specific). Copilot user MCP before it
  *                 moved to copilot-home; still resolved so recorded installs can be updated and
  *                 uninstalled.
  */
-export type ConfigRoot = 'project' | 'home' | 'copilot-home' | 'codex-home' | 'vscode-user';
+export type ConfigRoot = 'project' | HomeConfigRoot;
+
+/** The roots shared across all of the user's projects (`isHomeScopedRoot`). */
+type HomeConfigRoot = 'home' | 'copilot-home' | 'codex-home' | 'opencode-home' | 'vscode-user';
 
 /**
  * A config file a provider no longer writes, and the file that replaced it. `sigil update` moves a

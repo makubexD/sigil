@@ -30,6 +30,7 @@ import { OPENCODE_CAPABILITIES } from './capabilities';
 import { OPENCODE_LEXICON } from './lexicon';
 import { OPENCODE_EMIT_SPECS } from './spec';
 import { OPENCODE_AGGREGATE_DOCS } from './aggregate-docs';
+import { OPENCODE_SKILLS_DOC } from './doc-refs';
 import { OPENCODE_INIT_DIRS, OPENCODE_PROJECT_MARKERS, OPENCODE_VOCABULARY } from './metadata';
 
 export class OpenCodeTarget implements Target {
@@ -48,6 +49,19 @@ export class OpenCodeTarget implements Target {
   readonly outputContracts: ContractEntry[] = deriveContracts(OPENCODE_EMIT_SPECS);
   readonly lexicon: ProviderLexicon = OPENCODE_LEXICON;
   readonly aggregateDocs: readonly SourcedDocRef[] = OPENCODE_AGGREGATE_DOCS;
+
+  /**
+   * OpenCode also reads `.claude/skills/` next to the `.agents/skills/` it writes; one entry reaches
+   * it and which copy it shows on a name clash isn't fixed (OPENCODE_SKILLS_DOC).
+   */
+  readonly alsoLoads = [
+    {
+      kind: 'skill' as const,
+      targets: ['claude'],
+      doc: OPENCODE_SKILLS_DOC,
+      unfixedWinner: true,
+    },
+  ];
 
   /** Every skill, agent and shippable prompt (whole catalog co-installed) and AGENTS.md with repo-wide rules. */
   async compile(catalog: ResolvedCatalog, _options: CompileOptions): Promise<FileMap> {

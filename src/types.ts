@@ -528,12 +528,17 @@ export interface Target {
    * `readerWins` marks a reader whose own copy is used on a name clash: the other target's copy
    * of that artifact goes unused in the reader instead of loading twice (Cursor prefers
    * `.cursor/skills/` over `.claude/skills/` and `.agents/skills/`). The note then says so.
+   *
+   * `unfixedWinner` marks a reader where one entry reaches the tool, and which copy isn't fixed
+   * (OpenCode reads `.claude/skills` and `.agents/skills`). The note says so instead of
+   * "load twice".
    */
   readonly alsoLoads?: readonly {
     readonly kind: ArtifactKind;
     readonly targets: readonly string[];
     readonly doc: DocRef;
     readonly readerWins?: boolean;
+    readonly unfixedWinner?: boolean;
   }[];
 
   /**

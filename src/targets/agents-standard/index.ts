@@ -5,10 +5,10 @@
  * pipeline: emit specs, lexicon, capabilities and citations. It needs nothing outside this folder
  * except its `registerTarget()` line.
  *
- * Codex and Antigravity write the same `.agents/skills/` files, so a project uses one of the three
- * for skills (Target.sharesSkillFilesWith). Copilot also reads `.agents/skills/`, so installing the
- * same skills for both `copilot` and this target would show Copilot each skill twice; the install
- * hint says so.
+ * Codex, Antigravity and OpenCode write the same `.agents/skills/` files, so a project uses one of
+ * the four for skills (Target.sharesSkillFilesWith). Copilot also reads `.agents/skills/`, so
+ * installing the same skills for both `copilot` and this target would show Copilot each skill
+ * twice; the install hint says so.
  *
  * @module
  */
@@ -45,7 +45,7 @@ export class AgentsStandardTarget implements Target {
   readonly afterInstallHint =
     'tools that read the open standard pick up .agents/skills/ in their next session. Copilot reads it too: do not also install the same skills with --target copilot.';
 
-  readonly sharesSkillFilesWith = ['codex', 'antigravity'];
+  readonly sharesSkillFilesWith = ['codex', 'antigravity', 'opencode'];
   readonly capabilities: TargetCapabilities = AGENTS_STANDARD_CAPABILITIES;
   readonly initDirs: string[] = AGENTS_STANDARD_INIT_DIRS;
   readonly projectMarkers: string[] = AGENTS_STANDARD_PROJECT_MARKERS;

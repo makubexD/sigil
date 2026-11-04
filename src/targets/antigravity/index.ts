@@ -99,7 +99,7 @@ export class AntigravityTarget implements Target {
     'so export each of these before you start agy. Do not write a secret into the file instead: ' +
     '.agents/mcp_config.json is usually committed.';
 
-  readonly sharesSkillFilesWith = ['agents-standard', 'codex'];
+  readonly sharesSkillFilesWith = ['agents-standard', 'codex', 'opencode'];
   readonly capabilities: TargetCapabilities = ANTIGRAVITY_CAPABILITIES;
   readonly initDirs: string[] = ANTIGRAVITY_INIT_DIRS;
   readonly projectMarkers: string[] = ANTIGRAVITY_PROJECT_MARKERS;

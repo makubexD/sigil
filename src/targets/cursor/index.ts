@@ -88,7 +88,7 @@ export class CursorTarget implements Target {
     { kind: 'skill' as const, targets: ['claude'], doc: CURSOR_SKILLS_DOC, readerWins: true },
     {
       kind: 'skill' as const,
-      targets: ['agents-standard', 'codex', 'antigravity'],
+      targets: ['agents-standard', 'codex', 'antigravity', 'opencode'],
       doc: CURSOR_SKILLS_DOC,
       readerWins: true,
     },

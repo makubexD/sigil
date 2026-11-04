@@ -137,8 +137,7 @@ export async function scaffoldConfigOps(
   target: Target,
   id: string,
   resolved: ResolvedCatalog,
-  options: Parameters<NonNullable<Target['scaffoldConfig']>>[2],
-  vars: VarValues,
+  options: ConfigOpsOptions, // ScaffoldOptions plus `vars: VarValues`; the repo's max-params is 4
 ): Promise<ConfigMergeOp[]>;
 ```
 
@@ -295,7 +294,7 @@ Test: `npm run build && npm run build:test && node --test test-compiled/commands
 
 `src/commands/add/execute-config.ts`, `src/commands/add/render.ts`, `test/commands/add-vars.test.ts`.
 
-- `scaffoldAndApplyConfig` calls `scaffoldConfigOps(target, id, resolved, plan.scaffoldOpts, plan.vars)`, and `recordConfigEntry` passes only
+- `scaffoldAndApplyConfig` calls `scaffoldConfigOps(target, id, resolved, { ...plan.scaffoldOpts, vars: plan.vars })`, and `recordConfigEntry` passes only
   the artifact's declared names as `vars`.
 - `printConfigMergePreview` uses it too. Its `.catch` stays.
 

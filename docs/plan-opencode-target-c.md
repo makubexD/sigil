@@ -40,7 +40,8 @@ Test: `npm run build && npm run build:test && node --test test-compiled/targets/
 
 - `envKey?: string`: `env` is written under this key, in the same position.
 - `commandForm?: 'array'`: `command` becomes `[command, ...args]`, in `command`'s position, and `args` is removed.
-- Both apply in `renderMcpServer` after `applyTypePolicy` and before `expandEnvTokens`, through one small helper.
+- Both apply in `renderMcpServer` through one small helper, after `applyTypePolicy` and before both the `'inherited'`
+  return and `expandEnvTokens`. `commandForm` acts only on a server with `command`.
   `skipReason` keeps checking the authored field names, so `interpolatedFields` keeps its meaning.
 
 Dialect in every case: `envKey: 'environment'`, `commandForm: 'array'`, `stdioType: 'local'`, an env syntax writing
@@ -56,16 +57,17 @@ Dialect in every case: `envKey: 'environment'`, `commandForm: 'array'`, `stdioTy
 | 6    | Dialect without `commandForm`, `{ command: 'x', args: ['a'] }` | `{ type: 'local', command: 'x', args: ['a'] }`                     |
 | 7    | Dialect without `envKey`, `{ command: 'x', env: { A: 'b' } }`  | `env` stays under `env`                                            |
 | 8    | `interpolatedFields` without `args`, `args: ['{sigil:env:D}']` | `{ skip }` naming `args`, the authored name                        |
+| 9    | `{ url: 'u' }`                                                 | `{ url: 'u' }`, with no `command` key                              |
 
 Test: same command as step 1.
 
 ## Step 3: `bodyTransform` receives the artifact `[worker:medium]`
 
-`src/targets/spec-types.ts`, `src/targets/emit.ts`, `test/targets/emit-files.test.ts`.
+`src/targets/spec-types.ts`, `src/targets/emit.ts`, `test/targets/emit-files.test.ts` (through `renderArtifact`).
 
 The type becomes `(body: string, artifact: ResolvedArtifact) => string`, and `emit.ts:103` passes the artifact. Update the
-doc comment: a position needs the artifact's `args:`. Existing transforms take one parameter and stay unchanged; check that
-none has a second optional parameter that would now receive the artifact.
+doc comment: a position needs the artifact's `args:`. `toClaudePlaceholders`, `toCopilotPlaceholders` and the workflow's `trim` take one
+parameter, so they stay unchanged.
 
 | Case | Do                                                       | Expected                          |
 | ---- | -------------------------------------------------------- | --------------------------------- |
@@ -77,15 +79,15 @@ Test: `npx tsc --noEmit -p tsconfig.build.json`, then the same command for `test
 
 ## Step 4: `opencode-home` config root `[worker:medium]`
 
-`src/types.ts`, `src/config-utils.ts`, `docs/reference/config-kinds.md`, and a new `test/config-root.test.ts`.
+`src/types.ts`, `src/config-utils.ts`, `docs/reference/config-kinds.md`, `test/commands/home-backup.test.ts`.
 
 - Add `opencode-home` to `ConfigRoot`, with its line in the doc comment at `src/types.ts:179`.
 - `resolveOpenCodeHome()` beside `resolveCodexHome()`: `path.join(path.resolve($XDG_CONFIG_HOME), 'opencode')`, else
   `~/.config/opencode`. An empty value counts as unset, as for its siblings.
 - A `case` in `resolveConfigRoot`, a line in its doc comment, and an entry in `isHomeScopedRoot`.
-- `config-kinds.md`: the same row or mention `codex-home` has.
+- `config-kinds.md:183`: add it to the list of home-scoped roots.
 
-Each case sets and restores the variable itself.
+A new `describe('opencode-home root')` beside `codex-home root`, restoring the variable the same way.
 
 | Case | `XDG_CONFIG_HOME` | Call                                      | Expected                              |
 | ---- | ----------------- | ----------------------------------------- | ------------------------------------- |
@@ -95,19 +97,23 @@ Each case sets and restores the variable itself.
 | 4    | any               | `isHomeScopedRoot('opencode-home')`       | `true`                                |
 | 5    | any               | `resolveConfigRoot('project', dir)`       | `dir`, proving no fallthrough changed |
 
-Test: `npx tsc --noEmit -p tsconfig.build.json`, then the same command for `test-compiled/config-root.test.js`.
+Test: `npx tsc --noEmit -p tsconfig.build.json`, then the same command for `test-compiled/commands/home-backup.test.js`.
 
 ## Step 5: Prove no output changed `[inline: verification, not a code change]`
 
-Build `master` in a scratchpad worktree, symlinking `node_modules`, and this branch, with `npm run build` and
-`npm run catalog:build` in each. Remove the worktree after.
+Build `master` in a scratchpad worktree, symlinking `node_modules`, and this branch. In each, run `npm run build`, then
+`node dist-cli/cli.js build --target all --out-dir <scratch>/<name>`, so every target is compared, not only `claude` and
+`copilot`. Remove the worktree after. `registry.json` holds a build timestamp, so it's excluded.
 
 Test, each printing nothing:
 
 ```bash
-diff -r <worktree>/dist dist
+diff -r --exclude=registry.json <scratch>/base <scratch>/branch
 git status --short schema docs/reference/capabilities.md docs/reference/artifacts.md
 ```
+
+Check that both folders hold every registered target before trusting an empty diff. MCP entries for `add` aren't in a
+build, so the per-target MCP tests in the finish's full suite cover those.
 
 A difference here is a failed phase, not a thing to regenerate.
 
@@ -119,5 +125,5 @@ A difference here is a failed phase, not a thing to regenerate.
 Test: this prints nothing.
 
 ```bash
-grep -rln 'plan-opencode-target-[ab]\.md' docs README.md CHANGELOG.md
+grep -rln --exclude=plan-opencode-target-c.md 'plan-opencode-target-[ab]\.md' docs README.md CHANGELOG.md
 ```

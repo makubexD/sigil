@@ -1,6 +1,7 @@
 # OpenCode target (2026-11)
 
-Status: **evaluation in progress**, [plan](../plan-opencode-eval.md) step 1 done (docs pass). No decision yet.
+Status: **evaluation in progress**, [plan](../plan-opencode-eval.md) steps 1–2 done (docs pass, reuse map). No decision
+yet.
 
 ## How the docs pass ran
 
@@ -208,7 +209,7 @@ Splitting honors `"..."` and `'...'`.
 **Against `src/targets/prompt-args.ts`.** sigil has named `{{name}}` and a matching `args:` list. Claude resolves `$name`
 through `arguments:` and Copilot uses `${input:name}`. OpenCode has no named form, so a new helper would write
 `{{name}}` as `$<position in args>`. That's lossless for order, and the argument name survives only in the description.
-`{{name}}` with no `args:` entry has no position, so it must be refused or skipped. Both behaviors above favor sigil: a
+`{{name}}` with no `args:` entry has no position; the [reuse map](#reuse-map) settles that case. Both behaviors above favor sigil: a
 last free-text argument works unquoted.
 
 **Shell injection.** `` !`cmd` `` and `@file` in a template run or expand on OpenCode. A catalog body that happens to
@@ -331,3 +332,108 @@ add`, Git specs ([V2 plugins](https://opencode.ai/v2/docs/plugins/)).
 | U5  | Does a project `CLAUDE.md` load when there is no `AGENTS.md`, and does the env var turn it off?                   | P1, conflict (D1)       |
 | U6  | Does an agent's `"*": deny` allow-list hold under `opencode run`, and does `.opencode/opencode.json` carry `mcp`? | P4, P6                  |
 | U7  | Does a free model answer from a home with no credentials at all? This is step 3's gate.                           | D0                      |
+| U8  | Does OpenCode offer Claude's user-only prompt skills to the model? It ignores `disable-model-invocation`.         | P7, source reading only |
+| U9  | Does an object-form `read` keep the `.env` ask under `"*": deny`?                                                 | P4, conflict (D3)       |
+
+## Reuse map
+
+Step 2, 2026-11-03. Each row names the sigil piece an `opencode` target would use for one Kind table row, with what it
+still lacks. Every path is written in OpenCode 1 shape, the shape V2 says it still reads.
+
+| Row           | sigil piece                                                                                                                                                                                                                                                                                                                                                                                                                                       | Gap                                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| skill         | A skill `KindEmitSpec` writing `.agents/skills/<name>/SKILL.md`, the same file as `AGENTS_STANDARD_SKILL_SPEC` (`src/targets/agents-standard/spec/skill.ts:30`), with `AGENT_SKILLS_LIMITS` (`src/targets/agent-skills-limits.ts:15`). OpenCode documents the same 64 and 1,024 limits. `sharesSkillFilesWith` (`src/types.ts:538`) gains a fourth member, and `add` already refuses a second owner (`src/commands/add/plan.ts:120`)              | Don't write `.opencode/skills/`: a copy of one name in two folders is the completion-order hazard in D2. `allowedTools` isn't mapped, same as Codex, because OpenCode ignores it                                                                                                                                                                                                      |
+| agent         | A spec writing `.opencode/agents/<name>.md` with a `names` `ToolDialect` (`src/targets/tool-dialect.ts:32`) built from the D3 table. Every neutral tool has a key, so 39 of 39 catalog agents render `exact`. The `tools` `FieldMapping` writes `to: 'permission'` and its `serialize` shapes the rule map, as Antigravity's writes a YAML list (`src/targets/antigravity/spec/agent.ts:73`). `mode: subagent` is a constant `alwaysEmit` mapping | `disallowedTools` stays unmapped: no catalog agent authors one, and `restrictionProblems` then fails closed (`src/targets/tool-restriction.ts:54`). `model` stays unmapped because a tier has no provider-free id, with Cursor as precedent (`src/targets/cursor/spec/agent.ts:9`). One catalog agent sets it and inherits the caller's model. No `whenToUse`-style field             |
+| prompt        | A spec writing `.opencode/commands/<slug>.md`, with the slug rule Claude's scaffold uses (`src/targets/claude-code/spec/prompt.ts:47`) and `substitutePlaceholders` (`src/targets/prompt-args.ts:31`) for a new positional helper                                                                                                                                                                                                                 | **`bodyTransform` gets only the body** (`src/targets/spec-types.ts:101`, `src/targets/emit.ts:103`), and a position needs `args:`. It has to take the artifact too; existing callers are unaffected. D4's unknown `{{name}}` case stays as written: refusing it would lose `author-artifact`, whose one hit is a doc example (`catalog/shared/prompts/author-artifact.prompt.md:120`) |
+| rule          | `via` inline, as Codex and `agents-standard` declare it (`src/targets/agents-standard/capabilities.ts:18`), plus `renderRulesDocument` (`src/targets/shared/repo-wide-rules.ts:32`) for the root `AGENTS.md` on a full build (`src/targets/codex/index.ts:138`; the Copilot form is `src/targets/copilot/build-helpers.ts:19`). `isRepoWideRule` (`src/targets/shared/repo-wide-rules.ts:23`) keeps a scoped rule out                             | None for `via`. `instructions` could carry rule files, but they'd be repo-wide (D1), so a scoped rule would widen. No fifth `appliesTo` emitter                                                                                                                                                                                                                                       |
+| hook          | `HookInputDialect` (`src/targets/hook-input.ts:52`) fits D5's fields without change: the plugin passes `{ tool, args }`, with `pathFields: ['filePath']`, `commandField: 'command'` and `patch: { tools: ['apply_patch'], field: 'patchText' }`. `composeHookScript` (`:188`) builds the source                                                                                                                                                   | **No delivery path.** `hook` is a config kind (`src/kinds.ts:228`), so `add` sends it to a `ConfigMergeOp`. Merging a fragment can't write a JS file. V2 also won't run a V1 plugin, so a guard would look active and block nothing. See the neutrality table                                                                                                                         |
+| mcp           | An `McpDialect` value (`src/targets/mcp-dialect.ts:33`): `serversKey: 'mcp'`, an `EnvSyntax` (`src/targets/env-reference.ts:22`) writing `{env:NAME}`, and every field in `interpolatedFields`. `mcpServerOp` (`:164`) and a `ConfigKindTable` entry (`src/targets/config-kind-table.ts:64`) do the rest                                                                                                                                          | **The dialect needs data fields.** `stdioType` is only `'stdio'` (`:46`) and `remoteType` only `keep` or `drop` (`:48`), and nothing renames `env` or joins `command` and `args`. Add `stdioType: 'local'`, a `remoteType` that sets a value, `envKey` and `commandForm: 'array'`, read in `applyTypePolicy` (`:114`). A renderer hook would be a builder by another name             |
+| settings      | None. The catalog's `settings` is Claude's vocabulary (`ownedBy`, `src/kinds.ts:115`), so its `Bash(...)` rules can't merge into `permission`                                                                                                                                                                                                                                                                                                     | `none`, as on Codex and Copilot                                                                                                                                                                                                                                                                                                                                                       |
+| config writes | The JSON merge. `parseConfig` (`src/config-merge/file-format.ts:29`) is `JSON.parse` for every non-TOML path, and `renderConfig` (`:38`) calls `serialize()` (`src/config-merge/primitives.ts:134`). **It doesn't handle `.jsonc`:** a comment fails the parse, and comments couldn't survive a write. `holdsUserComments` (`:77`) is TOML-only                                                                                                   | Destinations are plain `.json` only: `.opencode/opencode.json` and user `opencode.json` (D7). OpenCode parses `.json` as JSONC too (`config/config.ts:240`), so a hand-commented `.json` is refused by `add` as "not valid JSON" (`src/commands/add/read-config.ts:23`). No data is lost, but the hint needs a target-aware word                                                      |
+| user root     | `ConfigRoot` (`src/types.ts:184`) and `resolveConfigRoot` (`src/config-utils.ts:66`), with `resolveCodexHome` (`:32`) as the model                                                                                                                                                                                                                                                                                                                | `home` is wrong when `XDG_CONFIG_HOME` is set, so a new `opencode-home` root honors it, also listed in `isHomeScopedRoot` (`:86`) so backups run                                                                                                                                                                                                                                      |
+| `$schema`     | `classifyConfigDrift` (`src/config-merge/drift.ts:115`) compares only the keys in sigil's fragment                                                                                                                                                                                                                                                                                                                                                | None. OpenCode inserting `$schema` (D0) isn't drift                                                                                                                                                                                                                                                                                                                                   |
+
+The D4 injection question is answered: neither catalog prompt holds `` !`cmd` ``, `@file`, `$1` or `$ARGUMENTS`. A
+future one is caught by `bodyForbids` (`src/targets/spec-types.ts:130`) on the prompt spec. Skills aren't templates, so
+the check doesn't apply to them.
+
+### Capability rows (draft)
+
+The `plugin` channel stays undefined (`src/targets/capability-types.ts:55`): D8 found a code channel, not an artifact
+channel.
+
+| Kind     | Scaffold                                                  |
+| -------- | --------------------------------------------------------- |
+| skill    | native (`.agents/skills/`, shared)                        |
+| agent    | native                                                    |
+| prompt   | native                                                    |
+| rule     | via (inline; repo-wide rules in `AGENTS.md` on a build)   |
+| workflow | none (no workflow file, and the catalog holds none)       |
+| hook     | none (V1-only plugin, and no whole-file path for a hook)  |
+| mcp      | native                                                    |
+| settings | none (this kind's schema is Claude Code's own vocabulary) |
+| template | none (`TEMPLATE_NOT_EMITTED`)                             |
+
+### Neutrality table
+
+Every OpenCode difference from steps 1 and 2, and the layer that absorbs it.
+
+| Difference                                                                          | Layer                                                                |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Paths under `.opencode/`, `.agents/skills/` and `~/.config/opencode/`               | `KindEmitSpec.outputPath`; `ConfigKindTable` destinations            |
+| `XDG_CONFIG_HOME` for the user config                                               | New `opencode-home` `ConfigRoot`                                     |
+| Agent `mode`, `permission` and the file name as the agent name                      | `KindEmitSpec` field mappings                                        |
+| Unknown agent keys reaching the model API                                           | `KindEmitSpec`: only mapped keys are written; `forbiddenKeys` guards |
+| Permission keys for neutral tools                                                   | `ToolDialect` (`names`)                                              |
+| `read: allow` dropping the `.env` default (U9)                                      | Agent spec's `serialize`: the object form                            |
+| No provider-free model id                                                           | Agent spec leaves `model` unmapped                                   |
+| Positional `$1` from named `{{name}}`                                               | Prompt `bodyTransform`, given the artifact                           |
+| `` !`cmd` `` and `@file` in command templates                                       | `bodyForbids`                                                        |
+| Skill folder shared with Codex, Antigravity and `agents-standard`                   | `Target.sharesSkillFilesWith`                                        |
+| `AGENTS.md`, `.agents/skills/`, skill arguments                                     | `ProviderLexicon`                                                    |
+| Repo-wide rules only, no `appliesTo`                                                | `capabilities.ts` (`via`), `isRepoWideRule`                          |
+| `mcp` key, `{env:NAME}`, `type: local` and `remote`, `command` array, `environment` | `McpDialect` (with the new fields) and `EnvSyntax`                   |
+| No env default, empty on a missing variable, no JSON escaping                       | Setup docs                                                           |
+| `.jsonc` config files                                                               | `ConfigKindTable` destinations (`.json` only)                        |
+| `.opencode/` gains `.gitignore`, `package.json` and `node_modules` at first run     | Setup docs                                                           |
+| `.claude/skills/` also read, so Claude and OpenCode bodies can collide (U4, U8)     | Setup docs (`OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`); P7 measures it   |
+| `CLAUDE.md` fallback on V1, none on V2                                              | Setup docs; the `AGENTS.md` carrier is the same on both              |
+| Settings keys                                                                       | `capabilities.ts` (`none`)                                           |
+| No artifact plugin channel                                                          | `capabilities.ts` (`plugin` undefined)                               |
+| Agent files, commands and MCP on V1 and V2                                          | V1 shape, which V2 translates; U1 confirms                           |
+| **Hooks as generated code, on a V1-only API**                                       | **None.** Shipped as `none`; see below                               |
+
+No row changes `catalog/` or the zod schema. The shared code changes are three, all in the target layer's own types:
+four `McpDialect` fields, the `bodyTransform` argument, and one `ConfigRoot`.
+
+**Needed concept, only if hooks ever ship: a config kind that writes a whole sigil-owned file.** This isn't a catalog
+concept, because hooks are already neutral and D5's fields fit. It is a pipeline one. `add`, `update`, `uninstall` and
+drift all assume a config kind is a fragment in a shared file, so a generated plugin needs a new op kind through
+`src/config-merge/` and the manifest, plus a test per path. It would also need a V2 plugin build and an answer to U2, and
+even then a guard installed for one line fails open on the other. The catalog has three hooks, so that cost isn't
+justified for a first version. `hook: none` needs no concept and fails visibly: `add` skips with the reason.
+
+### Reuse first: `agents-standard` or a small target?
+
+`agents-standard` already reaches OpenCode on paper. It writes `.agents/skills/` (D2), with each skill's rules inlined,
+and a full build adds a root `AGENTS.md` (D1). `sigil add` writes no `AGENTS.md`, so a scaffold install gets repo-wide
+rules only inside skills. P7 has to prove it live.
+
+| Catalog (2026-11-03) | Count | `agents-standard` | Small `opencode` target |
+| -------------------- | ----- | ----------------- | ----------------------- |
+| skills               | 46    | yes               | yes (same files)        |
+| rules                | 64    | inlined           | inlined                 |
+| agents               | 39    | no                | yes, restriction exact  |
+| prompts              | 2     | no                | yes                     |
+| MCP servers          | 4     | no                | yes                     |
+| hooks                | 3     | no                | no                      |
+| settings             | 6     | no                | no                      |
+
+The target adds no skill or rule reach, so its whole value is 39 agents, 2 prompts and 4 MCP servers. Nothing else
+carries those: `.claude/agents/` isn't in OpenCode's paths, and an MCP entry needs OpenCode's own shape. The agents are
+the catalog's reviewers and auditors, and all 39 stay exact, so that's real reach rather than a thin layer.
+
+**Answer for step 4: the small target is worth more than a doc on technical value, if P4 and P6 pass.** It is mostly
+data in one `src/targets/opencode/` folder plus the three shared changes, and the existing conformance rules cover it.
+This isn't the decision. Against it stand owner priority 4 of 4, a second product line, and live probes per catalog
+change. If step 4 says no-go, the doc route stays honest as long as it says what it leaves out.

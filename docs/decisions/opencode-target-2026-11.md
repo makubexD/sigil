@@ -564,6 +564,30 @@ diff, and the rest as the audience. Most real diffs hold both, so `explain-diff`
 prompt with two or more arguments, and `add` says why. This is the arguments' shape, not the prompt's: `{{diff}}` could reach
 OpenCode whole only as the last argument, and reordering `args:` to fit would change the catalog for one target.
 
+### Sigil output run
+
+2026-11-04, `opencode-ai` 1.19.4 and `@opencode/cli` 2.2.5, Linux, D0's isolation, with `sigil`'s own output and no hand-written
+files except case 5's. One repo held `sigil add --target opencode` of `shared/feature`, `shared/code-reviewer` and
+`shared/author-artifact`. The other held a full `sigil build --target opencode`: 45 skills, 39 agents, 1 command. `add` also
+skipped `shared/explain-diff` with the quoting reason.
+
+| Case | Check                                                  | Observed                                                                                                                                                                                                                              |
+| ---- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | V1 `debug skill`, V2 `/api/skill`                      | Both repos, every skill listed: 45 of 45 on the build. Extras are built-ins: V1 `customize-opencode`, V2 `Browser`, `OpenCode`, `Report`                                                                                              |
+| 2    | V1 `agent list` and `/agent`, V2 `/api/agent`          | 39 of 39 on the build, all `subagent`. 41 subagents in all, with the two built-ins (`explore`, `general`). The `add` repo: 3, the same way                                                                                            |
+| 3    | V1 `debug agent code-reviewer`, V2 `/api/agent`        | Same order on both, after the defaults: `*` deny, then `read` `*` allow, `*.env` ask, `*.env.*` ask, `*.env.example` allow, then `list`, `grep`, `glob`, `bash` allow. All 39 agents carry the deny rule                              |
+| 4    | V1 `/command`, V2 `/api/command`                       | `shared-author-artifact` under its slug, in both repos                                                                                                                                                                                |
+| 5    | Command route, one word, a prompt with one `args` item | `ECHO[tangerine]` on both, from `ECHO[{{word}}]`. Neither catalog prompt fits (`author-artifact` has no `args`, `explain-diff` doesn't ship), so this is a fixture rendered through `OPENCODE_PROMPT_SPEC`                            |
+| 6    | V1, the agent asked through `task` to read `.env`      | **Not answered.** The one try hit a 150-second timeout with no output and stdin closed, so nothing was read and no value appeared. This proves nothing about refusal. V2's reply to case 5 was `Free usage limit reached`, status 429 |
+
+**What still rests on hand-written fixtures.** P4's `.env` result, because case 6 had no model reply: the rules above are
+loaded from sigil's output, but nothing has been seen enforcing them. Also P2's picking between two copies, and P3's second
+argument. Model-backed checks on V2 stay in Phase F.
+
+**For the next run.** V1 and V2 take different command bodies: `{"command", "arguments"}` on V1, `{"name", "text"}` on V2. On V2
+one `/api/skill` read 4 seconds after creating a session came back empty, and a later run polling each second filled in 2. The
+cause wasn't isolated, so poll.
+
 ### What the probes change
 
 - **U3 to U9 are answered.** U1 and U2 stayed open here: these probes didn't run on `@opencode/cli`.

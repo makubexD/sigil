@@ -8,13 +8,12 @@
  *
  * @module
  */
-import { canonicalize } from './config-merge';
+import { checkConfigEntry } from './freshness-config';
 import { isConfigKind } from './kinds';
-import { sameDestination, sameFile, sha256 } from './manifest';
+import { sha256 } from './manifest';
 import { computeClosure } from './select/closure';
-import { CONFIG_SCOPES } from './types';
-import type { Manifest, ManifestConfigMerge, ManifestEntry } from './manifest/types';
-import type { ConfigMergeOp, ResolvedCatalog, RetiredConfigDestination, Target } from './types';
+import type { Manifest, ManifestEntry } from './manifest/types';
+import type { ResolvedCatalog, RetiredConfigDestination, Target } from './types';
 
 /** A dependency to install, and the installed artifacts that use it. */
 export interface MissingDependency {
@@ -64,40 +63,6 @@ export function renderFresh(id: string, ctx: FreshRenderCtx): Promise<Record<str
   });
 }
 
-/**
- * The catalog's current merge ops for a config artifact, across every scope. The manifest records
- * a fragment's destination (file + root), not the scope that chose it, so update scaffolds all
- * scopes and matches each recorded fragment to its destination's op.
- */
-export async function catalogConfigOps(
-  id: string,
-  catalog: { target: Target; resolved: ResolvedCatalog },
-  projectDir: string,
-): Promise<ConfigMergeOp[]> {
-  const { target, resolved } = catalog;
-  if (!target.scaffoldConfig) return [];
-  const perScope = await Promise.all(
-    CONFIG_SCOPES.map(scope =>
-      target.scaffoldConfig!(id, resolved, { projectDir, scope })
-        // A scope this target can't scaffold has no fresh op; its recorded fragment is restored.
-        .catch((): ConfigMergeOp[] => []),
-    ),
-  );
-  return perScope.flat();
-}
-
-/** The catalog's current op for `cf`'s destination, when it differs from what was recorded. */
-export function changedCatalogOp(
-  cf: ManifestConfigMerge,
-  freshOps: readonly ConfigMergeOp[],
-): ConfigMergeOp | undefined {
-  const fresh = freshOps.find(op => sameDestination(cf, op));
-  if (!fresh) return undefined;
-  const same = (op: { fragment: Record<string, unknown>; strategy: Record<string, unknown> }) =>
-    canonicalize(op.fragment) + canonicalize(op.strategy);
-  return same(fresh) === same(cf) ? undefined : fresh;
-}
-
 /** True when writing `fresh` would change or add a file, or retire one `update` would delete. */
 function wholeFileChanged(entry: ManifestEntry, fresh: Record<string, string>): boolean {
   const recorded = new Map(entry.files.map(f => [f.path, f.sha256]));
@@ -106,24 +71,6 @@ function wholeFileChanged(entry: ManifestEntry, fresh: Record<string, string>): 
 }
 
 type EntryCheck = { stale: boolean; unmovable: string[] } | { error: string };
-
-/** Whether a config entry's recorded fragments changed, and which retired files have no replacement. */
-async function checkConfigEntry(
-  entry: ManifestEntry,
-  ctx: FreshRenderCtx,
-  retired: readonly RetiredConfigDestination[],
-): Promise<{ stale: boolean; unmovable: string[] }> {
-  const ops = await catalogConfigOps(entry.id, ctx, ctx.projectDir);
-  const configFiles = entry.configFiles ?? [];
-  const stale = configFiles.some(cf => changedCatalogOp(cf, ops) !== undefined);
-  const unmovable = configFiles
-    .filter(cf => {
-      const move = retired.find(r => sameFile(cf, r.from));
-      return move !== undefined && !ops.some(op => sameFile(op, move.to));
-    })
-    .map(cf => cf.file);
-  return { stale, unmovable };
-}
 
 /**
  * Whether `update` would rewrite `entry` from the catalog, and which of its retired config files

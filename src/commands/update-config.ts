@@ -11,7 +11,7 @@ import { sameDestination } from '../manifest';
 import type { ManifestEntry, ManifestConfigMerge } from '../manifest/types';
 import type { ConfigMergeOp } from '../types';
 import type { ConfigUpdateOptions, UpdateOptions } from './update';
-import { changedCatalogOp } from '../freshness';
+import { changedCatalogOp } from '../freshness-config';
 import { applyCatalogChange } from './update-config-catalog';
 import {
   readExistingOrWarn,

@@ -25,6 +25,7 @@ import type { UpdateGroup } from './update-groups';
 import { warnMcpEnvCaveats } from './add/execute-config';
 import type { WrittenConfig } from './add/execute-config';
 import type { Manifest } from '../manifest/types';
+import type { VarValues } from '../mcp-vars';
 import type { Target } from '../types';
 import type { SigilOpsAt } from './update-config-io';
 
@@ -47,6 +48,8 @@ export interface UpdateOptions {
    * section lists only related artifacts that are installed alongside.
    */
   installedIds?: ReadonlySet<string> | undefined;
+  /** Install-variable values the caller supplies; they win over the ones the manifest recorded. */
+  vars?: VarValues | undefined;
 }
 
 /** `UpdateOptions` plus the manifest-derived lookup the config writers use for the home backup. */

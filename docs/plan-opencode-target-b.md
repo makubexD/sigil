@@ -1,7 +1,8 @@
 # Plan: OpenCode target, Phase B (V2 probe)
 
-Part of the [roadmap](plan-opencode-target.md). A spike with no `src/` change: it runs the V1-shaped files on OpenCode 2
-and ends in a written go or no-go. U1 is the gate. U2 is recorded only. The questions and the V1 results to compare with
+Part of the [roadmap](plan-opencode-target.md). A spike with no `src/` change: it runs the V1-shaped files on OpenCode 2.
+On 2026-11-03 the free quota ran out, so the owner split it: this phase ends with what the loader proves, and everything
+needing a model reply moves to the roadmap's [Phase F](plan-opencode-target.md#phase-f-v2-model-backed-checks), last. The questions and the V1 results to compare with
 are in the [evaluation](decisions/opencode-target-2026-11.md#open-for-later-steps).
 
 Rules for every run:
@@ -76,34 +77,17 @@ Test: every row has a result. **U1 passes** only if cases 3, 4, 7, 8, 9, 10 and 
 gate and what the target adds. Any other row, skills included, is a limit to carry into Phase D or the setup page, not a
 failure.
 
-## Step 3: A V1 plugin on V2 (U2) `[inline: probes OpenCode's own loader and model behavior]`
+## Step 3: Record the loader result `[inline: decision text and user-facing copy]`
 
-Recorded only; this doesn't gate the target. Reuse P5's plugin from the D5 shape: `.opencode/plugins/sigil-hooks.js`
-throwing on a `.env` write through `tool.execute.before`.
+This records a partial result, not a verdict: U1 and U2 stay open until Phase F. Steps 1 and 2 count as done with their
+loader rows; their other rows are listed in Phase F.
 
-| Case | Do                                                  | Record                                                                                                                                      |
-| ---- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0    | Control, no plugin: ask the model to write `.env`   | Whether V2 allows it. If it doesn't, case 1 needs another target file, such as `blocked.txt`, with the plugin's path check changed to match |
-| 1    | Ask the model to write `.env` with the plugin there | Skip, warn or fail, the exact message, and whether a file appeared                                                                          |
-| 2    | Ask it to write `ok.txt`                            | Whether the run still works around the plugin                                                                                               |
-| 3    | Check the isolated `.opencode/` afterwards          | Any dependency install, as in D0                                                                                                            |
-
-Test: all four recorded. If the `.env` write goes through with no message, say so plainly in the ADR: that is the silent
-guard failure the decision named as the reason for `hook: none`.
-
-## Step 4: Record the result `[inline: decision text and user-facing copy]`
-
-This step decides. The go or no-go follows step 2's U1 rule. A no-go needs no further work to count as done.
-
-- `docs/decisions/opencode-target-2026-11.md`: a `### V2 run` section under Probe log with the version, model, a results
-  table in the existing form, and the differences from V1. Answer U1 and U2 in "Open for later steps", and fix any D0 to
-  D8 V2 note the run disproves. On a no-go, revise Decision and Status: the work ends at Phase A. On a go, add a line
-  that U1 passed; the rest of Decision stands unless a result moved it.
-- `docs/plan-opencode-target.md`: mark Phase B done with its date and result, and record any change a difference forces
-  on Phase C or D (for example the `.env` rule, or `explain-diff`). On a no-go, mark C to E as cancelled.
-- `docs/setup/opencode.md`: replace "Not tested on OpenCode 2" with what the run showed, and correct anything else on the
-  page that V2 disproves. Where the lines differ, such as the `CLAUDE.md` fallback, say which line each fact belongs to.
-- `CHANGELOG.md`: under `## [Unreleased]`, a `### Documentation` entry for the page's change.
+- `docs/decisions/opencode-target-2026-11.md`: a `### V2 run` section under Probe log with the version, how to run V2, a
+  results table and the differences from V1. Update U1 and U2 in "Open for later steps", Status and Decision: the owner
+  moved the gate on 2026-11-03, so code no longer waits on U1, and Phase F closes it.
+- `docs/plan-opencode-target.md`: mark Phase B done with its date, add Phase F, and change the gates of C.
+- `docs/setup/opencode.md`: replace "Not tested on OpenCode 2" with what the run showed and what it didn't.
+- `CHANGELOG.md`: under `## [Unreleased]`, extend the setup page's entry.
 
 Test:
 
@@ -153,4 +137,4 @@ Results so far:
 Neither `.opencode/opencode.json` nor the repo changed: no `$schema` insert and no `.gitignore`. V2 can see nothing of the
 owner's: `debug paths` stays in the scratch `HOME`, and `find -newer` over the owner's directories printed nothing.
 
-Left: step 1 case 4, step 2 cases 1 (picked), 7 to 11 and 14, then steps 3 and 4.
+Left for Phase F: step 1 case 4, step 2 cases 1 (picked), 7 to 11 and 14, and U2.

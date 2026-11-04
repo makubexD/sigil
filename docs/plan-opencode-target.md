@@ -22,13 +22,14 @@ target's value is 39 agents, 2 prompts and 4 MCP servers. Scope is the scaffold 
 `workflow` stay `none`, and the `plugin` channel stays undefined. No phase changes `catalog/` or the zod schema, and no
 new neutral concept is needed.
 
-| Phase | What                                       | Gate           | Probes that cover it |
-| ----- | ------------------------------------------ | -------------- | -------------------- |
-| A     | Setup note for the free route              | None           | P1, P2, P7           |
-| B     | Probe `@opencode/cli`: U1 and U2           | Spike go/no-go | New                  |
-| C     | Shared changes in the target layer         | B says go      | None, unit tests     |
-| D     | The target: skills, rules, agents, prompts | C merged       | P2, P3, P4           |
-| E     | MCP, user scope and the re-run script      | D merged       | P6                   |
+| Phase | What                                       | Gate       | Probes that cover it |
+| ----- | ------------------------------------------ | ---------- | -------------------- |
+| A     | Setup note for the free route              | None       | P1, P2, P7           |
+| B     | Probe `@opencode/cli`, loader only         | None       | New                  |
+| C     | Shared changes in the target layer         | B merged   | None, unit tests     |
+| D     | The target: skills, rules, agents, prompts | C merged   | P2, P3, P4           |
+| E     | MCP, user scope and the re-run script      | D merged   | P6                   |
+| F     | V2 model-backed checks: U1 and U2          | Free quota | P4, plugin           |
 
 ## Phase A: setup note
 
@@ -41,9 +42,12 @@ when a Claude install shares the repo: colliding skills and user-only prompts of
 
 ## Phase B: V2 probe
 
-A spike. Install `@opencode/cli` beside V1 without touching the global install, in the same isolated home, and repeat P2,
-P3, P4 and P6 in V1 shape. U1 is the gate: if agents, commands or MCP don't load, the ADR's decision is revised and the
-work ends at Phase A. U2 is recorded only, because it decides whether hooks can ever ship and doesn't gate the target.
+Done on 2026-11-03, loader only: the [V2 run](decisions/opencode-target-2026-11.md#v2-run). OpenCode 2.2.5 loads V1-shaped
+skills, commands, agents and MCP, and substitutes arguments as V1 does. Every free model returned `Free usage limit
+reached`, so nothing that needs a model reply ran.
+
+**Owner's decision, 2026-11-03: the quota isn't a blocker.** C to E go ahead on this result, and U1 and U2 close in Phase F.
+The risk accepted: if V2 doesn't enforce agent permissions, the code still stands for V1 and the setup docs narrow to it.
 
 ## Phase C: shared changes
 
@@ -61,11 +65,12 @@ step plan decides from the reuse map.
 `src/targets/opencode/` with its capabilities, lexicon and emit specs, per the ADR's capability rows. Implications the step
 plan must cover:
 
-- Skills join `sharesSkillFilesWith` in all three peers, never `.opencode/skills/` (P2 showed the winner can change).
+- Skills join `sharesSkillFilesWith` in all three peers, never `.opencode/skills/` (P2 showed the winner can change on V1; V2 gave `.opencode` 16 of 16).
 - The agent spec writes `permission` in object form for `read`, because P4 returned a `.env` value with `read: allow`.
 - The prompt helper maps `{{name}}` to `$<position>` in `args:` order. Only the last argument holds spaces (P3).
-  `explain-diff` lists `diff` first, so it needs a quoted diff. Test a real diff holding `"` before shipping it, and say
-  so in the setup docs, or mark the prompt skipped for this target.
+  `explain-diff` lists `diff` first, so it needs a quoted diff. On V2 a `"` inside double quotes splits it, and
+  `\"` doesn't help, while `'a "b" c'` holds. Test a diff holding `'`, and on V1 too, then say so in the setup docs or
+  mark the prompt skipped for this target.
 - `bodyForbids` covers `` !`cmd` `` and `@file` in prompts.
 - Open question: should `add --target opencode` warn when `.claude/skills/` exists? Settle it from P7 in the step plan.
 
@@ -73,4 +78,27 @@ plan must cover:
 
 The `mcp` kind through an `McpDialect` value and a `ConfigKindTable` entry, writing `.opencode/opencode.json` and the user
 `opencode.json` (`.json` only). A `probe:opencode` script, on the model of `scripts/probe-antigravity.mjs`, re-runs the
-loader probes on one command. Close the ADR's Phase 8 row in `distribution-channels-2026-09.md` here.
+loader probes on one command. The ADR's Phase 8 row in `distribution-channels-2026-09.md` closes in Phase F.
+
+## Phase F: V2 model-backed checks
+
+Last, and once a free model answers (try one `opencode run` first). It can run before D or E if the quota returns, and it
+needs no code. Setup and rules for controls are in the [V2 run](decisions/opencode-target-2026-11.md#v2-run). "Nothing
+happened" is never a pass alone.
+
+| Case | Do                                                                             | Pass                                     |
+| ---- | ------------------------------------------------------------------------------ | ---------------------------------------- |
+| 1    | A skill in `.agents/skills/`, picked by description                            | Its body is used                         |
+| 2    | `mode: subagent`, the D3 allow-list, asked through `task` to write a file      | No file, and a control agent writes one  |
+| 3    | Same list, `mode: all`, write and shell through `--agent`                      | No file, and a control agent writes one  |
+| 4    | Object-form `read` keeping the `.env` rules, read `.env`                       | No value, and the log shows `ask` denied |
+| 5    | Same, read `note.txt`                                                          | Text returned                            |
+| 6    | Object-form `read` plus `bash: allow`, run `cat .env`                          | Recorded only: V1 returned the value     |
+| 7    | Root `AGENTS.md` asks for a closing word; a second repo with `CLAUDE.md` alone | Word in the first, none in the second    |
+| 8    | No plugin: ask the model to write `.env`                                       | Whether V2 allows it (U2's control)      |
+| 9    | V1 `.opencode/plugins/sigil-hooks.js`, throwing on that write                  | Recorded: skip, warn or fail, and a file |
+| 10   | Same plugin, write `ok.txt`                                                    | Recorded: the run still works            |
+
+U1 passes if cases 2 to 5 pass. U2 is cases 8 to 10, recorded only; if the write goes through with no message, that is the
+silent guard failure behind `hook: none`, and the ADR says so plainly. If U1 fails, revise the ADR and limit the setup
+docs to V1. Then close the ADR's Phase 8 row here, not in Phase E.

@@ -234,7 +234,8 @@ These installs aren't tracked by `sigil status`. Setup and limits: [docs/setup/s
   that use them carry them inline. MCP servers merge into `.agents/mcp_config.json` and agents go to
   `.agents/agents/`. A full build writes no `AGENTS.md`. Hooks are planned. See
   [docs/setup/antigravity.md](docs/setup/antigravity.md).
-- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
+- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`. OpenCode is one, and
+  [docs/setup/opencode.md](docs/setup/opencode.md) says what reaches it and what doesn't.
 
 ## What is in the catalog
 

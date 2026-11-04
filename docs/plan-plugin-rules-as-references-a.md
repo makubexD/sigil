@@ -3,6 +3,10 @@
 > **Roadmap:** [plan-plugin-rules-as-references](plan-plugin-rules-as-references.md), which explains why the candidate is
 > per-rule files and why the bar measures tokens loaded. Read its "The catch" section first.
 
+**Status: deferred 2026-11-04, low priority.** Don't start it from `/next`. The runs must use Claude, because the eval
+measures Claude's own behaviour, and up to about 108 of them is too much for the owner's $20 plan. DeepSeek can't stand in.
+Once the higher-priority work is done, the owner decides how to run it.
+
 Everything goes in a new folder, `test/evals/rules-on-demand/`. Nothing in `src/` or `catalog/` changes. The model under
 test is Claude, so every run is `[inline]`; the worker only writes harness files. Follow the shape of
 `test/evals/code-quality/` (`run.mjs`, `measure.mjs`, `stats.cjs`, `selftest.mjs`, `results.md`).

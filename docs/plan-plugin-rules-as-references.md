@@ -3,6 +3,10 @@
 > **Brief:** [plugin-rules-as-references](ideas/plugin-rules-as-references.md) ·
 > **ADR:** [Phases 1b and 1c](decisions/distribution-channels-2026-09.md#phases-1b-and-1c-2026-11-03)
 
+**Status: deferred 2026-11-04, low priority.** Don't start it from `/next`. The runs must use Claude, because the eval
+measures Claude's own behaviour, and up to about 108 of them is too much for the owner's $20 plan. DeepSeek can't stand in.
+Once the higher-priority work is done, the owner decides how to run it.
+
 Claude plugins can't ship loose rules, so `build` inlines them into each skill under `## Applied Rules`. That section is
 58% of what a plugin skill loads on invoke (82k of 141k tokens, re-measured on v0.9.0: same 82k across 52 skills). This
 roadmap decides whether moving it out is worth doing, then does it only if the eval says so.

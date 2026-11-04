@@ -16,6 +16,7 @@ import { resolveClaudeConfigDestination } from '../../dist-cli/targets/claude-co
 import { SigilError } from '../../dist-cli/errors';
 import type { FileMap, Pack, ResolvedArtifact, ResolvedCatalog } from '../../dist-cli/types';
 import { loadBundledCatalog } from '../helpers/catalog';
+import { withEnvMcpFixture } from '../helpers/env-mcp-fixture';
 import { PACKS as BUNDLED_PACKS } from '../helpers/install-scenario';
 
 const VERSION = '0.1.0';
@@ -50,6 +51,19 @@ async function compileBundled(): Promise<{
   const packs = realPacks();
   const target = new ClaudeCodeTarget();
   const files = await target.compile(resolved, { version: VERSION, packs });
+  return { files, resolved, packs };
+}
+
+/** Compile the bundled catalog with the env-token `shared/ado` fixture. */
+async function compileBundledWithEnvAdo(): Promise<{
+  files: FileMap;
+  resolved: ResolvedCatalog;
+  packs: Pack[];
+}> {
+  const catalog = await loadBundledCatalog();
+  const resolved = withEnvMcpFixture(resolveCatalog(catalog));
+  const packs = realPacks();
+  const files = await new ClaudeCodeTarget().compile(resolved, { version: VERSION, packs });
   return { files, resolved, packs };
 }
 
@@ -201,7 +215,7 @@ describe('Claude plugin: hooks and MCP as generated plugins', () => {
   });
 
   it('env syntax', async () => {
-    const { files } = await compileBundled();
+    const { files } = await compileBundledWithEnvAdo();
 
     const content = files['plugins/mcp-ado/.mcp.json'];
     assert.ok(content, 'mcp-ado ships .mcp.json');
@@ -217,7 +231,7 @@ describe('Claude plugin: hooks and MCP as generated plugins', () => {
   });
 
   it('description names variables', async () => {
-    const { files, resolved } = await compileBundled();
+    const { files, resolved } = await compileBundledWithEnvAdo();
 
     const adoManifest = files['plugins/mcp-ado/.claude-plugin/plugin.json'];
     assert.ok(adoManifest, 'mcp-ado ships a manifest');
@@ -267,7 +281,7 @@ describe('Claude plugin: hooks and MCP as generated plugins', () => {
   });
 
   it('an env MCP plugin puts the Claude-only sentence after the variable sentence', async () => {
-    const { files } = await compileBundled();
+    const { files } = await compileBundledWithEnvAdo();
 
     const manifest = files['plugins/mcp-ado/.claude-plugin/plugin.json'];
     assert.ok(manifest, 'mcp-ado ships a manifest');

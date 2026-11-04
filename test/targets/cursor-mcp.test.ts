@@ -19,6 +19,7 @@ import {
 } from '../../dist-cli/targets/cursor/mcp-ops';
 import { SigilError } from '../../dist-cli/errors';
 import { CATALOG_DIR, loadResolvedCatalog } from '../helpers/catalog';
+import { withEnvMcpFixture } from '../helpers/env-mcp-fixture';
 import { withTempDir } from '../helpers/temp-dir';
 import type { ConfigMergeOp, ResolvedCatalog } from '../../dist-cli/types';
 
@@ -96,7 +97,7 @@ describe('Cursor MCP server config', () => {
   });
 
   it('ado expands both env references to Cursor syntax', async () => {
-    const catalog = await loadResolvedCatalog();
+    const catalog = withEnvMcpFixture(await loadResolvedCatalog());
     const server = serverOf(await onlyOp(catalog, 'shared/ado'), 'ado');
 
     assert.ok((server.args as string[]).includes('${env:ADO_ORG}'));

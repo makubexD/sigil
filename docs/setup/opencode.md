@@ -45,8 +45,8 @@ OpenCode also reads `.claude/skills/` and `CLAUDE.md`. In a project that has Sig
   run only on your command can run on the model's choice.
 - **A `CLAUDE.md` is read when there is no `AGENTS.md`.**
 
-The same goes for your user folder. OpenCode reads `~/.claude/skills/` and `~/.claude/CLAUDE.md`, so a user-scope Claude
-install reaches every project.
+The same goes for your user folder. OpenCode reads `~/.claude/skills/` and `~/.claude/CLAUDE.md`, so what you keep there
+reaches every project.
 
 To turn this off, set these variables before you start `opencode`. There is no config key for them.
 

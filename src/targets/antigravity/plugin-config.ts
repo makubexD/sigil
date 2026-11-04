@@ -15,6 +15,7 @@
  */
 import { applyMerge } from '../../config-merge/apply';
 import { serialize } from '../../config-merge/primitives';
+import { declaredVarNames } from '../../mcp-vars';
 import { artifactTargetsPlatform } from '../../select';
 import type { FileMap, Pack, ResolvedArtifact, ResolvedCatalog } from '../../types';
 import type { ConfigKindWriter } from '../config-kind-table';
@@ -36,6 +37,19 @@ const CONFIG_PLUGIN_KINDS = ['hook', 'mcp'] as const;
 function configWriterFor(artifact: ResolvedArtifact): ConfigKindWriter | undefined {
   if (artifact.kind !== 'hook' && artifact.kind !== 'mcp') return undefined;
   return ANTIGRAVITY_CONFIG_KINDS[artifact.kind];
+}
+
+/**
+ * Whether a config plugin can carry `artifact`. A server with install variables can't: a plugin has
+ * no install step and Antigravity asks for nothing on enable, so the value has no source. `sigil add`
+ * still installs it.
+ */
+function deliverable(writer: ConfigKindWriter, artifact: ResolvedArtifact): boolean {
+  return (
+    artifactTargetsPlatform(artifact, 'antigravity') &&
+    writer.skipReason?.(artifact) === undefined &&
+    declaredVarNames(artifact).length === 0
+  );
 }
 
 /**
@@ -81,8 +95,7 @@ function buildOne(
   options: AntigravityPluginOptions,
 ): AntigravityConfigPlugin | undefined {
   const writer = configWriterFor(artifact);
-  if (!writer || !artifactTargetsPlatform(artifact, 'antigravity')) return undefined;
-  if (writer.skipReason?.(artifact) !== undefined) return undefined;
+  if (!writer || !deliverable(writer, artifact)) return undefined;
   const pack = configPack(artifact);
   const prefix = `plugins/${pack.name}`;
   return {
@@ -97,7 +110,8 @@ function buildOne(
 /**
  * Every `hook` and `mcp` artifact that gets a generated plugin, in build order: hooks first, then
  * MCP servers, each kind in catalog order. An artifact whose `platforms:` excludes Antigravity
- * (an absent list allows every target) or whose skip reason refuses it is left out.
+ * (an absent list allows every target), whose skip reason refuses it, or that declares install
+ * variables is left out.
  */
 export function antigravityConfigPluginArtifacts(catalog: ResolvedCatalog): ResolvedArtifact[] {
   const artifacts: ResolvedArtifact[] = [];
@@ -105,8 +119,7 @@ export function antigravityConfigPluginArtifacts(catalog: ResolvedCatalog): Reso
     for (const artifact of catalog.artifacts) {
       if (artifact.kind !== kind) continue;
       const writer = configWriterFor(artifact);
-      if (!writer || !artifactTargetsPlatform(artifact, 'antigravity')) continue;
-      if (writer.skipReason?.(artifact) !== undefined) continue;
+      if (!writer || !deliverable(writer, artifact)) continue;
       artifacts.push(artifact);
     }
   }

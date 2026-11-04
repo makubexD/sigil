@@ -213,7 +213,7 @@
   "antigravity/plugins/typescript-tooling/skills/ts-release/SKILL.md": "0472b7dbe22f3fe63c062795a5961e5db6149de3aea0f427d01d3619a1d4129f",
   "antigravity/plugins/typescript-tooling/skills/ts-scaffold-project/SKILL.md": "f3738991350db2ae3d2d6f90b406ded2ca666000a58e7c377c30f82800c58c02",
   "antigravity/plugins/typescript-tooling/skills/ts-sync-tests/SKILL.md": "e4eb3e7e48d50418292dd8d7eee11503e9e701c7cf0098b51d88a0b17e15818c",
-  "claude/.claude-plugin/marketplace.json": "de85715a0adb6246c94305a8a38aad1907eae62de65cb675d694c5c1bd581068",
+  "claude/.claude-plugin/marketplace.json": "a28ea4281baabd3310ff036f5e1b97cd8392f615511b763b080c51821e67638d",
   "claude/plugins/angular-starter/.claude-plugin/plugin.json": "15d060123ae9edebad44ff0eae9a947bc172385453cde512b97c8ba5bf244b13",
   "claude/plugins/angular-starter/agents/ng-architecture-reviewer.md": "51ffef6afed6c2f46ce39cd4e9788df2583ec5b11e3ab2e932fcaf635d6f9c90",
   "claude/plugins/angular-starter/agents/ng-code-reviewer.md": "19f84858305cb489c8c6de71bf37f022410afbd43b2069cf1e10dec7162a9237",
@@ -299,8 +299,8 @@
   "claude/plugins/hook-reviewer-bash-guard/hooks/hooks.json": "48cf335c5c460319f3666ed8804bb94afcb86fc4889643af83c69aacdc8d4f55",
   "claude/plugins/hook-worker-mode-guard/.claude-plugin/plugin.json": "e309b83790fbc184f09c845338d5a3a06991e5c8445dc849d78ec18dee3219a2",
   "claude/plugins/hook-worker-mode-guard/hooks/hooks.json": "68c4a575f1a38aac1171ddb663088d3f200ffc17ee0a2e8735c34d991d65ad72",
-  "claude/plugins/mcp-ado/.claude-plugin/plugin.json": "293fb9fb511c1f6dfcd20bdee35c7d3c92fe7641a0224c757617ce81ca8c3caa",
-  "claude/plugins/mcp-ado/.mcp.json": "0bba7d848b152dcd091d09ba91dc397f275a5b29b744c7f65b9c6345401aea07",
+  "claude/plugins/mcp-ado/.claude-plugin/plugin.json": "62fdd80b471c51605020eedc07b359d8596f55b33afe16187fdf074f83fe5e25",
+  "claude/plugins/mcp-ado/.mcp.json": "745488ab1eb64f1bd960a53b40d120a51e519c481fc56a21af61e254ff667dbf",
   "claude/plugins/mcp-context-mode/.claude-plugin/plugin.json": "9965a98e8ecf666a78b104d714d672548c6678f5d53a05959c8d18d466ab0bfa",
   "claude/plugins/mcp-context-mode/.mcp.json": "a31aa82eb09bafabdb7842b428fb99013a073f698724d760c1d66b9a12d893da",
   "claude/plugins/mcp-filesystem/.claude-plugin/plugin.json": "80a74237f9f24ba96b8eff35cb985dfa01b51450796126f8adcec75f7cab247e",
@@ -897,5 +897,5 @@
   "opencode/.opencode/agents/wizard-auditor.md": "97ddab3531af2a8a3d866268f66b3ee0d54c79f7da5fe79bedbf62976c801206",
   "opencode/.opencode/commands/shared-author-artifact.md": "d6e26c47db1c9e40db7406884cf540944bf5335375f5d1d8375bfa971a27a4d2",
   "opencode/AGENTS.md": "2c6ded365300dad30f6e649027e5d1cb13ca0c9e96eb6b6df9c9c4616bd58a31",
-  "registry.json": "b98ad3967c444f2457a293d76548b96832ee162e8063582233412fed13f3ddfe"
+  "registry.json": "4dfbea53706c30e470a79b3fc892f72888816f2be96e38290ef973f90802fd47"
 }

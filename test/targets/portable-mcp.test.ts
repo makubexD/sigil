@@ -15,6 +15,7 @@ import path from 'node:path';
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { canonicalize, serialize } from '../../dist-cli/config-merge';
+import { scaffoldConfigOps } from '../../dist-cli/config-ops';
 import { getTarget } from '../../dist-cli/targets/index';
 import { buildConfigPlugins } from '../../dist-cli/targets/claude-code/plugin-config';
 import { configPluginName } from '../../dist-cli/targets/claude-code/plugin-build';
@@ -31,6 +32,9 @@ const TARGET_SCOPES = [
   ['copilot', ['project', 'user']],
 ] as const;
 
+/** The sample install value used where a catalog server declares `vars:`. */
+const SAMPLE_VARS = { ADO_ORG: 'contoso' } as const;
+
 /** Every key's serialized output, sorted so the golden file is stable. */
 async function collectPortableMcpOutput(catalog: ResolvedCatalog): Promise<Record<string, string>> {
   const out: Record<string, string> = {};
@@ -38,9 +42,12 @@ async function collectPortableMcpOutput(catalog: ResolvedCatalog): Promise<Recor
   for (const server of servers) {
     for (const [target, scopes] of TARGET_SCOPES) {
       if (!artifactTargetsPlatform(server, target)) continue;
-      const scaffold = getTarget(target).scaffoldConfig!;
       for (const scope of scopes) {
-        const ops = await scaffold(server.id, catalog, { projectDir: '.', scope });
+        const ops = await scaffoldConfigOps(getTarget(target), server.id, catalog, {
+          projectDir: '.',
+          scope,
+          vars: SAMPLE_VARS,
+        });
         for (const op of ops) {
           const key =
             ops.length > 1

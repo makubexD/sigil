@@ -111,7 +111,7 @@
     {
       "name": "mcp-ado",
       "displayName": "Azure DevOps MCP Server",
-      "description": "Connects your AI tool to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. Requires the environment variables ADO_ORG and ADO_MCP_PERSONAL_TOKEN. As a plugin, this is for Claude Code only.",
+      "description": "Connects your AI tool to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. As a plugin, this is for Claude Code only.",
       "source": "./plugins/mcp-ado"
     },
     {

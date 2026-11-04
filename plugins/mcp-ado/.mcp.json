@@ -4,18 +4,16 @@
       "command": "npx",
       "args": [
         "-y",
+        "--allow-scripts=keytar",
         "@azure-devops/mcp@2.10.0",
-        "${ADO_ORG}",
+        "${user_config.ADO_ORG}",
         "--authentication",
-        "pat",
+        "azcli",
         "-d",
         "core",
         "work",
         "work-items"
-      ],
-      "env": {
-        "ADO_MCP_PERSONAL_TOKEN": "${ADO_MCP_PERSONAL_TOKEN}"
-      }
+      ]
     }
   }
 }

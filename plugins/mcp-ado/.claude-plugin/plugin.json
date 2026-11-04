@@ -2,12 +2,20 @@
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
   "name": "mcp-ado",
   "displayName": "Azure DevOps MCP Server",
-  "version": "0.8.1",
-  "description": "Connects your AI tool to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. Requires the environment variables ADO_ORG and ADO_MCP_PERSONAL_TOKEN. As a plugin, this is for Claude Code only.",
+  "version": "0.9.0",
+  "description": "Connects your AI tool to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. As a plugin, this is for Claude Code only.",
   "author": {
     "name": "Sigil",
     "url": "https://github.com/makubexD/sigil#readme"
   },
   "license": "MIT",
-  "keywords": []
+  "keywords": [],
+  "userConfig": {
+    "ADO_ORG": {
+      "type": "string",
+      "title": "Azure DevOps organization",
+      "description": "The <org> in dev.azure.com/<org>",
+      "required": true
+    }
+  }
 }

@@ -113,3 +113,44 @@ npx prettier --check docs/decisions/opencode-target-2026-11.md docs/plan-opencod
 
 Each `#heading` link added is read by hand, because the repo has no link checker. The full suite runs once, in the
 finish.
+
+## Run notes, 2026-11-03
+
+Step 1 stopped at case 4: every free model tested answered `Free usage limit reached`, with no credentials in use. These
+results keep the loader-only rows across a `/clear`; step 4 moves them to the ADR. The fixtures live in the scratchpad, so
+rebuild them from the tables above.
+
+How it ran on 2.2.5:
+
+- npm 12 blocks `@opencode/cli`'s postinstall, so `node_modules/.bin/opencode` only prints an error. The binary in
+  `node_modules/@opencode/cli-linux-x64/bin/opencode` runs with no install script.
+- `run` has no `--command`, and `debug skill` is gone. `debug agents`, `debug paths`, `debug config` and `mcp list` exist.
+- Commands use a background service unless they get `--standalone`. Use it on every run. Set `TMPDIR` too, or `tmp` is
+  `/tmp/opencode`.
+- Loader facts come from `opencode serve` plus basic auth (`opencode`, the printed password): `/api/skill`, `/api/command`,
+  `/api/agent`, `/api/mcp`. Skills and commands stay empty until a session exists, and then fill in about 3 seconds, so
+  poll for a project entry. Fixture repos need a commit, or the project is `global`.
+- `POST /api/session/{id}/command` stores the expanded text before any model call, so substitution needs no model.
+
+Results so far:
+
+| Case | Result                                                                                                               |
+| ---- | -------------------------------------------------------------------------------------------------------------------- |
+| 1    | All three listed. Picked: not run                                                                                    |
+| 2    | One entry, `.opencode` body, 16 of 16 listings                                                                       |
+| 2b   | With the variable, `c-skill` gone, `.agents` and `.opencode` remain                                                  |
+| 3    | Pass: `HELLO[one][two three four]`, and `HELLO[one][two]`                                                            |
+| 4    | Pass: `PLURAL[aa bb][aa bb]`                                                                                         |
+| 5    | Same as V1: unquoted `AUDIENCE[beta gamma reviewer] DIFF[alpha]`, quoted `AUDIENCE[reviewer] DIFF[alpha beta gamma]` |
+| 6    | `"` inside double quotes splits (`"a "b" c" reviewer` gives `DIFF[a ]`), `\"` too. `'a "b" c' reviewer` holds        |
+| 7-8  | Loader half: agents listed, rules end in `* deny` then the allows. Enforcement and control: not run                  |
+| 9-10 | Loader half: `read` rules keep `*.env: ask` after `*: allow`. Enforcement: not run                                   |
+| 11   | Not run                                                                                                              |
+| 12   | Pass: `connected`, server received the value                                                                         |
+| 13   | Same as V1: started with an empty string                                                                             |
+| 14   | Inconclusive: instruction entries are empty for both repos without a model turn                                      |
+
+Neither `.opencode/opencode.json` nor the repo changed: no `$schema` insert and no `.gitignore`. V2 can see nothing of the
+owner's: `debug paths` stays in the scratch `HOME`, and `find -newer` over the owner's directories printed nothing.
+
+Left: step 1 case 4, step 2 cases 1 (picked), 7 to 11 and 14, then steps 3 and 4.

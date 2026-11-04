@@ -100,7 +100,7 @@ export function renderArtifact(
   const frontmatterBlock = renderFrontmatterBlock(spec, artifact.frontmatter);
   const beforeLines = renderSections(spec, artifact, ctx, 'before');
   const rawBody = artifact.resolvedBody ?? artifact.body;
-  const transformedBody = spec.bodyTransform ? spec.bodyTransform(rawBody) : rawBody;
+  const transformedBody = spec.bodyTransform ? spec.bodyTransform(rawBody, artifact) : rawBody;
   const ownBody = applyLexicon(transformedBody, spec.lexicon);
   const afterLines = renderSections(spec, artifact, ctx, 'after');
 

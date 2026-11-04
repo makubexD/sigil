@@ -44,6 +44,7 @@ Installs are usually one language (packs, `--language`).
 OpenCode, Cline, Amp, Goose, Junie, Grok Build; DeepSeek has no first-party agent):
 
 - 9 of 10 live tools read `.agents/skills/<name>/SKILL.md`, and about 11 of 12 read a root `AGENTS.md`.
+  OpenCode's part was confirmed live on 1.19.4 on 2026-11-03 ([probes](opencode-target-2026-11.md#probe-log)).
 - Everything else varies along a finite set of dimensions:
   - output path per kind;
   - file format (md, mdc, toml, json);

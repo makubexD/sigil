@@ -372,6 +372,17 @@ export const McpSchema = z.object({
    */
   defaultScope: z.enum(CONFIG_SCOPES).optional(),
   /**
+   * Install-time variables: each name is written as `{sigil:var:NAME}` in `server` and gets the
+   * prompt text an install shows. The value is a literal written at install, never a secret: it
+   * lands in plain text in the config file and the manifest, and both can be committed.
+   */
+  vars: z
+    .record(
+      z.string().regex(/^[A-Za-z_][A-Za-z0-9_]*$/),
+      z.strictObject({ title: z.string().min(1), description: z.string().min(1) }),
+    )
+    .optional(),
+  /**
    * The MCP server config — either stdio (command + args) or remote (type + url).
    * The server key in mcpServers defaults to the artifact's `name` field.
    */

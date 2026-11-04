@@ -25,6 +25,7 @@ import type { UpdateGroup } from './update-groups';
 import { warnMcpEnvCaveats } from './add/execute-config';
 import type { WrittenConfig } from './add/execute-config';
 import type { Manifest } from '../manifest/types';
+import { declaredVarNames, parseVarFlags } from '../mcp-vars';
 import type { VarValues } from '../mcp-vars';
 import type { Target } from '../types';
 import type { SigilOpsAt } from './update-config-io';
@@ -50,6 +51,8 @@ export interface UpdateOptions {
   installedIds?: ReadonlySet<string> | undefined;
   /** Install-variable values the caller supplies; they win over the ones the manifest recorded. */
   vars?: VarValues | undefined;
+  /** Raw repeatable `--var NAME=value` flags from the CLI; `runUpdate` parses them into `vars`. */
+  var?: readonly string[] | undefined;
 }
 
 /** `UpdateOptions` plus the manifest-derived lookup the config writers use for the home backup. */
@@ -136,8 +139,33 @@ async function prepareUpdateRun(
 }
 
 export async function runUpdate(ids: string[], opts: UpdateOptions): Promise<void> {
-  if (shouldGuideUpdate(opts)) await runGuidedUpdate(ids, opts, applyUpdate);
-  else await applyUpdate(ids, opts);
+  const runOpts: UpdateOptions =
+    opts.var === undefined ? opts : { ...opts, vars: parseVarFlags(opts.var) };
+  if (shouldGuideUpdate(runOpts)) await runGuidedUpdate(ids, runOpts, applyUpdate);
+  else await applyUpdate(ids, runOpts);
+}
+
+/** Every install-variable name the selected entries' artifacts declare. */
+function selectedVarNames(groups: readonly UpdateGroup[]): Set<string> {
+  const names = new Set<string>();
+  for (const group of groups) {
+    for (const entry of group.entries) {
+      const artifact = group.resolved.byId.get(entry.id);
+      if (artifact !== undefined) for (const name of declaredVarNames(artifact)) names.add(name);
+    }
+  }
+  return names;
+}
+
+/** Throws when a `--var` names a variable no selected artifact declares, before any write. */
+function assertKnownVars(groups: readonly UpdateGroup[], vars: VarValues): void {
+  const declared = selectedVarNames(groups);
+  const unknown = Object.keys(vars).filter(name => !declared.has(name));
+  if (unknown.length === 0) return;
+  throw new SigilError(
+    `No selected artifact declares the install variable${unknown.length === 1 ? '' : 's'} ` +
+      `${unknown.map(name => `'${name}'`).join(', ')}.`,
+  );
 }
 
 /** Runs the update and saves the manifest even if a refused config edit stops it partway. */
@@ -161,6 +189,7 @@ async function applyUpdate(
   const setup = await prepareUpdateRun(ids, opts);
   if (!setup) return undefined;
   const { target, installedIds, sigilOpsAt, groups } = setup;
+  assertKnownVars(groups, opts.vars ?? {});
 
   console.log('');
   const written: WrittenConfig[] = [];

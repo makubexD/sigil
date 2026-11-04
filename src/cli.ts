@@ -241,6 +241,12 @@ program
   .option('--force', 'Overwrite drifted (user-modified) files', false)
   .option('--dry-run', 'Preview what would change without writing', false)
   .option('--yes', 'Apply without previewing and asking first (a terminal asks by default)', false)
+  .option(
+    '--var <NAME=value>',
+    'An install value for an MCP artifact; repeatable',
+    (v: string, acc: string[]) => [...acc, v],
+    [] as string[],
+  )
   .action(lazy(async () => (await import('./commands/update')).runUpdate));
 // ─── prune ────────────────────────────────────────────────────────────────────
 program

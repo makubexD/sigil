@@ -6,6 +6,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runUpdate } from '../../dist-cli/commands/update';
@@ -21,9 +22,13 @@ import { withTempDirAsync } from '../helpers/temp-dir';
 
 const ID = 'shared/vars-fixture';
 const SERVER = 'vars-fixture';
+const TWO_ID = 'shared/two-vars-fixture';
+const TWO_SERVER = 'two-vars-fixture';
+const TWO_PKG = '@azure-devops/mcp@2.10.0';
 const MCP_FILE = '.mcp.json';
 const OLD_PKG = '@azure-devops/mcp@2.9.0';
 const NEW_PKG = '@azure-devops/mcp@2.10.0';
+const CLI = path.resolve(__dirname, '../../dist-cli/cli.js');
 
 /** The fixture catalog: one `mcp` artifact declaring ADO_ORG, used in `args`. */
 const CATALOG_SOURCE = [
@@ -51,6 +56,34 @@ const CATALOG_SOURCE = [
   '',
 ].join('\n');
 
+/** A second fixture artifact declaring two variables, for the repeatable-flag CLI case. */
+const TWO_VARS_SOURCE = [
+  '---',
+  `id: ${TWO_ID}`,
+  'kind: mcp',
+  'title: Two vars fixture',
+  'description: A fixture MCP server with two install variables.',
+  'vars:',
+  '  A:',
+  '    title: First value',
+  '    description: The first install value',
+  '  B:',
+  '    title: Second value',
+  '    description: The second install value',
+  'server:',
+  '  command: npx',
+  '  args:',
+  "    - '-y'",
+  `    - '${TWO_PKG}'`,
+  "    - '{sigil:var:A}'",
+  "    - '{sigil:var:B}'",
+  'tags: [test, fixture]',
+  '---',
+  '',
+  'A fixture MCP server with two variables.',
+  '',
+].join('\n');
+
 interface Fixture {
   project: string;
   catalog: { dir: string; packs: string };
@@ -63,6 +96,7 @@ function makeFixture(root: string): Fixture {
   const dir = path.join(root, 'catalog');
   fs.mkdirSync(path.join(dir, 'shared', 'mcps'), { recursive: true });
   fs.writeFileSync(path.join(dir, 'shared', 'mcps', 'vars-fixture.mcp.md'), CATALOG_SOURCE);
+  fs.writeFileSync(path.join(dir, 'shared', 'mcps', 'two-vars-fixture.mcp.md'), TWO_VARS_SOURCE);
   const packs = path.join(root, 'packs.yaml');
   fs.writeFileSync(packs, 'packs: []\n');
   return { project, catalog: { dir, packs } };
@@ -80,11 +114,20 @@ const PRE_VARS_SERVER = {
   env: { ADO_MCP_PERSONAL_TOKEN: '${ADO_MCP_PERSONAL_TOKEN}' },
 };
 
+interface EntryWhere {
+  id?: string;
+  server?: string;
+}
+
 /** A manifest entry whose recorded fragment holds `server`. */
-function makeEntry(server: Record<string, unknown>, vars?: Record<string, string>): ManifestEntry {
-  const fragment = { mcpServers: { [SERVER]: server } };
+function makeEntry(
+  server: Record<string, unknown>,
+  vars?: Record<string, string>,
+  where: EntryWhere = {},
+): ManifestEntry {
+  const fragment = { mcpServers: { [where.server ?? SERVER]: server } };
   return {
-    id: ID,
+    id: where.id ?? ID,
     kind: 'mcp',
     target: 'claude',
     sigilVersion: '0.1.0',
@@ -108,6 +151,12 @@ function installed(org: string, pkg = NEW_PKG, vars?: Record<string, string>): M
   return makeEntry(currentServer(org, pkg), vars);
 }
 
+/** The two-variable fixture installed at `a` and `b`, with those values recorded. */
+function installedTwo(a: string, b: string): ManifestEntry {
+  const server = { command: 'npx', args: ['-y', TWO_PKG, a, b] };
+  return makeEntry(server, { A: a, B: b }, { id: TWO_ID, server: TWO_SERVER });
+}
+
 /** Writes the manifest and each recorded fragment's file into `project`. */
 function writeProject(project: string, entry: ManifestEntry): void {
   const manifest: Manifest = { manifestVersion: MANIFEST_VERSION, entries: [entry] };
@@ -119,11 +168,11 @@ function writeProject(project: string, entry: ManifestEntry): void {
   }
 }
 
-function readMcpFile(project: string): Record<string, unknown> {
+function readMcpFile(project: string, server = SERVER): Record<string, unknown> {
   const parsed = JSON.parse(fs.readFileSync(path.join(project, MCP_FILE), 'utf8')) as {
     mcpServers: Record<string, Record<string, unknown>>;
   };
-  return parsed.mcpServers[SERVER] as Record<string, unknown>;
+  return parsed.mcpServers[server] as Record<string, unknown>;
 }
 
 function serverNames(project: string): string[] {
@@ -147,6 +196,43 @@ function updateOpts(fixture: Fixture, extra: Partial<UpdateOptions> = {}): Updat
     dryRun: false,
     yes: true,
     ...extra,
+  };
+}
+
+interface CliResult {
+  status: number | null;
+  stdout: string;
+  stderr: string;
+}
+
+/** Runs the built CLI's `update` against the fixture project and catalog. */
+function updateCli(fixture: Fixture, args: readonly string[]): CliResult {
+  const done = spawnSync(
+    process.execPath,
+    [
+      CLI,
+      'update',
+      ...args,
+      '--target',
+      'claude',
+      '--catalog-dir',
+      fixture.catalog.dir,
+      '--packs',
+      fixture.catalog.packs,
+      '--project-dir',
+      fixture.project,
+      '--yes',
+    ],
+    { cwd: fixture.project, encoding: 'utf8', input: '', windowsHide: true },
+  );
+  return { status: done.status, stdout: done.stdout ?? '', stderr: done.stderr ?? '' };
+}
+
+/** The bytes of the project's MCP file and manifest, for a nothing-written assertion. */
+function projectBytes(project: string): { file: string; manifest: string } {
+  return {
+    file: fs.readFileSync(path.join(project, MCP_FILE), 'utf8'),
+    manifest: fs.readFileSync(path.join(project, '.sigil', 'manifest.json'), 'utf8'),
   };
 }
 
@@ -321,6 +407,62 @@ describe('sigil update with install variables', () => {
 
       assert.match(lines.join('\n'), /kept as installed: needs ADO_ORG/);
       assert.equal(fs.readFileSync(path.join(fixture.project, MCP_FILE), 'utf8'), fileBefore);
+    });
+  });
+
+  it('applies --var through the built CLI', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+      writeProject(fixture.project, makeEntry(PRE_VARS_SERVER));
+
+      const done = updateCli(fixture, ['--var', 'ADO_ORG=contoso']);
+
+      assert.equal(done.status, 0, done.stderr);
+      assert.ok(argsOf(fixture.project).includes('contoso'));
+    });
+  });
+
+  it('keeps the positional id as a selector when --var repeats', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+      writeProject(fixture.project, installedTwo('old', 'older'));
+
+      const done = updateCli(fixture, [TWO_ID, '--var', 'A=x', '--var', 'B=y']);
+
+      assert.equal(done.status, 0, done.stderr);
+      const args = readMcpFile(fixture.project, TWO_SERVER).args as string[];
+      assert.ok(args.includes('x'), args.join(' '));
+      assert.ok(args.includes('y'), args.join(' '));
+      assert.equal(args.includes('old'), false, args.join(' '));
+      assert.equal(args.includes('older'), false, args.join(' '));
+    });
+  });
+
+  it('exits 1 naming an unknown --var and writes nothing', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+      writeProject(fixture.project, installed('contoso', OLD_PKG, { ADO_ORG: 'contoso' }));
+      const before = projectBytes(fixture.project);
+
+      const done = updateCli(fixture, ['--var', 'TYPO=x']);
+
+      assert.equal(done.status, 1);
+      assert.match(done.stderr, /TYPO/);
+      assert.deepEqual(projectBytes(fixture.project), before);
+    });
+  });
+
+  it('exits 1 on a value that fails the rule and writes nothing', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+      writeProject(fixture.project, installed('contoso', OLD_PKG, { ADO_ORG: 'contoso' }));
+      const before = projectBytes(fixture.project);
+
+      const done = updateCli(fixture, ['--var', 'ADO_ORG=-x']);
+
+      assert.equal(done.status, 1);
+      assert.match(done.stderr, /Invalid --var ADO_ORG value/);
+      assert.deepEqual(projectBytes(fixture.project), before);
     });
   });
 });

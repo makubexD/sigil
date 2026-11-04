@@ -9,7 +9,10 @@ test-scaffold/
 tsc-out.txt
 tsc-err.txt
 test-compiled/
-.claude/
+.claude/*
+!.claude/rules/
+.claude/rules/*
+!.claude/rules/repo-*.md
 .sigil/
 
 # Logs

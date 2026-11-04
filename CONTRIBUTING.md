@@ -197,9 +197,11 @@ Follow [Build and link](docs/guides/operations.md#build-and-link): Node `>=20.19
 
 ## Code invariants and architecture
 
-[CLAUDE.md](CLAUDE.md) is written for AI coding agents, but it is also the authoritative list of
-invariants the code must keep (path anchoring, the platform-neutral pipeline, what may write files, and
-so on). Read its **Invariants** section before changing `src/`. For how the pieces fit, and how to add a
+[CLAUDE.md](CLAUDE.md) is written for AI coding agents. Its **Hard rules**, one line each, together with their full
+text in [.claude/rules/repo-\*.md](.claude/rules/), are the authoritative list of invariants the code must keep (path
+anchoring, the platform-neutral pipeline, what may write files, and so on). Read the rules file for the area before
+changing `src/`; Claude Code loads it by its `paths:`. A new repo rule goes in a `.claude/rules/repo-<topic>.md` file
+with `paths:`, plus a one-line hard rule in `CLAUDE.md`. For how the pieces fit, and how to add a
 platform target, see [docs/reference/architecture.md](docs/reference/architecture.md).
 
 ## Testing

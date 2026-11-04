@@ -4,9 +4,8 @@
  * Re-runnable OpenCode probe: installs sigil's real output into a fresh repo and reads it back
  * through the V1 loader commands (`debug skill`, `agent list`, `debug agent`, `mcp list`,
  * `debug config`) and, for the cases those can't answer, `opencode serve` — V1's `/command` and
- * V2's `/api/skill`, `/api/command`, `/api/agent` and `/api/mcp`. It answers the cases of
- * docs/plan-opencode-target-e.md and the OpenCode rows that need no model
- * (docs/decisions/opencode-target-2026-11.md).
+ * V2's `/api/skill`, `/api/command`, `/api/agent` and `/api/mcp`. It answers the OpenCode rows
+ * that need no model (docs/decisions/opencode-target-2026-11.md).
  *
  * `catalog/` is copied to a temp dir, the fixture artifacts under scripts/opencode-probe/catalog/
  * are overlaid on that copy, and each probe installs what it needs from it with `sigil add`.

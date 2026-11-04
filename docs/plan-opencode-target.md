@@ -13,7 +13,7 @@ Standing procedure: RED first, `npm run ci:local` green, merge on green CI. Clos
 `/agent-skills:review`, a `CHANGELOG.md` entry, the ADR note updated, and the step plan deleted after merge.
 
 Ban guardrail: never connect Anthropic or Claude in OpenCode, not even for a probe. Live checks use a free OpenCode
-model from the isolated home in the ADR's D0, never the owner's `~/.config/opencode/`.
+model, or for Phase F the paid DeepSeek API, from the isolated home in the ADR's D0, never the owner's `~/.config/opencode/`.
 
 ## Summary
 
@@ -95,8 +95,9 @@ Done 2026-11-04: `shared/ado` moved to `azcli`, so OpenCode has all 4 of 4 serve
 
 ## Phase F: V2 model-backed checks
 
-Last, and once a free model answers (try one `opencode run` first). It can run before D or E if the quota returns, and it
-needs no code. Setup is in the [V2 run](decisions/opencode-target-2026-11.md#v2-run). "Nothing
+Last. It needs no code. The free models were still out of quota on 2026-11-04, so the owner approved running it on the paid
+DeepSeek API: these cases test what OpenCode enforces, so any model that attempts the action will do. The key is passed
+only to the isolated home. Setup is in the [V2 run](decisions/opencode-target-2026-11.md#v2-run). "Nothing
 happened" is never a pass alone.
 
 | Case | Do                                                                             | Pass                                     |

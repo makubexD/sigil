@@ -69,6 +69,8 @@ default; in testing OpenCode asked.
 ## What was tested
 
 OpenCode 1.19.4 (`opencode-ai`) on Linux, with one free model (`opencode/deepseek-v4.1-flash-free`), in throwaway repos,
-on 2026-11-03. Not tested on OpenCode 2, so nothing here is known to hold there. Results:
-[opencode-target-2026-11](../decisions/opencode-target-2026-11.md#probe-log), P1, P2, P4 and P7. The commands and
+on 2026-11-03. On OpenCode 2 (`@opencode/cli` 2.2.5) only loading was tested, with no model: skills, including those in
+`.claude/skills/`, and `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`. OpenCode 2's guide says it reads `AGENTS.md` only, with no
+`CLAUDE.md` fallback, which wasn't tested. Whether a skill is picked, and the `.env` behavior, weren't tested there. Results:
+[opencode-target-2026-11](../decisions/opencode-target-2026-11.md#probe-log), P1, P2, P4, P7 and the V2 run. The commands and
 both variables on this page were then run as written, in project and user folders, and matched it.

@@ -1,6 +1,6 @@
 # OpenCode target (2026-11)
 
-Status: **go, staged**, 2026-11-03; see [Decision](#decision). Stage 1 is the setup note, and code waits on U1.
+Status: **go, staged**, 2026-11-03; see [Decision](#decision). Stage 1 is the setup note. The owner moved the U1 gate to the end on 2026-11-03: see [V2 run](#v2-run).
 
 ## How the docs pass ran
 
@@ -327,8 +327,8 @@ add`, Git specs ([V2 plugins](https://opencode.ai/v2/docs/plugins/)).
 
 | #   | Question                                                                                                         | Source                |
 | --- | ---------------------------------------------------------------------------------------------------------------- | --------------------- |
-| U1  | Do the file-based kinds really load unchanged on `@opencode/cli`? The guide says so; no probe has.               | V2 guide, not yet run |
-| U2  | What does V2 do with a V1-shaped `.opencode/plugins/*.js`: skip, warn, or fail? This decides if `hook` can ship. | undocumented (D5)     |
+| U1  | Do the file-based kinds really load unchanged on `@opencode/cli`? They load; enforcement isn't proven.           | [V2 run](#v2-run)     |
+| U2  | What does V2 do with a V1-shaped `.opencode/plugins/*.js`: skip, warn, or fail? This decides if `hook` can ship. | undocumented, not run |
 
 U3 to U9 are answered in the [Probe log](#probe-log).
 
@@ -502,9 +502,47 @@ model confirmed the rules are in its prompt, and it picked `ng-document` by desc
 - `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1` removes both `.claude` entries, leaving `ng-document` from `.agents/` and the
   built-in. It is an environment variable, so sigil can only document it.
 
+### V2 run
+
+`@opencode/cli` 2.2.5, Linux, 2026-11-03. Loader only: all eight free models returned `Free usage limit reached`, with no
+credentials in use. That includes `deepseek-v4.1-flash-free`, which answered on V1 the same day. So no row here rests on a
+model's reply.
+
+How to run it:
+
+- `npm i --prefix <scratch> @opencode/cli@2.2.5`, then call `node_modules/@opencode/cli-linux-x64/bin/opencode`. npm 12 skips
+  the package's postinstall, so `.bin/opencode` only prints an error.
+- D0's isolation holds (`debug paths` stays in the scratch `HOME`). Add `TMPDIR`, or `tmp` is `/tmp/opencode`. Pass
+  `--standalone`, or commands use a background service.
+- `run` has no `--command`, and `debug skill` is gone. Loader facts come from `opencode serve` with basic auth (`opencode`,
+  the printed password): `/api/skill`, `/api/command`, `/api/agent`, `/api/mcp`. Give fixtures a commit and create a session, then poll for a
+  project entry: with both, the lists filled within about 3 seconds. They stayed empty in the two runs without them,
+  which had no commit, so the cause wasn't isolated.
+- `POST /api/session/{id}/command` stores the expanded text first, so substitution needs no model reply.
+
+| Probe | Run                                                         | Observed                                                                                 |
+| ----- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| P2    | One skill only in `.agents/`, `.opencode/` and `.claude/`   | All listed. Picking wasn't run                                                           |
+| P2    | `dup-skill` with a different body in all three, 16 listings | One entry, `.opencode` 16 of 16                                                          |
+| P3    | `$1` `$2`, args `one two` and `one two three four`          | `HELLO[one][two]`, `HELLO[one][two three four]`                                          |
+| P3    | `.opencode/commands/`, `$1` `$ARGUMENTS`, args `aa bb`      | `PLURAL[aa bb][aa bb]`                                                                   |
+| P3    | `explain-diff` shape, unquoted and with the first quoted    | `AUDIENCE[beta gamma reviewer] DIFF[alpha]`, `AUDIENCE[reviewer] DIFF[alpha beta gamma]` |
+| P3    | First argument `"a "b" c"`                                  | Splits: `DIFF[a ]`. `\"` splits too                                                      |
+| P3    | First argument `'a "b" c'`                                  | Holds                                                                                    |
+| P4    | Agents with the object-form `read`, `mode: subagent`, `all` | Listed. Rules keep `*.env: ask` after `*: allow`, and `* deny` before the allows         |
+| P6    | `mcp` with `{env:PROBE_HOST_TOKEN}`, set and unset          | `connected`, value received; unset starts with an empty string                           |
+| P7    | `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1`                     | The `.claude` skill is gone; `.agents` and `.opencode` remain                            |
+
+**Differences from V1.** `dup-skill` was 15 of 16 `.opencode` on V1, and the [Skills](https://opencode.ai/v2/docs/skills/) page
+now states a fixed precedence. A V1-shaped `mcp` map is translated to `mcp.servers`. The file-write side effects didn't
+appear: no `$schema` insert in `opencode.json`, and no `.gitignore` in `.opencode/`.
+
+**Not run:** picking by description, permission enforcement, `cat .env`, `AGENTS.md` versus `CLAUDE.md`, and U2. Instruction
+entries were empty without a model turn, so they prove nothing either way. These are Phase F in the roadmap.
+
 ### What the probes change
 
-- **U3 to U9 are answered.** U1 and U2 stay open: nothing here ran on `@opencode/cli`.
+- **U3 to U9 are answered.** U1 and U2 stayed open here: these probes didn't run on `@opencode/cli`.
 - D3 stands. Blocked tools were absent from the model's report, not refused, and no file appeared. That rests on the
   model's word plus the result. The object-form `read` isn't optional, because P4 returned a `.env` value with the
   shorthand.
@@ -522,7 +560,8 @@ model confirmed the rules are in its prompt, and it picked `ng-document` by desc
 ## Decision
 
 **Go, staged, with target id `opencode`.** Scaffold channel only. `hook`, `settings` and `workflow` stay `none`, and the
-`plugin` channel stays undefined. Code starts only after U1 passes.
+`plugin` channel stays undefined. Code no longer waits on U1 (owner, 2026-11-03): the [V2 run](#v2-run) showed that every
+kind loads, and the enforcement half of U1 closes last, in the roadmap's Phase F.
 
 - **Demand.** Low. OpenCode is the owner's priority 4 of 4, no outside demand is recorded, and the owner's own config
   is left over from a retired worker setup. That rules out building ahead of Claude, Copilot or Antigravity work. It
@@ -543,10 +582,10 @@ model confirmed the rules are in its prompt, and it picked `ng-document` by desc
   a `.env` guard that silently stops working on an upgrade.
 
 **Why not stop at the doc?** It would leave every reviewer and auditor agent out, and those are the catalog's main
-reach beyond skills. The target is mostly data in one folder. The doc route is still right if U1 fails.
+reach beyond skills. The target is mostly data in one folder. If U1 fails, the target stays for V1 and the docs narrow to it.
 
-**What would change this.** If `@opencode/cli` doesn't load the V1 shape for agents, commands or MCP (U1), the work stops
-at the setup note and this record is revised. U2 only decides whether hooks can ever ship, so it doesn't gate the target.
+**What would change this.** If `@opencode/cli` doesn't enforce the V1 shape for agents (U1), this record is revised and the
+setup docs narrow to V1. The code stays, because it holds for V1. U2 only decides whether hooks can ever ship, so it doesn't gate the target.
 
 **Known limits to carry forward.**
 
@@ -560,6 +599,6 @@ at the setup note and this record is revised. U2 only decides whether hooks can 
 **Stages** (the roadmap, step 5, turns these into phases):
 
 1. Setup note for the free route, with P7's limits.
-2. Probe `@opencode/cli` for U1 and U2. This gates everything after it.
+2. Probe `@opencode/cli`, loader first. U1's enforcement half and U2 close last, in the roadmap's Phase F.
 3. Shared changes: the `McpDialect` fields, the `bodyTransform` argument and the `opencode-home` root.
 4. The target: skills, agents, prompts, rules and MCP.

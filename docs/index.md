@@ -38,6 +38,24 @@
 | [guides/operations.md](guides/operations.md)           | Build and link, targets, CI gate (`npm run ci:local` mirrors CI), `release` |
 | [../CHANGELOG.md](../CHANGELOG.md)                     | Version history                                                             |
 
+## Where a code topic lives
+
+Moved from the root `CLAUDE.md`. Paths are from the repository root.
+
+| Topic                                                                           | Doc                                                     |
+| ------------------------------------------------------------------------------- | ------------------------------------------------------- |
+| CLI command reference, platform/frontmatter mapping, trust scanner              | `docs/reference/spec.md`                                |
+| Per-command CLI flags (generated from `sigil <cmd> --help`)                     | `docs/reference/cli-flags.md`                           |
+| Extension model, emit specs, templates, lexicon, conformance engine             | `docs/reference/architecture.md`                        |
+| Which kinds each target delivers per channel (generated from `capabilities.ts`) | `docs/reference/capabilities.md`                        |
+| `mcp` / `hook` / `settings` config-kind merge model + scope tables              | `docs/reference/config-kinds.md`                        |
+| Adding a skill, rule, or language; `sigil get/search/patch/move/import`         | `docs/guides/authoring.md`                              |
+| Wizard step registry, home menu, guided verbs, install-state legend             | `src/wizard/CLAUDE.md` (auto-loads under `src/wizard/`) |
+| Installing artifacts into a consumer project; manifest/status/update/uninstall  | `docs/guides/consuming.md`                              |
+| Build targets, CI gate, `sigil release`                                         | `docs/guides/operations.md`                             |
+| Common errors, FAQ                                                              | `docs/reference/troubleshooting.md`                     |
+| Full doc map + command cheat-sheet                                              | `docs/index.md`                                         |
+
 ## Project history and backlog (not user docs)
 
 - [decisions/](decisions/README.md): point-in-time decision logs and retrospectives.

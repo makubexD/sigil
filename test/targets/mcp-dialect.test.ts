@@ -193,6 +193,103 @@ describe('renderMcpServer', () => {
   });
 });
 
+describe('renderMcpServer field shape', () => {
+  /** The step-2 base dialect: env under `environment`, command folded into an array. */
+  const shaped = (overrides: Partial<McpDialect> = {}): McpDialect =>
+    dialect({
+      stdioType: 'local',
+      envKey: 'environment',
+      commandForm: 'array',
+      envSyntax: { format: name => '{env:' + name + '}' },
+      ...overrides,
+    });
+
+  it('should fold args into command as an array, in command position', () => {
+    const rendered = renderMcpServer(mcpArtifact({ command: 'x', args: ['a', 'b'] }), shaped());
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'local', command: ['x', 'a', 'b'] });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command']);
+  });
+
+  it('should write [command] when the server has no args', () => {
+    const rendered = renderMcpServer(mcpArtifact({ command: 'x' }), shaped());
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'local', command: ['x'] });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command']);
+  });
+
+  it('should write [command] when args is empty', () => {
+    const rendered = renderMcpServer(mcpArtifact({ command: 'x', args: [] }), shaped());
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'local', command: ['x'] });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command']);
+  });
+
+  it("should write env under envKey, in env's key position", () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ env: { A: '{sigil:env:A}' }, command: 'x' }),
+      shaped(),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, {
+      type: 'local',
+      environment: { A: '{env:A}' },
+      command: ['x'],
+    });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'environment', 'command']);
+  });
+
+  it('should expand tokens inside the folded command array', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: '{sigil:env:C}', args: ['{sigil:env:D}'] }),
+      shaped(),
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'local', command: ['{env:C}', '{env:D}'] });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command']);
+  });
+
+  it('should keep command and args apart without commandForm', () => {
+    const { commandForm: _commandForm, ...withoutCommandForm } = shaped();
+    void _commandForm;
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', args: ['a'] }),
+      withoutCommandForm,
+    );
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'local', command: 'x', args: ['a'] });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command', 'args']);
+  });
+
+  it('should keep env under env without envKey while folding command', () => {
+    const { envKey: _envKey, ...withoutEnvKey } = shaped();
+    void _envKey;
+    const rendered = renderMcpServer(mcpArtifact({ command: 'x', env: { A: 'b' } }), withoutEnvKey);
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { type: 'local', command: ['x'], env: { A: 'b' } });
+    assert.deepEqual(Object.keys(rendered.config), ['type', 'command', 'env']);
+    assert.ok(!('environment' in rendered.config));
+  });
+
+  it('should skip on an authored args name outside interpolatedFields', () => {
+    const rendered = renderMcpServer(
+      mcpArtifact({ command: 'x', args: ['{sigil:env:D}'] }),
+      shaped({ interpolatedFields: ['command', 'env', 'url', 'headers'] }),
+    );
+    assert.ok(isMcpSkip(rendered));
+    assert.match(rendered.skip, /args/);
+    assert.match(rendered.skip, /\{sigil:env:D\}/);
+  });
+
+  it('should leave a remote server without command unchanged', () => {
+    const rendered = renderMcpServer(mcpArtifact({ url: 'u' }), shaped());
+    assert.ok(!isMcpSkip(rendered));
+    assert.deepEqual(rendered.config, { url: 'u' });
+    assert.deepEqual(Object.keys(rendered.config), ['url']);
+    assert.ok(!('command' in rendered.config));
+  });
+});
+
 describe('mcpServerOp', () => {
   it('should build the object-spread op under the dialect serversKey', () => {
     const op = mcpServerOp(mcpArtifact({ command: 'x' }), PORTABLE_MCP_DIALECT, {

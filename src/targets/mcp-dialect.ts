@@ -42,6 +42,14 @@ export interface McpDialect<S extends McpEnvSyntax = EnvSyntax> {
   readonly envSyntax: S;
   /** The server fields in which an env token may appear; a token elsewhere skips the server. */
   readonly interpolatedFields: readonly McpField[];
+  /** Write the server's `env` under this key instead of `env`, in `env`'s key position; omit to keep `env`. */
+  readonly envKey?: string;
+  /**
+   * `'array'`: a server with `command` writes `command: [command, ...args]` in `command`'s key
+   * position and drops `args` (a missing `args` means `[command]`); omit to keep the authored
+   * shape. A server without `command` is left alone.
+   */
+  readonly commandForm?: 'array';
   /**
    * Write `type: <stdioType>` first on a stdio server (`'stdio'` or `'local'`, whichever the file
    * format expects), replacing any authored `type`; omit to leave the authored object untouched.
@@ -137,13 +145,40 @@ function applyTypePolicy(
 }
 
 /**
+ * Applies the dialect's field shape while preserving key order: `env` is written under `envKey`,
+ * and `commandForm: 'array'` folds `args` into `command` as `[command, ...args]` in `command`'s
+ * position, dropping the `args` entry. A server without `command` is left alone.
+ */
+function shapeFields(
+  config: Record<string, unknown>,
+  dialect: McpDialect<McpEnvSyntax>,
+): Record<string, unknown> {
+  const foldCommand = dialect.commandForm === 'array' && 'command' in config;
+  const out: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(config)) {
+    if (key === 'args' && foldCommand) continue;
+    if (key === 'env' && dialect.envKey !== undefined) {
+      out[dialect.envKey] = value;
+      continue;
+    }
+    if (key === 'command' && foldCommand) {
+      out[key] = Array.isArray(config.args) ? [value, ...config.args] : [value];
+      continue;
+    }
+    out[key] = value;
+  }
+  return out;
+}
+
+/**
  * Renders one catalog `mcp` artifact's server under `dialect`. The name is `fm.name` or the id's
  * basename; `description` (catalog-only documentation) never reaches the config. A stdio server
  * (one with `command`) and a remote server (one with `url`) take the dialect's `type` policy, in
- * authored key order; then every `{sigil:env:NAME}` token is expanded through the dialect's
- * syntax. A token in a field outside `interpolatedFields` returns `{ skip }` naming the token and
- * the field before anything is expanded; a malformed token name still throws (an authoring error,
- * not a target gap).
+ * authored key order; then the dialect's field shape (`envKey` renames `env`, `commandForm:
+ * 'array'` folds `args` into an array `command`) is applied in place; then every
+ * `{sigil:env:NAME}` token is expanded through the dialect's syntax. A token in a field outside
+ * `interpolatedFields` returns `{ skip }` naming the token and the authored field before anything
+ * is expanded; a malformed token name still throws (an authoring error, not a target gap).
  */
 export function renderMcpServer(
   artifact: Pick<Artifact, 'id' | 'frontmatter'>,
@@ -160,7 +195,8 @@ export function renderMcpServer(
   const reason = skipReason(source, dialect);
   if (reason !== undefined) return { skip: reason };
 
-  const config = applyTypePolicy(source, 'command' in source, 'url' in source, dialect);
+  const typed = applyTypePolicy(source, 'command' in source, 'url' in source, dialect);
+  const config = shapeFields(typed, dialect);
   if (dialect.envSyntax === 'inherited') return { name, config };
   return { name, config: expandEnvTokens(config, dialect.envSyntax) };
 }

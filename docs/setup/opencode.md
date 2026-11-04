@@ -1,11 +1,12 @@
-# OpenCode: install Sigil skills, agents and commands
+# OpenCode: install Sigil skills, agents, commands and MCP servers
 
 > **Back to:** [README](../../README.md) · [Documentation index](../index.md) ·
 > [consuming.md](../guides/consuming.md)
 
 `sigil add --target opencode` writes skills to `.agents/skills/`, agents to `.opencode/agents/` and commands to
-`.opencode/commands/`, the folders OpenCode reads. `sigil build --target opencode` writes the same files to `dist/opencode/`,
-plus a root `AGENTS.md` with the repo-wide rules.
+`.opencode/commands/`, the folders OpenCode reads. It merges MCP servers into `.opencode/opencode.json`.
+`sigil build --target opencode` writes the skills, agents and commands to `dist/opencode/`, plus a root `AGENTS.md` with the
+repo-wide rules. MCP servers come only through `add`.
 
 ## Install
 
@@ -20,10 +21,39 @@ sigil add --target opencode <selector>
 - **Commands** go to `.opencode/commands/<id>.md`, with `/` in the id written as `-`: `shared/author-artifact` is the command
   `shared-author-artifact`.
 
+## MCP servers
+
+```bash
+sigil add --target opencode shared/filesystem                # .opencode/opencode.json
+sigil add --target opencode shared/filesystem --scope user   # ~/.config/opencode/opencode.json
+```
+
+A server merges into the `mcp` map of `.opencode/opencode.json` (project scope, the default, git-committed) or
+`opencode.json` under `$XDG_CONFIG_HOME/opencode`, by default `~/.config/opencode/` (user scope, all projects), next to what you
+already have ([MCP servers](https://opencode.ai/docs/mcp-servers/)). The first write to a user file that holds your own settings
+takes one `opencode.json.sigil.bak`. `--scope local` is refused: OpenCode has no personal per-project config file. Servers load
+in the next session.
+
+- **Only a primary agent uses these servers.** A catalog agent's allow-list denies MCP tools (below).
+- **Sigil never opens a `.jsonc` file.** It leaves your `opencode.jsonc` alone, in the project root and next to the user
+  `opencode.json`, and OpenCode loads both files. A key set in both goes to the `.jsonc`, so a server you already define there
+  keeps your version.
+- **Sigil refuses comments in a `.json` file.** OpenCode accepts them, but Sigil can't keep them when it writes. `add` stops with
+  a message and leaves the file as it is, and `update` skips the file. Remove the comments, or move your settings to a `.jsonc`.
+- **`{env:NAME}` has two traps.** A server that reads a variable gets a `{env:NAME}` reference in the file, and `add` prints these
+  warnings. OpenCode reads the value when it starts. An unset variable becomes an empty string with no error, and a value
+  holding a double quote stops OpenCode from loading the file. Export the variable first, and don't write a secret into the
+  file instead: `.opencode/opencode.json` is usually committed.
+- **`shared/ado` isn't on OpenCode yet.** It gets its own plan. The other three catalog servers install.
+
+OpenCode 1 also changes files itself when it starts: it adds `$schema` to `opencode.json` files, which Sigil ignores when it
+checks for drift, and it writes a `.gitignore` into `.opencode/`.
+
 ## What an agent can and can't do
 
 - **Its allow-list also denies MCP tools and the `skill` tool.** The list holds only the tools the agent names, so a catalog
-  agent doesn't reach your MCP servers or load skills. This comes from reading OpenCode's source, and wasn't tested.
+  agent doesn't reach the servers above, or your own, and doesn't load skills. This comes from reading OpenCode's source, and
+  wasn't tested.
 - **It carries no model.** It uses the model of the agent that called it.
 - **Restrictions have been seen working only on OpenCode 1, with hand-written files of the same shape and one free model.**
   They haven't been seen working on Sigil's own files, or on OpenCode 2. Both versions load Sigil's rules in the same order:
@@ -37,7 +67,6 @@ sigil add --target opencode <selector>
 | --------------------- | --------------------------------------------------------------------------------------- |
 | `shared/explain-diff` | It takes two arguments, and OpenCode can't carry a real diff in the first one (below)   |
 | Rules                 | They reach OpenCode inside the skills that use them, and through `AGENTS.md` on a build |
-| MCP servers           | Not yet                                                                                 |
 | Hooks                 | They would be generated code on a plugin API that OpenCode 2 doesn't run                |
 | Settings              | The kind's fields are Claude Code's own                                                 |
 | Workflows             | OpenCode has no workflow file                                                           |
@@ -116,7 +145,16 @@ OpenCode 2 (`@opencode/cli` 2.2.5), on Linux. Both listed all 45 skills and all 
 order given above, and both loaded the command. A one-argument command substituted `$1` on both, from a test prompt, because no
 catalog prompt that ships takes an argument.
 
-No model answered in that run, so these rest on earlier tests on OpenCode 1.19.4 with one free model
+The same day, MCP servers installed by `add` connected on both versions, and a test server received the variable's value, or an
+empty string when it was unset. On OpenCode 1, a value holding a double quote stopped the file from loading, and a user-scope
+server and a root `.jsonc` server both loaded. No model is involved, so to run these checks yourself, after `npm run build`:
+
+```bash
+npm run probe:opencode                        # OpenCode 1, from PATH
+npm run probe:opencode -- --v2 <path>         # also OpenCode 2, from an @opencode/cli binary
+```
+
+No model answered in those runs, so these rest on earlier tests on OpenCode 1.19.4 with one free model
 (`opencode/deepseek-v4.1-flash-free`), on 2026-11-03:
 
 - An agent can't use a tool outside its list, from hand-written files.
@@ -125,4 +163,4 @@ No model answered in that run, so these rest on earlier tests on OpenCode 1.19.4
 
 On OpenCode 2 only loading was tested, with no model. Its guide says it reads `AGENTS.md` only, with no `CLAUDE.md` fallback,
 which wasn't tested. Results: [opencode-target-2026-11](../decisions/opencode-target-2026-11.md#probe-log), P1, P2, P4, P7, the
-V2 run, the quoting run and the Sigil output run.
+V2 run, the quoting run, the Sigil output run and the Sigil MCP run.

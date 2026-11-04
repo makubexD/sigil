@@ -86,6 +86,9 @@ The `mcp` kind through an `McpDialect` value and a `ConfigKindTable` entry, writ
 `opencode.json` (`.json` only). A `probe:opencode` script, on the model of `scripts/probe-antigravity.mjs`, re-runs the
 loader probes on one command. The ADR's Phase 8 row in `distribution-channels-2026-09.md` closes in Phase F.
 
+Correction to the Summary's figures: 3 of 4 servers. `shared/ado` waits on its own plan, which moves it to `azcli` authentication
+and opens it to OpenCode.
+
 ## Phase F: V2 model-backed checks
 
 Last, and once a free model answers (try one `opencode run` first). It can run before D or E if the quota returns, and it

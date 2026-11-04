@@ -220,6 +220,7 @@ describe('tool-restriction-coverage', () => {
         ['error', 'copilot'],
         ['error', 'cursor'],
         ['error', 'antigravity'],
+        ['error', 'opencode'],
       ],
     );
   });

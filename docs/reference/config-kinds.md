@@ -149,7 +149,9 @@ can't supply its own. It also applies to recorded values: the manifest can be ed
 3. The value recorded for this id on another target.
 4. A prompt, in a terminal.
 
-With none of these, `add` fails before it writes anything and names the flag to pass. `--yes` never prompts. `--dry-run` never prompts
+With none of these, a server you named (`mcp:shared/ado`) makes `add` fail before it writes anything, naming the flag to pass. A server
+that `all`, `kind:` or `pack:` swept in is skipped with that same advice, so `sigil add all --yes` still installs the rest. `--yes` never
+prompts. `--dry-run` never prompts
 either: a missing value previews as `<NAME>`, and nothing is written or recorded. A `--var` value that differs from the recorded one
 reinstalls that id, and a `--var` name no selected artifact declares is an error.
 
@@ -164,8 +166,9 @@ server with `vars:` is left out of them, and `sigil add` still installs it there
 
 **Known limits.**
 
-- Installing for two targets that share `.mcp.json` with different values leaves the first target's fragment `modified`. Use one
-  value, or run `update --force`.
+- Installing for two targets that share `.mcp.json` with different values leaves the first target's fragment `modified`, and a bare
+  `update --force` doesn't clear it. Use one value, or run `sigil update --target <other> --var NAME=<value> --force` with the value
+  the file holds.
 - `shared/ado` signs in through the Azure CLI, so it needs `az` on `PATH` and a finished `az login`. Copilot CLI passes a local server
   only `PATH`, so `az` may not find its login there. That case and a real tool call are unproven, because no live check has had `az`.
 - An `ado` install from before `vars:` has no recorded value. Run `sigil update --var ADO_ORG=<org>` once.

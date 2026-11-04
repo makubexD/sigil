@@ -215,6 +215,27 @@ describe('sigil add with install variables', () => {
     });
   });
 
+  it('skips a server a bulk selector swept in and installs the rest', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+
+      await runAdd(['kind:mcp'], addOpts(fixture));
+
+      assert.equal(entryFor(fixture, 'claude'), undefined);
+      assert.ok(entryFor(fixture, 'claude', PLAIN_ID), 'the server with no vars still installs');
+    });
+  });
+
+  it('installs a bulk-selected server when the flag gives its value', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+
+      await runAdd(['kind:mcp'], addOpts(fixture, { var: ['A=contoso'] }));
+
+      assert.deepEqual(entryFor(fixture, 'claude')?.vars, { A: 'contoso' });
+    });
+  });
+
   it('previews a dry run with the flag and never prompts', async () => {
     await withTempDirAsync(async root => {
       const fixture = makeFixture(root);

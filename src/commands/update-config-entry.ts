@@ -6,7 +6,7 @@
  *
  * @module
  */
-import { catalogConfigOps } from '../freshness-config';
+import { catalogConfigOps, changedCatalogOp } from '../freshness-config';
 import { isAtRetiredDestination } from '../manifest';
 import { declaredVarNames, missingVars, usableVars } from '../mcp-vars';
 import { applyConfigEntry } from './update-config';
@@ -72,12 +72,35 @@ async function configRun(entry: ManifestEntry, ctx: UpdateRunCtx) {
   return { opts, artifact, values, missing, freshOps };
 }
 
+type ConfigRun = Awaited<ReturnType<typeof configRun>>;
+
+/**
+ * After the merge: reports what was written and records the values. A file that already holds them
+ * still needs the record, or `status` calls the entry outdated forever. A file that kept something
+ * else, such as a user's edit, doesn't get a value it doesn't hold.
+ */
+function recordOutcome(
+  entry: ManifestEntry,
+  ctx: UpdateRunCtx,
+  run: ConfigRun,
+  wrote: boolean,
+): void {
+  const { opts, artifact, values, missing, freshOps } = run;
+  if (opts.dryRun || !artifact) return;
+  if (wrote) ctx.written.push({ id: entry.id, artifact });
+  const configFiles = entry.configFiles ?? [];
+  const holdsValues =
+    missing.length === 0 && !configFiles.some(cf => changedCatalogOp(cf, freshOps) !== undefined);
+  if (wrote || holdsValues) recordVars(entry, artifact, values);
+}
+
 /** Brings a config-kind entry (hook/settings/mcp) up to date. */
 export async function updateConfigOutcome(
   entry: ManifestEntry,
   ctx: UpdateRunCtx,
 ): Promise<EntryUpdateOutcome> {
-  const { opts, artifact, values, missing, freshOps } = await configRun(entry, ctx);
+  const run = await configRun(entry, ctx);
+  const { opts, artifact, missing, freshOps } = run;
   const retired = ctx.target.retiredConfigDestinations ?? [];
   const moved = moveRetiredFragments(entry, opts, freshOps, retired);
   const applied = applyConfigEntry(entry, opts, freshOps, {
@@ -85,11 +108,7 @@ export async function updateConfigOutcome(
     skipReason: skipReasonFor(artifact, ctx.target, missing),
   });
   const wrote = moved.wrote || applied.wrote;
-  const pending = wrote && !!opts.dryRun;
-  if (wrote && !opts.dryRun && artifact) {
-    ctx.written.push({ id: entry.id, artifact });
-    recordVars(entry, artifact, values);
-  }
+  recordOutcome(entry, ctx, run, wrote);
   const skippedDriftCount = moved.skipped + applied.skipped;
-  return { updated: wrote, pending, skippedDriftCount, orphaned: false };
+  return { updated: wrote, pending: wrote && !!opts.dryRun, skippedDriftCount, orphaned: false };
 }

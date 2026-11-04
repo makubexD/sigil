@@ -410,6 +410,30 @@ describe('sigil update with install variables', () => {
     });
   });
 
+  it('records a --var value the file already holds, so status stops calling it outdated', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+      writeProject(fixture.project, installed('contoso'));
+
+      await runUpdate([], updateOpts(fixture, { vars: { ADO_ORG: 'contoso' } }));
+
+      assert.deepEqual(loadManifest(fixture.project).entries[0]?.vars, { ADO_ORG: 'contoso' });
+    });
+  });
+
+  it('records no --var value when a drifted file kept the old one', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+      writeProject(fixture.project, installed('contoso'));
+      const file = path.join(fixture.project, MCP_FILE);
+      fs.writeFileSync(file, fs.readFileSync(file, 'utf8').replace('contoso', 'edited-by-hand'));
+
+      await runUpdate([], updateOpts(fixture, { vars: { ADO_ORG: 'fabrikam' } }));
+
+      assert.equal(loadManifest(fixture.project).entries[0]?.vars, undefined);
+    });
+  });
+
   it('applies --var through the built CLI', async () => {
     await withTempDirAsync(async root => {
       const fixture = makeFixture(root);

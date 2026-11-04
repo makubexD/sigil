@@ -646,7 +646,7 @@ but neither target installs it.
 ## Bulk install
 
 ```bash
-# Full catalog — Claude Code
+# Full catalog — Claude Code (a server that needs an install value is skipped unless you pass --var)
 sigil add all --target claude --yes
 
 # All artifacts from one pack

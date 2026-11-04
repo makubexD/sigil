@@ -17,7 +17,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A config file that fails to parse as `.json` now gets a hint: sigil can't keep comments or trailing commas in a `.json` file.
 - Install variables: an `mcp` artifact can declare `vars:` and write `{sigil:var:NAME}`. `sigil add` asks for the value in a
   terminal, and `add` and `update` take `--var NAME=value`. The value is written as plain text to the config file and the manifest,
-  so it's never for a secret. The Claude plugin asks when it's enabled. Antigravity plugins leave out a server with `vars:`, and
+  so it's never for a secret. With no value and no terminal, `add` fails for a server you named, and `all`, `kind:` and `pack:` skip it
+  and name the flag. The Claude plugin asks when it's enabled. Antigravity plugins leave out a server with `vars:`, and
   `sigil add` still installs it there.
 - `shared/ado` now installs on all six targets, Codex, Antigravity and OpenCode included.
 

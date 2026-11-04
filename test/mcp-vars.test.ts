@@ -15,6 +15,8 @@ import {
   varTokenNames,
 } from '../dist-cli/mcp-vars';
 import { SigilError } from '../dist-cli/errors';
+import { recordedVars } from '../dist-cli/manifest';
+import type { Manifest } from '../dist-cli/manifest/types';
 import type { Artifact } from '../dist-cli/types';
 
 function artifactWithVars(vars: Record<string, unknown>): Pick<Artifact, 'frontmatter'> {
@@ -137,5 +139,22 @@ describe('parseVarFlags', () => {
 describe('declaredVarNames', () => {
   it('returns the frontmatter vars keys in declared order', () => {
     assert.deepEqual(declaredVarNames(artifactWithVars({ ORG: {}, NUM: {} })), ['ORG', 'NUM']);
+  });
+});
+
+describe('recordedVars', () => {
+  const manifest = {
+    entries: [
+      { id: 'shared/x', target: 'cursor', vars: { A: '-bad', B: 'fine' } },
+      { id: 'shared/x', target: 'codex', vars: { A: 'good' } },
+    ],
+  } as unknown as Manifest;
+
+  it('should fill a gap only from a valid value another target recorded', () => {
+    assert.deepEqual(recordedVars(manifest, 'shared/x', 'claude'), { A: 'good', B: 'fine' });
+  });
+
+  it('should prefer the target own valid value', () => {
+    assert.equal(recordedVars(manifest, 'shared/x', 'codex')['A'], 'good');
   });
 });

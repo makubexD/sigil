@@ -154,6 +154,8 @@ Options:
   --scope <scope>      Install scope for config-kind artifacts: project | local
                        | user
   --settings-local     (deprecated) Alias for --scope local (default: false)
+  --var <NAME=value>   An install value for an MCP artifact; repeatable
+                       (default: [])
   -h, --help           display help for command
 ```
 
@@ -299,6 +301,8 @@ Options:
                        false)
   --yes                Apply without previewing and asking first (a terminal
                        asks by default) (default: false)
+  --var <NAME=value>   An install value for an MCP artifact; repeatable
+                       (default: [])
   -h, --help           display help for command
 ```
 

@@ -80,6 +80,11 @@ export interface ManifestEntry {
    * bundled catalog's current revision for the same template id.
    */
   template?: { id: string; revision: number } | undefined;
+  /**
+   * Names and values of install variables, re-checked on read because the manifest is editable.
+   * Absent when the artifact declares none (additive — no MANIFEST_VERSION bump).
+   */
+  vars?: Record<string, string> | undefined;
 }
 
 export interface Manifest {

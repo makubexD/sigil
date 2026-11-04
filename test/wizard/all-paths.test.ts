@@ -321,6 +321,8 @@ const SCENARIOS: Scenario[] = [
 
 /** Files that draw prompts but are covered by shape rather than by their own scenario, with why. */
 const EXEMPT: Record<string, string> = {
+  'commands/add/resolve-vars.ts':
+    'one text prompt; flow covered by add-resolve-vars.test.ts, widths by the text-window property tests',
   'commands/delete.ts':
     'author-only; one confirm and one text, on the prompt layer proven by prompts-fit and prompt-views tests',
   'commands/move.ts': 'author-only; same as delete',

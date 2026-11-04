@@ -265,7 +265,12 @@ such as `catalog/languages/csharp/settings/cs-allow-dev-tools.settings.md`). The
 | ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `hook`     | `event` (required: `PreToolUse`, `PostToolUse`, `UserPromptSubmit`, `SubagentStop`, `Stop`, `SessionStart`, `Notification`), `command` (required), `args`, `matcher` (default `*`), `timeout` |
 | `settings` | `permissions` (`allow` / `deny` / `ask`), `env`, `model`, `statusLine`                                                                                                                        |
-| `mcp`      | `server`: stdio (`command`, `args`, `env`) or remote (`type: http` or `sse`, `url`, `headers`)                                                                                                |
+| `mcp`      | `server`: stdio (`command`, `args`, `env`) or remote (`type: http` or `sse`, `url`, `headers`); `vars` (each name has a required `title` and `description`)                                   |
+
+`server` values reference a run-time environment variable with `{sigil:env:NAME}`, which each target writes in its own syntax, and an
+install-time value with `{sigil:var:NAME}`, which is replaced by the literal value before a target sees the artifact. A `var` name must
+be declared under `vars:` and is never a secret, because the value lands in plain text in files that can be committed
+([Install variables](config-kinds.md#install-variables)).
 
 The merge model, scope tables, drift classification, and backup rules are owned by
 [config-kinds.md](config-kinds.md). `settings` models Claude Code's own vocabulary and is

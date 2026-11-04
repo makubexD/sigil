@@ -21,6 +21,8 @@
  *      references a `deprecated:` artifact.
  *  11. (warning) A skill points at a bundled path that doesn't ship     — skill-path-check.ts
  *      (`references/<missing>`, `assets/`, `scripts/`).
+ *  12. An `mcp` artifact's `{sigil:var:NAME}` tokens and `vars:`        — var-checks.ts
+ *      declarations agree.
  */
 import type { LoadedCatalog, Target, ValidationResult } from '../types';
 import type { ValidateCtx } from './types';
@@ -32,6 +34,7 @@ import { detectExtendsCycles } from './cycles';
 import { checkArtifactTemplate, checkTemplatesCatalogWide } from './template-checks';
 import { checkDeprecatedReferences } from './deprecated-checks';
 import { checkSkillPaths } from './skill-path-check';
+import { checkVarDeclarations } from './var-checks';
 
 export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[]): ValidationResult {
   const ctx: ValidateCtx = { catalog, knownTargets, errors: [], warnings: [] };
@@ -45,6 +48,7 @@ export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[])
     checkArtifactTemplate(ctx, artifact);
     checkDeprecatedReferences(ctx, artifact);
     checkSkillPaths(ctx, artifact);
+    checkVarDeclarations(ctx, artifact);
   }
 
   checkDuplicateAncestorScope(ctx);

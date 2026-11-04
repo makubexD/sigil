@@ -55,6 +55,7 @@ work on its paths. Read it before changing that area.
   ships to, or that agent is skipped.
 - Agents have no `whenToUse`; dispatch text goes in `description`.
 - MCP config never carries a provider's env syntax; catalog source writes `{sigil:env:NAME}`.
+- An install variable (`{sigil:var:NAME}`) is literal, declared under `vars:`, and never a secret.
 - Artifact bodies never hold a provider literal; use `{sigil:<term>}` lexicon tokens.
 
 **Config merge** (`repo-config-merge.md`)

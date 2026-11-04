@@ -33,6 +33,7 @@ export {
   sameFile,
   previousOpFor,
   isAtRetiredDestination,
+  recordedVars,
 } from './config-fragments';
 export { removeEntries } from './mutate-remove';
 export { computeStatus, recordedHashes } from './status';

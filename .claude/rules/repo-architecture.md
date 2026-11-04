@@ -67,7 +67,7 @@ same drifted-file protection.
 
 **`outdated` means "`sigil update` would rewrite this", in every view.** `src/freshness.ts` holds the one
 render (`renderFresh`: the overlaid catalog plus the installed set, without which a Boundary section drops) and
-the config ops `update` writes with (`catalogConfigOps`, `changedCatalogOp`). `staleEntries` applies update's checks
+`src/freshness-config.ts` the config ops `update` writes with (`catalogConfigOps`, `changedCatalogOp`). `staleEntries` applies update's checks
 and is the only source of `outdated` in `sigil status` and the install states (`add`, the wizard), besides a moved
 config file. It skips entries whose overlay was refused, as `update` does. A template revision alone is never
 outdated (`update` writes nothing when the render is unchanged); it only names the reason (`template <id> rev

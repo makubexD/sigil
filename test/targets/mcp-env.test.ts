@@ -12,7 +12,10 @@ import { expandEnvTokens } from '../../dist-cli/targets/env-reference';
 import { getAllTargets, getTarget } from '../../dist-cli/targets';
 import matter from 'gray-matter';
 import { withTempDirAsync } from '../helpers/temp-dir';
-import { CATALOG, add, update } from '../helpers/install-scenario';
+import { CATALOG, PACKS } from '../helpers/install-scenario';
+import { runAdd } from '../../dist-cli/commands/add';
+import { runUpdate } from '../../dist-cli/commands/update';
+import { ENV_MCP_MARKDOWN, withEnvMcpFixture } from '../helpers/env-mcp-fixture';
 
 const SYNTAX = { format: (name: string) => `<${name}>` } as const;
 
@@ -22,6 +25,30 @@ function serverIn(dir: string, file: string, key: string): Record<string, unknow
     Record<string, Record<string, unknown>>
   >;
   return json[key]!.ado!;
+}
+
+/** The bundled catalog copied under `dir`, with the env-token fixture in place of `shared/ado`. */
+function fixtureCatalog(dir: string): string {
+  const catalogDir = path.join(dir, 'fixture-catalog');
+  fs.cpSync(CATALOG, catalogDir, { recursive: true });
+  fs.writeFileSync(path.join(catalogDir, 'shared', 'mcps', 'ado.mcp.md'), ENV_MCP_MARKDOWN);
+  return catalogDir;
+}
+
+/** Non-interactive `sigil add mcp:shared/ado` against the fixture catalog. */
+async function addEnvMcp(dir: string, target: string, catalogDir: string): Promise<void> {
+  await runAdd(['mcp:shared/ado'], {
+    projectDir: dir,
+    catalogDir,
+    packs: PACKS,
+    target,
+    deps: true,
+    dryRun: false,
+    interactive: false,
+    yes: true,
+    overwrite: false,
+    settingsLocal: false,
+  });
 }
 
 describe('expandEnvTokens', () => {
@@ -42,7 +69,7 @@ describe('expandEnvTokens', () => {
 describe('ADO MCP install', () => {
   it('should write ${NAME} references for Claude Code', async () => {
     await withTempDirAsync(async dir => {
-      await add(dir, 'claude', ['mcp:shared/ado']);
+      await addEnvMcp(dir, 'claude', fixtureCatalog(dir));
       const server = serverIn(dir, '.mcp.json', 'mcpServers');
       assert.ok((server.args as string[]).includes('${ADO_ORG}'));
       assert.deepEqual(server.env, { ADO_MCP_PERSONAL_TOKEN: '${ADO_MCP_PERSONAL_TOKEN}' });
@@ -51,7 +78,7 @@ describe('ADO MCP install', () => {
 
   it('should write ${NAME} in the portable .mcp.json, the only file Copilot gets', async () => {
     await withTempDirAsync(async dir => {
-      await add(dir, 'copilot', ['mcp:shared/ado']);
+      await addEnvMcp(dir, 'copilot', fixtureCatalog(dir));
       assert.equal(fs.existsSync(path.join(dir, '.vscode/mcp.json')), false);
       const portable = serverIn(dir, '.mcp.json', 'mcpServers');
       assert.ok((portable.args as string[]).includes('${ADO_ORG}'));
@@ -89,7 +116,7 @@ describe('MCP env caveat on add', () => {
     const { warnMcpEnvCaveats } = await import('../../dist-cli/commands/add/execute-config');
     const { envTokenNames } = await import('../../dist-cli/targets/env-reference');
     const { loadResolvedCatalog } = await import('../helpers/catalog');
-    const resolved = await loadResolvedCatalog();
+    const resolved = withEnvMcpFixture(await loadResolvedCatalog());
     const mcps = resolved.artifacts.filter(a => a.kind === 'mcp');
     assert.ok(mcps.length > 0);
     const original = console.warn;
@@ -114,7 +141,7 @@ describe('MCP env caveat on add', () => {
     // Arrange
     const { warnMcpEnvCaveats } = await import('../../dist-cli/commands/add/execute-config');
     const { loadResolvedCatalog } = await import('../helpers/catalog');
-    const resolved = await loadResolvedCatalog();
+    const resolved = withEnvMcpFixture(await loadResolvedCatalog());
     const ado = resolved.byId.get('shared/ado');
     assert.ok(ado);
     const target = getTarget('copilot');
@@ -157,7 +184,8 @@ describe('update and the MCP env caveat', () => {
   it('should repeat the caveat when update rewrites a server that reads env vars', async () => {
     await withTempDirAsync(async dir => {
       // Arrange
-      await add(dir, 'copilot', ['mcp:shared/ado']);
+      const catalogDir = fixtureCatalog(dir);
+      await addEnvMcp(dir, 'copilot', catalogDir);
       fs.rmSync(path.join(dir, '.mcp.json'));
       const lines: string[] = [];
       const original = console.warn;
@@ -165,7 +193,15 @@ describe('update and the MCP env caveat', () => {
 
       // Act
       try {
-        await update(dir, 'copilot');
+        await runUpdate([], {
+          projectDir: dir,
+          target: 'copilot',
+          catalogDir,
+          packs: PACKS,
+          force: false,
+          dryRun: false,
+          yes: true,
+        });
       } finally {
         console.warn = original;
       }

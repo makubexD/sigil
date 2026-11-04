@@ -11,22 +11,18 @@
 import { resolveCatalog } from '../../resolve';
 import { applyProjectOverlays } from '../../overlay-report';
 import { getTarget } from '../../targets';
-import { CONFIG_KINDS, type SkippedArtifact } from '../../select';
+import type { SkippedArtifact } from '../../select';
 import { SigilError } from '../../errors';
-import { loadManifest } from '../../manifest';
-import { printSkippedAdvice } from '../../wizard';
-import { printPluginCheckWarnings, printPluginOverlapAdvice } from '../../wizard/command-strings';
 import type { PluginOverlap } from '../../plugin-overlap';
 import { loadAndValidate, detectProjectTarget } from '../../cli-helpers';
 import { resolveInputs } from './resolve-inputs';
-import { resolveIds, computeUpToDateIds } from './plan-ids';
+import { resolveAndPartitionIds } from './plan-ids';
+import { parseVarFlags } from '../../mcp-vars';
+import type { VarValues } from '../../mcp-vars';
+import { resolvePlanVars } from './plan-vars';
+import type { PlannedPartition } from './plan-vars';
 import { buildScaffoldOpts, computePrimaryPaths, scaffoldWholeFiles } from './plan-scaffold';
-import {
-  complement,
-  computePluginOverlaps,
-  type PartitionedIds,
-  type PlanCtx,
-} from './plan-context';
+import type { PartitionedIds, PlanCtx } from './plan-context';
 import type { FileMap, ConfigScope, ResolvedCatalog, Target } from '../../types';
 import type { AddOpts } from './index';
 
@@ -56,6 +52,8 @@ export interface AddPlan {
   readonly effectiveComplement: boolean;
   readonly fromWizard: boolean;
   readonly skipped: SkippedArtifact[];
+  /** The install value for every variable this plan's `mcp` artifacts declare. */
+  readonly vars: VarValues;
   /** Ids an enabled plugin also delivers, when not running under --complement (empty then). */
   readonly pluginOverlaps: ReadonlyMap<string, PluginOverlap>;
   readonly upToDateIds: string[];
@@ -85,7 +83,11 @@ function splitCommaFlag(raw: string | undefined): string[] | undefined {
 }
 
 /** Builds the plan context, resolving inputs/target; returns null when the wizard was cancelled. */
-async function buildPlanCtx(selectors: string[], opts: AddOpts): Promise<PlanCtx | null> {
+async function buildPlanCtx(
+  selectors: string[],
+  opts: AddOpts,
+  varFlags: VarValues,
+): Promise<PlanCtx | null> {
   const { catalog, packsConfig } = await loadAndValidate(opts.catalogDir, opts.packs);
   const overlaid = applyProjectOverlays(resolveCatalog(catalog), opts.projectDir);
   const { resolved, refused } = overlaid;
@@ -96,60 +98,8 @@ async function buildPlanCtx(selectors: string[], opts: AddOpts): Promise<PlanCtx
   const targetName = inputs.target ?? detectProjectTarget(opts.projectDir, { verbose: true });
   const target = resolveScaffoldTarget(targetName);
 
-  const ctx = { opts, resolved, refusedOverlays: refused, target, targetName, inputs };
+  const ctx = { opts, varFlags, resolved, refusedOverlays: refused, target, targetName, inputs };
   return { ...ctx, packs: packsConfig.packs, marketplace: packsConfig.marketplace };
-}
-
-/** Splits resolved ids into whole-file vs config-kind, excluding already-up-to-date ids from both. */
-function partitionIdsByKind(
-  ids: string[],
-  resolved: ResolvedCatalog,
-  upToDateSet: Set<string>,
-): { wholeFileIds: string[]; configIds: string[] } {
-  const wholeFileIds = ids.filter(
-    id => !CONFIG_KINDS.has(resolved.byId.get(id)?.kind ?? '') && !upToDateSet.has(id),
-  );
-  const configIds = ids.filter(
-    id => CONFIG_KINDS.has(resolved.byId.get(id)?.kind ?? '') && !upToDateSet.has(id),
-  );
-  return { wholeFileIds, configIds };
-}
-
-/** Refuses skills for a target whose skill files another target already installed here. */
-function refuseSharedSkillFiles(ctx: PlanCtx, ids: readonly string[]): void {
-  const peers = ctx.target.sharesSkillFilesWith ?? [];
-  if (!ids.some(id => ctx.resolved.byId.get(id)?.kind === 'skill')) return;
-  const entries = loadManifest(ctx.opts.projectDir)?.entries ?? [];
-  const peer = peers.find(name => entries.some(e => e.target === name && e.kind === 'skill'));
-  if (peer === undefined) return;
-  throw new SigilError(
-    `${peer} already installed skills in this project, and ${ctx.target.name} writes the same files.`,
-    {
-      hint: `Keep ${peer}, or remove its skills with sigil uninstall <ids> --target ${peer} first.`,
-    },
-  );
-}
-
-/** Resolves candidate ids, prints skip advice, and splits them into whole-file vs config-kind. */
-async function resolveAndPartitionIds(
-  ctx: PlanCtx,
-  filters: Parameters<typeof resolveIds>[1],
-): Promise<PartitionedIds> {
-  const { ids: resolvedIds, skipped } = resolveIds(ctx, filters);
-  const { overlaps, warnings } = computePluginOverlaps(ctx, resolvedIds);
-  printPluginCheckWarnings(warnings);
-  const ids = ctx.inputs.complement ? complement(ctx, resolvedIds, skipped, overlaps) : resolvedIds;
-  const shown = ctx.inputs.complement ? new Map<string, PluginOverlap>() : overlaps;
-
-  printSkippedAdvice(skipped, ctx.target);
-  // The wizard's plan box already showed this advisory (decision 11), so print it only for a typed add.
-  if (!ctx.inputs.fromWizard) printPluginOverlapAdvice(shown);
-  refuseSharedSkillFiles(ctx, ids);
-
-  const upToDateIds = await computeUpToDateIds(ctx, ids);
-  const { wholeFileIds, configIds } = partitionIdsByKind(ids, ctx.resolved, new Set(upToDateIds));
-
-  return { skipped, pluginOverlaps: shown, upToDateIds, wholeFileIds, configIds };
 }
 
 type EffectiveFields = Pick<
@@ -186,7 +136,7 @@ function buildEffectiveFields(
 /** Parameters for {@link assembleAddPlan} beyond the shared PlanCtx. */
 interface AssembleAddPlanOptions {
   effective: { kinds: string[] | undefined; exclude: string[] | undefined };
-  partition: Awaited<ReturnType<typeof resolveAndPartitionIds>>;
+  partition: PlannedPartition;
   scaffoldOpts: ScaffoldOpts;
   files: { primaryPaths: Set<string>; toWrite: FileMap; conflicting: FileMap };
 }
@@ -225,12 +175,14 @@ async function runScaffoldPhase(
 
 /** Builds the full install plan, or returns null when the wizard was cancelled. */
 export async function buildAddPlan(selectors: string[], opts: AddOpts): Promise<AddPlan | null> {
-  const ctx = await buildPlanCtx(selectors, opts);
+  const varFlags = parseVarFlags(opts.var ?? []);
+  const ctx = await buildPlanCtx(selectors, opts, varFlags);
   if (!ctx) return null;
 
   const effective = { kinds: splitCommaFlag(opts.kind), exclude: splitCommaFlag(opts.exclude) };
   const filters = { ...effective, language: ctx.inputs.language };
-  const partition = await resolveAndPartitionIds(ctx, filters);
+  const partition = await resolvePlanVars(ctx, await resolveAndPartitionIds(ctx, filters));
+  if (partition === null) return null;
 
   const { scaffoldOpts, primaryPaths, toWrite, conflicting } = await runScaffoldPhase(
     ctx,

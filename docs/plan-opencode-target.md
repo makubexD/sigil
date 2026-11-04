@@ -91,6 +91,8 @@ loader probes on one command. The ADR's Phase 8 row in `distribution-channels-20
 Correction to the Summary's figures: 3 of 4 servers. `shared/ado` waits on its own plan, which moves it to `azcli` authentication
 and opens it to OpenCode.
 
+Done 2026-11-04: [plan-ado-install-input](plan-ado-install-input.md) moved `shared/ado` to `azcli`, so OpenCode has all 4 of 4 servers.
+
 ## Phase F: V2 model-backed checks
 
 Last, and once a free model answers (try one `opencode run` first). It can run before D or E if the quota returns, and it

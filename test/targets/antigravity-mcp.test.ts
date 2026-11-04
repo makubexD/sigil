@@ -18,6 +18,7 @@ import {
 } from '../../dist-cli/targets/antigravity/mcp-ops';
 import { SigilError } from '../../dist-cli/errors';
 import { CATALOG_DIR, loadResolvedCatalog } from '../helpers/catalog';
+import { ENV_MCP_MARKDOWN, withEnvMcpFixture } from '../helpers/env-mcp-fixture';
 import { withTempDir } from '../helpers/temp-dir';
 import type { ConfigMergeOp, ResolvedCatalog } from '../../dist-cli/types';
 
@@ -106,7 +107,7 @@ describe('Antigravity MCP server config', () => {
 
 describe('Antigravity MCP skip reasons', () => {
   it('ado is skipped for its organization token in args', async () => {
-    const catalog = await loadResolvedCatalog();
+    const catalog = withEnvMcpFixture(await loadResolvedCatalog());
     const reason = antigravityMcpSkipReason(catalog.byId.get('shared/ado')!);
 
     assert.match(reason!, /\{sigil:env:ADO_ORG\}/);
@@ -124,7 +125,7 @@ describe('Antigravity MCP skip reasons', () => {
 
 describe('Antigravity target MCP wiring', () => {
   it('skips ado with the dialect reason', async () => {
-    const catalog = await loadResolvedCatalog();
+    const catalog = withEnvMcpFixture(await loadResolvedCatalog());
     const artifact = catalog.byId.get('shared/ado')!;
 
     assert.equal(
@@ -522,6 +523,7 @@ describe('Antigravity MCP e2e', () => {
       const { project, home } = makeDirs(work);
       const catalogDir = copyCatalog(work);
       const adoFile = path.join(catalogDir, CATALOG_ADO);
+      fs.writeFileSync(adoFile, ENV_MCP_MARKDOWN);
       const source = fs.readFileSync(adoFile, 'utf8');
       assert.match(source, /^platforms: .*$/m, 'the bundled source is platform-restricted');
       // A fixture copy without `platforms`, so the skip comes from the MCP dialect, not the

@@ -54,6 +54,11 @@ Moved from the root `CLAUDE.md`, which keeps a one-line hard rule for each; this
   authored and unmapped. (see `docs/decisions/catalog-quality-audit-2026-08.md`)
 - **MCP config never carries a provider's env syntax.** Catalog `server` values write `{sigil:env:NAME}`; each target
   expands it for the file it writes (`src/targets/env-reference.ts`, an `EnvSyntax` per file format).
+- **An install variable is literal, declared, and never a secret.** `{sigil:var:NAME}` needs a `vars:` entry, and
+  `scaffoldConfigOps` (`src/config-ops.ts`) replaces it before any target sees the artifact, so no target or dialect
+  handles a var. The value lands in plain text in the config file and the manifest, and both can be committed. Values
+  pass the fixed rule in `src/mcp-vars.ts`, on flags, prompts and recorded values; a catalog can't supply its own.
+  (see `docs/reference/config-kinds.md#install-variables`)
 - **Artifact bodies are provider-neutral prose — never a hardcoded provider-specific literal** (`CLAUDE.md`,
   `$ARGUMENTS`, `.claude/rules/`, …). Bodies use `{sigil:<term>}` tokens (`LEXICON_TERMS` in `src/targets/lexicon.ts`)
   and one `ProviderLexicon` per provider (`src/targets/<provider>/lexicon.ts`), applied by `renderArtifact()`

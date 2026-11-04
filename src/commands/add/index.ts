@@ -32,6 +32,8 @@ export interface AddOpts {
   complement?: boolean;
   /** The user home the plugin readers look in; defaults to os.homedir(), injectable for tests. */
   homeDir?: string;
+  /** Raw repeatable `--var NAME=value` flags; `buildAddPlan` parses them into `varFlags`. */
+  var?: readonly string[] | undefined;
 }
 
 /** Returns `'cancelled'` when the user backed out of the wizard before anything was planned. */

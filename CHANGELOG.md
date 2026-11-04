@@ -15,15 +15,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   quoting. MCP servers merge into `.opencode/opencode.json` or the user `opencode.json` through `add`, and hooks, settings and
   workflows are skipped. `add` and `sigil status` print a note when a skill is installed for both `claude` and `opencode`.
 - A config file that fails to parse as `.json` now gets a hint: sigil can't keep comments or trailing commas in a `.json` file.
+- Install variables: an `mcp` artifact can declare `vars:` and write `{sigil:var:NAME}`. `sigil add` asks for the value in a
+  terminal, and `add` and `update` take `--var NAME=value`. The value is written as plain text to the config file and the manifest,
+  so it's never for a secret. With no value and no terminal, `add` fails for a server you named, and `all`, `kind:` and `pack:` skip it
+  and name the flag. The Claude plugin asks when it's enabled. Antigravity plugins leave out a server with `vars:`, and
+  `sigil add` still installs it there.
+- `shared/ado` now installs on all six targets, Codex, Antigravity and OpenCode included.
 
 ### Changed
 
 - `sigil add` now exits non-zero when it can't parse a config file it would merge into. Before, it printed the error and exited 0.
 
+### Breaking
+
+- `shared/ado` now signs in through the Azure CLI and takes its organization at install. `ADO_ORG` and `ADO_MCP_PERSONAL_TOKEN`
+  are no longer read from the environment, because `--authentication pat` never read that token. Install `az`, run `az login`, then run
+  `sigil update --var ADO_ORG=<org>` once. Until you do, the old entry stays as installed and `status` shows it as outdated.
+
 ### Documentation
 
 - [docs/setup/opencode.md](docs/setup/opencode.md): what the target writes and skips, how it behaves next to Claude output,
   the `.env` limit, and what was tested on OpenCode 1 and 2.
+- [Install variables](docs/reference/config-kinds.md#install-variables): the concept, the allowed values, where `add` gets a value,
+  and the known limits. `az` under Copilot CLI and a real tool call are unproven.
 
 ## [0.8.1] - 2026-11-03
 

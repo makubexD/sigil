@@ -16,6 +16,7 @@ import { resolveClaudeConfigDestination } from '../../dist-cli/targets/claude-co
 import { SigilError } from '../../dist-cli/errors';
 import type { FileMap, Pack, ResolvedArtifact, ResolvedCatalog } from '../../dist-cli/types';
 import { loadBundledCatalog } from '../helpers/catalog';
+import { withEnvMcpFixture } from '../helpers/env-mcp-fixture';
 import { PACKS as BUNDLED_PACKS } from '../helpers/install-scenario';
 
 const VERSION = '0.1.0';
@@ -50,6 +51,19 @@ async function compileBundled(): Promise<{
   const packs = realPacks();
   const target = new ClaudeCodeTarget();
   const files = await target.compile(resolved, { version: VERSION, packs });
+  return { files, resolved, packs };
+}
+
+/** Compile the bundled catalog with the env-token `shared/ado` fixture. */
+async function compileBundledWithEnvAdo(): Promise<{
+  files: FileMap;
+  resolved: ResolvedCatalog;
+  packs: Pack[];
+}> {
+  const catalog = await loadBundledCatalog();
+  const resolved = withEnvMcpFixture(resolveCatalog(catalog));
+  const packs = realPacks();
+  const files = await new ClaudeCodeTarget().compile(resolved, { version: VERSION, packs });
   return { files, resolved, packs };
 }
 
@@ -102,6 +116,47 @@ function withAdoVariables(resolved: ResolvedCatalog, names: string[]): ResolvedC
   const clone = structuredClone(base);
   clone.frontmatter.server = { command: 'npx', args: names.map(name => `{sigil:env:${name}}`) };
   return withArtifact(resolved, clone);
+}
+
+/** The `vars:` entry the variable fixture declares. */
+const ORG_VAR = {
+  title: 'Azure DevOps organization',
+  description: 'The <org> in dev.azure.com/<org>',
+};
+
+/**
+ * The resolved catalog with `shared/ado` cloned to declare `ORG` under `vars:` and write
+ * `{sigil:var:ORG}` in its server, as a plugin install reads it.
+ */
+function withAdoVar(resolved: ResolvedCatalog): ResolvedCatalog {
+  const base = resolved.byId.get('shared/ado');
+  assert.ok(base, 'shared/ado is in the bundled catalog');
+  const clone = structuredClone(base);
+  clone.frontmatter.vars = { ORG: { ...ORG_VAR } };
+  clone.frontmatter.server = {
+    command: 'npx',
+    args: [
+      '-y',
+      '@azure-devops/mcp@2.10.0',
+      '{sigil:var:ORG}',
+      '--authentication',
+      'azcli',
+      '-d',
+      'core',
+      'work',
+      'work-items',
+    ],
+  };
+  return withArtifact(resolved, clone);
+}
+
+/** Compile the bundled catalog with the variable-declaring `shared/ado`. */
+async function compileWithAdoVar(): Promise<FileMap> {
+  const resolved = resolveCatalog(await loadBundledCatalog());
+  return new ClaudeCodeTarget().compile(withAdoVar(resolved), {
+    version: VERSION,
+    packs: realPacks(),
+  });
 }
 
 /** The description of the generated `mcp-ado` plugin for a server reading these variables. */
@@ -160,7 +215,7 @@ describe('Claude plugin: hooks and MCP as generated plugins', () => {
   });
 
   it('env syntax', async () => {
-    const { files } = await compileBundled();
+    const { files } = await compileBundledWithEnvAdo();
 
     const content = files['plugins/mcp-ado/.mcp.json'];
     assert.ok(content, 'mcp-ado ships .mcp.json');
@@ -176,7 +231,7 @@ describe('Claude plugin: hooks and MCP as generated plugins', () => {
   });
 
   it('description names variables', async () => {
-    const { files, resolved } = await compileBundled();
+    const { files, resolved } = await compileBundledWithEnvAdo();
 
     const adoManifest = files['plugins/mcp-ado/.claude-plugin/plugin.json'];
     assert.ok(adoManifest, 'mcp-ado ships a manifest');
@@ -226,7 +281,7 @@ describe('Claude plugin: hooks and MCP as generated plugins', () => {
   });
 
   it('an env MCP plugin puts the Claude-only sentence after the variable sentence', async () => {
-    const { files } = await compileBundled();
+    const { files } = await compileBundledWithEnvAdo();
 
     const manifest = files['plugins/mcp-ado/.claude-plugin/plugin.json'];
     assert.ok(manifest, 'mcp-ado ships a manifest');
@@ -504,6 +559,64 @@ describe('Claude plugin: pluginDependencies', () => {
       const manifest = files[`plugins/${name}/.claude-plugin/plugin.json`];
       assert.ok(manifest, `${name} ships a manifest`);
       assert.ok(!('dependencies' in JSON.parse(manifest)), `${name} declares no dependencies`);
+    }
+  });
+});
+
+describe('Claude plugin: install-time vars use userConfig', () => {
+  it('an MCP var server writes ${user_config.ORG} in .mcp.json', async () => {
+    const files = await compileWithAdoVar();
+
+    const content = files['plugins/mcp-ado/.mcp.json'];
+    assert.ok(content, 'mcp-ado ships .mcp.json');
+    const server = Object.values(JSON.parse(content).mcpServers)[0] as { args?: string[] };
+    assert.ok(Array.isArray(server.args), 'the server has args');
+    assert.ok(
+      server.args.includes('${user_config.ORG}'),
+      'the declared variable becomes a user_config reference',
+    );
+    assert.ok(!content.includes('{sigil:var:'), 'no catalog var token survives into the plugin');
+  });
+
+  it('the same server declares userConfig.ORG in plugin.json', async () => {
+    const files = await compileWithAdoVar();
+
+    const manifest = files['plugins/mcp-ado/.claude-plugin/plugin.json'];
+    assert.ok(manifest, 'mcp-ado ships a manifest');
+    assert.deepEqual(JSON.parse(manifest).userConfig, {
+      ORG: {
+        type: 'string',
+        title: ORG_VAR.title,
+        description: ORG_VAR.description,
+        required: true,
+      },
+    });
+  });
+
+  it('a server with no vars: writes no userConfig key', async () => {
+    const { files } = await compileBundled();
+
+    const manifest = files['plugins/mcp-filesystem/.claude-plugin/plugin.json'];
+    assert.ok(manifest, 'mcp-filesystem ships a manifest');
+    assert.ok(!('userConfig' in JSON.parse(manifest)), 'no userConfig key is written');
+    assert.ok(!manifest.includes('userConfig'), 'the manifest bytes carry no userConfig');
+  });
+
+  it('a pack plugin writes no userConfig key', async () => {
+    const { files } = await compileBundled();
+
+    const manifest = files['plugins/essentials/.claude-plugin/plugin.json'];
+    assert.ok(manifest, 'essentials ships a manifest');
+    assert.ok(!('userConfig' in JSON.parse(manifest)), 'a pack plugin has no userConfig');
+  });
+
+  it('no generated plugin file carries a {sigil: token', async () => {
+    const files = await compileWithAdoVar();
+
+    const pluginFiles = Object.entries(files).filter(([key]) => key.startsWith('plugins/'));
+    assert.ok(pluginFiles.length > 0, 'the compile writes plugin files');
+    for (const [key, content] of pluginFiles) {
+      assert.ok(!content.includes('{sigil:'), `${key} carries no catalog token`);
     }
   });
 });

@@ -15,6 +15,7 @@ import { buildCodexMcpOps } from '../../dist-cli/targets/codex/mcp-ops';
 import { supportedKinds } from '../../dist-cli/targets/capabilities';
 import { resolveSelection } from '../../dist-cli/select/selector-resolve';
 import { loadResolvedCatalog } from '../helpers/catalog';
+import { withEnvMcpFixture } from '../helpers/env-mcp-fixture';
 import { withTempDir } from '../helpers/temp-dir';
 import type { Artifact, ConfigMergeOp, ResolvedCatalog } from '../../dist-cli/types';
 
@@ -219,7 +220,7 @@ describe('codex mcp config — env and field mapping', () => {
 
 describe('codex mcp — platforms', () => {
   it('shared/ado is restricted to claude and copilot, so codex skips it', async () => {
-    const catalog = await loadResolvedCatalog();
+    const catalog = withEnvMcpFixture(await loadResolvedCatalog());
     const { ids, skipped } = resolveSelection({
       selectors: ['shared/ado'],
       filters: {},

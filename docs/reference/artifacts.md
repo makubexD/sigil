@@ -206,7 +206,7 @@ Contents: [Skills](#skills) · [Agents](#agents) · [Rules](#rules) · [Prompts]
 
 | Artifact | Description | Packs | Tools | Install |
 | --- | --- | --- | --- | --- |
-| [`shared/ado`](../../catalog/shared/mcps/ado.mcp.md) | Connects your AI tool to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. | — | claude, copilot, cursor | `sigil add mcp:shared/ado` |
+| [`shared/ado`](../../catalog/shared/mcps/ado.mcp.md) | Connects your AI tool to the Azure DevOps MCP server, enabling structured access to ADO boards, work items, and core APIs. | — | claude, copilot, codex, cursor, antigravity, opencode | `sigil add mcp:shared/ado` |
 | [`shared/context-mode`](../../catalog/shared/mcps/context-mode.mcp.md) | Connects your AI tool to the local context-mode MCP server, which must be installed globally and available on PATH. | — | claude, copilot, codex, cursor, antigravity, opencode | `sigil add mcp:shared/context-mode` |
 | [`shared/filesystem`](../../catalog/shared/mcps/filesystem.mcp.md) | Connects your AI tool to the official MCP filesystem server, enabling structured read/write access to local directories via the MCP protocol. | essentials, dotnet-starter, python-starter, react-starter, typescript-starter, angular-starter | claude, copilot, codex, cursor, antigravity, opencode | `sigil add mcp:shared/filesystem` |
 | [`shared/maku-jam`](../../catalog/shared/mcps/maku-jam.mcp.md) | Connects your AI tool to the MakuJam remote MCP server over HTTP at mcp.jam.dev. | — | claude, copilot, codex, cursor, antigravity, opencode | `sigil add mcp:shared/maku-jam` |

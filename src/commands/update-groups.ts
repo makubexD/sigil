@@ -11,9 +11,9 @@
 import { loadAndValidate } from '../cli-helpers';
 import { overlayProject, reportOverlayIssues, withoutRefused } from '../overlay-report';
 import { resolveCatalog } from '../resolve';
-import { catalogConfigOps } from '../freshness';
-import { applyConfigEntry, isConfigEntry } from './update-config';
-import { isAtRetiredDestination, moveRetiredFragments } from './update-config-move';
+import { isConfigEntry } from './update-config';
+import { updateConfigOutcome } from './update-config-entry';
+import type { EntryUpdateOutcome, UpdateRunCtx } from './update-config-entry';
 import { inlinedDependencies, inlinedNotice } from './shared/inlined-deps';
 import { installNewDependencies } from './update-deps';
 import { filterEntriesToUpdate } from './update-entries';
@@ -94,44 +94,6 @@ export async function loadUpdateGroups(
   for (const group of groups) loaded.push(await loadGroup(group, projectDir));
   reportOverlayIssues(loaded.map(l => l.overlaid));
   return loaded.flatMap(l => toUpdateGroup(l, targetName, idFilter) ?? []);
-}
-
-interface EntryUpdateOutcome {
-  updated: boolean;
-  pending?: boolean;
-  skippedDriftCount: number;
-  orphaned: boolean;
-}
-
-/** Shared context for the update-run helpers below. */
-interface UpdateRunCtx {
-  catalogIds: Set<string>;
-  resolved: ResolvedCatalog;
-  target: Target;
-  opts: ConfigUpdateOptions;
-  /** Config artifacts this run wrote, for the one MCP env warning at the end. */
-  written: WrittenConfig[];
-}
-
-/** Brings a config-kind entry (hook/settings/mcp) up to date. */
-async function updateConfigOutcome(
-  entry: ManifestEntry,
-  ctx: UpdateRunCtx,
-): Promise<EntryUpdateOutcome> {
-  const { opts } = ctx;
-  const freshOps = await catalogConfigOps(entry.id, ctx, opts.projectDir);
-  const retired = ctx.target.retiredConfigDestinations ?? [];
-  const moved = moveRetiredFragments(entry, opts, freshOps, retired);
-  const artifact = ctx.resolved.byId.get(entry.id);
-  const applied = applyConfigEntry(entry, opts, freshOps, {
-    isRetired: cf => isAtRetiredDestination(cf, retired),
-    skipReason: artifact && ctx.target.configSkipReason?.(artifact),
-  });
-  const wrote = moved.wrote || applied.wrote;
-  const pending = wrote && !!opts.dryRun;
-  if (wrote && !opts.dryRun && artifact) ctx.written.push({ id: entry.id, artifact });
-  const skippedDriftCount = moved.skipped + applied.skipped;
-  return { updated: wrote, pending, skippedDriftCount, orphaned: false };
 }
 
 /** Updates one manifest entry: orphan check, then config-kind or whole-file update. */

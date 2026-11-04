@@ -33,7 +33,7 @@ function slugOf(id: string): string {
  * case 5, on both product lines), so a prompt with two or more arguments is skipped.
  */
 const SPLIT_ARGS_SKIP_REASON =
-  'OpenCode splits arguments on spaces and quotes, so only the last one can hold free text';
+  'OpenCode splits arguments on spaces and quotes, so only the last one can hold several words';
 
 const descriptionMapping: FieldMapping = {
   from: 'description',

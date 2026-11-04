@@ -529,7 +529,7 @@ export interface Target {
    * of that artifact goes unused in the reader instead of loading twice (Cursor prefers
    * `.cursor/skills/` over `.claude/skills/` and `.agents/skills/`). The note then says so.
    *
-   * `unfixedWinner` marks a reader where one entry reaches the tool, and which copy isn't fixed
+   * `unfixedWinner` marks a reader where one entry reaches the tool, and which copy depends on its version
    * (OpenCode reads `.claude/skills` and `.agents/skills`). The note says so instead of
    * "load twice".
    */

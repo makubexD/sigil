@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `opencode` target: `sigil add --target opencode` writes skills to `.agents/skills/`, the 39 catalog agents as subagents in
+- `opencode` target: `sigil add --target opencode` writes skills to `.agents/skills/`, agents as subagents in
   `.opencode/agents/` with their tool lists written as `permission` rules, and prompts as commands in `.opencode/commands/`. A
   full build also writes a root `AGENTS.md`. `explain-diff` is skipped, because a real diff doesn't survive OpenCode's argument
   quoting. MCP servers are not delivered yet, and hooks, settings and workflows are skipped. `add` and `sigil status` print a

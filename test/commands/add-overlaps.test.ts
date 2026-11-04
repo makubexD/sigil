@@ -118,7 +118,7 @@ describe('sigil add — overlap notes', () => {
       await install(dir, 'claude', SKILL);
       const out = await install(dir, 'opencode', SKILL);
       assert.match(out, /OpenCode also reads Claude Code's skills/);
-      assert.match(out, /shows one copy of each, and which one isn't fixed/);
+      assert.match(out, /shows one copy of each, and which one depends on its version/);
       assert.doesNotMatch(out, /load twice/);
     });
   });

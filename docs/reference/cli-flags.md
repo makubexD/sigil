@@ -44,7 +44,8 @@ Compile the catalog to dist/<target>/, replacing that folder.
 
 Options:
   --target <name>      Platform to emit (claude, copilot, agents-standard,
-                       codex, cursor, antigravity, all) (default: "all")
+                       codex, cursor, antigravity, opencode, all) (default:
+                       "all")
   --catalog-dir <dir>  Path to catalog/ (default: <package>/catalog)
   --packs <file>       Path to packs.yaml (default: <package>/packs.yaml)
   --out-dir <dir>      Output root (default: <package>/dist)

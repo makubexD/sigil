@@ -534,7 +534,7 @@ How to run it:
 | P7    | `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1`                     | The `.claude` skill is gone; `.agents` and `.opencode` remain                            |
 
 **Differences from V1.** `dup-skill` was 15 of 16 `.opencode` on V1, and the [Skills](https://opencode.ai/v2/docs/skills/) page
-now states a fixed precedence. A V1-shaped `mcp` map is translated to `mcp.servers`. The file-write side effects didn't
+now states a fixed precedence, with `.agents/skills` over `.claude/skills`, so step 9's note says the winner depends on the version instead of the plan's "isn't fixed". A V1-shaped `mcp` map is translated to `mcp.servers`. The file-write side effects didn't
 appear: no `$schema` insert in `opencode.json`, and no `.gitignore` in `.opencode/`.
 
 **Not run:** picking by description, permission enforcement, `cat .env`, `AGENTS.md` versus `CLAUDE.md`, and U2. Instruction
@@ -562,7 +562,7 @@ same result on every case.
 **A diff holding both quote types can't reach an argument whole, and nothing reports it.** The model would get part of the
 diff, and the rest as the audience. Most real diffs hold both, so `explain-diff` doesn't ship on this target: its spec skips a
 prompt with two or more arguments, and `add` says why. This is the arguments' shape, not the prompt's: `{{diff}}` could reach
-OpenCode whole only as the last argument, and reordering `args:` to fit would change the catalog for one target.
+OpenCode as more than one word only as the last argument (with its quotes dropped, as case 5's `$2` shows), and reordering `args:` to fit would change the catalog for one target.
 
 ### Sigil output run
 

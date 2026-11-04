@@ -74,7 +74,10 @@ describe('duplicateLoads, OpenCode unfixed winner', () => {
     );
     assert.equal(notes.length, 1, notes.join('\n'));
     assert.match(notes[0] ?? '', /OpenCode also reads Claude Code's skills/);
-    assert.match(notes[0] ?? '', /shows one copy of each, and which one isn't fixed: shared\/cli/);
+    assert.match(
+      notes[0] ?? '',
+      /shows one copy of each, and which one depends on its version: shared\/cli/,
+    );
     assert.doesNotMatch(notes[0] ?? '', /load twice/);
   });
 

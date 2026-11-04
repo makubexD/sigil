@@ -9,7 +9,7 @@
  * entry sets `readerWins`, the reader's own copy is used on a name clash and the other target's
  * copy goes unused there (Cursor prefers `.cursor/skills/` over `.claude/skills/` and
  * `.agents/skills/`), so the note says that instead. When it sets `unfixedWinner`, the reader shows
- * one copy but which copy wins isn't fixed (OpenCode reads `.claude/skills/` and
+ * one copy but which copy wins depends on its version (OpenCode reads `.claude/skills/` and
  * `.agents/skills/`), so the note says that instead.
  *
  * @module
@@ -35,7 +35,7 @@ interface SharedLoad {
   readonly note: string;
 }
 
-/** The note when one entry reaches the reader but which copy wins on a name clash isn't fixed. */
+/** The note when one entry reaches the reader but which copy wins on a name clash depends on its version. */
 function unfixedWinnerNote(
   readerName: string,
   otherName: string,
@@ -44,7 +44,7 @@ function unfixedWinnerNote(
 ): string {
   return (
     `${readerName} also reads ${otherName}'s ${overlap.kind}s and shows one copy of each, ` +
-    `and which one isn't fixed: ${ids.join(', ')}. Keep one of the two installs ` +
+    `and which one depends on its version: ${ids.join(', ')}. Keep one of the two installs ` +
     `(${overlap.doc.url}).`
   );
 }

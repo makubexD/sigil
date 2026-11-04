@@ -146,7 +146,7 @@ mean a green CI.
 ## Build every target and inspect output
 
 ```bash
-sigil build --target all       # dist/claude/, dist/copilot/, dist/agents-standard/, dist/codex/, dist/cursor/, dist/antigravity/
+sigil build --target all       # dist/claude/, dist/copilot/, dist/agents-standard/, dist/codex/, dist/cursor/, dist/antigravity/, dist/opencode/
 sigil build --target claude    # a single target
 sigil build --target copilot
 

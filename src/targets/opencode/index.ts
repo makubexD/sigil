@@ -52,7 +52,8 @@ export class OpenCodeTarget implements Target {
 
   /**
    * OpenCode also reads `.claude/skills/` next to the `.agents/skills/` it writes; one entry reaches
-   * it and which copy it shows on a name clash isn't fixed (OPENCODE_SKILLS_DOC).
+   * it, and which copy it shows on a name clash isn't fixed on OpenCode 1, while OpenCode 2 documents
+   * `.agents/skills/` winning (D2, docs/decisions/opencode-target-2026-11.md).
    */
   readonly alsoLoads = [
     {

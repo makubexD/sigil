@@ -1,5 +1,5 @@
 /**
- * The OpenCode `prompt` spec (unregistered until step 8). A command file at
+ * The OpenCode `prompt` spec. A command file at
  * `.opencode/commands/<slug>.md` writes only `description`, translates `{{name}}` to a
  * positional `$1`, skips a prompt with two or more arguments, and forbids the template syntax
  * OpenCode would run or expand.
@@ -15,7 +15,7 @@ import { loadResolvedCatalog } from '../helpers/catalog';
 import type { FileMap, ResolvedArtifact } from '../../dist-cli/types';
 
 const SPLIT_ARGS_SKIP_REASON =
-  'OpenCode splits arguments on spaces and quotes, so only the last one can hold free text';
+  'OpenCode splits arguments on spaces and quotes, so only the last one can hold several words';
 const SHELL_REASON = 'OpenCode runs this shell command in the command template';
 const FILE_REASON = 'OpenCode expands this file reference in the command template';
 

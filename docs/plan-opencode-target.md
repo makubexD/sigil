@@ -76,7 +76,7 @@ plan must cover:
   `explain-diff` lists `diff` first, so it needs a quoted diff. On V2 a `"` inside double quotes splits it, and
   `\"` doesn't help, while `'a "b" c'` holds. Test a diff holding `'`, and on V1 too, then say so in the setup docs or
   mark the prompt skipped for this target.
-- Until Phase F passes, the setup docs say agent restrictions are proven on V1 only, and not yet on OpenCode 2.
+- Until Phase F passes, the setup docs say agent restrictions were seen on V1 only, with hand-written files, not yet on sigil's own files or OpenCode 2. Phase F also checks that `grep` can't return `.env` lines.
 - `bodyForbids` covers `` !`cmd` `` and `@file` in prompts.
 - Open question: should `add --target opencode` warn when `.claude/skills/` exists? Settle it from P7 in the step plan.
 

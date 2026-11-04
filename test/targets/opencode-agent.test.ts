@@ -1,5 +1,5 @@
 /**
- * The OpenCode `agent` and `skill` specs (unregistered until step 8). An agent file at
+ * The OpenCode `agent` and `skill` specs. An agent file at
  * `.opencode/agents/` writes only `description`, `mode` and `permission`; the skill spec writes
  * the shared `.agents/skills/` layout.
  */

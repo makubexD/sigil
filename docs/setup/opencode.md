@@ -23,10 +23,11 @@ sigil add --target opencode <selector>
 ## What an agent can and can't do
 
 - **Its allow-list also denies MCP tools and the `skill` tool.** The list holds only the tools the agent names, so a catalog
-  agent doesn't reach your MCP servers or load skills.
+  agent doesn't reach your MCP servers or load skills. This comes from reading OpenCode's source, and wasn't tested.
 - **It carries no model.** It uses the model of the agent that called it.
-- **Restrictions are proven on OpenCode 1 only, not yet on OpenCode 2.** OpenCode 2 loads the same rules in the same order,
-  but nothing has been seen enforcing them there.
+- **Restrictions have been seen working only on OpenCode 1, with hand-written files of the same shape and one free model.**
+  They haven't been seen working on Sigil's own files, or on OpenCode 2. Both versions load Sigil's rules in the same order:
+  `*` deny first, then an allow for each listed tool, with `read` asking on `.env` files.
 
 ## What it skips
 
@@ -42,15 +43,16 @@ sigil add --target opencode <selector>
 | Workflows             | OpenCode has no workflow file                                                           |
 
 **Why `explain-diff` is skipped.** OpenCode splits a command's arguments on spaces and quotes, so only the last one can hold
-free text. An argument holding both `'` and `"` doesn't arrive whole, and nothing reports it. Most real diffs hold both, so
-the model would get part of the diff, with the rest as the audience. This was the same on OpenCode 1 and 2. A prompt with one
-argument isn't affected.
+several words. An argument holding both `'` and `"` doesn't arrive whole, and nothing reports it. Most real diffs hold both,
+so the model would get part of the diff, with the rest as the audience. This was the same on OpenCode 1 and 2. A prompt with
+one argument gets every word, but its quotes and line breaks may not survive.
 
 ## One owner for `.agents/skills/`
 
-`opencode`, `agents-standard`, `codex` and `antigravity` write the same skill files, so a project uses one of them for skills.
-`add` refuses a second owner. If you already installed skills for one of the others, keep them: they reach OpenCode as they
-are, and `add --target opencode` still installs agents and commands next to them.
+`opencode`, `agents-standard`, `codex` and `antigravity` write skills to the same paths, so a project uses one of them for
+skills. `add` refuses a second owner. If you already installed skills for one of the others, keep them: they reach OpenCode
+as they are. `add --target opencode` refuses a whole selection that holds a skill, so to add agents and commands next to
+them, name those directly or pass `--kind agent,prompt`.
 
 Copilot and Cursor read `.agents/skills/` too. `sigil status` prints a note if a skill is installed both for one of them and
 for `opencode`.
@@ -75,12 +77,14 @@ each rule twice there.
 OpenCode also reads `.claude/skills/` and `CLAUDE.md`. It doesn't read `.claude/agents/`, so an agent installed for `claude`
 doesn't reach it. In a project that has Sigil output for `claude`:
 
-- **A skill in both `.agents/skills/` and `.claude/skills/` gives one entry with one body**, and which body isn't fixed.
-  The two can differ: the `.agents/skills/` copy has its rules inlined. `add` and `sigil status` print a note for this:
-  `OpenCode also reads Claude Code's skills and shows one copy of each, and which one isn't fixed`. Keep one of the two
-  installs.
-- **A skill marked for the user only in Claude is offered to the model.** OpenCode ignores that mark, so a prompt meant to
-  run only on your command can run on the model's choice.
+- **A skill in both `.agents/skills/` and `.claude/skills/` gives one entry with one body.** On OpenCode 1 which body isn't
+  fixed. OpenCode 2 documents `.agents/skills/` winning, which wasn't tested. The two can differ: the `.agents/skills/` copy
+  has its rules inlined. When a skill is installed for both `claude` and `opencode`, `add` and `sigil status` print a note:
+  `OpenCode also reads Claude Code's skills and shows one copy of each, and which one depends on its version`. Keep one of
+  the two installs. There is no note when another target, such as `codex`, owns `.agents/skills/`.
+- **On OpenCode 1, a skill marked for the user only in Claude is offered to the model.** OpenCode 1 ignores that mark, so a
+  prompt meant to run only on your command can run on the model's choice. OpenCode 2 documents honoring it, which wasn't
+  tested.
 - **A `CLAUDE.md` is read when there is no `AGENTS.md`.**
 
 The same goes for your user folder, with one difference. OpenCode reads `~/.claude/skills/`, and it reads
@@ -99,8 +103,9 @@ To turn this off, set these variables before you start `opencode`. There is no c
 **A catalog agent can run `cat .env`.** All 39 list `shell`, and no hook stands behind it: Sigil installs none on OpenCode, so
 nothing from Sigil protects your `.env`.
 
-Each agent keeps OpenCode's own rule that asks before a `read` of `.env`, but that rule covers only the `read` tool. To close
-the gap, remove the `bash` line from the agent's `permission` block, or set your own rules. See OpenCode's
+Each agent keeps OpenCode's own rule that asks before a `read` of `.env`, but that rule covers only the `read` tool. To narrow
+the gap, remove the `bash` line from the agent's `permission` block, or set your own rules. Whether `grep` can return `.env`
+lines wasn't tested. See OpenCode's
 [Permissions](https://opencode.ai/docs/permissions/) page for what you can set. That page says these reads are denied by
 default; in testing OpenCode asked.
 
@@ -108,15 +113,15 @@ default; in testing OpenCode asked.
 
 On 2026-11-04, Sigil's own output from `add` and a full `build`, in throwaway repos, on OpenCode 1.19.4 (`opencode-ai`) and
 OpenCode 2 (`@opencode/cli` 2.2.5), on Linux. Both listed all 45 skills and all 39 agents as subagents, with the rules in the
-order above, and both loaded the command. A one-argument command substituted `$1` on both, from a test prompt, because no
+order given above, and both loaded the command. A one-argument command substituted `$1` on both, from a test prompt, because no
 catalog prompt that ships takes an argument.
 
-No model answered in that run, so these rest on earlier tests with hand-written files, on OpenCode 1.19.4 with one free model
+No model answered in that run, so these rest on earlier tests on OpenCode 1.19.4 with one free model
 (`opencode/deepseek-v4.1-flash-free`), on 2026-11-03:
 
-- An agent can't use a tool outside its list.
-- The `.env` behavior above.
-- Skills are picked by description.
+- An agent can't use a tool outside its list, from hand-written files.
+- The `.env` behavior above, from hand-written files.
+- Skills are picked by description, from `agents-standard` output.
 
 On OpenCode 2 only loading was tested, with no model. Its guide says it reads `AGENTS.md` only, with no `CLAUDE.md` fallback,
 which wasn't tested. Results: [opencode-target-2026-11](../decisions/opencode-target-2026-11.md#probe-log), P1, P2, P4, P7, the

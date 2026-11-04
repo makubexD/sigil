@@ -65,4 +65,5 @@ Sigil installs no hook on OpenCode, so nothing from Sigil protects your `.env`. 
 
 OpenCode 1.19.4 (`opencode-ai`) on Linux, with one free model (`opencode/deepseek-v4.1-flash-free`), in throwaway repos,
 on 2026-11-03. Not tested on OpenCode 2, so nothing here is known to hold there. Results:
-[opencode-target-2026-11](../decisions/opencode-target-2026-11.md#probe-log), rows P1, P2, P4 and P7.
+[opencode-target-2026-11](../decisions/opencode-target-2026-11.md#probe-log), rows P1, P2, P4 and P7. The commands and
+both variables on this page were then run as written, in project and user folders, and matched it.

@@ -75,7 +75,7 @@ Test: `npm run build && npm run build:test && node --test test-compiled/targets/
 
 `src/targets/opencode/doc-refs.ts`, `src/targets/opencode/lexicon.ts`, `test/targets/opencode-lexicon.test.ts`.
 
-`doc-refs.ts`, each `verifiedOn: '2026-11-04'`, following `src/targets/cursor/doc-refs.ts`:
+`doc-refs.ts`, each `verifiedOn: '2026-11-03'`, the day the ADR read them, following `src/targets/cursor/doc-refs.ts`:
 
 | Constant                | URL                                     | Covers                                                                    |
 | ----------------------- | --------------------------------------- | ------------------------------------------------------------------------- |

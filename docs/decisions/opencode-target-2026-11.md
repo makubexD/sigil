@@ -1,7 +1,7 @@
 # OpenCode target (2026-11)
 
-Status: **evaluation in progress**, [plan](../plan-opencode-eval.md) steps 1–2 done (docs pass, reuse map). No decision
-yet.
+Status: **evaluation in progress**, [plan](../plan-opencode-eval.md) steps 1–3 done (docs pass, reuse map, live probes). No
+decision yet.
 
 ## How the docs pass ran
 
@@ -82,9 +82,10 @@ A probe gets real isolation from `HOME=<scratch>/home` with every `XDG_*_HOME` u
 data, cache and state from that home, and `os.homedir()` follows it (`core:global.ts:10-20`). Auth lives in the data
 dir, so nothing of the owner's is visible, and that also rules out reaching a Claude credential by accident.
 
-**Side effects to design around.** Each config directory, `.opencode/` included, gets a `.gitignore` and a background
-dependency install of `@opencode-ai/plugin`, leaving `package.json` and `node_modules` there
-(**undocumented**, `config/config.ts:309-325`, `:450-466`). The first run without env overrides seeds a global config
+**Side effects to design around.** Each config directory, `.opencode/` included, gets a `.gitignore`. A background
+dependency install of `@opencode-ai/plugin` can leave `package.json` and `node_modules` there (**undocumented**,
+`config/config.ts:309-325`, `:450-466`). On 1.19.4 only the global directory and a `.opencode/` holding a plugin got them
+([Probe log](#setup)). The first run without env overrides seeds a global config
 file (`:264-270`). A config file with no `$schema` gets one written into it (`:245-249`), by text insert, so comments
 survive but a byte-for-byte drift hash wouldn't.
 
@@ -323,17 +324,12 @@ add`, Git specs ([V2 plugins](https://opencode.ai/v2/docs/plugins/)).
 
 ## Open for later steps
 
-| #   | Question                                                                                                          | Source                  |
-| --- | ----------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| U1  | Do the file-based kinds really load unchanged on `@opencode/cli`? The guide says so; no probe has.                | V2 guide, not yet run   |
-| U2  | What does V2 do with a V1-shaped `.opencode/plugins/*.js`: skip, warn, or fail? This decides if `hook` can ship.  | undocumented (D5)       |
-| U3  | Does a throw in `tool.execute.before` reach the model as a failed call? Does it fire inside a subagent?           | P5, source reading only |
-| U4  | Same skill in `.agents/skills/` and `.opencode/skills/`: one listing, and which body?                             | P2, conflict (D2)       |
-| U5  | Does a project `CLAUDE.md` load when there is no `AGENTS.md`, and does the env var turn it off?                   | P1, conflict (D1)       |
-| U6  | Does an agent's `"*": deny` allow-list hold under `opencode run`, and does `.opencode/opencode.json` carry `mcp`? | P4, P6                  |
-| U7  | Does a free model answer from a home with no credentials at all? This is step 3's gate.                           | D0                      |
-| U8  | Does OpenCode offer Claude's user-only prompt skills to the model? It ignores `disable-model-invocation`.         | P7, source reading only |
-| U9  | Does an object-form `read` keep the `.env` ask under `"*": deny`?                                                 | P4, conflict (D3)       |
+| #   | Question                                                                                                         | Source                |
+| --- | ---------------------------------------------------------------------------------------------------------------- | --------------------- |
+| U1  | Do the file-based kinds really load unchanged on `@opencode/cli`? The guide says so; no probe has.               | V2 guide, not yet run |
+| U2  | What does V2 do with a V1-shaped `.opencode/plugins/*.js`: skip, warn, or fail? This decides if `hook` can ship. | undocumented (D5)     |
+
+U3 to U9 are answered in the [Probe log](#probe-log).
 
 ## Reuse map
 
@@ -378,30 +374,30 @@ channel.
 
 Every OpenCode difference from steps 1 and 2, and the layer that absorbs it.
 
-| Difference                                                                          | Layer                                                                |
-| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
-| Paths under `.opencode/`, `.agents/skills/` and `~/.config/opencode/`               | `KindEmitSpec.outputPath`; `ConfigKindTable` destinations            |
-| `XDG_CONFIG_HOME` for the user config                                               | New `opencode-home` `ConfigRoot`                                     |
-| Agent `mode`, `permission` and the file name as the agent name                      | `KindEmitSpec` field mappings                                        |
-| Unknown agent keys reaching the model API                                           | `KindEmitSpec`: only mapped keys are written; `forbiddenKeys` guards |
-| Permission keys for neutral tools                                                   | `ToolDialect` (`names`)                                              |
-| `read: allow` dropping the `.env` default (U9)                                      | Agent spec's `serialize`: the object form                            |
-| No provider-free model id                                                           | Agent spec leaves `model` unmapped                                   |
-| Positional `$1` from named `{{name}}`                                               | Prompt `bodyTransform`, given the artifact                           |
-| `` !`cmd` `` and `@file` in command templates                                       | `bodyForbids`                                                        |
-| Skill folder shared with Codex, Antigravity and `agents-standard`                   | `Target.sharesSkillFilesWith`                                        |
-| `AGENTS.md`, `.agents/skills/`, skill arguments                                     | `ProviderLexicon`                                                    |
-| Repo-wide rules only, no `appliesTo`                                                | `capabilities.ts` (`via`), `isRepoWideRule`                          |
-| `mcp` key, `{env:NAME}`, `type: local` and `remote`, `command` array, `environment` | `McpDialect` (with the new fields) and `EnvSyntax`                   |
-| No env default, empty on a missing variable, no JSON escaping                       | Setup docs                                                           |
-| `.jsonc` config files                                                               | `ConfigKindTable` destinations (`.json` only)                        |
-| `.opencode/` gains `.gitignore`, `package.json` and `node_modules` at first run     | Setup docs                                                           |
-| `.claude/skills/` also read, so Claude and OpenCode bodies can collide (U4, U8)     | Setup docs (`OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`); P7 measures it   |
-| `CLAUDE.md` fallback on V1, none on V2                                              | Setup docs; the `AGENTS.md` carrier is the same on both              |
-| Settings keys                                                                       | `capabilities.ts` (`none`)                                           |
-| No artifact plugin channel                                                          | `capabilities.ts` (`plugin` undefined)                               |
-| Agent files, commands and MCP on V1 and V2                                          | V1 shape, which V2 translates; U1 confirms                           |
-| **Hooks as generated code, on a V1-only API**                                       | **None.** Shipped as `none`; see below                               |
+| Difference                                                                            | Layer                                                                |
+| ------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| Paths under `.opencode/`, `.agents/skills/` and `~/.config/opencode/`                 | `KindEmitSpec.outputPath`; `ConfigKindTable` destinations            |
+| `XDG_CONFIG_HOME` for the user config                                                 | New `opencode-home` `ConfigRoot`                                     |
+| Agent `mode`, `permission` and the file name as the agent name                        | `KindEmitSpec` field mappings                                        |
+| Unknown agent keys reaching the model API                                             | `KindEmitSpec`: only mapped keys are written; `forbiddenKeys` guards |
+| Permission keys for neutral tools                                                     | `ToolDialect` (`names`)                                              |
+| `read: allow` dropping the `.env` default (U9)                                        | Agent spec's `serialize`: the object form                            |
+| No provider-free model id                                                             | Agent spec leaves `model` unmapped                                   |
+| Positional `$1` from named `{{name}}`                                                 | Prompt `bodyTransform`, given the artifact                           |
+| `` !`cmd` `` and `@file` in command templates                                         | `bodyForbids`                                                        |
+| Skill folder shared with Codex, Antigravity and `agents-standard`                     | `Target.sharesSkillFilesWith`                                        |
+| `AGENTS.md`, `.agents/skills/`, skill arguments                                       | `ProviderLexicon`                                                    |
+| Repo-wide rules only, no `appliesTo`                                                  | `capabilities.ts` (`via`), `isRepoWideRule`                          |
+| `mcp` key, `{env:NAME}`, `type: local` and `remote`, `command` array, `environment`   | `McpDialect` (with the new fields) and `EnvSyntax`                   |
+| No env default, empty on a missing variable, no JSON escaping                         | Setup docs                                                           |
+| `.jsonc` config files                                                                 | `ConfigKindTable` destinations (`.json` only)                        |
+| `.opencode/` gains `.gitignore`, plus `package.json` and `node_modules` with a plugin | Setup docs                                                           |
+| `.claude/skills/` also read: bodies collide, user-only prompts reach the model (P7)   | Setup docs (`OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`, tested in P7)     |
+| `CLAUDE.md` fallback on V1, none on V2                                                | Setup docs; the `AGENTS.md` carrier is the same on both              |
+| Settings keys                                                                         | `capabilities.ts` (`none`)                                           |
+| No artifact plugin channel                                                            | `capabilities.ts` (`plugin` undefined)                               |
+| Agent files, commands and MCP on V1 and V2                                            | V1 shape, which V2 translates; U1 confirms                           |
+| **Hooks as generated code, on a V1-only API**                                         | **None.** Shipped as `none`; see below                               |
 
 No row changes `catalog/` or the zod schema. The shared code changes are three, all in the target layer's own types:
 four `McpDialect` fields, the `bodyTransform` argument, and one `ConfigRoot`.
@@ -417,23 +413,100 @@ justified for a first version. `hook: none` needs no concept and fails visibly: 
 
 `agents-standard` already reaches OpenCode on paper. It writes `.agents/skills/` (D2), with each skill's rules inlined,
 and a full build adds a root `AGENTS.md` (D1). `sigil add` writes no `AGENTS.md`, so a scaffold install gets repo-wide
-rules only inside skills. P7 has to prove it live.
+rules only inside skills. P7 proved this live.
 
-| Catalog (2026-11-03) | Count | `agents-standard` | Small `opencode` target |
-| -------------------- | ----- | ----------------- | ----------------------- |
-| skills               | 46    | yes               | yes (same files)        |
-| rules                | 64    | inlined           | inlined                 |
-| agents               | 39    | no                | yes, restriction exact  |
-| prompts              | 2     | no                | yes                     |
-| MCP servers          | 4     | no                | yes                     |
-| hooks                | 3     | no                | no                      |
-| settings             | 6     | no                | no                      |
+| Catalog (2026-11-03) | Count | `agents-standard`      | Small `opencode` target |
+| -------------------- | ----- | ---------------------- | ----------------------- |
+| skills               | 46    | 45, without `mk-check` | yes (same files)        |
+| rules                | 64    | inlined                | inlined                 |
+| agents               | 39    | no                     | yes, restriction exact  |
+| prompts              | 2     | no                     | yes                     |
+| MCP servers          | 4     | no                     | yes                     |
+| hooks                | 3     | no                     | no                      |
+| settings             | 6     | no                     | no                      |
 
 The target adds no skill or rule reach, so its whole value is 39 agents, 2 prompts and 4 MCP servers. Nothing else
 carries those: `.claude/agents/` isn't in OpenCode's paths, and an MCP entry needs OpenCode's own shape. The agents are
 the catalog's reviewers and auditors, and all 39 stay exact, so that's real reach rather than a thin layer.
 
-**Answer for step 4: the small target is worth more than a doc on technical value, if P4 and P6 pass.** It is mostly
+**Answer for step 4: the small target is worth more than a doc on technical value; P4 and P6 passed.** It is mostly
 data in one `src/targets/opencode/` folder plus the three shared changes, and the existing conformance rules cover it.
 This isn't the decision. Against it stand owner priority 4 of 4, a second product line, and live probes per catalog
 change. If step 4 says no-go, the doc route stays honest as long as it says what it leaves out.
+
+## Probe log
+
+### Setup
+
+- `opencode-ai` 1.19.4, Linux. The docs pass read tag `v1.19.5`, one patch later.
+- Model: `opencode/deepseek-v4.1-flash-free` for every model run. `opencode/glm-5.3-flash-free` also passed the gate and
+  repeated P1's `AGENTS.md` result.
+- Isolation as in D0: `env -i` with a scratch `HOME`, no `XDG_*` variables and no provider keys, one fresh `git init` repo
+  per probe under the scratchpad. No `auth.json` was created, and `opencode models` listed no Anthropic model.
+- Scripted form: `opencode run --model <id> '<prompt>'`, without `--auto`, so an `ask` is auto-rejected. Loader facts came
+  from `opencode debug skill`, `debug agent <name>`, `agent list` and `mcp list`, which call no model.
+- **Gate passed (U7).** A free model answers with no credentials. Four early P1 runs were killed by an 80-second
+  timeout with no output. The cause wasn't found; the same probes then ran normally, with stdin closed and output in a
+  file, and it didn't happen again.
+
+### Results
+
+| Probe | Run                                                                       | Expected                              | Observed                                                                         |
+| ----- | ------------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------- |
+| P1    | `AGENTS.md` asks for a closing word                                       | Word present                          | `Hello! TANGERINE`, on both models                                               |
+| P1    | `CLAUDE.md` alone                                                         | Word present (fallback)               | `Hello! PERSIMMON`                                                               |
+| P1    | Same, `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT=1`                             | Source: word gone. Docs: word stays   | `Hello!`, so the source is right                                                 |
+| P1    | Same, `OPENCODE_DISABLE_CLAUDE_CODE=1`                                    | Word gone                             | `Hello!`                                                                         |
+| P2    | One skill only in `.agents/`, `.opencode/` and `.claude/`                 | All three listed and picked           | All listed; each picked by description, and its code came back                   |
+| P2    | `dup-skill` with a different body in all three folders                    | One entry, winner by completion order | One entry. `.opencode` 15 of 16 listings, `.claude` 1. The model got `.opencode` |
+| P3    | `.opencode/command/hello.md`, `$1` `$2`, args `one two`                   | `HELLO[one][two]`                     | `HELLO[one][two]`                                                                |
+| P3    | Same, args `one two three four`                                           | The last placeholder takes the rest   | `HELLO[one][two three four]`                                                     |
+| P3    | `.opencode/commands/plural.md`, `$1` `$ARGUMENTS`, args `aa bb`           | Plural folder loads                   | `PLURAL[aa bb][aa bb]`: loads, and `$1` as the last position takes both          |
+| P4    | `mode: subagent`, the D3 allow-list, asked through `task` to write a file | Refused                               | Only `glob`, `grep`, `read` offered; no file                                     |
+| P4    | Same list with `mode: all`, write and shell through `--agent`             | Refused                               | Tools not offered, so no refusal text and no file                                |
+| P4    | Same, read `note.txt`                                                     | Allowed                               | Text returned                                                                    |
+| P4    | Same, read `.env`, with shorthand `read: allow`                           | Default `.env` ask dropped            | **Value returned**                                                               |
+| P4    | Object-form `read` keeping the `.env` rules, read `.env`                  | `ask`, auto-rejected                  | `permission requested: read (.env); auto-rejecting`, no value                    |
+| P4    | Object form, read `note.txt`                                              | Allowed                               | Text returned                                                                    |
+| P5    | Plugin throws on a `.env` write                                           | Failed tool call, turn continues      | `Write .env failed`, the error reached the model, exit 0, no file                |
+| P5    | Same plugin, `ok.txt`                                                     | Allowed                               | Written                                                                          |
+| P5    | Same, inside a subagent through `task`                                    | Fires too                             | Fired with the subagent's session id and blocked the write                       |
+| P6    | `.opencode/opencode.json` `mcp`, `{env:PROBE_HOST_TOKEN}` set             | Starts, receives the value            | `probe connected`; server and tool both saw the value                            |
+| P6    | Same, variable unset                                                      | Empty string, no error                | Started with `TOKEN=""`, and the model got `TOKEN=`                              |
+
+P5 raw input: `input` is `{ tool, sessionID, callID }`, and `output.args` is `{ filePath, content }` for `write` and
+`{ description, subagent_type, prompt }` for `task`. That matches D5 and `HookInputDialect`.
+
+### P7, what OpenCode already picks up
+
+Two repos with no OpenCode config, both from sigil's real output.
+
+**A full `agents-standard` build:** `.agents/skills/` (45 skills) and a 6,493-byte root `AGENTS.md`. All 45 listed. The
+model confirmed the rules are in its prompt, and it picked `ng-document` by description.
+
+**`sigil add` of one skill, one agent and one prompt for `claude`, plus the same skill for `agents-standard`:**
+
+- No `AGENTS.md` was written. Confirmed: `add` carries repo-wide rules only inside skills.
+- `.claude/agents/ng-code-reviewer.md` isn't in `opencode agent list`. Confirmed: an agent needs a target.
+- **`ng-document` reaches OpenCode twice, with different bodies:** 7,419 bytes in `.agents/`, with rules inlined, and 3,776
+  in `.claude/`. One entry, and `.agents` won 16 of 16 listings. With P2's 1 in 16, the winner is usually stable and
+  not guaranteed, as the source says (U4). sigil makes this collision itself: `sharesSkillFilesWith` covers only skill
+  folders a target writes, and `claude` isn't in that group.
+- **U8 confirmed. `shared-explain-diff` has `disable-model-invocation: true`, and OpenCode offers it anyway.** The model
+  listed it and, asked for a diff summary with no command, loaded it. A prompt meant to run only on the user's command
+  can run on the model's choice.
+- `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1` removes both `.claude` entries, leaving `ng-document` from `.agents/` and the
+  built-in. It is an environment variable, so sigil can only document it.
+
+### What the probes change
+
+- **U3 to U9 are answered.** U1 and U2 stay open: nothing here ran on `@opencode/cli`.
+- D3 stands. An allow-list is stronger than a refusal: the tools aren't offered at all. The object-form `read` isn't
+  optional, because P4 returned a `.env` value with the shorthand.
+- D5 stands for V1: a guard works, and it fires in subagents. The reason for `hook: none` is V2 and the delivery path,
+  not the plugin API.
+- D4's last-placeholder rule means a positional mapping of `{{name}}` is safe only in `args:` order, and only the last
+  argument can hold spaces unquoted.
+- A corrected D1 conflict: the source is right, and `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT` also drops a project `CLAUDE.md`.
+- D0's dependency install is narrower than the source reading suggested. Three `.opencode/` folders with no plugin kept
+  only their `.gitignore` across their runs.

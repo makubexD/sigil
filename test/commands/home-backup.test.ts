@@ -230,6 +230,58 @@ describe('codex-home root', () => {
   });
 });
 
+describe('opencode-home root', () => {
+  /** Runs `fn` with `$XDG_CONFIG_HOME` set to `value` (undefined unsets it), restoring it afterwards. */
+  function withXdgConfigHome<T>(value: string | undefined, fn: () => T): T {
+    const previous = process.env.XDG_CONFIG_HOME;
+    if (value === undefined) delete process.env.XDG_CONFIG_HOME;
+    else process.env.XDG_CONFIG_HOME = value;
+    try {
+      return fn();
+    } finally {
+      if (previous === undefined) delete process.env.XDG_CONFIG_HOME;
+      else process.env.XDG_CONFIG_HOME = previous;
+    }
+  }
+
+  it('resolves ~/.config/opencode when $XDG_CONFIG_HOME is unset', () => {
+    withXdgConfigHome(undefined, () => {
+      assert.equal(
+        resolveConfigRoot('opencode-home', PROJECT_DIR),
+        path.join(os.homedir(), '.config', 'opencode'),
+      );
+    });
+  });
+
+  it('resolves $XDG_CONFIG_HOME/opencode when set', () => {
+    withXdgConfigHome('/tmp/x', () => {
+      assert.equal(
+        resolveConfigRoot('opencode-home', PROJECT_DIR),
+        path.join(path.resolve('/tmp/x'), 'opencode'),
+      );
+    });
+  });
+
+  it('resolves ~/.config/opencode when $XDG_CONFIG_HOME is empty', () => {
+    withXdgConfigHome('', () => {
+      assert.equal(
+        resolveConfigRoot('opencode-home', PROJECT_DIR),
+        path.join(os.homedir(), '.config', 'opencode'),
+      );
+    });
+  });
+
+  it('is a home-scoped root', () => {
+    assert.equal(isHomeScopedRoot('opencode-home'), true);
+  });
+
+  it('leaves project-scoped resolution untouched', () => {
+    withXdgConfigHome('/tmp/x', () => {
+      assert.equal(resolveConfigRoot('project', PROJECT_DIR), PROJECT_DIR);
+    });
+  });
+});
+
 // ── CLI round trip ─────────────────────────────────────────────────────────────
 
 const CLI = path.resolve(__dirname, '../../dist-cli/cli.js');

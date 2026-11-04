@@ -8,8 +8,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { emitFile, scaffoldArtifact, specFor } from '../../dist-cli/targets/emit-files';
+import { renderArtifact } from '../../dist-cli/targets/emit';
 import { getAllTargets } from '../../dist-cli/targets/index';
 import { wholeFileSkipReason } from '../../dist-cli/targets/tool-restriction';
+import { COPILOT_LEXICON } from '../../dist-cli/targets/copilot/lexicon';
+import type { KindEmitSpec } from '../../dist-cli/targets/spec-types';
+import type { ResolvedArtifact } from '../../dist-cli/types';
 import { loadResolvedCatalog } from '../helpers/catalog';
 
 const TARGETS_SRC = path.resolve(__dirname, '../../src/targets');
@@ -24,6 +28,63 @@ function sourceFiles(dir: string): string[] {
     return entry.name.endsWith('.ts') ? [full] : [];
   });
 }
+
+/** The smallest KindEmitSpec renderArtifact accepts: one skill, no frontmatter, no sections. */
+function minimalSpec(
+  bodyTransform?: (body: string, artifact: ResolvedArtifact) => string,
+): KindEmitSpec {
+  return {
+    kind: 'skill',
+    outputPath: () => 'SKILL.md',
+    pathPattern: /^SKILL\.md$/,
+    ...(bodyTransform ? { bodyTransform } : {}),
+    frontmatter: [],
+    emitEmptyFrontmatter: false,
+    body: [],
+    lexicon: COPILOT_LEXICON,
+    forbiddenKeys: [],
+    bodyForbids: [],
+    docs: [],
+  };
+}
+
+/** The smallest ResolvedArtifact to feed renderArtifact; callers override body/resolvedBody. */
+function minimalArtifact(overrides: Partial<ResolvedArtifact> = {}): ResolvedArtifact {
+  return {
+    id: 'test/body-transform',
+    kind: 'skill',
+    filePath: '/tmp/skill.md',
+    frontmatter: {},
+    body: 'original body',
+    ...overrides,
+  };
+}
+
+describe('renderArtifact bodyTransform', () => {
+  it('should pass the artifact to the transform as its second argument', () => {
+    const artifact = minimalArtifact();
+    const spec = minimalSpec((body, a) => `${body}\n${a.id}`);
+    const out = renderArtifact(spec, artifact, {});
+    assert.ok(out.includes(artifact.id));
+  });
+
+  it('should leave the body unchanged when the spec has no bodyTransform', () => {
+    const artifact = minimalArtifact();
+    const out = renderArtifact(minimalSpec(), artifact, {});
+    assert.ok(out.includes(artifact.body));
+  });
+
+  it('should receive resolvedBody, not body, when both are set', () => {
+    const artifact = minimalArtifact({ body: 'original body', resolvedBody: 'resolved body' });
+    let received: string | undefined;
+    const spec = minimalSpec(body => {
+      received = body;
+      return body;
+    });
+    renderArtifact(spec, artifact, {});
+    assert.equal(received, 'resolved body');
+  });
+});
 
 describe('emit-files', () => {
   it('should leave no hand-built whole-file path anywhere under src/targets', () => {

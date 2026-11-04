@@ -34,6 +34,14 @@ function resolveCodexHome(): string {
   return home ? path.resolve(home) : path.join(os.homedir(), '.codex');
 }
 
+/** $XDG_CONFIG_HOME/opencode, else ~/.config/opencode (an empty value counts as unset). */
+function resolveOpenCodeHome(): string {
+  const configHome = process.env.XDG_CONFIG_HOME;
+  return configHome
+    ? path.join(path.resolve(configHome), 'opencode')
+    : path.join(os.homedir(), '.config', 'opencode');
+}
+
 /**
  * The VS Code user-profile directory, warning when it is absent. A reader (status) passes quiet:
  * the warning is about writing there, which a reader never does.
@@ -55,6 +63,7 @@ function vsCodeUserRoot(quiet: boolean): string {
  *   home       → os.homedir()  (user-global: ~/.claude/settings.json, ~/.claude.json)
  *   copilot-home → $COPILOT_HOME, default ~/.copilot (Copilot's user MCP file)
  *   codex-home → $CODEX_HOME, default ~/.codex (Codex's user hooks file)
+ *   opencode-home → $XDG_CONFIG_HOME/opencode, default ~/.config/opencode (OpenCode user config)
  *   vscode-user → VS Code user-profile directory (best-effort; warns when absent)
  *                 win32   : %APPDATA%/Code/User
  *                 darwin  : ~/Library/Application Support/Code/User
@@ -75,6 +84,8 @@ export function resolveConfigRoot(
       return resolveCopilotHome();
     case 'codex-home':
       return resolveCodexHome();
+    case 'opencode-home':
+      return resolveOpenCodeHome();
     case 'vscode-user':
       return vsCodeUserRoot(opts.quiet ?? false);
     default: // 'project' or undefined
@@ -85,7 +96,11 @@ export function resolveConfigRoot(
 /** True when `root` writes to a directory shared across all of the user's projects. */
 export function isHomeScopedRoot(root: ConfigRoot | undefined): boolean {
   return (
-    root === 'home' || root === 'copilot-home' || root === 'codex-home' || root === 'vscode-user'
+    root === 'home' ||
+    root === 'copilot-home' ||
+    root === 'codex-home' ||
+    root === 'opencode-home' ||
+    root === 'vscode-user'
   );
 }
 

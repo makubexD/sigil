@@ -174,8 +174,8 @@ Consumer commands never read the file; `sigil move` renames a moved id in it. Se
    with one message naming the file and the scopes that exist. A test fails when the table's kinds differ from the
    kinds `capabilities.ts` marks `native`. For a JSON MCP file, the writer's `buildOps` is one `mcpServerOp` call with
    an `McpDialect` (`src/targets/mcp-dialect.ts`): the servers key, the `EnvSyntax`, the fields that may hold an env
-   token, and the `type` policy for stdio and remote servers. `renderMcpServer` does the transform and returns a skip
-   reason when a token sits in a field the dialect does not interpolate. A file that expands no references but whose
+   token, the `type` policy for stdio and remote servers, and the field shape (`envKey`, `commandForm`).
+   `renderMcpServer` does the transform and returns a skip reason when a token sits in a field the dialect does not interpolate. A file that expands no references but whose
    server inherits the client's environment sets `envSyntax: 'inherited'` (Antigravity): identity `env` entries are
    dropped and any other token skips the server. Cursor (`src/targets/cursor/config.ts`,
    `mcp-ops.ts`) is the worked example; the portable `.mcp.json` format is `PORTABLE_MCP_DIALECT`. `sigil sync

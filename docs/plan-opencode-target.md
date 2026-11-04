@@ -51,14 +51,15 @@ The risk accepted: if V2 doesn't enforce agent permissions, the code still stand
 
 ## Phase C: shared changes
 
+Done on 2026-11-04. All six targets build the same 788 files as `master`, excluding `registry.json`'s timestamp.
+
 Each is target-layer code with no behavior change for existing targets, proven by byte-identical `dist/` output:
 
 1. `McpDialect` gains `stdioType: 'local'`, a `remoteType` that sets a value, `envKey` and `commandForm: 'array'`.
 2. `bodyTransform` receives the artifact, for positional arguments from `args:`.
 3. A new `opencode-home` `ConfigRoot` that honors `XDG_CONFIG_HOME`, listed in `isHomeScopedRoot`.
 
-The hint in `src/commands/add/read-config.ts:23` gets a target-aware word for a commented `.json` file, or stays, as the
-step plan decides from the reuse map.
+The hint in `src/commands/add/read-config.ts:23` stays until Phase E, which adds the first writer it can fire for.
 
 ## Phase D: the target
 

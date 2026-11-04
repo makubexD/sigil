@@ -96,9 +96,11 @@ export interface KindEmitSpec {
    * Applied to the artifact's own body (`resolvedBody ?? body`) before it is placed between the
    * `before`/`after` sections — e.g. translating `{{name}}` catalog placeholders into a
    * provider's native substitution syntax (`$name` for Claude, `${input:name}` for Copilot).
-   * Omitted = body passes through unchanged.
+   * The artifact is passed as the second argument because a transform may need more than the
+   * body: a position needs the artifact's `args:`, for instance. Omitted = body passes through
+   * unchanged.
    */
-  readonly bodyTransform?: (body: string) => string;
+  readonly bodyTransform?: (body: string, artifact: ResolvedArtifact) => string;
   readonly frontmatter: readonly FieldMapping[];
   /** When false and no `frontmatter` mapping produced output, omit the `---…---` block entirely. */
   readonly emitEmptyFrontmatter: boolean;

@@ -336,6 +336,17 @@ Antigravity MCP (2 scopes, `src/targets/antigravity/config.ts`):
 the name, so don't install one server at both scopes. Antigravity doesn't read `.mcp.json` (C1), and no other target
 writes these files.
 
+OpenCode MCP (2 scopes, `src/targets/opencode/config.ts`):
+
+| Scope (precedence) | mcp                                                                                     | Notes                                                    |
+| ------------------ | --------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| project (1)        | `.opencode/opencode.json` (`mcp`)                                                       | git-committed; sigil never opens a root `opencode.json`  |
+| user (2)           | `opencode.json` under `$XDG_CONFIG_HOME/opencode` (default `~/.config/opencode`, `mcp`) | home-scoped: one `.sigil.bak` once it holds user content |
+
+`--scope local` is refused: OpenCode has no personal per-project config file. Only plain `.json` is written, and a `.jsonc`
+beside either file is left alone. OpenCode loads both, and a key set in both goes to the `.jsonc`
+([setup](../setup/opencode.md)).
+
 The Copilot and Cursor hook files carry `version: 1`. The `file-marker` strategy keeps it while any sigil
 hook remains in the file: uninstalling one of several hooks leaves the version in place, and
 uninstalling the last one removes it.

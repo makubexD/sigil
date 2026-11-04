@@ -168,7 +168,21 @@ describe('config fragments are replaced, not stacked', () => {
       editRecord(dir, 'shared/protect-config', cf => (cf.fragment = { hooks: { old: [] } }));
       fs.writeFileSync(path.join(dir, SETTINGS), '{ not json');
 
-      sigil(dir, 'add', HOOK, '--target', 'claude', '--scope', 'project', '--yes', '--overwrite');
+      assert.throws(
+        () =>
+          sigil(
+            dir,
+            'add',
+            HOOK,
+            '--target',
+            'claude',
+            '--scope',
+            'project',
+            '--yes',
+            '--overwrite',
+          ),
+        (err: { status?: number }) => err.status === 1,
+      );
 
       const manifest = readManifest(dir);
       const entry = manifest.entries.find((e: { id: string }) => e.id === 'shared/protect-config');

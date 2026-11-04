@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/* global console, process, Buffer, fetch, setTimeout */
+/* global console, process, AbortSignal, Buffer, fetch, setTimeout */
 /**
  * Re-runnable OpenCode probe: installs sigil's real output into a fresh repo and reads it back
  * through the V1 loader commands (`debug skill`, `agent list`, `debug agent`, `mcp list`,
@@ -591,6 +591,10 @@ async function serveClient(bin, repo, env, v2) {
   let url = null;
   let password = v2 ? null : SERVE_PASSWORD;
   let output = '';
+  let failure = null;
+  child.once('error', error => {
+    failure = error;
+  });
   const collect = chunk => {
     output += chunk;
     for (const line of output.split('\n')) {
@@ -606,10 +610,11 @@ async function serveClient(bin, repo, env, v2) {
   child.stderr.on('data', collect);
   try {
     await waitFor(
-      () => url !== null && password !== null,
+      () => failure !== null || (url !== null && password !== null),
       SERVE_TIMEOUT_MS,
       'opencode serve printed no password',
     );
+    if (failure !== null) throw failure;
   } catch (error) {
     child.kill('SIGTERM');
     throw error;
@@ -617,7 +622,10 @@ async function serveClient(bin, repo, env, v2) {
   const auth = { Authorization: `Basic ${Buffer.from(`opencode:${password}`).toString('base64')}` };
   return {
     async get(path) {
-      const response = await fetch(`${url}${path}`, { headers: auth });
+      const response = await fetch(`${url}${path}`, {
+        headers: auth,
+        signal: AbortSignal.timeout(SERVE_TIMEOUT_MS),
+      });
       if (!response.ok) throw new Error(`${path} -> HTTP ${response.status}`);
       return response.json();
     },
@@ -626,6 +634,7 @@ async function serveClient(bin, repo, env, v2) {
         method: 'POST',
         headers: { ...auth, 'Content-Type': 'application/json' },
         body: '{}',
+        signal: AbortSignal.timeout(SERVE_TIMEOUT_MS),
       });
       if (!response.ok) throw new Error(`create session -> HTTP ${response.status}`);
       const body = await response.json();
@@ -661,6 +670,8 @@ async function pollFilled(client, route, isReady) {
  */
 async function runProbe(probe, ctx, options) {
   const repo = makeRepo(probe.id, ctx);
+  // Every probe's server appends here, so an earlier probe's line must not pass for this one's.
+  rmSync(join(ctx.runDir, 'token.txt'), { force: true });
   try {
     probe.setup?.(repo, ctx);
     if (options.dryRun) {

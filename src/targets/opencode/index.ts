@@ -69,7 +69,7 @@ export class OpenCodeTarget implements Target {
   readonly displayName = 'OpenCode';
   readonly installHint = 'writes to .agents/skills/ and .opencode/';
   readonly afterInstallHint =
-    'OpenCode picks them up in its next session. MCP servers in .opencode/opencode.json load in the next session. Do not also install the same skills with --target agents-standard, codex or antigravity: they write the same .agents/skills/ files.';
+    'OpenCode picks them up in its next session, MCP servers included. Do not also install the same skills with --target agents-standard, codex or antigravity: they write the same .agents/skills/ files.';
 
   /**
    * OpenCode replaces each reference with the variable's raw value when it reads the file: an

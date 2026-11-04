@@ -8,6 +8,7 @@
  */
 import path from 'path';
 import { resolveConfigRoot } from '../../config-utils';
+import { scaffoldConfigOps } from '../../config-ops';
 import { loadManifest } from '../../manifest';
 import { OVERLAYS_FILE } from '../../overlays';
 import { getAllTargets } from '../../targets';
@@ -36,9 +37,10 @@ function printDryRunFiles(plan: AddPlan): { toWritePaths: string[]; conflictPath
 async function printConfigMergePreview(id: string, plan: AddPlan): Promise<void> {
   const artifact = plan.resolved.byId.get(id);
   if (!artifact) return;
-  const ops = await plan.target.scaffoldConfig!(id, plan.resolved, plan.scaffoldOpts).catch(
-    () => [],
-  );
+  const ops = await scaffoldConfigOps(plan.target, id, plan.resolved, {
+    ...plan.scaffoldOpts,
+    vars: plan.vars,
+  }).catch(() => []);
   for (const op of ops) {
     const rootDir = resolveConfigRoot(op.root as ConfigRoot | undefined, plan.opts.projectDir);
     const fullPath = path.join(rootDir, op.file);

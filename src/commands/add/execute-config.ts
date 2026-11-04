@@ -11,8 +11,7 @@ import path from 'path';
 import { renderConfig, replaceMerge } from '../../config-merge';
 import { readExistingConfig } from './read-config';
 import { resolveConfigRoot, isHomeScopedRoot, ensureHomeBackup } from '../../config-utils';
-import { previousOpFor, recordedOpsAt, sourceToRecord, upsertConfigEntry } from '../../manifest';
-import { pkg } from '../../cli-helpers';
+import { previousOpFor, recordedOpsAt } from '../../manifest';
 import type {
   ConfigMergeOp,
   ConfigRoot,
@@ -22,7 +21,9 @@ import type {
 } from '../../types';
 import type { Manifest, ManifestEntry } from '../../manifest';
 import { envTokenNames } from '../../targets/env-reference';
+import { scaffoldConfigOps } from '../../config-ops';
 import { warnHookCommandsOffPath } from './hook-path-warning';
+import { recordConfigEntry } from './execute-config-vars';
 import type { AddPlan } from './plan';
 
 export interface ConfigInstallOutcome {
@@ -97,7 +98,7 @@ function applyAllConfigMergeOps(
 const NOTHING_WRITTEN: ConfigArtifactResult = { written: 0, merged: [], upserted: false };
 
 /** Shared context threaded through the config-install helpers below. */
-interface InstallCtx {
+export interface InstallCtx {
   resolved: ResolvedCatalog;
   target: Target;
   plan: AddPlan;
@@ -106,32 +107,15 @@ interface InstallCtx {
   now: string;
 }
 
-/** Records one config artifact's ops into the manifest. */
-function recordConfigEntry(id: string, kind: string, ops: ConfigMergeOp[], ctx: InstallCtx): void {
-  upsertConfigEntry(ctx.manifest, {
-    id,
-    kind,
-    target: ctx.targetName,
-    ops,
-    dependentOf: [],
-    sigilVersion: pkg.version,
-    now: ctx.now,
-    catalog: sourceToRecord(
-      ctx.plan.opts.projectDir,
-      ctx.plan.opts.catalogDir,
-      ctx.plan.opts.packs,
-    ),
-  });
-}
-
 /** Scaffolds + applies + records one config artifact's ops (no error handling — caller wraps). */
 async function scaffoldAndApplyConfig(
   id: string,
-  artifact: { kind: string },
+  artifact: Pick<ResolvedArtifact, 'kind' | 'frontmatter'>,
   ctx: InstallCtx,
 ): Promise<ConfigArtifactResult> {
   const { target, resolved, plan } = ctx;
-  const ops: ConfigMergeOp[] = await target.scaffoldConfig!(id, resolved, plan.scaffoldOpts);
+  const options = { ...plan.scaffoldOpts, vars: plan.vars };
+  const ops: ConfigMergeOp[] = await scaffoldConfigOps(target, id, resolved, options);
   if (ops.length === 0) return NOTHING_WRITTEN;
 
   const installed = ctx.manifest.entries.find(e => e.id === id && e.target === ctx.targetName);
@@ -139,7 +123,7 @@ async function scaffoldAndApplyConfig(
   const { merged, toRecord } = applied;
   const written = merged.length;
   if (toRecord.length === 0) return { written, merged, upserted: false };
-  recordConfigEntry(id, artifact.kind, toRecord, ctx);
+  recordConfigEntry(id, artifact, toRecord, ctx);
   return { written, merged, upserted: true };
 }
 

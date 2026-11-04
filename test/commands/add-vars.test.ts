@@ -1,9 +1,9 @@
 /**
  * `sigil add` and install variables: a `--var` value satisfies a declared name, a missing one
- * fails before anything is written, and an id whose flag changes the recorded value is installed
- * again. The catalog is a temp fixture passed as `--catalog-dir`, the way `test/commands/`
- * installs a non-bundled catalog. Step 9 is not applied yet, so the "installed with contoso"
- * state is written by hand: the fragment plus the manifest entry that recorded it.
+ * fails before anything is written, an id whose flag changes the recorded value is installed
+ * again, and the install writes and records the value. The catalog is a temp fixture passed as
+ * `--catalog-dir`, the way `test/commands/` installs a non-bundled catalog. Some "installed with
+ * contoso" states are written by hand, as the fragment plus the manifest entry that recorded it.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,6 +11,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
+import { runUninstall } from '../../dist-cli/commands/uninstall';
 import type { AddOpts } from '../../dist-cli/commands/add';
 import { buildAddPlan } from '../../dist-cli/commands/add/plan';
 import { SigilError } from '../../dist-cli/errors';
@@ -19,7 +20,7 @@ import { resolveCatalog } from '../../dist-cli/resolve';
 import { getTarget } from '../../dist-cli/targets';
 import { scaffoldConfigOps } from '../../dist-cli/config-ops';
 import { canonicalize } from '../../dist-cli/config-merge';
-import { MANIFEST_VERSION, saveManifest, sha256 } from '../../dist-cli/manifest';
+import { loadManifest, MANIFEST_VERSION, saveManifest, sha256 } from '../../dist-cli/manifest';
 import type { Manifest, ManifestEntry } from '../../dist-cli/manifest/types';
 import type { ConfigMergeOp } from '../../dist-cli/types';
 import { withTempDirAsync } from '../helpers/temp-dir';
@@ -27,6 +28,15 @@ import { withTempDirAsync } from '../helpers/temp-dir';
 const ID = 'shared/vars-fixture';
 const PLAIN_ID = 'shared/plain-fixture';
 const MCP_FILE = '.mcp.json';
+/** The config file each target writes an MCP server into at project scope. */
+const TARGET_CONFIG_FILES: Record<string, string> = {
+  claude: MCP_FILE,
+  copilot: MCP_FILE,
+  cursor: '.cursor/mcp.json',
+  codex: '.codex/config.toml',
+  antigravity: '.agents/mcp_config.json',
+  opencode: '.opencode/opencode.json',
+};
 const CLI = path.resolve(__dirname, '../../dist-cli/cli.js');
 const HOME_VAR = process.platform === 'win32' ? 'USERPROFILE' : 'HOME';
 
@@ -153,6 +163,11 @@ async function installWithContoso(fixture: Fixture): Promise<void> {
     fs.mkdirSync(path.dirname(full), { recursive: true });
     fs.writeFileSync(full, JSON.stringify(op.fragment, null, 2) + '\n');
   }
+}
+
+/** The manifest entry `id` has for `target`, if any. */
+function entryFor(fixture: Fixture, target: string, id = ID): ManifestEntry | undefined {
+  return loadManifest(fixture.project).entries.find(e => e.id === id && e.target === target);
 }
 
 /** Runs the built CLI against the fixture project and catalog. */
@@ -290,6 +305,98 @@ describe('sigil add with install variables', () => {
       assert.ok(plan);
       assert.deepEqual(plan.vars, {});
       assert.deepEqual(plan.configIds, [PLAIN_ID]);
+    });
+  });
+
+  for (const target of Object.keys(TARGET_CONFIG_FILES)) {
+    it(`writes contoso and records it for ${target}`, async () => {
+      await withTempDirAsync(async root => {
+        const fixture = makeFixture(root);
+
+        await runAdd([`mcp:${ID}`], addOpts(fixture, { target, var: ['A=contoso'] }));
+
+        const file = path.join(fixture.project, TARGET_CONFIG_FILES[target]!);
+        const text = fs.readFileSync(file, 'utf8');
+        assert.match(text, /contoso/);
+        assert.doesNotMatch(text, /\{sigil:/);
+        assert.deepEqual(entryFor(fixture, target)?.vars, { A: 'contoso' });
+      });
+    });
+  }
+
+  it('records no vars key on an artifact that declares none', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+
+      await runAdd([`mcp:${ID}`, `mcp:${PLAIN_ID}`], addOpts(fixture, { var: ['A=contoso'] }));
+
+      const plain = entryFor(fixture, 'claude', PLAIN_ID);
+      assert.ok(plain);
+      assert.equal(Object.hasOwn(plain, 'vars'), false);
+    });
+  });
+
+  it('replaces the recorded value and keeps one server entry', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+      const file = path.join(fixture.project, MCP_FILE);
+
+      await runAdd([`mcp:${ID}`], addOpts(fixture, { var: ['A=contoso'] }));
+      await runAdd([`mcp:${ID}`], addOpts(fixture, { var: ['A=fabrikam'] }));
+
+      const text = fs.readFileSync(file, 'utf8');
+      assert.match(text, /fabrikam/);
+      assert.doesNotMatch(text, /contoso/);
+      const servers = (JSON.parse(text) as { mcpServers: Record<string, unknown> }).mcpServers;
+      assert.equal(Object.keys(servers).length, 1);
+      assert.deepEqual(entryFor(fixture, 'claude')?.vars, { A: 'fabrikam' });
+    });
+  });
+
+  it('reuses the value another target recorded without a prompt', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+
+      await runAdd([`mcp:${ID}`], addOpts(fixture, { var: ['A=contoso'] }));
+      await runAdd([`mcp:${ID}`], addOpts(fixture, { target: 'copilot' }));
+
+      const text = fs.readFileSync(path.join(fixture.project, MCP_FILE), 'utf8');
+      assert.match(text, /contoso/);
+      assert.deepEqual(entryFor(fixture, 'copilot')?.vars, { A: 'contoso' });
+    });
+  });
+
+  it('previews a dry run merge with a placeholder and writes nothing', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+
+      const run = sigil(fixture, ['add', `mcp:${ID}`, '--dry-run']);
+
+      assert.equal(run.status, 0, run.output);
+      assert.match(run.output, /Config merges that would be applied/);
+      assert.match(run.output, /config merge — mcp/);
+      assert.equal(fs.existsSync(path.join(fixture.project, MCP_FILE)), false);
+      assert.equal(fs.existsSync(path.join(fixture.project, '.sigil', 'manifest.json')), false);
+    });
+  });
+
+  it('removes the fragment and the recorded vars on uninstall', async () => {
+    await withTempDirAsync(async root => {
+      const fixture = makeFixture(root);
+      const file = path.join(fixture.project, MCP_FILE);
+
+      await runAdd([`mcp:${ID}`], addOpts(fixture, { var: ['A=contoso'] }));
+      await runUninstall([ID], {
+        projectDir: fixture.project,
+        target: 'claude',
+        yes: true,
+        force: false,
+        dryRun: false,
+      });
+
+      assert.equal(entryFor(fixture, 'claude'), undefined);
+      const remains = fs.existsSync(file) ? fs.readFileSync(file, 'utf8') : '';
+      assert.doesNotMatch(remains, /contoso|vars-fixture/);
     });
   });
 });

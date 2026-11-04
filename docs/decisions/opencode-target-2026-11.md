@@ -183,11 +183,13 @@ permission:
   glob: allow
 ```
 
+This block shows the shape only. Its `read: allow` drops the `.env` rule, so sigil writes the object form (P4).
+
 An allow-list like this also denies MCP tools and `skill`, because the keys are wildcard matches on the tool name. A
 `disallowedTools` list maps to `<key>: deny` the same way. `read: allow` as a shorthand replaces the default `.env` rule;
 **conflict** there: the page says `.env` reads are denied by default
-([Defaults](https://opencode.ai/docs/permissions/#defaults)), and the source says `ask` (`agent/agent.ts:130-135`). An
-agent that must keep that rule writes the object form. Step 2 decides how this fits `ToolDialect`, whose `names` form
+([Defaults](https://opencode.ai/docs/permissions/#defaults)), and the source says `ask` (`agent/agent.ts:130-135`). Every catalog agent lists `read`, so every one writes
+the object form. Step 2 decides how this fits `ToolDialect`, whose `names` form
 expects a list, not a rule map.
 
 ### D4. Commands
@@ -209,8 +211,8 @@ Splitting honors `"..."` and `'...'`.
 **Against `src/targets/prompt-args.ts`.** sigil has named `{{name}}` and a matching `args:` list. Claude resolves `$name`
 through `arguments:` and Copilot uses `${input:name}`. OpenCode has no named form, so a new helper would write
 `{{name}}` as `$<position in args>`. That's lossless for order, and the argument name survives only in the description.
-`{{name}}` with no `args:` entry has no position; the [reuse map](#reuse-map) settles that case. Both behaviors above favor sigil: a
-last free-text argument works unquoted.
+`{{name}}` with no `args:` entry has no position; the [reuse map](#reuse-map) settles that case. A last free-text argument works unquoted, but
+`explain-diff`, the only catalog prompt with `args:`, lists its free text first (P3).
 
 **Shell injection.** `` !`cmd` `` and `@file` in a template run or expand on OpenCode. A catalog body that happens to
 hold that syntax would now execute. Step 2 should check for it.
@@ -416,7 +418,7 @@ rules only inside skills. P7 proved this live.
 
 | Catalog (2026-11-03) | Count | `agents-standard`      | Small `opencode` target |
 | -------------------- | ----- | ---------------------- | ----------------------- |
-| skills               | 46    | 45, without `mk-check` | yes (same files)        |
+| skills               | 46    | 45, without `mk-check` | 45 (same files)         |
 | rules                | 64    | inlined                | inlined                 |
 | agents               | 39    | no                     | yes, restriction exact  |
 | prompts              | 2     | no                     | yes                     |
@@ -424,14 +426,14 @@ rules only inside skills. P7 proved this live.
 | hooks                | 3     | no                     | no                      |
 | settings             | 6     | no                     | no                      |
 
-The target adds no skill or rule reach, so its whole value is 39 agents, 2 prompts and 4 MCP servers. Nothing else
+`mk-check` is `platforms: [claude]`. The target adds no skill or rule reach, so its whole value is 39 agents, 2 prompts and 4 MCP servers. Nothing else
 carries those: `.claude/agents/` isn't in OpenCode's paths, and an MCP entry needs OpenCode's own shape. The agents are
 the catalog's reviewers and auditors, and all 39 stay exact, so that's real reach rather than a thin layer.
 
 **Answer for step 4: the small target is worth more than a doc on technical value; P4 and P6 passed.** It is mostly
 data in one `src/targets/opencode/` folder plus the three shared changes, and the existing conformance rules cover it.
-This isn't the decision. Against it stand owner priority 4 of 4, a second product line, and live probes per catalog
-change. If step 4 says no-go, the doc route stays honest as long as it says what it leaves out.
+This isn't the decision. Against it stand owner priority 4 of 4, a second product line, and live probes per OpenCode
+update. If step 4 says no-go, the doc route stays honest as long as it says what it leaves out.
 
 ## Probe log
 
@@ -461,12 +463,15 @@ change. If step 4 says no-go, the doc route stays honest as long as it says what
 | P3    | `.opencode/command/hello.md`, `$1` `$2`, args `one two`                   | `HELLO[one][two]`                     | `HELLO[one][two]`                                                                |
 | P3    | Same, args `one two three four`                                           | The last placeholder takes the rest   | `HELLO[one][two three four]`                                                     |
 | P3    | `.opencode/commands/plural.md`, `$1` `$ARGUMENTS`, args `aa bb`           | Plural folder loads                   | `PLURAL[aa bb][aa bb]`: loads, and `$1` as the last position takes both          |
-| P4    | `mode: subagent`, the D3 allow-list, asked through `task` to write a file | Refused                               | Only `glob`, `grep`, `read` offered; no file                                     |
-| P4    | Same list with `mode: all`, write and shell through `--agent`             | Refused                               | Tools not offered, so no refusal text and no file                                |
+| P3    | `explain-diff` shape, `$1` then `$2`, four unquoted words                 | First word in `$1`, the rest in `$2`  | `AUDIENCE[beta gamma reviewer] DIFF[alpha]`                                      |
+| P3    | Same, first argument quoted                                               | Words stay in `$1`                    | `AUDIENCE[reviewer] DIFF[alpha beta gamma]`                                      |
+| P4    | `mode: subagent`, the D3 allow-list, asked through `task` to write a file | Refused                               | Model reported only `glob`, `grep`, `read`; no file                              |
+| P4    | Same list with `mode: all`, write and shell through `--agent`             | Refused                               | Model reported no such tool; no file                                             |
 | P4    | Same, read `note.txt`                                                     | Allowed                               | Text returned                                                                    |
 | P4    | Same, read `.env`, with shorthand `read: allow`                           | Default `.env` ask dropped            | **Value returned**                                                               |
 | P4    | Object-form `read` keeping the `.env` rules, read `.env`                  | `ask`, auto-rejected                  | `permission requested: read (.env); auto-rejecting`, no value                    |
 | P4    | Object form, read `note.txt`                                              | Allowed                               | Text returned                                                                    |
+| P4    | Object-form `read` plus `bash: allow`, run `cat .env`                     | The `read` rule doesn't cover shell   | **Value returned**                                                               |
 | P5    | Plugin throws on a `.env` write                                           | Failed tool call, turn continues      | `Write .env failed`, the error reached the model, exit 0, no file                |
 | P5    | Same plugin, `ok.txt`                                                     | Allowed                               | Written                                                                          |
 | P5    | Same, inside a subagent through `task`                                    | Fires too                             | Fired with the subagent's session id and blocked the write                       |
@@ -500,12 +505,16 @@ model confirmed the rules are in its prompt, and it picked `ng-document` by desc
 ### What the probes change
 
 - **U3 to U9 are answered.** U1 and U2 stay open: nothing here ran on `@opencode/cli`.
-- D3 stands. An allow-list is stronger than a refusal: the tools aren't offered at all. The object-form `read` isn't
-  optional, because P4 returned a `.env` value with the shorthand.
+- D3 stands. Blocked tools were absent from the model's report, not refused, and no file appeared. That rests on the
+  model's word plus the result. The object-form `read` isn't optional, because P4 returned a `.env` value with the
+  shorthand.
+- **The object form protects only the `read` tool.** All 39 catalog agents list `shell`, so `bash: allow` lets `cat .env`
+  through. That is the authored restriction rendered exactly, and with `hook: none` there is no guard behind it.
 - D5 stands for V1: a guard works, and it fires in subagents. The reason for `hook: none` is V2 and the delivery path,
   not the plugin API.
-- D4's last-placeholder rule means a positional mapping of `{{name}}` is safe only in `args:` order, and only the last
-  argument can hold spaces unquoted.
+- **`explain-diff` needs quoting on OpenCode.** `{{diff}}` becomes `$1`, so an unquoted diff leaves one word there and
+  sends the rest to `audience`. Quoting fixes it. A diff holding `"` wasn't tested. `opencode run` also re-quotes an
+  argument holding spaces, so scripted tests must pass words separately.
 - A corrected D1 conflict: the source is right, and `OPENCODE_DISABLE_CLAUDE_CODE_PROMPT` also drops a project `CLAUDE.md`.
 - D0's dependency install is narrower than the source reading suggested. Three `.opencode/` folders with no plugin kept
   only their `.gitignore` across their runs.
@@ -541,6 +550,7 @@ at the setup note and this record is revised. U2 only decides whether hooks can 
 
 **Known limits to carry forward.**
 
+- `.env` stays reachable through `shell` on every catalog agent, with no hook to stop it (P4). The setup note says so.
 - A Claude install in the same repo reaches OpenCode: skills can collide with different bodies, and a user-only prompt
   is offered to the model (P7). The setup note names `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`. A warning from `add` is a
   question for the roadmap.

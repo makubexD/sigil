@@ -35,7 +35,7 @@ new neutral concept is needed.
 `docs/guides/consuming.md` documents the free route: a full `agents-standard` build carries skills and `AGENTS.md`, while
 `sigil add` carries skills with their rules inlined. It states what stays out (agents, prompts, MCP) and P7's two limits
 when a Claude install shares the repo: colliding skills and user-only prompts offered to the model, both removed by
-`OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`. This ships whatever Phase B finds.
+`OPENCODE_DISABLE_CLAUDE_CODE_SKILLS`. It also says that no `.env` guard exists on OpenCode through sigil. This ships whatever Phase B finds.
 
 ## Phase B: V2 probe
 
@@ -62,6 +62,8 @@ plan must cover:
 - Skills join `sharesSkillFilesWith` in all three peers, never `.opencode/skills/` (P2 showed the winner can change).
 - The agent spec writes `permission` in object form for `read`, because P4 returned a `.env` value with `read: allow`.
 - The prompt helper maps `{{name}}` to `$<position>` in `args:` order. Only the last argument holds spaces (P3).
+  `explain-diff` lists `diff` first, so it needs a quoted diff. Test a real diff holding `"` before shipping it, and say
+  so in the setup docs, or mark the prompt skipped for this target.
 - `bodyForbids` covers `` !`cmd` `` and `@file` in prompts.
 - Open question: should `add --target opencode` warn when `.claude/skills/` exists? Settle it from P7 in the step plan.
 

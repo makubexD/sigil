@@ -210,6 +210,18 @@ describe('resolveAddVars', () => {
     );
   });
 
+  it('accepts a flag for a name only an up-to-date artifact declares', async () => {
+    const values = await resolveAddVars(
+      input({
+        artifacts: [],
+        upToDate: [mcpArtifact('mcp/ado', ADO_VARS)],
+        flags: { ADO_ORG: 'contoso' },
+      }),
+    );
+
+    assert.deepEqual(values, {});
+  });
+
   it('throws when a custom ask returns an invalid value', async () => {
     const ask = fakeAsk('a b');
 

@@ -34,6 +34,8 @@ const CANCELLED = Symbol('cancelled');
  */
 export async function resolveAddVars(input: {
   artifacts: readonly ResolvedArtifact[]; // the config ids to write
+  /** selected artifacts already up to date: their names are valid flags but need no value */
+  upToDate?: readonly ResolvedArtifact[];
   flags: VarValues;
   recorded: (id: string) => VarValues;
   dryRun: boolean;
@@ -42,7 +44,7 @@ export async function resolveAddVars(input: {
   ask: (spec: { name: string; title: string; description: string }) => Promise<string | symbol>;
 }): Promise<VarValues | 'cancelled'> {
   const declaring = groupDeclaring(input.artifacts);
-  assertKnownFlags(input.flags, declaring);
+  assertKnownFlags(input.flags, declaring, input.upToDate ?? []);
   const values: Record<string, string> = {};
   const outcome = await resolveNames(input, declaring, values);
   if (outcome === CANCELLED) return 'cancelled';
@@ -65,10 +67,21 @@ function groupDeclaring(artifacts: readonly ResolvedArtifact[]): Declaring {
   return declaring;
 }
 
-/** A flag that no selected artifact declares is a typo, so it fails before any prompt. */
-function assertKnownFlags(flags: VarValues, declaring: Declaring): void {
+/**
+ * A flag that no selected artifact declares is a typo, so it fails before any prompt. A name an
+ * up-to-date artifact declares is known, but has no value to resolve: nothing will be written.
+ */
+function assertKnownFlags(
+  flags: VarValues,
+  declaring: Declaring,
+  upToDate: readonly ResolvedArtifact[],
+): void {
+  const known = new Set(declaring.keys());
+  for (const artifact of upToDate) {
+    for (const name of declaredVarNames(artifact)) known.add(name);
+  }
   for (const name of Object.keys(flags)) {
-    if (!declaring.has(name)) {
+    if (!known.has(name)) {
       throw new SigilError(
         `--var ${name} names no install variable the selected artifacts declare.`,
       );

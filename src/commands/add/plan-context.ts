@@ -18,9 +18,12 @@ import {
 } from '../../plugin-overlap';
 import type { ResolvedAddInputs } from './resolve-inputs';
 import type { AddOpts } from './index';
+import type { VarValues } from '../../mcp-vars';
 
 export interface PlanCtx {
   opts: AddOpts;
+  /** The parsed repeatable `--var` flags, ready before any id is resolved. */
+  varFlags: VarValues;
   /** The catalog with the project's overlays applied (src/overlays.ts). */
   resolved: ResolvedCatalog;
   /** Ids whose overlay entry was refused, with the reason: never installed wider than asked. */

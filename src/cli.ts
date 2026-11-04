@@ -116,6 +116,12 @@ program
   )
   .option('--scope <scope>', 'Install scope for config-kind artifacts: project | local | user')
   .option('--settings-local', '(deprecated) Alias for --scope local', false)
+  .option(
+    '--var <NAME=value>',
+    'An install value for an MCP artifact; repeatable',
+    (v: string, acc: string[]) => [...acc, v],
+    [] as string[],
+  )
   .action(async (selectors: string[], opts: AddOpts) => {
     await (await import('./commands/add')).runAdd(selectors, opts);
   });

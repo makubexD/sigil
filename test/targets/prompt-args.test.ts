@@ -8,6 +8,7 @@ import {
   toClaudePlaceholders,
   toCopilotPlaceholders,
   fromCopilotPlaceholders,
+  toPositionalPlaceholders,
   buildArgumentHint,
 } from '../../dist-cli/targets/prompt-args';
 import type { PromptArg } from '../../dist-cli/targets/prompt-args';
@@ -53,6 +54,42 @@ describe('toCopilotPlaceholders', () => {
   it('leaves text with no placeholders unchanged', () => {
     const body = 'No substitution needed here.';
     assert.equal(toCopilotPlaceholders(body), body);
+  });
+});
+
+describe('toPositionalPlaceholders', () => {
+  it('translates each name to its 1-based position in args', () => {
+    assert.equal(
+      toPositionalPlaceholders('A {{x}} B {{y}}', [{ name: 'x' }, { name: 'y' }]),
+      'A $1 B $2',
+    );
+  });
+
+  it('uses the position in args, not the order in the body', () => {
+    assert.equal(
+      toPositionalPlaceholders('{{y}} then {{x}}', [{ name: 'x' }, { name: 'y' }]),
+      '$2 then $1',
+    );
+  });
+
+  it('translates a repeated placeholder each time', () => {
+    assert.equal(toPositionalPlaceholders('{{x}} and {{x}}', [{ name: 'x' }]), '$1 and $1');
+  });
+
+  it('tolerates inner whitespace ({{ x }})', () => {
+    assert.equal(toPositionalPlaceholders('{{ x }}', [{ name: 'x' }]), '$1');
+  });
+
+  it('leaves a name not in args as literal text', () => {
+    assert.equal(toPositionalPlaceholders('{{other}}', [{ name: 'x' }]), '{{other}}');
+  });
+
+  it('leaves every name as literal text when args is undefined', () => {
+    assert.equal(toPositionalPlaceholders('{{other}}', undefined), '{{other}}');
+  });
+
+  it('handles a hyphenated name', () => {
+    assert.equal(toPositionalPlaceholders('{{a-b}}', [{ name: 'a-b' }]), '$1');
   });
 });
 

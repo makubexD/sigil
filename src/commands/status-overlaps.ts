@@ -5,9 +5,11 @@
  * of those targets shows up in the reader as well. `sigil status` prints these as notes; nothing
  * is changed.
  *
- * Two cases. Normally the reader loads the artifact twice, and the note says so. When the reader's
+ * Three cases. Normally the reader loads the artifact twice, and the note says so. When the reader's
  * entry sets `readerWins`, the reader's own copy is used on a name clash and the other target's
  * copy goes unused there (Cursor prefers `.cursor/skills/` over `.claude/skills/` and
+ * `.agents/skills/`), so the note says that instead. When it sets `unfixedWinner`, the reader shows
+ * one copy but which copy wins depends on its version (OpenCode reads `.claude/skills/` and
  * `.agents/skills/`), so the note says that instead.
  *
  * @module
@@ -33,6 +35,20 @@ interface SharedLoad {
   readonly note: string;
 }
 
+/** The note when one entry reaches the reader but which copy wins on a name clash depends on its version. */
+function unfixedWinnerNote(
+  readerName: string,
+  otherName: string,
+  overlap: Overlap,
+  ids: readonly string[],
+): string {
+  return (
+    `${readerName} also reads ${otherName}'s ${overlap.kind}s and shows one copy of each, ` +
+    `and which one depends on its version: ${ids.join(', ')}. Keep one of the two installs ` +
+    `(${overlap.doc.url}).`
+  );
+}
+
 /** The note, in display names, for one (reader, other target, kind) that shares at least one installed artifact. */
 function noteFor(
   readerName: string,
@@ -40,6 +56,7 @@ function noteFor(
   overlap: Overlap,
   ids: readonly string[],
 ): string {
+  if (overlap.unfixedWinner) return unfixedWinnerNote(readerName, otherName, overlap, ids);
   return overlap.readerWins
     ? `${readerName} also reads ${otherName}'s ${overlap.kind}s and uses its own copy on a ` +
         `name clash, so ${otherName}'s copy of these goes unused there: ${ids.join(', ')} ` +

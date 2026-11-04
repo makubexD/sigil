@@ -365,6 +365,14 @@ server. `local` scope is refused. An `agent` becomes `.agents/agents/<name>.md` 
 full list, because Antigravity reads an absent list as no tools. Every other kind is skipped with the reason in
 [capabilities.md](capabilities.md). Specs and citations: `src/targets/antigravity/`.
 
+**OpenCode (`opencode`).** A `skill` becomes `.agents/skills/<name>/SKILL.md`, the same file `codex` writes (so `add` refuses a
+second owner), with its rules inlined. An `agent` becomes `.opencode/agents/<name>.md` with `description`, `mode: subagent` and
+a `permission` block: `'*': deny` first, then an allow for each tool in OpenCode's own names (`read`, `list`, `grep`, `glob`,
+`bash`, and so on), with `read` keeping OpenCode's `.env` rules. It writes no `name` or `model`. A `prompt` becomes
+`.opencode/commands/<id-slug>.md` with `{{name}}` as `$<position>`; a prompt with two or more `args` is skipped, because only
+the last argument can hold several words. `build` writes a root `AGENTS.md` with the repo-wide rules. Every other kind is
+skipped with the reason in [capabilities.md](capabilities.md). Specs and citations: `src/targets/opencode/`.
+
 **Key vocabulary rules:**
 
 - Claude Code has **no "prompt" artifact** — catalog `prompt` becomes a _user-invoked skill_

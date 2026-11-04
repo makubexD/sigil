@@ -17,6 +17,7 @@ import { AgentsStandardTarget } from './agents-standard';
 import { CodexTarget } from './codex';
 import { CursorTarget } from './cursor';
 import { AntigravityTarget } from './antigravity';
+import { OpenCodeTarget } from './opencode';
 
 const registry = new Map<string, Target>();
 
@@ -26,6 +27,7 @@ registerTarget(new AgentsStandardTarget());
 registerTarget(new CodexTarget());
 registerTarget(new CursorTarget());
 registerTarget(new AntigravityTarget());
+registerTarget(new OpenCodeTarget());
 
 export function registerTarget(target: Target): void {
   if (registry.has(target.name)) {
@@ -71,4 +73,5 @@ export {
   CodexTarget,
   CursorTarget,
   AntigravityTarget,
+  OpenCodeTarget,
 };

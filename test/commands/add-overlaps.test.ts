@@ -83,4 +83,43 @@ describe('sigil add — overlap notes', () => {
       assert.match(out, /Cursor also reads Claude Code/);
     });
   });
+
+  it('should refuse OpenCode when Codex already installed the same skill files', async () => {
+    await withTempDirAsync(async dir => {
+      await install(dir, 'codex', SKILL);
+      await assert.rejects(
+        install(dir, 'opencode', SKILL),
+        /codex already installed skills in this project, and opencode writes the same files/,
+      );
+    });
+  });
+
+  it('should refuse OpenCode and each peer in either install order', async () => {
+    for (const peer of ['agents-standard', 'codex', 'antigravity']) {
+      await withTempDirAsync(async dir => {
+        await install(dir, peer, SKILL);
+        await assert.rejects(
+          install(dir, 'opencode', SKILL),
+          new RegExp(`${peer} already installed skills in this project, and opencode writes`),
+        );
+      });
+      await withTempDirAsync(async dir => {
+        await install(dir, 'opencode', SKILL);
+        await assert.rejects(
+          install(dir, peer, SKILL),
+          new RegExp(`opencode already installed skills in this project, and ${peer} writes`),
+        );
+      });
+    }
+  });
+
+  it('should report the one-copy note when adding a skill for OpenCode that Claude Code also has', async () => {
+    await withTempDirAsync(async dir => {
+      await install(dir, 'claude', SKILL);
+      const out = await install(dir, 'opencode', SKILL);
+      assert.match(out, /OpenCode also reads Claude Code's skills/);
+      assert.match(out, /shows one copy of each, and which one depends on its version/);
+      assert.doesNotMatch(out, /load twice/);
+    });
+  });
 });

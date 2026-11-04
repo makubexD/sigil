@@ -42,6 +42,16 @@ describe('duplicateLoads', () => {
     assert.match(notes[0] ?? '', /load twice there: shared\/cli/);
   });
 
+  it('should note a skill installed for OpenCode and Copilot as loading twice in Copilot', () => {
+    const notes = duplicateLoads(
+      [entry('shared/cli', 'skill', 'opencode'), entry('shared/cli', 'skill', 'copilot')],
+      getAllTargets(),
+    );
+    assert.equal(notes.length, 1, notes.join('\n'));
+    assert.match(notes[0] ?? '', /GitHub Copilot also loads OpenCode's skills/);
+    assert.match(notes[0] ?? '', /load twice there: shared\/cli/);
+  });
+
   it('should say nothing when no reader shares an artifact with a target it reads', () => {
     const notes = duplicateLoads(
       [
@@ -50,6 +60,30 @@ describe('duplicateLoads', () => {
         entry('shared/clean-code', 'rule', 'claude'),
         entry('shared/clean-code', 'rule', 'copilot'),
       ],
+      getAllTargets(),
+    );
+    assert.deepEqual(notes, []);
+  });
+});
+
+describe('duplicateLoads, OpenCode unfixed winner', () => {
+  it('should note a skill installed for OpenCode and Claude Code as one copy with no fixed winner', () => {
+    const notes = duplicateLoads(
+      [entry('shared/cli', 'skill', 'opencode'), entry('shared/cli', 'skill', 'claude')],
+      getAllTargets(),
+    );
+    assert.equal(notes.length, 1, notes.join('\n'));
+    assert.match(notes[0] ?? '', /OpenCode also reads Claude Code's skills/);
+    assert.match(
+      notes[0] ?? '',
+      /shows one copy of each, and which one depends on its version: shared\/cli/,
+    );
+    assert.doesNotMatch(notes[0] ?? '', /load twice/);
+  });
+
+  it('should say nothing when OpenCode and Claude Code hold different skills', () => {
+    const notes = duplicateLoads(
+      [entry('shared/cli', 'skill', 'opencode'), entry('shared/wizard', 'skill', 'claude')],
       getAllTargets(),
     );
     assert.deepEqual(notes, []);
@@ -88,6 +122,17 @@ describe('duplicateLoads, Cursor readerWins', () => {
     assert.match(notes[0] ?? '', /Cursor also reads Antigravity's skills/);
     assert.match(notes[0] ?? '', /uses its own copy on a name clash/);
     assert.match(notes[0] ?? '', /Antigravity's copy of these goes unused there: x/);
+  });
+
+  it('should note a skill installed for Cursor and OpenCode as unused in Cursor', () => {
+    const notes = duplicateLoads(
+      [entry('x', 'skill', 'cursor'), entry('x', 'skill', 'opencode')],
+      getAllTargets(),
+    );
+    assert.equal(notes.length, 1, notes.join('\n'));
+    assert.match(notes[0] ?? '', /Cursor also reads OpenCode's skills/);
+    assert.match(notes[0] ?? '', /uses its own copy on a name clash/);
+    assert.match(notes[0] ?? '', /OpenCode's copy of these goes unused there: x/);
   });
 
   it('should say nothing when the skill is installed for Cursor only', () => {

@@ -7,6 +7,7 @@
  *
  * - Claude Code custom commands: `$name` (resolved via `arguments:` frontmatter)
  * - GitHub Copilot prompt files: `${input:name}` (VS Code input variable syntax)
+ * - OpenCode commands: `$1`, `$2`, … by position in `args`
  *
  * `buildArgumentHint` formats the `argument-hint:` frontmatter value shown
  * in the Claude Code `/` menu autocomplete: e.g. "[diff] [audience]".
@@ -46,6 +47,22 @@ export function toClaudePlaceholders(body: string): string {
  */
 export function toCopilotPlaceholders(body: string): string {
   return substitutePlaceholders(body, name => `\${input:${name}}`);
+}
+
+/**
+ * Translates `{{name}}` → `$<1-based position>` for OpenCode commands.
+ * OpenCode has no named argument form, so a named placeholder becomes its
+ * position in `args`. A name not in `args` (or `args` undefined) stays as
+ * literal `{{name}}` text.
+ */
+export function toPositionalPlaceholders(
+  body: string,
+  args: readonly PromptArg[] | undefined,
+): string {
+  return substitutePlaceholders(body, name => {
+    const position = args?.findIndex(arg => arg.name === name) ?? -1;
+    return position === -1 ? `{{${name}}}` : `$${position + 1}`;
+  });
 }
 
 /** `${input:name}` or `${input:name:hint}` — other VS Code variables (`${file}`, …) are left alone. */

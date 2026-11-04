@@ -534,11 +534,59 @@ How to run it:
 | P7    | `OPENCODE_DISABLE_CLAUDE_CODE_SKILLS=1`                     | The `.claude` skill is gone; `.agents` and `.opencode` remain                            |
 
 **Differences from V1.** `dup-skill` was 15 of 16 `.opencode` on V1, and the [Skills](https://opencode.ai/v2/docs/skills/) page
-now states a fixed precedence. A V1-shaped `mcp` map is translated to `mcp.servers`. The file-write side effects didn't
+now states a fixed precedence, with `.agents/skills` over `.claude/skills`, so step 9's note says the winner depends on the version instead of the plan's "isn't fixed". A V1-shaped `mcp` map is translated to `mcp.servers`. The file-write side effects didn't
 appear: no `$schema` insert in `opencode.json`, and no `.gitignore` in `.opencode/`.
 
 **Not run:** picking by description, permission enforcement, `cat .env`, `AGENTS.md` versus `CLAUDE.md`, and U2. Instruction
 entries were empty without a model turn, so they prove nothing either way. These are Phase F in the roadmap.
+
+### Quoting run
+
+2026-11-04, `opencode-ai` 1.19.4 and `@opencode/cli` 2.2.5, Linux, one fresh session per case. The question from the roadmap's
+Phase D: can a real diff reach `$1`? The template was `DIFF[$1] AUDIENCE[$2]`, sent as `<first argument> reviewer` through the
+server's command route (V1 `POST /session/{id}/command`, V2 `POST /api/session/{id}/command`). Both store the expanded text
+before any model reply, so no row rests on a model: no free model answered on V1, and the requests timed out waiting for one.
+`serve` rejects `--standalone`, and `OPENCODE_SERVER_PASSWORD` sets its password instead of the printed one. V1 and V2 gave the
+same result on every case.
+
+| Case | First argument                                                 | Observed in `$1`                | Observed in `$2`               |
+| ---- | -------------------------------------------------------------- | ------------------------------- | ------------------------------ |
+| 1    | `"it's a test"`                                                | Whole                           | `reviewer`                     |
+| 2    | `'say "hi" now'`                                               | Whole                           | `reviewer`                     |
+| 3    | `it's "both" here`, in `"`                                     | 5 of 16 characters              | The rest, then `reviewer`      |
+| 3    | Same, in `'`                                                   | 2 of 16 characters              | The rest, then `reviewer`      |
+| 4    | Three lines, in `"` and in `'`                                 | Whole, newlines kept            | `reviewer`                     |
+| 5    | A real 1,648-character `git diff` of a test file, holding both | 848 of 1,648 in `"`, 219 in `'` | Diff text, with quotes dropped |
+| 6    | `"one two"`, no second argument                                | Whole                           | Empty, no error                |
+
+**A diff holding both quote types can't reach an argument whole, and nothing reports it.** The model would get part of the
+diff, and the rest as the audience. Most real diffs hold both, so `explain-diff` doesn't ship on this target: its spec skips a
+prompt with two or more arguments, and `add` says why. This is the arguments' shape, not the prompt's: `{{diff}}` could reach
+OpenCode as more than one word only as the last argument (with its quotes dropped, as case 5's `$2` shows), and reordering `args:` to fit would change the catalog for one target.
+
+### Sigil output run
+
+2026-11-04, `opencode-ai` 1.19.4 and `@opencode/cli` 2.2.5, Linux, D0's isolation, with `sigil`'s own output and no hand-written
+files except case 5's. One repo held `sigil add --target opencode` of `shared/feature`, `shared/code-reviewer` and
+`shared/author-artifact`. The other held a full `sigil build --target opencode`: 45 skills, 39 agents, 1 command. `add` also
+skipped `shared/explain-diff` with the quoting reason.
+
+| Case | Check                                                  | Observed                                                                                                                                                                                                                              |
+| ---- | ------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1    | V1 `debug skill`, V2 `/api/skill`                      | Both repos, every skill listed: 45 of 45 on the build. Extras are built-ins: V1 `customize-opencode`, V2 `Browser`, `OpenCode`, `Report`                                                                                              |
+| 2    | V1 `agent list` and `/agent`, V2 `/api/agent`          | 39 of 39 on the build, all `subagent`. 41 subagents in all, with the two built-ins (`explore`, `general`). The `add` repo: 3, the same way                                                                                            |
+| 3    | V1 `debug agent code-reviewer`, V2 `/api/agent`        | Same order on both, after the defaults: `*` deny, then `read` `*` allow, `*.env` ask, `*.env.*` ask, `*.env.example` allow, then `list`, `grep`, `glob`, `bash` allow. All 39 agents carry the deny rule                              |
+| 4    | V1 `/command`, V2 `/api/command`                       | `shared-author-artifact` under its slug, in both repos                                                                                                                                                                                |
+| 5    | Command route, one word, a prompt with one `args` item | `ECHO[tangerine]` on both, from `ECHO[{{word}}]`. Neither catalog prompt fits (`author-artifact` has no `args`, `explain-diff` doesn't ship), so this is a fixture rendered through `OPENCODE_PROMPT_SPEC`                            |
+| 6    | V1, the agent asked through `task` to read `.env`      | **Not answered.** The one try hit a 150-second timeout with no output and stdin closed, so nothing was read and no value appeared. This proves nothing about refusal. V2's reply to case 5 was `Free usage limit reached`, status 429 |
+
+**What still rests on hand-written fixtures.** P4's `.env` result, because case 6 had no model reply: the rules above are
+loaded from sigil's output, but nothing has been seen enforcing them. Also P2's picking between two copies, and P3's second
+argument. Model-backed checks on V2 stay in Phase F.
+
+**For the next run.** V1 and V2 take different command bodies: `{"command", "arguments"}` on V1, `{"name", "text"}` on V2. On V2
+one `/api/skill` read 4 seconds after creating a session came back empty, and a later run polling each second filled in 2. The
+cause wasn't isolated, so poll.
 
 ### What the probes change
 
@@ -601,4 +649,7 @@ setup docs narrow to V1. The code stays, because it holds for V1. U2 only decide
 1. Setup note for the free route, with P7's limits.
 2. Probe `@opencode/cli`, loader first. U1's enforcement half and U2 close last, in the roadmap's Phase F.
 3. Shared changes: the `McpDialect` fields, the `bodyTransform` argument and the `opencode-home` root.
-4. The target: skills, agents, prompts, rules and MCP.
+4. The target: skills, agents, prompts, rules and MCP. Shipped on 2026-11-04 without MCP, which is the roadmap's Phase E: 45
+   skills, 39 agents, 1 of 2 prompts (the [quoting run](#quoting-run) ruled out `explain-diff`), and repo-wide rules through
+   `AGENTS.md` on a build. The [Sigil output run](#sigil-output-run) shows it loading on V1 and V2. Enforcement on sigil's own
+   output wasn't seen, because no model answered.

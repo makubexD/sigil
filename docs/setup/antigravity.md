@@ -187,7 +187,9 @@ under `dist/antigravity/plugins/<name>/`, each with `plugin.json` at its root
 - **Hook and MCP plugins.** Each hook and MCP server gets a plugin of its own, `hook-<name>` or `mcp-<name>`, holding
   `hooks.json` or `mcp_config.json`. A pack plugin never carries a hook or a server, and it can't depend on one, since
   `plugin.json` has no dependencies field. If a pack's skills rely on a hook, such as `protect-config`, install its
-  `hook-<name>` plugin as well.
+  `hook-<name>` plugin as well. A server that needs an
+  [install value](../reference/config-kinds.md#install-variables), such as `shared/ado`, gets no plugin, because a plugin
+  can't ask for the value. Install it with `sigil add --target antigravity mcp:shared/ado`.
 
 Install one for your user, or copy it into one project:
 

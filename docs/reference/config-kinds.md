@@ -90,7 +90,7 @@ expands it, but VS Code Copilot Chat 1.125.1 passes `${NAME}` (and `${env:NAME}`
 through as text; only its deprecated `.vscode/mcp.json` expands `${env:NAME}`. sigil keeps writing
 the portable file, and `add` prints the target's `mcpEnvCaveat` (data on the target) for every
 installed server that reads an environment variable. Copilot CLI passes a local server only `PATH` from the
-environment, so a server lists every variable it reads under `env` (as `shared/ado` does).
+environment, so a server lists every variable it reads under `env`.
 Cursor's `.cursor/mcp.json` gets `${env:NAME}`, which Cursor documents and expands in `command`,
 `args`, `env`, `url` and `headers` (measured in `args` and `env`, `docs/decisions/cursor-target-2026-11.md`
 A6 and § Phase D probes), so Cursor has no `mcpEnvCaveat`. Codex forwards a variable by name
@@ -105,6 +105,62 @@ OpenCode's `opencode.json` gets `{env:NAME}`, which OpenCode replaces with the r
 holding `"` stops the file loading (`docs/decisions/opencode-target-2026-11.md`, Sigil MCP run), so its `mcpEnvCaveat` says so.
 Never write one tool's syntax in the catalog. Pin every `npx` package to an exact
 version (`@scope/pkg@1.2.3`); a test fails on a floating one.
+
+### Install variables
+
+Some values have to be in the file itself. `shared/ado` takes its organization as a positional argument that no environment
+variable can set, and an env token in `args` doesn't work everywhere: Codex and Antigravity can't carry one, and VS Code Copilot
+Chat passes it through as text. For a value like this, an `mcp` artifact declares a variable under `vars:` and writes
+`{sigil:var:NAME}` in `server`:
+
+```yaml
+vars:
+  ADO_ORG:
+    title: 'Azure DevOps organization'
+    description: 'The <org> in dev.azure.com/<org>'
+server:
+  command: 'npx'
+  args: ['-y', '@azure-devops/mcp@2.10.0', '{sigil:var:ADO_ORG}', '--authentication', 'azcli']
+```
+
+`title` and `description` are required, because the prompts show them. `sigil validate` fails when a token and the `vars:` block
+disagree. `scaffoldConfigOps` (`src/config-ops.ts`) replaces each token with its literal value before a target sees the artifact, so
+no target or `McpDialect` has any var code, and no token reaches an output file.
+
+**Never a secret.** The value is written in plain text to the config file and to `.sigil/manifest.json`, and both can be committed.
+A secret stays in the environment, behind `{sigil:env:NAME}`.
+
+**Allowed values.** A value matches `^[A-Za-z0-9][A-Za-z0-9._-]{0,127}$`. It reaches a command line and files with their own
+expansion syntax, so a leading `-`, `$`, `{`, `/`, spaces and quotes are refused. The rule is fixed in `src/mcp-vars.ts`, and a catalog
+can't supply its own. It also applies to recorded values: the manifest can be edited, so a recorded value that fails counts as missing.
+
+**Where `add` gets a value.** The first of these wins:
+
+1. `--var NAME=value`.
+2. The value recorded for this id and target.
+3. The value recorded for this id on another target.
+4. A prompt, in a terminal.
+
+With none of these, `add` fails before it writes anything and names the flag to pass. `--yes` never prompts. `--dry-run` never prompts
+either: a missing value previews as `<NAME>`, and nothing is written or recorded. A `--var` value that differs from the recorded one
+reinstalls that id, and a `--var` name no selected artifact declares is an error.
+
+**`update` never prompts.** It takes `--var` too, and otherwise uses the recorded value. If there is none, it prints
+`kept as installed: needs ADO_ORG; re-run with --var ADO_ORG=<value>` and leaves the entry outdated, and `status` and `outdated` keep
+reporting it as stale.
+
+**Plugins.** A plugin has no install step. The Claude plugin declares each variable as `userConfig` in `plugin.json` and writes
+`${user_config.NAME}` in `.mcp.json`, so Claude Code asks when the plugin is enabled
+([plugin reference](https://code.claude.com/docs/en/plugins-reference#user-configuration)). Antigravity's plugins can't ask, so a
+server with `vars:` is left out of them, and `sigil add` still installs it there. The other plugin channels carry no MCP.
+
+**Known limits.**
+
+- Installing for two targets that share `.mcp.json` with different values leaves the first target's fragment `modified`. Use one
+  value, or run `update --force`.
+- `shared/ado` signs in through the Azure CLI, so it needs `az` on `PATH` and a finished `az login`. Copilot CLI passes a local server
+  only `PATH`, so `az` may not find its login there. That case and a real tool call are unproven, because no live check has had `az`.
+- An `ado` install from before `vars:` has no recorded value. Run `sigil update --var ADO_ORG=<org>` once.
 
 ## Merge strategies
 
@@ -159,6 +215,8 @@ refusing. (Rule from audit finding F14: a reinstall once undid a hook fix and th
 What `update` writes always comes from the bundled catalog, never from the manifest.
 `.sigil/manifest.json` is committed and anyone can edit it, so its record only says which
 fragment is installed where. A restore writes the catalog's current op for that file and root.
+The one thing `update` reads from the record is an install variable's value, and only after it passes the
+[value rule](#install-variables).
 A recorded fragment the catalog has no op for is skipped with a note (re-run `sigil add`).
 
 ## Re-install and catalog changes replace, never stack

@@ -62,6 +62,10 @@ folder. The MCP route ran on Copilot CLI and wasn't run in VS Code.
 `mcp-ado`, `mcp-context-mode` and `mcp-maku-jam` weren't tested as plugins, so use `sigil add` for
 those too.
 
+`shared/ado` signs in through the Azure CLI, but Copilot CLI passes a local server only `PATH`, so `az` may
+not find its login there. This hasn't been tested; see the
+[known limits](../reference/config-kinds.md#install-variables).
+
 ## Limits
 
 - On Copilot CLI's Free plan only `--model auto` is accepted, and it mostly picks a GPT model, which writes files

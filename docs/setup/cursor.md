@@ -92,7 +92,8 @@ per-project MCP file. Sigil merges its servers into the `mcpServers` map and lea
 
 A local server is written with `type: "stdio"` first, then the catalog's `command`, `args` and `env`. A remote server
 gets its `url` and `headers` with no `type` key. A catalog `{sigil:env:NAME}` reference becomes `${env:NAME}`, which
-Cursor expands in `command`, `args`, `env`, `url` and `headers`:
+Cursor expands in `command`, `args`, `env`, `url` and `headers`. An
+[install value](../reference/config-kinds.md#install-variables) is written as plain text, such as the organization here:
 
 ```json
 {
@@ -103,15 +104,14 @@ Cursor expands in `command`, `args`, `env`, `url` and `headers`:
       "args": [
         "-y",
         "@azure-devops/mcp@2.10.0",
-        "${env:ADO_ORG}",
+        "contoso",
         "--authentication",
-        "pat",
+        "azcli",
         "-d",
         "core",
         "work",
         "work-items"
-      ],
-      "env": { "ADO_MCP_PERSONAL_TOKEN": "${env:ADO_MCP_PERSONAL_TOKEN}" }
+      ]
     }
   }
 }

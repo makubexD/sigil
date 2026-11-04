@@ -44,7 +44,9 @@ in the next session.
   warnings. OpenCode reads the value when it starts. An unset variable becomes an empty string with no error, and a value
   holding a double quote stops OpenCode from loading the file. Export the variable first, and don't write a secret into the
   file instead: `.opencode/opencode.json` is usually committed.
-- **`shared/ado` isn't on OpenCode yet.** It gets its own plan. The other three catalog servers install.
+- **`shared/ado` needs your organization at install.** `add` asks for it, or takes `--var ADO_ORG=<org>`, and writes it into the
+  file as plain text, not as a `{env:NAME}` reference
+  ([install values](../reference/config-kinds.md#install-variables)). All four catalog servers install.
 
 OpenCode 1 also changes files itself when it starts: it adds `$schema` to `opencode.json` files, which Sigil ignores when it
 checks for drift, and it writes a `.gitignore` into `.opencode/`.

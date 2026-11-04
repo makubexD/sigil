@@ -541,10 +541,16 @@ packaged into plugins; install those with `sigil add`. The per-kind table is in
 [capabilities.md](../reference/capabilities.md).
 
 **Environment variables.** An MCP plugin reads `${NAME}` values from the environment Claude Code starts
-from, and its description names the ones it needs. `mcp-ado`, for example, needs `ADO_ORG` and
-`ADO_MCP_PERSONAL_TOKEN`. If a variable is unset, the server still starts with the literal text
-`${NAME}` as its value and Claude Code shows no warning, so a connected server doesn't prove the value
-is set. A project `.mcp.json` from `sigil add` behaves the same way.
+from, and its description names the ones it needs. If a variable is unset, the server still starts with
+the literal text `${NAME}` as its value and Claude Code shows no warning, so a connected server doesn't
+prove the value is set. A project `.mcp.json` from `sigil add` behaves the same way.
+
+**Install values.** Some servers need a value written into their config instead. `mcp-ado`, for example,
+needs your Azure DevOps organization, so Claude Code asks for it when you enable the plugin. `sigil add`
+asks too, or takes `--var ADO_ORG=<org>` in a script. The value is stored as plain text, so never use one
+for a secret. `mcp-ado` signs in through the Azure CLI, so install `az` and run `az login` first. The
+order sigil looks for a value in, the allowed characters and the known limits are in
+[Install variables](../reference/config-kinds.md#install-variables).
 
 **A plugin and `sigil add` together.** Installing the same artifact both ways is safe, but rarely
 what you want. A hook runs twice, which is harmless for sigil's three hooks because they are

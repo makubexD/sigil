@@ -64,7 +64,9 @@ because a partial table stops Codex from starting.
 Project config loads only in a trusted project, and `--scope local` is refused.
 
 Codex doesn't expand `${NAME}` in MCP config. A catalog variable reaches a server only by name, through `env_vars`, so
-export it before starting Codex. `shared/ado` needs a variable in its arguments, so it's skipped on Codex.
+export it before starting Codex. `shared/ado` takes its organization as an
+[install value](../reference/config-kinds.md#install-variables), written as plain text, so it does install on Codex:
+`sigil add mcp:shared/ado --target codex --var ADO_ORG=<org>`.
 
 ## Plugins
 

@@ -43,6 +43,9 @@ free model answers, record that and let V2 decide.
 | 5    | A real `git diff` of a TypeScript file, holding both of those | Whole text in `$1`        |
 | 6    | No second argument                                            | `$2` empty, nothing fails |
 
+Result, 2026-11-04: case 3 and case 5 failed on both lines, with no error, so the prompt doesn't ship. See the
+[quoting run](decisions/opencode-target-2026-11.md#quoting-run).
+
 Decision rule: **case 5 passes on both lines, or the prompt doesn't ship.** A real diff is the prompt's whole input, so a
 prompt that works only on a diff with no quotes isn't usable. On a fail, step 7 keeps its `skipReason` line, and the prompt
 count on this target is 1 of 2. On a pass, delete that line and its cases from step 7, and step 12 documents the quoting.
@@ -199,8 +202,8 @@ Test: `npm run build && npm run build:test && node --test test-compiled/targets/
 - ``/!`[^`]+`/``, shell output in a template.
 - ``/(?<![\w`])@[\w.~/-]/``, a file reference, not after a word character or a backtick.
 
-`skipReason`, from step 1: a prompt with two or more `args` returns `OpenCode splits arguments on spaces, so only the last one
-can hold a diff or other free text`. The spec's header states step 1's result.
+`skipReason`, from step 1: a prompt with two or more `args` returns `OpenCode splits arguments on spaces and quotes, so only the
+last one can hold free text`. The spec's header states step 1's result.
 
 `spec/index.ts` exports `OPENCODE_EMIT_SPECS` with the agent, prompt and skill specs.
 

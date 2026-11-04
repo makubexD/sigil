@@ -540,6 +540,30 @@ appear: no `$schema` insert in `opencode.json`, and no `.gitignore` in `.opencod
 **Not run:** picking by description, permission enforcement, `cat .env`, `AGENTS.md` versus `CLAUDE.md`, and U2. Instruction
 entries were empty without a model turn, so they prove nothing either way. These are Phase F in the roadmap.
 
+### Quoting run
+
+2026-11-04, `opencode-ai` 1.19.4 and `@opencode/cli` 2.2.5, Linux, one fresh session per case. The question from the roadmap's
+Phase D: can a real diff reach `$1`? The template was `DIFF[$1] AUDIENCE[$2]`, sent as `<first argument> reviewer` through the
+server's command route (V1 `POST /session/{id}/command`, V2 `POST /api/session/{id}/command`). Both store the expanded text
+before any model reply, so no row rests on a model: no free model answered on V1, and the requests timed out waiting for one.
+`serve` rejects `--standalone`, and `OPENCODE_SERVER_PASSWORD` sets its password instead of the printed one. V1 and V2 gave the
+same result on every case.
+
+| Case | First argument                                                 | Observed in `$1`                | Observed in `$2`               |
+| ---- | -------------------------------------------------------------- | ------------------------------- | ------------------------------ |
+| 1    | `"it's a test"`                                                | Whole                           | `reviewer`                     |
+| 2    | `'say "hi" now'`                                               | Whole                           | `reviewer`                     |
+| 3    | `it's "both" here`, in `"`                                     | 5 of 16 characters              | The rest, then `reviewer`      |
+| 3    | Same, in `'`                                                   | 2 of 16 characters              | The rest, then `reviewer`      |
+| 4    | Three lines, in `"` and in `'`                                 | Whole, newlines kept            | `reviewer`                     |
+| 5    | A real 1,648-character `git diff` of a test file, holding both | 848 of 1,648 in `"`, 219 in `'` | Diff text, with quotes dropped |
+| 6    | `"one two"`, no second argument                                | Whole                           | Empty, no error                |
+
+**A diff holding both quote types can't reach an argument whole, and nothing reports it.** The model would get part of the
+diff, and the rest as the audience. Most real diffs hold both, so `explain-diff` doesn't ship on this target: its spec skips a
+prompt with two or more arguments, and `add` says why. This is the arguments' shape, not the prompt's: `{{diff}}` could reach
+OpenCode whole only as the last argument, and reordering `args:` to fit would change the catalog for one target.
+
 ### What the probes change
 
 - **U3 to U9 are answered.** U1 and U2 stayed open here: these probes didn't run on `@opencode/cli`.

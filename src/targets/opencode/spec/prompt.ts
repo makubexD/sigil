@@ -5,7 +5,7 @@
  * The body is the command template: `{{name}}` becomes `$<1-based position in args>`, because
  * OpenCode has no named argument form.
  *
- * Step 1 of docs/plan-opencode-target-d.md measured whether a real diff survives OpenCode's
+ * The ADR's quoting run (opencode-target-2026-11.md) measured whether a real diff survives OpenCode's
  * quoting. Result, 2026-11-04: case 3 (an argument holding both `'` and `"`) and case 5 (a real
  * git diff holding both) failed on both lines, with no error, so the prompt doesn't ship. A diff
  * holding both quote types can't reach an argument whole, and nothing reports it. Most real

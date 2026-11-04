@@ -162,7 +162,7 @@ describe('opencode target over the whole catalog', () => {
     );
   });
 
-  it('should skip hook, settings, workflow and mcp ids, each with its reason', async () => {
+  it('should skip hook, settings and workflow ids, each with its reason', async () => {
     const catalog = await loadResolvedCatalog();
     const target = getTarget(TARGET);
 
@@ -189,7 +189,6 @@ describe('opencode target over the whole catalog', () => {
       hook: /plugin API/,
       settings: /Claude Code's own vocabulary/,
       workflow: /no workflow file/,
-      mcp: /isn't built yet/,
     };
     const entries = (Object.keys(reasons) as ArtifactKind[]).map(kind => {
       const id =

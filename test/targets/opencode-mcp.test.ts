@@ -10,15 +10,20 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import path from 'node:path';
+import { OpenCodeTarget } from '../../dist-cli/targets/opencode';
+import { kindSupport, supportsKind } from '../../dist-cli/targets/capabilities';
 import {
   OPENCODE_MCP_DIALECT,
   buildOpenCodeMcpOps,
   openCodeMcpSkipReason,
 } from '../../dist-cli/targets/opencode/mcp-ops';
+import { resolveConfigRoot } from '../../dist-cli/config-utils';
 import { SigilError } from '../../dist-cli/errors';
 import { loadResolvedCatalog } from '../helpers/catalog';
 import type { Artifact, ConfigMergeOp, ResolvedCatalog } from '../../dist-cli/types';
 
+const PROJECT_DIR = '/abs/project';
 const MCP_FILE = '.opencode/opencode.json';
 const USER_MCP_FILE = 'opencode.json';
 
@@ -175,5 +180,91 @@ describe('OpenCode MCP skip reasons', () => {
         assert.doesNotMatch(JSON.stringify(op.fragment), /\{sigil:env:/, `${artifact.id} ${scope}`);
       }
     }
+  });
+});
+
+describe('OpenCode MCP config scopes', () => {
+  it('offers project and user for mcp', () => {
+    const scopes = new OpenCodeTarget().configScopes!(['mcp'], PROJECT_DIR);
+
+    assert.deepEqual(
+      scopes.map(scope => scope.value),
+      ['project', 'user'],
+    );
+    for (const scope of scopes) {
+      assert.deepEqual(
+        scope.destinations.map(destination => destination.kind),
+        ['mcp'],
+      );
+      assert.equal(scope.destinations[0]!.section, 'mcp');
+    }
+
+    const project = scopes[0]!.destinations[0]!;
+    const user = scopes[1]!.destinations[0]!;
+    assert.equal(project.file, MCP_FILE);
+    assert.equal(project.fullPath, path.join(PROJECT_DIR, '.opencode', 'opencode.json'));
+    assert.equal(user.file, USER_MCP_FILE);
+    assert.equal(
+      user.fullPath,
+      path.join(resolveConfigRoot('opencode-home', PROJECT_DIR), 'opencode.json'),
+    );
+  });
+
+  it('offers both scopes with empty destinations for hook and settings', () => {
+    const scopes = new OpenCodeTarget().configScopes!(['hook', 'settings'], PROJECT_DIR);
+
+    assert.deepEqual(
+      scopes.map(scope => scope.value),
+      ['project', 'user'],
+    );
+    for (const scope of scopes) assert.deepEqual(scope.destinations, []);
+  });
+
+  it('supports mcp natively on the scaffold channel', () => {
+    const target = new OpenCodeTarget();
+
+    assert.equal(supportsKind(target, 'mcp'), true);
+    assert.equal(kindSupport(target, 'mcp')!.mode, 'native');
+  });
+
+  it('still refuses hook and settings, with their reasons unchanged', () => {
+    const target = new OpenCodeTarget();
+    const hook = kindSupport(target, 'hook');
+    const settings = kindSupport(target, 'settings');
+
+    assert.equal(hook?.mode, 'none');
+    assert.equal(
+      hook?.mode === 'none' ? hook.reason : undefined,
+      "OpenCode hooks are generated code on a plugin API OpenCode 2 doesn't run",
+    );
+    assert.equal(settings?.mode, 'none');
+    assert.equal(
+      settings?.mode === 'none' ? settings.reason : undefined,
+      "this kind's schema is Claude Code's own vocabulary",
+    );
+  });
+
+  it('scaffoldConfig on a hook artifact names the one kind it supports', async () => {
+    const catalog = await loadResolvedCatalog();
+    const hook = catalog.artifacts.find(artifact => artifact.kind === 'hook')!;
+    assert.ok(hook, 'the catalog has a hook');
+
+    await assert.rejects(
+      () => new OpenCodeTarget().scaffoldConfig!(hook.id, catalog, { projectDir: PROJECT_DIR }),
+      /supports only the 'mcp' config kind/,
+    );
+  });
+
+  it('compile writes no .opencode/opencode.json: MCP is add-only', async () => {
+    const files = await new OpenCodeTarget().compile(await loadResolvedCatalog(), {
+      version: '0.0.0',
+      packs: [],
+    });
+
+    assert.equal(files[MCP_FILE], undefined);
+    assert.deepEqual(
+      Object.keys(files).filter(file => file.endsWith('opencode.json')),
+      [],
+    );
   });
 });

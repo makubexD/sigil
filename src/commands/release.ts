@@ -10,14 +10,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { execSync, execFileSync } from 'node:child_process';
 import { confirm, isCancel } from '../wizard/prompts';
-import { bumpVersion, promoteChangelog } from '../release';
+import { bumpVersion, localIsoDate, promoteChangelog } from '../release';
 import { isInteractiveTTY } from '../wizard';
 import { pkg, PKG_ROOT } from '../cli-helpers';
 import { SigilError } from '../errors';
 import { JSON_INDENT } from '../json-util';
-
-/** Length of an ISO date string in the format 'YYYY-MM-DD'. */
-const ISO_DATE_LEN = 10;
 
 export interface ReleaseOptions {
   dryRun: boolean;
@@ -131,7 +128,7 @@ function promoteChangelogFile(nextVersion: string): string {
   }
 
   const changelogText = fs.readFileSync(changelogPath, 'utf-8');
-  const today = new Date().toISOString().slice(0, ISO_DATE_LEN);
+  const today = localIsoDate();
   try {
     const promoted = promoteChangelog(changelogText, nextVersion, today);
     fs.writeFileSync(changelogPath, promoted, 'utf-8');

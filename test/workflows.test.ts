@@ -41,7 +41,7 @@ describe('release and CI workflows', () => {
     const release = workflow('release.yml');
     // The step itself (`run: npm run ci:local`), not a comment that mentions it.
     const gate = release.search(/^\s*run:\s*npm run ci:local\s*$/m);
-    const publish = release.search(/^\s*run:\s*npm publish --provenance/m);
+    const publish = release.search(/^\s*run:\s*npm publish\b/m);
     assert.ok(gate > 0 && publish > gate, 'ci:local must run before npm publish');
   });
 

@@ -64,9 +64,9 @@ jobs:
 
       - uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5
         with:
-          node-version: '20'
+          node-version: '24'
           registry-url: 'https://registry.npmjs.org'
-          cache: npm
+          package-manager-cache: false
 
       - name: Install dependencies
         run: npm ci
@@ -76,9 +76,12 @@ jobs:
       # ── Publish ──────────────────────────────────────────────────────────────
       #
       # RECOMMENDED PATH — npm OIDC Trusted Publishing (no stored secret):
-      #   1. Publish once manually: `npm publish --access public`
-      #   2. On npmjs.com → your package → Publishing → Trusted Publishers
-      #      Add: repo=<owner>/<repo>, workflow=release.yml, environment=<leave blank>
+      #   Trusted publishing needs Node 22.14+ and npm 11.5.1+, which Node 24 provides.
+      #   1. Publish once by hand: `npm publish`.
+      #   2. On npmjs.com, in the package's settings, add a GitHub Actions trusted publisher:
+      #      user makubexD, repository sigil, workflow release.yml, no environment, and allow
+      #      `npm publish`. npm does not check these fields on save and they are case-sensitive,
+      #      so a typo shows up only as ENEEDAUTH at publish.
       #   3. In GitHub → Settings → Secrets and variables → Actions → Variables, set
       #      NPM_PUBLISH = true. Until then this job is skipped, not failed.
       #   After that, OIDC authentication is automatic and this step runs as-is.
@@ -91,8 +94,8 @@ jobs:
       #       run: npm publish --access public
       #   Step 3 still applies: without NPM_PUBLISH = true this job never runs.
       #
-      - name: Publish to npm (OIDC + provenance)
-        run: npm publish --provenance --access public
+      - name: Publish to npm (OIDC)
+        run: npm publish
 
   # ── Marketplace ────────────────────────────────────────────────────────────
   #

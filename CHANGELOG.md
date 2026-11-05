@@ -11,6 +11,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - OpenCode setup note: agent restrictions are now proven on OpenCode 2 with Sigil's own files. It also records two more routes
   to `.env`, on top of `cat .env`: `grep`, and `opencode run --auto`, which approves the `read` ask.
+- `sigil update` now counts a file you edited as drifted even when the catalog didn't change, and says so. The guided update and
+  the wizard's Update offer to restore it, as `update --force` does.
+- On OpenCode, an agent that can't delegate now gets a Boundary heading that asks it to name the co-installed agents in its
+  report, instead of telling it to delegate to them.
+- `sigil sync --check` now holds a prompt shipped as a Claude plugin skill to the skill limits.
+- The README has an install block for OpenCode.
+
+### Fixed
+
+- `author-artifact` no longer shows its title twice on Claude, and its first line now says "the sigil catalog". The body's title
+  line is gone on every target.
+
+### Removed
+
+- The unused `.sigil/allow.json` loader. No command read that file.
+
+### Tests
+
+- A selection that holds a skill and an agent is refused whole when another target owns the skill files.
 
 ## [0.9.0] - 2026-11-04
 

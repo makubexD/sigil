@@ -8,14 +8,14 @@ catalog to Cursor. Planned in
 `.cursor/rules/*.mdc`, agents, commands, hooks, MCP, and the Cursor plugin, the one format that
 carries rules; matrix in section 3). This brief does not restate it.
 
-## Evidence
+## Status
 
-- `src/targets/index.ts:19-20` registers only the Claude and Copilot targets; there is no
-  `src/targets/cursor/`.
-- Rules are the kind other targets cannot carry in a plugin; Cursor would be the first with a
-  native rule plugin (ADR section 3), which would exercise the `plugin` capability channel
-  (`src/targets/capability-types.ts`) in a new way.
-- The extension recipe is `src/targets/index.ts:3-7`.
+The `cursor` target has shipped. [plan-cursor-target.md](../plan-cursor-target.md) is the record, and phases A to E and N are
+done. Two phases are left:
+
+- **F, the Cursor plugin channel:** paused on Cursor's free usage limit. So far a CLI-loaded Cursor plugin loads skills and
+  agents but not rules.
+- **G, close-out:** a live check in Cursor, then delete this brief and its README row.
 
 ## Out of scope
 

@@ -579,6 +579,18 @@ allows only the edit tools, tells the model not to open other files, and returns
 unless the edit happened and no tool call touched `.agents/`. Three runs after the fix: `NONE` each time. B1 stands,
 and the scoped-rule `skipReason` stays.
 
+**G3, the local-backlog re-check (`agy 1.4.12`, `gemini-3.8-flash-low`, Linux, signed in).** The free model answered.
+`--only G-skill,G-rule,G-glob,G-agent,G-mcp,G-hook,G-validate` returned `OK` on all seven, with no loader drift. `G-plugin`
+was left out on purpose: it installs into `~/.gemini/config/plugins/`, and this run kept out of `~/.gemini`, whose config
+listing was the same before and after. So the installed-plugin path was not re-checked here.
+
+| Date       | Case | Run                                                                         | Result                                                                         |
+| ---------- | ---- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| 2026-11-04 | G3a  | A skill in `.agents/skills/`; the question matches its description, no name | **Pass.** Answered with the word only the skill holds                          |
+| 2026-11-04 | G3b  | Control: same question, no skill                                            | No word. The model tried a shell command, which was auto-denied, and gave none |
+| 2026-11-04 | G3c  | `sigil add shared/protect-config`, write `.env` with the file tool          | **Pass.** No file, and the model reported the block                            |
+| 2026-11-04 | G3d  | Control: same install and tool permission, write `ok.txt`                   | Written, with the content asked for                                            |
+
 ## Decision
 
 **Go, staged, with target id `antigravity`.** The docs call the product Antigravity CLI and the binary `agy`, and

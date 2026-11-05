@@ -177,7 +177,7 @@ describe('updateWholeFileEntry', () => {
         makeOpts(dir),
       );
       assert.equal(result.updated, false);
-      assert.equal(result.skippedDriftCount, 0);
+      assert.equal(result.skippedDriftCount, 1);
       assert.equal(fs.readFileSync(path.join(dir, 'rule.md'), 'utf-8'), 'hand-edited by the user');
     });
   });

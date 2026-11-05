@@ -658,8 +658,33 @@ The control for case 9: the same plugin on V1 blocked the write with its own mes
 - **U2 is answered:** a V1 plugin is skipped with no message, which is the silent guard failure behind `hook: none`.
 - **`grep` is a third route to `.env`,** after `shell` and `--auto`. It adds no new exposure on a catalog agent, since all 39 list
   `shell`, but removing `bash` alone doesn't close the gap.
-- In cases 2 and 3 the model listed `skill` among its tools under `'*': deny`. That is the model's word, and it wasn't tested
-  further.
+- In cases 2 and 3 the model listed `skill` among its tools under `'*': deny`. That is the model's word. The
+  [skill checks](#skill-checks-run) test it: the model can try the tool, and the call is denied.
+
+### Skill checks run
+
+2026-11-04, `@opencode/cli` 2.2.5 on Linux, model `deepseek/deepseek-flash` on the paid API, D0's isolation, one fresh scratch
+`HOME` per run, `--standalone`, a committed fixture, and the key passed only to that process. The cases read the `tool_use`
+events of `--format json`, so a result doesn't rest on the model's report. Each secret word appears only in its fixture's
+`SKILL.md`. The locked agent is the Phase F one, with `mode: all`.
+
+| Date       | Case | Run                                                                       | Result                                                                            |
+| ---------- | ---- | ------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| 2026-11-04 | A1   | One skill name in `.agents/skills/` and `.claude/skills/`, different body | `.agents/skills/` body in 3 of 3 runs, through the `skill` tool                   |
+| 2026-11-04 | A2   | Control: `.agents/skills/` only                                           | That body                                                                         |
+| 2026-11-04 | A3   | Control: `.claude/skills/` only                                           | That body, so V2 does read the folder that lost in A1                             |
+| 2026-11-04 | B1   | `disable-model-invocation: true`, question matches the description        | No tool call, answered `NONE`. One run                                            |
+| 2026-11-04 | B2   | Control: same skill and question, no mark                                 | `skill` tool called, word returned                                                |
+| 2026-11-04 | B3   | Same marked skill, the model told its name and to use the `skill` tool    | **Loaded.** Tool call completed, word returned                                    |
+| 2026-11-04 | C1   | Locked agent under `'*': deny`, told to load a skill                      | **Denied.** The model made the call, which failed with `Permission denied: skill` |
+| 2026-11-04 | C2   | Control: the same agent plus `skill: allow`                               | `skill` tool called, word returned                                                |
+
+- **A1 confirms the documented order** on V2. The body a V2 user gets is the `.agents/skills/` copy, with its rules inlined.
+- **The mark hides a skill from the model's own choice, not from the tool** (B1 to B3). A prompt meant for the user alone
+  can't be picked by description, but anything that names it can load it. B1 is one run with one model.
+- **A catalog agent can't load a skill on V2** (C1, C2), so the source reading holds. The Phase F report was half right: the
+  model can try `skill`, but the permission stops the call. So `skill` differs from the tools in cases 2 and 3, which are never
+  offered. MCP tools under `'*': deny` are still untested.
 
 ### What the probes change
 

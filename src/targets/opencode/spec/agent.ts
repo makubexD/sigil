@@ -52,13 +52,34 @@ const permissionMapping: FieldMapping = {
   serialize: v => opencodePermissionBlock(v as string[]),
 };
 
+/**
+ * Boundary heading for an agent OpenCode locks out of `task`: it cannot delegate, so it names
+ * the co-installed agents in its report for the caller to hand the work to instead.
+ */
+const REPORT_ESCALATES_HEADING =
+  'Name these co-installed agents in your report, so the caller can hand the work over:';
+
+/**
+ * A non-empty tools list without `agent` makes the permission block deny `task`; no tools keeps
+ * OpenCode's every-tool default, so that agent can still delegate.
+ */
+function cannotDelegate(frontmatter: Record<string, unknown>): boolean {
+  const tools = frontmatter.tools;
+  return Array.isArray(tools) && tools.length > 0 && !tools.includes('agent');
+}
+
 const titleAndBoundarySection: BodySectionSpec = {
   id: 'titleAndBoundary',
   position: 'before',
   render: (artifact, ctx) => [
     `# ${artifact.frontmatter.title as string}`,
     '',
-    ...renderBoundarySection(artifact, ctx.installSet, ctx.catalog),
+    ...renderBoundarySection(
+      artifact,
+      ctx.installSet,
+      ctx.catalog,
+      cannotDelegate(artifact.frontmatter) ? REPORT_ESCALATES_HEADING : undefined,
+    ),
   ],
 };
 

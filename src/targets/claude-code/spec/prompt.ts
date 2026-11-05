@@ -39,6 +39,7 @@ import { CLAUDE_SKILLS_DOC } from '../../doc-refs';
 import { basenameOfId } from '../../../paths';
 import { CLAUDE_LEXICON } from '../lexicon';
 import { UNTRANSLATED_TOKEN_FORBID } from '../../lexicon-forbid';
+import { CLAUDE_SKILL_LIMITS } from './skill';
 
 /** Same id -> slug rule the old `.claude/commands/<slug>.md` path used (full id, `/` -> `-`) —
  * kept identical to preserve cross-language uniqueness. The scaffold has no pack namespace and no
@@ -147,7 +148,8 @@ export const CLAUDE_PROMPT_SPEC: KindEmitSpec = {
 
 /**
  * Plugin prompts: the same user-invoked skill, inside the pack's plugin folder, with the
- * slug reduced to the id's last segment (see the module header).
+ * slug reduced to the id's last segment (see the module header). It ships as a plugin skill, so
+ * the skill output limits apply.
  */
 export const CLAUDE_PLUGIN_PROMPT_SPEC: KindEmitSpec = {
   ...CLAUDE_PROMPT_SPEC,
@@ -162,4 +164,5 @@ export const CLAUDE_PLUGIN_PROMPT_SPEC: KindEmitSpec = {
     argumentsListMapping,
     disableModelInvocationMapping,
   ],
+  limits: CLAUDE_SKILL_LIMITS,
 };

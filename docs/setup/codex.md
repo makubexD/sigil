@@ -90,6 +90,7 @@ skills with a warning. A project's own selection fits. All 45 skills together ma
 
 ## What was tested
 
-Codex CLI 0.166.0 on Linux, against a local mock model. That proves what Codex loads and sends. It doesn't prove that a
-real model picks a skill from its description. Results:
+Codex CLI 0.166.0 on Linux, against a local mock model. That proves what Codex loads and sends. On 2026-11-04 a real model,
+DeepSeek's `deepseek-flash` as a custom provider, picked a skill from its description in both runs, and without the skill it
+answered that it didn't know. No OpenAI model was tested. Results:
 [codex-target-2026-10](../decisions/codex-target-2026-10.md).

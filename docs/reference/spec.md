@@ -574,7 +574,7 @@ non-zero with a usage hint instead of hanging — always pass a selector and `--
 - **Severity:** `error` findings always fail `sigil check --trust`. `warn` findings are printed
   either way and fail the command only with `--strict` (`src/commands/check.ts`).
 - **Allowlist:** inline `<!-- sigil-allow: rule/id -->` in the file body silences `warn` rules only.
-  No command reads `.sigil/allow.json`, so an `error` finding has no override.
+  An `error` finding has no override.
 - Binary extensions (`.png`, `.jpg`, `.pdf`, etc.) are skipped entirely.
 
 Surfaced by `sigil check <file> --trust` (authoring time); `--strict` makes warnings fail too. For a

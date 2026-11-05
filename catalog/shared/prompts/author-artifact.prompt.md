@@ -18,9 +18,7 @@ tags:
 #                # change later: sigil retarget shared/author-artifact --add <platform>
 ---
 
-# Author a New Catalog Artifact
-
-When the user wants to add a new artifact to the sigil, follow this structured process.
+When the user wants to add a new artifact to the sigil catalog, follow this structured process.
 
 ## Step 1 — Understand the intent
 

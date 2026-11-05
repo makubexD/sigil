@@ -1,19 +1,12 @@
 /**
  * Tests for src/trust/scan.ts — secret and injection scanner.
- * Also covers src/trust/scan/allowlist.ts — loadAllowlist.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import path from 'path';
 import fs from 'fs';
-import os from 'os';
 import { performance } from 'node:perf_hooks';
-import {
-  scanContent,
-  formatScanFindings,
-  RULE_DESCRIPTIONS,
-  loadAllowlist,
-} from '../dist-cli/trust/scan/index';
+import { scanContent, formatScanFindings, RULE_DESCRIPTIONS } from '../dist-cli/trust/scan/index';
 import { RULES } from '../dist-cli/trust/scan/rules';
 import { CATALOG_DIR } from './helpers/catalog';
 
@@ -647,99 +640,5 @@ describe('the bundled catalog passes the trust scanner', () => {
       }
     }
     assert.deepEqual(offenders, [], `error findings under catalog/:\n${offenders.join('\n')}`);
-  });
-});
-
-// ─── loadAllowlist ────────────────────────────────────────────────────────────
-
-describe('loadAllowlist', () => {
-  function makeTempDir(): string {
-    return fs.mkdtempSync(path.join(os.tmpdir(), 'sigil-allow-'));
-  }
-
-  function cleanTempDir(dir: string): void {
-    try {
-      fs.rmSync(dir, { recursive: true });
-    } catch {
-      /* best-effort */
-    }
-  }
-
-  it('returns empty set when .sigil/allow.json does not exist', () => {
-    const dir = makeTempDir();
-    try {
-      const result = loadAllowlist(dir);
-      assert.ok(result instanceof Set, 'returns a Set');
-      assert.equal(result.size, 0, 'empty set when file absent');
-    } finally {
-      cleanTempDir(dir);
-    }
-  });
-
-  it('returns rules from a valid allow.json', () => {
-    const dir = makeTempDir();
-    try {
-      const sigilDir = path.join(dir, '.sigil');
-      fs.mkdirSync(sigilDir);
-      fs.writeFileSync(
-        path.join(sigilDir, 'allow.json'),
-        JSON.stringify({ allow: ['secret/generic-api-key', 'injection/ignore-previous'] }),
-        'utf-8',
-      );
-      const result = loadAllowlist(dir);
-      assert.ok(result.has('secret/generic-api-key'), 'contains first allowed rule');
-      assert.ok(result.has('injection/ignore-previous'), 'contains second allowed rule');
-      assert.equal(result.size, 2, 'exactly two rules');
-    } finally {
-      cleanTempDir(dir);
-    }
-  });
-
-  it('returns empty set for malformed JSON', () => {
-    const dir = makeTempDir();
-    try {
-      const sigilDir = path.join(dir, '.sigil');
-      fs.mkdirSync(sigilDir);
-      fs.writeFileSync(path.join(sigilDir, 'allow.json'), 'not valid json', 'utf-8');
-      const result = loadAllowlist(dir);
-      assert.equal(result.size, 0, 'empty set for malformed JSON');
-    } finally {
-      cleanTempDir(dir);
-    }
-  });
-
-  it('returns empty set when "allow" key is missing from JSON', () => {
-    const dir = makeTempDir();
-    try {
-      const sigilDir = path.join(dir, '.sigil');
-      fs.mkdirSync(sigilDir);
-      fs.writeFileSync(path.join(sigilDir, 'allow.json'), JSON.stringify({ rules: [] }), 'utf-8');
-      const result = loadAllowlist(dir);
-      assert.equal(result.size, 0, 'empty set when allow key absent');
-    } finally {
-      cleanTempDir(dir);
-    }
-  });
-
-  it('loadAllowlist Set integrates with scanContent to suppress rules', () => {
-    const dir = makeTempDir();
-    try {
-      const sigilDir = path.join(dir, '.sigil');
-      fs.mkdirSync(sigilDir);
-      fs.writeFileSync(
-        path.join(sigilDir, 'allow.json'),
-        JSON.stringify({ allow: ['secret/generic-api-key'] }),
-        'utf-8',
-      );
-      const allowed = loadAllowlist(dir);
-      const content = 'api_key: "mysupersecretkey12345678"\n';
-      const result = scanContent('test.md', content, allowed);
-      assert.ok(
-        !result.findings.some(f => f.rule === 'secret/generic-api-key'),
-        'loadAllowlist Set suppresses the allowed rule in scanContent',
-      );
-    } finally {
-      cleanTempDir(dir);
-    }
   });
 });

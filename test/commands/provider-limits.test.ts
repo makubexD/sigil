@@ -12,6 +12,11 @@ import { loadCatalog } from '../../dist-cli/load';
 import { runConformance } from '../../dist-cli/commands/sync/conformance/detect';
 import { getAllTargets, registerTarget } from '../../dist-cli/targets/index';
 import { COPILOT_PROMPT_SPEC } from '../../dist-cli/targets/copilot/spec/prompt';
+import {
+  CLAUDE_PROMPT_SPEC,
+  CLAUDE_PLUGIN_PROMPT_SPEC,
+} from '../../dist-cli/targets/claude-code/spec/prompt';
+import { CLAUDE_SKILL_LIMITS } from '../../dist-cli/targets/claude-code/spec/skill';
 import { channelFromNativeKinds } from '../../dist-cli/targets/capabilities';
 import type { KindEmitSpec } from '../../dist-cli/targets/spec-types';
 import type { Target } from '../../dist-cli/types';
@@ -95,6 +100,14 @@ const bytesTarget = {
 const prompt = (body: string) =>
   `---\nid: shared/probe\nkind: prompt\nname: probe\ntitle: P\ndescription: A probe prompt.\n---\n\n${body}\n`;
 
+/** A prompt file with a chosen description — Claude's plugin prompt variant emits a skill. */
+const promptWithDescription = (description: string) =>
+  `---\nid: shared/probe\nkind: prompt\nname: probe\ntitle: P\ndescription: "${description}"\n---\n\nBody.\n`;
+
+/** provider-limits findings for one provider, as "severity provider detail" strings. */
+const forProvider = (out: string[], provider: string) =>
+  out.filter(f => f.split(' ')[1] === provider);
+
 describe('provider-limits', () => {
   it('should find no error in the bundled catalog', async () => {
     const catalog = await loadBundledCatalog();
@@ -122,6 +135,30 @@ describe('provider-limits', () => {
       declaringAtLeast('skill', 'description', ['error claude', 'error copilot']),
     );
     assert.ok(over.every(f => /^error .* description/.test(f)));
+  });
+
+  it('should flag a plugin prompt description past the skill limit', async () => {
+    const file = 'shared/prompts/probe.prompt.md';
+    const over = forProvider(
+      await findings(file, promptWithDescription('d'.repeat(1025))),
+      'claude',
+    );
+    assert.equal(over.length, 1, over.join('\n'));
+    assert.match(over[0]!, /^error claude claude description is 1025 chars; the limit is 1024/);
+  });
+
+  it('should accept a plugin prompt description at the skill limit', async () => {
+    const file = 'shared/prompts/probe.prompt.md';
+    const found = forProvider(
+      await findings(file, promptWithDescription('d'.repeat(1024))),
+      'claude',
+    );
+    assert.deepEqual(found, []);
+  });
+
+  it('should declare skill limits on the plugin prompt spec only', () => {
+    assert.equal(CLAUDE_PROMPT_SPEC.limits, undefined);
+    assert.deepEqual(CLAUDE_PLUGIN_PROMPT_SPEC.limits, CLAUDE_SKILL_LIMITS);
   });
 
   it("should flag a skill listing (description + when_to_use) past Claude's 1,536 characters", async () => {

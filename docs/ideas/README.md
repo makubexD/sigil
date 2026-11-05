@@ -30,8 +30,8 @@ user wants it kept).
 
 ## Briefs
 
-| File                                                           | Summary                                     | Status   |
-| -------------------------------------------------------------- | ------------------------------------------- | -------- |
-| [npm-first-publish.md](npm-first-publish.md)                   | First npm publish and package name          | proposed |
-| [cursor-target.md](cursor-target.md)                           | Cursor target (ADR Phase 6)                 | proposed |
-| [plugin-rules-as-references.md](plugin-rules-as-references.md) | Plugin skills load rules on demand (ADR 1c) | proposed |
+| File                                                           | Summary                                     | Status                    |
+| -------------------------------------------------------------- | ------------------------------------------- | ------------------------- |
+| [npm-first-publish.md](npm-first-publish.md)                   | First npm publish and package name          | proposed                  |
+| [cursor-target.md](cursor-target.md)                           | Cursor target (ADR Phase 6)                 | shipped; F paused, G left |
+| [plugin-rules-as-references.md](plugin-rules-as-references.md) | Plugin skills load rules on demand (ADR 1c) | proposed                  |

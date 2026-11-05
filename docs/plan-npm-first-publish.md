@@ -65,11 +65,11 @@ run line to `npm publish`, since provenance is automatic and `publishConfig.acce
 including that npm doesn't check them on save and they're case-sensitive (`makubexD`). Leave the `gate`, `marketplace` and
 `skills` jobs alone.
 
-| Case                                                                                                  | Expected                                                       |
-| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
-| `git diff --stat`                                                                                     | Only `release.yml`                                             |
-| The `publish` job                                                                                     | Still gated on `vars.NPM_PUBLISH`, still has `id-token: write` |
-| `node -e "require('yaml').parse(require('fs').readFileSync('.github/workflows/release.yml','utf8'))"` | No error                                                       |
+| Case                                                                                                    | Expected                                                       |
+| ------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| `git diff --stat`                                                                                       | Only `release.yml`                                             |
+| The `publish` job                                                                                       | Still gated on `vars.NPM_PUBLISH`, still has `id-token: write` |
+| `node -e "require('js-yaml').load(require('fs').readFileSync('.github/workflows/release.yml','utf8'))"` | No error                                                       |
 
 Test: the node command above, then `npm run lint`.
 
@@ -132,7 +132,7 @@ Files: `packs.yaml`, `docs/guides/consuming.md`, `test/fixtures/output-snapshot/
 
 Remove `pluginExclude` and its comment from `essentials` (`packs.yaml:34-35`). Rewrite the last sentence of its description
 (`packs.yaml:26`) so the plugin names `/essentials:author-artifact` and says it needs the `sigil` CLI. Change
-`docs/guides/consuming.md:530-533` the same way. Regenerate the snapshot with the repo's own script, and read its diff: it may
+`docs/guides/consuming.md:530-533` the same way. Regenerate the snapshot with `npm run snapshot:update`, and read its diff: it may
 only add this one artifact.
 
 | Case                                                            | Expected                                                    |

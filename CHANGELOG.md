@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-11-05
+
 ### Changed
 
 - OpenCode setup note: agent restrictions are now proven on OpenCode 2 with Sigil's own files. It also records two more routes

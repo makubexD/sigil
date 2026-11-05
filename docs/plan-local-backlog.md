@@ -1,5 +1,7 @@
 # Plan: what this machine can finish
 
+**Done 2026-11-04:** all nine steps are merged with this branch.
+
 Everything here runs on this machine, with DeepSeek through `mk-exec`, the paid DeepSeek API, and free OpenCode and
 Antigravity models. It uses Claude only for planning and review. Every item was checked against the code on 2026-11-04.
 

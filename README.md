@@ -114,14 +114,14 @@ sigil status                                   # what is installed, and is it he
 
 The stacks are C#, TypeScript, Angular, Python and React, plus shared artifacts for any language.
 
-| Pack              | What it installs                                                                     |
-| ----------------- | ------------------------------------------------------------------------------------ |
-| `essentials`      | For any language: `explain-diff`, plus the filesystem MCP and config-file protection |
-| `<stack>-starter` | A small setup for one stack, built around test generation                            |
-| `<stack>-tooling` | The full suite for one stack: its skills, agents and rules                           |
-| `spec-driven`     | The `/feature` conductor: spec, plan, TDD build and review, with approval gates      |
-| `cli-builder`     | Design, build or audit a command-line interface and its setup wizard                 |
-| `deepseek-worker` | Plan in your main session and hand mechanical steps to the paid DeepSeek API         |
+| Pack              | What it installs                                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `essentials`      | For any language: `explain-diff`. With `sigil add`, also the filesystem MCP, config-file protection and the authoring command |
+| `<stack>-starter` | A small setup for one stack, built around test generation                                                                     |
+| `<stack>-tooling` | The full suite for one stack: its skills, agents and rules                                                                    |
+| `spec-driven`     | The `/feature` conductor: spec, plan, TDD build and review, with approval gates                                               |
+| `cli-builder`     | Design, build or audit a command-line interface and its setup wizard                                                          |
+| `deepseek-worker` | Plan in your main session and hand mechanical steps to the paid DeepSeek API                                                  |
 
 `<stack>` is `dotnet`, `typescript`, `angular`, `python` or `react`. Every artifact, its packs, the tools it installs into and
 its `sigil add` command are in the [artifact index](docs/reference/artifacts.md). Pack definitions are in
@@ -153,8 +153,9 @@ target with the reason for each gap.
 - **Shared skill files:** Codex, the open standard and Antigravity write the same `.agents/skills/` files, so install skills for
   one of them. `sigil add` refuses the second.
 - **Codex:** run it in a trusted project and review hooks with `/hooks`, because it skips an unreviewed hook with no error.
+- **Cursor:** a subagent has no tool list, only a read-only flag. Reviewers lose the shell, and debuggers gain every tool.
 - **Antigravity:** scoped rules are skipped because no glob rule attached in testing. They still arrive inside the skills.
-- **OpenCode:** `explain-diff` is skipped, and there are no hooks. A catalog agent can run `cat .env`, and nothing stands behind it.
+- **OpenCode:** `explain-diff` is skipped, and there are no hooks. A catalog agent can run `cat .env`, and no hook blocks it.
 
 ## Who are you?
 

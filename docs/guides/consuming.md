@@ -643,6 +643,13 @@ but neither target installs it.
 
 ---
 
+## Only pay for what you load
+
+A skill or agent costs only its short description until it is used. A rule loads its full text whenever a matching file is read.
+For a lean context, pick individual artifacts rather than whole packs.
+
+---
+
 ## Bulk install
 
 ```bash

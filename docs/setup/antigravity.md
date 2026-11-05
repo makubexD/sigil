@@ -294,3 +294,6 @@ account, in throwaway repos. The Antigravity desktop app, Windows and macOS were
 - **G1:** a plugin in a subfolder of a branch installed from its `/tree/<branch>/<path>` GitHub URL, and its skill
   answered; a branch URL without the subfolder, or a `#branch:path` fragment, failed with "could not detect plugin
   structure".
+- **G3 (2026-11-04):** a skill was picked from its description without being named, and with `shared/protect-config`
+  installed a `.env` write was blocked while `ok.txt` was written. The other probes matched their recorded results, except
+  `G-plugin`, which wasn't run.

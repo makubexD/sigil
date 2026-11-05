@@ -75,11 +75,10 @@ Test: the node command above, then `npm run lint`.
 
 ## Step 3: Say how to install it `[inline: user-facing copy]`
 
-Files: `README.md`, `docs/guides/consuming.md`, `docs/guides/publishing.md`, `CHANGELOG.md`.
+Files: `README.md`, `docs/guides/consuming.md`, `docs/guides/operations.md`, `CHANGELOG.md`.
 
 Change `README.md:44-45` and `docs/guides/consuming.md:12-18` to present tense, with `npm install -g sigil` and `npx sigil` first
-and clone-and-link kept for contributors. Add a short npm section to `publishing.md`: the manual first publish, the trusted
-publisher fields, `NPM_PUBLISH`. Add a CHANGELOG line for the npm package, and one saying the `shared/ado` tool call after a real
+and clone-and-link kept for contributors. Correct the npm setup in `docs/guides/operations.md`, which already covers it: the plain `npm publish`, the trusted publisher fields. Add a CHANGELOG line for the npm package, and one saying the `shared/ado` tool call after a real
 `az login` is still unproven. Everything assumes the name `sigil`; step 5 corrects it if npm refuses.
 
 Test: `npm run format:check`.
@@ -109,7 +108,7 @@ Claude checks `https://registry.npmjs.org/sigil` for the version and records the
 
 If npm refuses the name (a 403 or a similarity error), stop and do not retry under another unscoped name. Then, on a new branch:
 set `name` to `@<npm-user>/sigil`, keep `bin` as is, update the install lines in `README.md`, `docs/guides/consuming.md`,
-`publishing.md` and the hint at `src/manifest/io.ts:41`, release a patch, and repeat this step with `npm publish --access public`
+`docs/guides/operations.md` and the hint at `src/manifest/io.ts:41`, release a patch, and repeat this step with `npm publish --access public`
 for that version. The tag and marketplace for v0.11.0 stay as they are.
 
 Test: `npx <name>@<version> --version` prints the version.
@@ -157,6 +156,6 @@ After that PR merges: `npm run sigil -- release minor --yes`, then push `master`
 | Marketplace `essentials`                            | Carries `author-artifact`                             |
 
 Then ask the owner to turn on **Require two-factor authentication and disallow tokens**. Close out: delete
-`docs/ideas/npm-first-publish.md` and its row in `docs/ideas/README.md`, moving what's still true to `publishing.md`.
+`docs/ideas/npm-first-publish.md` and its row in `docs/ideas/README.md`, moving what's still true to `docs/guides/operations.md`.
 
 Test: the table above.

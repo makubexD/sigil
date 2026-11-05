@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `sigil release` now dates the changelog entry in your own time zone. It used UTC, so an evening release west of Greenwich got
+  tomorrow's date.
+- `npm run build` keeps `dist-cli/cli.js` executable, so a linked `sigil` no longer fails with Permission denied after a rebuild.
+
 ## [0.10.0] - 2026-11-05
 
 ### Changed

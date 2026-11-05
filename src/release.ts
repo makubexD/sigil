@@ -53,6 +53,20 @@ export function bumpVersion(current: string, level: string): string {
 
 // ─── Changelog promotion ──────────────────────────────────────────────────────
 
+/** Width of a month or day in `YYYY-MM-DD`. */
+const DATE_PART_WIDTH = 2;
+
+/**
+ * Formats `now` as `YYYY-MM-DD` in the machine's time zone.
+ *
+ * A changelog date is the day the maintainer cut the release, so it can't come from `toISOString()`,
+ * which is UTC and rolls over early west of Greenwich.
+ */
+export function localIsoDate(now: Date = new Date()): string {
+  const pad = (part: number): string => String(part).padStart(DATE_PART_WIDTH, '0');
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
+
 /**
  * Promote the [Unreleased] section in a Keep-a-Changelog formatted document.
  *

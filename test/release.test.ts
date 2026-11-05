@@ -1,10 +1,10 @@
 /**
- * Tests for src/release.ts — version bumping and changelog promotion.
+ * Tests for src/release.ts — version bumping, changelog promotion and the release date.
  * All pure functions; no filesystem I/O.
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
-import { bumpVersion, promoteChangelog } from '../dist-cli/release';
+import { bumpVersion, localIsoDate, promoteChangelog } from '../dist-cli/release';
 
 describe('bumpVersion', () => {
   it('bumps patch', () => assert.equal(bumpVersion('0.1.0', 'patch'), '0.1.1'));
@@ -17,6 +17,32 @@ describe('bumpVersion', () => {
   });
   it('throws on unknown level', () => {
     assert.throws(() => bumpVersion('1.0.0', 'beta'), /Unknown release level/);
+  });
+});
+
+describe('localIsoDate', () => {
+  /** Runs `fn` with `TZ` set, then restores it. Node rereads `TZ` when it is assigned. */
+  function inTimeZone<T>(tz: string, fn: () => T): T {
+    const saved = process.env.TZ;
+    process.env.TZ = tz;
+    try {
+      return fn();
+    } finally {
+      if (saved === undefined) delete process.env.TZ;
+      else process.env.TZ = saved;
+    }
+  }
+
+  it('keeps the local day when UTC has already rolled over', () => {
+    const lateEvening = new Date('2026-11-05T00:40:00Z'); // 19:40 on Nov 4 in Bogota
+    assert.equal(
+      inTimeZone('America/Bogota', () => localIsoDate(lateEvening)),
+      '2026-11-04',
+    );
+  });
+
+  it('zero-pads the month and day', () => {
+    assert.equal(localIsoDate(new Date(2026, 0, 5, 12)), '2026-01-05');
   });
 });
 

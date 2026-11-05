@@ -1,5 +1,8 @@
 <p align="center">
-  <img src="docs/assets/sigil-logo.svg" width="280" alt="Sigil — one source, every assistant">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/sigil-logo-dark.svg">
+    <img src="docs/assets/sigil-logo.svg" width="280" alt="Sigil — one source, every assistant">
+  </picture>
 </p>
 
 <p align="center">
@@ -138,7 +141,7 @@ and a script gets `claude`.
 | [Cursor](docs/setup/cursor.md)                           | `cursor`          | Skills, agents, rules as `.mdc`, hooks, MCP                            |
 | [Antigravity](docs/setup/antigravity.md)                 | `antigravity`     | Skills, agents, repo-wide rules, hooks, MCP                            |
 | [OpenCode](docs/setup/opencode.md)                       | `opencode`        | Skills with rules inlined, agents, commands, MCP                       |
-| [Any agent, with `npx skills`](docs/setup/skills-cli.md) | not `sigil`       | Single skills, from the `skills` branch; `sigil status` can't see them |
+| [Any agent, with `npx skills`](docs/setup/skills-cli.md) | none              | Single skills, from the `skills` branch; `sigil status` can't see them |
 
 Real limits, in brief. The setup guides have the rest, and [capabilities](docs/reference/capabilities.md) has every kind per
 target with the reason for each gap.

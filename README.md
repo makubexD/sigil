@@ -92,7 +92,6 @@ The same things as commands:
 sigil list --kind skill                        # browse (also: sigil search <query>)
 sigil add skill:typescript/ts-generate-tests   # one artifact plus what it depends on
 sigil add pack:typescript-starter              # or a curated bundle
-sigil add pack:typescript-starter --target copilot   # the same, for another tool
 sigil status                                   # what is installed, and is it healthy?
 ```
 

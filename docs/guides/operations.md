@@ -234,8 +234,8 @@ git push && git push --tags
 
 Pushing a `v*.*.*` tag triggers `.github/workflows/release.yml`, which runs `npm ci`, installs the
 pinned Claude Code CLI, and runs `npm run ci:local` (the same gate as CI). It then publishes the
-Claude marketplace, and runs `npm publish --provenance --access public` (npm OIDC Trusted
-Publishing, no stored token) only when the repository variable `NPM_PUBLISH` is `true`. Until then
+Claude marketplace, and runs `npm publish` (npm OIDC Trusted Publishing, provenance included, no
+stored token) only when the repository variable `NPM_PUBLISH` is `true`. Until then
 the npm job is skipped, and the run still concludes green.
 
 > **The release gate is the CI gate.** `sigil release` and `release.yml` both run `npm run ci:local`,
@@ -248,14 +248,17 @@ the npm job is skipped, and the run still concludes green.
 
 OIDC publishing does not work until the package exists on npm and is linked to this workflow:
 
-1. **Publish the first version manually** from a maintainer's machine: `npm publish --access public`.
+1. **Publish the first version manually** from the release tag, on an account with 2FA: `npm publish`.
    The package must already exist on npmjs.com before a Trusted Publisher can be attached.
-2. On npmjs.com, open the package, then **Publishing → Trusted Publishers**, and add: repository
-   `makubexD/sigil`, workflow `release.yml`, environment left blank.
+2. On npmjs.com, open the package's settings and add a GitHub Actions trusted publisher: user
+   `makubexD`, repository `sigil`, workflow `release.yml`, no environment, and allow `npm publish`.
+   npm doesn't check these fields when you save them, and they're case-sensitive, so a typo shows up
+   as `ENEEDAUTH` on the next release.
 3. In GitHub, open **Settings → Secrets and variables → Actions → Variables** and set
    `NPM_PUBLISH` to `true`.
 
-After all three, tag pushes publish to npm automatically. If OIDC cannot be configured, the comment in
+After all three, tag pushes publish to npm automatically, with provenance. The hand-published first
+version has none. If OIDC cannot be configured, the comment in
 `release.yml` describes a fallback that publishes with an `NPM_TOKEN` secret instead.
 
 ---

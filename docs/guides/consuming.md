@@ -9,17 +9,16 @@ you never need to be inside the sigil repo to use it.
 
 ## Get the `sigil` command
 
-sigil is **not published to npm yet**, so `npm install -g sigil` and `npx sigil` do not work today.
-
-| Form                                    | Status      | Use when                                                       |
-| --------------------------------------- | ----------- | -------------------------------------------------------------- |
-| Clone, build, `npm link`, then `sigil`  | Works today | You want a normal `sigil <cmd>` command from any folder        |
-| `node <abs-path>/dist-cli/cli.js <cmd>` | Works today | You want no global command, or a script pinned to one checkout |
-| `npm install -g sigil` / `npx sigil`    | Planned     | Not available until the package is published                   |
+| Form                                    | Use when                                                       |
+| --------------------------------------- | -------------------------------------------------------------- |
+| `npm install -g sigil`                  | You want a normal `sigil <cmd>` command from any folder        |
+| `npx sigil <cmd>`                       | You want to run it once, with no install                       |
+| Clone, build, `npm link`, then `sigil`  | You work on sigil itself                                       |
+| `node <abs-path>/dist-cli/cli.js <cmd>` | You want no global command, or a script pinned to one checkout |
 
 The clone, build, and link steps live in one place:
 [operations.md § Build and link](operations.md#build-and-link). Every example below writes `sigil`;
-if you did not link, replace it with `node <abs-path>/dist-cli/cli.js`.
+if you use another form, replace it with that form's command.
 
 > **Gotcha: `npm run sigil -- add ...`** runs from the sigil package folder, so `--project-dir`
 > (which defaults to the current directory) points at the **sigil repo itself**, not your project. If

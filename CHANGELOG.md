@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Sigil is on npm: `npm install -g sigil`, or `npx sigil` with no install. This is a first publish, so the `shared/ado` tool call
+  after a real `az login` is still unproven, as is `az` under Copilot CLI.
+
 ### Fixed
 
 - `sigil release` now dates the changelog entry in your own time zone. It used UTC, so an evening release west of Greenwich got

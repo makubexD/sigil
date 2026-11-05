@@ -33,6 +33,14 @@ own syntax. When guidance changes, it drifts.
 ## Install
 
 ```bash
+npm install -g sigil
+```
+
+Or run it once with `npx sigil`, with no install.
+
+To work on Sigil itself, build it from a clone:
+
+```bash
 git clone https://github.com/makubexD/sigil.git
 cd sigil
 npm install
@@ -41,8 +49,7 @@ npm link            # puts a global `sigil` command on your PATH
 ```
 
 Details, alternatives to `npm link` (such as `npm run sigil -- <command>`), and heap-size notes:
-[Build and link](docs/guides/operations.md#build-and-link). Once Sigil is published, `npx sigil` and
-`npm install -g sigil` will work without a clone.
+[Build and link](docs/guides/operations.md#build-and-link).
 
 ## Quick start
 

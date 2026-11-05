@@ -91,8 +91,22 @@ hook that can't start lets every call through. The encoded form has no character
 The cost is that `/hooks` shows an unreadable string, so review means reading the catalog source. Protection across
 shells won over readability.
 
+## Real-model run
+
+Codex CLI 0.166.0 on Linux, model `deepseek-flash` on DeepSeek's paid API as a `model_providers` entry, in a throwaway
+`CODEX_HOME` and `HOME`, with the key passed only to that process. Codex warned that it has no metadata for the model.
+
+| Date       | Case | Run                                                                         | Result                                                                          |
+| ---------- | ---- | --------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
+| 2026-11-04 | R1   | One call, `wire_api = "responses"`                                          | **Answered.** DeepSeek serves the Responses route Codex needs                   |
+| 2026-11-04 | R2   | One call, `wire_api = "chat"`                                               | Refused at load: `` `wire_api = "chat"` is no longer supported ``               |
+| 2026-11-04 | R3   | A skill in `.agents/skills/`; the question matches its description, unnamed | **Pass, 2 of 2.** The first command was `cat` on that `SKILL.md`, then the word |
+| 2026-11-04 | R4   | Control: same question, no skill                                            | Searched the repo, answered `NONE`                                              |
+
+So a real model does pick a skill from its description. This is one model, and not one OpenAI ships.
+
 ## Not proven
 
-- A real model picking a skill or using a hook-guarded tool. Every run used a mock model.
+- A real model using a hook-guarded tool. The [real-model run](#real-model-run) covers skills only.
 - The hook on Windows, fish, zsh, tcsh or nushell. It ran through bash and `sh` only.
 - The `/hooks` review itself. Hook runs used `--dangerously-bypass-hook-trust`.

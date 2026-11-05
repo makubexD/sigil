@@ -155,6 +155,18 @@ that use them. MCP servers merge into `.agents/mcp_config.json` (or `~/.gemini/c
 </details>
 
 <details>
+<summary><strong>OpenCode: install skills, agents and commands</strong></summary>
+
+```bash
+sigil add --target opencode <selector>
+```
+
+Skills go to `.agents/skills/`, agents to `.opencode/agents/` and commands to `.opencode/commands/`. MCP servers
+merge into `.opencode/opencode.json`. Setup, limits and what was tested: [docs/setup/opencode.md](docs/setup/opencode.md).
+
+</details>
+
+<details>
 <summary><strong>Any agent: install single skills with <code>npx skills</code></strong></summary>
 
 Each release publishes its skills in the open Agent Skills format to the `skills` branch:

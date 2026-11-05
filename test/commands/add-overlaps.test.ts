@@ -6,6 +6,7 @@
  */
 import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import path from 'node:path';
 import { runAdd } from '../../dist-cli/commands/add';
 import { withTempDirAsync } from '../helpers/temp-dir';
@@ -91,6 +92,17 @@ describe('sigil add — overlap notes', () => {
         install(dir, 'opencode', SKILL),
         /codex already installed skills in this project, and opencode writes the same files/,
       );
+    });
+  });
+
+  it('should refuse the whole selection, agent included, when Codex owns the skill files', async () => {
+    await withTempDirAsync(async dir => {
+      await install(dir, 'codex', SKILL);
+      await assert.rejects(
+        install(dir, 'opencode', 'pack:typescript-tooling'),
+        /codex already installed skills in this project, and opencode writes the same files/,
+      );
+      assert.equal(fs.existsSync(path.join(dir, '.opencode', 'agents')), false);
     });
   });
 

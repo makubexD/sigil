@@ -54,10 +54,12 @@ checks for drift, and it writes a `.gitignore` into `.opencode/`.
 ## What an agent can and can't do
 
 - **Its allow-list also denies MCP tools and the `skill` tool.** The list holds only the tools the agent names, so a catalog
-  agent doesn't reach the servers above, or your own, and doesn't load skills. This comes from reading OpenCode's source, and
-  wasn't tested. On OpenCode 2 the model still listed `skill` among its tools.
+  agent doesn't reach the servers above, or your own, and doesn't load skills. On OpenCode 2 this was tested for `skill`: the
+  call fails with `Permission denied: skill`, and adding `skill: allow` to the same agent makes it work. For MCP tools it comes
+  from reading OpenCode's source, and wasn't tested.
 - **It carries no model.** It uses the model of the agent that called it.
-- **Restrictions work on both versions.** A tool outside the list is never offered to the model. On OpenCode 2 this was tested
+- **Restrictions work on both versions.** A tool outside the list isn't offered to the model, with `skill` the one exception
+  seen: OpenCode 2 lets the model try it, then denies the call. On OpenCode 2 this was tested
   with one of Sigil's own agents and with hand-written files of the same shape. Both versions load the rules in the same order:
   `*` deny first, then an allow for each listed tool, with `read` asking on `.env` files.
 
@@ -109,13 +111,14 @@ OpenCode also reads `.claude/skills/` and `CLAUDE.md`. It doesn't read `.claude/
 doesn't reach it. In a project that has Sigil output for `claude`:
 
 - **A skill in both `.agents/skills/` and `.claude/skills/` gives one entry with one body.** On OpenCode 1 which body isn't
-  fixed. OpenCode 2 documents `.agents/skills/` winning, which wasn't tested. The two can differ: the `.agents/skills/` copy
-  has its rules inlined. When a skill is installed for both `claude` and `opencode`, `add` and `sigil status` print a note:
+  fixed. On OpenCode 2 the `.agents/skills/` body won in all three test runs, as its docs say. The two can differ: the
+  `.agents/skills/` copy has its rules inlined. When a skill is installed for both `claude` and `opencode`, `add` and `sigil status` print a note:
   `OpenCode also reads Claude Code's skills and shows one copy of each, and which one depends on its version`. Keep one of
   the two installs. There is no note when another target, such as `codex`, owns `.agents/skills/`.
 - **On OpenCode 1, a skill marked for the user only in Claude is offered to the model.** OpenCode 1 ignores that mark, so a
-  prompt meant to run only on your command can run on the model's choice. OpenCode 2 documents honoring it, which wasn't
-  tested.
+  prompt meant to run only on your command can run on the model's choice. OpenCode 2 honors it for the model's own choice: in
+  one test run, the model didn't pick a marked skill from its description. The mark doesn't block the `skill` tool, though: a
+  model told the skill's name still loaded it.
 - **A `CLAUDE.md` is read when there is no `AGENTS.md`.**
 
 The same goes for your user folder, with one difference. OpenCode reads `~/.claude/skills/`, and it reads

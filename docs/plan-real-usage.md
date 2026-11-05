@@ -36,6 +36,16 @@ wizard or `sigil add`. Create a `real-usage` issue label, and list the repos and
 
 Test: `sigil status` in each repo shows the install, and a Claude and a Copilot session each load it.
 
+Done on 2026-11-04. The owner left the choice to Claude, which picked repos that get real work and a stack the catalog covers.
+
+| Repo                    | Packs                                      | Targets         | Where it lives                                                                                |
+| ----------------------- | ------------------------------------------ | --------------- | --------------------------------------------------------------------------------------------- |
+| `MakuVisaApptScheduler` | `python-starter`, `python-tooling`         | Claude, Copilot | Local branch `chore/sigil-real-usage`, not pushed                                             |
+| `sigil`                 | `typescript-starter`, `typescript-tooling` | Claude          | Skills, agents and rules only, all gitignored. Hooks would block this repo's own config edits |
+
+Left out: `SyncSettings` is bash and config, which the catalog doesn't cover, and it holds `.user-values.json`. `mk-trial` is a
+scratch repo.
+
 ## Step 2: Use it `[inline: the owner's real work]`
 
 About two weeks of normal work on those repos. Open a `real-usage` issue when:

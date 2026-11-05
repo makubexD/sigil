@@ -42,7 +42,11 @@
     "schema/",
     "dist-cli/",
     "packs.yaml",
-    "docs/",
+    "docs/assets/",
+    "docs/guides/",
+    "docs/index.md",
+    "docs/reference/",
+    "docs/setup/",
     "CHANGELOG.md",
     "LICENSE",
     "README.md"
@@ -64,6 +68,7 @@
     "evals:check": "node scripts/check-skill-evals.mjs && node test/evals/code-quality/selftest.mjs",
     "rule-load": "node scripts/rule-load.cjs",
     "catalog:build": "node dist-cli/cli.js build",
+    "pack:smoke": "node scripts/pack-smoke.cjs",
     "validate:claude-plugins": "node scripts/validate-claude-plugins.cjs",
     "validate:antigravity-plugins": "node scripts/validate-antigravity-plugins.cjs",
     "probe:antigravity": "node scripts/probe-antigravity.mjs",
@@ -78,7 +83,7 @@
     "marketplace:check": "node scripts/check-marketplace-drift.cjs",
     "skills:check": "node scripts/check-marketplace-drift.cjs --target agents-standard",
     "check": "npm run lint && npm run format:check && npm run check-doc-comments && npm test",
-    "ci:local": "npm audit --omit=dev &&npm run lint && npm run format:check && npm run build && npm run validate && npm run trust:check && node dist-cli/cli.js sync --check && npm run evals:check && npm run test:built && npm run catalog:build && npm run validate:claude-plugins && npm run validate:antigravity-plugins && node dist-cli/cli.js --version && node dist-cli/cli.js list"
+    "ci:local": "npm audit --omit=dev &&npm run lint && npm run format:check && npm run build && npm run validate && npm run trust:check && node dist-cli/cli.js sync --check && npm run evals:check && npm run test:built && npm run catalog:build && npm run pack:smoke && npm run validate:claude-plugins && npm run validate:antigravity-plugins && node dist-cli/cli.js --version && node dist-cli/cli.js list"
   },
   "dependencies": {
     "@clack/prompts": "^0.8.2",

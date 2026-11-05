@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The README is rewritten around what Sigil is and how to install it. It covers all seven targets, and the per-target detail now
+  lives in the setup guides. The consuming guide gained the note on what an install costs in context, and
+  the support matrix now matches the Cursor, Antigravity and OpenCode targets.
+
 ### Fixed
 
 - `sigil release` now dates the changelog entry in your own time zone. It used UTC, so an evening release west of Greenwich got

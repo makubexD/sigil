@@ -1,36 +1,59 @@
 <p align="center">
-  <img src="docs/assets/sigil-logo.svg" width="280" alt="Sigil — one source, every assistant">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="docs/assets/sigil-logo-dark.svg">
+    <img src="docs/assets/sigil-logo.svg" width="280" alt="Sigil — one source, every assistant">
+  </picture>
 </p>
 
 <p align="center">
-  <strong>Write AI coding instructions once. Compile to Claude Code, GitHub Copilot, and more.</strong>
+  <strong>Write AI coding instructions once. Install them into Claude Code, GitHub Copilot and five more targets.</strong>
 </p>
 
----
+<p align="center">
+  <a href="https://github.com/makubexD/sigil/actions/workflows/ci.yml"><img src="https://github.com/makubexD/sigil/actions/workflows/ci.yml/badge.svg?branch=master" alt="CI status"></a>
+  <a href="https://github.com/makubexD/sigil/tags"><img src="https://img.shields.io/github/v/tag/makubexD/sigil?sort=semver&label=release" alt="Latest release"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/makubexD/sigil" alt="MIT license"></a>
+  <a href="docs/guides/operations.md#build-and-link"><img src="https://img.shields.io/badge/node-%3E%3D20.19-339933" alt="Node 20.19 or newer"></a>
+</p>
 
-> **Status:** v0.1, early. The catalog covers C#, TypeScript, Angular, Python, and React. Sigil is
-> **not on npm yet**, so you build it from source (below). Three targets exist today: Claude Code,
-> GitHub Copilot, and the open standard (`.agents/skills` + `AGENTS.md`).
+<p align="center">
+  <a href="#install">Install</a> · <a href="#quick-start">Quick start</a> · <a href="docs/index.md">Docs</a>
+</p>
 
 ## Why
 
-Every AI tool has its own format for coding instructions. Today you re-type the same
-"how to write a good unit test" guidance for Claude, then again for Copilot, in each tool's
-own syntax. When guidance changes, it drifts.
+Every AI tool has its own format for coding instructions. You write "how to write a good unit test" for Claude, again for
+Copilot, and when the guidance changes the copies drift. Sigil keeps one provider-neutral catalog and turns it into each
+tool's native files.
 
-**Sigil** solves this with a **canonical-source → compiler** approach:
+```mermaid
+flowchart LR
+  catalog["catalog/<br/>skills, agents, rules,<br/>prompts, hooks, MCP, settings"]
+  catalog --> load --> validate --> resolve["resolve<br/>extends, uses"]
+  resolve --> claude["Claude Code<br/>.claude/"]
+  resolve --> copilot["GitHub Copilot<br/>.github/"]
+  resolve --> standard["Open standard<br/>.agents/, AGENTS.md"]
+  resolve --> codex["Codex<br/>.agents/, .codex/"]
+  resolve --> cursor["Cursor<br/>.cursor/"]
+  resolve --> antigravity["Antigravity<br/>.agents/"]
+  resolve --> opencode["OpenCode<br/>.agents/, .opencode/"]
+```
 
-- Author skills, agents, and rules **once** in plain Markdown with YAML frontmatter.
-- Express DRY reuse through `extends:` (rules inherit rules) and `uses:` (skills reference rules/agents by ID).
-- A build step compiles the resolved catalog to each platform's native layout.
-- Adding a language = one new folder. Adding a new AI platform = one new adapter.
+## What you get
 
-## Prerequisites
-
-- Node.js **20.19 or newer**, and npm
-- git
+- **One neutral catalog.** Artifacts are plain Markdown with YAML frontmatter. Tool names, model hints and hook events stay
+  neutral, and each target translates them.
+- **Updates that respect your edits.** `.sigil/manifest.json` records a hash of every file. `sigil status` shows what you
+  changed, and `sigil update` leaves an edited file alone unless you pass `--force`.
+- **Config merged, never overwritten.** Hooks, MCP servers and settings merge into your existing files, and a file in your
+  home folder is backed up before the first write.
+- **A trust scanner.** `sigil check --trust` looks for secrets and prompt-injection patterns in an artifact, and CI runs the
+  scan over the whole catalog.
+- **Plugin marketplaces.** Each release publishes the packs as a Claude Code marketplace, which Copilot can read too.
 
 ## Install
+
+Sigil **isn't on npm yet**, so you build it from a clone. You need Node.js 20.19 or newer, npm and git.
 
 ```bash
 git clone https://github.com/makubexD/sigil.git
@@ -40,164 +63,99 @@ npm run build
 npm link            # puts a global `sigil` command on your PATH
 ```
 
-Details, alternatives to `npm link` (such as `npm run sigil -- <command>`), and heap-size notes:
-[Build and link](docs/guides/operations.md#build-and-link). Once Sigil is published, `npx sigil` and
-`npm install -g sigil` will work without a clone.
+Alternatives to `npm link` are in [Build and link](docs/guides/operations.md#build-and-link).
+
+**Claude Code without a clone:** install a pack as a plugin. Add the marketplace inside Claude Code, then install from your
+project's shell:
+
+```
+/plugin marketplace add makubexD/sigil#marketplace
+claude plugin install spec-driven@sigil --scope project
+```
+
+Each pack is one plugin, and each hook and MCP server is its own opt-in plugin (`hook-<name>`, `mcp-<name>`). Rules ride
+inside the skills that use them, and loose rules and settings still need `sigil add`. Pinning a release, updates and removal
+are in the [Claude Code setup](docs/setup/claude-code.md).
 
 ## Quick start
 
-These commands assume `sigil` is on your PATH (the `npm link` step above). Run them from the root of
-the project you want to equip, not from the sigil clone:
+Run this from the root of the project you want to equip, not from the sigil clone:
 
 ```bash
-sigil                                          # guided menu: looks at the folder, suggests the next step
+sigil
 ```
 
-That is all you need to start. In a terminal, `sigil` with no command checks the folder you are in
-(is it set up? what is installed? is anything missing or edited?), shows what it found, and offers
-the next step: set up, install, update, remove, check status, browse and search the catalog. Every
-choice runs the same command you could type yourself, and the guided flows print that command so you
-can repeat it in a script. Details: [consuming.md](docs/guides/consuming.md#using-the-guided-menu).
+The guided menu checks the folder, shows what's set up, installed, missing or edited, and offers the next step. Every choice
+runs a command you could type yourself, and the guided flows print it. Details are in
+[Using the guided menu](docs/guides/consuming.md#using-the-guided-menu).
 
-Prefer typing? The same things as commands:
+The same things as commands:
 
 ```bash
-sigil list --kind skill                        # browse first (also: sigil search <query>)
-sigil add skill:typescript/ts-generate-tests   # install one artifact plus what it depends on
+sigil list --kind skill                        # browse (also: sigil search <query>)
+sigil add skill:typescript/ts-generate-tests   # one artifact plus what it depends on
 sigil add pack:typescript-starter              # or a curated bundle
 sigil status                                   # what is installed, and is it healthy?
 ```
 
-Files land in your project (`.claude/` or `.github/`) and are tracked in `.sigil/manifest.json`, so
-`sigil status`, `update`, and `uninstall` know what Sigil wrote. Packs are defined in
-[`packs.yaml`](packs.yaml); `sigil list` shows what is available.
+`sigil --help` lists every command, and `sigil <command> --help` shows its options and defaults. The
+[consuming guide](docs/guides/consuming.md) covers the rest, and every flag is in the
+[CLI reference](docs/reference/cli-flags.md).
 
-<details>
-<summary><strong>Claude Code: install packs as plugins, no clone needed</strong></summary>
+## The catalog
 
-Each Sigil release publishes its packs as a Claude Code plugin marketplace on the `marketplace`
-branch of this repository. In Claude Code:
+| Kind                     | Count    | What it holds                                                                   |
+| ------------------------ | -------- | ------------------------------------------------------------------------------- |
+| Skills                   | about 45 | Task workflows: generate tests, scaffold a project, audit dependencies, release |
+| Agents                   | about 40 | Focused reviewers and specialists with restricted tools                         |
+| Rules                    | about 65 | Coding standards per stack, loaded where they apply                             |
+| Prompts                  | a few    | Commands you run by hand, such as `explain-diff`                                |
+| Hooks, MCP, and settings | a dozen  | Config that merges into your files, such as `protect-config`                    |
 
-```
-/plugin marketplace add makubexD/sigil#marketplace
-```
+The stacks are C#, TypeScript, Angular, Python and React, plus shared artifacts for any language.
 
-Then, from your project's shell:
+| Pack              | What it installs                                                                                                              |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `essentials`      | For any language: `explain-diff`. With `sigil add`, also the filesystem MCP, config-file protection and the authoring command |
+| `<stack>-starter` | A small setup for one stack, built around test generation                                                                     |
+| `<stack>-tooling` | The full suite for one stack: its skills, agents and rules                                                                    |
+| `spec-driven`     | The `/feature` conductor: spec, plan, TDD build and review, with approval gates                                               |
+| `cli-builder`     | Design, build or audit a command-line interface and its setup wizard                                                          |
+| `deepseek-worker` | Plan in your main session and hand mechanical steps to the paid DeepSeek API                                                  |
 
-```bash
-claude plugin install spec-driven@sigil --scope project
-```
+`<stack>` is `dotnet`, `typescript`, `angular`, `python` or `react`. Every artifact, its packs, the tools it installs into and
+its `sigil add` command are in the [artifact index](docs/reference/artifacts.md). Pack definitions are in
+[`packs.yaml`](packs.yaml).
 
-Each pack in [`packs.yaml`](packs.yaml) is one plugin, and each hook and MCP server is its own opt-in
-plugin (`hook-<name>`, `mcp-<name>`). To stay on one release, add
-`makubexD/sigil#marketplace-v<version>` instead. Pack plugins carry skills, agents, workflows and
-prompts. Rules ride inside the skills, and settings still need `sigil add`.
-Setup, updates and removal: [docs/setup/claude-code.md](docs/setup/claude-code.md).
+## Targets
 
-</details>
+Pick one with `sigil add --target <name>`. Without it, Sigil uses the tool set up in the folder. If there's none, a terminal asks
+and a script gets `claude`.
 
-<details>
-<summary><strong>GitHub Copilot: install packs as plugins</strong></summary>
+| Target                                                   | `--target`        | What `sigil add` delivers                                              |
+| -------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------- |
+| [Claude Code](docs/setup/claude-code.md)                 | `claude`          | Skills, agents, rules, prompts, hooks, MCP, settings                   |
+| [GitHub Copilot](docs/setup/copilot.md)                  | `copilot`         | Skills, agents, instructions, prompts, hooks, MCP                      |
+| [Open standard](https://agentskills.io/specification)    | `agents-standard` | Skills, with each skill's rules inlined                                |
+| [OpenAI Codex](docs/setup/codex.md)                      | `codex`           | Skills with rules inlined, hooks, MCP                                  |
+| [Cursor](docs/setup/cursor.md)                           | `cursor`          | Skills, agents, rules as `.mdc`, hooks, MCP                            |
+| [Antigravity](docs/setup/antigravity.md)                 | `antigravity`     | Skills, agents, repo-wide rules, hooks, MCP                            |
+| [OpenCode](docs/setup/opencode.md)                       | `opencode`        | Skills with rules inlined, agents, commands, MCP                       |
+| [Any agent, with `npx skills`](docs/setup/skills-cli.md) | none              | Single skills, from the `skills` branch; `sigil status` can't see them |
 
-Copilot reads the same marketplace. On Copilot CLI:
+Real limits, in brief. The setup guides have the rest, and [capabilities](docs/reference/capabilities.md) has every kind per
+target with the reason for each gap.
 
-```bash
-copilot plugin marketplace add makubexD/sigil#marketplace
-copilot plugin install typescript-tooling@sigil
-```
-
-This delivers skills, agents and prompts. Don't install the `hook-*` plugins or `mcp-filesystem` on
-Copilot: they use Claude's forms and fail there. Install hooks and MCP with `sigil add` instead.
-Setup, limits and what was tested: [docs/setup/copilot.md](docs/setup/copilot.md).
-
-</details>
-
-<details>
-<summary><strong>OpenAI Codex: install skills</strong></summary>
-
-```bash
-sigil add --target codex <skill-or-pack>
-```
-
-Run Codex in a trusted project, and review hooks with `/hooks`: Codex skips an unreviewed hook with no
-error. Packs also load from the Claude marketplace, but not the `hook-*` plugins. Setup, limits and what
-was tested:
-[docs/setup/codex.md](docs/setup/codex.md).
-
-</details>
-
-<details>
-<summary><strong>Cursor: install rules and skills</strong></summary>
-
-```bash
-sigil add --target cursor <rule-skill-or-pack>
-```
-
-Rules become `.mdc` files in `.cursor/rules/` and skills go to `.cursor/skills/`. Cursor already reads
-`.claude/skills/` and Claude Code's installed plugins, so a user of sigil's Claude plugin gets its skills in
-Cursor without installing them again. Setup, limits and what was tested:
-[docs/setup/cursor.md](docs/setup/cursor.md).
-
-</details>
-
-<details>
-<summary><strong>Antigravity: install rules and skills</strong></summary>
-
-```bash
-sigil add --target antigravity <rule-skill-or-pack>
-```
-
-Skills go to `.agents/skills/` and repo-wide rules to `.agents/rules/` as `always_on` rules. Scoped rules are
-skipped, because Antigravity did not attach a glob rule in testing, but they still arrive inlined in the skills
-that use them. MCP servers merge into `.agents/mcp_config.json` (or `~/.gemini/config/mcp_config.json` with
-`--scope user`), and agents go to `.agents/agents/`, with Antigravity's own tool names and model tiers. Setup, limits and what was tested: [docs/setup/antigravity.md](docs/setup/antigravity.md).
-
-</details>
-
-<details>
-<summary><strong>OpenCode: install skills, agents and commands</strong></summary>
-
-```bash
-sigil add --target opencode <selector>
-```
-
-Skills go to `.agents/skills/`, agents to `.opencode/agents/` and commands to `.opencode/commands/`. MCP servers
-merge into `.opencode/opencode.json`. Setup, limits and what was tested: [docs/setup/opencode.md](docs/setup/opencode.md).
-
-</details>
-
-<details>
-<summary><strong>Any agent: install single skills with <code>npx skills</code></strong></summary>
-
-Each release publishes its skills in the open Agent Skills format to the `skills` branch:
-
-```bash
-npx skills add https://github.com/makubexD/sigil/tree/skills --skill ts-generate-tests
-```
-
-Add `--list` to see every skill, and `-a <agent>` to pick the agent (`claude-code`, `codex`, …). Each skill carries
-its rules. Always use the `…/tree/skills` URL: the bare `makubexD/sigil` form installs unrendered catalog source.
-These installs aren't tracked by `sigil status`. Setup and limits: [docs/setup/skills-cli.md](docs/setup/skills-cli.md).
-
-</details>
-
-### Getting help
-
-| You want                                 | Run                                                                  |
-| ---------------------------------------- | -------------------------------------------------------------------- |
-| Every command, grouped by task           | `sigil --help` (or `sigil help`)                                     |
-| One command's options and their defaults | `sigil <command> --help`, for example `sigil add --help`             |
-| The same, written down                   | [CLI flags reference](docs/reference/cli-flags.md)                   |
-| Help while running from the clone        | `npm run sigil -- --help` (the `--` is required, see the note below) |
-
-> **`npm run sigil --help` shows npm's help, not sigil's.** Without the `--`, npm keeps the flag for
-> itself. Write `npm run sigil -- --help` or `npm run sigil -- add --help`. Installing with
-> `npm link` avoids the problem: then it is just `sigil --help`.
-
-> **Only pay for what you load.** A skill or agent costs only its short description until it is
-> used; a rule loads its full text whenever a matching file is read. Pick individual artifacts
-> rather than whole packs for a lean context. Plugins cannot carry loose rules or settings (rules
-> ride inlined inside skills), so `sigil add` is the only way to install those.
+- **Copilot:** commit the files, since its cloud agent reads the repository. The marketplace delivers skills, agents and
+  prompts, but its `hook-*` and `mcp-filesystem` plugins fail there, so install those with `sigil add`.
+- **Open standard:** any tool that reads `.agents/skills/` can use it, and a full `sigil build` also writes a root `AGENTS.md`.
+  Copilot and Cursor read that folder too, so don't install the same skills for them and for this target.
+- **Shared skill files:** Codex, the open standard and Antigravity write the same `.agents/skills/` files, so install skills for
+  one of them. `sigil add` refuses the second.
+- **Codex:** run it in a trusted project and review hooks with `/hooks`, because it skips an unreviewed hook with no error.
+- **Cursor:** a subagent has no tool list, only a read-only flag. Reviewers lose the shell, and debuggers gain every tool.
+- **Antigravity:** scoped rules are skipped because no glob rule attached in testing. They still arrive inside the skills.
+- **OpenCode:** `explain-diff` is skipped, and there are no hooks. A catalog agent can run `cat .env`, and no hook blocks it.
 
 ## Who are you?
 
@@ -211,75 +169,27 @@ These installs aren't tracked by `sigil status`. Setup and limits: [docs/setup/s
 | Contribute code to Sigil itself                                 | [CONTRIBUTING.md § Contributing code](CONTRIBUTING.md#b-contributing-code)                   |
 | See what works today and what is planned                        | [Support matrix](docs/index.md#support-matrix)                                               |
 
-## Claude Code, Copilot, and other tools
+<details>
+<summary><strong>Library usage</strong></summary>
 
-- **Claude Code** (recommended): `sigil add` writes `.claude/skills|agents|rules/` and merges
-  hooks, settings, and MCP config. Packs also install as plugins from the published marketplace
-  (`/plugin marketplace add makubexD/sigil#marketplace`) or from a local
-  `sigil build --target claude`. See [docs/setup/claude-code.md](docs/setup/claude-code.md) and
-  [consuming.md](docs/guides/consuming.md).
-- **GitHub Copilot**: `sigil add --target copilot` writes `.github/` skills, agents, instructions,
-  prompts, and hooks, and merges MCP config. Commit those files; Copilot's cloud agent reads
-  repository files. Packs also install from the published marketplace, but its hook and filesystem
-  MCP plugins don't work on Copilot, so use `add` for those. Settings aren't supported. See
-  [docs/setup/copilot.md](docs/setup/copilot.md), [consuming.md](docs/guides/consuming.md) and
-  [capabilities](docs/reference/capabilities.md). Every artifact, its packs, the tools it installs
-  into and its `sigil add` command are listed in the [artifact index](docs/reference/artifacts.md).
-- **Open standard** (`agents-standard`): `sigil add --target agents-standard` writes Agent Skills to
-  `.agents/skills/<name>/SKILL.md` exactly as the [Agent Skills spec](https://agentskills.io/specification)
-  defines them, with each skill's rules inlined; a full build also writes a root `AGENTS.md`
-  ([agents.md](https://agents.md/)) with the repo-wide rules. Tools that read `.agents/skills/` use it
-  as-is: GitHub Copilot and Cursor document it. Copilot reads it too, so don't install the same skills
-  for both `copilot` and `agents-standard`. The open standard has no subagents, prompts, hooks,
-  settings or shared MCP file, so those kinds are skipped for this target.
-- **OpenAI Codex**: `sigil add --target codex` writes skills to `.agents/skills/` and merges hooks into
-  `.codex/hooks.json` and MCP servers into `.codex/config.toml`, and a full build also
-  writes a root `AGENTS.md` with the repo-wide rules. Agents and prompts are skipped: a Codex agent file
-  can't restrict tools, and Codex deprecated custom prompts. See [docs/setup/codex.md](docs/setup/codex.md).
-- **Cursor**: `sigil add --target cursor` writes rules to `.cursor/rules/` as `.mdc` files and skills to
-  `.cursor/skills/`. A full build writes no `AGENTS.md`, because the repo-wide rules are already
-  `alwaysApply` rules. Hooks merge into `.cursor/hooks.json` and MCP servers into `.cursor/mcp.json`. Agents and
-  prompts are skipped for now. See
-  [docs/setup/cursor.md](docs/setup/cursor.md).
-- **Antigravity**: `sigil add --target antigravity` writes skills to `.agents/skills/` and repo-wide rules to
-  `.agents/rules/` as `always_on` rules. Scoped rules are skipped until Antigravity attaches glob rules; the skills
-  that use them carry them inline. MCP servers merge into `.agents/mcp_config.json` and agents go to
-  `.agents/agents/`. A full build writes no `AGENTS.md`. Hooks are planned. See
-  [docs/setup/antigravity.md](docs/setup/antigravity.md).
-- **OpenCode**: `sigil add --target opencode` writes skills to `.agents/skills/`, agents to `.opencode/agents/` and commands
-  to `.opencode/commands/`, and merges MCP servers into `.opencode/opencode.json`. A full build also writes a root `AGENTS.md`
-  with the repo-wide rules. `explain-diff` is skipped, because a real diff doesn't survive OpenCode's argument quoting, and hooks
-  are skipped. Agents can run `cat .env`, and no hook stands behind it. See [docs/setup/opencode.md](docs/setup/opencode.md).
-- **Other tools**: `agents-standard` delivers skills to any tool that reads `.agents/skills/`.
-
-## What is in the catalog
-
-Run `sigil list` (or `sigil search <query>`) to browse. The catalog has skills, agents, rules,
-prompts, and config kinds (MCP, hooks, settings) for `csharp`, `typescript`, `angular`, `python`,
-and `react`, plus `shared` artifacts that apply to every stack. Curated bundles are the packs in
-[`packs.yaml`](packs.yaml). Artifact kinds and fields: [docs/reference/spec.md](docs/reference/spec.md).
-
-## Library usage
-
-Sigil is primarily a CLI, but `config-merge`'s pure JSON-merge primitives — the machinery behind
-`mcp`/`hook`/`settings` install, drift detection, and repair — are also published as a small,
-curated library surface for programmatic use (e.g. a tool that wants to detect or repair drift in
-a sigil-managed config file without shelling out to the CLI):
+Sigil is primarily a CLI, but `config-merge`'s pure JSON-merge primitives, the machinery behind `mcp`, `hook` and `settings`
+installs, drift detection and repair, are also a small library. A tool can use them to detect or repair drift in a
+sigil-managed config file without shelling out to the CLI:
 
 ```ts
 import { applyMerge, classifyConfigDrift, detectConfigDrift } from 'sigil';
 ```
 
-Everything else — the pipeline stages, target adapters, wizard, commands — is intentionally not
-exported; only `.` and `./package.json` resolve via the package name (`package.json`'s `exports`
-map). See `src/index.ts` for the full exported surface and the "public library surface"
-invariant in `.claude/rules/repo-cli.md` for why it stays curated rather than exposing all of `dist-cli/`.
+Everything else (pipeline stages, target adapters, wizard, commands) is intentionally not exported. Only `.` and
+`./package.json` resolve through the package name. See `src/index.ts` for the exported surface and the "public library surface"
+rule in `.claude/rules/repo-cli.md` for why it stays curated.
+
+</details>
 
 ## Learn more
 
-Start at [docs/index.md](docs/index.md): a map by audience, a glossary, and the support matrix.
-Also [CHANGELOG.md](CHANGELOG.md) for version history and [CLAUDE.md](CLAUDE.md) for the invariants
-code contributors must keep.
+Start at [docs/index.md](docs/index.md): a map by audience, a glossary and the support matrix. See also
+[CHANGELOG.md](CHANGELOG.md) for version history and [CLAUDE.md](CLAUDE.md) for the rules code contributors must keep.
 
 ## License
 

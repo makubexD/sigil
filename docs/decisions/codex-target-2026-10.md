@@ -10,7 +10,8 @@ mock of the Responses API, configured through the documented `model_providers` s
 The mock returned scripted tool calls and logged each request body.
 
 That proves what Codex loads, what it sends to the model, and what its hooks and MCP clients do. **It does not prove
-that a real model picks a skill**: dispatch on the `description` was not tested.
+that a real model picks a skill**: dispatch on the `description` was not tested here. The [real-model run](#real-model-run)
+tested it later.
 
 ## Results
 

@@ -45,13 +45,16 @@ file (`rule-load` python: the seven `**/*.py` rules plus `shared/orchestration`)
 `py-project-layout` and `shared/orchestration` alone are 8.7 KB of the load, so 12 KB needs them too.
 Test: `npm run build && npm run rule-load` shows python at or under 12 KB; `npm run validate`; `npm run evals:check`.
 
-## Step 4: py-packaging only in a library pack `[worker]` (#211)
+## Step 4: release and API-compat only in a library pack `[worker]` (#211)
 
 Files: `packs.yaml`, `catalog/README.md`.
-Change: add a `python-library` pack holding `python/py-packaging` (and anything else only libraries need), and exclude
-`py-packaging` from `python-tooling` (use the pack's existing exclude mechanism, or list artifacts if it has none).
+Change: add a `python-library` pack holding `python/py-release` and `python/py-api-compat-reviewer`, and replace
+`python-tooling`'s `languages: [python]` with an explicit list of every other Python artifact. Amended Nov 8:
+`py-packaging` stays in `python-tooling`. It is Python's `package-manager` family member, which every `add-package`
+and `audit-deps` skill must load (family parity in `sigil sync --check`), and it only loads on `pyproject.toml`.
 Test: `npm run build && node dist-cli/cli.js add pack:python-tooling --target claude --dry-run --yes --project-dir "$(mktemp -d)"`
-lists no `python-py-packaging`; the same with `pack:python-library` lists it; `npm run validate`.
+lists no `py-release` or `py-api-compat-reviewer`; the same with `pack:python-library` lists both; `npm run validate`;
+`node dist-cli/cli.js sync --check`.
 
 ## Step 5: warn when a skill overlaps an existing command `[worker]` (#212)
 

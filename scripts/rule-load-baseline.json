@@ -1,22 +1,22 @@
 {
   "typescript": {
-    "bytes": 42547,
-    "reason": "ts-security payload example reworded so the trust scanner passes it"
+    "bytes": 42699,
+    "reason": "conventions name the pack's code-reviewer agent (+152 B) (#213)"
   },
   "angular": {
     "bytes": 50389,
     "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
   },
   "react": {
-    "bytes": 33454,
-    "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
+    "bytes": 33083,
+    "reason": "conventions name the pack's code-reviewer agent (+152 B) (#213)"
   },
   "csharp": {
     "bytes": 38310,
     "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
   },
   "python": {
-    "bytes": 33077,
-    "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
+    "bytes": 9837,
+    "reason": "review: deprecation and README bullets in py-documentation"
   }
 }

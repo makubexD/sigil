@@ -2,7 +2,7 @@
 id: python/py-conventions
 kind: rule
 title: "Conventions (Python)"
-description: Python-specific style rules — PEP 8, type hints, modern Python idioms, and project tooling conventions (the clean-code baseline arrives through py-code-quality).
+description: Python style rules — type hints, typed structured data, resource handling, specific exceptions, PEP 8 names
 language: python
 appliesTo:
   - "**/*.py"
@@ -12,24 +12,13 @@ tags:
   - pep8
 appliesToRationale: Scoped to Python source because these PEP 8 and idiom rules only apply to .py files — there is no equivalent concern in pyproject.toml or other config.
 ---
-- **Type hints everywhere.** Annotate every function signature and public variable. Use `from __future__ import annotations` for forward references. Use `X | None` (Python 3.10+) instead of `Optional[X]`.
-- **Dataclasses and typed dicts over plain dicts.** Prefer `@dataclass` or `TypedDict` for structured data. Plain dicts with string keys are not self-documenting.
-- **f-strings for formatting.** Use f-strings (`f"{value}"`) not `%` formatting or `.format()`.
-- **Comprehensions over `map`/`filter`.** List, dict, and set comprehensions are more Pythonic and readable. Avoid `lambda` in `map`/`filter` — use a comprehension instead.
-- **Context managers for resources.** Use `with` for files, database connections, locks — anything that needs cleanup.
-- **`pathlib.Path` not `os.path`.** Use `pathlib` for all file system operations.
-- **Avoid mutable default arguments.** Never use `def f(lst=[])` — use `def f(lst=None)` and initialise inside the function.
-- **Single-responsibility imports.** One import per line. Alphabetise within groups: stdlib → third-party → local. Use `isort` or `ruff` to automate.
-- **Raise specific exceptions.** Raise `ValueError`, `TypeError`, or a custom subclass — not bare `Exception` or `BaseException`.
-- **No bare `except`.** Always specify the exception type(s): `except (ValueError, KeyError)`. Bare `except` swallows `KeyboardInterrupt` and `SystemExit`.
-- **Prefer `logging` over `print`.** Use the `logging` module for any output that is not user-facing. Configure a logger per module: `logger = logging.getLogger(__name__)`.
-- **PEP 8 naming.** Follow the table below; `ruff`'s `N` (pep8-naming) rules enforce it.
+- Annotate every function signature and public variable; `X | None`, not `Optional[X]`.
+- Structured data is a `@dataclass` or `TypedDict`, not a dict with string keys.
+- No mutable default arguments: `def f(items=None)` and set it inside.
+- `with` for anything that needs cleanup; `pathlib.Path`, not `os.path`.
+- Raise a specific exception (`ValueError`, a custom subclass), never bare `Exception`.
+- PEP 8 names (`snake_case`, `PascalCase` classes, `UPPER_SNAKE` constants, `_private`), enforced by `ruff`'s `N`
+  rules; imports sorted stdlib, third-party, local by `ruff`/`isort`.
 
-| Symbol | Style | Example |
-|---|---|---|
-| Functions, methods, variables, parameters | `snake_case` | `parse_ics`, `daily_cap_hours` |
-| Classes, exceptions, `Protocol`s, type aliases | `PascalCase` | `CalendarEvent`, `ParseError` |
-| Module-level constants | `UPPER_SNAKE` | `MAX_RETRY_COUNT`, `DEFAULT_TIMEZONE` |
-| Modules and packages | short `snake_case` | `calendar_parser.py`, `reporting/` |
-| Internal (non-public) names | leading `_` | `_to_utc`, `self._cache` |
-| Type variables | `T` or short `PascalCase` | `T`, `KT`, `T_co` |
+For a code review in this repo, use the `py-code-reviewer` agent when it is installed, not a general-purpose
+reviewer: it reviews against these rules.

@@ -144,12 +144,48 @@ packs:
 
   - name: python-tooling
     displayName: Python Tooling
-    languages: [python]
     description: >
-      Full Python tooling suite — all py- skills, agents, and rules.
-      Skills include scaffolding, testing, documentation, dependency management,
-      security auditing, and release preparation.
+      Python tooling for applications and services — the py- skills, agents, and rules for
+      scaffolding, testing, documentation, dependency management, and security auditing.
+      Release preparation and public-API compatibility review live in python-library;
+      install it as well when the project is a package published to PyPI.
       Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - python/py-add-package
+      - python/py-add-project
+      - python/py-audit-deps
+      - python/py-document
+      - python/py-generate-tests
+      - python/py-scaffold-project
+      - python/py-sync-tests
+      - python/py-architecture-reviewer
+      - python/py-code-reviewer
+      - python/py-debugger
+      - python/py-performance-profiler
+      - python/py-refactor-specialist
+      - python/py-security-auditor
+      - python/py-async
+      - python/py-code-quality
+      - python/py-conventions
+      - python/py-dependencies
+      - python/py-documentation
+      - python/py-git
+      - python/py-logging
+      - python/py-packaging
+      - python/py-project-layout
+      - python/py-security
+      - python/py-testing
+      - python/py-allow-dev-tools
+
+  - name: python-library
+    displayName: Python Library
+    description: >
+      For a package published to PyPI — release preparation and public-API compatibility review.
+      Install it next to python-tooling, which carries the packaging rule.
+      Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - python/py-release
+      - python/py-api-compat-reviewer
 
   - name: react-tooling
     displayName: React Tooling

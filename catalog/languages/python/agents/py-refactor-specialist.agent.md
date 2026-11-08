@@ -55,7 +55,7 @@ is no way to verify behavior was preserved.
 ### Common refactors
 
 **Extract function** — pull a cohesive block into a named function when it exceeds
-`py-code-quality`'s size limits or is duplicated elsewhere. Name it for what it does, not how.
+is too long to read at once or is duplicated elsewhere. Name it for what it does, not how.
 
 **Extract module** — split a module that has grown multiple unrelated responsibilities into
 separate modules, updating all imports.

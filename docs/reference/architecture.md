@@ -241,7 +241,7 @@ content — one or more `<!-- slot: key -->` markers followed by that slot's Mar
 the top level:
 
 Shipped templates (all under `catalog/shared/templates/`): `code-quality` (the per-language `*-code-quality`
-rules), `mcp-note` (the four `shared/*.mcp.md` artifacts), and `release-skill` (the per-language `*-release`
+rules except Python's, which carries its own short list), `mcp-note` (the four `shared/*.mcp.md` artifacts), and `release-skill` (the per-language `*-release`
 skills). Each was added only after measuring real body overlap; see
 [template-extraction-evidence-2026-08.md](../decisions/template-extraction-evidence-2026-08.md) and
 [catalog-quality-audit-2026-08.md](../decisions/catalog-quality-audit-2026-08.md).

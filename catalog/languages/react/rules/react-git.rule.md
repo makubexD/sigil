@@ -36,16 +36,6 @@ storybook-static/
 Never commit build output (`dist/`, `.next/`) — it's fully reproducible from source and bloats
 history with generated diffs on every commit.
 
-## No Secrets in History
-
-Never commit secrets — even a client-exposed `NEXT_PUBLIC_*`/`VITE_*` variable that looks like
-"just a public key" deserves review before committing a real value; use `.env.example` with
-placeholders. A genuinely private key (a server-only API secret) must never be prefixed
-`NEXT_PUBLIC_`/`VITE_` in the first place — that prefix ships the value straight into client bundles.
-
-If a real secret is accidentally committed, rotate it immediately and remove it from history with
-`git filter-repo`.
-
 ## Deprecating a Shared Component
 
 Mark a deprecated exported component or hook with `@deprecated` in its TSDoc and keep it functional

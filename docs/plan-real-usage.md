@@ -65,3 +65,7 @@ Read the `real-usage` issues and the never-used list. Group them, then write the
 changes, things to remove. Check the Parked triggers, and move any that fired.
 
 Test: the next plan is committed, and each of its steps links an issue.
+
+Status, Nov 8: the first plan from real use is `docs/plan-catalog-slim.md` (#209 to #213). Steps 1 to 6 are on its PR;
+step 7, reinstalling in MakuVisaApptScheduler and measuring through about Nov 18, stays open, and that plan finishes after
+it.

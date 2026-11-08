@@ -191,3 +191,6 @@ for string formatting — no manual concatenation for new code. Use `node:path` 
 - Mutable module-level state (hidden shared state, obstructs testing and concurrency).
 - Using exceptions for expected control flow (return a typed result instead).
 - `eval`, `new Function(code)`, or `vm.runInNewContext` on non-constant input.
+
+For a code review in this repo, use the `ts-code-reviewer` agent when it is installed, not a general-purpose
+reviewer: it reviews against these rules.

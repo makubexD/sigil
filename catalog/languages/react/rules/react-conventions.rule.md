@@ -35,3 +35,6 @@ appliesToRationale: Scoped to component files (.tsx/.jsx) because these hooks an
 | Functions, variables | `camelCase` | `formatDate`, `selectedRows` |
 | Boolean props and state | `is`/`has`/`should` prefix | `isOpen`, `hasError` |
 | Module-level constants | `UPPER_SNAKE` | `MAX_RETRY_COUNT` |
+
+For a code review in this repo, use the `react-code-reviewer` agent when it is installed, not a general-purpose
+reviewer: it reviews against these rules.

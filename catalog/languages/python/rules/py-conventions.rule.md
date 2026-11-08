@@ -19,3 +19,6 @@ appliesToRationale: Scoped to Python source because these PEP 8 and idiom rules 
 - Raise a specific exception (`ValueError`, a custom subclass), never bare `Exception`.
 - PEP 8 names (`snake_case`, `PascalCase` classes, `UPPER_SNAKE` constants, `_private`), enforced by `ruff`'s `N`
   rules; imports sorted stdlib, third-party, local by `ruff`/`isort`.
+
+For a code review in this repo, use the `py-code-reviewer` agent when it is installed, not a general-purpose
+reviewer: it reviews against these rules.

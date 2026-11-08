@@ -511,7 +511,7 @@
   "copilot/.github/instructions/python-py-conventions.instructions.md": "c49f5e1ac120ab67ba8ec0d8fad4bf04a5fe565d5133cb76bf6b2d953d518160",
   "copilot/.github/instructions/python-py-dependencies.instructions.md": "3524d7625c38154a2a3d48bb9bd47da80684122faca41ee9a91c7d07540de0f3",
   "copilot/.github/instructions/python-py-documentation.instructions.md": "f0f4be2010286c1094fffd349256b4062a04c32f58263c6695c13f5d06701322",
-  "copilot/.github/instructions/python-py-git.instructions.md": "632e07aa48cf2cfaa1df5cb25076867682a9c9b258ac037f6a7516a4df9fa2b5",
+  "copilot/.github/instructions/python-py-git.instructions.md": "2acc3e78799a34222bc34b797e7426e3937b4cdf7780528ce8a793513814823a",
   "copilot/.github/instructions/python-py-logging.instructions.md": "a8fc51266138f31e9d4cc4de3d0db94aed4678cabc0e51bfd8b98db2afebe183",
   "copilot/.github/instructions/python-py-packaging.instructions.md": "ac814e5bfcceda06662935a581a534e367610239d1532e46e005c1ce5ae9b37b",
   "copilot/.github/instructions/python-py-project-layout.instructions.md": "1fb5cb6df1ffda5339aed334a06f085027ee1fca8787c77acfc9e686e53fe64c",
@@ -522,7 +522,7 @@
   "copilot/.github/instructions/react-react-conventions.instructions.md": "de6b879cecb3a61eb8345b8f8c34b38ea48a2ec0a6677f17be3477d12c02e729",
   "copilot/.github/instructions/react-react-dependencies.instructions.md": "b258a7bc7f04cdd129704b44baa09fe4eeddf37d351dbf03a51fb1269eb61732",
   "copilot/.github/instructions/react-react-documentation.instructions.md": "9982ac858c5371069dd7600885191eddedbb69440e38fe3a6511b04a74db271a",
-  "copilot/.github/instructions/react-react-git.instructions.md": "1ca5690b0c71adb2ee8ae6b5336a82f781af5cd3c01a1d3a7f1cff9135f9d9dc",
+  "copilot/.github/instructions/react-react-git.instructions.md": "3eb07c6d9af2fc33f62405269bfa20341f9aa97836d1716e3c1291a530f94618",
   "copilot/.github/instructions/react-react-logging.instructions.md": "2a685f43b5ce0277a12e975f42eb7ffbbb2359166ea341e6f95aeda0bf5595ff",
   "copilot/.github/instructions/react-react-npm.instructions.md": "25eccfa07fd9dffc2a3babb39e85c58bfc15b8c7b065d0db768b3ffa20a8d3b9",
   "copilot/.github/instructions/react-react-project-layout.instructions.md": "9320ca16711e83765ce92f1b54e3645cfeca5b40956ad182b29e3ef5b116073f",
@@ -683,7 +683,7 @@
   "cursor/.cursor/rules/python-py-conventions.mdc": "7224897c6466a333689e2a6ed876df2477d5cf03e31cd7cefed3176f66d4da5d",
   "cursor/.cursor/rules/python-py-dependencies.mdc": "8e503c3dfdad9a7f808c9c4b5c280c4ffd123f639219070be59d52f385a7049d",
   "cursor/.cursor/rules/python-py-documentation.mdc": "d23f3eb4acae7e3615348c19d443c27ce7745d1679480807463cd6889321b355",
-  "cursor/.cursor/rules/python-py-git.mdc": "99128bd26e5bcd241f80e852ea9a09a853c6b7aef1bdcfb4f6826d2c64323c2c",
+  "cursor/.cursor/rules/python-py-git.mdc": "c6c3abb08359eb9859e5d0883571f075881f16ab7e5519b52c92f71ed10b8b70",
   "cursor/.cursor/rules/python-py-logging.mdc": "a33ff2ace2da11a14b71a0f68e60a598f0c7550014187d0522ec2831b1d42ddc",
   "cursor/.cursor/rules/python-py-packaging.mdc": "ab85290e0bf306ac01fc87fc3339c2da4f6463e11cb39f87829c5f29e881acfd",
   "cursor/.cursor/rules/python-py-project-layout.mdc": "583eef69560b762e74c77bfa487a911c95e5d8f1eae61e74915fc38126bdc919",
@@ -694,7 +694,7 @@
   "cursor/.cursor/rules/react-react-conventions.mdc": "1964c89c305bbd9406402d9e9ff4a3831a848f4b3383938b8cc7de1e66cfa1f2",
   "cursor/.cursor/rules/react-react-dependencies.mdc": "58f095ccc4da4ef442f49db6e5ac8c43b498a54f55cb6d3ff284c245d79f440b",
   "cursor/.cursor/rules/react-react-documentation.mdc": "a2981d6f5648d96d2c6874b23651dfb738353a36f11abfef28f367c1d2aff8e7",
-  "cursor/.cursor/rules/react-react-git.mdc": "45085708afba476486b77bdb54c55a2bfed1ac04cbf4d3838f460e5511bd3fd6",
+  "cursor/.cursor/rules/react-react-git.mdc": "61121cb374a7a3051e51d65f06b34c0e2568e94b7555fe74467abfbf8c9f0392",
   "cursor/.cursor/rules/react-react-logging.mdc": "28da95c10c7af8eddab08f57a35a1278b9ac7e93cf0a6d819f9cbcd22b7cc3d9",
   "cursor/.cursor/rules/react-react-npm.mdc": "7334322fe719f4e9b980c5bc44970d9cc6382dc97f394cdf02ebcddb3156938a",
   "cursor/.cursor/rules/react-react-project-layout.mdc": "bf4d2b843d2d5976694999c545dbc7169be63ac7b6e2d6dc25b17b58f619fca5",
@@ -897,5 +897,5 @@
   "opencode/.opencode/agents/wizard-auditor.md": "97ddab3531af2a8a3d866268f66b3ee0d54c79f7da5fe79bedbf62976c801206",
   "opencode/.opencode/commands/shared-author-artifact.md": "15fdb486f9ab92883f5bee96d8c45d5d22e9493016ea75c3c0283e5b54d8b661",
   "opencode/AGENTS.md": "2c6ded365300dad30f6e649027e5d1cb13ca0c9e96eb6b6df9c9c4616bd58a31",
-  "registry.json": "5eb16ae6d97602b15720e33804f8428b662e0339cfbe4ddcd9c1d396c1b9bcef"
+  "registry.json": "db6b530bd5c3a2915c34698abf52109781c02fd66cd8a02ff288ddf184e94312"
 }

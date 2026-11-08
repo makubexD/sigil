@@ -36,10 +36,13 @@ headings pass; the real catalog passes after step 1.
 ## Step 3: cut the always-on Python rules to about 3k tokens `[inline: judgment on what to cut]` (#210)
 
 Files: `catalog/languages/python/rules/py-async.rule.md`, `py-code-quality.rule.md`, `py-conventions.rule.md`,
-`py-documentation.rule.md`, `py-logging.rule.md`, `scripts/rule-load-baseline.json`.
+`py-documentation.rule.md`, `py-logging.rule.md`, `py-security.rule.md`, `py-project-layout.rule.md`, `py-testing.rule.md`,
+`scripts/rule-load-baseline.json`.
 Change: keep the specific, checkable rules (each one a thing a reviewer could point at in a diff); drop general material
-the model already knows (SOLID, KISS/YAGNI explanations, long examples). Target: the five `**/*.py` rules plus
-`py-testing` under 12 KB rendered, from about 30 KB.
+the model already knows (SOLID, KISS/YAGNI explanations, long examples). Target: everything that loads on a plain `.py`
+file (`rule-load` python: the seven `**/*.py` rules plus `shared/orchestration`) at or under 12 KB rendered, from 27.8 KB;
+`py-testing` cut by the same bar. Amended Nov 8: the first draft listed only five rules, but `py-security`,
+`py-project-layout` and `shared/orchestration` alone are 8.7 KB of the load, so 12 KB needs them too.
 Test: `npm run build && npm run rule-load` shows python at or under 12 KB; `npm run validate`; `npm run evals:check`.
 
 ## Step 4: py-packaging only in a library pack `[worker]` (#211)

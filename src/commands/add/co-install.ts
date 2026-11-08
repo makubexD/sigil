@@ -8,6 +8,8 @@
  *
  * @module
  */
+import fs from 'fs';
+import path from 'path';
 import { loadManifest } from '../../manifest';
 import { preloadedSkillIds } from '../../refs';
 import { computeClosure } from '../../select/closure';
@@ -28,7 +30,19 @@ export function coInstallSetFor(
     .map(e => e.id);
   const coInstalled = new Set([...pickedIds, ...deps, ...installed]);
   warnMissingPreloads(ctx, coInstalled);
+  warnInstallingSkillOverlaps(ctx, pickedIds, deps);
   return coInstalled;
+}
+
+/** The skill overlap check applies only to Claude Code, which owns the `.claude/` layout. */
+function warnInstallingSkillOverlaps(
+  ctx: PlanCtx,
+  pickedIds: readonly string[],
+  deps: readonly string[],
+): void {
+  if (ctx.targetName !== 'claude') return;
+  const skills = [...pickedIds, ...deps].filter(id => ctx.resolved.byId.get(id)?.kind === 'skill');
+  warnCommandOverlaps(ctx.opts.projectDir, skills);
 }
 
 /**
@@ -46,4 +60,40 @@ function warnMissingPreloads(ctx: PlanCtx, coInstalled: ReadonlySet<string>): vo
       console.warn(`     Add it with: sigil add skill:${skillId}`);
     }
   }
+}
+
+/**
+ * A catalog skill and a hand-written command (or skill) can answer the same request; Claude Code
+ * then shows both, and the user has to pick. Language skills carry a prefix (`py-generate-tests`)
+ * while the project's own copy usually does not (`generate-tests`), so compare the unprefixed
+ * name against `.claude/commands/<rest>.md` and `.claude/skills/<rest>/`. Warn only — an existing
+ * file is the user's, never something to block or overwrite here.
+ */
+export function warnCommandOverlaps(projectDir: string, skillIds: Iterable<string>): void {
+  const seen = new Set<string>();
+  for (const id of skillIds) {
+    if (seen.has(id)) continue;
+    seen.add(id);
+    const slash = id.indexOf('/');
+    if (slash <= 0 || id.slice(0, slash) === 'shared') continue;
+    const rest = id.slice(slash + 1).replace(/^[a-z]+-/, '');
+    const overlap = overlapPathFor(projectDir, rest);
+    if (overlap !== undefined) console.warn(`  ⚠  ${id} overlaps ${overlap}; keep one.`);
+  }
+}
+
+/** The project file this unprefixed skill name would duplicate, if one exists. */
+function overlapPathFor(projectDir: string, rest: string): string | undefined {
+  const commandPath = path.join(projectDir, '.claude', 'commands', `${rest}.md`);
+  const skillPath = path.join(projectDir, '.claude', 'skills', rest);
+  try {
+    if (fs.existsSync(commandPath)) return `.claude/commands/${rest}.md`;
+    if (fs.existsSync(skillPath) && fs.statSync(skillPath).isDirectory()) {
+      return `.claude/skills/${rest}/`;
+    }
+  } catch {
+    // An unreadable path is no reason to fail the install; skip the note.
+    return undefined;
+  }
+  return undefined;
 }

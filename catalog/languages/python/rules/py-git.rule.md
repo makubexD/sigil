@@ -7,12 +7,11 @@ language: python
 extends:
   - shared/git
 appliesTo:
-  - "**/*.py"
   - "**/.gitignore"
 tags:
   - python
   - git
-appliesToRationale: Scoped to Python source and .gitignore because these additions (venv/cache exclusions, deprecation mechanics) are Python-specific on top of the shared git baseline.
+appliesToRationale: Scoped to .gitignore because the Python-specific additions (venv/cache exclusions) apply on top of the shared git baseline.
 ---
 
 ## Python `.gitignore` Additions
@@ -37,15 +36,6 @@ htmlcov/
 
 Never commit a virtual environment (`.venv/`, `venv/`) — it is large, platform-specific, and fully
 reproducible from `pyproject.toml` + the lock file.
-
-## No Secrets in History
-
-Never commit secrets — even to a private repo, even temporarily. A `.env` file with real values, a
-hardcoded API key in a settings module, or a database URL with embedded credentials is compromised
-the moment it lands in history, regardless of a later revert.
-
-If a secret is accidentally committed: rotate it immediately, remove it from history with
-`git filter-repo`, and force-push all affected branches (coordinate with the team).
 
 ## Python Deprecation Mechanics
 

@@ -8,15 +8,15 @@
     "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
   },
   "react": {
-    "bytes": 33454,
-    "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
+    "bytes": 32928,
+    "reason": "py-git scope, duplicate section"
   },
   "csharp": {
     "bytes": 38310,
     "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
   },
   "python": {
-    "bytes": 33077,
-    "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
+    "bytes": 28455,
+    "reason": "py-git scope, duplicate section"
   }
 }

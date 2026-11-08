@@ -23,6 +23,7 @@
  *      (`references/<missing>`, `assets/`, `scripts/`).
  *  12. An `mcp` artifact's `{sigil:var:NAME}` tokens and `vars:`        — var-checks.ts
  *      declarations agree.
+ *  13. A rule's flattened `extends` chain repeats an H2 heading.        — heading-checks.ts
  */
 import type { LoadedCatalog, Target, ValidationResult } from '../types';
 import type { ValidateCtx } from './types';
@@ -35,6 +36,7 @@ import { checkArtifactTemplate, checkTemplatesCatalogWide } from './template-che
 import { checkDeprecatedReferences } from './deprecated-checks';
 import { checkSkillPaths } from './skill-path-check';
 import { checkVarDeclarations } from './var-checks';
+import { checkRepeatedHeadings } from './heading-checks';
 
 export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[]): ValidationResult {
   const ctx: ValidateCtx = { catalog, knownTargets, errors: [], warnings: [] };
@@ -52,6 +54,7 @@ export function validateCatalog(catalog: LoadedCatalog, knownTargets?: Target[])
   }
 
   checkDuplicateAncestorScope(ctx);
+  checkRepeatedHeadings(ctx);
   checkOwnedByKindConflicts(ctx);
   checkTemplatesCatalogWide(ctx);
   detectExtendsCycles(catalog, ctx.errors);

@@ -78,7 +78,7 @@ environment against the PyPA advisory database:
 uv export --format requirements-txt | pip-audit -r -
 ```
 
-See `py-audit-deps` for the full automated dependency-audit skill and `py-release` for the complete
+See `py-audit-deps` for the full automated dependency-audit skill and `py-release` (python-library pack) for the complete
 release-preparation workflow this rule's mechanics feed into.
 
 ## `py.typed` Marker

@@ -58,7 +58,7 @@ type-annotation scrutiny than one without.
   string-formatted SQL, `subprocess` with `shell=True` and interpolated input.
 
 **Quality / conventions**
-- Deviations from `py-code-quality` (function length, parameter count, layering).
+- Deviations from `py-code-quality` (logic in entry points, import cycles, swallowed or unchained exceptions).
 - Missing type hints on new public functions.
 - Missing or misleading docstrings on new public symbols (see `py-documentation`).
 

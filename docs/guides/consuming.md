@@ -517,7 +517,7 @@ about 2.5k tokens per session for one `*-tooling` plugin.
 The marketplace is named `sigil`, and each pack in `packs.yaml` becomes a plugin of the same name,
 for example `essentials`, `dotnet-starter`, `dotnet-tooling`, `python-starter`, `react-starter`,
 `typescript-starter`, `typescript-tooling`, `angular-starter`, `angular-tooling`, `python-tooling`,
-`react-tooling`, `spec-driven`, and `cli-builder`.
+`python-library`, `react-tooling`, `spec-driven`, and `cli-builder`.
 `dist/claude/.claude-plugin/marketplace.json` lists them all. Without `--target`, `sigil build` builds
 **both** targets (`dist/claude/` and `dist/copilot/`).
 

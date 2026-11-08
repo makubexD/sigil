@@ -2,7 +2,7 @@
 id: python/py-documentation
 kind: rule
 title: Documentation (Python)
-description: Python docstring conventions (Google/NumPy style), type hints as documentation, and README expectations
+description: Python docstring conventions — match the project style, public API coverage, deprecations, README contents, keep docs current
 language: python
 appliesTo:
   - "**/*.py"
@@ -20,5 +20,9 @@ appliesToRationale: Scoped to Python source because docstring conventions only a
 - A `Protocol` or ABC documents the invariant implementers must keep, not just the signature.
 - Don't restate the type hints, the name (`"""Get the user."""`), or implementation steps that will drift.
 - A module with non-obvious scope gets a one- or two-sentence module docstring.
+- Deprecate a public symbol with `@warnings.deprecated` (3.13+, `typing_extensions` before) or
+  `warnings.warn(..., DeprecationWarning, stacklevel=2)`, and keep it working for at least one release.
+- A package README covers what it does, install and quickstart, required environment variable names (never
+  values), and the test and quality-gate commands.
 - When a signature, return type or raised exception changes, update the docstring in the same commit; update the
   README when install steps, CLI flags or required environment variables change.

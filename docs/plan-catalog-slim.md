@@ -62,7 +62,7 @@ Files: `src/commands/add/co-install.ts` (next to `warnMissingPreloads`), `test/c
 Change: after planning, for each skill being installed for Claude, strip the language prefix (`py-`, `ts-`, …) and warn
 when `.claude/commands/<rest>.md` or `.claude/skills/<rest>/` already exists in the project:
 `⚠  <skill id> overlaps .claude/commands/<rest>.md; keep one.` Warn only, never block.
-Test: `npm run test:built -- add-overlaps`. Cases: existing `commands/generate-tests.md` with `py-generate-tests` warns;
+Test: `npm run test:built -- add-command-overlaps`. Cases: existing `commands/generate-tests.md` with `py-generate-tests` warns;
 no such file, no warning; an existing `skills/sync-tests/` with `py-sync-tests` warns.
 
 ## Step 6: prefer the pack's reviewer `[inline: user-facing copy]` (#213)

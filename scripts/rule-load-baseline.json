@@ -16,7 +16,7 @@
     "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
   },
   "python": {
-    "bytes": 9441,
-    "reason": "conventions name the pack's code-reviewer agent (+152 B) (#213)"
+    "bytes": 9837,
+    "reason": "review: deprecation and README bullets in py-documentation"
   }
 }

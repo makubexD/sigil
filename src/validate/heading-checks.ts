@@ -11,8 +11,33 @@ import type { Artifact, LoadedCatalog } from '../types';
 import type { ValidateCtx } from './types';
 import { composeArtifactAgainstTemplate } from '../templates';
 
-const H2_RE = /^## (.+)$/;
-const FENCE = '```';
+const H2_RE = /^ {0,3}##[ \t]+(.+?)(?:[ \t]+#+)?[ \t]*$/;
+/** CommonMark opening fence: up to 3 spaces, then 3+ backticks or 3+ tildes. */
+const FENCE_OPEN_RE = /^ {0,3}(`{3,}|~{3,})/;
+/** CommonMark closing fence: the same marker, up to 3 spaces of indent, nothing else. */
+const FENCE_CLOSE_RE = /^ {0,3}(`{3,}|~{3,})[ \t]*$/;
+
+/** An open code fence: its marker character and run length (CommonMark treats them as distinct). */
+interface Fence {
+  readonly char: '`' | '~';
+  readonly length: number;
+}
+
+/** The fence a line opens, or undefined when the line is not an opening fence. */
+function openingFence(line: string): Fence | undefined {
+  const match = FENCE_OPEN_RE.exec(line);
+  if (!match) return undefined;
+  const marker = match[1]!;
+  return { char: marker[0] as '`' | '~', length: marker.length };
+}
+
+/** Whether a line closes `fence`: same character, at least as long, nothing but whitespace after. */
+function closesFence(line: string, fence: Fence): boolean {
+  const match = FENCE_CLOSE_RE.exec(line);
+  if (!match) return false;
+  const marker = match[1]!;
+  return marker[0] === fence.char && marker.length >= fence.length;
+}
 
 /** One body segment in resolution order, tagged with the artifact that contributes it. */
 interface HeadingSegment {
@@ -57,17 +82,21 @@ function collectSegments(
   return segments;
 }
 
-/** H2 heading texts in a body, ignoring lines inside ``` fenced code blocks. */
+/** H2 heading texts in a body, ignoring lines inside CommonMark fenced code blocks. */
 function extractH2(body: string): string[] {
   const headings: string[] = [];
-  let inFence = false;
+  let openFence: Fence | undefined;
   for (const rawLine of body.split('\n')) {
     const line = rawLine.trimEnd();
-    if (line.trimStart().startsWith(FENCE)) {
-      inFence = !inFence;
+    if (openFence) {
+      if (closesFence(line, openFence)) openFence = undefined;
       continue;
     }
-    if (inFence) continue;
+    const fence = openingFence(line);
+    if (fence) {
+      openFence = fence;
+      continue;
+    }
     const match = H2_RE.exec(line);
     if (match) headings.push(match[1]!);
   }
@@ -81,24 +110,69 @@ interface RepeatedHeading {
   readonly secondSourceId: string;
 }
 
-/** Each heading text a second segment repeats; the first pair wins, later copies are ignored. */
+/** Two headings are the same when their text matches after collapsing whitespace and lowercasing. */
+function headingKey(heading: string): string {
+  return heading.replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+/** The first contribution of one heading key: its text as written, and the artifact. */
+interface FirstHeading {
+  readonly heading: string;
+  readonly sourceId: string;
+}
+
+/** State shared across the scan: the first source per key and the repeats reported so far. */
+interface RepeatAccumulator {
+  readonly firstByKey: Map<string, FirstHeading>;
+  readonly repeated: RepeatedHeading[];
+  readonly reported: Set<string>;
+}
+
+/** Records one heading occurrence, adding a repeat the first time a key is seen again. */
+function recordRepeatedHeading(heading: string, sourceId: string, acc: RepeatAccumulator): void {
+  const key = headingKey(heading);
+  const first = acc.firstByKey.get(key);
+  if (first === undefined) {
+    acc.firstByKey.set(key, { heading, sourceId });
+    return;
+  }
+  if (acc.reported.has(key)) return;
+  acc.reported.add(key);
+  acc.repeated.push({
+    heading: first.heading,
+    firstSourceId: first.sourceId,
+    secondSourceId: sourceId,
+  });
+}
+
+/** Each heading a later segment repeats; the first pair wins, later copies are ignored. */
 function findRepeatedHeadings(segments: HeadingSegment[]): RepeatedHeading[] {
-  const firstSource = new Map<string, string>();
-  const repeated: RepeatedHeading[] = [];
-  const reported = new Set<string>();
+  const acc: RepeatAccumulator = {
+    firstByKey: new Map<string, FirstHeading>(),
+    repeated: [],
+    reported: new Set<string>(),
+  };
   for (const segment of segments) {
     for (const heading of extractH2(segment.body)) {
-      const first = firstSource.get(heading);
-      if (first === undefined) {
-        firstSource.set(heading, segment.sourceId);
-        continue;
-      }
-      if (reported.has(heading)) continue;
-      reported.add(heading);
-      repeated.push({ heading, firstSourceId: first, secondSourceId: segment.sourceId });
+      recordRepeatedHeading(heading, segment.sourceId, acc);
     }
   }
-  return repeated;
+  return acc.repeated;
+}
+
+/** Names the two sources, or the one source that contributed the heading through two paths. */
+function repeatedHeadingMessage(ruleId: string, repeated: RepeatedHeading): string {
+  const { heading, firstSourceId, secondSourceId } = repeated;
+  if (firstSourceId === secondSourceId) {
+    return firstSourceId === ruleId
+      ? `heading "## ${heading}" appears twice within ${firstSourceId}`
+      : `heading "## ${heading}" is inherited twice through more than one extends path: ` +
+          `from ${firstSourceId}`;
+  }
+  return (
+    `heading "## ${heading}" appears twice after extends: ` +
+    `in ${firstSourceId} and ${secondSourceId}`
+  );
 }
 
 /**
@@ -113,9 +187,7 @@ export function checkRepeatedHeadings(ctx: ValidateCtx): void {
       ctx.errors.push({
         artifactId: rule.id,
         filePath: rule.filePath,
-        error:
-          `heading "## ${repeated.heading}" appears twice after extends: ` +
-          `in ${repeated.firstSourceId} and ${repeated.secondSourceId}`,
+        error: repeatedHeadingMessage(rule.id, repeated),
       });
     }
   }

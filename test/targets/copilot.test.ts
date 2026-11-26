@@ -124,7 +124,7 @@ describe('Copilot target', () => {
     assert.ok(instrFile, 'csharp cs-conventions instructions file emitted');
     assert.ok(instrFile.includes('applyTo'), 'applyTo frontmatter present');
     assert.ok(instrFile.includes('*.cs'), 'cs glob present');
-    assert.ok(instrFile.includes('File-Scoped Namespaces'), 'rule body present');
+    assert.ok(instrFile.includes('File-scoped namespaces'), 'rule body present');
   });
 
   it('emits skills as native Agent Skills (open standard)', async () => {

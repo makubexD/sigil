@@ -23,11 +23,23 @@ runs), `claude-opus-5-5`, Claude Code 2.1.301 or the version recorded with the r
 - Limits, stated in advance: one model, TypeScript only, prompts written by someone who has read the
   listings (each avoids the quoted trigger phrases, but not the ideas behind them).
 
+**Probe S1** (registered 2026-11-26, before any run): the `Fn` prompts of S0 unchanged, 3 runs each,
+`claude-haiku-5-5`, catalog at master on the day of the run. Prompts whose skill has since become
+user-invoked only are left out.
+
+- **H14**: Haiku fires each skill in at least 2 of 3 runs, as Opus did in S0.
+- Why: in the baseline gate (`../baseline/results.md`) Haiku called `ts-generate-tests` in 3 of 15
+  runs that had it installed. S1 says whether that is the model or those prompts.
+- **Decision rule**: no listing changes from S1 alone. If H14 fails, the miss is reported per skill
+  and a wording change is tried only where Opus and Haiku both miss.
+- The quiet prompts are not run: a model that fires less cannot fail them.
+
 ## Runs
 
-| Date       | Probe                                     | Commit                              | Model             | Result                                                                                                        |
-| ---------- | ----------------------------------------- | ----------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------- |
-| 2026-10-19 | S0 (`runs/s0.jsonl`), Claude Code 2.1.301 | catalog `3b96e03`, runner `4cd25fe` | `claude-opus-5-5` | **H13 holds**: 54 of 54 runs correct; each of F1–F9 fired its skill 3 of 3, each of Q1–Q9 stayed quiet 3 of 3 |
+| Date       | Probe                                     | Commit                                                     | Model              | Result                                                                                                                                                              |
+| ---------- | ----------------------------------------- | ---------------------------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-19 | S0 (`runs/s0.jsonl`), Claude Code 2.1.301 | catalog `3b96e03`, runner `4cd25fe`                        | `claude-opus-5-5`  | **H13 holds**: 54 of 54 runs correct; each of F1–F9 fired its skill 3 of 3, each of Q1–Q9 stayed quiet 3 of 3                                                       |
+| 2026-11-26 | S1 (`runs/s1-haiku.jsonl`)                | catalog `e215772` plus the unmerged baseline request files | `claude-haiku-5-5` | **H14 fails**: 13 of 21 runs fired. 3 of 3: `ts-audit-deps`, `ts-document`, `ts-sync-tests`. 1 of 3: `ts-generate-tests`. 0 of 3: `ts-add-package`, `cli`, `wizard` |
 
 **S0.** No listing changes, per the decision rule. Reported, not gated:
 
@@ -39,3 +51,15 @@ runs), `claude-opus-5-5`, Claude Code 2.1.301 or the version recorded with the r
   The runner change in `4cd25fe` only creates the records folder; the catalog under test is master `3b96e03`.
 - What this does not show: firing on other models, in other languages' skills, or on prompts written by someone who
   has not read the listings (see Limits).
+
+**S1.** No listing changes, per its decision rule: Opus fired all seven of these in S0, so no skill is
+missed by both models.
+
+- Haiku does call a skill when the request sits close to its listing: three skills fired in every run.
+- The four it missed are requests where it could start on the task directly (add a library, write
+  tests, build a command-line tool, build a wizard). It began the work in the first six tool calls
+  without calling the skill.
+- This explains most of the baseline gate's low count for `ts-generate-tests` (3 of 15): the same
+  model fires it 1 of 3 here, on a prompt written to match its listing.
+- Not recorded: cost (a run is stopped before its result event) and the model each run reported. Runs
+  of this length cost under a cent on Haiku in the baseline gate.

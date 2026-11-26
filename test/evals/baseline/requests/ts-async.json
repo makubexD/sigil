@@ -1,0 +1,122 @@
+{
+  "artifact": "typescript/ts-async",
+  "kind": "rule",
+  "note": "Each request asks for an ordinary feature that has a slower or more fragile obvious implementation. No prompt says how to write it. Graded by hidden behaviour tests (checks/ts-async.mjs) and, where behaviour can't show it, a pattern on the source. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `loadProfiles(ids: string[], fetchProfile: FetchProfile): Promise<Profile[]>` to src/profiles.ts. It returns the profiles in the same order as the ids.",
+      "fixture": "fixtures/ts-jobs",
+      "checks": [
+        {
+          "id": "profiles-works",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["profiles-works"]
+        },
+        {
+          "id": "profiles-together",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["profiles-together"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add `loadConfig(path: string): Promise<Config>` to src/config.ts. It reads the JSON file at that path; when the file can't be read or parsed it throws a ConfigError whose message names the file.",
+      "fixture": "fixtures/ts-jobs",
+      "checks": [
+        {
+          "id": "config-works",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["config-works"]
+        },
+        {
+          "id": "config-keeps-cause",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["config-keeps-cause"]
+        },
+        {
+          "id": "config-no-sync-io",
+          "kind": "file-lacks",
+          "glob": "src/config.ts",
+          "pattern": "readFileSync"
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add `recordVisit(userId: string): number` to src/visits.ts. It adds one to the user's count in `counts` and returns the new count straight away. It also persists the count with `store.save`, but the caller must not wait for that.",
+      "fixture": "fixtures/ts-jobs",
+      "checks": [
+        {
+          "id": "visit-works",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["visit-works"]
+        },
+        {
+          "id": "visit-failure-handled",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["visit-failure-handled"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add `countErrors(path: string): Promise<number>` to src/logs.ts. It returns how many lines of the log file at that path are error lines. Production logs run to several gigabytes.",
+      "fixture": "fixtures/ts-jobs",
+      "checks": [
+        {
+          "id": "logs-works",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["logs-works"]
+        },
+        {
+          "id": "logs-streamed",
+          "kind": "file-lacks",
+          "glob": "src/logs.ts",
+          "pattern": "readFile(Sync)?\\("
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add `notifyAll(users: User[], send: Send): Promise<string[]>` to src/notify.ts. It sends to every user and resolves with the ids of the users whose send failed; one failure must not stop the rest.",
+      "fixture": "fixtures/ts-jobs",
+      "checks": [
+        {
+          "id": "notify-works",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["notify-works"]
+        },
+        {
+          "id": "notify-together",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["notify-together"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add `initials(name: string)` to src/names.ts. \"ada lovelace\" gives \"AL\".",
+      "fixture": "fixtures/ts-jobs",
+      "checks": [
+        {
+          "id": "initials-works",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["initials-works"]
+        }
+      ]
+    }
+  ]
+}

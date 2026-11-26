@@ -3,7 +3,7 @@ id: python/py-generate-tests
 kind: skill
 name: py-generate-tests
 title: "Generate Tests (Python)"
-description: Use when adding or reviewing unit and integration tests in a Python project. Covers project layout, fixtures, parametrize, mocking, and async test patterns.
+description: Write or review unit and integration tests in a Python project — project layout, fixtures, parametrize, mocking, and async test patterns.
 language: python
 uses:
   rules:
@@ -15,7 +15,7 @@ tags:
   - testing
   - pytest
   - mocking
-whenToUse: "Use when adding, updating, or reviewing tests in a Python project — e.g. \"write tests for this service\", \"add pytest fixtures\", \"review my test coverage\". Covers project layout, fixtures, parametrize, mocking, and async test patterns."
+whenToUse: "Use when adding, updating, or reviewing tests in a Python project — e.g. \"write tests for this service\", \"add pytest fixtures\", \"review my test coverage\"."
 argumentHint: "[file-or-module] (optional)"
 allowedTools:
   - read

@@ -261,6 +261,11 @@ new baseline with the change. The update refuses to drop an emitted path or an a
 decision: when a rule change grows a language, or shrinks it by more than 1 KB, run
 `npm run rule-load -- --baseline "<why>"` and commit the baseline with the change.
 
+**Listing load:** `test/listing-load.test.ts` does the same for the skill and agent listing a session
+carries before the first prompt (name, `description` and `whenToUse`), per language, against
+`scripts/listing-load-baseline.json`. When a change grows a group, or shrinks it by more than 256
+bytes, run `npm run listing-load -- --baseline "<why>"` and commit the baseline with the change.
+
 **Existing installs:** `test/fixtures/installs/master-8882c86/` is a project an older sigil set up, and
 `test/commands/install-migration.test.ts` checks that `status`, `update` and `prune` still treat it
 correctly. Never regenerate that fixture: it stands for what users already have on disk.

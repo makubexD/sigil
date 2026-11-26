@@ -39,7 +39,7 @@ history with generated diffs on every commit.
 ## Deprecating a Shared Component
 
 Mark a deprecated exported component or hook with `@deprecated` in its TSDoc and keep it functional
-for at least one release before removal, same as `ts-git`'s convention:
+for at least one release before removal, as in `ts-documentation`:
 
 ```tsx
 /**

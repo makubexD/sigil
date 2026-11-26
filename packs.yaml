@@ -205,6 +205,16 @@ packs:
     artifacts:
       - shared/feature
 
+  - name: review-flow
+    displayName: Review Flow
+    description: >
+      One command, /review-changes, that reviews the current change with the reviewer agents the
+      project has installed: the code reviewer of each changed language, plus the security auditor
+      when the change touches input handling, auth, secrets, subprocess calls or queries.
+      It installs no reviewer itself; add a <stack>-starter for those. Works with any language.
+    artifacts:
+      - shared/review-changes
+
   - name: cli-builder
     displayName: CLI Builder
     description: >

@@ -1,0 +1,122 @@
+{
+  "artifact": "typescript/ts-logging",
+  "kind": "rule",
+  "note": "Each request asks for a feature that logs something. Graded by what reached the project's logger and the console when the code runs (checks/ts-logging.mjs). No prompt says how to log. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `importOrders(rows: OrderRow[], save: SaveOrder): Promise<void>` to src/orders.ts. It saves each row and carries on when one is refused. Log what happened so ops can follow an import.",
+      "fixture": "fixtures/ts-logs",
+      "checks": [
+        {
+          "id": "orders-works",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["orders-works"]
+        },
+        {
+          "id": "orders-uses-logger",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["orders-uses-logger"]
+        },
+        {
+          "id": "orders-quiet-loop",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["orders-quiet-loop"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add `chargeCard(order: Order, gateway: Gateway)` to src/billing.ts. It charges the order through the gateway and resolves with the receipt. When the charge fails, log it and let the caller see the failure.",
+      "fixture": "fixtures/ts-logs",
+      "checks": [
+        {
+          "id": "charge-works",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["charge-works"]
+        },
+        {
+          "id": "charge-logs-error-object",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["charge-logs-error-object"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add `login(request: LoginRequest, authenticate: Authenticate): Promise<boolean>` to src/login.ts. It checks the credentials and resolves with whether they were accepted. Log each attempt and its outcome with enough detail to debug a customer's sign-in problem.",
+      "fixture": "fixtures/ts-logs",
+      "checks": [
+        {
+          "id": "login-works",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["login-works"]
+        },
+        {
+          "id": "login-no-secrets",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["login-no-secrets"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add `normalizeRows(rows: Row[]): Row[]` to src/rows.ts. It returns the usable rows and drops the rest. Log how many were kept and how many were dropped.",
+      "fixture": "fixtures/ts-logs",
+      "checks": [
+        {
+          "id": "rows-works",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["rows-works"]
+        },
+        {
+          "id": "rows-counts-as-fields",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["rows-counts-as-fields"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add `syncInventory(items: Item[], push: Push): Promise<void>` to src/sync.ts. It pushes every item's stock level. Log when a sync starts and when it finishes.",
+      "fixture": "fixtures/ts-logs",
+      "checks": [
+        {
+          "id": "sync-works",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["sync-works"]
+        },
+        {
+          "id": "sync-uses-logger",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["sync-uses-logger"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add `toCents(amount: number): number` to src/money.ts. 12.5 gives 1250.",
+      "fixture": "fixtures/ts-logs",
+      "checks": [
+        {
+          "id": "cents-works",
+          "kind": "script",
+          "script": "checks/ts-logging.mjs",
+          "args": ["cents-works"]
+        }
+      ]
+    }
+  ]
+}

@@ -8,9 +8,10 @@ cap and expected cost per run of each stage. Add the verdict and the action afte
 
 | Date       | Batch      | Artifacts                                                                                                                     | Stage  | Model              | Cap                     | Expected per run | Spent | Status                                                 |
 | ---------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------ | ----------------------- | ---------------- | ----- | ------------------------------------------------------ |
-| 2026-11-26 | defaults-1 | `typescript/ts-generate-tests` (the other TypeScript and Python starter and tooling members join as their request files land) | screen | `claude-haiku-5-5` | 1.00 a day, 5.00 in all | 0.02             | 0.30  | `ts-generate-tests` done (36 runs, median 0.008 a run) |
+| 2026-11-26 | defaults-1 | `typescript/ts-generate-tests` (the other TypeScript and Python starter and tooling members join as their request files land) | screen | `claude-haiku-5-5` | 2.00 a day, 5.00 in all | 0.02             | 0.30  | `ts-generate-tests` done (36 runs, median 0.008 a run) |
 | 2026-11-26 | defaults-1 | `typescript/ts-code-reviewer`                                                                                                 | screen | `claude-haiku-5-5` | 0.70                    | 0.02             | 0.15  | done (36 runs, median 0.004 a run)                     |
 | 2026-11-26 | defaults-1 | `typescript/ts-security` (rule)                                                                                               | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.24  | done (36 runs, median 0.006 a run)                     |
+| 2026-11-26 | defaults-1 | `typescript/ts-async` (rule)                                                                                                  | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.23  | done (36 runs, median 0.006 a run)                     |
 
 `defaults-1` runs on a Team subscription seat, so it is the screen only: no `confirm` or `final` stage
 until a key with its own spend limit exists. A `beats` here stays unconfirmed.
@@ -22,6 +23,7 @@ until a key with its own spend limit exists. A `beats` here stays unconfirmed.
 | 2026-11-26 | `typescript/ts-generate-tests` | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`  | none taken: the skill was called in 3 of 15 working runs, see below     |
 | 2026-11-26 | `typescript/ts-code-reviewer`  | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`  | none taken: the agent was dispatched in 0 of 15 working runs, see below |
 | 2026-11-26 | `typescript/ts-security`       | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`  | keep, uncut: one line changes behaviour every time, see below           |
+| 2026-11-26 | `typescript/ts-async`          | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`  | none taken: 29 of 30 working runs scored 1.00 in both arms, see below   |
 
 ### `typescript/ts-generate-tests`, screen
 
@@ -63,6 +65,17 @@ behaviour tests. A rule loads by path, so there is nothing for the model to call
 - Two wins of five is a `ties` under the sign test. The rule still holds a fact the model does not
   apply by itself (the timeout), so it stays. It is not cut: three of its eight lines (secrets, parsing
   untrusted data, requests to user-chosen hosts) have no request here.
+
+### `typescript/ts-async`, screen
+
+Requests with a slower or more fragile obvious implementation, graded by hidden behaviour tests.
+
+- With nothing installed Haiku ran independent lookups together, kept the original error as `cause`,
+  read the file without blocking, handled the rejection of a save nobody waits for, and streamed a
+  large log: 1.00 in every run of R1 to R4.
+- R5's win is one `none` run of three that sent notifications one at a time.
+- The lines of the rule these requests cover describe what the model already does. Not covered here:
+  accepting and passing down an `AbortSignal`, `new Promise(async ...)`, and capping concurrency.
 
 ### What the screens say together
 

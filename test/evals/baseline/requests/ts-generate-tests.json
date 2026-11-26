@@ -1,0 +1,230 @@
+{
+  "artifact": "typescript/ts-generate-tests",
+  "kind": "skill",
+  "note": "Graded by whether the tests a run wrote catch planted bugs (checks/mutant.mjs), not by how they are written. Not registered in results.md yet: no paid run has used it.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "src/pricing.ts has nothing checking it yet. Can you cover it?",
+      "fixture": "fixtures/ts-lib",
+      "checks": [
+        {
+          "id": "has-tests",
+          "kind": "file-matches",
+          "glob": "**/*.test.ts",
+          "pattern": "from ['\"][./]+(src/)?pricing(\\.ts|\\.js)?['\"]"
+        },
+        {
+          "id": "suite-green",
+          "kind": "command",
+          "command": "node",
+          "args": ["--test"]
+        },
+        {
+          "id": "negative-quantity",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/pricing.ts", "quantity < 0", "quantity < -1"]
+        },
+        {
+          "id": "discount-bound",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/pricing.ts", "discountPct > 100", "discountPct > 1000"]
+        },
+        {
+          "id": "rounding",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": [
+            "src/pricing.ts",
+            "return Math.round(net * 100) / 100;",
+            "return Math.floor(net * 100) / 100;"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "We're about to use slugify for every public URL. I want to be sure it copes with odd titles first; add whatever you think it needs.",
+      "fixture": "fixtures/ts-lib",
+      "checks": [
+        {
+          "id": "has-tests",
+          "kind": "file-matches",
+          "glob": "**/*.test.ts",
+          "pattern": "from ['\"][./]+(src/)?slug(\\.ts|\\.js)?['\"]"
+        },
+        {
+          "id": "suite-green",
+          "kind": "command",
+          "command": "node",
+          "args": ["--test"]
+        },
+        {
+          "id": "accents",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/slug.ts", ".normalize('NFKD')", ""]
+        },
+        {
+          "id": "length",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/slug.ts", ".slice(0, MAX_LENGTH)", ".slice(0, MAX_LENGTH + 1)"]
+        },
+        {
+          "id": "trailing-dash",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/slug.ts", ".replace(/^-+|-+$/g, '')", ".replace(/^-+/g, '')"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "What does parseRange do with '5-2', or with spaces and repeated pages? Pin that behaviour down so nobody breaks it.",
+      "fixture": "fixtures/ts-lib",
+      "checks": [
+        {
+          "id": "has-tests",
+          "kind": "file-matches",
+          "glob": "**/*.test.ts",
+          "pattern": "from ['\"][./]+(src/)?range(\\.ts|\\.js)?['\"]"
+        },
+        {
+          "id": "suite-green",
+          "kind": "command",
+          "command": "node",
+          "args": ["--test"]
+        },
+        {
+          "id": "backwards",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/range.ts", "if (start > end) throw", "if (false) throw"]
+        },
+        {
+          "id": "duplicates",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/range.ts", "[...new Set(out)]", "[...out]"]
+        },
+        {
+          "id": "order",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/range.ts", ".sort((a, b) => a - b)", ""]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "retry() in src/retry.ts goes onto the payment path next week. Give me a safety net before then.",
+      "fixture": "fixtures/ts-lib",
+      "checks": [
+        {
+          "id": "has-tests",
+          "kind": "file-matches",
+          "glob": "**/*.test.ts",
+          "pattern": "from ['\"][./]+(src/)?retry(\\.ts|\\.js)?['\"]"
+        },
+        {
+          "id": "suite-green",
+          "kind": "command",
+          "command": "node",
+          "args": ["--test"]
+        },
+        {
+          "id": "backoff",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/retry.ts", "delayMs * 2 ** (attempt - 1)", "delayMs"]
+        },
+        {
+          "id": "no-wait-after-last",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": [
+            "src/retry.ts",
+            "if (attempt < attempts) await sleep",
+            "if (attempt <= attempts) await sleep"
+          ]
+        },
+        {
+          "id": "rejects",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/retry.ts", "throw lastError;", "return undefined as T;"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Someone reported LruCache dropping the wrong entry and I can't reproduce it. Can you get src/cache.ts under enough scrutiny that this kind of thing would show up?",
+      "fixture": "fixtures/ts-lib",
+      "checks": [
+        {
+          "id": "has-tests",
+          "kind": "file-matches",
+          "glob": "**/*.test.ts",
+          "pattern": "from ['\"][./]+(src/)?cache(\\.ts|\\.js)?['\"]"
+        },
+        {
+          "id": "suite-green",
+          "kind": "command",
+          "command": "node",
+          "args": ["--test"]
+        },
+        {
+          "id": "read-refreshes",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/cache.ts", "this.touch(key, value);\n    return value;", "return value;"]
+        },
+        {
+          "id": "write-refreshes",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/cache.ts", "if (this.items.has(key)) this.items.delete(key);", ""]
+        },
+        {
+          "id": "capacity",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": [
+            "src/cache.ts",
+            "this.items.size > this.capacity",
+            "this.items.size > this.capacity + 1"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Rename slugify to toSlug everywhere in this project.",
+      "fixture": "fixtures/ts-lib",
+      "checks": [
+        {
+          "id": "renamed",
+          "kind": "file-matches",
+          "glob": "src/slug.ts",
+          "pattern": "export function toSlug\\b"
+        },
+        {
+          "id": "no-old-name",
+          "kind": "file-lacks",
+          "glob": "src/**/*.ts",
+          "pattern": "\\bslugify\\b"
+        },
+        {
+          "id": "suite-green",
+          "kind": "command",
+          "command": "node",
+          "args": ["--test"]
+        }
+      ]
+    }
+  ]
+}

@@ -139,17 +139,31 @@ try {
     { id: 'says-tested', kind: 'answer-matches', pattern: 'tests? pass' },
     { id: 'no-apology', kind: 'answer-lacks', pattern: 'could not' },
     { id: 'gate', kind: 'command', command: 'node', args: ['check.js'] },
+    { id: 'hidden', kind: 'script', script: 'hidden.mjs', args: ['src/sum.test.js'] },
   ];
+  // Lives beside the request file, outside the project, so a run never sees it.
+  writeFileSync(
+    join(root, 'hidden.mjs'),
+    "import { existsSync } from 'node:fs';\nprocess.exit(existsSync(process.argv[2]) ? 0 : 1);\n",
+  );
   assert.deepEqual(checks.map(check => check.kind).sort(), [...CHECK_KINDS].sort());
-  const passed = runChecks(checks, { dir: goodDir, answer: 'Added it; the tests pass.' });
+  const passed = runChecks(checks, {
+    dir: goodDir,
+    answer: 'Added it; the tests pass.',
+    base: root,
+  });
   assert.deepEqual(
     passed.map(check => check.pass),
-    [true, true, true, true, true, true],
+    [true, true, true, true, true, true, true],
   );
-  const failed = runChecks(checks, { dir: badDir, answer: 'I could not run anything.' });
+  const failed = runChecks(checks, {
+    dir: badDir,
+    answer: 'I could not run anything.',
+    base: root,
+  });
   assert.deepEqual(
     failed.map(check => check.pass),
-    [false, false, false, false, false, false],
+    [false, false, false, false, false, false, false],
   );
   assert.throws(() => runChecks([{ id: 'x', kind: 'nope' }], { dir: goodDir, answer: '' }));
 } finally {

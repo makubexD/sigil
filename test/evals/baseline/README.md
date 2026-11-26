@@ -35,8 +35,10 @@ One artifact at a time, from a request file under `requests/`:
 ## Grading
 
 Scripted checks only (`checks.mjs`): `file-exists`, `file-matches`, `file-lacks`, `answer-matches`,
-`answer-lacks` and `command` (hidden tests, a type check). A run's score is the share of its checks
-that pass. Files the catalog installs (`.claude/`, `.github/`, `.sigil/`) never count as the run's
+`answer-lacks`, `command` (a type check, the project's own tests) and `script` (a node script kept
+beside the request file, where a run never sees it: hidden tests, or `requests/checks/mutant.mjs`,
+which passes when the tests a run wrote catch a planted bug). A run's score is the share of its
+checks that pass. Files the catalog installs (`.claude/`, `.github/`, `.sigil/`) never count as the run's
 work.
 
 A check measures something the user wanted from the request, not whether the output uses the

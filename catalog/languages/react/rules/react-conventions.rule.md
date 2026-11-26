@@ -23,6 +23,3 @@ appliesToRationale: Scoped to component files (.tsx/.jsx) because these hooks an
 - No prop drilling beyond two levels: use Context or the state library the project already has.
 - Names: `PascalCase` components and their files, `use` + `PascalCase` hooks (the Rules of Hooks lint relies on
   the prefix), `on<Event>` props and `handle<Event>` handlers, `is`/`has`/`should` booleans.
-
-For a code review in this repo, use the `react-code-reviewer` agent when it is installed, not a general-purpose
-reviewer: it reviews against these rules.

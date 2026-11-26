@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Pack `review-flow`: `/review-changes` reviews the current change with the reviewer agents the project has installed, the code
+  reviewer of each changed language plus the security auditor when the change touches a risky area (#213). It installs no
+  reviewer itself and is user-invoked. The "use the installed reviewer" line is gone from the Python, TypeScript and React
+  conventions rules: field use showed a rule line did not change which reviewer ran, and a command that names it did.
+
 ### Changed
 
 - Packs are split by purpose (#216). Each `<stack>-starter` is now the stack's code reviewer and security auditor, with no skill and

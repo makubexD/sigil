@@ -546,6 +546,13 @@ families:
     kind: rule
     keys: [appliesTo, appliesToRationale]
     members: [shared/orchestration]
+  # A user-invoked command that starts the installed reviewer agents; it installs none itself.
+  - id: review-flow
+    kind: skill
+    keys: [argumentHint, whenToUse, disableModelInvocation]
+    sections:
+      - Steps
+    members: [shared/review-changes]
   - id: worker-delegate
     kind: skill
     keys: [argumentHint, whenToUse, disableModelInvocation]

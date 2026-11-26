@@ -96,6 +96,7 @@ and load rules and agents from the same families.
 | generic-code-reviewer | agent | — | `shared/code-reviewer` | — | — |
 | feature | skill | — | `shared/feature` | — | examples (examples) |
 | orchestration | rule | — | `shared/orchestration` | — | — |
+| review-flow | skill | — | `shared/review-changes` | 1 | — |
 | worker-delegate | skill | — | `shared/mk-delegate` | 2 | — |
 | worker-check | skill | — | `shared/mk-check` | 2 | mk-exec (core); workflow-report (core); worker-config (core) |
 

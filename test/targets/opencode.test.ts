@@ -41,14 +41,14 @@ function filesUnder(files: FileMap, dir: string): string[] {
 }
 
 describe('opencode target over the whole catalog', () => {
-  it('should compile 45 skills, 39 agents and the one shippable prompt', async () => {
+  it('should compile 46 skills, 39 agents and the one shippable prompt', async () => {
     const files = await compile();
 
     const skills = filesUnder(files, '.agents/skills/').filter(f => f.endsWith('/SKILL.md'));
     const agents = filesUnder(files, '.opencode/agents/');
     const prompts = filesUnder(files, '.opencode/commands/');
 
-    assert.equal(skills.length, 45);
+    assert.equal(skills.length, 46);
     assert.equal(agents.length, 39);
     assert.equal(prompts.length, 1);
     // explain-diff holds too many arguments for OpenCode's quoting (step 1), so author-artifact

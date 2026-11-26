@@ -6,6 +6,7 @@ description: "Add an app or package to an existing React workspace with its stan
 name: react-add-project
 language: react
 argumentHint: "<name> [--type=app|lib]"
+disableModelInvocation: true
 uses:
   rules:
     - react/react-project-layout

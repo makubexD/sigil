@@ -515,9 +515,9 @@ Install at project scope because the default, `user`, loads a plugin's listing i
 about 2.5k tokens per session for one `*-tooling` plugin.
 
 The marketplace is named `sigil`, and each pack in `packs.yaml` becomes a plugin of the same name,
-for example `essentials`, `dotnet-starter`, `dotnet-tooling`, `python-starter`, `react-starter`,
-`typescript-starter`, `typescript-tooling`, `angular-starter`, `angular-tooling`, `python-tooling`,
-`python-library`, `react-tooling`, `spec-driven`, and `cli-builder`.
+for example `essentials`, `typescript-starter`, `typescript-tooling`, `typescript-scaffold`,
+`typescript-deps` (and the same four for `dotnet`, `python`, `react` and `angular`),
+`python-library`, `spec-driven`, and `cli-builder`.
 `dist/claude/.claude-plugin/marketplace.json` lists them all. Without `--target`, `sigil build` builds
 **both** targets (`dist/claude/` and `dist/copilot/`).
 

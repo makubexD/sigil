@@ -22,15 +22,18 @@ describe('packMemberIds', () => {
   });
 
   it('should expand a languages pack to exactly the artifacts of that language', () => {
-    const pack = packs.find(p => p.name === 'dotnet-tooling');
-    assert.ok(pack, 'packs.yaml must define dotnet-tooling');
+    // No shipped pack uses `languages:` any more, but a fork's packs.yaml may.
+    const raw =
+      'packs:\n  - name: all-csharp\n    displayName: P\n    description: d\n    languages: [csharp]\n';
+    const pack = parsePacksConfig(raw, 'packs.yaml').packs[0];
+    assert.ok(pack, 'the fixture defines one pack');
 
     const ids = packMemberIds(pack, catalog);
     const expected = catalog.artifacts
       .filter(a => a.frontmatter.language === 'csharp')
       .map(a => a.id);
 
-    assert.ok(ids.length > 0, 'dotnet-tooling must have members');
+    assert.ok(ids.length > 0, 'a languages pack must have members');
     assert.deepEqual(ids, expected);
   });
 

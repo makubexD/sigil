@@ -6,6 +6,7 @@ description: "Create a new .NET solution in an empty directory — sln, a consol
 name: cs-new-project
 language: csharp
 argumentHint: "<SolutionName> [--type=console|webapi|classlib]"
+disableModelInvocation: true
 uses:
   rules:
     - csharp/cs-project-layout

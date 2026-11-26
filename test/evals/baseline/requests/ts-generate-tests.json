@@ -1,7 +1,7 @@
 {
   "artifact": "typescript/ts-generate-tests",
   "kind": "skill",
-  "note": "Graded by whether the tests a run wrote catch planted bugs (checks/mutant.mjs), not by how they are written. Not registered in results.md yet: no paid run has used it.",
+  "note": "Graded by whether the tests a run wrote catch planted bugs (checks/mutant.mjs), not by how they are written. Version 2: after the first screen (results.md) R5 was reworded and two harder planted bugs were added to each request, because R3 and R4 scored 1.00 in both arms.",
   "requests": [
     {
       "id": "R1",
@@ -41,6 +41,18 @@
             "return Math.round(net * 100) / 100;",
             "return Math.floor(net * 100) / 100;"
           ]
+        },
+        {
+          "id": "discount-negative",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/pricing.ts", "discountPct < 0 || ", ""]
+        },
+        {
+          "id": "order-discount",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/pricing.ts", "line.quantity, line.discountPct)", "line.quantity)"]
         }
       ]
     },
@@ -78,6 +90,18 @@
           "kind": "script",
           "script": "checks/mutant.mjs",
           "args": ["src/slug.ts", ".replace(/^-+|-+$/g, '')", ".replace(/^-+/g, '')"]
+        },
+        {
+          "id": "collapse",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/slug.ts", "/[^a-z0-9]+/g", "/[^a-z0-9]/g"]
+        },
+        {
+          "id": "leading-dash",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/slug.ts", ".replace(/^-+|-+$/g, '')", ".replace(/-+$/g, '')"]
         }
       ]
     },
@@ -115,6 +139,18 @@
           "kind": "script",
           "script": "checks/mutant.mjs",
           "args": ["src/range.ts", ".sort((a, b) => a - b)", ""]
+        },
+        {
+          "id": "spaces-in-range",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/range.ts", "(?:\\s*-\\s*(\\d+))?", "(?:-(\\d+))?"]
+        },
+        {
+          "id": "empty-part",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/range.ts", "if (text === '') continue;", ""]
         }
       ]
     },
@@ -156,12 +192,28 @@
           "kind": "script",
           "script": "checks/mutant.mjs",
           "args": ["src/retry.ts", "throw lastError;", "return undefined as T;"]
+        },
+        {
+          "id": "attempts-guard",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": [
+            "src/retry.ts",
+            "if (attempts < 1) throw new RangeError('attempts must be at least 1');",
+            ""
+          ]
+        },
+        {
+          "id": "stops-on-success",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": ["src/retry.ts", "return await fn();", "await fn();\n      return await fn();"]
         }
       ]
     },
     {
       "id": "R5",
-      "prompt": "Someone reported LruCache dropping the wrong entry and I can't reproduce it. Can you get src/cache.ts under enough scrutiny that this kind of thing would show up?",
+      "prompt": "LruCache in src/cache.ts has no tests, and someone reported it dropping the wrong entry. Write tests that would catch that kind of thing.",
       "fixture": "fixtures/ts-lib",
       "checks": [
         {
@@ -196,6 +248,26 @@
             "src/cache.ts",
             "this.items.size > this.capacity",
             "this.items.size > this.capacity + 1"
+          ]
+        },
+        {
+          "id": "capacity-guard",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": [
+            "src/cache.ts",
+            "if (capacity < 1) throw new RangeError('capacity must be at least 1');",
+            ""
+          ]
+        },
+        {
+          "id": "evicts-oldest",
+          "kind": "script",
+          "script": "checks/mutant.mjs",
+          "args": [
+            "src/cache.ts",
+            "this.items.keys().next().value as K",
+            "[...this.items.keys()].pop() as K"
           ]
         }
       ]

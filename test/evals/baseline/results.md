@@ -31,3 +31,8 @@ until a key with its own spend limit exists. A `beats` here stays unconfirmed.
   tests. Reword it before the set is used again.
 - So this screen says the body of the skill adds nothing Haiku can be seen to use on these requests,
   and that its listing rarely makes Haiku call it. It says nothing about larger models.
+- Regraded for free afterwards: the projects those runs left behind, against version 2 of the request
+  file (two harder planted bugs per request, 25 in all). Means, `none` then `with`: R1 0.95 and 0.95,
+  R2 0.90 and 1.00, R3 1.00 and 1.00, R4 1.00 and 1.00. Haiku with nothing installed catches nearly
+  every planted bug in a small pure module, so this kind of request has no room for an artifact to
+  win. The `ts-testing` rule was not screened on it for that reason.

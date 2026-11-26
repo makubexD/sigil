@@ -34,6 +34,3 @@ appliesToRationale: Covers every TypeScript module extension (including explicit
 - An expected outcome is a typed result, not a thrown exception.
 - Names: `PascalCase` types, `camelCase` functions and variables, `UPPER_SNAKE` module constants; file names follow
   the repo.
-
-For a code review in this repo, use the `ts-code-reviewer` agent when it is installed, not a general-purpose
-reviewer: it reviews against these rules.

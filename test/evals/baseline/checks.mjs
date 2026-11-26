@@ -2,7 +2,7 @@
 // behind and at the run's final answer, and passes or fails: no model reads anything here.
 /* global process */
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
+import { join, relative, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 
 const SKIP_DIRS = new Set(['node_modules', '.git', '.claude', '.github', '.sigil']);
@@ -53,11 +53,18 @@ const KINDS = {
       encoding: 'utf8',
       timeout: COMMAND_TIMEOUT_MS,
     }).status === 0,
+  /** The node script `script`, a path relative to the request file, exits 0 in the project. */
+  script: ({ script, args = [] }, { dir, base }) =>
+    spawnSync(process.execPath, [resolve(base, script), ...args], {
+      cwd: dir,
+      encoding: 'utf8',
+      timeout: COMMAND_TIMEOUT_MS,
+    }).status === 0,
 };
 
 export const CHECK_KINDS = Object.keys(KINDS);
 
-/** Runs a request's checks over one finished run: [{ id, pass }]. */
+/** Runs a request's checks over one finished run ({ dir, answer, base }): [{ id, pass }]. */
 export function runChecks(checks, run) {
   if (!existsSync(run.dir)) throw new Error(`no project at ${run.dir}`);
   return checks.map(check => {
@@ -87,6 +94,8 @@ export function requestProblems(spec) {
     if (!(request.checks ?? []).length) problems.push(`${at}: no checks`);
     for (const check of request.checks ?? []) {
       if (!KINDS[check.kind]) problems.push(`${at}, check ${check.id}: unknown kind ${check.kind}`);
+      if (check.kind === 'script' && !check.script)
+        problems.push(`${at}, check ${check.id}: no script`);
     }
   }
   return problems;

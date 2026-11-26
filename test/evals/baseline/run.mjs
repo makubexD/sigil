@@ -208,7 +208,11 @@ outer: for (const request of requests) {
         console.log(`${label}: rejected (answered by ${result.reportedModel}, not ${model})`);
         continue;
       }
-      const checks = runChecks(request.checks, { dir, answer: result.answer });
+      const checks = runChecks(request.checks, {
+        dir,
+        answer: result.answer,
+        base: dirname(requestsFile),
+      });
       const record = {
         date: new Date().toISOString().slice(0, 10),
         artifact: spec.artifact,

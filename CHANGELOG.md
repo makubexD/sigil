@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Packs are split by purpose (#216). Each `<stack>-starter` is now the stack's code reviewer and security auditor, with no skill and
+  no rule: the two artifacts real projects were seen to use. `<stack>-tooling` keeps the rules, agents and the testing and
+  documentation skills. Scaffolding moved to `<stack>-scaffold` and dependency management to `<stack>-deps`. Nothing is removed
+  from the catalog, and a `sigil add` install keeps what it has. A Claude plugin follows its pack: after a plugin update, install
+  `<stack>-scaffold` or `<stack>-deps` to keep those skills.
+- The `new-project` and `add-project` skills run only when you invoke them (`disableModelInvocation`), like `release`, so they
+  no longer take room in the model's skill listing on tools that honor the flag.
+
 - The README is rewritten around what Sigil is and how to install it. It covers all seven targets, and the per-target detail now
   lives in the setup guides. The consuming guide gained the note on what an install costs in context, and
   the support matrix now matches the Cursor, Antigravity and OpenCode targets.

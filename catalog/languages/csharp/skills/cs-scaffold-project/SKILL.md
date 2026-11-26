@@ -6,6 +6,7 @@ description: "Scaffold a new .NET project with the solution's standards pre-wire
 name: cs-scaffold-project
 language: csharp
 argumentHint: "<name> [--type=lib|console|web|test]"
+disableModelInvocation: true
 uses:
   rules:
     - csharp/cs-project-layout

@@ -163,7 +163,7 @@ describe('readAntigravityEnabledPlugins', () => {
     }
   });
 
-  it('(g) through pluginOverlaps, typescript-starter yields its skill and agent ids, with no @', async () => {
+  it('(g) through pluginOverlaps, typescript-starter yields its agent ids, with no @', async () => {
     const { homeDir, cleanup } = tempHome();
     try {
       installPlugin(userPath(homeDir), 'typescript-starter');
@@ -177,12 +177,7 @@ describe('readAntigravityEnabledPlugins', () => {
         env(homeDir, homeDir),
       );
 
-      for (const id of [
-        'typescript/ts-document',
-        'typescript/ts-generate-tests',
-        'typescript/ts-release',
-        'typescript/ts-code-reviewer',
-      ]) {
+      for (const id of ['typescript/ts-code-reviewer', 'typescript/ts-security-auditor']) {
         assert.ok(overlaps.has(id), `${id} is delivered by the plugin`);
       }
       assert.equal(catalog.byId.get('typescript/ts-code-reviewer')?.kind, 'agent');

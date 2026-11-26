@@ -154,11 +154,11 @@ describe('readCodexEnabledPlugins', () => {
     }
   });
 
-  it('(g) through pluginOverlaps, typescript-starter yields its skill ids and no agent id', async () => {
+  it('(g) through pluginOverlaps, typescript-tooling yields its skill ids and no agent id', async () => {
     const { homeDir, cleanup } = tempHome();
     try {
-      installPlugin(codexRoot(homeDir), 'typescript-starter');
-      writeConfig(codexRoot(homeDir), '[plugins."typescript-starter@sigil"]\n');
+      installPlugin(codexRoot(homeDir), 'typescript-tooling');
+      writeConfig(codexRoot(homeDir), '[plugins."typescript-tooling@sigil"]\n');
 
       const catalog = await loadResolvedCatalog();
       const packs = parsePacksConfig(fs.readFileSync(PACKS, 'utf8'), PACKS).packs;

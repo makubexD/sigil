@@ -1,0 +1,26 @@
+{
+  "angular": {
+    "bytes": 7389,
+    "reason": "first recorded listing size (#224)"
+  },
+  "csharp": {
+    "bytes": 6194,
+    "reason": "first recorded listing size (#224)"
+  },
+  "python": {
+    "bytes": 6314,
+    "reason": "first recorded listing size (#224)"
+  },
+  "react": {
+    "bytes": 6539,
+    "reason": "first recorded listing size (#224)"
+  },
+  "shared": {
+    "bytes": 3033,
+    "reason": "first recorded listing size (#224)"
+  },
+  "typescript": {
+    "bytes": 6748,
+    "reason": "first recorded listing size (#224)"
+  }
+}

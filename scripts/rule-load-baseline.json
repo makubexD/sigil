@@ -1,7 +1,7 @@
 {
   "typescript": {
-    "bytes": 13153,
-    "reason": "TypeScript rules cut to checkable one-liners; ts-git and ts-dependencies scoped to their own files (#215)"
+    "bytes": 10926,
+    "reason": "ts-security, ts-async and ts-logging cut to the lines the baseline screens did not show the model already follows (#225)"
   },
   "angular": {
     "bytes": 15865,

@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The TypeScript `ts-security`, `ts-async` and `ts-logging` rules are cut to the lines the baseline screens could not show the
+  model already follows (#225): 3.5 KB of rule text becomes 1.4 KB. Removed lines are ones `claude-haiku-5-5` followed with no rule
+  installed in every run that tested them (shell-free process start, path containment, no `eval`, schema-checked `JSON.parse`,
+  prototype-pollution keys, crypto-drawn tokens, address checks on user-chosen hosts, error `cause`, async file reads, streaming,
+  the project's logger over the console, error objects and structured fields). Kept: the lines that changed behaviour (a `fetch`
+  timeout, no `info` record per item in a loop, constant-time comparison, no secret in an error message, running independent work
+  together) and the lines no request tested. The evidence is in `test/evals/baseline/results.md`; the other languages are unchanged.
 - Packs are split by purpose (#216). Each `<stack>-starter` is now the stack's code reviewer and security auditor, with no skill and
   no rule: the two artifacts real projects were seen to use. `<stack>-tooling` keeps the rules, agents and the testing and
   documentation skills. Scaffolding moved to `<stack>-scaffold` and dependency management to `<stack>-deps`. Nothing is removed

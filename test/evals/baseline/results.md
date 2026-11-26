@@ -25,9 +25,9 @@ until a key with its own spend limit exists. A `beats` here stays unconfirmed.
 | ---------- | ------------------------------------ | ------ | ------------------ | ---------------------- | ---------- | ---------------------------- | ----------------------------------------------------------------------- |
 | 2026-11-26 | `typescript/ts-generate-tests`       | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`                       | none taken: the skill was called in 3 of 15 working runs, see below     |
 | 2026-11-26 | `typescript/ts-code-reviewer`        | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`                       | none taken: the agent was dispatched in 0 of 15 working runs, see below |
-| 2026-11-26 | `typescript/ts-security`             | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                       | keep, uncut: one line changes behaviour every time, see below           |
-| 2026-11-26 | `typescript/ts-async`                | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | none taken: 29 of 30 working runs scored 1.00 in both arms, see below   |
-| 2026-11-26 | `typescript/ts-logging`              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | keep, uncut: one line changes behaviour every time, see below           |
+| 2026-11-26 | `typescript/ts-security`             | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                       | cut to the lines kept in "The cut that followed"                        |
+| 2026-11-26 | `typescript/ts-async`                | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The cut that followed"                        |
+| 2026-11-26 | `typescript/ts-logging`              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The cut that followed"                        |
 | 2026-11-26 | `typescript/ts-security`, second set | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`                       | none taken, see below                                                   |
 | 2026-11-26 | `typescript/ts-async`, R6 alone      | screen | `claude-haiku-5-5` | 0, 1, 0                | not run    | `inconclusive` (one request) | none taken                                                              |
 
@@ -114,6 +114,55 @@ The lines the first set had no request for.
 
 Thousands of images to resize: every run in both arms capped how many ran at once and none ran them
 one at a time. One request cannot give a verdict; it says the line describes what Haiku already does.
+
+### The cut that followed
+
+The plan's action for a tie that holds a fact is "keep, cut to that fact". The three rules were cut on
+that basis, line by line. `none` is the arm with no rule installed.
+
+| Rule          | Line                                              | Evidence                                 | Action |
+| ------------- | ------------------------------------------------- | ---------------------------------------- | ------ |
+| `ts-security` | no secrets in source, logs, error messages        | 1 of 3 `none` runs leaked a DSN password | kept   |
+| `ts-security` | fail fast on a missing variable, no fallback      | 3 of 3 `none` runs did it                | cut    |
+| `ts-security` | `execFile` or `spawn` with an argument array      | 3 of 3                                   | cut    |
+| `ts-security` | resolve a user path against a root                | 3 of 3                                   | cut    |
+| `ts-security` | no `eval`; schema-check `JSON.parse` output       | 3 of 3 each                              | cut    |
+| `ts-security` | `js-yaml` 4+ `load`                               | no request                               | kept   |
+| `ts-security` | skip `__proto__`, `constructor`, `prototype`      | 3 of 3                                   | cut    |
+| `ts-security` | tokens from `crypto`                              | 6 of 6                                   | cut    |
+| `ts-security` | `timingSafeEqual`, never `===`                    | 1 of 3 `none` runs used `===`            | kept   |
+| `ts-security` | timeout on every outbound `fetch`                 | 0 of 3 `none`, 3 of 3 with the rule      | kept   |
+| `ts-security` | never `rejectUnauthorized: false`                 | no request                               | kept   |
+| `ts-security` | allowlist or address check for a user-chosen host | 3 of 3                                   | cut    |
+| `ts-async`    | every promise awaited, returned or handled        | 3 of 3                                   | cut    |
+| `ts-async`    | independent work under `Promise.all`              | 1 of 6 `none` runs went one at a time    | kept   |
+| `ts-async`    | cap the concurrency of a large list               | 3 of 3                                   | cut    |
+| `ts-async`    | share an `AbortSignal`; accept and pass one down  | no request                               | kept   |
+| `ts-async`    | `Promise.allSettled` only when inspected          | no request                               | kept   |
+| `ts-async`    | no `async` function in `new Promise(...)`         | no request                               | kept   |
+| `ts-async`    | re-throw with `cause`                             | 3 of 3                                   | cut    |
+| `ts-async`    | no synchronous I/O on an async path               | 3 of 3                                   | cut    |
+| `ts-async`    | CPU-heavy work goes to a `Worker`                 | no request                               | kept   |
+| `ts-async`    | `for await` over building an array                | 3 of 3                                   | cut    |
+| `ts-logging`  | the project's logger, never `console.*`           | 3 of 3                                   | cut    |
+| `ts-logging`  | an injected `Logger` when the project has none    | no request                               | kept   |
+| `ts-logging`  | `console.log` only for output the CLI user reads  | no request                               | kept   |
+| `ts-logging`  | context in structured fields                      | 3 of 3                                   | cut    |
+| `ts-logging`  | log the error object                              | 3 of 3                                   | cut    |
+| `ts-logging`  | no `info` or above per item in a loop             | 0 of 3 `none`, 3 of 3 with the rule      | kept   |
+| `ts-logging`  | no credentials or tokens in logs                  | 3 of 3; `ts-security` still says it      | cut    |
+| `ts-logging`  | no PII in logs                                    | no request                               | kept   |
+
+What this does not show:
+
+- Three runs of one request is a small sample. Two lines that held in two of three `none` runs failed
+  in the third, so a line cut on 3 of 3 can still be one the model sometimes breaks.
+- Only `claude-haiku-5-5` was run. The plan trusts a tie on the small model for larger Claude models;
+  nothing was run on the models other targets use.
+- The cut rules were not run again. The two lines that changed behaviour were measured inside the
+  longer rules.
+- Only TypeScript was screened. The Python, C#, React and Angular rules of the same families are as
+  they were.
 
 ### What the screens say together
 

@@ -4,8 +4,8 @@
     "reason": "TypeScript rules cut to checkable one-liners; ts-git and ts-dependencies scoped to their own files (#215)"
   },
   "angular": {
-    "bytes": 50389,
-    "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
+    "bytes": 15865,
+    "reason": "Angular rules cut to checkable one-liners; ng-git and ng-dependencies scoped to their own files (#223)"
   },
   "react": {
     "bytes": 13083,

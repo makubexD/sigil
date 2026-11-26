@@ -6,11 +6,10 @@ description: Angular/Node dependency management — pinning, vetting, Angular lo
 language: angular
 appliesTo:
   - "**/package.json"
-  - "**/*.ts"
 tags:
   - angular
   - dependencies
-appliesToRationale: Scoped to package.json, where dependencies are declared, and TypeScript source, where they are imported and consumed — the two places a dependency decision is visible.
+appliesToRationale: Scoped to package.json because that is where dependencies are declared and reviewed.
 ---
 
 ## Pin and Lock

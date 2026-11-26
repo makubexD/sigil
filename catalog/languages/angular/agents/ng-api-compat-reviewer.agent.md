@@ -78,7 +78,7 @@ Cross-reference with Grep over `public-api.ts` and exported decorators/selectors
 
 ## 4. Check deprecation discipline
 
-Check that anything slated for removal carried a `@deprecated` TSDoc tag for at least one prior release (see `ng-git` / `ng-release`).
+Check that anything slated for removal carried a `@deprecated` TSDoc tag for at least one prior release (see `ng-documentation` / `ng-release`).
 
 ## 5. Output
 

@@ -14,27 +14,15 @@ tags:
   - style
 appliesToRationale: Scoped to component files (.tsx/.jsx) because these hooks and composition conventions apply only to React component code, not plain TypeScript modules or config.
 ---
-- **Function components only.** Never write class components for new code. Use function components with hooks.
-- **One component per file.** Each file exports one primary component. Co-located sub-components are fine if small and not reused elsewhere.
-- **Props typed with interfaces.** Define a `Props` interface at the top of each component file. Never use inline anonymous types in function signatures.
-- **Destructure props at the top.** `const { title, onClick, children } = props;` — do not access `props.x` throughout the body.
-- **Explicit return types.** `function MyComponent(props: Props): React.ReactElement` — helps catch accidental `undefined` returns.
-- **`useCallback` and `useMemo` with intention.** Only memoize when the profiler shows a real problem or when a callback is passed to a child wrapped in `React.memo`. Premature memoization adds noise.
-- **Keep effects minimal.** Each `useEffect` does one thing. If an effect has two unrelated cleanup paths, split into two effects.
-- **No direct state mutation.** Treat all state as immutable. Use spread (`[...arr, item]`) or `immer` — never `arr.push(item)`.
-- **Avoid prop drilling beyond two levels.** Use Context, or the state library the project already uses, when data flows more than two component levels down.
-- **Key props on lists.** Always provide a stable, unique `key` on list items — never the array index unless the list is static and unordered.
-- **Naming.** Follow the table below. The `use` prefix on hooks is not cosmetic — the Rules of Hooks lint relies on it.
-
-| Symbol | Style | Example |
-|---|---|---|
-| Components (function and file) | `PascalCase` | `UserCard`, `UserCard.tsx` |
-| Custom hooks | `use` + `PascalCase` | `useUserData`, `useDebounce` |
-| Props interfaces | `Props` or `<Component>Props` | `Props`, `UserCardProps` |
-| Event-handler props / handlers | `on<Event>` / `handle<Event>` | `onSelect`, `handleSubmit` |
-| Functions, variables | `camelCase` | `formatDate`, `selectedRows` |
-| Boolean props and state | `is`/`has`/`should` prefix | `isOpen`, `hasError` |
-| Module-level constants | `UPPER_SNAKE` | `MAX_RETRY_COUNT` |
+- Function components only, one primary component per file.
+- Props are a `Props` interface (or `<Component>Props`), destructured at the top; no inline anonymous prop types.
+- Never mutate state: spread or `immer`, not `arr.push(item)`.
+- Always provide a stable, unique `key` on list items, never the array index unless the list is static.
+- Each `useEffect` does one thing; two unrelated cleanups are two effects.
+- `useCallback`/`useMemo` only for a measured problem or a callback passed to a `React.memo` child.
+- No prop drilling beyond two levels: use Context or the state library the project already has.
+- Names: `PascalCase` components and their files, `use` + `PascalCase` hooks (the Rules of Hooks lint relies on
+  the prefix), `on<Event>` props and `handle<Event>` handlers, `is`/`has`/`should` booleans.
 
 For a code review in this repo, use the `react-code-reviewer` agent when it is installed, not a general-purpose
 reviewer: it reviews against these rules.

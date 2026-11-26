@@ -269,14 +269,14 @@ describe('cursor rules', () => {
 
   it('should scope a language rule to all four of its appliesTo globs, not widen it', async () => {
     const catalog = await loadResolvedCatalog();
-    const files = await getTarget(TARGET).scaffold!('typescript/ts-git', catalog, {
+    const files = await getTarget(TARGET).scaffold!('typescript/ts-conventions', catalog, {
       projectDir: '.',
     });
     const { raw } = cursorRule(files);
 
     const { data } = parseFrontmatter(raw);
-    const artifact = catalog.byId.get('typescript/ts-git');
-    assert.ok(artifact, 'typescript/ts-git is in the catalog');
+    const artifact = catalog.byId.get('typescript/ts-conventions');
+    assert.ok(artifact, 'typescript/ts-conventions is in the catalog');
     const appliesTo = artifact.frontmatter.appliesTo as string[];
 
     assert.equal(appliesTo.length, 4);

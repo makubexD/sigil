@@ -11,6 +11,7 @@ whenToUse: >-
   type. Never overwrites existing files; confirms before editing the root workspace config. For
   an empty directory with no workspace, use ts-new-project instead.
 argumentHint: "<name> [--type=lib|app|cli|test]"
+disableModelInvocation: true
 uses:
   rules:
     - typescript/ts-project-layout

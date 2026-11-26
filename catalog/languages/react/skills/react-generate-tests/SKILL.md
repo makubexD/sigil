@@ -3,7 +3,7 @@ id: react/react-generate-tests
 kind: skill
 name: react-generate-tests
 title: "Generate Tests (React)"
-description: Use when adding or reviewing tests for React components. Covers React Testing Library, user-event, async queries, mocking, and accessibility assertions.
+description: Write or review tests for React components — React Testing Library, user-event, async queries, mocking, and accessibility assertions.
 language: react
 uses:
   rules:
@@ -16,7 +16,7 @@ tags:
   - rtl
   - vitest
   - jest
-whenToUse: "Use when adding, updating, or reviewing tests for a React component — e.g. \"write tests for UserCard\", \"test this form submission\", \"check accessibility in this component's tests\". Covers React Testing Library queries, user-event interactions, async queries, mocking, and accessibility assertions."
+whenToUse: "Use when adding, updating, or reviewing tests for a React component — e.g. \"write tests for UserCard\", \"test this form submission\", \"check accessibility in this component's tests\"."
 argumentHint: "[component-file] (optional)"
 allowedTools:
   - read

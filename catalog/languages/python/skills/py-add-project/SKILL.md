@@ -6,6 +6,7 @@ description: "Add a package to an existing Python repo or monorepo with its stan
 name: py-add-project
 language: python
 argumentHint: "<name> [--type=lib|app]"
+disableModelInvocation: true
 uses:
   rules:
     - python/py-project-layout

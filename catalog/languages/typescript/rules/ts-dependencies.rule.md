@@ -6,12 +6,10 @@ description: TypeScript dependency management — Node built-ins first, lockfile
 language: typescript
 appliesTo:
   - "**/package.json"
-  - "**/*.ts"
-  - "**/*.tsx"
 tags:
   - typescript
   - dependencies
-appliesToRationale: package.json is the dependency manifest itself; .ts/.tsx files are included so import-site guidance (Node built-ins, vetting) surfaces during normal source edits, not just manifest edits.
+appliesToRationale: Scoped to package.json because that is where dependencies are declared — the concern does not exist in .ts source.
 ---
 
 ## Commit the Lockfile

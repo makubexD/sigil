@@ -40,9 +40,9 @@ describe('scripts/rule-load.cjs', () => {
     const ts = (await ruleLoad(CATALOG_DIR)).languages.typescript;
     assert.ok(ts, 'typescript is measured');
     const ids = ts.rules.map(r => r.id);
-    assert.ok(ids.includes('typescript/ts-git'), 'ts-git applies to .ts files');
+    assert.ok(!ids.includes('typescript/ts-git'), 'ts-git applies to .gitignore only');
     assert.ok(ids.includes('typescript/ts-code-quality'));
-    assert.ok(!ids.includes('shared/git'), 'shared/git is inlined into ts-git');
+    assert.ok(!ids.includes('shared/git'), 'shared/git loads only inside ts-git');
     assert.ok(
       !ids.includes('shared/clean-code'),
       'shared/clean-code is inlined into ts-code-quality',

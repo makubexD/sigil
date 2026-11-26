@@ -6,12 +6,10 @@ description: React dependency management — bundle-size awareness, peer-depende
 language: react
 appliesTo:
   - "**/package.json"
-  - "**/*.tsx"
-  - "**/*.jsx"
 tags:
   - react
   - dependencies
-appliesToRationale: Scoped to package.json and component files because that is where dependencies are declared and where their bundle-size impact actually lands.
+appliesToRationale: Scoped to package.json because that is where dependencies are declared and reviewed.
 ---
 
 ## Bundle Size Is a Cost, Not Just Install Time

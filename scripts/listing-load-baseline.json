@@ -1,0 +1,26 @@
+{
+  "angular": {
+    "bytes": 6170,
+    "reason": "new-project and add-project skills are user-invoked only (#215)"
+  },
+  "csharp": {
+    "bytes": 5088,
+    "reason": "new-project and add-project skills are user-invoked only (#215)"
+  },
+  "python": {
+    "bytes": 5219,
+    "reason": "new-project and add-project skills are user-invoked only (#215)"
+  },
+  "react": {
+    "bytes": 5395,
+    "reason": "new-project and add-project skills are user-invoked only (#215)"
+  },
+  "shared": {
+    "bytes": 3033,
+    "reason": "first recorded listing size (#224)"
+  },
+  "typescript": {
+    "bytes": 5611,
+    "reason": "new-project and add-project skills are user-invoked only (#215)"
+  }
+}

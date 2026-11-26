@@ -447,7 +447,7 @@ families:
   - id: new-project
     title: New Project
     kind: skill
-    keys: [allowedTools, argumentHint, whenToUse]
+    keys: [allowedTools, argumentHint, whenToUse, disableModelInvocation]
     sections:
       - "Confirm the target directory is empty"
       - "Create the project structure"
@@ -467,7 +467,7 @@ families:
   - id: add-project
     title: Add Project
     kind: skill
-    keys: [allowedTools, argumentHint, whenToUse]
+    keys: [allowedTools, argumentHint, whenToUse, disableModelInvocation]
     sections:
       - "Discover repo standards"
       - "Determine placement"

@@ -6,6 +6,7 @@ description: "Scaffold a new React application in an empty directory with Vite, 
 name: react-scaffold-project
 language: react
 argumentHint: "<app-name>"
+disableModelInvocation: true
 uses:
   rules:
     - react/react-project-layout

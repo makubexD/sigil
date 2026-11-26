@@ -5,8 +5,8 @@
 # When a pack contains skills, their rule / agent dependencies are auto-resolved by
 # the wizard's `deps` step; you do not need to list them manually here.
 #
-# Legacy: use `languages: [<lang>]` to include every artifact for a language.
-# Prefer explicit `artifacts:` lists for curated packs (takes precedence over languages).
+# Every pack here lists its artifacts. `languages: [<lang>]` (every artifact of a language) still
+# works for a fork's own packs; `artifacts:` takes precedence over it.
 # `pluginExclude: [<id>]` keeps a listed artifact out of the Claude plugin; sigil add still installs it.
 # `pluginDependencies: [<id>]` makes the Claude plugin depend on a listed hook or MCP's generated plugin.
 #
@@ -37,14 +37,15 @@ packs:
   - name: dotnet-starter
     displayName: .NET / C# Starter
     description: >
-      Complete setup for .NET / C# development.
-      Includes the cs-generate-tests skill (plus its C# testing rule and the
-      cs-code-reviewer agent as automatically resolved deps). With sigil add, also installs the
-      Filesystem MCP, config-file protection, and common dev-tool permissions.
+      The smallest .NET / C# setup: the cs-code-reviewer and cs-security-auditor agents, the two
+      artifacts real projects were seen to use. No skill and no rule, so it adds almost nothing to
+      a session before the first prompt; add dotnet-tooling for the rules and skills.
+      With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions.
       As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
       the permissions need sigil add.
     artifacts:
-      - csharp/cs-generate-tests
+      - csharp/cs-code-reviewer
+      - csharp/cs-security-auditor
       - shared/filesystem
       - shared/protect-config
       - shared/reviewer-bash-guard
@@ -53,14 +54,15 @@ packs:
   - name: python-starter
     displayName: Python Starter
     description: >
-      Complete setup for Python development.
-      Includes the py-generate-tests skill (plus its Python testing rule and the
-      py-code-reviewer agent as automatically resolved deps). With sigil add, also installs the
-      Filesystem MCP, config-file protection, and common dev-tool permissions.
+      The smallest Python setup: the py-code-reviewer and py-security-auditor agents, the two
+      artifacts real projects were seen to use. No skill and no rule, so it adds almost nothing to
+      a session before the first prompt; add python-tooling for the rules and skills.
+      With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions.
       As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
       the permissions need sigil add.
     artifacts:
-      - python/py-generate-tests
+      - python/py-code-reviewer
+      - python/py-security-auditor
       - shared/filesystem
       - shared/protect-config
       - shared/reviewer-bash-guard
@@ -69,14 +71,15 @@ packs:
   - name: react-starter
     displayName: React Starter
     description: >
-      Complete setup for React development.
-      Includes the react-generate-tests skill (plus its React testing rule and the
-      react-code-reviewer agent as automatically resolved deps). With sigil add, also installs the
-      Filesystem MCP, config-file protection, and common dev-tool permissions.
+      The smallest React setup: the react-code-reviewer and react-security-auditor agents, the two
+      artifacts real projects were seen to use. No skill and no rule, so it adds almost nothing to
+      a session before the first prompt; add react-tooling for the rules and skills.
+      With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions.
       As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
       the permissions need sigil add.
     artifacts:
-      - react/react-generate-tests
+      - react/react-code-reviewer
+      - react/react-security-auditor
       - shared/filesystem
       - shared/protect-config
       - shared/reviewer-bash-guard
@@ -84,25 +87,65 @@ packs:
 
   - name: dotnet-tooling
     displayName: .NET / C# Tooling
-    languages: [csharp]
     description: >
-      Full .NET / C# tooling suite — all imported cs- skills, agents, and rules.
-      Skills include scaffolding, testing, documentation, dependency management,
-      security auditing, release preparation, and package vetting.
-      Skill deps (rules + agents) are auto-resolved by the wizard's deps step.
+      .NET / C# rules, review and specialist agents, and the skills for testing and documentation.
+      Scaffolding lives in dotnet-scaffold and dependency management in dotnet-deps.
+      Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - csharp/cs-document
+      - csharp/cs-generate-tests
+      - csharp/cs-release
+      - csharp/cs-sync-tests
+      - csharp/cs-api-compat-reviewer
+      - csharp/cs-architecture-reviewer
+      - csharp/cs-code-reviewer
+      - csharp/cs-debugger
+      - csharp/cs-performance-profiler
+      - csharp/cs-refactor-specialist
+      - csharp/cs-security-auditor
+      - csharp/cs-async
+      - csharp/cs-code-quality
+      - csharp/cs-conventions
+      - csharp/cs-dependencies
+      - csharp/cs-documentation
+      - csharp/cs-git
+      - csharp/cs-logging
+      - csharp/cs-nuget
+      - csharp/cs-project-layout
+      - csharp/cs-security
+      - csharp/cs-testing
+      - csharp/cs-allow-dev-tools
+
+  - name: dotnet-scaffold
+    displayName: .NET / C# Scaffolding
+    description: >
+      Create a new .NET / C# project, or add a project to an existing workspace. Both skills run only
+      when you invoke them. Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - csharp/cs-new-project
+      - csharp/cs-scaffold-project
+
+  - name: dotnet-deps
+    displayName: .NET / C# Dependencies
+    description: >
+      Vet and add a package, and audit the dependencies a .NET / C# project already has.
+      Skill deps (the dependency rules and the security auditor) are auto-resolved by the wizard's deps step.
+    artifacts:
+      - csharp/cs-add-package
+      - csharp/cs-audit-deps
 
   - name: typescript-starter
     displayName: TypeScript Starter
     description: >
-      Complete setup for TypeScript development.
-      Includes generate-tests, document, and release skills plus their deps.
+      The smallest TypeScript setup: the ts-code-reviewer and ts-security-auditor agents, the two
+      artifacts real projects were seen to use. No skill and no rule, so it adds almost nothing to
+      a session before the first prompt; add typescript-tooling for the rules and skills.
       With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions.
       As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
       the permissions need sigil add.
     artifacts:
-      - typescript/ts-generate-tests
-      - typescript/ts-document
-      - typescript/ts-release
+      - typescript/ts-code-reviewer
+      - typescript/ts-security-auditor
       - shared/filesystem
       - shared/protect-config
       - shared/reviewer-bash-guard
@@ -110,24 +153,65 @@ packs:
 
   - name: typescript-tooling
     displayName: TypeScript Tooling
-    languages: [typescript]
     description: >
-      Full TypeScript tooling suite — all imported ts- skills, agents, and rules.
-      Skills include testing, scaffolding, documentation, dependency management,
-      security auditing, and release preparation.
+      TypeScript rules, review and specialist agents, and the skills for testing and documentation.
+      Scaffolding lives in typescript-scaffold and dependency management in typescript-deps.
       Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - typescript/ts-document
+      - typescript/ts-generate-tests
+      - typescript/ts-release
+      - typescript/ts-sync-tests
+      - typescript/ts-api-compat-reviewer
+      - typescript/ts-architecture-reviewer
+      - typescript/ts-code-reviewer
+      - typescript/ts-debugger
+      - typescript/ts-performance-profiler
+      - typescript/ts-refactor-specialist
+      - typescript/ts-security-auditor
+      - typescript/ts-async
+      - typescript/ts-code-quality
+      - typescript/ts-conventions
+      - typescript/ts-dependencies
+      - typescript/ts-documentation
+      - typescript/ts-git
+      - typescript/ts-logging
+      - typescript/ts-npm
+      - typescript/ts-project-layout
+      - typescript/ts-security
+      - typescript/ts-testing
+      - typescript/ts-allow-dev-tools
+
+  - name: typescript-scaffold
+    displayName: TypeScript Scaffolding
+    description: >
+      Create a new TypeScript project, or add a project to an existing workspace. Both skills run only
+      when you invoke them. Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - typescript/ts-new-project
+      - typescript/ts-scaffold-project
+
+  - name: typescript-deps
+    displayName: TypeScript Dependencies
+    description: >
+      Vet and add a package, and audit the dependencies a TypeScript project already has.
+      Skill deps (the dependency rules and the security auditor) are auto-resolved by the wizard's deps step.
+    artifacts:
+      - typescript/ts-add-package
+      - typescript/ts-audit-deps
 
   - name: angular-starter
     displayName: Angular Starter
     description: >
-      Complete setup for Angular development.
-      Includes generate-tests and generate-component skills plus their deps.
+      The smallest Angular setup: the ng-code-reviewer and ng-security-auditor agents, the two
+      artifacts real projects were seen to use. No skill and no rule, so it adds almost nothing to
+      a session before the first prompt; add angular-tooling for the rules and skills.
       With sigil add, also installs the Filesystem MCP, config-file protection, and common dev-tool permissions.
       As plugins, add mcp-filesystem, hook-protect-config and hook-reviewer-bash-guard;
       the permissions need sigil add.
     artifacts:
-      - angular/ng-generate-tests
-      - angular/ng-generate-component
+      - angular/ng-code-reviewer
+      - angular/ng-security-auditor
       - shared/filesystem
       - shared/protect-config
       - shared/reviewer-bash-guard
@@ -135,28 +219,70 @@ packs:
 
   - name: angular-tooling
     displayName: Angular Tooling
-    languages: [angular]
     description: >
-      Full Angular tooling suite — all imported ng- skills, agents, and rules.
-      Covers Angular-specific concerns: components, RxJS, Signals, templates,
-      security, and testing patterns for Angular applications.
+      Angular rules, review and specialist agents, and the skills for testing and documentation.
+      Scaffolding lives in angular-scaffold and dependency management in angular-deps.
       Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - angular/ng-document
+      - angular/ng-generate-component
+      - angular/ng-generate-tests
+      - angular/ng-release
+      - angular/ng-sync-tests
+      - angular/ng-api-compat-reviewer
+      - angular/ng-architecture-reviewer
+      - angular/ng-code-reviewer
+      - angular/ng-debugger
+      - angular/ng-performance-profiler
+      - angular/ng-refactor-specialist
+      - angular/ng-security-auditor
+      - angular/ng-template-reviewer
+      - angular/ng-async
+      - angular/ng-code-quality
+      - angular/ng-components
+      - angular/ng-conventions
+      - angular/ng-dependencies
+      - angular/ng-documentation
+      - angular/ng-git
+      - angular/ng-logging
+      - angular/ng-npm
+      - angular/ng-project-layout
+      - angular/ng-rxjs
+      - angular/ng-security
+      - angular/ng-signals
+      - angular/ng-templates
+      - angular/ng-testing
+      - angular/ng-allow-dev-tools
+
+  - name: angular-scaffold
+    displayName: Angular Scaffolding
+    description: >
+      Create a new Angular project, or add a project to an existing workspace. Both skills run only
+      when you invoke them. Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - angular/ng-new-project
+      - angular/ng-add-project
+
+  - name: angular-deps
+    displayName: Angular Dependencies
+    description: >
+      Vet and add a package, and audit the dependencies a Angular project already has.
+      Skill deps (the dependency rules and the security auditor) are auto-resolved by the wizard's deps step.
+    artifacts:
+      - angular/ng-add-package
+      - angular/ng-audit-deps
 
   - name: python-tooling
     displayName: Python Tooling
     description: >
-      Python tooling for applications and services — the py- skills, agents, and rules for
-      scaffolding, testing, documentation, dependency management, and security auditing.
+      Python rules, review and specialist agents, and the skills for testing and documentation.
+      Scaffolding lives in python-scaffold and dependency management in python-deps.
       Release preparation and public-API compatibility review live in python-library;
       install it as well when the project is a package published to PyPI.
       Skill deps are auto-resolved by the wizard's deps step.
     artifacts:
-      - python/py-add-package
-      - python/py-add-project
-      - python/py-audit-deps
       - python/py-document
       - python/py-generate-tests
-      - python/py-scaffold-project
       - python/py-sync-tests
       - python/py-architecture-reviewer
       - python/py-code-reviewer
@@ -177,6 +303,24 @@ packs:
       - python/py-testing
       - python/py-allow-dev-tools
 
+  - name: python-scaffold
+    displayName: Python Scaffolding
+    description: >
+      Create a new Python project, or add a project to an existing workspace. Both skills run only
+      when you invoke them. Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - python/py-scaffold-project
+      - python/py-add-project
+
+  - name: python-deps
+    displayName: Python Dependencies
+    description: >
+      Vet and add a package, and audit the dependencies a Python project already has.
+      Skill deps (the dependency rules and the security auditor) are auto-resolved by the wizard's deps step.
+    artifacts:
+      - python/py-add-package
+      - python/py-audit-deps
+
   - name: python-library
     displayName: Python Library
     description: >
@@ -189,12 +333,52 @@ packs:
 
   - name: react-tooling
     displayName: React Tooling
-    languages: [react]
     description: >
-      Full React tooling suite — all react- skills, agents, and rules.
-      Skills include scaffolding, testing, documentation, dependency management,
-      security auditing, and release preparation.
+      React rules, review and specialist agents, and the skills for testing and documentation.
+      Scaffolding lives in react-scaffold and dependency management in react-deps.
       Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - react/react-document
+      - react/react-generate-tests
+      - react/react-release
+      - react/react-sync-tests
+      - react/react-api-compat-reviewer
+      - react/react-architecture-reviewer
+      - react/react-code-reviewer
+      - react/react-debugger
+      - react/react-performance-profiler
+      - react/react-refactor-specialist
+      - react/react-security-auditor
+      - react/react-async
+      - react/react-code-quality
+      - react/react-conventions
+      - react/react-dependencies
+      - react/react-documentation
+      - react/react-git
+      - react/react-logging
+      - react/react-npm
+      - react/react-project-layout
+      - react/react-security
+      - react/react-testing
+      - react/react-allow-dev-tools
+
+  - name: react-scaffold
+    displayName: React Scaffolding
+    description: >
+      Create a new React project, or add a project to an existing workspace. Both skills run only
+      when you invoke them. Skill deps are auto-resolved by the wizard's deps step.
+    artifacts:
+      - react/react-scaffold-project
+      - react/react-add-project
+
+  - name: react-deps
+    displayName: React Dependencies
+    description: >
+      Vet and add a package, and audit the dependencies a React project already has.
+      Skill deps (the dependency rules and the security auditor) are auto-resolved by the wizard's deps step.
+    artifacts:
+      - react/react-add-package
+      - react/react-audit-deps
 
   - name: spec-driven
     displayName: Spec-Driven Development
@@ -204,6 +388,16 @@ packs:
       (addyosmani/agent-skills), installed separately. Works with any language.
     artifacts:
       - shared/feature
+
+  - name: review-flow
+    displayName: Review Flow
+    description: >
+      One command, /review-changes, that reviews the current change with the reviewer agents the
+      project has installed: the code reviewer of each changed language, plus the security auditor
+      when the change touches input handling, auth, secrets, subprocess calls or queries.
+      It installs no reviewer itself; add a <stack>-starter for those. Works with any language.
+    artifacts:
+      - shared/review-changes
 
   - name: cli-builder
     displayName: CLI Builder

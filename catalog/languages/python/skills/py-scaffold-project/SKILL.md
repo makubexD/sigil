@@ -6,6 +6,7 @@ description: "Scaffold a new Python package in an empty directory with src layou
 name: py-scaffold-project
 language: python
 argumentHint: "<package-name>"
+disableModelInvocation: true
 uses:
   rules:
     - python/py-project-layout

@@ -162,6 +162,7 @@
   "shared/feature": "skill",
   "shared/mk-check": "skill",
   "shared/mk-delegate": "skill",
+  "shared/review-changes": "skill",
   "shared/wizard": "skill",
   "shared/templates/code-quality": "template",
   "shared/templates/mcp-note": "template",

@@ -6,6 +6,7 @@ description: "Create a new Node.js TypeScript project in an empty directory — 
 name: ts-new-project
 language: typescript
 argumentHint: "<package-name> [--runner=node|vitest]"
+disableModelInvocation: true
 uses:
   rules:
     - typescript/ts-project-layout

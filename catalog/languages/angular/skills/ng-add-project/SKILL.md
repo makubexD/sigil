@@ -6,6 +6,7 @@ description: "Add an application or library to an existing Angular workspace wit
 name: ng-add-project
 language: angular
 argumentHint: "<name> [--type=app|lib]"
+disableModelInvocation: true
 uses:
   rules:
     - angular/ng-project-layout

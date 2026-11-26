@@ -6,6 +6,7 @@ description: "Create a new Angular workspace in an empty directory with ng new â
 name: ng-new-project
 language: angular
 argumentHint: "<app-name>"
+disableModelInvocation: true
 uses:
   rules:
     - angular/ng-project-layout

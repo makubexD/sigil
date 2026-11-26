@@ -114,14 +114,16 @@ sigil status                                   # what is installed, and is it he
 
 The stacks are C#, TypeScript, Angular, Python and React, plus shared artifacts for any language.
 
-| Pack              | What it installs                                                                                                              |
-| ----------------- | ----------------------------------------------------------------------------------------------------------------------------- |
-| `essentials`      | For any language: `explain-diff`. With `sigil add`, also the filesystem MCP, config-file protection and the authoring command |
-| `<stack>-starter` | A small setup for one stack, built around test generation                                                                     |
-| `<stack>-tooling` | The full suite for one stack: its skills, agents and rules                                                                    |
-| `spec-driven`     | The `/feature` conductor: spec, plan, TDD build and review, with approval gates                                               |
-| `cli-builder`     | Design, build or audit a command-line interface and its setup wizard                                                          |
-| `deepseek-worker` | Plan in your main session and hand mechanical steps to the paid DeepSeek API                                                  |
+| Pack               | What it installs                                                                                                              |
+| ------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| `essentials`       | For any language: `explain-diff`. With `sigil add`, also the filesystem MCP, config-file protection and the authoring command |
+| `<stack>-starter`  | The smallest setup for one stack: its code reviewer and security auditor                                                      |
+| `<stack>-tooling`  | The rules, agents, and testing and documentation skills for one stack                                                         |
+| `<stack>-scaffold` | Create a project, or add one to a workspace; runs only when you invoke it                                                     |
+| `<stack>-deps`     | Vet and add a package, and audit the dependencies a project has                                                               |
+| `spec-driven`      | The `/feature` conductor: spec, plan, TDD build and review, with approval gates                                               |
+| `cli-builder`      | Design, build or audit a command-line interface and its setup wizard                                                          |
+| `deepseek-worker`  | Plan in your main session and hand mechanical steps to the paid DeepSeek API                                                  |
 
 `<stack>` is `dotnet`, `typescript`, `angular`, `python` or `react`. Every artifact, its packs, the tools it installs into and
 its `sigil add` command are in the [artifact index](docs/reference/artifacts.md). Pack definitions are in

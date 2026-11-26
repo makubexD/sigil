@@ -3,7 +3,7 @@
   ".github/agents/cli-auditor.agent.md": "6152ceb0cb2e932815748a7996034651a2c392848c5cfdf7343b7a8665663ade",
   ".github/agents/cs-code-reviewer.agent.md": "be103155ab55c73949ddc053d88400aef2c1d307c294a3f1195e6c71309c2d36",
   ".github/hooks/sigil.json": "d0b1b757f1e502dcf7cf2bc0eda0048a52732c3fadbd7d287442c7fef33eb0da",
-  ".github/instructions/angular-ng-conventions.instructions.md": "99c0bdda06ef1af847a4dff34cfae05dde26164d315f47436410fd686fe15d15",
+  ".github/instructions/angular-ng-conventions.instructions.md": "b2692e41f79e26e87fb4f676c362a5f713a278b7f98efa1890c4b39c7a7af9bc",
   ".github/prompts/shared-explain-diff.prompt.md": "cb069c425ec23b81fbf039c9b66fee78a892ecd8fa7673b219757c62eb02b380",
   ".github/skills/cli/SKILL.md": "87340a65b132a2563fdd2aedd01d6e9608643a45491f4780d0a3d3e068d21d17",
   ".github/skills/cli/references/architecture.md": "41a44180eaefbe2754b238b8e6a138b460747f6bcf5255e458cf58cadb5d3f4f",
@@ -19,8 +19,8 @@
   ".github/skills/cli/references/stack-rust.md": "caec8e889d44cad66c61e383ef105edac99facb5b97abf6f0d0af302110a6943",
   ".github/skills/cli/references/testing.md": "d42c4e985555244ee508e439616e0acc62c3dd806bc2db4abde742b83db64eb4",
   ".github/skills/cs-generate-tests/SKILL.md": "294210f8d3425af1cbf8a2ddeee790becd453de95e77312c71ce6cffb18dc987",
-  ".github/skills/ts-release/SKILL.md": "6b66153b73c185e480e5b2fddc6da03171200d243889d14f8ff81e055809e29e",
+  ".github/skills/ts-release/SKILL.md": "bb0d7daf2a2ffbe20b060e42af328dcd8a99dcba66479c28b4146f3441a719c4",
   ".mcp.json": "385e29df22bbd9de40c8cec8b18e495c15ef267e5432a1a030c355358956b4b5",
-  ".sigil/manifest.json": "a7a316ae3395e93df0763a0b29196d1cbf50c7e0c785de6e46de9447dd7ab12a",
+  ".sigil/manifest.json": "454700a472d7b021eb61eb62e9f97c3bbd4a5af8bfe374931dc33564b2eed64c",
   ".vscode/mcp.json": "d1f02306f87cf2d84c19d291028eecf07f15fdf0bf14ac17ef028c481a823f77"
 }

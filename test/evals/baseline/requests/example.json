@@ -1,0 +1,141 @@
+{
+  "artifact": "python/py-generate-tests",
+  "kind": "skill",
+  "note": "An example of the format, used by selftest.mjs. It is not a registered request set: register one in results.md before a paid run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "cart/pricing.py has no tests yet. Can you cover it?",
+      "fixture": "fixtures/py-cart",
+      "checks": [
+        {
+          "id": "t",
+          "kind": "file-exists",
+          "glob": "tests/**/test_*.py"
+        },
+        {
+          "id": "raises",
+          "kind": "file-matches",
+          "glob": "tests/**/*.py",
+          "pattern": "pytest\\.raises"
+        },
+        {
+          "id": "both",
+          "kind": "file-matches",
+          "glob": "tests/**/*.py",
+          "pattern": "cart_total"
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "I want to be sure the discount maths in the cart is right before we ship. Add whatever checks you think it needs.",
+      "fixture": "fixtures/py-cart",
+      "checks": [
+        {
+          "id": "t",
+          "kind": "file-exists",
+          "glob": "tests/**/test_*.py"
+        },
+        {
+          "id": "discount",
+          "kind": "file-matches",
+          "glob": "tests/**/*.py",
+          "pattern": "discount"
+        },
+        {
+          "id": "rounding",
+          "kind": "file-matches",
+          "glob": "tests/**/*.py",
+          "pattern": "0\\.0\\d|Decimal\\(\"\\d+\\.\\d\\d\"\\)"
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "What happens with a negative quantity or a 150 percent discount? Pin that behaviour down so nobody breaks it.",
+      "fixture": "fixtures/py-cart",
+      "checks": [
+        {
+          "id": "t",
+          "kind": "file-exists",
+          "glob": "tests/**/test_*.py"
+        },
+        {
+          "id": "raises",
+          "kind": "file-matches",
+          "glob": "tests/**/*.py",
+          "pattern": "pytest\\.raises\\(ValueError"
+        },
+        {
+          "id": "source-kept",
+          "kind": "file-matches",
+          "glob": "cart/pricing.py",
+          "pattern": "must not be negative"
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "line_total gets called with lots of different price and quantity pairs. Make sure a handful of them are verified.",
+      "fixture": "fixtures/py-cart",
+      "checks": [
+        {
+          "id": "t",
+          "kind": "file-exists",
+          "glob": "tests/**/test_*.py"
+        },
+        {
+          "id": "many",
+          "kind": "file-matches",
+          "glob": "tests/**/*.py",
+          "pattern": "parametrize"
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "We are about to refactor cart_total. Give me a safety net first.",
+      "fixture": "fixtures/py-cart",
+      "checks": [
+        {
+          "id": "t",
+          "kind": "file-exists",
+          "glob": "tests/**/test_*.py"
+        },
+        {
+          "id": "total",
+          "kind": "file-matches",
+          "glob": "tests/**/*.py",
+          "pattern": "cart_total"
+        },
+        {
+          "id": "source-kept",
+          "kind": "file-lacks",
+          "glob": "cart/pricing.py",
+          "pattern": "TODO|pass\\s*$",
+          "flags": "m"
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "prompt": "Why does cart_total quantize to two decimals? Just explain, no changes.",
+      "fixture": "fixtures/py-cart",
+      "checks": [
+        {
+          "id": "no-tests",
+          "kind": "file-lacks",
+          "glob": "**/test_*.py",
+          "pattern": "."
+        },
+        {
+          "id": "explains",
+          "kind": "answer-matches",
+          "pattern": "quantize|two decimal|cent"
+        }
+      ],
+      "quiet": true
+    }
+  ]
+}

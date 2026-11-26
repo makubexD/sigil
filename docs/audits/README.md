@@ -6,22 +6,23 @@ documentation, and nothing in the user guides depends on them. The narrative and
 round live in the matching log under [`docs/decisions/`](../decisions/README.md); a folder here
 holds the raw material behind it.
 
-| Folder       | Round | Focus                                                                                     |
-| ------------ | ----- | ----------------------------------------------------------------------------------------- |
-| `2026-08-20` | 1     | Dogfood install plus SME and scripted lanes; verdict per artifact                         |
-| `2026-08-21` | 2     | Usage and portability, repeatable measurement harness                                     |
-| `2026-08-22` | 3     | Project-health lane and findings F21 to F28                                               |
-| `2026-08-23` | 4     | Adversarial benchmark: Copilot install, recall as well as precision                       |
-| `2026-08-24` | 5     | First round that changed catalog content against the harness                              |
-| `2026-08-25` | 6     | Follow-through on round 5's evidence                                                      |
-| `2026-08-26` | 7     | Hardened dispatch probe, python/react coverage gap                                        |
-| `2026-09-27` | -     | Live-prompt campaign against real Claude Code and Copilot CLI (not a numbered round)      |
-| `2026-10-03` | -     | Probe: does Copilot load a skill reference named by backticks, a link, or not at all (V1) |
-| `2026-10-06` | -     | Probe: do Copilot's MCP files expand environment variables (F4)                           |
-| `2026-10-12` | -     | Probe: does Copilot deliver a skill's rule twice                                          |
-| `2026-10-13` | -     | Pre-release audit of `master`: cli/wizard auditors, code review, evals S1 and W3          |
-| `2026-10-14` | -     | Benchmark of four agent-guidance repos and the catalog code-quality plan                  |
-| `2026-10-16` | -     | Benchmark v2: full brief, final verdicts, guidance errata and the eval-v2 roadmap         |
+| Folder       | Round | Focus                                                                                                      |
+| ------------ | ----- | ---------------------------------------------------------------------------------------------------------- |
+| `2026-08-20` | 1     | Dogfood install plus SME and scripted lanes; verdict per artifact                                          |
+| `2026-08-21` | 2     | Usage and portability, repeatable measurement harness                                                      |
+| `2026-08-22` | 3     | Project-health lane and findings F21 to F28                                                                |
+| `2026-08-23` | 4     | Adversarial benchmark: Copilot install, recall as well as precision                                        |
+| `2026-08-24` | 5     | First round that changed catalog content against the harness                                               |
+| `2026-08-25` | 6     | Follow-through on round 5's evidence                                                                       |
+| `2026-08-26` | 7     | Hardened dispatch probe, python/react coverage gap                                                         |
+| `2026-09-27` | -     | Live-prompt campaign against real Claude Code and Copilot CLI (not a numbered round)                       |
+| `2026-10-03` | -     | Probe: does Copilot load a skill reference named by backticks, a link, or not at all (V1)                  |
+| `2026-10-06` | -     | Probe: do Copilot's MCP files expand environment variables (F4)                                            |
+| `2026-10-12` | -     | Probe: does Copilot deliver a skill's rule twice                                                           |
+| `2026-10-13` | -     | Pre-release audit of `master`: cli/wizard auditors, code review, evals S1 and W3                           |
+| `2026-10-14` | -     | Benchmark of four agent-guidance repos and the catalog code-quality plan                                   |
+| `2026-10-16` | -     | Benchmark v2: full brief, final verdicts, guidance errata and the eval-v2 roadmap                          |
+| `2026-11-25` | -     | Real-usage audit: reach, cost, effect and drift of installed artifacts on four repos, for a second opinion |
 
 ## What is in a folder
 

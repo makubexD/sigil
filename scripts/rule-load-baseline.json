@@ -1,7 +1,7 @@
 {
   "typescript": {
-    "bytes": 42699,
-    "reason": "conventions name the pack's code-reviewer agent (+152 B) (#213)"
+    "bytes": 13153,
+    "reason": "TypeScript rules cut to checkable one-liners; ts-git and ts-dependencies scoped to their own files (#215)"
   },
   "angular": {
     "bytes": 50389,

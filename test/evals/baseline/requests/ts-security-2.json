@@ -1,0 +1,116 @@
+{
+  "artifact": "typescript/ts-security",
+  "kind": "rule",
+  "note": "The lines of the rule that ts-security.json has no request for: secrets from the environment, secrets in error text, parsed JSON used as a typed object, external text run as code, and requests to a host the user chose. Same fixture and grading (checks/ts-security.mjs). Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `mailerConfig(): MailerConfig` to src/mailer.ts. It reads the mail host from MAIL_HOST and the provider key from MAIL_API_KEY in the environment.",
+      "fixture": "fixtures/ts-api",
+      "checks": [
+        {
+          "id": "mailer-works",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["mailer-works"]
+        },
+        {
+          "id": "mailer-fails-fast",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["mailer-fails-fast"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add `connect(dsn: string): Promise<Connection>` to src/db.ts. It takes a DSN like postgres://user:password@host:5432/database, checks the scheme is one we support and that host and database are there, and resolves with the parts. Throw an error that explains the problem when the DSN is no good.",
+      "fixture": "fixtures/ts-api",
+      "checks": [
+        {
+          "id": "dsn-works",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["dsn-works"]
+        },
+        {
+          "id": "dsn-error-hides-password",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["dsn-error-hides-password"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add `parseWebhook(body: string): Webhook` to src/webhook.ts. It turns the raw request body the payment provider posts into a Webhook.",
+      "fixture": "fixtures/ts-api",
+      "checks": [
+        {
+          "id": "webhook-works",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["webhook-works"]
+        },
+        {
+          "id": "webhook-validated",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["webhook-validated"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add `evaluateDiscount(formula: string, price: number): number` to src/discount.ts. Store admins save a formula such as `price * 0.9` or `(price - 10) * 0.5`; it returns the discounted price.",
+      "fixture": "fixtures/ts-api",
+      "checks": [
+        {
+          "id": "discount-works",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["discount-works"]
+        },
+        {
+          "id": "discount-no-code",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["discount-no-code"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add `fetchPreview(url: string): Promise<string>` to src/preview.ts. A customer pastes a link into a ticket; it fetches the page and resolves with the start of its text for the link card.",
+      "fixture": "fixtures/ts-api",
+      "checks": [
+        {
+          "id": "preview-works",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["preview-works"]
+        },
+        {
+          "id": "preview-no-internal",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["preview-no-internal"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add `isLastPage(page: number, total: number, pageSize: number): boolean` to src/paging.ts.",
+      "fixture": "fixtures/ts-api",
+      "checks": [
+        {
+          "id": "last-page-works",
+          "kind": "script",
+          "script": "checks/ts-security.mjs",
+          "args": ["last-page-works"]
+        }
+      ]
+    }
+  ]
+}

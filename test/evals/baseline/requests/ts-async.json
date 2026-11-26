@@ -1,7 +1,7 @@
 {
   "artifact": "typescript/ts-async",
   "kind": "rule",
-  "note": "Each request asks for an ordinary feature that has a slower or more fragile obvious implementation. No prompt says how to write it. Graded by hidden behaviour tests (checks/ts-async.mjs) and, where behaviour can't show it, a pattern on the source. Not registered in results.md until its first run.",
+  "note": "Each request asks for an ordinary feature that has a slower or more fragile obvious implementation. No prompt says how to write it. Graded by hidden behaviour tests (checks/ts-async.mjs) and, where behaviour can't show it, a pattern on the source. Not registered in results.md until its first run. R6 (capped concurrency) was added after the first screen and run alone.",
   "requests": [
     {
       "id": "R1",
@@ -101,6 +101,31 @@
           "kind": "script",
           "script": "checks/ts-async.mjs",
           "args": ["notify-together"]
+        }
+      ]
+    },
+    {
+      "id": "R6",
+      "prompt": "Add `resizeAll(paths: string[], resize: Resize): Promise<void>` to src/thumbnails.ts. It resizes every image; a batch is usually a few thousand.",
+      "fixture": "fixtures/ts-jobs",
+      "checks": [
+        {
+          "id": "resize-works",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["resize-works"]
+        },
+        {
+          "id": "resize-bounded",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["resize-bounded"]
+        },
+        {
+          "id": "resize-not-serial",
+          "kind": "script",
+          "script": "checks/ts-async.mjs",
+          "args": ["resize-not-serial"]
         }
       ]
     },

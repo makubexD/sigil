@@ -114,6 +114,34 @@ const CASES = {
     const ms = await timed(() => notifyAll(users, send));
     assert.ok(ms < TOGETHER_MS, `took ${ms} ms: one send at a time`);
   },
+  async 'resize-works'() {
+    const { resizeAll } = await load('thumbnails.ts');
+    const done = new Set();
+    const paths = Array.from({ length: 40 }, (_, i) => `img${i}.png`);
+    await resizeAll(paths, async path => {
+      await sleep(5);
+      done.add(path);
+    });
+    assert.equal(done.size, 40);
+  },
+  async 'resize-bounded'() {
+    const { resizeAll } = await load('thumbnails.ts');
+    let running = 0;
+    let peak = 0;
+    const paths = Array.from({ length: 400 }, (_, i) => `img${i}.png`);
+    await resizeAll(paths, async () => {
+      peak = Math.max(peak, ++running);
+      await sleep(10);
+      running--;
+    });
+    assert.ok(peak <= 64, `${peak} resizes ran at once`);
+  },
+  async 'resize-not-serial'() {
+    const { resizeAll } = await load('thumbnails.ts');
+    const paths = Array.from({ length: 60 }, (_, i) => `img${i}.png`);
+    const ms = await timed(() => resizeAll(paths, () => sleep(30)));
+    assert.ok(ms < 60 * 30 * 0.6, `took ${ms} ms: one image at a time`);
+  },
   async 'initials-works'() {
     const { initials } = await load('names.ts');
     assert.equal(initials('ada lovelace'), 'AL');

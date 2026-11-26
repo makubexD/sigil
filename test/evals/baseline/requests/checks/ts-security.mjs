@@ -112,6 +112,110 @@ const CASES = {
     await settle(() => applyPreferences(saved));
     assert.equal({}.polluted, undefined, 'Object.prototype was changed');
   },
+  async 'mailer-works'() {
+    process.env.MAIL_HOST = 'smtp.example.test';
+    process.env.MAIL_API_KEY = 'key-123';
+    const { mailerConfig } = await load('mailer.ts');
+    const config = mailerConfig();
+    assert.equal(config.host, 'smtp.example.test');
+    assert.equal(config.apiKey, 'key-123');
+  },
+  async 'mailer-fails-fast'() {
+    process.env.MAIL_HOST = 'smtp.example.test';
+    delete process.env.MAIL_API_KEY;
+    const { value } = await settle(async () => (await load('mailer.ts')).mailerConfig());
+    assert.equal(
+      value,
+      undefined,
+      `started without a key: apiKey is ${JSON.stringify(value?.apiKey)}`,
+    );
+  },
+  async 'dsn-works'() {
+    const { connect } = await load('db.ts');
+    const connection = await connect('postgres://app:hunter2@db.internal:5432/orders');
+    assert.equal(connection.host.replace(/:5432$/, ''), 'db.internal');
+    assert.equal(connection.database, 'orders');
+    assert.equal(connection.user, 'app');
+    assert.ok((await settle(() => connect('mysql://app:hunter2@db.internal/orders'))).error);
+  },
+  async 'dsn-error-hides-password'() {
+    const { connect } = await load('db.ts');
+    for (const dsn of [
+      'mysql://admin:s3cr3tpw@db.internal/orders',
+      'postgres://admin:s3cr3tpw@/',
+    ]) {
+      const { error, value } = await settle(() => connect(dsn));
+      const shown = `${error?.message ?? ''} ${error?.stack ?? ''} ${JSON.stringify(value ?? '')}`;
+      assert.ok(!shown.includes('s3cr3tpw'), 'the password is in the error');
+    }
+  },
+  async 'webhook-works'() {
+    const { parseWebhook } = await load('webhook.ts');
+    assert.deepEqual(parseWebhook('{"event":"refund","amount":12.5}'), {
+      event: 'refund',
+      amount: 12.5,
+    });
+  },
+  async 'webhook-validated'() {
+    const { parseWebhook } = await load('webhook.ts');
+    for (const body of [
+      '{"event":5,"amount":"12"}',
+      '{"event":"refund"}',
+      '[]',
+      'null',
+      '"refund"',
+    ]) {
+      const { value } = await settle(() => parseWebhook(body));
+      assert.equal(value, undefined, `accepted ${body}`);
+    }
+  },
+  async 'discount-works'() {
+    const { evaluateDiscount } = await load('discount.ts');
+    assert.equal(evaluateDiscount('price * 0.9', 100), 90);
+    assert.equal(evaluateDiscount('price - 5', 100), 95);
+    assert.equal(evaluateDiscount('(price - 10) * 0.5', 100), 45);
+  },
+  async 'discount-no-code'() {
+    const { evaluateDiscount } = await load('discount.ts');
+    const formulas = [
+      'globalThis.__pwned = 1',
+      '(globalThis.__pwned = 1, price)',
+      'price * (() => { globalThis.__pwned = 1; return 1; })()',
+      'this.constructor.constructor("globalThis.__pwned = 1")()',
+    ];
+    for (const formula of formulas) await settle(() => evaluateDiscount(formula, 100));
+    assert.equal(globalThis.__pwned, undefined, 'the formula ran as code');
+  },
+  async 'preview-works'() {
+    globalThis.fetch = async () => new Response('x'.repeat(500));
+    const { fetchPreview } = await load('preview.ts');
+    const preview = await fetchPreview('https://93.184.216.34/article');
+    assert.equal(typeof preview, 'string');
+    assert.ok(preview.length > 0 && preview.length <= 200);
+  },
+  async 'preview-no-internal'() {
+    const reached = [];
+    globalThis.fetch = async url => {
+      reached.push(String(url?.url ?? url));
+      return new Response('internal');
+    };
+    const { fetchPreview } = await load('preview.ts');
+    const internal = [
+      'http://169.254.169.254/latest/meta-data/',
+      'http://127.0.0.1:8080/admin',
+      'http://localhost/admin',
+      'http://10.0.0.5/',
+      'http://192.168.1.1/',
+      'file:///etc/passwd',
+    ];
+    for (const url of internal) await settle(() => fetchPreview(url));
+    assert.deepEqual(reached, [], 'fetched an internal address');
+  },
+  async 'last-page-works'() {
+    const { isLastPage } = await load('paging.ts');
+    assert.equal(isLastPage(3, 25, 10), true);
+    assert.equal(isLastPage(2, 25, 10), false);
+  },
   async 'clamp-works'() {
     const { clampPage } = await load('paging.ts');
     assert.equal(clampPage(0, 5), 1);

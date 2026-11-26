@@ -9,15 +9,17 @@ cap and expected cost per run of each stage. Add the verdict and the action afte
 | Date       | Batch      | Artifacts                                                                                                                     | Stage  | Model              | Cap                     | Expected per run | Spent | Status                                                 |
 | ---------- | ---------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------ | ----------------------- | ---------------- | ----- | ------------------------------------------------------ |
 | 2026-11-26 | defaults-1 | `typescript/ts-generate-tests` (the other TypeScript and Python starter and tooling members join as their request files land) | screen | `claude-haiku-5-5` | 1.00 a day, 5.00 in all | 0.02             | 0.30  | `ts-generate-tests` done (36 runs, median 0.008 a run) |
+| 2026-11-26 | defaults-1 | `typescript/ts-code-reviewer`                                                                                                 | screen | `claude-haiku-5-5` | 0.70                    | 0.02             | 0.15  | done (36 runs, median 0.004 a run)                     |
 
 `defaults-1` runs on a Team subscription seat, so it is the screen only: no `confirm` or `final` stage
 until a key with its own spend limit exists. A `beats` here stays unconfirmed.
 
 ## Verdicts
 
-| Date       | Artifact                       | Stage  | Model              | Votes (win, tie, loss) | Quiet held | Verdict | Action                                                              |
-| ---------- | ------------------------------ | ------ | ------------------ | ---------------------- | ---------- | ------- | ------------------------------------------------------------------- |
-| 2026-11-26 | `typescript/ts-generate-tests` | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`  | none taken: the skill was called in 3 of 15 working runs, see below |
+| Date       | Artifact                       | Stage  | Model              | Votes (win, tie, loss) | Quiet held | Verdict | Action                                                                  |
+| ---------- | ------------------------------ | ------ | ------------------ | ---------------------- | ---------- | ------- | ----------------------------------------------------------------------- |
+| 2026-11-26 | `typescript/ts-generate-tests` | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`  | none taken: the skill was called in 3 of 15 working runs, see below     |
+| 2026-11-26 | `typescript/ts-code-reviewer`  | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`  | none taken: the agent was dispatched in 0 of 15 working runs, see below |
 
 ### `typescript/ts-generate-tests`, screen
 
@@ -36,3 +38,18 @@ until a key with its own spend limit exists. A `beats` here stays unconfirmed.
   R2 0.90 and 1.00, R3 1.00 and 1.00, R4 1.00 and 1.00. Haiku with nothing installed catches nearly
   every planted bug in a small pure module, so this kind of request has no room for an artifact to
   win. The `ts-testing` rule was not screened on it for that reason.
+
+### `typescript/ts-code-reviewer`, screen
+
+- The agent was dispatched in none of the 15 working runs that had it installed: Haiku reviewed the
+  file itself every time.
+- Every run in both arms scored 1.00: Haiku with nothing installed named all 15 planted defects.
+- Grading is by loose patterns on the answer, so 1.00 means the defect was named, not that the review
+  was good. It cannot tell a good review from a better one.
+
+### What the two screens say together
+
+On a request about one self-contained file, Haiku with nothing installed is at the top of what these
+checks can measure, and it seldom calls an installed skill or agent. More screens of this shape will
+tie. An artifact can only win where the model lacks a fact: a repo convention, a tool-specific step, a
+change that spans files. The next request sets should be built there.

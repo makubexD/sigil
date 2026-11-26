@@ -1,0 +1,137 @@
+{
+  "artifact": "typescript/ts-code-reviewer",
+  "kind": "agent",
+  "note": "Each file holds three planted defects; a check passes when the answer names the defect, in any words the pattern allows. Patterns are loose on purpose and the same for both arms. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Can you look over src/session.ts before I merge it? Tell me what's wrong with it; don't change anything.",
+      "fixture": "fixtures/ts-review",
+      "checks": [
+        {
+          "id": "weak-token",
+          "kind": "answer-matches",
+          "pattern": "Math\\.random|randomBytes|randomUUID|cryptographic|predictab|CSPRNG"
+        },
+        {
+          "id": "units",
+          "kind": "answer-matches",
+          "pattern": "millisecond|\\bms\\b|seconds vs|in seconds|unit mismatch|\\* ?1000|/ ?1000"
+        },
+        {
+          "id": "timing",
+          "kind": "answer-matches",
+          "pattern": "timing|constant[- ]time|timingSafeEqual"
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "src/paginate.ts is going out today. Anything in there that will bite us?",
+      "fixture": "fixtures/ts-review",
+      "checks": [
+        {
+          "id": "off-by-one",
+          "kind": "answer-matches",
+          "pattern": "off[- ]by[- ]one|\\(page - 1\\)|page - 1|1-based|one-based|first page|skips? the first|zero-based|0-based"
+        },
+        {
+          "id": "ceil",
+          "kind": "answer-matches",
+          "pattern": "Math\\.ceil|\\bceil|round(s|ed|ing)? down|partial page|last page|remainder"
+        },
+        {
+          "id": "page-size",
+          "kind": "answer-matches",
+          "pattern": "pageSize.{0,60}(\\b0\\b|zero|negative|valid|positive)|divi(de|sion) by zero|Infinity|\\bNaN\\b"
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "A junior wrote src/upload.ts. What would you flag?",
+      "fixture": "fixtures/ts-review",
+      "checks": [
+        {
+          "id": "traversal",
+          "kind": "answer-matches",
+          "pattern": "travers|\\.\\./|outside (of )?(the )?upload|basename|saniti[sz]"
+        },
+        {
+          "id": "not-awaited",
+          "kind": "answer-matches",
+          "pattern": "await|floating|not awaited|unhandled (promise )?rejection|fire[- ]and[- ]forget"
+        },
+        {
+          "id": "secret-in-log",
+          "kind": "answer-matches",
+          "pattern": "apiToken|token.{0,40}log|log.{0,60}(token|secret|credential)|secret|credential|sensitive"
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Is src/merge-config.ts safe to ship as it is? List the problems.",
+      "fixture": "fixtures/ts-review",
+      "checks": [
+        {
+          "id": "prototype",
+          "kind": "answer-matches",
+          "pattern": "prototype pollution|__proto__|prototype"
+        },
+        {
+          "id": "mutates-defaults",
+          "kind": "answer-matches",
+          "pattern": "mutat|in[- ]place|shared (state|object|default)|deep ?(clone|copy)|structuredClone|leak(s|ed|ing)? (between|across|into)"
+        },
+        {
+          "id": "parse",
+          "kind": "answer-matches",
+          "pattern": "JSON\\.parse.{0,80}(throw|try|catch|invalid|malformed|unhandled|valid)|malformed|invalid JSON|SyntaxError"
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Give me a second pair of eyes on src/report.ts; just the findings.",
+      "fixture": "fixtures/ts-review",
+      "checks": [
+        {
+          "id": "sort",
+          "kind": "answer-matches",
+          "pattern": "lexicograph|as strings|string (comparison|order|sort)|alphabetic|compar(e|ator|ison) function|\\(a, b\\) =>"
+        },
+        {
+          "id": "empty-input",
+          "kind": "answer-matches",
+          "pattern": "\\bNaN\\b|divi(de|sion) by zero|empty (array|list|input|samples)|no samples|length === 0|zero samples"
+        },
+        {
+          "id": "swallowed",
+          "kind": "answer-matches",
+          "pattern": "swallow|empty catch|silent|catch block|ignor(e|es|ed|ing) (the )?(error|failure)"
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add an isWeekend(date: Date) function to src/dates.ts that returns true on Saturday and Sunday in UTC.",
+      "fixture": "fixtures/ts-review",
+      "checks": [
+        {
+          "id": "added",
+          "kind": "file-matches",
+          "glob": "src/dates.ts",
+          "pattern": "export (function isWeekend|const isWeekend)"
+        },
+        {
+          "id": "utc",
+          "kind": "file-matches",
+          "glob": "src/dates.ts",
+          "pattern": "getUTCDay"
+        }
+      ]
+    }
+  ]
+}

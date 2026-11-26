@@ -8,8 +8,8 @@
     "reason": "shared/orchestration (+1632 B per language, was 1551): an approval that amends a repo plan writes the amendment into that file first; loads everywhere because delegation is about how the session works"
   },
   "react": {
-    "bytes": 33083,
-    "reason": "conventions name the pack's code-reviewer agent (+152 B) (#213)"
+    "bytes": 13083,
+    "reason": "React rules cut to checkable one-liners; react-git and react-dependencies scoped to their own files (#223)"
   },
   "csharp": {
     "bytes": 12939,

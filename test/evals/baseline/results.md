@@ -15,6 +15,7 @@ cap and expected cost per run of each stage. Add the verdict and the action afte
 | 2026-11-26 | defaults-1 | `typescript/ts-logging` (rule)                                                                                                | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.28  | done (36 runs, median 0.009 a run)                     |
 | 2026-11-26 | defaults-1 | `typescript/ts-security` (rule), the lines the first set left out (`ts-security-2.json`)                                      | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.31  | done (36 runs)                                         |
 | 2026-11-26 | defaults-1 | `typescript/ts-async` (rule), request R6 only: capped concurrency                                                             | screen | `claude-haiku-5-5` | 0.10                    | 0.02             | 0.06  | done (6 runs)                                          |
+| 2026-11-26 | cut-1      | `ts-security` R3 and R4, second set R2, `ts-async` R5, `ts-logging` R1 (twice): the `with` arm only, against the cut rules    | screen | `claude-haiku-5-5` | 0.25                    | 0.01             | 0.15  | 18 runs; `none` runs seeded from `defaults-1`          |
 
 `defaults-1` runs on a Team subscription seat, so it is the screen only: no `confirm` or `final` stage
 until a key with its own spend limit exists. A `beats` here stays unconfirmed.
@@ -159,10 +160,29 @@ What this does not show:
   in the third, so a line cut on 3 of 3 can still be one the model sometimes breaks.
 - Only `claude-haiku-5-5` was run. The plan trusts a tie on the small model for larger Claude models;
   nothing was run on the models other targets use.
-- The cut rules were not run again. The two lines that changed behaviour were measured inside the
-  longer rules.
 - Only TypeScript was screened. The Python, C#, React and Angular rules of the same families are as
   they were.
+
+### The cut rules, run again
+
+Batch `cut-1`: the five requests behind the kept lines, three runs each with the cut rule installed,
+on `claude-haiku-5-5`. The `none` runs are the ones from `defaults-1`, copied in and marked
+`seededFrom`, so only the `with` arm was paid for: 0.15 dollars for 18 runs.
+
+| Request                                    | Kept line                    | With the cut rule |
+| ------------------------------------------ | ---------------------------- | ----------------- |
+| `ts-security` R3, an invite code           | `timingSafeEqual`            | 3 of 3            |
+| `ts-security` R4, an outbound `fetch`      | request timeout              | 3 of 3            |
+| `ts-security` second set R2, a refused DSN | no secret in an error        | 3 of 3            |
+| `ts-async` R5, notifications               | independent work together    | 3 of 3            |
+| `ts-logging` R1, an import of many orders  | no `info` per item in a loop | 3 of 3            |
+
+- The first `ts-logging` runs (`cut-1-ts-logging.jsonl`) had one run of three at 0.33. It kept the loop
+  quiet, but it changed `importOrders` to take a logger as a third argument, so the existing callers
+  broke. The cause was the sentence "domain code never imports a logger singleton", which the longer
+  rule had balanced with "diagnostics go through the project's structured logger". That sentence is
+  now removed, and the three runs after it (`cut-2-ts-logging.jsonl`) scored 1.00.
+- This checks the kept lines only. The lines that were cut were not run again.
 
 ### What the screens say together
 

@@ -16,6 +16,6 @@ appliesToRationale: Structured-logger and level-discipline guidance applies to T
 ## Logging
 
 - No `info` or above per item inside a loop; per-item detail is `debug` or nothing.
-- If the project has no logger, accept an injected `Logger` (`info`/`warn`/`error`); domain code never imports a
-  logger singleton. `console.log` only for output the CLI user is meant to read.
+- If the project has no logger, accept an injected `Logger` (`info`/`warn`/`error`). `console.log` only for output
+  the CLI user is meant to read.
 - No PII in log messages or structured fields (watch whole request objects).

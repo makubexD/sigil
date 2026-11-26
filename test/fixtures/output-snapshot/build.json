@@ -576,7 +576,7 @@
   "copilot/.github/instructions/typescript-ts-dependencies.instructions.md": "bb68046e06f983dbb8a486ceade6a61ad825d4e6b7d02df6df7c67df5b909423",
   "copilot/.github/instructions/typescript-ts-documentation.instructions.md": "fa858ac1973692ab35c7956ade69a1c5061b7749143f600b41af9e44c70840f2",
   "copilot/.github/instructions/typescript-ts-git.instructions.md": "ff184f82b6f42ace8ebdf529e1f1f86d96ad28e10c45eeadf11ff116d42d8430",
-  "copilot/.github/instructions/typescript-ts-logging.instructions.md": "46a7006f15cbb612ff5be23ebac828f15adb5e6143f3b45ffc0d8888836ac722",
+  "copilot/.github/instructions/typescript-ts-logging.instructions.md": "3e59409ced10977caf5ce116df828c270fd9bbe9ebcf6134db773b928521d74a",
   "copilot/.github/instructions/typescript-ts-npm.instructions.md": "5434f8224a4ef0d95ffebc37f1b77b52a7878392b977d26d5159f896854fc2ec",
   "copilot/.github/instructions/typescript-ts-project-layout.instructions.md": "7c3f812895070ec0800911263d9953dcc1d6a5a904a0970f64338161527e5d3d",
   "copilot/.github/instructions/typescript-ts-security.instructions.md": "855c674a9e1b58a92e037aeabcdeef4121a147c0653eab34efef678666506f8d",
@@ -752,7 +752,7 @@
   "cursor/.cursor/rules/typescript-ts-dependencies.mdc": "51756d77be3e70793bafebc90959dbb465ed466229683d197ca45f64ece3abe3",
   "cursor/.cursor/rules/typescript-ts-documentation.mdc": "6a591bf7b318ee27664dfe1baa98be6874cc1c9ae45cdcc3ff362ef8e47bb228",
   "cursor/.cursor/rules/typescript-ts-git.mdc": "1e3f6b1695134c20ca10fcf046036a1348ee1f721834e5cdeb21737ee1cc379c",
-  "cursor/.cursor/rules/typescript-ts-logging.mdc": "1982a55cdd7728547253e81c9e23d958ba3400455ff7815a6e2b19c5e1a08706",
+  "cursor/.cursor/rules/typescript-ts-logging.mdc": "e4c7262c96293d6123404150c735e7537b9c67bdc7ef84df9737fbfa944711ed",
   "cursor/.cursor/rules/typescript-ts-npm.mdc": "522cc8c3c996e17aeaedfcc8abcfa900e066e6b034c75129efc2e06013a80e16",
   "cursor/.cursor/rules/typescript-ts-project-layout.mdc": "e6893338d595821317604ee4c6805c8cd1fba5389dc04ca83f7fd08f032f2e0d",
   "cursor/.cursor/rules/typescript-ts-security.mdc": "1dc9ce1bf0a666dc2e4fa72b1f10d3b0e4ec730eabfa14074dae0e72b7372e8e",
@@ -940,5 +940,5 @@
   "opencode/.opencode/agents/wizard-auditor.md": "97ddab3531af2a8a3d866268f66b3ee0d54c79f7da5fe79bedbf62976c801206",
   "opencode/.opencode/commands/shared-author-artifact.md": "15fdb486f9ab92883f5bee96d8c45d5d22e9493016ea75c3c0283e5b54d8b661",
   "opencode/AGENTS.md": "2c6ded365300dad30f6e649027e5d1cb13ca0c9e96eb6b6df9c9c4616bd58a31",
-  "registry.json": "66f21fe98bc62fd688be6448bd1a6586e6b84ababb782a72be2f8bf5e2ff75c7"
+  "registry.json": "531a716fc5af47f710f128020bb2cf72ec244668cad92c602e5089bef49a66bf"
 }

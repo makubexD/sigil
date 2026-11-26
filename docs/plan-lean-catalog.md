@@ -20,6 +20,34 @@ stays has earned its place.
 
 Steps 1 to 4 remove no artifact, so they don't wait for evidence. Deletion happens only in step 6.
 
+## Progress
+
+As of 2026-11-26. Every PR is open and unmerged; "tests" means `npm run test:built` passes except three symlink tests
+that fail with `EPERM` on the Windows machine it ran on.
+
+| Step | PR             | Result                                                                           |
+| ---- | -------------- | -------------------------------------------------------------------------------- |
+| 1    | #228           | typescript 41.7 to 12.8 KB                                                       |
+| 2    | #230 #231 #232 | csharp 37.4 to 12.6 KB, react 32.3 to 12.8 KB, angular 49.2 to 15.5 KB           |
+| 3    | #229           | `npm run listing-load` with a baseline; `whenToUse` may not repeat `description` |
+| 4    | #233 (draft)   | starters are the two reviewers; tooling split into tooling, scaffold and deps    |
+| 6    | #235           | harness and selftest only; no paid run                                           |
+| 7    | #234           | `review-flow` pack, `/review-changes`                                            |
+| 8    | none           | waits for two weeks of real use                                                  |
+
+Changed while doing the work:
+
+- **Steps 1 and 2 leave every `code-quality` rule untouched.** It is the one rule the October rounds measured, and 5.6 to
+  6.1 KB of each language's load, so C# and React end 0.6 and 0.8 KB over their 12 KB targets.
+- **Step 3 drops the collision check** (one alike pair in the catalog, siblings by design, and
+  `docs/audits/tools/lane-k-collision.js` exists) **and defers the 300-byte agent budget** to after step 6: 35 of 39 agents
+  are over it, and cutting them rewrites the text agents are dispatched on. The report is per language, not per pack.
+- **Step 4 is a draft** until the owner decides whether ten new packs (scaffold and deps for five stacks) are wanted.
+- **Step 7 ships a skill, not a prompt.** A Copilot prompt file is written with a fixed tool list that can't start agents.
+- **Merge order.** The rule PRs (#228, #230, #231, #232) each edit `scripts/rule-load-baseline.json` and the output
+  snapshot, and #234 edits two conventions rules #228 and #231 rewrite: merge one, rebase the next, run
+  `npm run snapshot:update`. Merge #229 before #233, then lower the listing baseline in #233.
+
 ## Decisions
 
 Owner's answers, 2026-11-25:

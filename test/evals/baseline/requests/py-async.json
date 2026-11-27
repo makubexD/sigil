@@ -1,0 +1,128 @@
+{
+  "artifact": "python/py-async",
+  "kind": "rule",
+  "note": "Each request has a slower or more fragile obvious implementation. Graded by hidden behaviour tests on an event loop (checks/py-async.py, run through checks/py.mjs). No prompt says how to write the coroutine. Needs `python` on PATH. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `async def load_profiles(ids: list[str], fetch: Fetch) -> list[Profile]` to jobs/profiles.py. It returns the profile of each id, in the order the ids were given.",
+      "fixture": "fixtures/py-jobs",
+      "checks": [
+        {
+          "id": "profiles-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "profiles-works"]
+        },
+        {
+          "id": "profiles-together",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "profiles-together"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add `async def enrich(keys: list[str]) -> dict[str, str]` to jobs/enrich.py. It maps each key to what `slow_lookup` returns for it.",
+      "fixture": "fixtures/py-jobs",
+      "checks": [
+        {
+          "id": "enrich-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "enrich-works"]
+        },
+        {
+          "id": "enrich-loop-free",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "enrich-loop-free"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add `def record_visit(page: str) -> None` to jobs/visits.py. Request handlers call it from inside the running event loop. It saves the visit through `store.save` without making the caller wait for the save.",
+      "fixture": "fixtures/py-jobs",
+      "checks": [
+        {
+          "id": "visit-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "visit-works"]
+        },
+        {
+          "id": "visit-does-not-wait",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "visit-does-not-wait"]
+        },
+        {
+          "id": "visit-failure-handled",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "visit-failure-handled"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add `async def drain(queue: asyncio.Queue[Job], handle: Handle) -> None` to jobs/worker.py. It takes jobs from the queue and handles them one after another, for as long as the service runs. A job that fails must not stop the worker.",
+      "fixture": "fixtures/py-jobs",
+      "checks": [
+        {
+          "id": "worker-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "worker-works"]
+        },
+        {
+          "id": "worker-cancellable",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "worker-cancellable"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add `async def resize_all(paths: list[str], resize: Resize) -> list[str]` to jobs/thumbnails.py. It resizes every image and returns the thumbnail paths in the order the paths were given. A nightly run covers tens of thousands of images.",
+      "fixture": "fixtures/py-jobs",
+      "checks": [
+        {
+          "id": "resize-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "resize-works"]
+        },
+        {
+          "id": "resize-bounded",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "resize-bounded"]
+        },
+        {
+          "id": "resize-not-serial",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "resize-not-serial"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add `initials(name: str) -> str` to jobs/names.py. \"Ada Lovelace\" gives \"AL\".",
+      "fixture": "fixtures/py-jobs",
+      "checks": [
+        {
+          "id": "initials-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-async.py", "initials-works"]
+        }
+      ]
+    }
+  ]
+}

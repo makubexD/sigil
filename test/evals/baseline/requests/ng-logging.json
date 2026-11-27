@@ -1,0 +1,134 @@
+{
+  "artifact": "angular/ng-logging",
+  "kind": "rule",
+  "note": "One request per line of the rule: the project's logger and not the console, in a file that already uses the console; the error object and not its message; no credentials in a log; facts as fields of the record; and no log on every change-detection pass. Graded by hidden behaviour tests: the project is compiled by Angular's own compiler in a jsdom page with a fake API (checks/angular.mjs, checks/angular/ng-logging.mjs). Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `import(rows: OrderRow[]): Promise<void>` to `OrdersImportService`. It saves each row with `OrdersApi.save` and carries on when one is refused. Log what happens.",
+      "fixture": "fixtures/ng-app",
+      "checks": [
+        {
+          "id": "orders-works",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "orders-works"]
+        },
+        {
+          "id": "orders-uses-logger",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "orders-uses-logger"]
+        },
+        {
+          "id": "orders-no-console",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "orders-no-console"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add a `BillingService` to src/app/billing.service.ts with `charge(order: OrderRow): Promise<Receipt>`. It charges the order through `GatewayService`. When the charge fails, log it and let the caller see the failure.",
+      "fixture": "fixtures/ng-app",
+      "checks": [
+        {
+          "id": "charge-works",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "charge-works"]
+        },
+        {
+          "id": "charge-rethrows",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "charge-rethrows"]
+        },
+        {
+          "id": "charge-logs-error-object",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "charge-logs-error-object"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add a `LoginService` to src/app/login.service.ts with `login(request: LoginRequest): Promise<boolean>`. It checks the credentials with `CredentialsService.check` and returns whether they were accepted. Log each attempt and how it ended.",
+      "fixture": "fixtures/ng-app",
+      "checks": [
+        {
+          "id": "login-works",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "login-works"]
+        },
+        {
+          "id": "login-logs",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "login-logs"]
+        },
+        {
+          "id": "login-no-secrets",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "login-no-secrets"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add a `RowCleanerService` to src/app/row-cleaner.service.ts with `clean(rows: Row[]): Row[]`. It returns the rows that have a sku and a price and drops the rest. Log how many rows were kept and how many were dropped.",
+      "fixture": "fixtures/ng-app",
+      "checks": [
+        {
+          "id": "rows-works",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "rows-works"]
+        },
+        {
+          "id": "rows-counts-structured",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "rows-counts-structured"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add a `PriceListComponent` (src/app/price-list.component.ts, selector `app-price-list`) that shows one row per price in `PricesService.prices`, label and amount, and the total under them. The total is off by a cent now and then: log the total it shows so we can compare.",
+      "fixture": "fixtures/ng-app",
+      "checks": [
+        {
+          "id": "prices-works",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "prices-works"]
+        },
+        {
+          "id": "prices-log-not-per-check",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "prices-log-not-per-check"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "prompt": "Add an `initials(name: string): string` function to src/app/initials.ts. \"Ada Lovelace\" gives \"AL\".",
+      "fixture": "fixtures/ng-app",
+      "checks": [
+        {
+          "id": "initials-works",
+          "kind": "script",
+          "script": "checks/angular.mjs",
+          "args": ["ng-logging", "initials-works"]
+        }
+      ],
+      "quiet": true
+    }
+  ]
+}

@@ -58,6 +58,12 @@ the pinned set in `requests/checks/web/react.deps.json` into a temp folder on fi
 running install scripts; `node requests/checks/react.mjs --install` does it ahead of a stage, which
 needs the network once. A check takes about six seconds to start.
 
+An Angular project is graded the same way through `requests/checks/angular.mjs`: the project is
+compiled in the page by Angular's own compiler, with its own providers (`app.config.ts`), and a case
+swaps a service for a fake where it needs to. The packages are in
+`requests/checks/web/angular.deps.json`; `node requests/checks/angular.mjs --install` installs them.
+`isDevMode()` is false, as in a shipped build.
+
 A check measures something the user wanted from the request, not whether the output uses the
 artifact's words. Where no script can grade the output (a review report), leave the artifact out of
 the batch and say so in the ledger; a model judge is a separate, registered decision.

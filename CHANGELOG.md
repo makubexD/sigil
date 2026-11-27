@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The Python `py-security`, `py-async` and `py-logging` rules are cut the same way as the TypeScript ones (#225): 2.8 KB of rule
+  text becomes 1.6 KB. Removed lines are ones `claude-haiku-5-5` followed with no rule installed in every run that tested them
+  (`subprocess` without a shell, bound SQL parameters, path containment, `secrets` and `hmac.compare_digest`, a capped fan-out,
+  letting `CancelledError` through, `logging` over `print`, lazy arguments, `logger.exception`, no credentials in logs, no logging
+  setup in a library module). Kept: the lines that changed behaviour (a request timeout, no secret in an exception, no blocking
+  call in a coroutine, no `INFO` record per item in a loop) and the lines no request tested.
 - The TypeScript `ts-security`, `ts-async` and `ts-logging` rules are cut to the lines the baseline screens could not show the
   model already follows (#225): 3.5 KB of rule text becomes 1.4 KB. Removed lines are ones `claude-haiku-5-5` followed with no rule
   installed in every run that tested them (shell-free process start, path containment, no `eval`, schema-checked `JSON.parse`,

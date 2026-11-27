@@ -16,7 +16,7 @@
     "reason": "C# rules cut to checkable one-liners; cs-git scoped to .gitignore (#223)"
   },
   "python": {
-    "bytes": 9837,
-    "reason": "review: deprecation and README bullets in py-documentation"
+    "bytes": 8562,
+    "reason": "py-security, py-async and py-logging cut to the lines the baseline screens did not show the model already follows (#225)"
   }
 }

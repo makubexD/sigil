@@ -19,6 +19,7 @@ cap and expected cost per run of each stage. Add the verdict and the action afte
 | 2026-11-26 | python-1   | `python/py-security` (rule), `py-security.json`. The daily cap is raised to 3.00 for this batch, at the user's word; 5.00 in all stands | screen | `claude-haiku-5-5` | 0.42                    | 0.02             | 0.26  | done (42 runs). The login ran out after 19 runs; rejected runs cost nothing and were run again |
 | 2026-11-26 | python-1   | `python/py-async` (rule), `py-async.json`                                                                                               | screen | `claude-haiku-5-5` | 0.34                    | 0.02             | 0.25  | done (36 runs)                                                                                 |
 | 2026-11-26 | python-1   | `python/py-logging` (rule), `py-logging.json`                                                                                           | screen | `claude-haiku-5-5` | 0.34                    | 0.02             | 0.25  | done (36 runs)                                                                                 |
+| 2026-11-26 | cut-3      | `py-security` R5 and R6, `py-async` R2, `py-logging` R1: the `with` arm only, against the cut Python rules                              | screen | `claude-haiku-5-5` | 0.25                    | 0.02             | 0.08  | 12 runs; `none` runs seeded from `python-1`                                                    |
 
 `defaults-1` runs on a Team subscription seat, so it is the screen only: no `confirm` or `final` stage
 until a key with its own spend limit exists. A `beats` here stays unconfirmed.
@@ -34,9 +35,9 @@ until a key with its own spend limit exists. A `beats` here stays unconfirmed.
 | 2026-11-26 | `typescript/ts-logging`              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The cut that followed"                        |
 | 2026-11-26 | `typescript/ts-security`, second set | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`                       | none taken, see below                                                   |
 | 2026-11-26 | `typescript/ts-async`, R6 alone      | screen | `claude-haiku-5-5` | 0, 1, 0                | not run    | `inconclusive` (one request) | none taken                                                              |
-| 2026-11-26 | `python/py-security`                 | screen | `claude-haiku-5-5` | 2, 4, 0                | yes        | `ties`                       | none taken, see below                                                   |
-| 2026-11-26 | `python/py-async`                    | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | none taken, see below                                                   |
-| 2026-11-26 | `python/py-logging`                  | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | none taken, see below                                                   |
+| 2026-11-26 | `python/py-security`                 | screen | `claude-haiku-5-5` | 2, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The Python cut"                               |
+| 2026-11-26 | `python/py-async`                    | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The Python cut"                               |
+| 2026-11-26 | `python/py-logging`                  | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The Python cut"                               |
 
 ### `typescript/ts-generate-tests`, screen
 
@@ -202,6 +203,64 @@ What this does not show:
   nothing was run on the models other targets use.
 - Only TypeScript was screened. The Python, C#, React and Angular rules of the same families are as
   they were.
+
+### The Python cut
+
+The same action as for TypeScript, line by line. `none` is the arm with no rule installed.
+
+| Rule          | Line                                                  | Evidence                                          | Action |
+| ------------- | ----------------------------------------------------- | ------------------------------------------------- | ------ |
+| `py-security` | no secrets in source, logs, exceptions                | 2 of 3 `none` runs put a password in an error     | kept   |
+| `py-security` | read secrets from the environment, fail fast          | no request                                        | kept   |
+| `py-security` | `subprocess.run([...])`, never `shell=True`           | 3 of 3 `none` runs did it                         | cut    |
+| `py-security` | parameterized SQL                                     | 3 of 3                                            | cut    |
+| `py-security` | no `pickle`, `yaml.safe_load`, no `eval`              | no request                                        | kept   |
+| `py-security` | resolve a user path against a root                    | 3 of 3                                            | cut    |
+| `py-security` | `secrets` for tokens, `hmac.compare_digest`           | 3 of 3 each                                       | cut    |
+| `py-security` | a timeout on every outbound HTTP call                 | 1 of 3 `none` runs set none                       | kept   |
+| `py-security` | never `verify=False`                                  | no request                                        | kept   |
+| `py-async`    | no blocking call in a coroutine                       | 1 of 2 `none` runs that wrote a coroutine blocked | kept   |
+| `py-async`    | concurrent work in a `TaskGroup`; `return_exceptions` | ran together 3 of 3; which construct, no request  | kept   |
+| `py-async`    | cap a large fan-out with a `Semaphore`                | 3 of 3                                            | cut    |
+| `py-async`    | keep a reference to a created task                    | a reference cannot be seen from outside           | kept   |
+| `py-async`    | let `CancelledError` propagate                        | 3 of 3                                            | cut    |
+| `py-async`    | a deadline on every I/O await                         | no request                                        | kept   |
+| `py-async`    | `async with` / `async for`                            | no request                                        | kept   |
+| `py-async`    | `asyncio.Lock` between coroutines                     | no request                                        | kept   |
+| `py-logging`  | `logging.getLogger(__name__)`, never `print`          | 3 of 3                                            | cut    |
+| `py-logging`  | `print` only for output the CLI user reads            | no request                                        | kept   |
+| `py-logging`  | context in `extra=`, lazy arguments                   | 3 of 3                                            | cut    |
+| `py-logging`  | `logger.exception` at a boundary                      | 3 of 3                                            | cut    |
+| `py-logging`  | no `INFO` or above per item in a loop                 | 1 of 3 `none` runs did it                         | kept   |
+| `py-logging`  | no credentials or tokens in logs                      | 3 of 3; `py-security` still says it               | cut    |
+| `py-logging`  | no PII in logs                                        | no request                                        | kept   |
+| `py-logging`  | configure logging once, at the entry point            | 3 of 3                                            | cut    |
+
+The limits are the ones listed under the TypeScript cut, and one more: the Python lines that are kept
+showed in one or two runs of three, so the evidence for keeping them is thinner than for the two
+TypeScript lines that showed in every run.
+
+### The cut Python rules, run again
+
+Batch `cut-3`: the four requests behind the kept Python lines, three runs each with the cut rule
+installed. The `none` runs are the ones from `python-1`, marked `seededFrom`.
+
+| Request                                | Kept line                       | With the cut rule                    |
+| -------------------------------------- | ------------------------------- | ------------------------------------ |
+| `py-security` R5, an outbound request  | a timeout on every HTTP call    | 3 of 3                               |
+| `py-security` R6, a refused DSN        | no secret in an exception       | 2 of 3                               |
+| `py-async` R2, a slow synchronous call | no blocking call in a coroutine | 1 of 1 coroutine; 2 runs wrote `def` |
+| `py-logging` R1, an import of orders   | no `INFO` per item in a loop    | 3 of 3                               |
+
+- R6: the run that failed wrote a function to hide the password and used it in every message. It
+  missed one malformed DSN (`postgres:/user:password@`, one slash), where the credentials sit in the
+  path. The line was followed and the code had a hole; the same line, uncut, scored 3 of 3 in
+  `python-1`.
+- R2: two of three runs wrote `def enrich`, not the `async def` the prompt gave, as one run in each
+  arm of `python-1` did. That is four of twelve runs on this request, in both arms and with both
+  forms of the rule, so it is the request and not the rule. The request should name the caller (an
+  `await` in a handler) before it is used again.
+- Nothing here suggests the cut changed what a kept line does. It is twelve runs.
 
 ### The cut rules, run again
 

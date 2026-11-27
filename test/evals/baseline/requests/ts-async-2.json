@@ -1,0 +1,134 @@
+{
+  "artifact": "typescript/ts-async",
+  "kind": "rule",
+  "note": "The lines of the rule that requests/ts-async.json has no request for: passing an AbortSignal down, cancelling the rest when one of several calls fails, a failure that `Promise.allSettled` would hide, an `async` function in `new Promise`, and CPU-heavy work. Graded by hidden behaviour tests (checks/ts-async-2.mjs). Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `syncCatalog(pages: number, fetchPage: FetchPage, signal?: AbortSignal): Promise<Item[]>` to src/catalog.ts. It fetches pages 1 to `pages`, one at a time, and returns every item in order. A full sync takes minutes, and the caller gives up when its own request is cancelled.",
+      "fixture": "fixtures/ts-jobs-2",
+      "checks": [
+        {
+          "id": "catalog-works",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["catalog-works"]
+        },
+        {
+          "id": "catalog-passes-signal",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["catalog-passes-signal"]
+        },
+        {
+          "id": "catalog-stops",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["catalog-stops"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add `loadDashboard(userId: string, api: Api): Promise<Dashboard>` to src/dashboard.ts. It loads the profile, the orders and the recommendations of the user.",
+      "fixture": "fixtures/ts-jobs-2",
+      "checks": [
+        {
+          "id": "dashboard-works",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["dashboard-works"]
+        },
+        {
+          "id": "dashboard-together",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["dashboard-together"]
+        },
+        {
+          "id": "dashboard-cancels-rest",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["dashboard-cancels-rest"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add `warmCaches(keys: string[], warm: Warm): Promise<void>` to src/caches.ts. It warms every key before the service starts taking traffic.",
+      "fixture": "fixtures/ts-jobs-2",
+      "checks": [
+        {
+          "id": "caches-works",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["caches-works"]
+        },
+        {
+          "id": "caches-failure-surfaces",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["caches-failure-surfaces"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add `waitForReady(check: Check, intervalMs: number, timeoutMs: number): Promise<void>` to src/ready.ts. It calls `check` every `intervalMs` until it resolves with true, and rejects when `timeoutMs` passes first.",
+      "fixture": "fixtures/ts-jobs-2",
+      "checks": [
+        {
+          "id": "ready-works",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["ready-works"]
+        },
+        {
+          "id": "ready-times-out",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["ready-times-out"]
+        },
+        {
+          "id": "ready-check-failure-settles",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["ready-check-failure-settles"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add `fingerprint(data: string, rounds: number): Promise<string>` to src/fingerprint.ts. It applies `round` to the data `rounds` times and resolves with the result. The upload handler calls it with two million rounds.",
+      "fixture": "fixtures/ts-jobs-2",
+      "checks": [
+        {
+          "id": "fingerprint-works",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["fingerprint-works"]
+        },
+        {
+          "id": "fingerprint-loop-free",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["fingerprint-loop-free"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add `initials(name: string)` to src/names.ts. \"ada lovelace\" gives \"AL\".",
+      "fixture": "fixtures/ts-jobs-2",
+      "checks": [
+        {
+          "id": "initials-works",
+          "kind": "script",
+          "script": "checks/ts-async-2.mjs",
+          "args": ["initials-works"]
+        }
+      ]
+    }
+  ]
+}

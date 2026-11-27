@@ -38,12 +38,12 @@ Test: `sigil status` in each repo shows the install, and a Claude and a Copilot 
 
 Done on 2026-11-04. The owner left the choice to Claude, which picked repos that get real work and a stack the catalog covers.
 
-| Repo                    | Packs                                      | Targets         | Where it lives                                                                                |
-| ----------------------- | ------------------------------------------ | --------------- | --------------------------------------------------------------------------------------------- |
-| `MakuVisaApptScheduler` | `python-starter`, `python-tooling`         | Claude, Copilot | Local branch `chore/sigil-real-usage`, not pushed                                             |
-| `sigil`                 | `typescript-starter`, `typescript-tooling` | Claude          | Skills, agents and rules only, all gitignored. Hooks would block this repo's own config edits |
+| Repo     | Packs                                      | Targets         | Where it lives                                                                                |
+| -------- | ------------------------------------------ | --------------- | --------------------------------------------------------------------------------------------- |
+| `repo-b` | `python-starter`, `python-tooling`         | Claude, Copilot | Local branch `chore/sigil-real-usage`, not pushed                                             |
+| `sigil`  | `typescript-starter`, `typescript-tooling` | Claude          | Skills, agents and rules only, all gitignored. Hooks would block this repo's own config edits |
 
-Left out: `SyncSettings` is bash and config, which the catalog doesn't cover, and it holds `.user-values.json`. `mk-trial` is a
+Left out: `repo-c` is bash and config, which the catalog doesn't cover, and it holds `.user-values.json`. `mk-trial` is a
 scratch repo.
 
 ## Step 2: Use it `[inline: the owner's real work]`
@@ -67,5 +67,5 @@ changes, things to remove. Check the Parked triggers, and move any that fired.
 Test: the next plan is committed, and each of its steps links an issue.
 
 Status, Nov 8: the first plan from real use is `docs/plan-catalog-slim.md` (#209 to #213). Steps 1 to 6 are on its PR;
-step 7, reinstalling in MakuVisaApptScheduler and measuring through about Nov 18, stays open, and that plan finishes after
+step 7, reinstalling in repo-b and measuring through about Nov 18, stays open, and that plan finishes after
 it.

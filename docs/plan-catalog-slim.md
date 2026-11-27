@@ -1,7 +1,7 @@
 # Plan: slim the Python catalog from real use
 
-Step 3 of `docs/plan-real-usage.md`, run early on the only real install (`MakuVisaApptScheduler`, Nov 5 to 8: 6 sessions,
-51 worker runs). Each step links its `real-usage` issue. The consumer-side cleanup is already in MakuVisaApptScheduler
+Step 3 of `docs/plan-real-usage.md`, run early on the only real install (`repo-b`, Nov 5 to 8: 6 sessions,
+51 worker runs). Each step links its `real-usage` issue. The consumer-side cleanup is already in repo-b
 PR #2.
 
 ## Facts
@@ -72,19 +72,19 @@ Change: one closing line: for code review in this repo, use the installed `<lang
 general-purpose reviewer. Measure its token cost in `rule-load`.
 Test: `npm run build && npm run validate && npm run rule-load`.
 
-## Step 7: reinstall in MakuVisaApptScheduler and keep measuring `[inline: judgment]`
+## Step 7: reinstall in repo-b and keep measuring `[inline: judgment]`
 
-After the PR merges, `sigil update` in MakuVisaApptScheduler for Claude and Copilot. Through about Nov 18, rerun the usage
+After the PR merges, `sigil update` in repo-b for Claude and Copilot. Through about Nov 18, rerun the usage
 count (rule loads and tokens per session, agent and skill uses) and record it here, then close or update the issues.
 
 ### Result, 2026-11-20: done
 
 Measured with `sigil-audit` (`~/.claude/bin/sigil-audit`), each repo since its install. Rule tokens per session, median and
-max: MakuVisaApptScheduler 2.0k and 2.8k, invoice-bot 2.5k and 2.9k, against about 7.5k before #210. `py-git` is no longer
-installed in any repo. TypeScript wasn't slimmed: SyncSettings 7.3k median, 10.2k max.
+max: repo-b 2.0k and 2.8k, repo-a 2.5k and 2.9k, against about 7.5k before #210. `py-git` is no longer
+installed in any repo. TypeScript wasn't slimmed: repo-c 7.3k median, 10.2k max.
 
-The reviewer line from step 6 didn't change the habit: pack vs generic review calls are invoice-bot 25 vs 31,
-MakuVisaApptScheduler 14 vs 36, SyncSettings 7 vs 20, because the user's workflow hardcodes the generic reviewer.
+The reviewer line from step 6 didn't change the habit: pack vs generic review calls are repo-a 25 vs 31,
+repo-b 14 vs 36, repo-c 7 vs 20, because the user's workflow hardcodes the generic reviewer.
 
 Issues: #209 and #210 closed. #213 updated with these numbers. Opened from the same run: #215 (TypeScript slim), #216
 (implementation skills unused), #217 (hand edits to fold back), #218 (Go and Rust reviewers), #219 (reviewer report format),

@@ -32,24 +32,24 @@ Added 2026-11-20:
 
 ## First results: `sigil-audit`, 2026-11-20
 
-From the script (step 8), each repo since its install. Hand counts in invoice-bot match: 25 `py-code-reviewer` uses, 502 worker
+From the script (step 8), each repo since its install. Hand counts in repo-a match: 25 `py-code-reviewer` uses, 502 worker
 runs, 74 sessions loading `py-code-quality`. The first run found and fixed three script errors: hook runs credited to the wrong
 hook, rule cost per use instead of per load, and rule loads missed from sessions started in a subdirectory. The one-off hand
 run before this plan used other periods, so its numbers differ; these replace them.
 
-| Finding                                       | Evidence                                                                                                                                                                                                               | Fix goes to                               |
-| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
-| Pack reviewer bypassed                        | Pack vs generic review calls: invoice-bot 25 vs 31, MakuVisaApptScheduler 14 vs 36, SyncSettings 7 vs 20. `/next` finish step 2 hardcodes `/agent-skills:review`                                                       | `~/.claude/skills/next/SKILL.md` (step 9) |
-| The worker never calls a sigil skill or agent | 0 Skill and 0 Agent calls in 1,164 worker runs (502, 351, 305, 6). Every run's init lists them: 11 `listed, never used` findings, 302 to 483 runs each                                                                 | sigil: worker fit, or removal             |
-| TypeScript rules weren't slimmed like Python  | Rule tokens per session, median: SyncSettings 7.3k, invoice-bot 2.5k, MakuVisaApptScheduler 2.0k. `parity: slim typescript` on 9 roles, 2 to 10 times Python per load (`ts-conventions` 1,945 vs `py-conventions` 198) | sigil: port #210 to TypeScript            |
-| Implementation skills unused                  | `removal candidate` 9, `everywhere` 1 (`py-generate-tests`): `generate-tests`, `sync-tests`, `document`, `debugger`, `refactor-specialist`, `ts-add-package`, `ts-audit-deps`, `feature`, 0 uses in 60 to 82 sessions  | sigil: same as the worker row             |
-| Hand edits                                    | Drifted: `ts-add-package` and `ts-npm` in SyncSettings, `py-allow-dev-tools` in MakuVisaApptScheduler. `ts-conventions` outdated in the sigil repo                                                                     | sigil: fold back into the catalog         |
-| Costly rules                                  | `ts-conventions` 1,945, `ts-async` 1,570, `ts-security` 1,496, `py-code-quality` 692 tokens per load, each top 3 by cost in its repo                                                                                   | sigil: same as the TypeScript row         |
-| `reviewer-bash-guard` misfires                | 65 blocks of read-only reviewers in invoice-bot (scratchpad `mkdir -p`, redirects, `python -c ''`)                                                                                                                     | sigil: allow the scratchpad               |
-| Catalog gap                                   | `agent-skills:review` 14 to 30 uses a repo, `agent-skills:code-review-and-quality` 9 to 18: the generic reviewer, covered by step 9                                                                                    | step 9, not the catalog                   |
-| Rule cites                                    | 0 rule cites counted in any repo: reviewers don't cite rules by name                                                                                                                                                   | sigil: a fixed reviewer report format     |
-| Suppressions                                  | Per 100 added lines, before and after install: invoice-bot 0.09 and 0.05, MakuVisaApptScheduler 0.03 and 0.03, SyncSettings 0 and 0. No `quality: look`                                                                | none                                      |
-| Too early                                     | The sigil repo and `~/sigil-live/h/claude` (a live-test sandbox) have 1 session each                                                                                                                                   | the report says "too early"               |
+| Finding                                       | Evidence                                                                                                                                                                                                              | Fix goes to                               |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| Pack reviewer bypassed                        | Pack vs generic review calls: repo-a 25 vs 31, repo-b 14 vs 36, repo-c 7 vs 20. `/next` finish step 2 hardcodes `/agent-skills:review`                                                                                | `~/.claude/skills/next/SKILL.md` (step 9) |
+| The worker never calls a sigil skill or agent | 0 Skill and 0 Agent calls in 1,164 worker runs (502, 351, 305, 6). Every run's init lists them: 11 `listed, never used` findings, 302 to 483 runs each                                                                | sigil: worker fit, or removal             |
+| TypeScript rules weren't slimmed like Python  | Rule tokens per session, median: repo-c 7.3k, repo-a 2.5k, repo-b 2.0k. `parity: slim typescript` on 9 roles, 2 to 10 times Python per load (`ts-conventions` 1,945 vs `py-conventions` 198)                          | sigil: port #210 to TypeScript            |
+| Implementation skills unused                  | `removal candidate` 9, `everywhere` 1 (`py-generate-tests`): `generate-tests`, `sync-tests`, `document`, `debugger`, `refactor-specialist`, `ts-add-package`, `ts-audit-deps`, `feature`, 0 uses in 60 to 82 sessions | sigil: same as the worker row             |
+| Hand edits                                    | Drifted: `ts-add-package` and `ts-npm` in repo-c, `py-allow-dev-tools` in repo-b. `ts-conventions` outdated in the sigil repo                                                                                         | sigil: fold back into the catalog         |
+| Costly rules                                  | `ts-conventions` 1,945, `ts-async` 1,570, `ts-security` 1,496, `py-code-quality` 692 tokens per load, each top 3 by cost in its repo                                                                                  | sigil: same as the TypeScript row         |
+| `reviewer-bash-guard` misfires                | 65 blocks of read-only reviewers in repo-a (scratchpad `mkdir -p`, redirects, `python -c ''`)                                                                                                                         | sigil: allow the scratchpad               |
+| Catalog gap                                   | `agent-skills:review` 14 to 30 uses a repo, `agent-skills:code-review-and-quality` 9 to 18: the generic reviewer, covered by step 9                                                                                   | step 9, not the catalog                   |
+| Rule cites                                    | 0 rule cites counted in any repo: reviewers don't cite rules by name                                                                                                                                                  | sigil: a fixed reviewer report format     |
+| Suppressions                                  | Per 100 added lines, before and after install: repo-a 0.09 and 0.05, repo-b 0.03 and 0.03, repo-c 0 and 0. No `quality: look`                                                                                         | none                                      |
+| Too early                                     | The sigil repo and `~/sigil-live/h/claude` (a live-test sandbox) have 1 session each                                                                                                                                  | the report says "too early"               |
 
 Sigil's own `docs/plan-catalog-slim.md` step 7 (re-measure through about Nov 18) is still open. Step 8 here closes it with these
 numbers.
@@ -105,14 +105,14 @@ Read real data and record the answers here, before any parser is written:
 
 - How to tell a sigil hook from others in a `hook_success` line. Installed hooks are inline `node -e` commands, so check for a
   stable marker against `.claude/settings.json`.
-- The attachment type for a blocked or failed hook. invoice-bot has about 5 candidate PreToolUse block lines; confirm one.
+- The attachment type for a blocked or failed hook. repo-a has about 5 candidate PreToolUse block lines; confirm one.
 - Whether an allowed sigil hook leaves any trace. If none, the report shows blocks only and says so; no capture is added.
 - Whether a skill typed as `/name` lands in `prompt.slash`, `skill`, or both, so it isn't counted twice.
 - Whether a loaded skill's rule `uses` show up in `nested_memory`.
 - How a pack reviewer's report shows severity and the rule it cites, inside the Agent tool result. If the rule isn't cited
   reliably, record it: that's a sigil issue (a fixed report format), and step 4 counts severity only.
 - Whether a headless worker session loads path-scoped rules. Check the Claude Code docs first. If they don't settle it, one
-  `mk-exec --effort low` run in invoice-bot that reads `src/` and reports which `.claude/rules` files it was given.
+  `mk-exec --effort low` run in repo-a that reads `src/` and reports which `.claude/rules` files it was given.
 - The listing text the model sees per skill and agent, for the cost estimate.
 
 Save small fixtures cut from real lines, with no prompt text, code or paths outside the repo: one ledger file, one transcript
@@ -140,9 +140,9 @@ Read from the four sigil repos' transcripts, the ledger and 1,674 worker runs. F
 
 Also seen, for step 8's issues:
 
-- `shared/reviewer-bash-guard` blocks read-only reviewers about 70 times in invoice-bot, mostly `mkdir -p` and redirects into
+- `shared/reviewer-bash-guard` blocks read-only reviewers about 70 times in repo-a, mostly `mkdir -p` and redirects into
   the session scratchpad and `python -c ''`: a misfire, not a guard working. Sigil issue: allow the scratchpad.
-- `py-add-package` `uses` `python/py-packaging`, which isn't installed in invoice-bot.
+- `py-add-package` `uses` `python/py-packaging`, which isn't installed in repo-a.
 - Transcript lines can be cut off mid-write; parsers skip a line that isn't JSON, as for the ledger.
 
 So step 2 also reads subagent transcripts and the worker transcripts, with `WORKER_PROJECTS_DIR` overriding

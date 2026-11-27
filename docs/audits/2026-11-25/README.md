@@ -9,7 +9,7 @@ Files in this folder:
 | File                                             | What it is                                                                                                                                                                                                             |
 | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `README.md`                                      | This briefing                                                                                                                                                                                                          |
-| [`sigil-audit-report.md`](sigil-audit-report.md) | The full, unedited output of the audit script for 2026-11-25 (home directory shortened to `~`). Every number below comes from it unless marked otherwise                                                               |
+| [`sigil-audit-report.md`](sigil-audit-report.md) | The full output of the audit script for 2026-11-25, redacted by hand: home directory shortened to `~`, repos lettered, plan files numbered. Every number below comes from it unless marked otherwise                   |
 | [`measurement-spec.md`](measurement-spec.md)     | The plan the audit script was built from: goals, data sources, the format questions answered from real logs, every metric's definition, the finding rules and their test cases. It lives outside this repo (see below) |
 
 ## 1. Context

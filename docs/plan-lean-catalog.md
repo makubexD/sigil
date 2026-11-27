@@ -302,7 +302,8 @@ reviewer and no generic one.
 Two weeks after steps 1 to 4 are installed in the real repos, rerun `sigil-audit` and record rule and listing tokens per
 session, uses per artifact and reviewer findings in a new `docs/audits/<date>/`. Before that run, fix what the review of
 the 2026-11-25 audit found: count an artifact's sessions from its own install date, keep the slice from overlapping its
-baseline day, and leave plan file names out of the published report.
+baseline day, and leave plan file names and repo folder names out of the published report. The changes are specified in
+[`measurement-spec.md`](audits/2026-11-25/measurement-spec.md), step 10; the script is not in this repo.
 Test: the new audit shows the TypeScript repo's rule tokens per session near Python's, and each starter's listing lower.
 
 ## Not in this plan

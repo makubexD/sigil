@@ -22,6 +22,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   work in a `Worker`, `console.log` for CLI output, no PII in logs, never `rejectUnauthorized: false`. Kept: sharing an
   `AbortSignal` across concurrent calls and an injected `Logger` when the project has none, which changed behaviour in every
   run, and the lines still untested.
+- The React `react-security`, `react-async` and `react-logging` rules are cut the same way (#225): 3.9 KB of rule files becomes
+  2.3 KB. Removed lines are ones `claude-haiku-5-5` followed with no rule installed in every run that tested them (sanitising
+  HTML before `dangerouslySetInnerHTML`, checking a redirect target, the session in an httpOnly cookie, a CSRF token on writes,
+  server state through the query library, guarding and aborting a raw effect fetch, `useMutation` with a refreshed list,
+  `<Suspense>` close to the data, a failure shown by an `async` handler, no personal data in logs, no `console.log` in a render
+  body, a failed API call reported in one place). Kept: the two logging lines that changed behaviour (errors go to the error
+  reporter, an Error Boundary reports the error and its `componentStack`), the client-exposed secrets line and the lines no
+  request tested.
 - The C# `cs-security`, `cs-async` and `cs-logging` rules are cut the same way (#225): 4.4 KB of rule files becomes 3.2 KB.
   Removed lines are ones `claude-haiku-5-5` followed with no rule installed in every run that tested them
   (`ProcessStartInfo.ArgumentList`, bound SQL parameters, path containment, `RandomNumberGenerator` and `FixedTimeEquals`,

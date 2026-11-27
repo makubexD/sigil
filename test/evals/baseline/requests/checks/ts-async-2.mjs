@@ -215,7 +215,9 @@ const CASES = {
       `no result: ${outcome?.error?.message ?? 'never settled'}`,
     );
     assert.equal(outcome.value, expected);
-    assert.ok(worst < 150, `the event loop stood still for ${worst} ms`);
+    // A blocked loop stands still for the whole hash, about a second; 150 ms was tripped once by a
+    // worker starting on a busy machine.
+    assert.ok(worst < 400, `the event loop stood still for ${worst} ms`);
   },
   async 'initials-works'() {
     const { initials } = await load('names.ts');

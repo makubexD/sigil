@@ -6,38 +6,50 @@ cap and expected cost per run of each stage. Add the verdict and the action afte
 
 ## Batches
 
-| Date       | Batch      | Artifacts                                                                                                                               | Stage  | Model              | Cap                     | Expected per run | Spent | Status                                                                                         |
-| ---------- | ---------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------ | ----------------------- | ---------------- | ----- | ---------------------------------------------------------------------------------------------- |
-| 2026-11-26 | defaults-1 | `typescript/ts-generate-tests` (the other TypeScript and Python starter and tooling members join as their request files land)           | screen | `claude-haiku-5-5` | 2.00 a day, 5.00 in all | 0.02             | 0.30  | `ts-generate-tests` done (36 runs, median 0.008 a run)                                         |
-| 2026-11-26 | defaults-1 | `typescript/ts-code-reviewer`                                                                                                           | screen | `claude-haiku-5-5` | 0.70                    | 0.02             | 0.15  | done (36 runs, median 0.004 a run)                                                             |
-| 2026-11-26 | defaults-1 | `typescript/ts-security` (rule)                                                                                                         | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.24  | done (36 runs, median 0.006 a run)                                                             |
-| 2026-11-26 | defaults-1 | `typescript/ts-async` (rule)                                                                                                            | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.23  | done (36 runs, median 0.006 a run)                                                             |
-| 2026-11-26 | defaults-1 | `typescript/ts-logging` (rule)                                                                                                          | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.28  | done (36 runs, median 0.009 a run)                                                             |
-| 2026-11-26 | defaults-1 | `typescript/ts-security` (rule), the lines the first set left out (`ts-security-2.json`)                                                | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.31  | done (36 runs)                                                                                 |
-| 2026-11-26 | defaults-1 | `typescript/ts-async` (rule), request R6 only: capped concurrency                                                                       | screen | `claude-haiku-5-5` | 0.10                    | 0.02             | 0.06  | done (6 runs)                                                                                  |
-| 2026-11-26 | cut-1      | `ts-security` R3 and R4, second set R2, `ts-async` R5, `ts-logging` R1 (twice): the `with` arm only, against the cut rules              | screen | `claude-haiku-5-5` | 0.25                    | 0.01             | 0.15  | 18 runs; `none` runs seeded from `defaults-1`                                                  |
-| 2026-11-26 | python-1   | `python/py-security` (rule), `py-security.json`. The daily cap is raised to 3.00 for this batch, at the user's word; 5.00 in all stands | screen | `claude-haiku-5-5` | 0.42                    | 0.02             | 0.26  | done (42 runs). The login ran out after 19 runs; rejected runs cost nothing and were run again |
-| 2026-11-26 | python-1   | `python/py-async` (rule), `py-async.json`                                                                                               | screen | `claude-haiku-5-5` | 0.34                    | 0.02             | 0.25  | done (36 runs)                                                                                 |
-| 2026-11-26 | python-1   | `python/py-logging` (rule), `py-logging.json`                                                                                           | screen | `claude-haiku-5-5` | 0.34                    | 0.02             | 0.25  | done (36 runs)                                                                                 |
-| 2026-11-26 | cut-3      | `py-security` R5 and R6, `py-async` R2, `py-logging` R1: the `with` arm only, against the cut Python rules                              | screen | `claude-haiku-5-5` | 0.25                    | 0.02             | 0.08  | 12 runs; `none` runs seeded from `python-1`                                                    |
+| Date       | Batch         | Artifacts                                                                                                                               | Stage  | Model              | Cap                     | Expected per run | Spent | Status                                                                                                                                  |
+| ---------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------- | ------ | ------------------ | ----------------------- | ---------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-26 | defaults-1    | `typescript/ts-generate-tests` (the other TypeScript and Python starter and tooling members join as their request files land)           | screen | `claude-haiku-5-5` | 2.00 a day, 5.00 in all | 0.02             | 0.30  | `ts-generate-tests` done (36 runs, median 0.008 a run)                                                                                  |
+| 2026-11-26 | defaults-1    | `typescript/ts-code-reviewer`                                                                                                           | screen | `claude-haiku-5-5` | 0.70                    | 0.02             | 0.15  | done (36 runs, median 0.004 a run)                                                                                                      |
+| 2026-11-26 | defaults-1    | `typescript/ts-security` (rule)                                                                                                         | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.24  | done (36 runs, median 0.006 a run)                                                                                                      |
+| 2026-11-26 | defaults-1    | `typescript/ts-async` (rule)                                                                                                            | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.23  | done (36 runs, median 0.006 a run)                                                                                                      |
+| 2026-11-26 | defaults-1    | `typescript/ts-logging` (rule)                                                                                                          | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.28  | done (36 runs, median 0.009 a run)                                                                                                      |
+| 2026-11-26 | defaults-1    | `typescript/ts-security` (rule), the lines the first set left out (`ts-security-2.json`)                                                | screen | `claude-haiku-5-5` | 0.50                    | 0.02             | 0.31  | done (36 runs)                                                                                                                          |
+| 2026-11-26 | defaults-1    | `typescript/ts-async` (rule), request R6 only: capped concurrency                                                                       | screen | `claude-haiku-5-5` | 0.10                    | 0.02             | 0.06  | done (6 runs)                                                                                                                           |
+| 2026-11-26 | cut-1         | `ts-security` R3 and R4, second set R2, `ts-async` R5, `ts-logging` R1 (twice): the `with` arm only, against the cut rules              | screen | `claude-haiku-5-5` | 0.25                    | 0.01             | 0.15  | 18 runs; `none` runs seeded from `defaults-1`                                                                                           |
+| 2026-11-26 | python-1      | `python/py-security` (rule), `py-security.json`. The daily cap is raised to 3.00 for this batch, at the user's word; 5.00 in all stands | screen | `claude-haiku-5-5` | 0.42                    | 0.02             | 0.26  | done (42 runs). The login ran out after 19 runs; rejected runs cost nothing and were run again                                          |
+| 2026-11-26 | python-1      | `python/py-async` (rule), `py-async.json`                                                                                               | screen | `claude-haiku-5-5` | 0.34                    | 0.02             | 0.25  | done (36 runs)                                                                                                                          |
+| 2026-11-26 | python-1      | `python/py-logging` (rule), `py-logging.json`                                                                                           | screen | `claude-haiku-5-5` | 0.34                    | 0.02             | 0.25  | done (36 runs)                                                                                                                          |
+| 2026-11-26 | cut-3         | `py-security` R5 and R6, `py-async` R2, `py-logging` R1: the `with` arm only, against the cut Python rules                              | screen | `claude-haiku-5-5` | 0.25                    | 0.02             | 0.08  | 12 runs; `none` runs seeded from `python-1`                                                                                             |
+| 2026-11-27 | ts-untested-1 | `typescript/ts-async` (rule), `ts-async-2.json`: the lines the cut kept untested. Daily cap back to 2.00; 5.00 in all stands            | screen | `claude-haiku-5-5` | 0.34                    | 0.02             | 0.27  | done (36 runs)                                                                                                                          |
+| 2026-11-27 | ts-untested-1 | `typescript/ts-logging` (rule), R6 to R8 of `ts-logging.json`, run with `--only`: three requests, no verdict                            | screen | `claude-haiku-5-5` | 0.20                    | 0.02             | 0.14  | done (18 runs). The first try stopped unpaid: a request file needs five requests and a quiet one, so these moved into `ts-logging.json` |
+| 2026-11-27 | ts-untested-1 | `typescript/ts-security` (rule), R6 of `ts-security-2.json`, run with `--only`: one request, no verdict                                 | screen | `claude-haiku-5-5` | 0.08                    | 0.02             | 0.05  | done (6 runs), moved for the same reason                                                                                                |
+| 2026-11-27 | csharp-1      | `csharp/cs-security` (rule), `cs-security.json`                                                                                         | screen | `claude-haiku-5-5` | 0.36                    | 0.02             | 0.23  | done (36 runs)                                                                                                                          |
+| 2026-11-27 | csharp-1      | `csharp/cs-async` (rule), `cs-async.json`                                                                                               | screen | `claude-haiku-5-5` | 0.36                    | 0.02             | 0.22  | done (36 runs)                                                                                                                          |
+| 2026-11-27 | csharp-1      | `csharp/cs-logging` (rule), `cs-logging.json`                                                                                           | screen | `claude-haiku-5-5` | 0.36                    | 0.02             | 0.22  | done (36 runs)                                                                                                                          |
 
 `defaults-1` runs on a Team subscription seat, so it is the screen only: no `confirm` or `final` stage
 until a key with its own spend limit exists. A `beats` here stays unconfirmed.
 
 ## Verdicts
 
-| Date       | Artifact                             | Stage  | Model              | Votes (win, tie, loss) | Quiet held | Verdict                      | Action                                                                  |
-| ---------- | ------------------------------------ | ------ | ------------------ | ---------------------- | ---------- | ---------------------------- | ----------------------------------------------------------------------- |
-| 2026-11-26 | `typescript/ts-generate-tests`       | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`                       | none taken: the skill was called in 3 of 15 working runs, see below     |
-| 2026-11-26 | `typescript/ts-code-reviewer`        | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`                       | none taken: the agent was dispatched in 0 of 15 working runs, see below |
-| 2026-11-26 | `typescript/ts-security`             | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                       | cut to the lines kept in "The cut that followed"                        |
-| 2026-11-26 | `typescript/ts-async`                | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The cut that followed"                        |
-| 2026-11-26 | `typescript/ts-logging`              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The cut that followed"                        |
-| 2026-11-26 | `typescript/ts-security`, second set | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`                       | none taken, see below                                                   |
-| 2026-11-26 | `typescript/ts-async`, R6 alone      | screen | `claude-haiku-5-5` | 0, 1, 0                | not run    | `inconclusive` (one request) | none taken                                                              |
-| 2026-11-26 | `python/py-security`                 | screen | `claude-haiku-5-5` | 2, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The Python cut"                               |
-| 2026-11-26 | `python/py-async`                    | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The Python cut"                               |
-| 2026-11-26 | `python/py-logging`                  | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                       | cut to the lines kept in "The Python cut"                               |
+| Date       | Artifact                                       | Stage  | Model              | Votes (win, tie, loss) | Quiet held | Verdict                         | Action                                                                  |
+| ---------- | ---------------------------------------------- | ------ | ------------------ | ---------------------- | ---------- | ------------------------------- | ----------------------------------------------------------------------- |
+| 2026-11-26 | `typescript/ts-generate-tests`                 | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`                          | none taken: the skill was called in 3 of 15 working runs, see below     |
+| 2026-11-26 | `typescript/ts-code-reviewer`                  | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`                          | none taken: the agent was dispatched in 0 of 15 working runs, see below |
+| 2026-11-26 | `typescript/ts-security`                       | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | cut to the lines kept in "The cut that followed"                        |
+| 2026-11-26 | `typescript/ts-async`                          | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The cut that followed"                        |
+| 2026-11-26 | `typescript/ts-logging`                        | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The cut that followed"                        |
+| 2026-11-26 | `typescript/ts-security`, second set           | screen | `claude-haiku-5-5` | 1, 3, 1                | yes        | `ties`                          | none taken, see below                                                   |
+| 2026-11-26 | `typescript/ts-async`, R6 alone                | screen | `claude-haiku-5-5` | 0, 1, 0                | not run    | `inconclusive` (one request)    | none taken                                                              |
+| 2026-11-26 | `python/py-security`                           | screen | `claude-haiku-5-5` | 2, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The Python cut"                               |
+| 2026-11-26 | `python/py-async`                              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The Python cut"                               |
+| 2026-11-26 | `python/py-logging`                            | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The Python cut"                               |
+| 2026-11-27 | `typescript/ts-async`, second set              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | none taken, see below                                                   |
+| 2026-11-27 | `typescript/ts-logging`, R6 to R8              | screen | `claude-haiku-5-5` | 1, 2, 0                | not run    | `inconclusive` (three requests) | none taken, see below                                                   |
+| 2026-11-27 | `typescript/ts-security`, R6 of the second set | screen | `claude-haiku-5-5` | 0, 1, 0                | not run    | `inconclusive` (one request)    | none taken, see below                                                   |
+| 2026-11-27 | `csharp/cs-security`                           | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`                          | none taken, see below                                                   |
+| 2026-11-27 | `csharp/cs-async`                              | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | none taken, see below                                                   |
+| 2026-11-27 | `csharp/cs-logging`                            | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | none taken, see below                                                   |
 
 ### `typescript/ts-generate-tests`, screen
 
@@ -156,6 +168,59 @@ Read with the TypeScript screens: the lines that show at all are the same ones i
 request timeout, a secret in an error message, an `INFO` record per item), and they show less often in
 Python (one or two runs of three, where two of the TypeScript ones were three of three). No line is cut
 on this: no Python rule has been changed.
+
+### The TypeScript lines the cut kept untested
+
+Batch `ts-untested-1`: requests for the lines "The cut that followed" kept only because no request
+tested them.
+
+| Rule          | Line                                                 | `none` | With the rule |
+| ------------- | ---------------------------------------------------- | ------ | ------------- |
+| `ts-async`    | share an `AbortSignal` so a failure cancels the rest | 0 of 3 | 3 of 3        |
+| `ts-async`    | accept an `AbortSignal`, pass it down, stop the loop | 3 of 3 | 3 of 3        |
+| `ts-async`    | `Promise.allSettled` only when inspected             | 3 of 3 | 3 of 3        |
+| `ts-async`    | no `async` function in `new Promise(...)`            | 3 of 3 | 3 of 3        |
+| `ts-async`    | CPU-heavy work goes to a `Worker`                    | 3 of 3 | 3 of 3        |
+| `ts-logging`  | an injected `Logger` when the project has none       | 0 of 3 | 3 of 3        |
+| `ts-logging`  | `console.log` for output the CLI user reads          | 3 of 3 | 3 of 3        |
+| `ts-logging`  | no PII in logs                                       | 3 of 3 | 3 of 3        |
+| `ts-security` | never `rejectUnauthorized: false`                    | 3 of 3 | 3 of 3        |
+
+- Two more lines change what Haiku does in every run: sharing a signal across calls that run
+  together, and taking a logger as a parameter in a project that has none (without the rule every
+  run wrote to the console).
+- The other seven Haiku follows with nothing installed. They are candidates for the next cut. The
+  first of them was run with the signal already in the signature the prompt gave, so it shows that a
+  signal that is given is used, not that one is asked for.
+- The `Worker` request: one run with the rule scored 0.50 and was regraded to 1.00. It used a worker,
+  and the check passed twice when run again on the project the run left behind; the limit of 150 ms
+  for a stalled event loop was tripped by the worker starting on a busy machine. The limit is now
+  400 ms (a blocked loop stalls for about a second). The runner's own tally, before the regrade,
+  counted it a loss.
+- Still no request: the `js-yaml` line.
+
+### `csharp/cs-security`, `csharp/cs-async` and `csharp/cs-logging`, screen
+
+Batch `csharp-1`. Graded by a C# program compiled against each run's project (`checks/cs.mjs`).
+
+| Rule         | Line                                         | `none` | With the rule |
+| ------------ | -------------------------------------------- | ------ | ------------- |
+| `cs-async`   | `ConfigureAwait(false)` in library code      | 0 of 3 | 3 of 3        |
+| `cs-async`   | accept a `CancellationToken` and forward it  | 0 of 3 | 3 of 3        |
+| `cs-logging` | no `Information` or above per item in a loop | 1 of 3 | 3 of 3        |
+| `cs-logging` | an injected `ILogger<T>`, never `Console`    | 1 of 3 | 3 of 3        |
+
+- `cs-security`: 1.00 in every run of both arms. With nothing installed Haiku contained the path
+  (a sibling folder with the same prefix included), started the process without a shell, passed the
+  name as a SQL parameter, drew the invite code from `RandomNumberGenerator`, compared it with
+  `FixedTimeEquals` and kept the password out of every exception message.
+- `cs-async`, the rest: lookups ran together, a failed background save was observed, the writer was
+  disposed when a write failed and the `TaskCompletionSource` ran its continuations asynchronously,
+  in every run of both arms.
+- `cs-logging`, the rest: the exception was passed to the logger, the password and the authorization
+  header stayed out, and counts were named placeholders, in every run of both arms.
+- The two `cs-async` lines are .NET library conventions, not general practice, and they are the
+  clearest result of the whole gate: never without the rule, always with it.
 
 ### The cut that followed
 
@@ -294,3 +359,10 @@ The rule screens were built that way. Across 21 requests over three rules, two l
 Haiku did in every run: a timeout on an outbound `fetch` (`ts-security`) and no `info` record per item in
 a loop (`ts-logging`). Two more showed in one run of three: constant-time comparison and a password in
 an error message. Everything else these requests cover, Haiku did unasked.
+
+After the Python, C# and second TypeScript batches (nine rules, 61 requests, all on Haiku), six lines
+changed what Haiku did in every run: a timeout on an outbound `fetch`, no `info` record per item in a
+loop, a shared `AbortSignal` and an injected logger (TypeScript); `ConfigureAwait(false)` and a
+`CancellationToken` (C#). What they share is that each is a convention or a non-default choice, not
+something a careful programmer does anyway. The general safety practices (no shell, bound parameters,
+path containment, safe randomness) Haiku followed in all three languages with nothing installed.

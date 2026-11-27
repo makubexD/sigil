@@ -1,4 +1,4 @@
-// Hidden behaviour tests for requests/ts-logging-2.json (README, Grading).
+// Hidden behaviour tests for R6 to R8 of requests/ts-logging.json (README, Grading).
 //
 //   node ts-logging-2.mjs <case>     (cwd: the project a run left behind)
 //

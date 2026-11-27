@@ -1,0 +1,12 @@
+{
+  "name": "sigil-baseline-react-graders",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@tanstack/react-query": "5.108.4",
+    "dompurify": "3.5.0",
+    "jsdom": "31.0.1",
+    "react": "19.3.1",
+    "react-dom": "19.3.1"
+  }
+}

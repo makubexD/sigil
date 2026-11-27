@@ -1,0 +1,140 @@
+{
+  "artifact": "react/react-async",
+  "kind": "rule",
+  "note": "One request per line of the rule that a script can grade: server state through the project's query library, a raw effect fetch that guards against out-of-order answers and aborts, a write that refreshes what is on screen, an async event handler that shows its failure, and Suspense boundaries close to the data. The Server Component line has no request: the fixtures are client-rendered. Graded by hidden behaviour tests against real React in a jsdom page with a fake API (checks/react.mjs, checks/react/react-async.mjs). Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add a `useOrders(customerId: string)` hook to src/useOrders.ts. It returns `{ orders, loading, error }` for that customer, from `fetchOrders`. The orders page and the badge in the sidebar both use it.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "orders-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "orders-works"]
+        },
+        {
+          "id": "orders-one-request",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "orders-one-request"]
+        },
+        {
+          "id": "orders-latest-wins",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "orders-latest-wins"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add a `useSearch(term: string)` hook to src/useSearch.ts. It returns `{ results, loading }` for what the shopper has typed so far, from `searchProducts`.",
+      "fixture": "fixtures/react-widget",
+      "checks": [
+        {
+          "id": "search-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "search-works"]
+        },
+        {
+          "id": "search-latest-wins",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "search-latest-wins"]
+        },
+        {
+          "id": "search-aborts-stale",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "search-aborts-stale"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add a `useRenameProject()` hook to src/useRenameProject.ts. It returns `{ rename, saving }`, and `rename(id, name)` renames the project with `renameProject`. The project list (`useProjects`) is on screen while this happens.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "rename-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "rename-works"]
+        },
+        {
+          "id": "rename-list-fresh",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "rename-list-fresh"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add a `<SaveButton text={...} />` component to src/SaveButton.tsx. Clicking it saves the draft with `saveDraft`.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "save-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "save-works"]
+        },
+        {
+          "id": "save-failure-shown",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "save-failure-shown"]
+        },
+        {
+          "id": "save-failure-handled",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "save-failure-handled"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add a `<Dashboard />` page to src/Dashboard.tsx. It shows `Header`, `RevenueChart` and `RecentOrders`.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "dashboard-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "dashboard-works"]
+        },
+        {
+          "id": "dashboard-header-first",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "dashboard-header-first"]
+        },
+        {
+          "id": "dashboard-independent",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "dashboard-independent"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "prompt": "Add an `<Initials name={...} />` component to src/Initials.tsx. \"Ada Lovelace\" shows \"AL\".",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "initials-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-async", "initials-works"]
+        }
+      ],
+      "quiet": true
+    }
+  ]
+}

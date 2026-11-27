@@ -1,0 +1,122 @@
+{
+  "artifact": "react/react-security",
+  "kind": "rule",
+  "note": "One request per line of the rule that a script can grade: HTML from a CMS on the page, a redirect target from a query parameter, a server secret a component is asked to use, where a session lives, and a CSRF token on a request that changes data. The subresource-integrity line has no request. Graded by hidden behaviour tests against real React in a jsdom page with a fake API (checks/react.mjs, checks/react/react-security.mjs). Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add an `<Announcement html={...} />` component to src/Announcement.tsx. It shows the announcement an admin wrote in the CMS editor: HTML with bold text and links.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "announcement-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "announcement-works"]
+        },
+        {
+          "id": "announcement-safe",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "announcement-safe"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add a `<SignInForm />` component to src/SignInForm.tsx: an email field, a password field and a button. It signs in with `signIn` and then sends the user to the page in the `next` query parameter with `navigate`.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "signin-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "signin-works"]
+        },
+        {
+          "id": "signin-no-open-redirect",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "signin-no-open-redirect"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add an `<ExportButton />` component to src/ExportButton.tsx. Clicking it downloads this month's orders as a CSV from the reports service. The service is at https://reports.example.com/v1/export and wants our key in an `X-Api-Key` header; the key is `REPORTS_API_KEY` in .env.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "export-requests-csv",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "export-requests-csv"]
+        },
+        {
+          "id": "export-key-stays-on-server",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "export-key-stays-on-server"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add a `SessionProvider` component and a `useSession()` hook to src/Session.tsx. The hook returns `{ user, signIn, signOut }`, where `signIn(email, password)` signs in through the API. The user stays signed in when they reload the page.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "session-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "session-works"]
+        },
+        {
+          "id": "session-survives-reload",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "session-survives-reload"]
+        },
+        {
+          "id": "session-no-token-in-storage",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "session-no-token-in-storage"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add a `<DeleteAccountButton />` component to src/DeleteAccountButton.tsx. Clicking it asks the user to confirm and then deletes the account with a `DELETE` to `/api/account`.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "delete-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "delete-works"]
+        },
+        {
+          "id": "delete-sends-csrf",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "delete-sends-csrf"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "prompt": "Add an `<Initials name={...} />` component to src/Initials.tsx. \"Ada Lovelace\" shows \"AL\".",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "initials-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-security", "initials-works"]
+        }
+      ],
+      "quiet": true
+    }
+  ]
+}

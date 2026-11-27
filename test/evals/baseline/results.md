@@ -47,9 +47,9 @@ until a key with its own spend limit exists. A `beats` here stays unconfirmed.
 | 2026-11-27 | `typescript/ts-async`, second set              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | none taken, see below                                                   |
 | 2026-11-27 | `typescript/ts-logging`, R6 to R8              | screen | `claude-haiku-5-5` | 1, 2, 0                | not run    | `inconclusive` (three requests) | none taken, see below                                                   |
 | 2026-11-27 | `typescript/ts-security`, R6 of the second set | screen | `claude-haiku-5-5` | 0, 1, 0                | not run    | `inconclusive` (one request)    | none taken, see below                                                   |
-| 2026-11-27 | `csharp/cs-security`                           | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`                          | none taken, see below                                                   |
-| 2026-11-27 | `csharp/cs-async`                              | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | none taken, see below                                                   |
-| 2026-11-27 | `csharp/cs-logging`                            | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | none taken, see below                                                   |
+| 2026-11-27 | `csharp/cs-security`                           | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`                          | cut to the lines kept in "The C# cut"                                   |
+| 2026-11-27 | `csharp/cs-async`                              | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | cut to the lines kept in "The C# cut"                                   |
+| 2026-11-27 | `csharp/cs-logging`                            | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | cut to the lines kept in "The C# cut"                                   |
 
 ### `typescript/ts-generate-tests`, screen
 
@@ -304,6 +304,44 @@ The same action as for TypeScript, line by line. `none` is the arm with no rule 
 The limits are the ones listed under the TypeScript cut, and one more: the Python lines that are kept
 showed in one or two runs of three, so the evidence for keeping them is thinner than for the two
 TypeScript lines that showed in every run.
+
+### The C# cut
+
+The same action again, line by line. `none` is the arm with no rule installed.
+
+| Rule          | Line                                                           | Evidence                                                          | Action |
+| ------------- | -------------------------------------------------------------- | ----------------------------------------------------------------- | ------ |
+| `cs-security` | no secrets in source, config, logs, exception messages         | 3 of 3 `none` runs kept a password out of an exception; see below | kept   |
+| `cs-security` | read secrets from `IConfiguration`, throw when missing         | no request                                                        | kept   |
+| `cs-security` | `ProcessStartInfo.ArgumentList`, no shell                      | 3 of 3 `none` runs did it                                         | cut    |
+| `cs-security` | parameterized SQL                                              | 3 of 3                                                            | cut    |
+| `cs-security` | a user path checked against a root                             | 3 of 3                                                            | cut    |
+| `cs-security` | no `BinaryFormatter`; a locked-down `XmlReader`                | no request                                                        | kept   |
+| `cs-security` | `RandomNumberGenerator`, `FixedTimeEquals`                     | 3 of 3 each                                                       | cut    |
+| `cs-security` | `HttpClient` timeout, factory, certificate callback, allowlist | no request                                                        | kept   |
+| `cs-async`    | never block on a task                                          | no request                                                        | kept   |
+| `cs-async`    | `async void` only for an event handler                         | no request                                                        | kept   |
+| `cs-async`    | `ConfigureAwait(false)` in library code                        | 0 of 3 `none`, 3 of 3 with the rule                               | kept   |
+| `cs-async`    | accept a `CancellationToken` and forward it                    | 0 of 3 `none`, 3 of 3 with the rule                               | kept   |
+| `cs-async`    | independent work under `Task.WhenAll`                          | 3 of 3                                                            | cut    |
+| `cs-async`    | `ValueTask<T>` only on a measured hot path                     | no request                                                        | kept   |
+| `cs-async`    | `IAsyncDisposable` with `await using`                          | 3 of 3                                                            | cut    |
+| `cs-async`    | no unobserved fire-and-forget                                  | 3 of 3                                                            | cut    |
+| `cs-async`    | `TaskCompletionSource` with `RunContinuationsAsynchronously`   | 3 of 3                                                            | cut    |
+| `cs-logging`  | an injected `ILogger<T>`, never `Console`                      | 1 of 3 `none`, 3 of 3 with the rule                               | kept   |
+| `cs-logging`  | `Console` only for output the CLI user reads                   | no request                                                        | kept   |
+| `cs-logging`  | a message template with named placeholders                     | 3 of 3                                                            | cut    |
+| `cs-logging`  | pass the exception to the logger                               | 3 of 3                                                            | cut    |
+| `cs-logging`  | no `Information` or above per item in a loop                   | 1 of 3 `none`, 3 of 3 with the rule                               | kept   |
+| `cs-logging`  | `IsEnabled` guard, `[LoggerMessage]` on a hot path             | no request                                                        | kept   |
+| `cs-logging`  | no credentials or tokens in logs                               | 3 of 3; `cs-security` still says it                               | cut    |
+| `cs-logging`  | no PII; never log a whole request or response                  | no request                                                        | kept   |
+
+- The secrets line is the one exception to "3 of 3 is cut". Only its exception-message part was tested,
+  and the same request leaked a password in 1 of 3 `none` runs in TypeScript and 2 of 3 in Python, on
+  the same model. Three clean C# runs are not enough to drop the one line a `required` security rule is
+  for, and `cs-logging` now relies on it for credentials.
+- The limits are the ones listed under the TypeScript cut. The cut rules have not been run again yet.
 
 ### The cut Python rules, run again
 

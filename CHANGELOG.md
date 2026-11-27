@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The C# `cs-security`, `cs-async` and `cs-logging` rules are cut the same way (#225): 4.4 KB of rule files becomes 3.2 KB.
+  Removed lines are ones `claude-haiku-5-5` followed with no rule installed in every run that tested them
+  (`ProcessStartInfo.ArgumentList`, bound SQL parameters, path containment, `RandomNumberGenerator` and `FixedTimeEquals`,
+  `Task.WhenAll`, `await using`, observed background work, `RunContinuationsAsynchronously`, message templates, passing the
+  exception to the logger, no credentials in logs). Kept: the lines that changed behaviour (`ConfigureAwait(false)`, a
+  forwarded `CancellationToken`, an injected `ILogger<T>`, no `Information` record per item in a loop), the secrets line and
+  the lines no request tested.
 - The Python `py-security`, `py-async` and `py-logging` rules are cut the same way as the TypeScript ones (#225): 2.8 KB of rule
   text becomes 1.6 KB. Removed lines are ones `claude-haiku-5-5` followed with no rule installed in every run that tested them
   (`subprocess` without a shell, bound SQL parameters, path containment, `secrets` and `hmac.compare_digest`, a capped fan-out,

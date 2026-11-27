@@ -349,6 +349,51 @@ Test: `grep -n 'code-reviewer' skills/next/SKILL.md CLAUDE.md` shows both lines.
 the ledger shows the repo's reviewer and no `agent-skills:review` for that session, and `sigil-audit` drops
 `pack reviewer bypassed` there.
 
+## Step 10: Fixes before the next run `[worker:medium]`
+
+Files: `bin/sigil-audit`, `bin/tests/test-sigil-audit.sh`.
+
+Written 2026-11-27 from the review of the 2026-11-25 run. Not built yet: the script lives in the developer's Claude Code
+config, not in this package. `docs/plan-lean-catalog.md` step 8 waits for these.
+
+**1. Count an artifact from its own install date.** Sessions, worker runs, uses, listings and tokens for one artifact
+start at that manifest entry's `installedAt`, not at the repo's earliest one. The repo header keeps the repo's period.
+Each artifact row carries its own session count, and the findings that need "10 or more sessions" or "50 or more runs"
+read that count. An artifact below it is "too early", as a repo is today.
+
+**2. Keep a slice off its baseline day.** `--since D` starts at 00:00 local time on `D` and includes it. A new
+`--until D` stops before 00:00 on `D` and excludes it. A before-and-after pair is `--until D` and `--since D`, so no
+event is in both. The header prints both bounds as `since..until`, with the end marked as excluded. The Nov 25 slice and
+its baseline both counted Nov 20.
+
+**3. `--publish` writes a report that can be committed.** The default output and the files under `state/metrics/sigil/`
+stay as they are, for reading on the machine. With `--publish <file>` the script also writes a Markdown report in which:
+
+- each repo is `repo-a`, `repo-b`, ... in the order of the report, everywhere its path or folder name would print, the
+  findings included;
+- each plan file is `docs/plan-NN.md`, numbered across the report in order of first appearance;
+- the home directory is `~`;
+- the first lines say the report is redacted and how.
+
+The letters and numbers are stable between runs: the mapping is kept in `state/metrics/sigil/names.json`, a new name
+takes the next free label, and the mapping is never written to the published file. The 2026-11-25 report was redacted by
+hand, twice; its labels (`repo-a` to `repo-c`, `plan-01` to `plan-77`) seed the mapping.
+
+| Case                                                                              | Expected                                                          |
+| --------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
+| Repo installed on day 1, one skill added on day 8, 12 sessions, 4 after day 8     | That skill: 4 sessions, "too early"                               |
+| The same skill, 12 sessions after day 8, unused                                   | `removal candidate`                                               |
+| A skill listed in 60 worker runs, 20 of them after its install                    | Listed 20, no `listed, never used`                                |
+| One event at 23:59 on Nov 19, one at 00:00 on Nov 20                              | `--until 2026-11-20` has the first, `--since` the second          |
+| `--until` and `--since` on the same day, counts added                             | Equal to the count with neither flag                              |
+| `--until` before `--since`                                                        | An error that names both, exit 2                                  |
+| `--publish out.md`, fixture repo folder `secret-app`, plan `docs/plan-billing.md` | Neither string is in `out.md`; `repo-a` and `docs/plan-01.md` are |
+| `--publish` run twice, a second repo added between                                | The first repo keeps `repo-a`, the new one is `repo-b`            |
+| `--publish`, the published file                                                   | Does not hold the home directory or `names.json` content          |
+| No `--publish`                                                                    | Output as before, names in full                                   |
+
+Test: `bash ~/.claude/bin/tests/test-sigil-audit.sh`.
+
 ## After this plan
 
 Catalog changes are made in sigil, each from a `real-usage` issue, in a sigil plan. Rerun `/sigil-audit` one to two weeks after

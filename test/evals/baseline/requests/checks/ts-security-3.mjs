@@ -1,4 +1,4 @@
-// Hidden checks for requests/ts-security-3.json (README, Grading).
+// Hidden checks for R6 of requests/ts-security-2.json (README, Grading).
 //
 //   node ts-security-3.mjs <case>     (cwd: the project a run left behind)
 //

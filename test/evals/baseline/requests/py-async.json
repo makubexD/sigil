@@ -1,7 +1,7 @@
 {
   "artifact": "python/py-async",
   "kind": "rule",
-  "note": "Each request has a slower or more fragile obvious implementation. Graded by hidden behaviour tests on an event loop (checks/py-async.py, run through checks/py.mjs). No prompt says how to write the coroutine. Needs `python` on PATH. Not registered in results.md until its first run.",
+  "note": "Each request has a slower or more fragile obvious implementation. Graded by hidden behaviour tests on an event loop (checks/py-async.py, run through checks/py.mjs). No prompt says how to write the coroutine. Needs `python` on PATH. R2 was reworded after batches `python-1` and `cut-3`: it now names the caller, because 4 of 12 runs wrote `def`, not the `async def` asked for.",
   "requests": [
     {
       "id": "R1",
@@ -24,7 +24,7 @@
     },
     {
       "id": "R2",
-      "prompt": "Add `async def enrich(keys: list[str]) -> dict[str, str]` to jobs/enrich.py. It maps each key to what `slow_lookup` returns for it.",
+      "prompt": "Add `async def enrich(keys: list[str]) -> dict[str, str]` to jobs/enrich.py. Request handlers `await` it. It maps each key to what `slow_lookup` returns for it.",
       "fixture": "fixtures/py-jobs",
       "checks": [
         {

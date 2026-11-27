@@ -14,8 +14,8 @@ catalog does not teach. Files are `rule:<id>` or `agent:<id>`, read resolved, an
 | K2.4 bounded result                  | agent:csharp/cs-performance-profiler | add `.Take(n)` or pagination                                       |
 | K3.1 no blocking call in `async def` | rule:python/py-async                 | No blocking call in a coroutine                                    |
 | K3.4 outbound HTTP timeout           | rule:python/py-security              | Every outbound HTTP call sets a timeout                            |
-| K4.1 sanitize before HTML sink       | rule:react/react-security            | Never pass unsanitized user or third-party content to it           |
+| K4.1 sanitize before HTML sink       | agent:react/react-security-auditor   | `dangerouslySetInnerHTML` with unsanitized content                 |
 | K4.2 stable list keys                | rule:react/react-conventions         | Always provide a stable, unique `key` on list items                |
 | K4.3 deferred filter work            | rule:react/react-dependencies        | `useDeferredValue`/`useTransition`                                 |
-| K4.4 abort stale fetch               | rule:react/react-async               | out-of-order responses with a cleanup flag or `AbortController`    |
+| K4.4 abort stale fetch               | agent:react/react-code-reviewer      | no cleanup/abort guard against out-of-order responses              |
 | K5.3 no secrets in logs              | rule:typescript/ts-security          | No secrets in source, committed config, logs                       |

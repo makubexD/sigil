@@ -480,6 +480,44 @@ and were finished from the same run files the same day, once the user raised the
 - Every quiet request held. The three verdicts are `ties`: no rule beat the empty arm on enough
   requests, and two `react-logging` lines are the only ones that changed what was written.
 
+### The React cut
+
+The same action again, line by line. `none` is the arm with no rule installed.
+
+| Rule             | Line                                                                          | Evidence                                                    | Action |
+| ---------------- | ----------------------------------------------------------------------------- | ----------------------------------------------------------- | ------ |
+| `react-security` | sanitise before `dangerouslySetInnerHTML`                                     | 3 of 3 `none` runs did it                                   | cut    |
+| `react-security` | no secret in a `NEXT_PUBLIC_` or `VITE_` variable or a `"use client"` prop    | 3 of 3 for the variable; no request for the prop; see below | kept   |
+| `react-security` | a redirect target checked against an allowlist                                | 3 of 3                                                      | cut    |
+| `react-security` | `integrity` on a CDN script; an injected `<script>` against the CSP           | no request                                                  | kept   |
+| `react-security` | session tokens in an httpOnly cookie, not `localStorage`                      | 3 of 3                                                      | cut    |
+| `react-security` | `SameSite` cookies and a CSRF token on writes                                 | 3 of 3                                                      | cut    |
+| `react-async`    | server state through the query library                                        | 3 of 3; each `none` run used `useQuery`                     | cut    |
+| `react-async`    | a raw effect fetch guards against out-of-order answers and aborts             | 3 of 3                                                      | cut    |
+| `react-async`    | a Server Component `await`s its data; a query hook only in a client component | no request                                                  | kept   |
+| `react-async`    | writes use `useMutation` and refresh the affected queries                     | 3 of 3; each `none` run used `useMutation`                  | cut    |
+| `react-async`    | `<Suspense>` close to where the data is read                                  | 3 of 3                                                      | cut    |
+| `react-async`    | an `async` handler catches and shows the failure                              | 3 of 3                                                      | cut    |
+| `react-logging`  | real errors go to the error reporter, not only `console`                      | 0 of 3 `none`, 1 of 3 with the rule                         | kept   |
+| `react-logging`  | an Error Boundary reports the error and its `componentStack`                  | 1 of 3 `none`, 3 of 3 with the rule                         | kept   |
+| `react-logging`  | no personal data in `console` output or the reporter's context                | 3 of 3                                                      | cut    |
+| `react-logging`  | no unconditional `console.log` in a render body                               | 3 of 3                                                      | cut    |
+| `react-logging`  | a failed API call logged once, in one place                                   | 3 of 3                                                      | cut    |
+
+- The secrets line is kept for the reason the C# one was: it is the line a `required` security rule is
+  for, only half of it was tested, and three clean runs are not enough to drop it.
+- `react-async` is left with one line, about Server Components, which the client-rendered fixtures
+  cannot test. The rule stays so that line still loads; a request for it needs a server-rendered
+  fixture.
+- The reporter line is kept on thin evidence, 1 of 3 with the rule against 0 of 3 without. It is the
+  only line that asks for the behaviour, and the Error Boundary line beside it shows the model does
+  not report on its own.
+- The cut lines that the reviewer agents also state (`dangerouslySetInnerHTML` without sanitising, a
+  raw effect fetch with no abort guard) are still in those agents; the coverage-probe rows now point
+  there.
+- The kept lines have not been run again against the cut rules. The limits are the ones listed under
+  the TypeScript cut.
+
 ### What the screens say together
 
 On a request about one self-contained file, Haiku with nothing installed is at the top of what these

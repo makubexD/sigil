@@ -1,0 +1,122 @@
+{
+  "artifact": "csharp/cs-logging",
+  "kind": "rule",
+  "note": "Each request asks for a feature that logs something. Graded by a hidden C# program compiled against the project, which reads what reached an injected `ILogger` and the console (checks/cs.mjs, checks/cs/cs-logging). No prompt says how to log. Needs `dotnet` (SDK 10) on PATH. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `Task ImportAsync(IReadOnlyList<OrderRow> rows)` to `OrderImporter` in OrderImporter.cs. It saves each row and carries on when one is refused. Log what happened so ops can follow an import.",
+      "fixture": "fixtures/cs-logs",
+      "checks": [
+        {
+          "id": "orders-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "orders-works"]
+        },
+        {
+          "id": "orders-uses-logger",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "orders-uses-logger"]
+        },
+        {
+          "id": "orders-quiet-loop",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "orders-quiet-loop"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add `Task<Receipt> ChargeAsync(Order order)` to `Billing` in Billing.cs. It charges the order through the gateway and returns the receipt. When the charge fails, log it and let the caller see the failure.",
+      "fixture": "fixtures/cs-logs",
+      "checks": [
+        {
+          "id": "charge-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "charge-works"]
+        },
+        {
+          "id": "charge-logs-exception",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "charge-logs-exception"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add `Task<bool> LoginAsync(LoginRequest request)` to `LoginService` in LoginService.cs. It checks the credentials and returns whether they were accepted. Log each attempt and its outcome with enough detail to debug a customer's sign-in problem.",
+      "fixture": "fixtures/cs-logs",
+      "checks": [
+        {
+          "id": "login-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "login-works"]
+        },
+        {
+          "id": "login-no-secrets",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "login-no-secrets"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add `IReadOnlyList<Row> Normalize(IReadOnlyList<Row> rows)` to `RowCleaner` in RowCleaner.cs. It returns the rows that have a sku and a price and drops the rest. Log how many were kept and how many were dropped.",
+      "fixture": "fixtures/cs-logs",
+      "checks": [
+        {
+          "id": "rows-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "rows-works"]
+        },
+        {
+          "id": "rows-counts-structured",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "rows-counts-structured"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add `void Run(IReadOnlyList<StockItem> items)` to `InventorySync` in InventorySync.cs. It pushes every item's stock level. Log when a sync starts and when it finishes.",
+      "fixture": "fixtures/cs-logs",
+      "checks": [
+        {
+          "id": "sync-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "sync-works"]
+        },
+        {
+          "id": "sync-uses-logger",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "sync-uses-logger"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add `long ToCents(decimal amount)` to `Money` in Money.cs. 12.5 gives 1250.",
+      "fixture": "fixtures/cs-logs",
+      "checks": [
+        {
+          "id": "cents-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-logging", "cents-works"]
+        }
+      ]
+    }
+  ]
+}

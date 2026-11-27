@@ -1,0 +1,134 @@
+{
+  "artifact": "csharp/cs-async",
+  "kind": "rule",
+  "note": "Each request has a slower or more fragile obvious implementation. Graded by a hidden C# program compiled against the project (checks/cs.mjs, checks/cs/cs-async); `profiles-configure-await` reads the source. No prompt says how to write the method. Needs `dotnet` (SDK 10) on PATH. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `Task<IReadOnlyList<Profile>> LoadAsync(IReadOnlyList<string> ids)` to `Profiles` in Profiles.cs. It returns the profile of each id, in the order the ids were given.",
+      "fixture": "fixtures/cs-jobs",
+      "checks": [
+        {
+          "id": "profiles-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "profiles-works"]
+        },
+        {
+          "id": "profiles-together",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "profiles-together"]
+        },
+        {
+          "id": "profiles-configure-await",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "profiles-configure-await"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add `Task<IReadOnlyList<Item>> SyncAsync(int pages)` to `Catalog` in Catalog.cs. It fetches pages 1 to `pages`, one at a time, and returns every item in order. A full sync takes minutes.",
+      "fixture": "fixtures/cs-jobs",
+      "checks": [
+        {
+          "id": "catalog-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "catalog-works"]
+        },
+        {
+          "id": "catalog-accepts-token",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "catalog-accepts-token"]
+        },
+        {
+          "id": "catalog-forwards-token",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "catalog-forwards-token"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add `void Record(string page)` to `Visits` in Visits.cs. Request handlers call it. It saves the visit through the store without making the caller wait for the save.",
+      "fixture": "fixtures/cs-jobs",
+      "checks": [
+        {
+          "id": "visit-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "visit-works"]
+        },
+        {
+          "id": "visit-does-not-wait",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "visit-does-not-wait"]
+        },
+        {
+          "id": "visit-failure-observed",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "visit-failure-observed"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add `Task<int> ExportAsync(IReadOnlyList<string> rows)` to `Exporter` in Exporter.cs. It opens a writer, writes every row and returns how many rows it wrote.",
+      "fixture": "fixtures/cs-jobs",
+      "checks": [
+        {
+          "id": "export-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "export-works"]
+        },
+        {
+          "id": "export-disposed-on-failure",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "export-disposed-on-failure"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Create a `Gate` class in Gate.cs, in the `Jobs` namespace, with `Task WaitAsync()` and `void Open()`. `WaitAsync` completes once `Open` has been called; any number of callers can wait, and a caller that waits after `Open` does not wait at all.",
+      "fixture": "fixtures/cs-jobs",
+      "checks": [
+        {
+          "id": "gate-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "gate-works"]
+        },
+        {
+          "id": "gate-continuations-async",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "gate-continuations-async"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add `string Initials(string name)` to `Names` in Names.cs. \"Ada Lovelace\" gives \"AL\".",
+      "fixture": "fixtures/cs-jobs",
+      "checks": [
+        {
+          "id": "initials-works",
+          "kind": "script",
+          "script": "checks/cs.mjs",
+          "args": ["cs-async", "initials-works"]
+        }
+      ]
+    }
+  ]
+}

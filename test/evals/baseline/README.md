@@ -45,6 +45,12 @@ A Python project is graded by a Python script run through `requests/checks/py.mj
 `python` on PATH. Each of those graders stops a case that hangs, so a worker that cannot be cancelled
 fails its check and does not stall the stage.
 
+A C# project is graded by a small C# program (`requests/checks/cs/`) that `requests/checks/cs.mjs`
+compiles against the project in a temp folder, once per project and group of cases; it needs the
+.NET 10 SDK on PATH and no NuGet package. It finds constructors and methods by name, so a run that
+added a logger or a `CancellationToken` parameter still loads. A project that does not compile fails
+every case.
+
 A check measures something the user wanted from the request, not whether the output uses the
 artifact's words. Where no script can grade the output (a review report), leave the artifact out of
 the batch and say so in the ledger; a model judge is a separate, registered decision.

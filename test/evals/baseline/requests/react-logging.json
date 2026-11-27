@@ -1,0 +1,134 @@
+{
+  "artifact": "react/react-logging",
+  "kind": "rule",
+  "note": "One request per line of the rule: an unexpected failure that reaches error tracking and not only the console, an error boundary that reports where the error happened, no personal data in logs or reports, no log on every render, and a failed API call reported in one place. Graded by hidden behaviour tests against real React in a jsdom page with a fake API (checks/react.mjs, checks/react/react-logging.mjs). Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add an `<AvatarUpload />` component to src/AvatarUpload.tsx: a file input that prepares the chosen picture with `resizeImage`, uploads it with `uploadAvatar`, and tells the user when that fails.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "upload-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "upload-works"]
+        },
+        {
+          "id": "upload-failure-shown",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "upload-failure-shown"]
+        },
+        {
+          "id": "upload-failure-reported",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "upload-failure-reported"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add an `<ErrorBoundary fallback={...}>` component to src/ErrorBoundary.tsx. When something inside it throws while rendering, it shows the fallback and not a blank page.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "boundary-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "boundary-works"]
+        },
+        {
+          "id": "boundary-reports",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "boundary-reports"]
+        },
+        {
+          "id": "boundary-reports-where",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "boundary-reports-where"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add a `<CheckoutForm />` component to src/CheckoutForm.tsx with name, email and card number fields and a pay button. It pays with `pay`. Payments are refused a few times a day and support cannot tell why: record enough for them to investigate.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "checkout-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "checkout-works"]
+        },
+        {
+          "id": "checkout-no-personal-data",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "checkout-no-personal-data"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add a `<ResultsList results={...} />` component to src/ResultsList.tsx: one row per `Product` with its title and price. While we chase the slow-search bug, have it log how many results it is showing.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "results-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "results-works"]
+        },
+        {
+          "id": "results-log-not-per-render",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "results-log-not-per-render"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add a `useInvoices()` hook to src/useInvoices.ts. It returns `{ invoices, error }` from `fetchInvoices`. Make sure a load the server refuses ends up in error tracking.",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "invoices-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "invoices-works"]
+        },
+        {
+          "id": "invoices-failure-surfaces",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "invoices-failure-surfaces"]
+        },
+        {
+          "id": "invoices-reported-once",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "invoices-reported-once"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "prompt": "Add an `<Initials name={...} />` component to src/Initials.tsx. \"Ada Lovelace\" shows \"AL\".",
+      "fixture": "fixtures/react-app",
+      "checks": [
+        {
+          "id": "initials-works",
+          "kind": "script",
+          "script": "checks/react.mjs",
+          "args": ["react-logging", "initials-works"]
+        }
+      ],
+      "quiet": true
+    }
+  ]
+}

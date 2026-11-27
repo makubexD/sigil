@@ -51,6 +51,13 @@ compiles against the project in a temp folder, once per project and group of cas
 added a logger or a `CancellationToken` parameter still loads. A project that does not compile fails
 every case.
 
+A React project is graded by hidden behaviour tests run through `requests/checks/react.mjs`: the
+project is imported as a bundler would import it, into a jsdom page with a fake API server, against
+real React and TanStack Query. Those packages are not dependencies of this repo. The grader installs
+the pinned set in `requests/checks/web/react.deps.json` into a temp folder on first use, without
+running install scripts; `node requests/checks/react.mjs --install` does it ahead of a stage, which
+needs the network once. A check takes about six seconds to start.
+
 A check measures something the user wanted from the request, not whether the output uses the
 artifact's words. Where no script can grade the output (a review report), leave the artifact out of
 the batch and say so in the ledger; a model judge is a separate, registered decision.

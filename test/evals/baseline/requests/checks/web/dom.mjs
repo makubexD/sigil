@@ -44,10 +44,11 @@ for (const key of Object.getOwnPropertyNames(window)) {
       writable: true,
     });
 }
-window.URL.createObjectURL ??= () => 'blob:https://portal.example/download';
-window.URL.revokeObjectURL ??= () => {};
-globalThis.URL.createObjectURL ??= window.URL.createObjectURL;
-globalThis.URL.revokeObjectURL ??= window.URL.revokeObjectURL;
+// A download is an object URL: node's own would refuse the page's Blob, and jsdom has none.
+for (const target of [window.URL, globalThis.URL]) {
+  target.createObjectURL = () => 'blob:https://portal.example/download';
+  target.revokeObjectURL = () => {};
+}
 window.scrollTo = () => {};
 globalThis.IS_REACT_ACT_ENVIRONMENT = true;
 

@@ -22,9 +22,4 @@ appliesToRationale: Scoped to C# source because async/await correctness only app
 - Every I/O-bound or long-running public async method must accept a `CancellationToken` as its last parameter
   (`cancellationToken = default`) and forward it to every call that takes one; call
   `ThrowIfCancellationRequested()` in CPU-bound loops.
-- Independent operations run under `Task.WhenAll`, not one `await` after another.
 - `Task` by default. `ValueTask<T>` only on a measured hot path, awaited exactly once and never stored.
-- Async cleanup is `IAsyncDisposable`, used with `await using`.
-- No unobserved fire-and-forget (`_ = RunAsync();`): use a `BackgroundService`, or attach a continuation that
-  logs the fault.
-- Create a `TaskCompletionSource` with `TaskCreationOptions.RunContinuationsAsynchronously`.

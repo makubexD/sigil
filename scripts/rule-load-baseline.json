@@ -12,8 +12,8 @@
     "reason": "React rules cut to checkable one-liners; react-git and react-dependencies scoped to their own files (#223)"
   },
   "csharp": {
-    "bytes": 12939,
-    "reason": "C# rules cut to checkable one-liners; cs-git scoped to .gitignore (#223)"
+    "bytes": 11719,
+    "reason": "cs-security, cs-async and cs-logging cut to the lines the baseline screens did not show the model already follows (#225)"
   },
   "python": {
     "bytes": 8562,

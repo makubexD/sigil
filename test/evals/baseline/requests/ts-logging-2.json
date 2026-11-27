@@ -1,0 +1,64 @@
+{
+  "artifact": "typescript/ts-logging",
+  "kind": "rule",
+  "note": "The lines of the rule that requests/ts-logging.json has no request for: an injected logger in a project that has none, console output a CLI user is meant to read, and PII. Graded by hidden behaviour tests (checks/ts-logging-2.mjs). Three requests, so a stage gives no verdict; each request is read by itself. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `importOrders(rows: OrderRow[], save: SaveOrder): Promise<void>` to src/orders.ts. It saves each row and carries on when one is refused. Log what happened so ops can follow an import.",
+      "fixture": "fixtures/ts-logs-bare",
+      "checks": [
+        {
+          "id": "bare-orders-works",
+          "kind": "script",
+          "script": "checks/ts-logging-2.mjs",
+          "args": ["bare-orders-works"]
+        },
+        {
+          "id": "bare-orders-injected-logger",
+          "kind": "script",
+          "script": "checks/ts-logging-2.mjs",
+          "args": ["bare-orders-injected-logger"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add a `total` command to src/cli.ts: `main(['total', '3', '4'])` shows the user the sum of the numbers.",
+      "fixture": "fixtures/ts-logs-bare",
+      "checks": [
+        {
+          "id": "cli-total-shown",
+          "kind": "script",
+          "script": "checks/ts-logging-2.mjs",
+          "args": ["cli-total-shown"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Create src/customers.ts with `registerCustomer(form: CustomerForm, save: SaveCustomer): Promise<string>`. `CustomerForm` is `{ name: string; email: string; phone: string; dateOfBirth: string }`, and `SaveCustomer` takes the form and resolves with the new customer's id, which `registerCustomer` resolves with. Log each registration so support can trace one.",
+      "fixture": "fixtures/ts-logs",
+      "checks": [
+        {
+          "id": "register-works",
+          "kind": "script",
+          "script": "checks/ts-logging-2.mjs",
+          "args": ["register-works"]
+        },
+        {
+          "id": "register-logged",
+          "kind": "script",
+          "script": "checks/ts-logging-2.mjs",
+          "args": ["register-logged"]
+        },
+        {
+          "id": "register-no-pii",
+          "kind": "script",
+          "script": "checks/ts-logging-2.mjs",
+          "args": ["register-no-pii"]
+        }
+      ]
+    }
+  ]
+}

@@ -16,6 +16,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- The TypeScript `ts-security`, `ts-async` and `ts-logging` rules are cut a second time (#225), now that the lines the first cut
+  kept untested have been tested. Removed lines are ones `claude-haiku-5-5` followed with no rule installed in every run: passing
+  a given `AbortSignal` down, `Promise.allSettled` only when inspected, no `async` function in `new Promise(...)`, CPU-heavy
+  work in a `Worker`, `console.log` for CLI output, no PII in logs, never `rejectUnauthorized: false`. Kept: sharing an
+  `AbortSignal` across concurrent calls and an injected `Logger` when the project has none, which changed behaviour in every
+  run, and the lines still untested.
 - The C# `cs-security`, `cs-async` and `cs-logging` rules are cut the same way (#225): 4.4 KB of rule files becomes 3.2 KB.
   Removed lines are ones `claude-haiku-5-5` followed with no rule installed in every run that tested them
   (`ProcessStartInfo.ArgumentList`, bound SQL parameters, path containment, `RandomNumberGenerator` and `FixedTimeEquals`,

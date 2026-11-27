@@ -1,6 +1,6 @@
 {
   "typescript": {
-    "bytes": 10926,
+    "bytes": 10387,
     "reason": "ts-security, ts-async and ts-logging cut to the lines the baseline screens did not show the model already follows (#225)"
   },
   "angular": {

@@ -44,9 +44,9 @@ until a key with its own spend limit exists. A `beats` here stays unconfirmed.
 | 2026-11-26 | `python/py-security`                           | screen | `claude-haiku-5-5` | 2, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The Python cut"                               |
 | 2026-11-26 | `python/py-async`                              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The Python cut"                               |
 | 2026-11-26 | `python/py-logging`                            | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The Python cut"                               |
-| 2026-11-27 | `typescript/ts-async`, second set              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | none taken, see below                                                   |
-| 2026-11-27 | `typescript/ts-logging`, R6 to R8              | screen | `claude-haiku-5-5` | 1, 2, 0                | not run    | `inconclusive` (three requests) | none taken, see below                                                   |
-| 2026-11-27 | `typescript/ts-security`, R6 of the second set | screen | `claude-haiku-5-5` | 0, 1, 0                | not run    | `inconclusive` (one request)    | none taken, see below                                                   |
+| 2026-11-27 | `typescript/ts-async`, second set              | screen | `claude-haiku-5-5` | 1, 4, 0                | yes        | `ties`                          | cut to the lines kept in "The second TypeScript cut"                    |
+| 2026-11-27 | `typescript/ts-logging`, R6 to R8              | screen | `claude-haiku-5-5` | 1, 2, 0                | not run    | `inconclusive` (three requests) | cut to the lines kept in "The second TypeScript cut"                    |
+| 2026-11-27 | `typescript/ts-security`, R6 of the second set | screen | `claude-haiku-5-5` | 0, 1, 0                | not run    | `inconclusive` (one request)    | cut to the lines kept in "The second TypeScript cut"                    |
 | 2026-11-27 | `csharp/cs-security`                           | screen | `claude-haiku-5-5` | 0, 5, 0                | yes        | `ties`                          | cut to the lines kept in "The C# cut"                                   |
 | 2026-11-27 | `csharp/cs-async`                              | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | cut to the lines kept in "The C# cut"                                   |
 | 2026-11-27 | `csharp/cs-logging`                            | screen | `claude-haiku-5-5` | 2, 3, 0                | yes        | `ties`                          | cut to the lines kept in "The C# cut"                                   |
@@ -342,6 +342,31 @@ The same action again, line by line. `none` is the arm with no rule installed.
   the same model. Three clean C# runs are not enough to drop the one line a `required` security rule is
   for, and `cs-logging` now relies on it for credentials.
 - The limits are the ones listed under the TypeScript cut. The cut rules have not been run again yet.
+
+### The second TypeScript cut
+
+The lines the first cut kept only because no request tested them, after batch `ts-untested-1` tested
+them. `none` is the arm with no rule installed.
+
+| Rule          | Line                                                   | Evidence                                  | Action |
+| ------------- | ------------------------------------------------------ | ----------------------------------------- | ------ |
+| `ts-async`    | share an `AbortSignal` so a failure cancels the rest   | 0 of 3 `none`, 3 of 3 with the rule       | kept   |
+| `ts-async`    | accept an `AbortSignal`                                | the prompt gave the signal, so not tested | kept   |
+| `ts-async`    | pass the signal down, `throwIfAborted()` in long loops | 3 of 3 `none` runs did it                 | cut    |
+| `ts-async`    | deadlines use `AbortSignal.timeout(ms)`                | no request                                | kept   |
+| `ts-async`    | `Promise.allSettled` only when inspected               | 3 of 3                                    | cut    |
+| `ts-async`    | no `async` function in `new Promise(...)`              | 3 of 3                                    | cut    |
+| `ts-async`    | CPU-heavy work goes to a `Worker`                      | 3 of 3                                    | cut    |
+| `ts-logging`  | an injected `Logger` when the project has none         | 0 of 3 `none`, 3 of 3 with the rule       | kept   |
+| `ts-logging`  | `console.log` only for output the CLI user reads       | 3 of 3                                    | cut    |
+| `ts-logging`  | no PII in logs                                         | 3 of 3                                    | cut    |
+| `ts-security` | never `rejectUnauthorized: false`                      | 3 of 3                                    | cut    |
+| `ts-security` | `js-yaml` 4+ `load`                                    | no request                                | kept   |
+
+- One cut needs watching. "`console.log` only for output the CLI user reads" sat next to the
+  injected-logger line and may have balanced it, as a sentence did in the first cut. The recheck should
+  run the CLI-output request (`ts-logging` R7) with the cut rule, not only the kept lines.
+- The limits are the ones listed under the first cut. The cut rules have not been run again yet.
 
 ### The cut Python rules, run again
 

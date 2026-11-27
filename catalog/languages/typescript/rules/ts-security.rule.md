@@ -19,6 +19,5 @@ appliesToRationale: Security invariants (secrets, comparison, timeouts) apply to
 - No secrets in source, committed config, logs, error messages or `JSON.stringify` output. Commit `.env.example`
   with placeholders, never `.env`.
 - Compare secrets with `crypto.timingSafeEqual` after a length check, never `===`.
-- Always set a request timeout. Use `AbortSignal.timeout(ms)` on every outbound `fetch`; never
-  `rejectUnauthorized: false` outside local tests.
+- Always set a request timeout. Use `AbortSignal.timeout(ms)` on every outbound `fetch`.
 - YAML: `js-yaml` 4+ `load`; upgrade from 3.x.

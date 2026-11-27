@@ -1,6 +1,6 @@
 # Plan: a lean catalog for any workflow
 
-Drafted 2026-11-25, not started. It follows the real-usage audit ([`docs/audits/2026-11-25/`](audits/2026-11-25/README.md))
+Drafted 2026-11-25; where it stands is under Progress. It follows the real-usage audit ([`docs/audits/2026-11-25/`](audits/2026-11-25/README.md))
 and a second look at six public catalogs (ECC, agent-skills, ponytail, dotnet/skills, superpowers, CLI-Anything). The aim:
 an install costs as little context as possible before the user types anything, for any workflow, and every artifact that
 stays has earned its place.
@@ -22,18 +22,38 @@ Steps 1 to 4 remove no artifact, so they don't wait for evidence. Deletion happe
 
 ## Progress
 
-As of 2026-11-26. Every PR is open and unmerged; "tests" means `npm run test:built` passes except three symlink tests
-that fail with `EPERM` on the Windows machine it ran on.
+As of 2026-11-27. Every PR listed is merged. "Tests" means `npm run test:built` passes except three symlink tests that
+fail with `EPERM` on the Windows machine it ran on; CI passes them.
 
 | Step | PR             | Result                                                                           |
 | ---- | -------------- | -------------------------------------------------------------------------------- |
 | 1    | #228           | typescript 41.7 to 12.8 KB                                                       |
 | 2    | #230 #231 #232 | csharp 37.4 to 12.6 KB, react 32.3 to 12.8 KB, angular 49.2 to 15.5 KB           |
 | 3    | #229           | `npm run listing-load` with a baseline; `whenToUse` may not repeat `description` |
-| 4    | #233 (draft)   | starters are the two reviewers; tooling split into tooling, scaffold and deps    |
-| 6    | #235           | harness and selftest only; no paid run                                           |
+| 4    | #233           | starters are the two reviewers; tooling split into tooling, scaffold and deps    |
+| 6    | #235 to #249   | part done on a reduced budget: see "Step 6 so far"                               |
 | 7    | #234           | `review-flow` pack, `/review-changes`                                            |
 | 8    | none           | waits for two weeks of real use                                                  |
+
+### Step 6 so far
+
+Run on the owner's work seat, so on `claude-haiku-5-5` only, with 5 dollars in all in place of the 100 the step budgets.
+The ledger is [`test/evals/baseline/results.md`](../test/evals/baseline/results.md): 561 paid runs, 3.88 dollars.
+
+- **Screened:** `ts-generate-tests`, `ts-code-reviewer`, and the security, async and logging rules of TypeScript, Python
+  and C#. Every screen tied.
+- **The skill and the agent:** Haiku called the skill in 3 of 15 working runs and dispatched the agent in 0 of 15, so
+  those two screens measure the model alone. No action taken.
+- **The nine rules** were cut to the lines the screens support (#240, #246, #248, #249), and each cut was run again.
+  Rule text with one source file open is now typescript 10.1 KB, csharp 11.4 KB, python 8.4 KB.
+- **What changed Haiku's behaviour in every run:** six lines, each a convention or a non-default choice: a `fetch`
+  timeout, no `info` record per item in a loop, a shared `AbortSignal`, an injected logger (TypeScript);
+  `ConfigureAwait(false)` and a forwarded `CancellationToken` (C#). General safety practice it followed unasked.
+- **Not done:** the confirm and final stages (they need a key with its own spend limit); `cli`, `wizard` and
+  `shared/code-reviewer`, which the step puts first; every other skill and agent; the React and Angular rules; the
+  conventions, documentation and code-quality rules; any model other than Haiku. Those stay untested, not tied.
+- **A limit on what the cuts mean:** a line was cut on three clean runs of one request. Two lines that held in two runs
+  of three failed in the third, so a cut line can still be one the model sometimes breaks.
 
 Changed while doing the work:
 
@@ -42,7 +62,6 @@ Changed while doing the work:
 - **Step 3 drops the collision check** (one alike pair in the catalog, siblings by design, and
   `docs/audits/tools/lane-k-collision.js` exists) **and defers the 300-byte agent budget** to after step 6: 35 of 39 agents
   are over it, and cutting them rewrites the text agents are dispatched on. The report is per language, not per pack.
-- **Step 4 is a draft** until the owner decides whether ten new packs (scaffold and deps for five stacks) are wanted.
 - **Step 7 ships a skill, not a prompt.** A Copilot prompt file is written with a fixed tool list that can't start agents.
 - **Merge order.** The rule PRs (#228, #230, #231, #232) each edit `scripts/rule-load-baseline.json` and the output
   snapshot, and #234 edits two conventions rules #228 and #231 rewrite: merge one, rebase the next, run

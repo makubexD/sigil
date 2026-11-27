@@ -41,6 +41,10 @@ which passes when the tests a run wrote catch a planted bug). A run's score is t
 checks that pass. Files the catalog installs (`.claude/`, `.github/`, `.sigil/`) never count as the run's
 work.
 
+A Python project is graded by a Python script run through `requests/checks/py.mjs`, which needs
+`python` on PATH. Each of those graders stops a case that hangs, so a worker that cannot be cancelled
+fails its check and does not stall the stage.
+
 A check measures something the user wanted from the request, not whether the output uses the
 artifact's words. Where no script can grade the output (a review report), leave the artifact out of
 the batch and say so in the ledger; a model judge is a separate, registered decision.

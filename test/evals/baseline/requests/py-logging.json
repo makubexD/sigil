@@ -1,0 +1,128 @@
+{
+  "artifact": "python/py-logging",
+  "kind": "rule",
+  "note": "Each request asks for a feature that logs something. Graded by what reached the `logging` module and what was printed when the code runs (checks/py-logging.py, run through checks/py.mjs). No prompt says how to log. Needs `python` on PATH. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `import_orders(rows: list[OrderRow], save: SaveOrder) -> None` to shop/orders.py. It saves each row and carries on when one is refused. Log what happened so ops can follow an import.",
+      "fixture": "fixtures/py-logs",
+      "checks": [
+        {
+          "id": "orders-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "orders-works"]
+        },
+        {
+          "id": "orders-uses-logging",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "orders-uses-logging"]
+        },
+        {
+          "id": "orders-quiet-loop",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "orders-quiet-loop"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add `charge_card(order: Order, gateway: Gateway) -> Receipt` to shop/billing.py. It charges the order through the gateway and returns the receipt. When the charge fails, log it and let the caller see the failure.",
+      "fixture": "fixtures/py-logs",
+      "checks": [
+        {
+          "id": "charge-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "charge-works"]
+        },
+        {
+          "id": "charge-logs-traceback",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "charge-logs-traceback"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Add `login(request: LoginRequest, authenticate: Authenticate) -> bool` to shop/login.py. It checks the credentials and returns whether they were accepted. Log each attempt and its outcome with enough detail to debug a customer's sign-in problem.",
+      "fixture": "fixtures/py-logs",
+      "checks": [
+        {
+          "id": "login-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "login-works"]
+        },
+        {
+          "id": "login-no-secrets",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "login-no-secrets"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Add `normalize_rows(rows: list[Row]) -> list[Row]` to shop/rows.py. It returns the rows that have a sku and a price and drops the rest. Log how many were kept and how many were dropped.",
+      "fixture": "fixtures/py-logs",
+      "checks": [
+        {
+          "id": "rows-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "rows-works"]
+        },
+        {
+          "id": "rows-counts-not-in-string",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "rows-counts-not-in-string"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Add `sync_inventory(items: list[Item], push: Push) -> None` to shop/sync.py. It pushes every item's stock level. Log when a sync starts and when it finishes.",
+      "fixture": "fixtures/py-logs",
+      "checks": [
+        {
+          "id": "sync-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "sync-works"]
+        },
+        {
+          "id": "sync-uses-logging",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "sync-uses-logging"]
+        },
+        {
+          "id": "sync-does-not-configure",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "sync-does-not-configure"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add `to_cents(amount: float) -> int` to shop/money.py. 12.5 gives 1250.",
+      "fixture": "fixtures/py-logs",
+      "checks": [
+        {
+          "id": "cents-works",
+          "kind": "script",
+          "script": "checks/py.mjs",
+          "args": ["py-logging.py", "cents-works"]
+        }
+      ]
+    }
+  ]
+}

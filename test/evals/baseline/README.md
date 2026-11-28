@@ -37,7 +37,8 @@ One artifact at a time, from a request file under `requests/`:
 Scripted checks only (`checks.mjs`): `file-exists`, `file-matches`, `file-lacks`, `answer-matches`,
 `answer-lacks`, `command` (a type check, the project's own tests) and `script` (a node script kept
 beside the request file, where a run never sees it: hidden tests, or `requests/checks/mutant.mjs`,
-which passes when the tests a run wrote catch a planted bug). A run's score is the share of its
+which passes when the tests a run wrote catch a planted bug). A script is given the run's final answer
+on its standard input. A run's score is the share of its
 checks that pass. Files the catalog installs (`.claude/`, `.github/`, `.sigil/`) never count as the run's
 work.
 
@@ -72,9 +73,17 @@ while they stay the grader's pipes, and `converse` in `requests/checks/cli/kit.m
 a key at a time, each time the program stops to ask. It tells a question by its words, so a request
 that adds questions says what they are.
 
+A review (`requests/code-reviewer.json`) is graded through `requests/checks/review.mjs`, one case per
+defect planted in the fixture. A case passes when the answer names the defect, in any of the words
+its pattern allows, and within about 300 characters of that says where it is: a line number within
+three lines of the planted ones, or the name of the function. A line number counts for the file named
+on its line, or else the last file named above it. It measures which planted defects a review found
+and placed; it does not count false findings or judge how the review reads.
+
 A check measures something the user wanted from the request, not whether the output uses the
-artifact's words. Where no script can grade the output (a review report), leave the artifact out of
-the batch and say so in the ledger; a model judge is a separate, registered decision.
+artifact's words. Where no script can grade the output (a report with nothing planted to find), leave
+the artifact out of the batch and say so in the ledger; a model judge is a separate, registered
+decision.
 
 ## Stages and money
 

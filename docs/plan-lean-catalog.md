@@ -31,7 +31,7 @@ fail with `EPERM` on the Windows machine it ran on; CI passes them.
 | 2    | #230 #231 #232 | csharp 37.4 to 12.6 KB, react 32.3 to 12.8 KB, angular 49.2 to 15.5 KB           |
 | 3    | #229           | `npm run listing-load` with a baseline; `whenToUse` may not repeat `description` |
 | 4    | #233           | starters are the two reviewers; tooling split into tooling, scaffold and deps    |
-| 6    | #235 to #258   | part done on a reduced budget: see "Step 6 so far"                               |
+| 6    | #235 to #260   | part done on a reduced budget: see "Step 6 so far"                               |
 | 7    | #234           | `review-flow` pack, `/review-changes`                                            |
 | 8    | none           | waits for two weeks of real use                                                  |
 
@@ -54,10 +54,11 @@ seat's budget is spent: see "Continuing on another subscription".
 - **React:** two `react-logging` lines changed what was written: an Error Boundary that reports the error (1 of 3 runs
   without the rule, 3 of 3 with it) and errors sent to the reporter (0 of 3, 1 of 3).
 - **Built, not run:** the Angular request sets and graders (`requests/ng-*.json`, #254); the `shared/cli` and
-  `shared/wizard` request sets and their grader (`requests/cli.json`, `requests/wizard.json`, #258).
-- **Not done:** the confirm and final stages; the `cli` and `wizard` screens and `shared/code-reviewer`, which the step
-  puts first; every other skill and agent; the conventions, documentation and code-quality rules; any model other than Haiku. Those
-  stay untested, not tied.
+  `shared/wizard` request sets and their grader (`requests/cli.json`, `requests/wizard.json`, #258); the
+  `shared/code-reviewer` request set and its grader (`requests/code-reviewer.json`, #260).
+- **Not done:** the confirm and final stages; the `cli`, `wizard` and `shared/code-reviewer` screens, which the step
+  puts first; every other skill and agent; the conventions, documentation and code-quality rules; any model other than
+  Haiku. Those stay untested, not tied.
 - **A limit on what the cuts mean:** a line was cut on three clean runs of one request. Two lines that held in two runs
   of three failed in the third, so a cut line can still be one the model sometimes breaks.
 
@@ -94,7 +95,7 @@ What is left, in order:
 | 1   | Run `react-logging` R1 and R2 again against the cut rule (`--only R1,R2`)              | yes                     | 0.15 dollars      |
 | 2   | Screen `ng-security`, `ng-async`, `ng-logging`; cut the tied lines; run the kept again | yes                     | 1.15 dollars      |
 | 3   | Screen `shared/cli` and `shared/wizard` (`requests/cli.json`, `requests/wizard.json`)  | yes                     | 0.80, estimated   |
-| 4   | Screen `shared/code-reviewer`                                                          | no: request set needed  | 0.40, estimated   |
+| 4   | Screen `shared/code-reviewer` (`requests/code-reviewer.json`)                          | yes                     | 0.40, estimated   |
 | 5   | The lines each cut kept untested (listed per cut in the ledger)                        | no: requests needed     | 0.05 a line       |
 | 6   | The conventions, documentation and code-quality rules; the other skills and agents     | no: request sets needed | 0.30 an artifact  |
 | 7   | The kept lines on `claude-sonnet-5-5` and `claude-opus-5-5`                            | yes, with `--model`     | not measured      |
@@ -105,8 +106,9 @@ What is left, in order:
   skills stop for approval in some modes and a one-shot run has nobody to approve, so a with-skill run that stops scores
   0: read a loss with that in mind. No request covers the command grammar, help text and usage exit code of `cli`, or the
   back, review-edit, Ctrl-C and one-code-path lines of `wizard`.
-- **Item 4 needs a grader for a review report**, which is prose: the protocol takes scripted checks only, so plant known
-  bugs in a fixture and check that the report names each file and line, or register a model judge first.
+- **Item 4 grades which planted defects a review finds and places**, 27 of them in Go, Rust and Java. It does not count
+  false findings. Haiku dispatched `ts-code-reviewer` in none of 15 runs, so check `usedArtifact` before reading the
+  verdict: a screen where the agent was never dispatched measures the model alone.
 - **Item 7 is outside the step's protocol**, which sends only a screen winner to the larger models, and no screen was
   won. It is listed because the cuts assume a line Haiku follows unasked is one the larger models follow too, and the
   eight lines that changed Haiku's behaviour may not change theirs. Run one request on each model first to learn the

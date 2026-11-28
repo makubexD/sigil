@@ -53,11 +53,15 @@ const KINDS = {
       encoding: 'utf8',
       timeout: COMMAND_TIMEOUT_MS,
     }).status === 0,
-  /** The node script `script`, a path relative to the request file, exits 0 in the project. */
-  script: ({ script, args = [] }, { dir, base }) =>
+  /**
+   * The node script `script`, a path relative to the request file, exits 0 in the project. The
+   * run's final answer is its standard input, for a script that grades what was said.
+   */
+  script: ({ script, args = [] }, { dir, base, answer = '' }) =>
     spawnSync(process.execPath, [resolve(base, script), ...args], {
       cwd: dir,
       encoding: 'utf8',
+      input: answer,
       timeout: COMMAND_TIMEOUT_MS,
     }).status === 0,
 };

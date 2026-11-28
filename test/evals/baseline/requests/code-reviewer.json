@@ -1,0 +1,230 @@
+{
+  "artifact": "shared/code-reviewer",
+  "kind": "agent",
+  "note": "Go, Rust and Java, the languages the agent's description names as having no reviewer of their own. Each request covers two files with planted defects (27 in all). A check passes when the answer names the defect and places it: a line number within three lines of the planted ones, or the name of the function (checks/review/). Patterns are loose and the same for both arms. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "I've just reworked internal/ledger (ledger.go and export.go) and I'm about to commit. Go through both files first and list every problem you find, each with its file and line. Don't change anything.",
+      "fixture": "fixtures/go-ledger",
+      "checks": [
+        {
+          "id": "transfer-partial",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "transfer-partial"]
+        },
+        {
+          "id": "entries-race",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "entries-race"]
+        },
+        {
+          "id": "defer-loop",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "defer-loop"]
+        },
+        {
+          "id": "amount-format",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "amount-format"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "internal/rates (client.go and cache.go) is new code from a contractor and the nightly job starts using it tomorrow. What would you send back? Give the file and line for each point. No edits.",
+      "fixture": "fixtures/go-ledger",
+      "checks": [
+        {
+          "id": "ctx-ignored",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "ctx-ignored"]
+        },
+        {
+          "id": "body-leak",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "body-leak"]
+        },
+        {
+          "id": "no-timeout",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "no-timeout"]
+        },
+        {
+          "id": "nil-map",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "nil-map"]
+        },
+        {
+          "id": "ttl-inverted",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "ttl-inverted"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "src/queue.rs and src/retry.rs go into the worker today. Read them and tell me what is wrong, with file and line for each finding. Leave the code as it is.",
+      "fixture": "fixtures/rs-queue",
+      "checks": [
+        {
+          "id": "deadlock",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "deadlock"]
+        },
+        {
+          "id": "requeue-order",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "requeue-order"]
+        },
+        {
+          "id": "fill-percent",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "fill-percent"]
+        },
+        {
+          "id": "backoff-overflow",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "backoff-overflow"]
+        },
+        {
+          "id": "retry-after-panic",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "retry-after-panic"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Can you check OrderService.java and DiscountPolicy.java under src/main/java/com/acme/orders before this goes to QA? Say what is wrong and where (file and line). Don't edit them.",
+      "fixture": "fixtures/java-orders",
+      "checks": [
+        {
+          "id": "modified-in-loop",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "modified-in-loop"]
+        },
+        {
+          "id": "integer-identity",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "integer-identity"]
+        },
+        {
+          "id": "optional-null",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "optional-null"]
+        },
+        {
+          "id": "string-identity",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "string-identity"]
+        },
+        {
+          "id": "bigdecimal-scale",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "bigdecimal-scale"]
+        },
+        {
+          "id": "formatter-shared",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "formatter-shared"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "OrderRepository.java and ReportWriter.java (src/main/java/com/acme/orders) are the last two files of this change. Give me your findings, each with file and line, and nothing else.",
+      "fixture": "fixtures/java-orders",
+      "checks": [
+        {
+          "id": "sql-injection",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "sql-injection"]
+        },
+        {
+          "id": "connection-leak",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "connection-leak"]
+        },
+        {
+          "id": "error-swallowed",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "error-swallowed"]
+        },
+        {
+          "id": "sum-discarded",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "sum-discarded"]
+        },
+        {
+          "id": "empty-divide",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "empty-divide"]
+        },
+        {
+          "id": "sort-direction",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "sort-direction"]
+        },
+        {
+          "id": "sort-in-place",
+          "kind": "script",
+          "script": "checks/review.mjs",
+          "args": ["code-reviewer", "sort-in-place"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add a function ParseAmount(text string) (int64, error) to internal/ledger/money.go. It turns \"12.05\" into 1205 cents and returns an error for anything that is not digits, a dot and exactly two digits.",
+      "fixture": "fixtures/go-ledger",
+      "checks": [
+        {
+          "id": "added",
+          "kind": "file-matches",
+          "glob": "internal/ledger/money.go",
+          "pattern": "func ParseAmount\\(\\w+ string\\) \\(\\w* ?int64, \\w* ?error\\)"
+        },
+        {
+          "id": "rejects",
+          "kind": "file-matches",
+          "glob": "internal/ledger/money.go",
+          "pattern": "errors\\.New|fmt\\.Errorf|\\berr\\b"
+        },
+        {
+          "id": "kept",
+          "kind": "file-matches",
+          "glob": "internal/ledger/money.go",
+          "pattern": "func Abs\\(cents int64\\) int64"
+        }
+      ]
+    }
+  ]
+}

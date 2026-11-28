@@ -64,6 +64,14 @@ swaps a service for a fake where it needs to. The packages are in
 `requests/checks/web/angular.deps.json`; `node requests/checks/angular.mjs --install` installs them.
 `isDevMode()` is false, as in a shipped build.
 
+A command-line project (`requests/cli.json`, `requests/wizard.json`) is graded through
+`requests/checks/cli.mjs`, which needs no package. It starts the project's own entry point with a
+stock file in a temp folder and reads the exit code, the two streams and the file. For a case about a
+terminal it loads `requests/checks/cli/tty-preload.mjs` first, so the three streams report a terminal
+while they stay the grader's pipes, and `converse` in `requests/checks/cli/kit.mjs` types an answer,
+a key at a time, each time the program stops to ask. It tells a question by its words, so a request
+that adds questions says what they are.
+
 A check measures something the user wanted from the request, not whether the output uses the
 artifact's words. Where no script can grade the output (a review report), leave the artifact out of
 the batch and say so in the ledger; a model judge is a separate, registered decision.

@@ -31,29 +31,85 @@ fail with `EPERM` on the Windows machine it ran on; CI passes them.
 | 2    | #230 #231 #232 | csharp 37.4 to 12.6 KB, react 32.3 to 12.8 KB, angular 49.2 to 15.5 KB           |
 | 3    | #229           | `npm run listing-load` with a baseline; `whenToUse` may not repeat `description` |
 | 4    | #233           | starters are the two reviewers; tooling split into tooling, scaffold and deps    |
-| 6    | #235 to #249   | part done on a reduced budget: see "Step 6 so far"                               |
+| 6    | #235 to #256   | part done on a reduced budget: see "Step 6 so far"                               |
 | 7    | #234           | `review-flow` pack, `/review-changes`                                            |
 | 8    | none           | waits for two weeks of real use                                                  |
 
 ### Step 6 so far
 
 Run on the owner's work seat, so on `claude-haiku-5-5` only, with 5 dollars in all in place of the 100 the step budgets.
-The ledger is [`test/evals/baseline/results.md`](../test/evals/baseline/results.md): 561 paid runs, 3.88 dollars.
+The ledger is [`test/evals/baseline/results.md`](../test/evals/baseline/results.md): 669 paid runs, 4.85 dollars. That
+seat's budget is spent: see "Continuing on another subscription".
 
-- **Screened:** `ts-generate-tests`, `ts-code-reviewer`, and the security, async and logging rules of TypeScript, Python
-  and C#. Every screen tied.
+- **Screened:** `ts-generate-tests`, `ts-code-reviewer`, and the security, async and logging rules of TypeScript, Python,
+  C# and React (12 rules). Every screen tied.
 - **The skill and the agent:** Haiku called the skill in 3 of 15 working runs and dispatched the agent in 0 of 15, so
   those two screens measure the model alone. No action taken.
-- **The nine rules** were cut to the lines the screens support (#240, #246, #248, #249), and each cut was run again.
-  Rule text with one source file open is now typescript 10.1 KB, csharp 11.4 KB, python 8.4 KB.
+- **The twelve rules** were cut to the lines the screens support (#240, #246, #248, #249, #256). The TypeScript, Python
+  and C# cuts were each run again; the React cut was not. Rule text with one source file open is now typescript 10.1 KB,
+  csharp 11.4 KB, react 11.1 KB, python 8.4 KB; angular is 15.5 KB, as step 2 left it.
 - **What changed Haiku's behaviour in every run:** six lines, each a convention or a non-default choice: a `fetch`
   timeout, no `info` record per item in a loop, a shared `AbortSignal`, an injected logger (TypeScript);
   `ConfigureAwait(false)` and a forwarded `CancellationToken` (C#). General safety practice it followed unasked.
-- **Not done:** the confirm and final stages (they need a key with its own spend limit); `cli`, `wizard` and
-  `shared/code-reviewer`, which the step puts first; every other skill and agent; the React and Angular rules; the
-  conventions, documentation and code-quality rules; any model other than Haiku. Those stay untested, not tied.
+- **React:** two `react-logging` lines changed what was written: an Error Boundary that reports the error (1 of 3 runs
+  without the rule, 3 of 3 with it) and errors sent to the reporter (0 of 3, 1 of 3).
+- **Built, not run:** the Angular request sets and graders (`requests/ng-*.json`, #254).
+- **Not done:** the confirm and final stages; `cli`, `wizard` and `shared/code-reviewer`, which the step puts first;
+  every other skill and agent; the conventions, documentation and code-quality rules; any model other than Haiku. Those
+  stay untested, not tied.
 - **A limit on what the cuts mean:** a line was cut on three clean runs of one request. Two lines that held in two runs
   of three failed in the third, so a cut line can still be one the model sometimes breaks.
+
+### Continuing on another subscription
+
+The work seat has 0.15 dollars of its 5 left and is closed for paid runs. Everything below runs from a clean checkout on
+any machine where `claude` is logged in to the other account. The 5 dollar total and the 2 dollar day were that seat's
+limits: set new ones before the first run and write them in the ledger.
+
+Set up once:
+
+1. `npm ci`, `npm run build`, `npm run evals:check` (the harness selftest; it makes no model call).
+2. The Python graders need `python` on PATH and the C# graders the .NET SDK. The React and Angular graders install pinned
+   packages into the temp folder on first use, with install scripts off: `node requests/checks/react.mjs --install` and
+   `node requests/checks/angular.mjs --install`, from `test/evals/baseline/`.
+3. Run one request first (`--only Q1`, a cap of 0.10) to confirm the account answers as the model asked for. The harness
+   drops a record whose reported model differs.
+
+A screen, from `test/evals/baseline/`, after its batch is registered in `results.md`:
+
+```bash
+node run.mjs --sigil <checkout> --requests requests/<set>.json --stage screen \
+  --model claude-haiku-5-5 --cap <dollars> --expected 0.02 --out runs/<batch>-<set>.jsonl
+```
+
+A stopped screen resumes from its `--out` file and pays for no run twice. A React or Angular screen cost about 0.32
+dollars on Haiku (36 runs at about 0.009), the other languages about 0.25. The rest of the protocol is in
+[`test/evals/baseline/README.md`](../test/evals/baseline/README.md).
+
+What is left, in order:
+
+| #   | Work                                                                                   | Ready to run            | Haiku cost, about |
+| --- | -------------------------------------------------------------------------------------- | ----------------------- | ----------------- |
+| 1   | Run `react-logging` R1 and R2 again against the cut rule (`--only R1,R2`)              | yes                     | 0.15 dollars      |
+| 2   | Screen `ng-security`, `ng-async`, `ng-logging`; cut the tied lines; run the kept again | yes                     | 1.15 dollars      |
+| 3   | Screen `shared/cli`, `shared/wizard` and `shared/code-reviewer`                        | no: request sets needed | 1 dollar          |
+| 4   | The lines each cut kept untested (listed per cut in the ledger)                        | no: requests needed     | 0.05 a line       |
+| 5   | The conventions, documentation and code-quality rules; the other skills and agents     | no: request sets needed | 0.30 an artifact  |
+| 6   | The kept lines on `claude-sonnet-5-5` and `claude-opus-5-5`                            | yes, with `--model`     | not measured      |
+| 7   | Step 8                                                                                 | in two weeks            | none              |
+
+- **Item 6 is outside the step's protocol**, which sends only a screen winner to the larger models, and no screen was
+  won. It is listed because the cuts assume a line Haiku follows unasked is one the larger models follow too, and the
+  eight lines that changed Haiku's behaviour may not change theirs. Run one request on each model first to learn the
+  price: Sonnet coding runs were never recorded.
+- **A rule cut follows a screen, as before:** a line every no-rule run followed is cut, a line that changed behaviour or
+  that no request tested stays, and the cut is run again. Each cut edits the rule, `scripts/rule-load-baseline.json`, the
+  output snapshot, `docs/reference/artifacts.md`, the changelog and the ledger; #256 is the latest example.
+- **Building request sets costs nothing.** Each grader was checked against a naive and a careful reference solution
+  before its set was merged; do the same for a new one.
+- **Step 8** needs the audit-script fixes in
+  [`measurement-spec.md`](audits/2026-11-25/measurement-spec.md) ("Step 10: Fixes before the next run"), built on the
+  machine that has `sigil-audit` and the real repos.
 
 Changed while doing the work:
 

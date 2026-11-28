@@ -1,0 +1,200 @@
+{
+  "artifact": "shared/wizard",
+  "kind": "skill",
+  "note": "Five requests about an interactive `depot init`: adding one to a CLI that has only flags, a new setting that is both a flag and a question, quitting part-way, a runner with no terminal, and a secret among the answers. Graded by running the project's own entry point on a simulated terminal and answering what it asks, or with no terminal (checks/cli.mjs, checks/cli/wizard.mjs, checks/cli/kit.mjs). The grader recognises a question by its words (name, currency, low or threshold, token, a yes/no), so R1 states the questions it wants; a setup that asks in other words, or with an arrow-key menu, is not graded fairly. The skill asks for approval of a design before it builds, and a run has nobody to give it: R1 says to build without checking, the others name a fix. The back, review-edit, Ctrl-C and one-code-path lines have no request. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "New people never know which flags `depot init` needs. When someone runs it in a terminal with a flag missing, ask for what is missing: the store name, then the currency as a code such as EUR, then show what will be created and ask `Create it? [y/N]`. Build it now; you don't need to check the plan with me first.",
+      "fixture": "fixtures/cli-depot",
+      "checks": [
+        {
+          "id": "init-asks",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "init-asks"]
+        },
+        {
+          "id": "init-skips-given",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "init-skips-given"]
+        },
+        {
+          "id": "init-asks-again",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "init-asks-again"]
+        },
+        {
+          "id": "init-decline",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "init-decline"]
+        },
+        {
+          "id": "init-shows-command",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "init-shows-command"]
+        },
+        {
+          "id": "init-no-terminal",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "init-no-terminal"]
+        },
+        {
+          "id": "init-flags-kept",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "init-flags-kept"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "Add a low-stock threshold to setup: `depot init --low-stock <n>`, a whole number from 0 up, 5 when left out, saved as `store.lowStock` in the stock file. The interactive setup asks for it too.",
+      "fixture": "fixtures/cli-depot-setup",
+      "checks": [
+        {
+          "id": "low-flag",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "low-flag"]
+        },
+        {
+          "id": "low-flag-checked",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "low-flag-checked"]
+        },
+        {
+          "id": "low-asked",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "low-asked"]
+        },
+        {
+          "id": "low-asked-again",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "low-asked-again"]
+        },
+        {
+          "id": "low-flag-skips",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "low-flag-skips"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "Someone quit `depot init` halfway through and still ended up with a depot.json, with a currency they never chose. Nothing should be written unless they say yes at the end. Fix it.",
+      "fixture": "fixtures/cli-depot-setup",
+      "checks": [
+        {
+          "id": "quit-leaves-nothing",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "quit-leaves-nothing"]
+        },
+        {
+          "id": "decline-leaves-nothing",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "decline-leaves-nothing"]
+        },
+        {
+          "id": "setup-still-creates",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "setup-still-creates"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Our CI job hung for an hour on `depot init`: the runner has no terminal and a flag was missing from the command. Make sure that can't happen again.",
+      "fixture": "fixtures/cli-depot-setup",
+      "checks": [
+        {
+          "id": "ci-no-hang",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "ci-no-hang"]
+        },
+        {
+          "id": "ci-names-flag",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "ci-names-flag"]
+        },
+        {
+          "id": "ci-no-piped-answers",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "ci-no-piped-answers"]
+        },
+        {
+          "id": "terminal-still-asks",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "terminal-still-asks"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Setup should also take the cloud sync token, so a new shop doesn't have to create the credentials file by hand (`saveToken` in src/sync.mjs). Have the interactive `depot init` ask for it. It is optional.",
+      "fixture": "fixtures/cli-depot-setup",
+      "checks": [
+        {
+          "id": "token-saved",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "token-saved"]
+        },
+        {
+          "id": "token-not-shown",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "token-not-shown"]
+        },
+        {
+          "id": "token-not-a-flag",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "token-not-a-flag"]
+        },
+        {
+          "id": "token-optional",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "token-optional"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add a `--warehouse <name>` filter to `depot item list`.",
+      "fixture": "fixtures/cli-depot-setup",
+      "checks": [
+        {
+          "id": "list-by-warehouse",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["wizard", "list-by-warehouse"]
+        },
+        {
+          "id": "suite-green",
+          "kind": "command",
+          "command": "node",
+          "args": ["--test"]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,152 @@
+{
+  "artifact": "shared/cli",
+  "kind": "skill",
+  "note": "One request per part of the command-line contract a script can grade: a destructive command (confirmation with nobody to ask, a dry run), output a script reads (one JSON document, nothing else on stdout), a renamed command (the old spelling kept with a warning, callers moved), colour (off in a pipe and under NO_COLOR) and a failure (non-zero, nothing on stdout). The grammar, help and exit-code-2 lines have no request. Graded by running the project's own entry point on pipes or on a simulated terminal (checks/cli.mjs, checks/cli/cli.mjs). The skill's design and audit modes edit nothing, so every request names its change. Not registered in results.md until its first run.",
+  "requests": [
+    {
+      "id": "R1",
+      "prompt": "Add `depot item prune`: it removes every item whose quantity is 0.",
+      "fixture": "fixtures/cli-depot",
+      "checks": [
+        {
+          "id": "prune-works",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "prune-works"]
+        },
+        {
+          "id": "prune-asks-first",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "prune-asks-first"]
+        },
+        {
+          "id": "prune-dry-run",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "prune-dry-run"]
+        }
+      ]
+    },
+    {
+      "id": "R2",
+      "prompt": "The deploy script needs to read the item list. Add machine-readable output to `depot item list`.",
+      "fixture": "fixtures/cli-depot",
+      "checks": [
+        {
+          "id": "list-json-parses",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "list-json-parses"]
+        },
+        {
+          "id": "list-json-empty",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "list-json-empty"]
+        },
+        {
+          "id": "list-text-kept",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "list-text-kept"]
+        }
+      ]
+    },
+    {
+      "id": "R3",
+      "prompt": "`depot warehouse show-all` should be `depot warehouse list`, like `depot item list`. Rename it.",
+      "fixture": "fixtures/cli-depot",
+      "checks": [
+        {
+          "id": "rename-works",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "rename-works"]
+        },
+        {
+          "id": "rename-old-deprecated",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "rename-old-deprecated"]
+        },
+        {
+          "id": "rename-callers-moved",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "rename-callers-moved"]
+        }
+      ]
+    },
+    {
+      "id": "R4",
+      "prompt": "Make low stock stand out in `depot item list`: rows with fewer than 5 in stock are shown in red.",
+      "fixture": "fixtures/cli-depot",
+      "checks": [
+        {
+          "id": "color-on-terminal",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "color-on-terminal"]
+        },
+        {
+          "id": "color-off-piped",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "color-off-piped"]
+        },
+        {
+          "id": "color-off-no-color",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "color-off-no-color"]
+        }
+      ]
+    },
+    {
+      "id": "R5",
+      "prompt": "Our release job ran `depot item get $ID > item.txt` for an item that doesn't exist. The step passed and item.txt had junk in it. Fix that.",
+      "fixture": "fixtures/cli-depot",
+      "checks": [
+        {
+          "id": "get-works",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "get-works"]
+        },
+        {
+          "id": "get-missing-fails",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "get-missing-fails"]
+        },
+        {
+          "id": "get-missing-clean",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "get-missing-clean"]
+        }
+      ]
+    },
+    {
+      "id": "Q1",
+      "quiet": true,
+      "prompt": "Add a `totalQuantity(items)` function to src/stock.mjs. It returns the sum of the quantities.",
+      "fixture": "fixtures/cli-depot",
+      "checks": [
+        {
+          "id": "total-quantity",
+          "kind": "script",
+          "script": "checks/cli.mjs",
+          "args": ["cli", "total-quantity"]
+        },
+        {
+          "id": "suite-green",
+          "kind": "command",
+          "command": "node",
+          "args": ["--test"]
+        }
+      ]
+    }
+  ]
+}
